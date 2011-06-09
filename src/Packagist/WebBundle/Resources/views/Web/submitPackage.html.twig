@@ -1,0 +1,20 @@
+{% extends "PackagistWebBundle::layout.html.twig" %}
+
+{% block content %}
+    <h1>Submit package</h1>
+    <form action="" method="POST" {{ form_enctype(form) }}>
+        {{ form_errors(form) }}
+        <p>
+            {{ form_label(form.name, "Unique Package Name") }}
+            {{ form_errors(form.name) }}
+            {{ form_widget(form.name) }}
+        </p>
+        <p>
+            {{ form_label(form.description, "Description") }}
+            {{ form_errors(form.description) }}
+            {{ form_widget(form.description) }}
+        </p>
+        {{ form_rest(form) }}
+        <input type="submit" value="Submit" />
+    </form>
+{% endblock %}

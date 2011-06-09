@@ -1,0 +1,19 @@
+{% extends "PackagistWebBundle::layout.html.twig" %}
+
+{% block content %}
+    <h1>Packages</h1>
+    {% for package in packages %}
+        <section class="package">
+            <h2>{{ package.name }}</h2>
+            <p class="description">{{ package.description }}</p>
+            {% if package.versions[0] is defined %}
+                <p class="license">License: {{ package.versions[0].license|default("Unknown") }}</p>
+                <p class="links">
+                    {% if package.versions[0].homepage %}
+                        <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a>
+                    {% endif %}
+                </p>
+            {% endif %}
+        </section>
+    {% endfor %}
+{% endblock %}

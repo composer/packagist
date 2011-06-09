@@ -1,0 +1,3 @@
+_packagist:
+    resource: "@PackagistWebBundle/Controller"
+    type:     annotation

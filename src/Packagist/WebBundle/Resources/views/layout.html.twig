@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<!--[if lte IE 8 ]> <html lang="en" class="no-js oldie"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--> <html lang="en" class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="UTF-8" />
+
+        <title>{% block title %}Packagist{% endblock %}</title>
+        <meta name="description" content="" />
+        <meta name="author" content="Jordi Boggiano" />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
+        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
+
+        <script type="text/javascript">
+            WebFontConfig = {
+                google: { families: [ 'Neuton', 'PT Sans' ] }
+            };
+            (function() {
+                var wf = document.createElement('script');
+                wf.src = '//ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
+                wf.type = 'text/javascript';
+                wf.async = 'true';
+                var s = document.getElementsByTagName('script')[0];
+                s.parentNode.insertBefore(wf, s);
+            })();
+        </script>
+        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" />
+
+        {# {% stylesheets '@PackagistWebBundle/Resources/public/css/main.css' filter="yui_css" output='css/main.css' %}
+            <link rel="stylesheet" href="{{ asset_url }}" />
+        {% endstylesheets %} #}
+
+        <script src="/js/libs/modernizr-1.7.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="betawarn">WARNING - This is an experimental site, packages may come and go, this is not ready yet.</div>
+            <header>
+                {% if page is defined and page != 'submit' %}
+                <a class="submit" href="{{ path('submit') }}">Submit Package</a>
+                {% endif %}
+                <h1><a href="{{ path('home') }}">Packagist</a></h1>
+                <h2>The PHP package archivist.</h2>
+                {% if page is defined and page == 'home' %}
+                <p>Packagist is the main <a href="http://github.com/composer/composer">Composer</a> repository. It aggregates all sorts of PHP libraries that are installable with Composer. Browse packages below and if you have some open-source lib <a href="{{ path('submit') }}">submit it</a>!</p>
+                {% endif %}
+            </header>
+
+            {% if app.session.flash('success') %}
+                <div class="flash-message success">
+                    <p>{{ app.session.flash('success') }}</p>
+                </div>
+            {% endif %}
+            {% if app.session.flash('error') %}
+                <div class="flash-message error">
+                    <p>{{ app.session.flash('error') }}</p>
+                </div>
+            {% endif %}
+            {{ app.session.clearFlashes }}
+
+            <div class="main" role="main">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+        <script>!window.jQuery && document.write(unescape('%3Cscript src="/js/libs/jquery-1.5.2.min.js"%3E%3C/script%3E'))</script>
+        <script src="{{ asset('bundles/packagistweb/js/main.js') }}"></script>
+        {#<script>
+            var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']]; // TODO Change UA-XXXXX-X
+            (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.async=1;
+            g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+            s.parentNode.insertBefore(g,s)}(document,'script'));
+        </script>#}
+    </body>
+</html>
