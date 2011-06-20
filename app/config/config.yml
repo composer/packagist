@@ -19,7 +19,6 @@ framework:
 twig:
     debug:            %kernel.debug%
     strict_variables: %kernel.debug%
-    extensions: [twig.extension.text, twig.extension.debug]
 
 # Assetic Configuration
 assetic:

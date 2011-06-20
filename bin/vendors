@@ -15,7 +15,7 @@ $vendorDir = $rootDir.'/vendor';
 
 array_shift($argv);
 if (!isset($argv[0])) {
-    die(<<<EOF
+    exit(<<<EOF
 Symfony2 vendors script management.
 
 Specify a command to run:
@@ -29,7 +29,7 @@ EOF
 }
 
 if (!in_array($command = array_shift($argv), array('install', 'update'))) {
-    die(sprintf("Command \"%s\" does not exist.\n", $command));
+    exit(sprintf("Command \"%s\" does not exist.\n", $command));
 }
 
 if (!is_dir($vendorDir)) {
@@ -39,83 +39,69 @@ if (!is_dir($vendorDir)) {
 // versions
 $versions = array();
 if ('install' === $command && file_exists($rootDir.'/deps.lock')) {
-    foreach (file($rootDir.'/deps.lock') as $line) {
-        if (!trim($line)) {
-            continue;
-        }
-        $parts = array_values(array_filter(explode(' ', trim($line))));
+    foreach (file($rootDir.'/deps.lock', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $parts = array_values(array_filter(explode(' ', $line)));
         if (2 !== count($parts)) {
-            die(sprintf('The deps version file is not valid (near "%s")', $line));
+            exit(sprintf('The deps version file is not valid (near "%s")', $line));
         }
         $versions[$parts[0]] = $parts[1];
     }
 }
 
-foreach (file($rootDir.'/deps') as $line) {
-    if (!trim($line)) {
-        continue;
-    }
-    $parts = array_values(array_filter(explode(' ', trim($line))));
-    if (3 !== count($parts)) {
-        die(sprintf('The deps file is not valid (near "%s")', $line));
-    }
-    list($name, $path, $url) = $parts;
-
-    $rev = 'origin/HEAD';
-    if (false !== strpos($url, '@')) {
-        list($url, $rev) = explode('@', $url);
-    }
-
+$newversions = array();
+$deps = parse_ini_file($rootDir.'/deps', true, INI_SCANNER_RAW);
+foreach ($deps as $name => $dep) {
+    // revision
     if (isset($versions[$name])) {
         $rev = $versions[$name];
+    } else {
+        $rev = isset($dep['version']) ? $dep['version'] : 'origin/HEAD';
     }
 
-    $installDir = $vendorDir.'/'.$path.'/'.$name;
+    // install dir
+    $installDir = isset($dep['target']) ? $vendorDir.'/'.$dep['target'] : $vendorDir.'/'.$name;
     if (in_array('--reinstall', $argv)) {
         if (PHP_OS == 'WINNT') {
-            system('rmdir /S /Q "'.realpath($installDir)).'"';
+            system(sprintf('rmdir /S /Q %s', escapeshellarg(realpath($installDir))));
         } else {
-            system('rm -rf "'.$installDir.'"');
+            system(sprintf('rm -rf %s', escapeshellarg($installDir)));
         }
     }
 
     echo "> Installing/Updating $name\n";
 
+    // url
+    if (!isset($dep['git'])) {
+        exit(sprintf('The "git" value for the "%s" dependency must be set.', $name));
+    }
+    $url = $dep['git'];
+
     if (!is_dir($installDir)) {
-        system(sprintf('git clone %s "%s"', $url, $installDir));
+        system(sprintf('git clone %s %s', escapeshellarg($url), escapeshellarg($installDir)));
     }
 
-    system(sprintf('cd "%s" && git fetch origin && git reset --hard %s', $installDir, $rev));
+    system(sprintf('cd %s && git fetch origin && git reset --hard %s', escapeshellarg($installDir), escapeshellarg($rev)));
+
+    if ('update' === $command) {
+        ob_start();
+        system(sprintf('cd %s && git log -n 1 --format=%%H', escapeshellarg($installDir)));
+        $newversions[] = trim($name.' '.ob_get_clean());
+    }
 }
 
 // update?
 if ('update' === $command) {
-    $deps = array();
-    foreach (file($rootDir.'/deps') as $line) {
-        if (!trim($line)) {
-            continue;
-        }
-        $parts = array_values(array_filter(explode(' ', trim($line))));
-        if (3 !== count($parts)) {
-            die(sprintf('The deps file is not valid (near "%s")', $line));
-        }
-        list($name, $path, $url) = $parts;
-
-        ob_start();
-        system('cd "'.$vendorDir.'/'.$path.'/'.$name.'"; git log -n 1 --format=%H');
-        $deps[] = trim($name.' '.ob_get_clean());
-    }
-    file_put_contents($rootDir.'/deps.lock', implode("\n", $deps));
+    file_put_contents($rootDir.'/deps.lock', implode("\n", $newversions));
 }
 
 // php on windows can't use the shebang line from system()
 $interpreter = PHP_OS == 'WINNT' ? 'php.exe' : '';
 
 // Update the bootstrap files
-system(sprintf('%s "%s/bin/build_bootstrap"', $interpreter, $rootDir));
+system(sprintf('%s %s', $interpreter, escapeshellarg($rootDir.'/vendor/bundles/Sensio/Bundle/DistributionBundle/Resources/bin/build_bootstrap.php')));
 
 // Update assets
-system(sprintf('%s "%s/app/console" assets:install "%s/web/"', $interpreter, $rootDir, $rootDir));
+system(sprintf('%s %s assets:install %s', $interpreter, escapeshellarg($rootDir.'/app/console'), escapeshellarg($rootDir.'/web/')));
 
 // Remove the cache
-system(sprintf('%s "%s/app/console" cache:clear --no-warmup', $interpreter, $rootDir));
+system(sprintf('%s %s cache:clear --no-warmup', $interpreter, escapeshellarg($rootDir.'/app/console')));
