@@ -43,7 +43,7 @@ class WebController extends Controller
             ->getRepository('Packagist\WebBundle\Entity\Package')
             ->findAll();
 
-        return array('packages' => $packages, 'page' => 'home');
+        return array('packages' => $packages, 'page' => 'home', 'user' => $this->getUser());
     }
 
     /**
@@ -74,7 +74,7 @@ class WebController extends Controller
             }
         }
 
-        return array('form' => $form->createView(), 'page' => 'submit');
+        return array('form' => $form->createView(), 'page' => 'submit', 'user' => $this->getUser());
     }
 
     /**
@@ -123,7 +123,7 @@ class WebController extends Controller
             }
         }
 
-        return array('form' => $form->createView(), 'package' => $pkg, 'page' => 'submit');
+        return array('form' => $form->createView(), 'package' => $pkg, 'page' => 'submit', 'user' => $this->getUser());
     }
 
     /**

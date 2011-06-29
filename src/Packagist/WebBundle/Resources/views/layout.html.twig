@@ -36,6 +36,13 @@
     </head>
     <body>
         <div class="container">
+            <div>
+                {% if user.username is defined %}
+                    {{ user.username }} | <a href="{{ url('fos_user_security_logout') }}">logout</a>
+                {% else %}
+                    <a href="{{ url('fos_user_security_login') }}">login</a>
+                {% endif %}
+            </div>
             <div class="betawarn">WARNING - This is an experimental site, packages may come and go, this is not ready yet.</div>
             <header>
                 {% if page is defined and page != 'submit' %}
