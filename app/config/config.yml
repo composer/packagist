@@ -58,6 +58,4 @@ jms_security_extra:
 fos_user:
     db_driver:     orm
     firewall_name: main
-    class:
-        model:
-            user:  Packagist\WebBundle\Entity\User
+    user_class:  Packagist\WebBundle\Entity\User
