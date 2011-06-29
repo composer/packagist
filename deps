@@ -45,3 +45,7 @@
 [AsseticBundle]
     git=http://github.com/symfony/AsseticBundle.git
     target=/bundles/Symfony/Bundle/AsseticBundle
+    
+[FOSUserBundle]
+    git=git://github.com/FriendsOfSymfony/UserBundle.git
+    target=/bundles/FOS/UserBundle

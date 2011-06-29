@@ -4,3 +4,6 @@ app/cache/*
 app/logs/*
 build/
 vendor/
+/.settings
+/.buildpath
+/.project

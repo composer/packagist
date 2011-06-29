@@ -50,10 +50,11 @@ class Package
      */
     private $versions;
 
-//    /**
-//     * @ORM\ManyToMany(targetEntity="User")
-//     */
-//    private $maintainers;
+    /**
+     * @ORM\ManyToMany(targetEntity="User", inversedBy="packages")
+     * @ORM\JoinTable(name="maintainers_packages")
+     */
+    private $maintainers;
 
     // dist-tags / rel or runtime?
 
@@ -197,5 +198,25 @@ class Package
     public function getUpdatedAt()
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * Add maintainers
+     *
+     * @param Packagist\WebBundle\Entity\User $maintainers
+     */
+    public function addMaintainers(\Packagist\WebBundle\Entity\User $maintainers)
+    {
+        $this->maintainers[] = $maintainers;
+    }
+
+    /**
+     * Get maintainers
+     *
+     * @return Doctrine\Common\Collections\Collection $maintainers
+     */
+    public function getMaintainers()
+    {
+        return $this->maintainers;
     }
 }

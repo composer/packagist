@@ -21,12 +21,18 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class WebController extends Controller
 {
+    protected function getUser()
+    {
+        return $user = $this->get('security.context')->getToken()->getUser();
+    }
+
     /**
      * @Template()
      * @Route("/", name="home")
@@ -37,7 +43,7 @@ class WebController extends Controller
             ->getRepository('Packagist\WebBundle\Entity\Package')
             ->findAll();
 
-        return array('packages' => $packages, 'page' => 'home');
+        return array('packages' => $packages, 'page' => 'home', 'user' => $this->getUser());
     }
 
     /**
@@ -54,6 +60,8 @@ class WebController extends Controller
             $form->bindRequest($request);
             if ($form->isValid()) {
                 try {
+                    $user = $this->getUser();
+                    $package->addMaintainers($user);
                     $em = $this->get('doctrine')->getEntityManager();
                     $em->persist($package);
                     $em->flush();
@@ -66,7 +74,7 @@ class WebController extends Controller
             }
         }
 
-        return array('form' => $form->createView(), 'page' => 'submit');
+        return array('form' => $form->createView(), 'page' => 'submit', 'user' => $this->getUser());
     }
 
     /**
@@ -79,6 +87,10 @@ class WebController extends Controller
 
         $pkg = $this->get('doctrine')->getRepository('Packagist\WebBundle\Entity\Package')
             ->findOneByName($package);
+
+        if(!$pkg->getMaintainers()->contains($this->getUser())) {
+            throw new AccessDeniedException();
+        }
 
         if (!$pkg) {
             throw new NotFoundHttpException('Package '.$package.' not found.');
@@ -111,7 +123,7 @@ class WebController extends Controller
             }
         }
 
-        return array('form' => $form->createView(), 'package' => $pkg, 'page' => 'submit');
+        return array('form' => $form->createView(), 'package' => $pkg, 'page' => 'submit', 'user' => $this->getUser());
     }
 
     /**
