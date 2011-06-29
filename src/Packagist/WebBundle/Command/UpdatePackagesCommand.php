@@ -12,7 +12,7 @@
 
 namespace Packagist\WebBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\Command;
+use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,7 +22,7 @@ use Symfony\Component\Finder\Finder;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class UpdatePackagesCommand extends Command
+class UpdatePackagesCommand extends ContainerAwareCommand
 {
     /**
      * {@inheritdoc}
