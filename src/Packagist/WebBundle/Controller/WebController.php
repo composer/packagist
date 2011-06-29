@@ -21,12 +21,18 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class WebController extends Controller
 {
+    protected function getUser()
+    {
+        return $user = $this->get('security.context')->getToken()->getUser();
+    }
+
     /**
      * @Template()
      * @Route("/", name="home")
@@ -54,7 +60,7 @@ class WebController extends Controller
             $form->bindRequest($request);
             if ($form->isValid()) {
                 try {
-                    $user = $this->get('security.context')->getToken()->getUser();
+                    $user = $this->getUser();
                     $package->addMaintainers($user);
                     $em = $this->get('doctrine')->getEntityManager();
                     $em->persist($package);
@@ -81,6 +87,13 @@ class WebController extends Controller
 
         $pkg = $this->get('doctrine')->getRepository('Packagist\WebBundle\Entity\Package')
             ->findOneByName($package);
+
+        $this->get('logger')->info(print_r((array)$pkg->getMaintainers(), true));
+
+
+        if(!in_array($this->getUser(), (array)$pkg->getMaintainers())) {
+            throw new AccessDeniedException();
+        }
 
         if (!$pkg) {
             throw new NotFoundHttpException('Package '.$package.' not found.');
