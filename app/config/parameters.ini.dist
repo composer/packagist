@@ -15,4 +15,4 @@
 
     locale            = en
 
-    secret            = 84f4c65b9cde3417ecaeedc4fb57742c
+    secret            = CHANGE_ME_IN_PROD
