@@ -22,11 +22,13 @@ class User extends BaseUser
      * @ORM\ManyToMany(targetEntity="Package", mappedBy="maintainers")
      */
     private $packages;
+
     public function __construct()
     {
         $this->packages = new \Doctrine\Common\Collections\ArrayCollection();
+        parent::__construct();
     }
-    
+
     /**
      * Get id
      *
