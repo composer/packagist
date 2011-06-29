@@ -54,6 +54,8 @@ class WebController extends Controller
             $form->bindRequest($request);
             if ($form->isValid()) {
                 try {
+                    $user = $this->get('security.context')->getToken()->getUser();
+                    $package->addMaintainers($user);
                     $em = $this->get('doctrine')->getEntityManager();
                     $em->persist($package);
                     $em->flush();
