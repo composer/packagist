@@ -88,10 +88,7 @@ class WebController extends Controller
         $pkg = $this->get('doctrine')->getRepository('Packagist\WebBundle\Entity\Package')
             ->findOneByName($package);
 
-        $this->get('logger')->info(print_r((array)$pkg->getMaintainers(), true));
-
-
-        if(!in_array($this->getUser(), (array)$pkg->getMaintainers())) {
+        if(!$pkg->getMaintainers()->contains($this->getUser())) {
             throw new AccessDeniedException();
         }
 
