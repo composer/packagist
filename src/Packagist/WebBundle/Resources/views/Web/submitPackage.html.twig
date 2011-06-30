@@ -10,9 +10,9 @@
             {{ form_widget(form.name) }}
         </p>
         <p>
-            {{ form_label(form.description, "Description") }}
-            {{ form_errors(form.description) }}
-            {{ form_widget(form.description) }}
+            {{ form_label(form.repository, "Repository URL (Git only at the moment)") }}
+            {{ form_errors(form.repository) }}
+            {{ form_widget(form.repository) }}
         </p>
         {{ form_rest(form) }}
         <input type="submit" value="Submit" />

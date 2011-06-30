@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\ExecutionContext;
 
 /**
  * @ORM\Entity
@@ -21,6 +22,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *     name="package",
  *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx",columns={"name"})}
  * )
+ * @Assert\Callback(methods={"isRepositoryValid","isPackageUnique"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package
@@ -56,6 +58,12 @@ class Package
      */
     private $maintainers;
 
+    /**
+     * @ORM\Column()
+     * @Assert\NotBlank()
+     */
+    private $repository;
+
     // dist-tags / rel or runtime?
 
     /**
@@ -67,6 +75,11 @@ class Package
      * @ORM\Column(type="datetime", nullable="true")
      */
     private $updatedAt;
+
+    /**
+     * @ORM\Column(type="datetime", nullable="true")
+     */
+    private $crawledAt;
 
     public function __construct()
     {
@@ -88,6 +101,20 @@ class Package
             'versions' => $versions,
         );
         return json_encode($data);
+    }
+
+    public function isRepositoryValid(ExecutionContext $context)
+    {
+        if (!preg_match('#^(git://.+|https?://github.com/[^/]+/[^/]+\.git)$#', $this->repository)) {
+            $propertyPath = $context->getPropertyPath() . '.repository';
+            $context->setPropertyPath($propertyPath);
+            $context->addViolation('This is not a valid git repository url', array(), null);
+        }
+    }
+
+    public function isPackageUnique(ExecutionContext $context)
+    {
+        // TODO check for uniqueness of package name
     }
 
     /**
@@ -161,6 +188,26 @@ class Package
     }
 
     /**
+     * Set repository
+     *
+     * @param string $repository
+     */
+    public function setRepository($repository)
+    {
+        $this->repository = $repository;
+    }
+
+    /**
+     * Get repository
+     *
+     * @return string $repository
+     */
+    public function getRepository()
+    {
+        return $this->repository;
+    }
+
+    /**
      * Add versions
      *
      * @param Packagist\WebBundle\Entity\Version $versions
@@ -198,6 +245,26 @@ class Package
     public function getUpdatedAt()
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * Set crawledAt
+     *
+     * @param datetime $crawledAt
+     */
+    public function setCrawledAt($crawledAt)
+    {
+        $this->crawledAt = $crawledAt;
+    }
+
+    /**
+     * Get crawledAt
+     *
+     * @return datetime $crawledAt
+     */
+    public function getCrawledAt()
+    {
+        return $this->crawledAt;
     }
 
     /**

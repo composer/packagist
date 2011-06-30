@@ -66,64 +66,15 @@ class WebController extends Controller
                     $em->persist($package);
                     $em->flush();
 
-                    $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, now go ahead and add a release!');
-                    return new RedirectResponse($this->generateUrl('submit_version', array('package' => $package->getName())));
-                } catch (\PDOExceptionx $e) {
+                    $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, the repository will be parsed for releases in a bit.');
+                    return new RedirectResponse($this->generateUrl('home'));
+                } catch (\PDOException $e) {
                     $this->get('session')->setFlash('error', $package->getName().' could not be saved in our database, most likely the name is already in use.');
                 }
             }
         }
 
         return array('form' => $form->createView(), 'page' => 'submit', 'user' => $this->getUser());
-    }
-
-    /**
-     * @Template()
-     * @Route("/submit/{package}", name="submit_version")
-     */
-    public function submitVersionAction($package)
-    {
-        $em = $this->get('doctrine')->getEntityManager();
-
-        $pkg = $this->get('doctrine')->getRepository('Packagist\WebBundle\Entity\Package')
-            ->findOneByName($package);
-
-        if(!$pkg->getMaintainers()->contains($this->getUser())) {
-            throw new AccessDeniedException();
-        }
-
-        if (!$pkg) {
-            throw new NotFoundHttpException('Package '.$package.' not found.');
-        }
-
-        // TODO populate with the latest version's data
-        $version = new Version;
-        $version->setEntityManager($em);
-        $version->setName($pkg->getName());
-        $version->setDescription($pkg->getDescription());
-        $form = $this->get('form.factory')->create(new VersionType, $version);
-
-        $request = $this->get('request');
-        if ($request->getMethod() == 'POST') {
-            $form->bindRequest($request);
-
-            if ($form->isValid()) {
-                try {
-                    // TODO check if this is the latest version to move the latest dist-tags reference, and update the package's description perhaps
-                    $pkg->addVersions($version);
-                    $version->setPackage($pkg);
-                    $em->persist($version);
-                    $em->flush();
-
-                    $this->get('session')->setFlash('success', $pkg->getName().'\'s version '.$version->getVersion().' has been added.');
-                    return new RedirectResponse($this->generateUrl('home'));
-                } catch (\PDOException $e) {
-                    $this->get('session')->setFlash('error', $pkg->getName().'\'s version '.$version->getVersion().' could not be saved in our database, most likely it already exists.');
-                }
-            }
-        }
-
-        return array('form' => $form->createView(), 'package' => $pkg, 'page' => 'submit', 'user' => $this->getUser());
     }
 
     /**

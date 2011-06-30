@@ -23,7 +23,7 @@ class PackageType extends AbstractType
     public function buildForm(FormBuilder $builder, array $options)
     {
         $builder->add('name');
-        $builder->add('description', null, array('required' => false));
+        $builder->add('repository');
     }
 
     public function getDefaultOptions(array $options)
