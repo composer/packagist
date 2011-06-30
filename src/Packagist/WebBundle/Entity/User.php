@@ -4,6 +4,7 @@ namespace Packagist\WebBundle\Entity;
 
 use FOS\UserBundle\Entity\User as BaseUser;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * @ORM\Entity
@@ -25,18 +26,8 @@ class User extends BaseUser
 
     public function __construct()
     {
-        $this->packages = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->packages = new ArrayCollection();
         parent::__construct();
-    }
-
-    /**
-     * Get id
-     *
-     * @return integer $id
-     */
-    public function getId()
-    {
-        return $this->id;
     }
 
     /**
@@ -44,7 +35,7 @@ class User extends BaseUser
      *
      * @param Packagist\WebBundle\Entity\Package $packages
      */
-    public function addPackages(\Packagist\WebBundle\Entity\Package $packages)
+    public function addPackages(Package $packages)
     {
         $this->packages[] = $packages;
     }

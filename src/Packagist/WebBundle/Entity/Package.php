@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ExecutionContext;
+use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * @ORM\Entity
@@ -83,7 +84,7 @@ class Package
 
     public function __construct()
     {
-        $this->versions = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->versions = new ArrayCollection();
         $this->createdAt = new \DateTime;
     }
 
@@ -212,7 +213,7 @@ class Package
      *
      * @param Packagist\WebBundle\Entity\Version $versions
      */
-    public function addVersions(\Packagist\WebBundle\Entity\Version $versions)
+    public function addVersions(Version $versions)
     {
         $this->versions[] = $versions;
     }
@@ -272,7 +273,7 @@ class Package
      *
      * @param Packagist\WebBundle\Entity\User $maintainers
      */
-    public function addMaintainers(\Packagist\WebBundle\Entity\User $maintainers)
+    public function addMaintainers(User $maintainers)
     {
         $this->maintainers[] = $maintainers;
     }
