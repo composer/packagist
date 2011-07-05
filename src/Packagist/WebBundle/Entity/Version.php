@@ -85,22 +85,19 @@ class Version
     private $authors;
 
     /**
-     * JSON object of source spec
-     *
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Requirement", mappedBy="version")
+     */
+    private $requirements;
+
+    /**
      * @ORM\Column(type="text")
-     * @Assert\NotBlank()
      */
     private $source;
 
     /**
-     * JSON object of requirements
-     *
-     * @ORM\Column(type="text", name="requires")
-     * @Assert\NotBlank()
+     * @ORM\Column(type="text")
      */
-    private $require;
-
-//    dist (later)
+    private $dist;
 
     /**
      * @ORM\Column(type="datetime")
@@ -135,6 +132,11 @@ class Version
         foreach ($this->getAuthors() as $author) {
             $authors[] = $author->toArray();
         }
+        $requirements = array();
+        foreach ($this->getRequirements() as $requirement) {
+            $requirement = $requirement->toArray();
+            $requirements[key($requirement)] = current($requirement);
+        }
         return array(
             'name' => $this->name,
             'description' => $this->description,
@@ -143,10 +145,10 @@ class Version
             'version' => $this->version,
             'license' => $this->license,
             'authors' => $authors,
-            'require' => $this->getRequire(),
+            'require' => $requirements,
             'source' => $this->getSource(),
             'time' => $this->releasedAt ? $this->releasedAt->format('Y-m-d\TH:i:sP') : null,
-            'dist' => array(),
+            'dist' => $this->getDist(),
         );
     }
 
@@ -267,9 +269,7 @@ class Version
      */
     public function setSource($source)
     {
-        if (preg_match('#^([a-z-]+) (\S+)$#', $source, $m)) {
-            $this->source = json_encode(array('type' => $m[1], 'url' => $m[2]));
-        }
+        $this->source = json_encode($source);
     }
 
     /**
@@ -279,33 +279,27 @@ class Version
      */
     public function getSource()
     {
-        return json_decode($this->source);
+        return json_decode($this->source, true);
     }
 
     /**
-     * Set require
+     * Set dist
      *
-     * @param text $require
+     * @param text $dist
      */
-    public function setRequire($require)
+    public function setDist($dist)
     {
-        if (preg_match_all('#^(\S+) (\S+)\r?\n?$#m', $require, $m)) {
-            $requires = array();
-            foreach ($m[1] as $idx => $package) {
-                $requires[$package] = $m[2][$idx];
-            }
-            $this->require = json_encode($requires);
-        }
+        $this->dist = json_encode($dist);
     }
 
     /**
-     * Get require
+     * Get dist
      *
-     * @return text $require
+     * @return text
      */
-    public function getRequire()
+    public function getDist()
     {
-        return json_decode($this->require);
+        return json_decode($this->dist, true);
     }
 
     /**
@@ -353,7 +347,7 @@ class Version
      *
      * @param Packagist\WebBundle\Entity\Package $package
      */
-    public function setPackage(\Packagist\WebBundle\Entity\Package $package)
+    public function setPackage(Package $package)
     {
         $this->package = $package;
     }
@@ -373,7 +367,7 @@ class Version
      *
      * @param Packagist\WebBundle\Entity\Tag $tags
      */
-    public function addTags(\Packagist\WebBundle\Entity\Tag $tags)
+    public function addTags(Tag $tags)
     {
         $this->tags[] = $tags;
     }
@@ -462,7 +456,7 @@ class Version
      *
      * @param Packagist\WebBundle\Entity\Author $authors
      */
-    public function addAuthors(\Packagist\WebBundle\Entity\Author $authors)
+    public function addAuthors(Author $authors)
     {
         $this->authors[] = $authors;
     }
@@ -475,5 +469,25 @@ class Version
     public function getAuthors()
     {
         return $this->authors;
+    }
+
+    /**
+     * Add requirements
+     *
+     * @param Packagist\WebBundle\Entity\Requirement $requirements
+     */
+    public function addRequirements(Requirement $requirements)
+    {
+        $this->requirements[] = $requirements;
+    }
+
+    /**
+     * Get requirements
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getRequirements()
+    {
+        return $this->requirements;
     }
 }

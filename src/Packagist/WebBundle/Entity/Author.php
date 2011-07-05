@@ -35,7 +35,6 @@ class Author
      * Unique package name
      *
      * @ORM\Column(type="text", nullable="true")
-     * @Assert\NotBlank()
      */
     private $name;
 
@@ -56,7 +55,6 @@ class Author
 
     /**
      * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\User", inversedBy="authors")
-     * @Assert\Type(type="Packagist\WebBundle\Entity\User")
      */
     private $owner;
 
