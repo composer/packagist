@@ -75,10 +75,14 @@ class Version
      */
     private $license;
 
-//    /**
-//     * @ORM\ManyToMany(targetEntity="User")
-//     */
-//    private $authors;
+    /**
+     * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Author", inversedBy="versions")
+     * @ORM\JoinTable(name="version_author",
+     *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
+     *     inverseJoinColumns={@ORM\JoinColumn(name="author_id", referencedColumnName="id")}
+     * )
+     */
+    private $authors;
 
     /**
      * JSON object of source spec
@@ -124,8 +128,12 @@ class Version
     public function toArray()
     {
         $tags = array();
-        foreach ($this->tags as $tag) {
+        foreach ($this->getTags() as $tag) {
             $tags[] = $tag->getName();
+        }
+        $authors = array();
+        foreach ($this->getAuthors() as $author) {
+            $authors[] = $author->toArray();
         }
         return array(
             'name' => $this->name,
@@ -134,10 +142,10 @@ class Version
             'homepage' => $this->homepage,
             'version' => $this->version,
             'license' => $this->license,
-            'authors' => array(),
+            'authors' => $authors,
             'require' => $this->getRequire(),
             'source' => $this->getSource(),
-            'time' => $this->releasedAt->format('Y-m-d\TH:i:s'),
+            'time' => $this->releasedAt ? $this->releasedAt->format('Y-m-d\TH:i:sP') : null,
             'dist' => array(),
         );
     }
@@ -447,5 +455,25 @@ class Version
     public function getUpdatedAt()
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * Add authors
+     *
+     * @param Packagist\WebBundle\Entity\Author $authors
+     */
+    public function addAuthors(\Packagist\WebBundle\Entity\Author $authors)
+    {
+        $this->authors[] = $authors;
+    }
+
+    /**
+     * Get authors
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getAuthors()
+    {
+        return $this->authors;
     }
 }

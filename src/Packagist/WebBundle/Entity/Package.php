@@ -21,9 +21,9 @@ use Doctrine\Common\Collections\ArrayCollection;
  * @ORM\Entity
  * @ORM\Table(
  *     name="package",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx",columns={"name"})}
+ *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})}
  * )
- * @Assert\Callback(methods={"isRepositoryValid","isPackageUnique"})
+ * @Assert\Callback(methods={"isRepositoryValid", "isPackageUnique"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package
@@ -49,7 +49,7 @@ class Package
     private $description;
 
     /**
-     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Version",mappedBy="package")
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Version", mappedBy="package")
      */
     private $versions;
 
