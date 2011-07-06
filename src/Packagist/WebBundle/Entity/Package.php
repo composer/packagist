@@ -91,14 +91,18 @@ class Package
     public function toJson()
     {
         $versions = array();
-        foreach ($this->versions as $version) {
+        foreach ($this->getVersions() as $version) {
             $versions[$version->getVersion()] = $version->toArray();
+        }
+        $maintainers = array();
+        foreach ($this->getMaintainers() as $maintainer) {
+            $maintainers[] = $maintainer->toArray();
         }
         $data = array(
             'name' => $this->name,
             'description' => $this->description,
             'dist-tags' => array(),
-            'maintainers' => array(),
+            'maintainers' => $maintainers,
             'versions' => $versions,
         );
         return json_encode($data);

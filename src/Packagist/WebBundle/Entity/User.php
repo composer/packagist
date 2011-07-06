@@ -36,6 +36,14 @@ class User extends BaseUser
         parent::__construct();
     }
 
+    public function toArray()
+    {
+        return array(
+            'name' => $this->username,
+            'email' => $this->email,
+        );
+    }
+
     /**
      * Add packages
      *
