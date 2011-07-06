@@ -106,10 +106,34 @@ class Package
 
     public function isRepositoryValid(ExecutionContext $context)
     {
-        if (!preg_match('#^(git://.+|https?://github.com/[^/]+/[^/]+\.git)$#', $this->repository)) {
-            $propertyPath = $context->getPropertyPath() . '.repository';
-            $context->setPropertyPath($propertyPath);
+        $propertyPath = $context->getPropertyPath() . '.repository';
+        $context->setPropertyPath($propertyPath);
+
+        if (!preg_match('#^git://.+|https?://github.com/[^/]+/[^/]+(?:\.git)?$#', $this->repository)) {
             $context->addViolation('This is not a valid git repository url', array(), null);
+            return;
+        }
+
+        if (!preg_match('#^(?:https?|git)://github\.com/([^/]+)/(.+?)(?:\.git)?$#', $this->repository, $match)) {
+            $context->addViolation('Only GitHub repositories are supported at the moment', array(), null);
+            // TODO handle other types of git repos, and later svn/hg too
+            return;
+        }
+
+        // handle github repositories
+        $owner = $match[1];
+        $repository = $match[2];
+
+        $repoData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$owner.'/'.$repository), true);
+        if (!$repoData) {
+            $context->addViolation('Could not fetch information from this repository (if GitHub is down, please try again later)', array(), null);
+            return;
+        }
+
+        $masterData = json_decode(file_get_contents('https://raw.github.com/'.$owner.'/'.$repository.'/master/composer.json'), true);
+        if ($masterData['name'] !== $this->name) {
+            $context->addViolation('The repository\'s composer.json information does not match the given package name, '.$masterData['name'].' found.', array(), null);
+            return;
         }
     }
 
