@@ -35,11 +35,6 @@ class GitRepository implements RepositoryInterface
         return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/tags'), true);
     }
 
-    public function getOwner()
-    {
-        return $this->owner;
-    }
-
     public function getSource()
     {
         return array('type' => 'git', 'url' => $this->getUrl());
@@ -48,11 +43,6 @@ class GitRepository implements RepositoryInterface
     public function getUrl()
     {
         return 'http://github.com/'.$this->owner.'/'.$this->repository.'.git';
-    }
-
-    public function getRepository()
-    {
-        return $this->repository;
     }
 
     public function getDist($tag)
