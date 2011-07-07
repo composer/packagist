@@ -66,8 +66,7 @@ EOF
             // Process GitHub via API
             if ($repo = $provider->getRepository($package->getRepository())) {
 
-                //TODO: Abstraction broke this.
-                $output->writeln('Importing Repository');//'.$owner.'/'.$repository);
+                $output->writeln('Importing '.$repo->getUrl());
 
                 $repoData = $repo->getRepoData();
                 if (!$repoData) {
