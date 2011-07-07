@@ -40,7 +40,15 @@ class GitRepository implements RepositoryInterface
         return $this->owner;
     }
 
+    /**
+     * @deprecated
+     */
     public function getSource()
+    {
+        return $this->getUrl();
+    }
+
+    public function getUrl()
     {
         return 'http://github.com/'.$this->owner.'/'.$this->repository.'.git';
     }
