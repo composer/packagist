@@ -10,4 +10,6 @@ interface RepositoryInterface
      * The array shall be in the form of $unique_identifier => $composer_file
      */
     public function getAllComposerFiles();
+
+    public function getDist($unique_identifier);
 }

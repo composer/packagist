@@ -50,6 +50,17 @@ class GitRepository implements RepositoryInterface
         return $this->repository;
     }
 
+    public function getDist($tag)
+    {
+        $repoData = $this->getRepoData();
+        if ($repoData['repository']['has_downloads']) {
+            $downloadUrl = 'https://github.com/'.$this->owner.'/'.$this->repository.'/zipball/'.$tag;
+            $checksum = hash_file('sha1', $downloadUrl);
+            return array('type' => 'zip', 'url' => $downloadUrl, 'shasum' => $checksum ?: '');
+        } else {
+            // TODO clone the repo and build/host a zip ourselves. Not sure if this can happen, but it'll be needed for non-GitHub repos anyway
+        }
+    }
 
     public function getAllComposerFiles()
     {
@@ -58,7 +69,7 @@ class GitRepository implements RepositoryInterface
         $tagsData = $this->getTagsData();
         foreach ($tagsData['tags'] as $tag => $hash) {
             if($file = $this->getComposerFile($hash)) {
-                $files[$hash] = $file;
+                $files[$tag] = $file;
             }
         }
 

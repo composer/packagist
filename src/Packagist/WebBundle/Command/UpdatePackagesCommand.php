@@ -63,10 +63,8 @@ EOF
 
         foreach ($qb->getQuery()->getResult() as $package) {
 
-            $repo = $provider->getRepository($package->getRepository());
-
             // Process GitHub via API
-            if ($repo) {
+            if ($repo = $provider->getRepository($package->getRepository())) {
 
                 $owner = $repo->getOwner();
                 $repository = $repo->getRepository();
@@ -77,8 +75,6 @@ EOF
                     $output->writeln('Err: Could not fetch data from: '.$repo->getSource().', skipping.');
                     continue;
                 }
-
-                $tagsData = $repo->getTagsData();
 
                 foreach ($repo->getAllComposerFiles() as $uniqid => $data) {
 
@@ -115,15 +111,7 @@ EOF
                     $version->setUpdatedAt(new \DateTime);
                     $version->setReleasedAt(new \DateTime($data['time']));
                     $version->setSource(array('type' => 'git', 'url' => $repo->getSource()));
-
-                    if ($repoData['repository']['has_downloads']) {
-                        //TODO: Abstraction broke this
-                        $downloadUrl = 'https://github.com/'.$owner.'/'.$repository.'/zipball/'.$tag;
-                        $checksum = hash_file('sha1', $downloadUrl);
-                        $version->setDist(array('type' => 'zip', 'url' => $downloadUrl, 'shasum' => $checksum ?: ''));
-                    } else {
-                        // TODO clone the repo and build/host a zip ourselves. Not sure if this can happen, but it'll be needed for non-GitHub repos anyway
-                    }
+                    $version->setDist($repo->getDist($uniqid));
 
                     if (isset($data['keywords'])) {
                         foreach ($data['keywords'] as $keyword) {
@@ -177,7 +165,7 @@ EOF
                 // TODO parse composer.json on every branch matching a "$num.x.x" version scheme, + the master one, for all "x.y.z-dev" versions, usable through "latest-dev"
             } else {
                 // TODO support other repos
-                //$output->writeln('Err: unsupported repository: '.$repo->getSource());
+                $output->writeln('Err: unsupported repository: '.$package->getRepository());
                 continue;
             }
             $package->setUpdatedAt(new \DateTime);
