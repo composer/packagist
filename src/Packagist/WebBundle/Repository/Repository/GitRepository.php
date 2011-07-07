@@ -59,6 +59,10 @@ class GitRepository implements RepositoryInterface
 
     public function getAllComposerFiles()
     {
+        if(!$this->getRepoData()) {
+            throw new \Exception();
+        }
+
         $files = array();
 
         $tagsData = $this->getTagsData();

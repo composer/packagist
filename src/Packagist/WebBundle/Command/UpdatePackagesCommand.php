@@ -68,13 +68,15 @@ EOF
 
                 $output->writeln('Importing '.$repo->getUrl());
 
-                $repoData = $repo->getRepoData();
-                if (!$repoData) {
+                try {
+                    $files = $repo->getAllComposerFiles();
+                }
+                catch (Exception $ex) {
                     $output->writeln('Err: Could not fetch data from: '.$repo->getUrl().', skipping.');
                     continue;
                 }
 
-                foreach ($repo->getAllComposerFiles() as $uniqid => $data) {
+                foreach ($files as $uniqid => $data) {
 
                     // TODO parse $data['version'] w/ composer version parser, if no match, ignore the tag
 
