@@ -2,13 +2,13 @@
 
 namespace Packagist\WebBundle\Repository;
 
-use Packagist\WebBundle\Repository\Provider\RepositoryProviderInterface;
+use Packagist\WebBundle\Repository\Provider\ProviderInterface;
 
 class RepositoryProvider implements RepositoryProviderInterface
 {
     protected $providers = array();
 
-    public function addProvider(RepositoryProviderInterface $provider)
+    public function addProvider(ProviderInterface $provider)
     {
         $this->providers[] = $provider;
     }
