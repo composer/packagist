@@ -6,8 +6,6 @@ interface RepositoryInterface
 {
     /**
      * Return an array of all composer files (by tag).
-     *
-     * The array shall be in the form of $uniqid => $composer_file
      */
     public function getAllComposerFiles();
 
