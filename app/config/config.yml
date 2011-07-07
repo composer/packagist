@@ -61,4 +61,3 @@ fos_user:
     user_class:  Packagist\WebBundle\Entity\User
     #from_email:     { webmaster@example.com: Admin }
     
-packagist_web: ~
