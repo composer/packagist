@@ -4,7 +4,7 @@ namespace Packagist\WebBundle\Repository;
 
 use Packagist\WebBundle\Repository\Provider\RepositoryProviderInterface;
 
-class RepositoryProviderProvider
+class RepositoryProvider implements RepositoryProviderInterface
 {
     protected $providers = array();
 
