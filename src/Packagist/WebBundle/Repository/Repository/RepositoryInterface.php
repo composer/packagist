@@ -11,11 +11,13 @@ interface RepositoryInterface
      */
     public function getAllComposerFiles();
 
-    //TODO: This doesn't seem very clean.
-    public function getDist($uniqid);
-
     /**
      * Return the URL of the Repository
      */
     public function getUrl();
+
+    /**
+     * Return the type of the repository
+     */
+    public function getType();
 }

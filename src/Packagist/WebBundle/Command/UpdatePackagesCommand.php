@@ -104,8 +104,10 @@ EOF
                     $version->setPackage($package);
                     $version->setUpdatedAt(new \DateTime);
                     $version->setReleasedAt(new \DateTime($data['time']));
-                    $version->setSource($repo->getSource());
-                    $version->setDist($repo->getDist($uniqid));
+                    $version->setSource(array('type' => $repo->getType(), 'url' => $repo->getUrl()));
+
+                    $checksum = hash_file('sha1', $data['download']);
+                    $version->setDist(array('type' => 'zip', 'url' => $data['download'], 'shasum' => $checksum ?: ''));
 
                     if (isset($data['keywords'])) {
                         foreach ($data['keywords'] as $keyword) {

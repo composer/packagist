@@ -19,9 +19,9 @@ class GitRepository implements RepositoryInterface
         return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository), true);
     }
 
-    public function getSource()
+    public function getType()
     {
-        return array('type' => 'git', 'url' => $this->getUrl());
+        return 'git';
     }
 
     public function getUrl()
@@ -29,13 +29,11 @@ class GitRepository implements RepositoryInterface
         return 'http://github.com/'.$this->owner.'/'.$this->repository.'.git';
     }
 
-    public function getDist($tag)
+    protected function getDist($tag)
     {
         $repoData = $this->getRepoData();
         if ($repoData['repository']['has_downloads']) {
-            $downloadUrl = 'https://github.com/'.$this->owner.'/'.$this->repository.'/zipball/'.$tag;
-            $checksum = hash_file('sha1', $downloadUrl);
-            return array('type' => 'zip', 'url' => $downloadUrl, 'shasum' => $checksum ?: '');
+            return 'https://github.com/'.$this->owner.'/'.$this->repository.'/zipball/'.$tag;
         } else {
             // TODO clone the repo and build/host a zip ourselves. Not sure if this can happen, but it'll be needed for non-GitHub repos anyway
         }
@@ -43,7 +41,7 @@ class GitRepository implements RepositoryInterface
 
     public function getAllComposerFiles()
     {
-        if(!$this->getRepoData()) {
+        if(!$repoData = $this->getRepoData()) {
             throw new \Exception();
         }
 
@@ -57,6 +55,8 @@ class GitRepository implements RepositoryInterface
                     $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$this->owner.'/'.$this->repository.'/'.$tag), true);
                     $file['time'] = $commit['commit']['committed_date'];
                 }
+
+                $file['download'] = $this->getDist($tag);
 
                 $files[$tag] = $file;
             }
