@@ -64,22 +64,22 @@ EOF
         foreach ($qb->getQuery()->getResult() as $package) {
 
             // Process GitHub via API
-            if ($gitRepo = $provider->getRepository($package->getRepository())) {
+            if ($repo = $provider->getRepository($package->getRepository())) {
 
-                $owner = $gitRepo->getOwner();
-                $repository = $gitRepo->getRepository();
+                $owner = $repo->getOwner();
+                $repository = $repo->getRepository();
                 $output->writeln('Importing '.$owner.'/'.$repository);
 
-                $repoData = $gitRepo->getRepoData();
+                $repoData = $repo->getRepoData();
                 if (!$repoData) {
-                    $output->writeln('Err: Could not fetch data from: '.$gitRepo->getSource().', skipping.');
+                    $output->writeln('Err: Could not fetch data from: '.$repo->getSource().', skipping.');
                     continue;
                 }
 
-                $tagsData = $gitRepo->getTagsData();
+                $tagsData = $repo->getTagsData();
 
                 foreach ($tagsData['tags'] as $tag => $hash) {
-                    $data = $gitRepo->getComposerFile($hash);
+                    $data = $repo->getComposerFile($hash);
 
                     // silently skip tags without composer.json, this is expected.
                     if (!$data) {
@@ -96,7 +96,7 @@ EOF
                     }
 
                     if ($data['name'] !== $package->getName()) {
-                        $output->writeln('Err: Package name seems to have changed for '.$gitRepo->getSource().'@'.$tag.' '.$hash.', skipping');
+                        $output->writeln('Err: Package name seems to have changed for '.$repo->getSource().'@'.$tag.' '.$hash.', skipping');
                         continue;
                     }
 
@@ -118,7 +118,7 @@ EOF
                     $version->setPackage($package);
                     $version->setUpdatedAt(new \DateTime);
                     $version->setReleasedAt(new \DateTime($data['time']));
-                    $version->setSource(array('type' => 'git', 'url' => $gitRepo->getSource()));
+                    $version->setSource(array('type' => 'git', 'url' => $repo->getSource()));
 
                     if ($repoData['repository']['has_downloads']) {
                         $downloadUrl = 'https://github.com/'.$owner.'/'.$repository.'/zipball/'.$tag;
@@ -180,7 +180,7 @@ EOF
                 // TODO parse composer.json on every branch matching a "$num.x.x" version scheme, + the master one, for all "x.y.z-dev" versions, usable through "latest-dev"
             } else {
                 // TODO support other repos
-                $output->writeln('Err: unsupported repository: '.$gitRepo->getSource());
+                $output->writeln('Err: unsupported repository: '.$repo->getSource());
                 continue;
             }
             $package->setUpdatedAt(new \DateTime);
