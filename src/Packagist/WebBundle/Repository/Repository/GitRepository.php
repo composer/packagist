@@ -68,6 +68,11 @@ class GitRepository implements RepositoryInterface
         $tagsData = $this->getTagsData();
         foreach ($tagsData['tags'] as $tag => $hash) {
             if($file = $this->getComposerFile($hash)) {
+
+                if(!isset($file['time'])) {
+                    $file['time'] = $this->getTime($tag);
+                }
+
                 $files[$tag] = $file;
             }
         }
@@ -75,7 +80,7 @@ class GitRepository implements RepositoryInterface
         return $files;
     }
 
-    public function getTime($uniqid)
+    protected function getTime($uniqid)
     {
         $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$this->owner.'/'.$this->repository.'/'.$uniqid), true);
         return $commit['commit']['committed_date'];

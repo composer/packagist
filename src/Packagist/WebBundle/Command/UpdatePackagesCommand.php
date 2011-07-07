@@ -101,12 +101,6 @@ EOF
                         }
                     }
 
-                    //TODO: This should be done in getAllComoserFiles()
-                    // fetch date from the commit if not specified
-                    if (!isset($data['time'])) {
-                        $data['time'] = $repo->getTime($uniqid);
-                    }
-
                     $version->setPackage($package);
                     $version->setUpdatedAt(new \DateTime);
                     $version->setReleasedAt(new \DateTime($data['time']));
