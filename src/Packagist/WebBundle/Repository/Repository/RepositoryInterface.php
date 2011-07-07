@@ -5,7 +5,7 @@ namespace Packagist\WebBundle\Repository\Repository;
 interface RepositoryInterface
 {
     /**
-     * Returns the decoded composer.json file.
+     * Return an array of all composer files (by tag).
      */
-    public function getComposerFile($hash);
+    public function getAllComposerFiles();
 }

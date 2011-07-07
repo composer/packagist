@@ -14,6 +14,9 @@ class GitRepository implements RepositoryInterface
         $this->repository = $match[2];
     }
 
+    /**
+     * @deprecated
+     */
     public function getComposerFile($hash)
     {
         return json_decode(file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$hash.'/composer.json'), true);
@@ -24,6 +27,9 @@ class GitRepository implements RepositoryInterface
         return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository), true);
     }
 
+    /**
+     * @deprecated
+     */
     public function getTagsData()
     {
         return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/tags'), true);
@@ -42,5 +48,18 @@ class GitRepository implements RepositoryInterface
     public function getRepository()
     {
         return $this->repository;
+    }
+
+
+    public function getAllComposerFiles()
+    {
+        $files = array();
+
+        $tagsData = $this->getTagsData();
+        foreach ($tagsData['tags'] as $tag => $hash) {
+            $files[] = $this->getComposerFile($hash);
+        }
+
+        return $files;
     }
 }
