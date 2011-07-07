@@ -17,12 +17,12 @@ class GitRepository implements RepositoryInterface
     /**
      * @deprecated
      */
-    public function getComposerFile($hash)
+    protected function getComposerFile($hash)
     {
         return json_decode(file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$hash.'/composer.json'), true);
     }
 
-    public function getRepoData()
+    protected function getRepoData()
     {
         return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository), true);
     }
@@ -30,7 +30,7 @@ class GitRepository implements RepositoryInterface
     /**
      * @deprecated
      */
-    public function getTagsData()
+    protected function getTagsData()
     {
         return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/tags'), true);
     }
