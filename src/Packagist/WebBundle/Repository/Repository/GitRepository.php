@@ -40,12 +40,9 @@ class GitRepository implements RepositoryInterface
         return $this->owner;
     }
 
-    /**
-     * @deprecated
-     */
     public function getSource()
     {
-        return $this->getUrl();
+        return array('type' => 'git', 'url' => $this->getUrl());
     }
 
     public function getUrl()
@@ -82,5 +79,11 @@ class GitRepository implements RepositoryInterface
         }
 
         return $files;
+    }
+
+    public function getTime($uniqid)
+    {
+        $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$this->owner.'/'.$this->repository.'/'.$uniqid), true);
+        return $commit['commit']['committed_date'];
     }
 }

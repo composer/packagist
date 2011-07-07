@@ -66,9 +66,8 @@ EOF
             // Process GitHub via API
             if ($repo = $provider->getRepository($package->getRepository())) {
 
-                $owner = $repo->getOwner();
-                $repository = $repo->getRepository();
-                $output->writeln('Importing '.$owner.'/'.$repository);
+                //TODO: Abstraction broke this.
+                $output->writeln('Importing Repository');//'.$owner.'/'.$repository);
 
                 $repoData = $repo->getRepoData();
                 if (!$repoData) {
@@ -101,16 +100,16 @@ EOF
                         }
                     }
 
+                    //TODO: This should be done in getAllComoserFiles()
                     // fetch date from the commit if not specified
                     if (!isset($data['time'])) {
-                        $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$owner.'/'.$repository.'/'.$uniqid), true);
-                        $data['time'] = $commit['commit']['committed_date'];
+                        $data['time'] = $repo->getTime($uniqid);
                     }
 
                     $version->setPackage($package);
                     $version->setUpdatedAt(new \DateTime);
                     $version->setReleasedAt(new \DateTime($data['time']));
-                    $version->setSource(array('type' => 'git', 'url' => $repo->getUrl()));
+                    $version->setSource($repo->getSource());
                     $version->setDist($repo->getDist($uniqid));
 
                     if (isset($data['keywords'])) {
