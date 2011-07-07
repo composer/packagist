@@ -62,10 +62,9 @@ EOF
             ->setParameters(array(date('Y-m-d H:i:s', time() - 3600)));
 
         foreach ($qb->getQuery()->getResult() as $package) {
-            $repo = $package->getRepository();
 
             // Process GitHub via API
-            if ($gitRepo = $provider->getRepository($repo)) {
+            if ($gitRepo = $provider->getRepository($package->getRepository())) {
 
                 $owner = $gitRepo->getOwner();
                 $repository = $gitRepo->getRepository();
@@ -73,7 +72,7 @@ EOF
 
                 $repoData = $gitRepo->getRepoData();
                 if (!$repoData) {
-                    $output->writeln('Err: Could not fetch data from: '.$repo.', skipping.');
+                    $output->writeln('Err: Could not fetch data from: '.$gitRepo->getSource().', skipping.');
                     continue;
                 }
 
@@ -97,7 +96,7 @@ EOF
                     }
 
                     if ($data['name'] !== $package->getName()) {
-                        $output->writeln('Err: Package name seems to have changed for '.$repo.'@'.$tag.' '.$hash.', skipping');
+                        $output->writeln('Err: Package name seems to have changed for '.$gitRepo->getSource().'@'.$tag.' '.$hash.', skipping');
                         continue;
                     }
 
@@ -119,7 +118,7 @@ EOF
                     $version->setPackage($package);
                     $version->setUpdatedAt(new \DateTime);
                     $version->setReleasedAt(new \DateTime($data['time']));
-                    $version->setSource(array('type' => 'git', 'url' => 'http://github.com/'.$owner.'/'.$repository.'.git'));
+                    $version->setSource(array('type' => 'git', 'url' => $gitRepo->getSource()));
 
                     if ($repoData['repository']['has_downloads']) {
                         $downloadUrl = 'https://github.com/'.$owner.'/'.$repository.'/zipball/'.$tag;
@@ -181,7 +180,7 @@ EOF
                 // TODO parse composer.json on every branch matching a "$num.x.x" version scheme, + the master one, for all "x.y.z-dev" versions, usable through "latest-dev"
             } else {
                 // TODO support other repos
-                $output->writeln('Err: unsupported repository: '.$repo);
+                $output->writeln('Err: unsupported repository: '.$gitRepo->getSource());
                 continue;
             }
             $package->setUpdatedAt(new \DateTime);

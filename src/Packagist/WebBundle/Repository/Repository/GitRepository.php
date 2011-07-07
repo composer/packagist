@@ -34,6 +34,11 @@ class GitRepository implements RepositoryInterface
         return $this->owner;
     }
 
+    public function getSource()
+    {
+        return 'http://github.com/'.$this->owner.'/'.$this->repository.'.git';
+    }
+
     public function getRepository()
     {
         return $this->repository;
