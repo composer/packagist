@@ -63,8 +63,10 @@ EOF
 
         foreach ($qb->getQuery()->getResult() as $package) {
 
+            $repo = $provider->getRepository($package->getRepository());
+
             // Process GitHub via API
-            if ($repo = $provider->getRepository($package->getRepository())) {
+            if ($repo) {
 
                 $owner = $repo->getOwner();
                 $repository = $repo->getRepository();
@@ -78,13 +80,7 @@ EOF
 
                 $tagsData = $repo->getTagsData();
 
-                foreach ($tagsData['tags'] as $tag => $hash) {
-                    $data = $repo->getComposerFile($hash);
-
-                    // silently skip tags without composer.json, this is expected.
-                    if (!$data) {
-                        continue;
-                    }
+                foreach ($repo->getAllComposerFiles() as $uniqid => $data) {
 
                     // TODO parse $data['version'] w/ composer version parser, if no match, ignore the tag
 
@@ -96,7 +92,7 @@ EOF
                     }
 
                     if ($data['name'] !== $package->getName()) {
-                        $output->writeln('Err: Package name seems to have changed for '.$repo->getSource().'@'.$tag.' '.$hash.', skipping');
+                        $output->writeln('Err: Package name seems to have changed for '.$repo->getSource().'@'.$uniqid.', skipping');
                         continue;
                     }
 
@@ -111,7 +107,7 @@ EOF
 
                     // fetch date from the commit if not specified
                     if (!isset($data['time'])) {
-                        $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$owner.'/'.$repository.'/'.$hash), true);
+                        $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$owner.'/'.$repository.'/'.$uniqid), true);
                         $data['time'] = $commit['commit']['committed_date'];
                     }
 
@@ -121,6 +117,7 @@ EOF
                     $version->setSource(array('type' => 'git', 'url' => $repo->getSource()));
 
                     if ($repoData['repository']['has_downloads']) {
+                        //TODO: Abstraction broke this
                         $downloadUrl = 'https://github.com/'.$owner.'/'.$repository.'/zipball/'.$tag;
                         $checksum = hash_file('sha1', $downloadUrl);
                         $version->setDist(array('type' => 'zip', 'url' => $downloadUrl, 'shasum' => $checksum ?: ''));
@@ -180,7 +177,7 @@ EOF
                 // TODO parse composer.json on every branch matching a "$num.x.x" version scheme, + the master one, for all "x.y.z-dev" versions, usable through "latest-dev"
             } else {
                 // TODO support other repos
-                $output->writeln('Err: unsupported repository: '.$repo->getSource());
+                //$output->writeln('Err: unsupported repository: '.$repo->getSource());
                 continue;
             }
             $package->setUpdatedAt(new \DateTime);

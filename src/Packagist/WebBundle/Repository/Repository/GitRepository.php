@@ -57,7 +57,9 @@ class GitRepository implements RepositoryInterface
 
         $tagsData = $this->getTagsData();
         foreach ($tagsData['tags'] as $tag => $hash) {
-            $files[] = $this->getComposerFile($hash);
+            if($file = $this->getComposerFile($hash)) {
+                $files[$hash] = $file;
+            }
         }
 
         return $files;
