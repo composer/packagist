@@ -7,9 +7,15 @@ interface RepositoryInterface
     /**
      * Return an array of all composer files (by tag).
      *
-     * The array shall be in the form of $unique_identifier => $composer_file
+     * The array shall be in the form of $uniqid => $composer_file
      */
     public function getAllComposerFiles();
 
-    public function getDist($unique_identifier);
+    //TODO: This doesn't seem very clean.
+    public function getDist($uniqid);
+
+    /**
+     * Return the URL of the Repository
+     */
+    public function getUrl();
 }
