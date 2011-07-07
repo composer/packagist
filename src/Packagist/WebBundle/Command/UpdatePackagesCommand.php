@@ -72,7 +72,7 @@ EOF
 
                 $repoData = $repo->getRepoData();
                 if (!$repoData) {
-                    $output->writeln('Err: Could not fetch data from: '.$repo->getSource().', skipping.');
+                    $output->writeln('Err: Could not fetch data from: '.$repo->getUrl().', skipping.');
                     continue;
                 }
 
@@ -88,7 +88,7 @@ EOF
                     }
 
                     if ($data['name'] !== $package->getName()) {
-                        $output->writeln('Err: Package name seems to have changed for '.$repo->getSource().'@'.$uniqid.', skipping');
+                        $output->writeln('Err: Package name seems to have changed for '.$repo->getUrl().'@'.$uniqid.', skipping');
                         continue;
                     }
 
@@ -110,7 +110,7 @@ EOF
                     $version->setPackage($package);
                     $version->setUpdatedAt(new \DateTime);
                     $version->setReleasedAt(new \DateTime($data['time']));
-                    $version->setSource(array('type' => 'git', 'url' => $repo->getSource()));
+                    $version->setSource(array('type' => 'git', 'url' => $repo->getUrl()));
                     $version->setDist($repo->getDist($uniqid));
 
                     if (isset($data['keywords'])) {
