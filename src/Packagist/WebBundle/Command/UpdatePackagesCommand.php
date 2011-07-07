@@ -39,6 +39,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             ))
             ->setDescription('Updates packages')
             ->setHelp(<<<EOF
+
 EOF
             )
         ;
@@ -51,6 +52,7 @@ EOF
     {
         $em = $this->getContainer()->get('doctrine')->getEntityManager();
         $logger = $this->getContainer()->get('logger');
+        $provider = $this->getContainer()->get('git_repository_provider');
 
         $qb = $em->createQueryBuilder();
         $qb->select('p, v')
@@ -63,21 +65,26 @@ EOF
             $repo = $package->getRepository();
 
             // Process GitHub via API
-            if (preg_match('#^(?:https?|git)://github\.com/([^/]+)/(.+?)(?:\.git)?$#', $repo, $match)) {
+            if ($provider->supports($repo)) {
+
+                $gitRepo = $provider->getRepository($repo);
+
+
+
                 $owner = $match[1];
                 $repository = $match[2];
                 $output->writeln('Importing '.$owner.'/'.$repository);
 
-                $repoData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$owner.'/'.$repository), true);
+                $repoData = $gitRepo->getRepoData();
                 if (!$repoData) {
                     $output->writeln('Err: Could not fetch data from: '.$repo.', skipping.');
                     continue;
                 }
 
-                $tagsData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$owner.'/'.$repository.'/tags'), true);
+                $tagsData = $gitRepo->getTagsData();
 
                 foreach ($tagsData['tags'] as $tag => $hash) {
-                    $data = json_decode(file_get_contents('https://raw.github.com/'.$owner.'/'.$repository.'/'.$hash.'/composer.json'), true);
+                    $data = $gitRepo->getComposerFile($hash);
 
                     // silently skip tags without composer.json, this is expected.
                     if (!$data) {

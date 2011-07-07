@@ -1,0 +1,3 @@
+services:
+    git_repository_provider:
+        class: Packagist\WebBundle\Repository\Provider\GitRepositoryProvider
