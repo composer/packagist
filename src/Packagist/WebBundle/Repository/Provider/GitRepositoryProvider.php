@@ -13,6 +13,6 @@ class GitRepositoryProvider implements RepositoryProviderInterface
 
     public function supports($url)
     {
-        return preg_match('#^(?:https?|git)://github\.com/([^/]+)/(.+?)(?:\.git)?$#', $repo, $match);
+        return preg_match('#^(?:https?|git)://github\.com/([^/]+)/(.+?)(?:\.git)?$#', $url, $match);
     }
 }

@@ -9,7 +9,7 @@ class GitRepository implements RepositoryInterface
 
     public function __construct($url)
     {
-        preg_match('#^(?:https?|git)://github\.com/([^/]+)/(.+?)(?:\.git)?$#', $repo, $match);
+        preg_match('#^(?:https?|git)://github\.com/([^/]+)/(.+?)(?:\.git)?$#', $url, $match);
         $this->owner = $match[1];
         $this->repository = $match[2];
     }
@@ -27,5 +27,15 @@ class GitRepository implements RepositoryInterface
     public function getTagsData()
     {
         return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/tags'), true);
+    }
+
+    public function getOwner()
+    {
+        return $this->owner;
+    }
+
+    public function getRepository()
+    {
+        return $this->repository;
     }
 }

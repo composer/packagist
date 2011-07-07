@@ -7,5 +7,5 @@ interface RepositoryInterface
     /**
      * Returns the decoded composer.json file.
      */
-    public function getComposerFile();
+    public function getComposerFile($hash);
 }

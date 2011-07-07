@@ -52,7 +52,7 @@ EOF
     {
         $em = $this->getContainer()->get('doctrine')->getEntityManager();
         $logger = $this->getContainer()->get('logger');
-        $provider = $this->getContainer()->get('git_repository_provider');
+        $provider = $this->getContainer()->get('repository_provider');
 
         $qb = $em->createQueryBuilder();
         $qb->select('p, v')
@@ -65,14 +65,10 @@ EOF
             $repo = $package->getRepository();
 
             // Process GitHub via API
-            if ($provider->supports($repo)) {
+            if ($gitRepo = $provider->getRepository($repo)) {
 
-                $gitRepo = $provider->getRepository($repo);
-
-
-
-                $owner = $match[1];
-                $repository = $match[2];
+                $owner = $gitRepo->getOwner();
+                $repository = $gitRepo->getRepository();
                 $output->writeln('Importing '.$owner.'/'.$repository);
 
                 $repoData = $gitRepo->getRepoData();

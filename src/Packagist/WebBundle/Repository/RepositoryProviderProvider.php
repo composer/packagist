@@ -15,10 +15,8 @@ class RepositoryProviderProvider
 
     public function getRepository($url)
     {
-        foreach ($this->providers as $provider)
-        {
-            if($provider->supports($url))
-            {
+        foreach ($this->providers as $provider){
+            if($provider->supports($url)){
                 return $provider->getRepository($url);
             }
         }
