@@ -14,25 +14,9 @@ class GitRepository implements RepositoryInterface
         $this->repository = $match[2];
     }
 
-    /**
-     * @deprecated
-     */
-    protected function getComposerFile($hash)
-    {
-        return json_decode(file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$hash.'/composer.json'), true);
-    }
-
     protected function getRepoData()
     {
         return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository), true);
-    }
-
-    /**
-     * @deprecated
-     */
-    protected function getTagsData()
-    {
-        return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/tags'), true);
     }
 
     public function getSource()
@@ -65,12 +49,13 @@ class GitRepository implements RepositoryInterface
 
         $files = array();
 
-        $tagsData = $this->getTagsData();
+        $tagsData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/tags'), true);
         foreach ($tagsData['tags'] as $tag => $hash) {
-            if($file = $this->getComposerFile($hash)) {
+            if($file = json_decode(file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$hash.'/composer.json'), true)) {
 
                 if(!isset($file['time'])) {
-                    $file['time'] = $this->getTime($tag);
+                    $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$this->owner.'/'.$this->repository.'/'.$tag), true);
+                    $file['time'] = $commit['commit']['committed_date'];
                 }
 
                 $files[$tag] = $file;
@@ -78,11 +63,5 @@ class GitRepository implements RepositoryInterface
         }
 
         return $files;
-    }
-
-    protected function getTime($uniqid)
-    {
-        $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$this->owner.'/'.$this->repository.'/'.$uniqid), true);
-        return $commit['commit']['committed_date'];
     }
 }
