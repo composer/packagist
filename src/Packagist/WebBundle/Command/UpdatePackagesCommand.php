@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Command;
 
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -89,7 +90,7 @@ EOF
         }
     }
 
-    protected function fetchInformation(OutputInterface $output, $doctrine, $package, $repository, $identifier)
+    protected function fetchInformation(OutputInterface $output, RegistryInterface $doctrine, $package, $repository, $identifier)
     {
         $data = $repository->getComposerInformation($identifier);
         $em = $doctrine->getEntityManager();
