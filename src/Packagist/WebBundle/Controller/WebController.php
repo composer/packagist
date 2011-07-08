@@ -58,16 +58,17 @@ class WebController extends Controller
         $form = $this->get('form.factory')->create(new PackageType, $package);
 
         $request = $this->getRequest();
-        $provider = $this->get('packagist.repository_provider');
         if ($request->getMethod() == 'POST') {
             $form->bindRequest($request);
+
+            $provider = $this->get('packagist.repository_provider');
+            $repository = $provider->getRepository($package->getRepository());
+            $composerFile = $repository->getComposerInformation('master');
+
+            $package->setName($composerFile['name']);
             if ($form->isValid()) {
                 $user = $this->getUser();
                 $package->addMaintainers($user);
-                $repository = $provider->getRepository($package->getRepository());
-
-                $composerFile = $repository->getComposerInformation('master');
-                $package->setName($composerFile['name']);
 
                 $em = $this->getDoctrine()->getEntityManager();
                 $em->persist($package);

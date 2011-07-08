@@ -39,7 +39,7 @@ class Package
      * Unique package name
      *
      * @ORM\Column
-     * @Assert\NotBlank()
+     * Assert\NotBlank()
      */
     private $name;
 
