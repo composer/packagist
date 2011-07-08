@@ -32,7 +32,7 @@ class PackageRepository extends EntityRepository
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->where('p.crawledAt IS NULL OR p.crawledAt < ?0')
-            ->setParameters(array(date('Y-m-d H:i:s', time() - 3600)));
+            ->setParameters(array(new \DateTime('-1hour')));
         return $qb->getQuery()->getResult();
     }
 }
