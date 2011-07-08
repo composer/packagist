@@ -5,17 +5,46 @@ namespace Packagist\WebBundle\Repository\Repository;
 interface RepositoryInterface
 {
     /**
-     * Return an array of all composer files (by tag).
+     * Return the composer.json file information
+     *
+     * @param string $identifier Any identifier to a specific branch/tag/commit
+     * @return array containing all infos from the composer.json file
      */
-    public function getAllComposerFiles();
+    function getComposerInformation($identifier);
 
     /**
-     * Return the URL of the Repository
+     * Return list of branches in the repository
+     *
+     * @return array Branch names as keys, identifiers as values
      */
-    public function getUrl();
+    function getBranches();
+
+    /**
+     * Return list of tags in the repository
+     *
+     * @return array Tag names as keys, identifiers as values
+     */
+    function getTags();
+
+    /**
+     * Return the URL of the repository
+     *
+     * @param string $identifier Any identifier to a specific branch/tag/commit
+     * @return array With type, url and shasum properties.
+     */
+    function getDist($identifier);
+
+    /**
+     * Return the URL of the repository
+     *
+     * @return string
+     */
+    function getUrl();
 
     /**
      * Return the type of the repository
+     *
+     * @return string
      */
-    public function getType();
+    function getType();
 }
