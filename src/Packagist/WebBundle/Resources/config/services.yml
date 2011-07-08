@@ -1,0 +1,8 @@
+services:
+    git_repository_provider:
+        class: Packagist\WebBundle\Repository\Provider\GitProvider
+        
+    repository_provider:
+        class: Packagist\WebBundle\Repository\RepositoryProvider
+        calls:
+            - [ addProvider, [ @git_repository_provider ] ]

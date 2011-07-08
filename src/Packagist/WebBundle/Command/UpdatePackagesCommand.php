@@ -39,6 +39,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             ))
             ->setDescription('Updates packages')
             ->setHelp(<<<EOF
+
 EOF
             )
         ;
@@ -51,6 +52,7 @@ EOF
     {
         $em = $this->getContainer()->get('doctrine')->getEntityManager();
         $logger = $this->getContainer()->get('logger');
+        $provider = $this->getContainer()->get('repository_provider');
 
         $qb = $em->createQueryBuilder();
         $qb->select('p, v')
@@ -60,29 +62,21 @@ EOF
             ->setParameters(array(date('Y-m-d H:i:s', time() - 3600)));
 
         foreach ($qb->getQuery()->getResult() as $package) {
-            $repo = $package->getRepository();
 
             // Process GitHub via API
-            if (preg_match('#^(?:https?|git)://github\.com/([^/]+)/(.+?)(?:\.git)?$#', $repo, $match)) {
-                $owner = $match[1];
-                $repository = $match[2];
-                $output->writeln('Importing '.$owner.'/'.$repository);
+            if ($repo = $provider->getRepository($package->getRepository())) {
 
-                $repoData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$owner.'/'.$repository), true);
-                if (!$repoData) {
-                    $output->writeln('Err: Could not fetch data from: '.$repo.', skipping.');
+                $output->writeln('Importing '.$repo->getUrl());
+
+                try {
+                    $files = $repo->getAllComposerFiles();
+                }
+                catch (Exception $ex) {
+                    $output->writeln('Err: Could not fetch data from: '.$repo->getUrl().', skipping.');
                     continue;
                 }
 
-                $tagsData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$owner.'/'.$repository.'/tags'), true);
-
-                foreach ($tagsData['tags'] as $tag => $hash) {
-                    $data = json_decode(file_get_contents('https://raw.github.com/'.$owner.'/'.$repository.'/'.$hash.'/composer.json'), true);
-
-                    // silently skip tags without composer.json, this is expected.
-                    if (!$data) {
-                        continue;
-                    }
+                foreach ($files as $uniqid => $data) {
 
                     // TODO parse $data['version'] w/ composer version parser, if no match, ignore the tag
 
@@ -94,7 +88,7 @@ EOF
                     }
 
                     if ($data['name'] !== $package->getName()) {
-                        $output->writeln('Err: Package name seems to have changed for '.$repo.'@'.$tag.' '.$hash.', skipping');
+                        $output->writeln('Err: Package name seems to have changed for '.$repo->getUrl().'@'.$uniqid.', skipping');
                         continue;
                     }
 
@@ -107,24 +101,13 @@ EOF
                         }
                     }
 
-                    // fetch date from the commit if not specified
-                    if (!isset($data['time'])) {
-                        $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$owner.'/'.$repository.'/'.$hash), true);
-                        $data['time'] = $commit['commit']['committed_date'];
-                    }
-
                     $version->setPackage($package);
                     $version->setUpdatedAt(new \DateTime);
                     $version->setReleasedAt(new \DateTime($data['time']));
-                    $version->setSource(array('type' => 'git', 'url' => 'http://github.com/'.$owner.'/'.$repository.'.git'));
+                    $version->setSource(array('type' => $repo->getType(), 'url' => $repo->getUrl()));
 
-                    if ($repoData['repository']['has_downloads']) {
-                        $downloadUrl = 'https://github.com/'.$owner.'/'.$repository.'/zipball/'.$tag;
-                        $checksum = hash_file('sha1', $downloadUrl);
-                        $version->setDist(array('type' => 'zip', 'url' => $downloadUrl, 'shasum' => $checksum ?: ''));
-                    } else {
-                        // TODO clone the repo and build/host a zip ourselves. Not sure if this can happen, but it'll be needed for non-GitHub repos anyway
-                    }
+                    $checksum = hash_file('sha1', $data['download']);
+                    $version->setDist(array('type' => 'zip', 'url' => $data['download'], 'shasum' => $checksum ?: ''));
 
                     if (isset($data['keywords'])) {
                         foreach ($data['keywords'] as $keyword) {
@@ -178,7 +161,7 @@ EOF
                 // TODO parse composer.json on every branch matching a "$num.x.x" version scheme, + the master one, for all "x.y.z-dev" versions, usable through "latest-dev"
             } else {
                 // TODO support other repos
-                $output->writeln('Err: unsupported repository: '.$repo);
+                $output->writeln('Err: unsupported repository: '.$package->getRepository());
                 continue;
             }
             $package->setUpdatedAt(new \DateTime);
