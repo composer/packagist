@@ -1,8 +1,8 @@
 services:
-    git_repository_provider:
+    packagist.repository_provider.github:
         class: Packagist\WebBundle\Repository\Provider\GitHubProvider
+        tags:
+            - { name: packagist.repository_provider, priority: 100 }
 
-    repository_provider:
+    packagist.repository_provider:
         class: Packagist\WebBundle\Repository\RepositoryProvider
-        calls:
-            - [ addProvider, [ @git_repository_provider ] ]

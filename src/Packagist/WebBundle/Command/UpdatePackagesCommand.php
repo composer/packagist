@@ -53,7 +53,7 @@ EOF
         $doctrine = $this->getContainer()->get('doctrine');
 
         $logger = $this->getContainer()->get('logger');
-        $provider = $this->getContainer()->get('repository_provider');
+        $provider = $this->getContainer()->get('packagist.repository_provider');
 
         $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
 
