@@ -2,7 +2,7 @@
 
 namespace Packagist\WebBundle\Repository\Repository;
 
-class GitRepository implements RepositoryInterface
+class GitHubRepository implements RepositoryInterface
 {
     protected $owner;
     protected $repository;

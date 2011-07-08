@@ -2,14 +2,14 @@
 
 namespace Packagist\WebBundle\Repository\Provider;
 
-use Packagist\WebBundle\Repository\Repository\GitRepository;
+use Packagist\WebBundle\Repository\Repository\GitHubRepository;
 
-class GitProvider implements ProviderInterface
+class GitHubProvider implements ProviderInterface
 {
     public function getRepository($url)
     {
         if($this->supports($url)){
-            return new GitRepository($url);
+            return new GitHubRepository($url);
         }
     }
 

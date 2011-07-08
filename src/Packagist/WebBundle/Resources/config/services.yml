@@ -1,7 +1,7 @@
 services:
     git_repository_provider:
-        class: Packagist\WebBundle\Repository\Provider\GitProvider
-        
+        class: Packagist\WebBundle\Repository\Provider\GitHubProvider
+
     repository_provider:
         class: Packagist\WebBundle\Repository\RepositoryProvider
         calls:
