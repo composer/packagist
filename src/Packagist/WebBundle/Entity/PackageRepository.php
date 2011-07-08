@@ -13,14 +13,10 @@
 namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @ORM\Entity
- * @ORM\Table(
- *     name="package",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})}
- * )
- * @Assert\Callback(methods={"isRepositoryValid", "isPackageUnique"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class PackageRepository extends EntityRepository
