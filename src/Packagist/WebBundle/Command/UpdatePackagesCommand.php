@@ -62,8 +62,6 @@ EOF
             ->setParameters(array(date('Y-m-d H:i:s', time() - 3600)));
 
         foreach ($qb->getQuery()->getResult() as $package) {
-
-            // Process GitHub via API
             if ($repo = $provider->getRepository($package->getRepository())) {
 
                 $output->writeln('Importing '.$repo->getUrl());
