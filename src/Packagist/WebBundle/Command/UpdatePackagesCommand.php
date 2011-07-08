@@ -62,106 +62,103 @@ EOF
             ->setParameters(array(date('Y-m-d H:i:s', time() - 3600)));
 
         foreach ($qb->getQuery()->getResult() as $package) {
-            if ($repo = $provider->getRepository($package->getRepository())) {
+            $repo = $provider->getRepository($package->getRepository());
 
-                $output->writeln('Importing '.$repo->getUrl());
+            if (!$repo) {
+                $output->writeln('<error>Unsupported repository: '.$package->getRepository().'</error>');
+                continue;
+            }
 
-                try {
-                    $files = $repo->getAllComposerFiles();
+            $output->writeln('Importing '.$repo->getUrl());
+
+            try {
+                $files = $repo->getAllComposerFiles();
+            } catch (\Exception $e) {
+                $output->writeln('<error>Could not fetch data from: '.$repo->getUrl().', skipping.</error>');
+                continue;
+            }
+
+            foreach ($files as $uniqid => $data) {
+                // check if we have that version yet
+                foreach ($package->getVersions() as $version) {
+                    if ($version->getVersion() === $data['version']) {
+                        continue 2;
+                    }
                 }
-                catch (Exception $ex) {
-                    $output->writeln('Err: Could not fetch data from: '.$repo->getUrl().', skipping.');
+
+                if ($data['name'] !== $package->getName()) {
+                    $output->writeln('<error>Package name seems to have changed for '.$repo->getUrl().'@'.$uniqid.', skipping</error>');
                     continue;
                 }
 
-                foreach ($files as $uniqid => $data) {
+                $version = new Version();
+                $em->persist($version);
 
-                    // TODO parse $data['version'] w/ composer version parser, if no match, ignore the tag
-
-                    // check if we have that version yet
-                    foreach ($package->getVersions() as $version) {
-                        if ($version->getVersion() === $data['version']) {
-                            continue 2;
-                        }
-                    }
-
-                    if ($data['name'] !== $package->getName()) {
-                        $output->writeln('Err: Package name seems to have changed for '.$repo->getUrl().'@'.$uniqid.', skipping');
-                        continue;
-                    }
-
-                    $version = new Version();
-                    $em->persist($version);
-
-                    foreach (array('name', 'description', 'homepage', 'license', 'version') as $field) {
-                        if (isset($data[$field])) {
-                            $version->{'set'.$field}($data[$field]);
-                        }
-                    }
-
-                    $version->setPackage($package);
-                    $version->setUpdatedAt(new \DateTime);
-                    $version->setReleasedAt(new \DateTime($data['time']));
-                    $version->setSource(array('type' => $repo->getType(), 'url' => $repo->getUrl()));
-
-                    $checksum = hash_file('sha1', $data['download']);
-                    $version->setDist(array('type' => 'zip', 'url' => $data['download'], 'shasum' => $checksum ?: ''));
-
-                    if (isset($data['keywords'])) {
-                        foreach ($data['keywords'] as $keyword) {
-                            $version->addTags(Tag::getByName($em, $keyword, true));
-                        }
-                    }
-                    if (isset($data['authors'])) {
-                        foreach ($data['authors'] as $authorData) {
-                            $author = null;
-                            // skip authors with no information
-                            if (!isset($authorData['email']) && !isset($authorData['name'])) {
-                                continue;
-                            }
-
-                            if (isset($authorData['email'])) {
-                                $qb = $em->createQueryBuilder();
-                                $qb->select('a')
-                                    ->from('Packagist\WebBundle\Entity\Author', 'a')
-                                    ->where('a.email = ?0')
-                                    ->setParameters(array($authorData['email']))
-                                    ->setMaxResults(1);
-                                $author = $qb->getQuery()->getOneOrNullResult();
-                            }
-
-                            if (!$author) {
-                                $author = new Author();
-                                $em->persist($author);
-                            }
-                            foreach (array('email', 'name', 'homepage') as $field) {
-                                if (isset($authorData[$field])) {
-                                    $author->{'set'.$field}($authorData[$field]);
-                                }
-                            }
-                            $author->setUpdatedAt(new \DateTime);
-                            $version->addAuthors($author);
-                            $author->addVersions($version);
-                        }
-                    }
-                    if (isset($data['require'])) {
-                        foreach ($data['require'] as $requireName => $requireVersion) {
-                            $requirement = new Requirement();
-                            $em->persist($requirement);
-                            $requirement->setPackageName($requireName);
-                            $requirement->setPackageVersion($requireVersion);
-                            $version->addRequirements($requirement);
-                            $requirement->setVersion($version);
-                        }
+                foreach (array('name', 'description', 'homepage', 'license', 'version') as $field) {
+                    if (isset($data[$field])) {
+                        $version->{'set'.$field}($data[$field]);
                     }
                 }
 
-                // TODO parse composer.json on every branch matching a "$num.x.x" version scheme, + the master one, for all "x.y.z-dev" versions, usable through "latest-dev"
-            } else {
-                // TODO support other repos
-                $output->writeln('Err: unsupported repository: '.$package->getRepository());
-                continue;
+                $version->setPackage($package);
+                $version->setUpdatedAt(new \DateTime);
+                $version->setReleasedAt(new \DateTime($data['time']));
+                $version->setSource(array('type' => $repo->getType(), 'url' => $repo->getUrl()));
+
+                $checksum = hash_file('sha1', $data['download']);
+                $version->setDist(array('type' => 'zip', 'url' => $data['download'], 'shasum' => $checksum ?: ''));
+
+                if (isset($data['keywords'])) {
+                    foreach ($data['keywords'] as $keyword) {
+                        $version->addTags(Tag::getByName($em, $keyword, true));
+                    }
+                }
+                if (isset($data['authors'])) {
+                    foreach ($data['authors'] as $authorData) {
+                        $author = null;
+                        // skip authors with no information
+                        if (!isset($authorData['email']) && !isset($authorData['name'])) {
+                            continue;
+                        }
+
+                        if (isset($authorData['email'])) {
+                            $qb = $em->createQueryBuilder();
+                            $qb->select('a')
+                                ->from('Packagist\WebBundle\Entity\Author', 'a')
+                                ->where('a.email = ?0')
+                                ->setParameters(array($authorData['email']))
+                                ->setMaxResults(1);
+                            $author = $qb->getQuery()->getOneOrNullResult();
+                        }
+
+                        if (!$author) {
+                            $author = new Author();
+                            $em->persist($author);
+                        }
+                        foreach (array('email', 'name', 'homepage') as $field) {
+                            if (isset($authorData[$field])) {
+                                $author->{'set'.$field}($authorData[$field]);
+                            }
+                        }
+                        $author->setUpdatedAt(new \DateTime);
+                        $version->addAuthors($author);
+                        $author->addVersions($version);
+                    }
+                }
+                if (isset($data['require'])) {
+                    foreach ($data['require'] as $requireName => $requireVersion) {
+                        $requirement = new Requirement();
+                        $em->persist($requirement);
+                        $requirement->setPackageName($requireName);
+                        $requirement->setPackageVersion($requireVersion);
+                        $version->addRequirements($requirement);
+                        $requirement->setVersion($version);
+                    }
+                }
             }
+
+            // TODO parse composer.json on every branch matching a "$num.x.x" version scheme, + the master one, for all "x.y.z-dev" versions, usable through "latest-dev"
+
             $package->setUpdatedAt(new \DateTime);
             $package->setCrawledAt(new \DateTime);
             $em->flush();

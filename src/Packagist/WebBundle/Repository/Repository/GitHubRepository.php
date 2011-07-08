@@ -6,6 +6,7 @@ class GitHubRepository implements RepositoryInterface
 {
     protected $owner;
     protected $repository;
+    protected $data;
 
     public function __construct($url)
     {
@@ -16,7 +17,14 @@ class GitHubRepository implements RepositoryInterface
 
     protected function getRepoData()
     {
-        return json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository), true);
+        if (null === $this->data) {
+            $url = 'http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository;
+            $this->data = json_decode(@file_get_contents($url), true);
+            if (!$this->data) {
+                throw new \UnexpectedValueException('Failed to download from '.$url);
+            }
+        }
+        return $this->data;
     }
 
     public function getType()
@@ -41,20 +49,19 @@ class GitHubRepository implements RepositoryInterface
 
     public function getAllComposerFiles()
     {
-        if(!$repoData = $this->getRepoData()) {
-            throw new \Exception();
-        }
+        $repoData = $this->getRepoData();
 
         $files = array();
 
         $tagsData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/tags'), true);
         foreach ($tagsData['tags'] as $tag => $hash) {
-            if($file = json_decode(file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$hash.'/composer.json'), true)) {
-
-                if(!isset($file['time'])) {
+            if ($file = json_decode(file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$hash.'/composer.json'), true)) {
+                if (!isset($file['time'])) {
                     $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$this->owner.'/'.$this->repository.'/'.$tag), true);
                     $file['time'] = $commit['commit']['committed_date'];
                 }
+
+                // TODO parse $data['version'] w/ composer version parser, if no match, ignore the tag
 
                 $file['download'] = $this->getDist($tag);
 
