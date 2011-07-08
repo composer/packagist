@@ -70,13 +70,13 @@ EOF
             try {
                 foreach ($repository->getTags() as $tag => $identifier) {
                     // TODO parse tag name (or fetch composer file?) w/ composer version parser, if no match, ignore the tag
-                    $this->fetchInformation($output, $em, $package, $repository, $identifier);
+                    $this->fetchInformation($output, $doctrine, $package, $repository, $identifier);
                 }
 
                 foreach ($repository->getBranches() as $branch => $identifier) {
                     // TODO parse branch name, matching a "$num.x.x" version scheme, + the master one
                     // use for all "x.y.z-dev" versions, usable through "latest-dev"
-                    $this->fetchInformation($output, $em, $package, $repository, $identifier);
+                    $this->fetchInformation($output, $doctrine, $package, $repository, $identifier);
                 }
 
                 $package->setUpdatedAt(new \DateTime);
