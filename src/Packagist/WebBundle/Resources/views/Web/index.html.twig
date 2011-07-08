@@ -6,7 +6,7 @@
         <section class="package">
             <h2>{{ package.name }}</h2> by
             {% for maintainer in package.maintainers %}
-                {{ maintainer.username }}
+                {{ maintainer.username }}{% if not loop.last %}, {% endif %}
             {% endfor %}
             <p class="description">{{ package.description }}</p>
             {% if package.versions[0] is defined %}

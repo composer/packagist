@@ -37,8 +37,8 @@
     <body>
         <div class="container">
             <div>
-                {% if user.username is defined %}
-                    {{ user.username }} | <a href="{{ path('fos_user_security_logout') }}">logout</a>
+                {% if app.user %}
+                    {{ app.user.username }} | <a href="{{ path('fos_user_security_logout') }}">logout</a>
                 {% else %}
                     <a href="{{ path('fos_user_security_login') }}">login</a> | <a href="{{ path('fos_user_registration_register') }}">register</a>
                 {% endif %}

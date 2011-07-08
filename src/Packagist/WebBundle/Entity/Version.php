@@ -75,28 +75,29 @@ class Version
      */
     private $license;
 
-//    /**
-//     * @ORM\ManyToMany(targetEntity="User")
-//     */
-//    private $authors;
+    /**
+     * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Author", inversedBy="versions")
+     * @ORM\JoinTable(name="version_author",
+     *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
+     *     inverseJoinColumns={@ORM\JoinColumn(name="author_id", referencedColumnName="id")}
+     * )
+     */
+    private $authors;
 
     /**
-     * JSON object of source spec
-     *
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Requirement", mappedBy="version")
+     */
+    private $requirements;
+
+    /**
      * @ORM\Column(type="text")
-     * @Assert\NotBlank()
      */
     private $source;
 
     /**
-     * JSON object of requirements
-     *
-     * @ORM\Column(type="text", name="requires")
-     * @Assert\NotBlank()
+     * @ORM\Column(type="text")
      */
-    private $require;
-
-//    dist (later)
+    private $dist;
 
     /**
      * @ORM\Column(type="datetime")
@@ -124,8 +125,17 @@ class Version
     public function toArray()
     {
         $tags = array();
-        foreach ($this->tags as $tag) {
+        foreach ($this->getTags() as $tag) {
             $tags[] = $tag->getName();
+        }
+        $authors = array();
+        foreach ($this->getAuthors() as $author) {
+            $authors[] = $author->toArray();
+        }
+        $requirements = array();
+        foreach ($this->getRequirements() as $requirement) {
+            $requirement = $requirement->toArray();
+            $requirements[key($requirement)] = current($requirement);
         }
         return array(
             'name' => $this->name,
@@ -134,11 +144,11 @@ class Version
             'homepage' => $this->homepage,
             'version' => $this->version,
             'license' => $this->license,
-            'authors' => array(),
-            'require' => $this->getRequire(),
+            'authors' => $authors,
+            'require' => $requirements,
             'source' => $this->getSource(),
-            'time' => $this->releasedAt->format('Y-m-d\TH:i:s'),
-            'dist' => array(),
+            'time' => $this->releasedAt ? $this->releasedAt->format('Y-m-d\TH:i:sP') : null,
+            'dist' => $this->getDist(),
         );
     }
 
@@ -259,9 +269,7 @@ class Version
      */
     public function setSource($source)
     {
-        if (preg_match('#^([a-z-]+) (\S+)$#', $source, $m)) {
-            $this->source = json_encode(array('type' => $m[1], 'url' => $m[2]));
-        }
+        $this->source = json_encode($source);
     }
 
     /**
@@ -271,33 +279,27 @@ class Version
      */
     public function getSource()
     {
-        return json_decode($this->source);
+        return json_decode($this->source, true);
     }
 
     /**
-     * Set require
+     * Set dist
      *
-     * @param text $require
+     * @param text $dist
      */
-    public function setRequire($require)
+    public function setDist($dist)
     {
-        if (preg_match_all('#^(\S+) (\S+)\r?\n?$#m', $require, $m)) {
-            $requires = array();
-            foreach ($m[1] as $idx => $package) {
-                $requires[$package] = $m[2][$idx];
-            }
-            $this->require = json_encode($requires);
-        }
+        $this->dist = json_encode($dist);
     }
 
     /**
-     * Get require
+     * Get dist
      *
-     * @return text $require
+     * @return text
      */
-    public function getRequire()
+    public function getDist()
     {
-        return json_decode($this->require);
+        return json_decode($this->dist, true);
     }
 
     /**
@@ -345,7 +347,7 @@ class Version
      *
      * @param Packagist\WebBundle\Entity\Package $package
      */
-    public function setPackage(\Packagist\WebBundle\Entity\Package $package)
+    public function setPackage(Package $package)
     {
         $this->package = $package;
     }
@@ -365,7 +367,7 @@ class Version
      *
      * @param Packagist\WebBundle\Entity\Tag $tags
      */
-    public function addTags(\Packagist\WebBundle\Entity\Tag $tags)
+    public function addTags(Tag $tags)
     {
         $this->tags[] = $tags;
     }
@@ -447,5 +449,45 @@ class Version
     public function getUpdatedAt()
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * Add authors
+     *
+     * @param Packagist\WebBundle\Entity\Author $authors
+     */
+    public function addAuthors(Author $authors)
+    {
+        $this->authors[] = $authors;
+    }
+
+    /**
+     * Get authors
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getAuthors()
+    {
+        return $this->authors;
+    }
+
+    /**
+     * Add requirements
+     *
+     * @param Packagist\WebBundle\Entity\Requirement $requirements
+     */
+    public function addRequirements(Requirement $requirements)
+    {
+        $this->requirements[] = $requirements;
+    }
+
+    /**
+     * Get requirements
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getRequirements()
+    {
+        return $this->requirements;
     }
 }

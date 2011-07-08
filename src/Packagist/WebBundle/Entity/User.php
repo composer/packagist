@@ -4,6 +4,7 @@ namespace Packagist\WebBundle\Entity;
 
 use FOS\UserBundle\Entity\User as BaseUser;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * @ORM\Entity
@@ -23,20 +24,24 @@ class User extends BaseUser
      */
     private $packages;
 
+    /**
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Author", mappedBy="owner")
+     */
+    private $authors;
+
     public function __construct()
     {
-        $this->packages = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->packages = new ArrayCollection();
+        $this->authors = new ArrayCollection();
         parent::__construct();
     }
 
-    /**
-     * Get id
-     *
-     * @return integer $id
-     */
-    public function getId()
+    public function toArray()
     {
-        return $this->id;
+        return array(
+            'name' => $this->username,
+            'email' => $this->email,
+        );
     }
 
     /**
@@ -44,7 +49,7 @@ class User extends BaseUser
      *
      * @param Packagist\WebBundle\Entity\Package $packages
      */
-    public function addPackages(\Packagist\WebBundle\Entity\Package $packages)
+    public function addPackages(Package $packages)
     {
         $this->packages[] = $packages;
     }
@@ -57,5 +62,25 @@ class User extends BaseUser
     public function getPackages()
     {
         return $this->packages;
+    }
+
+    /**
+     * Add authors
+     *
+     * @param Packagist\WebBundle\Entity\Author $authors
+     */
+    public function addAuthors(\Packagist\WebBundle\Entity\Author $authors)
+    {
+        $this->authors[] = $authors;
+    }
+
+    /**
+     * Get authors
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getAuthors()
+    {
+        return $this->authors;
     }
 }
