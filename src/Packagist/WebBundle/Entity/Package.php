@@ -23,7 +23,7 @@ use Doctrine\Common\Collections\ArrayCollection;
  *     name="package",
  *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})}
  * )
- * @Assert\Callback(methods={"isRepositoryValid", "isPackageUnique"})
+ * @Assert\Callback(methods={"isPackageUnique"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package
@@ -108,6 +108,7 @@ class Package
         return json_encode($data);
     }
 
+/*
     public function isRepositoryValid(ExecutionContext $context)
     {
         $propertyPath = $context->getPropertyPath() . '.repository';
@@ -140,6 +141,7 @@ class Package
             return;
         }
     }
+*/
 
     public function isPackageUnique(ExecutionContext $context)
     {

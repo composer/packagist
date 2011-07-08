@@ -1,14 +1,9 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
 {% block content %}
-    <h1>Submit package</h1>
+    <h1>Confirm package</h1>
     <form action="" method="POST" {{ form_enctype(form) }}>
         {{ form_errors(form) }}
-        <p>
-            {{ form_label(form.repository, "Repository URL (Git only at the moment)") }}
-            {{ form_errors(form.repository) }}
-            {{ form_widget(form.repository) }}
-        </p>
         {{ form_rest(form) }}
         <input type="submit" value="Submit" />
     </form>

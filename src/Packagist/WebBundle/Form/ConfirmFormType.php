@@ -18,17 +18,16 @@ use Symfony\Component\Form\FormBuilder;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class PackageType extends AbstractType
+class ConfirmFormType extends AbstractType
 {
     public function buildForm(FormBuilder $builder, array $options)
     {
-        $builder->add('repository');
     }
 
     public function getDefaultOptions(array $options)
     {
         return array(
-            'data_class' => 'Packagist\WebBundle\Entity\Package',
+            'data_class' => 'Packagist\WebBundle\Form\ConfirmForm',
         );
     }
 }
