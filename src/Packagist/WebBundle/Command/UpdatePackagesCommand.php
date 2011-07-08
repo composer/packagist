@@ -50,18 +50,14 @@ EOF
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $em = $this->getContainer()->get('doctrine')->getEntityManager();
+        $doctrine = $this->getContainer()->get('doctrine');
+
         $logger = $this->getContainer()->get('logger');
         $provider = $this->getContainer()->get('repository_provider');
 
-        $qb = $em->createQueryBuilder();
-        $qb->select('p, v')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->where('p.crawledAt IS NULL OR p.crawledAt < ?0')
-            ->setParameters(array(date('Y-m-d H:i:s', time() - 3600)));
+        $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
 
-        foreach ($qb->getQuery()->getResult() as $package) {
+        foreach ($packages as $package) {
             $repository = $provider->getRepository($package->getRepository());
 
             if (!$repository) {
@@ -85,7 +81,7 @@ EOF
 
                 $package->setUpdatedAt(new \DateTime);
                 $package->setCrawledAt(new \DateTime);
-                $em->flush();
+                $doctrine->getEntityManager()->flush();
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package.</error>');
                 continue;
@@ -93,9 +89,10 @@ EOF
         }
     }
 
-    protected function fetchInformation(OutputInterface $output, $em, $package, $repository, $identifier)
+    protected function fetchInformation(OutputInterface $output, $doctrine, $package, $repository, $identifier)
     {
         $data = $repository->getComposerInformation($identifier);
+        $em = $doctrine->getEntityManager();
 
         // check if we have that version yet
         foreach ($package->getVersions() as $version) {
@@ -105,7 +102,7 @@ EOF
         }
 
         if ($data['name'] !== $package->getName()) {
-            $output->writeln('<error>Package name seems to have changed for '.$repository->getUrl().'@'.$identifier.', skipping tag.</error>');
+            $output->writeln('<error>Package name seems to have changed for '.$repository->getUrl().'@'.$identifier.', skipping.</error>');
             return;
         }
 
@@ -139,13 +136,7 @@ EOF
                 }
 
                 if (isset($authorData['email'])) {
-                    $qb = $em->createQueryBuilder();
-                    $qb->select('a')
-                        ->from('Packagist\WebBundle\Entity\Author', 'a')
-                        ->where('a.email = ?0')
-                        ->setParameters(array($authorData['email']))
-                        ->setMaxResults(1);
-                    $author = $qb->getQuery()->getOneOrNullResult();
+                    $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneByEmail($authorData['email']);
                 }
 
                 if (!$author) {

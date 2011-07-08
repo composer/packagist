@@ -18,7 +18,7 @@ use Symfony\Component\Validator\ExecutionContext;
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\PackageRepository")
  * @ORM\Table(
  *     name="package",
  *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})}
