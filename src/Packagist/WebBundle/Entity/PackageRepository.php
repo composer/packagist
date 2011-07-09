@@ -12,6 +12,8 @@
 
 namespace Packagist\WebBundle\Entity;
 
+use Packagist\WebBundle\Repository\RepositoryProviderInterface;
+
 use Doctrine\ORM\EntityRepository;
 
 /**
@@ -28,5 +30,18 @@ class PackageRepository extends EntityRepository
             ->where('p.crawledAt IS NULL OR p.crawledAt < ?0')
             ->setParameters(array(new \DateTime('-1hour')));
         return $qb->getQuery()->getResult();
+    }
+
+    public function createFromRepository(RepositoryProviderInterface $provider, $repository)
+    {
+        $package = new Package;
+
+        $repo = $provider->getRepository($repository);
+        $composerFile = $repo->getComposerInformation('master');
+
+        $package->setName($composerFile['name']);
+        $package->setRepository($repository);
+
+        return $package;
     }
 }

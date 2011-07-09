@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Packagist\WebBundle\Form\ConfirmPackageType;
 use Packagist\WebBundle\Form\ConfirmForm;
 use Packagist\WebBundle\Form\ConfirmFormType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -55,17 +56,44 @@ class WebController extends Controller
     public function submitPackageAction()
     {
         $package = new Package;
-        $form = $this->get('form.factory')->create(new PackageType, $package);
+        $form = $this->createForm(new PackageType, $package);
 
         $request = $this->getRequest();
         if ($request->getMethod() == 'POST') {
             $form->bindRequest($request);
+            if($form->isValid()) {
+                $this->get('session')->set('repository', $package->getRepository());
 
-            $provider = $this->get('packagist.repository_provider');
-            $repository = $provider->getRepository($package->getRepository());
-            $composerFile = $repository->getComposerInformation('master');
+                return new RedirectResponse($this->generateUrl('confirm'));
+            }
+        }
 
-            $package->setName($composerFile['name']);
+        return array('form' => $form->createView(), 'page' => 'submit');
+    }
+
+    /**
+     * @Template()
+     * @Route("/submit/confirm", name="confirm")
+     */
+    public function confirmPackageAction()
+    {
+        if(!$repository = $this->get('session')->get('repository')) {
+
+            return new RedirectResponse($this->generateUrl('submit'));
+        }
+
+        $em = $this->getDoctrine()->getEntityManager();
+
+        $package = $em
+            ->getRepository('PackagistWebBundle:Package')
+            ->createFromRepository($this->get('packagist.repository_provider'), $repository);
+
+        $form = $this->createForm(new ConfirmPackageType, $package);
+
+        $request = $this->getRequest();
+        if($request->getMethod() == 'POST') {
+            $form->bindRequest($request);
+
             if ($form->isValid()) {
                 $user = $this->getUser();
                 $package->addMaintainers($user);
@@ -74,11 +102,14 @@ class WebController extends Controller
                 $em->persist($package);
                 $em->flush();
 
+                $this->get('session')->remove('repository');
+
                 return new RedirectResponse($this->generateUrl('home'));
             }
         }
 
-        return array('form' => $form->createView(), 'page' => 'submit');
+        return array('form' => $form->createView(), 'package' => $package, 'page' => 'confirm');
+
     }
 
     /**
