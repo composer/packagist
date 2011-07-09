@@ -80,7 +80,6 @@ class WebController extends Controller
     {
         $session = $this->get('session');
         $em = $this->getDoctrine()->getEntityManager();
-
         $package = new Package;
 
         if($repository = $session->get('repository')) {
