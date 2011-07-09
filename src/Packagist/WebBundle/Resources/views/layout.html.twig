@@ -26,7 +26,7 @@
                 s.parentNode.insertBefore(wf, s);
             })();
             
-            window.base = "{{ asset('img/..') }}";
+            window.base = "{{ asset('.') }}";
         </script>
         <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" />
 
@@ -35,7 +35,6 @@
         {% endstylesheets %} #}
 
         <script src="/js/libs/modernizr-1.7.min.js"></script>
-        <script src="{{ asset('js/jquery.js') }}"></script>
     </head>
     <body>
         <div class="container">
