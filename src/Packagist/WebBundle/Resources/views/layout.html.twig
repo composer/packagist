@@ -25,6 +25,8 @@
                 var s = document.getElementsByTagName('script')[0];
                 s.parentNode.insertBefore(wf, s);
             })();
+            
+            window.base = "{{ asset('img/..') }}";
         </script>
         <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" />
 
@@ -71,6 +73,10 @@
             <div class="main" role="main">
                 {% block content %}
                 {% endblock %}
+                
+                <div id="loader" class="hidden">
+                    <img src="{{ asset('bundles/packagistweb/img/loader.gif')}}"></img>
+                </div>
             </div>
         </div>
 
@@ -83,5 +89,7 @@
             g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
             s.parentNode.insertBefore(g,s)}(document,'script'));
         </script>#}
+        
+        {% block scripts %}{% endblock %}
     </body>
 </html>

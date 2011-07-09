@@ -1,5 +1,9 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
+{% block scripts %}
+    <script src="{{ asset('bundles/packagistweb/js/submitPackage.js')}}"></script>
+{% endblock %}
+
 {% block content %}
     <h1>Submit package</h1>
     <form action="" method="POST" {{ form_enctype(form) }}>
@@ -14,27 +18,10 @@
             <input id="submit" type="submit" value="Submit" />
         </div>
         <div id="confirmation_panel" style="display:none;">
-            Please confirm:<br />
+            <em>Please confirm:</em><br />
             Package name:<span id="package_name"></span> <br />
             Repository:<span id="repo_name"></span><br />
             <input id="confirm" type="submit" value="Submit" />
         </div>
     </form>
-    <script>
-        $(document).ready(function() {
-            
-            $('#submit').click(function(){
-                var repo_name = $('#package_repository').val();
-                $('#form').hide();
-                
-                $.getJSON('{{ path("name") }}', { url: repo_name }, function(data) {
-                    $('#package_name').html(data);
-                    $('#repo_name').html(repo_name);
-                    $('#confirmation_panel').show();
-                });
-                return false;
-            });
-        });
-        
-    </script>
 {% endblock %}
