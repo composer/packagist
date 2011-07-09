@@ -31,17 +31,4 @@ class PackageRepository extends EntityRepository
             ->setParameters(array(new \DateTime('-1hour')));
         return $qb->getQuery()->getResult();
     }
-
-    public function createFromRepository(RepositoryProviderInterface $provider, $repository)
-    {
-        $package = new Package;
-
-        $repo = $provider->getRepository($repository);
-        $composerFile = $repo->getComposerInformation('master');
-
-        $package->setName($composerFile['name']);
-        $package->setRepository($repository);
-
-        return $package;
-    }
 }

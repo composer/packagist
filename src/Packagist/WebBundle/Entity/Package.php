@@ -12,6 +12,8 @@
 
 namespace Packagist\WebBundle\Entity;
 
+use Packagist\WebBundle\Repository\RepositoryProviderInterface;
+
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ExecutionContext;
@@ -39,7 +41,7 @@ class Package
      * Unique package name
      *
      * @ORM\Column
-     * Assert\NotBlank()
+     * @Assert\NotBlank()
      */
     private $name;
 
@@ -146,6 +148,14 @@ class Package
     public function isPackageUnique(ExecutionContext $context)
     {
         // TODO check for uniqueness of package name
+    }
+
+    public function fromProvider(RepositoryProviderInterface $provider)
+    {
+        $repo = $provider->getRepository($this->repository);
+        $composerFile = $repo->getComposerInformation('master');
+
+        $this->setName($composerFile['name']);
     }
 
     /**

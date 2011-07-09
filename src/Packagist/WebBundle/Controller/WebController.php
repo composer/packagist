@@ -61,7 +61,8 @@ class WebController extends Controller
         $request = $this->getRequest();
         if ($request->getMethod() == 'POST') {
             $form->bindRequest($request);
-            if($form->isValid()) {
+            $children = $form->getChildren();
+            if($children['repository']->isValid()) {
                 $this->get('session')->set('repository', $package->getRepository());
 
                 return new RedirectResponse($this->generateUrl('confirm'));
@@ -77,24 +78,28 @@ class WebController extends Controller
      */
     public function confirmPackageAction()
     {
-        if(!$repository = $this->get('session')->get('repository')) {
-
-            return new RedirectResponse($this->generateUrl('submit'));
-        }
-
+        $session = $this->get('session');
         $em = $this->getDoctrine()->getEntityManager();
 
-        $package = $em
-            ->getRepository('PackagistWebBundle:Package')
-            ->createFromRepository($this->get('packagist.repository_provider'), $repository);
+        $package = new Package;
+
+        if($repository = $session->get('repository')) {
+            $session->remove('repository');
+            $package->setRepository($repository);
+            $package->fromProvider($this->get('packagist.repository_provider'));
+
+
+        }
 
         $form = $this->createForm(new ConfirmPackageType, $package);
 
         $request = $this->getRequest();
         if($request->getMethod() == 'POST') {
             $form->bindRequest($request);
+            $package->fromProvider($this->get('packagist.repository_provider'));
 
-            if ($form->isValid()) {
+            $children = $form->getChildren();
+            if($children['repository']->isValid()) {
                 $user = $this->getUser();
                 $package->addMaintainers($user);
 
@@ -107,8 +112,12 @@ class WebController extends Controller
                 return new RedirectResponse($this->generateUrl('home'));
             }
         }
+        elseif(!$repository) {
 
-        return array('form' => $form->createView(), 'package' => $package, 'page' => 'confirm');
+            return new RedirectResponse($this->generateUrl('submit'));
+        }
+
+        return array('form' => $form->createView(), 'package' => $package, 'page' => 'submit');
 
     }
 
