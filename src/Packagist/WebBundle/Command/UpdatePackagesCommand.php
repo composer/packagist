@@ -23,6 +23,7 @@ use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Entity\Requirement;
+use Packagist\WebBundle\Repository\Repository\RepositoryInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -90,7 +91,7 @@ EOF
         }
     }
 
-    protected function fetchInformation(OutputInterface $output, RegistryInterface $doctrine, $package, $repository, $identifier)
+    protected function fetchInformation(OutputInterface $output, RegistryInterface $doctrine, $package, RepositoryInterface $repository, $identifier)
     {
         $data = $repository->getComposerInformation($identifier);
         $em = $doctrine->getEntityManager();
