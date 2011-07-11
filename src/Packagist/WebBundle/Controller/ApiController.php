@@ -46,19 +46,4 @@ class ApiController extends Controller
 
         return new Response($data, 200, array('Content-Type' => 'application/json'));
     }
-
-    /**
-     * @Template()
-     * @Route("/name", name="name")
-     */
-    public function nameAction()
-    {
-        $provider = $this->get('packagist.repository_provider');
-        $repository = $provider->getRepository($this->getRequest()->get('url'));
-        $composerFile = $repository->getComposerInformation('master');
-        $name = $composerFile['name'];
-        $data = json_encode($name);
-
-        return new Response($data, 200, array('Content-Type' => 'application/json'));
-    }
 }
