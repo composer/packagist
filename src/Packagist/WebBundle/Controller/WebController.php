@@ -86,19 +86,17 @@ class WebController extends Controller
             $session->remove('repository');
             $package->setRepository($repository);
             $package->fromProvider($this->get('packagist.repository_provider'));
-
-
         }
 
         $form = $this->createForm(new ConfirmPackageType, $package);
 
         $request = $this->getRequest();
-        if($request->getMethod() == 'POST') {
+        if ($request->getMethod() == 'POST') {
             $form->bindRequest($request);
             $package->fromProvider($this->get('packagist.repository_provider'));
 
             $children = $form->getChildren();
-            if($children['repository']->isValid()) {
+            if ($children['repository']->isValid()) {
                 $user = $this->getUser();
                 $package->addMaintainers($user);
 
@@ -110,14 +108,11 @@ class WebController extends Controller
 
                 return new RedirectResponse($this->generateUrl('home'));
             }
-        }
-        elseif(!$repository) {
-
+        } elseif (!$repository) {
             return new RedirectResponse($this->generateUrl('submit'));
         }
 
         return array('form' => $form->createView(), 'package' => $package, 'page' => 'submit');
-
     }
 
     /**

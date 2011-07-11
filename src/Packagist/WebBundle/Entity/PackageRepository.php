@@ -12,8 +12,6 @@
 
 namespace Packagist\WebBundle\Entity;
 
-use Packagist\WebBundle\Repository\RepositoryProviderInterface;
-
 use Doctrine\ORM\EntityRepository;
 
 /**
