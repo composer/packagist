@@ -13,6 +13,13 @@ interface RepositoryInterface
     function getComposerInformation($identifier);
 
     /**
+     * Return the root identifier (trunk, master, ..)
+     *
+     * @return string Identifier
+     */
+    function getRootIdentifier();
+
+    /**
      * Return list of branches in the repository
      *
      * @return array Branch names as keys, identifiers as values

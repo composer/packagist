@@ -9,6 +9,7 @@ class GitHubRepository implements RepositoryInterface
     protected $repositoryData;
     protected $tags;
     protected $branches;
+    protected $infoCache = array();
 
     public function __construct($url)
     {
@@ -23,6 +24,14 @@ class GitHubRepository implements RepositoryInterface
     public function getType()
     {
         return 'git';
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getRootIdentifier()
+    {
+        return 'master';
     }
 
     /**
@@ -55,17 +64,20 @@ class GitHubRepository implements RepositoryInterface
      */
     public function getComposerInformation($identifier)
     {
-        $composer = json_decode(@file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$identifier.'/composer.json'), true);
-        if (!$composer) {
-            throw new \UnexpectedValueException('Failed to download retrieve composer information for identifier '.$identifier.' in '.$this->getUrl());
+        if (!isset($this->infoCache[$identifier])) {
+            $composer = json_decode(@file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$identifier.'/composer.json'), true);
+            if (!$composer) {
+                throw new \UnexpectedValueException('Failed to download retrieve composer information for identifier '.$identifier.' in '.$this->getUrl());
+            }
+
+            if (!isset($composer['time'])) {
+                $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$this->owner.'/'.$this->repository.'/'.$identifier), true);
+                $composer['time'] = $commit['commit']['committed_date'];
+            }
+            $this->infoCache[$identifier] = $composer;
         }
 
-        if (!isset($composer['time'])) {
-            $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$this->owner.'/'.$this->repository.'/'.$identifier), true);
-            $composer['time'] = $commit['commit']['committed_date'];
-        }
-
-        return $composer;
+        return $this->infoCache[$identifier];
     }
 
     /**
