@@ -59,5 +59,6 @@ fos_user:
     db_driver:     orm
     firewall_name: main
     user_class:  Packagist\WebBundle\Entity\User
-    #from_email:     { webmaster@example.com: Admin }
-    
+#    from_email:
+#        address:        webmaster@example.com
+#        sender_name:    Admin
