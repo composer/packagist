@@ -12,6 +12,9 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Packagist\WebBundle\Form\ConfirmPackageType;
+use Packagist\WebBundle\Form\ConfirmForm;
+use Packagist\WebBundle\Form\ConfirmFormType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
@@ -53,28 +56,63 @@ class WebController extends Controller
     public function submitPackageAction()
     {
         $package = new Package;
-        $form = $this->get('form.factory')->create(new PackageType, $package);
+        $form = $this->createForm(new PackageType, $package);
 
-        $request = $this->get('request');
+        $request = $this->getRequest();
         if ($request->getMethod() == 'POST') {
             $form->bindRequest($request);
-            if ($form->isValid()) {
-                try {
-                    $user = $this->getUser();
-                    $package->addMaintainers($user);
-                    $em = $this->get('doctrine')->getEntityManager();
-                    $em->persist($package);
-                    $em->flush();
+            $children = $form->getChildren();
+            if($children['repository']->isValid()) {
+                $this->get('session')->set('repository', $package->getRepository());
 
-                    $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, the repository will be parsed for releases in a bit.');
-                    return new RedirectResponse($this->generateUrl('home'));
-                } catch (\PDOException $e) {
-                    $this->get('session')->setFlash('error', $package->getName().' could not be saved in our database, most likely the name is already in use.');
-                }
+                return new RedirectResponse($this->generateUrl('confirm'));
             }
         }
 
         return array('form' => $form->createView(), 'page' => 'submit');
+    }
+
+    /**
+     * @Template()
+     * @Route("/submit/confirm", name="confirm")
+     */
+    public function confirmPackageAction()
+    {
+        $session = $this->get('session');
+        $em = $this->getDoctrine()->getEntityManager();
+        $package = new Package;
+
+        if($repository = $session->get('repository')) {
+            $session->remove('repository');
+            $package->setRepository($repository);
+            $package->fromProvider($this->get('packagist.repository_provider'));
+        }
+
+        $form = $this->createForm(new ConfirmPackageType, $package);
+
+        $request = $this->getRequest();
+        if ($request->getMethod() == 'POST') {
+            $form->bindRequest($request);
+            $package->fromProvider($this->get('packagist.repository_provider'));
+
+            $children = $form->getChildren();
+            if ($children['repository']->isValid()) {
+                $user = $this->getUser();
+                $package->addMaintainers($user);
+
+                $em = $this->getDoctrine()->getEntityManager();
+                $em->persist($package);
+                $em->flush();
+
+                $this->get('session')->remove('repository');
+
+                return new RedirectResponse($this->generateUrl('home'));
+            }
+        } elseif (!$repository) {
+            return new RedirectResponse($this->generateUrl('submit'));
+        }
+
+        return array('form' => $form->createView(), 'package' => $package, 'page' => 'submit');
     }
 
     /**

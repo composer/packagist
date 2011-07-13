@@ -12,6 +12,8 @@
 
 namespace Packagist\WebBundle\Entity;
 
+use Packagist\WebBundle\Repository\RepositoryProviderInterface;
+
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ExecutionContext;
@@ -23,7 +25,7 @@ use Doctrine\Common\Collections\ArrayCollection;
  *     name="package",
  *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})}
  * )
- * @Assert\Callback(methods={"isRepositoryValid", "isPackageUnique"})
+ * @Assert\Callback(methods={"isPackageUnique"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package
@@ -108,6 +110,7 @@ class Package
         return json_encode($data);
     }
 
+/*
     public function isRepositoryValid(ExecutionContext $context)
     {
         $propertyPath = $context->getPropertyPath() . '.repository';
@@ -140,10 +143,19 @@ class Package
             return;
         }
     }
+*/
 
     public function isPackageUnique(ExecutionContext $context)
     {
         // TODO check for uniqueness of package name
+    }
+
+    public function fromProvider(RepositoryProviderInterface $provider)
+    {
+        $repo = $provider->getRepository($this->repository);
+        $composerFile = $repo->getComposerInformation('master');
+
+        $this->setName($composerFile['name']);
     }
 
     /**
