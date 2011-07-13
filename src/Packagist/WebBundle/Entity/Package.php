@@ -13,7 +13,6 @@
 namespace Packagist\WebBundle\Entity;
 
 use Packagist\WebBundle\Repository\RepositoryProviderInterface;
-
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ExecutionContext;
@@ -25,7 +24,7 @@ use Doctrine\Common\Collections\ArrayCollection;
  *     name="package",
  *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})}
  * )
- * @Assert\Callback(methods={"isPackageUnique"})
+ * @Assert\Callback(methods={"isPackageUnique","isRepositoryValid"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package
@@ -41,7 +40,6 @@ class Package
      * Unique package name
      *
      * @ORM\Column
-     * @Assert\NotBlank()
      */
     private $name;
 
@@ -110,52 +108,35 @@ class Package
         return json_encode($data);
     }
 
-/*
+    public function setRepositoryProvider(RepositoryProviderInterface $provider)
+    {
+        $this->repositoryProvider = $provider;
+    }
+
     public function isRepositoryValid(ExecutionContext $context)
     {
         $propertyPath = $context->getPropertyPath() . '.repository';
         $context->setPropertyPath($propertyPath);
 
-        if (!preg_match('#^git://.+|https?://github.com/[^/]+/[^/]+(?:\.git)?$#', $this->repository)) {
-            $context->addViolation('This is not a valid git repository url', array(), null);
+        $repo = $this->repositoryClass;
+        if (!$repo) {
+            $context->addViolation('No valid/supported repository was found at the given URL', array(), null);
             return;
         }
+        try {
+            $information = $repo->getComposerInformation($repo->getRootIdentifier());
+        } catch (\UnexpectedValueException $e) {}
+        // TODO use more specialized exception for repos
 
-        if (!preg_match('#^(?:https?|git)://github\.com/([^/]+)/(.+?)(?:\.git)?$#', $this->repository, $match)) {
-            $context->addViolation('Only GitHub repositories are supported at the moment', array(), null);
-            // TODO handle other types of git repos, and later svn/hg too
-            return;
-        }
-
-        // handle github repositories
-        $owner = $match[1];
-        $repository = $match[2];
-
-        $repoData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$owner.'/'.$repository), true);
-        if (!$repoData) {
-            $context->addViolation('Could not fetch information from this repository (if GitHub is down, please try again later)', array(), null);
-            return;
-        }
-
-        $masterData = json_decode(file_get_contents('https://raw.github.com/'.$owner.'/'.$repository.'/master/composer.json'), true);
-        if ($masterData['name'] !== $this->name) {
-            $context->addViolation('The repository\'s composer.json information does not match the given package name, '.$masterData['name'].' found.', array(), null);
+        if (!isset($information['name']) || !$information['name']) {
+            $context->addViolation('The package name was not be found, your composer.json file must be invalid or missing in your master branch/trunk.', array(), null);
             return;
         }
     }
-*/
 
     public function isPackageUnique(ExecutionContext $context)
     {
         // TODO check for uniqueness of package name
-    }
-
-    public function fromProvider(RepositoryProviderInterface $provider)
-    {
-        $repo = $provider->getRepository($this->repository);
-        $composerFile = $repo->getComposerInformation('master');
-
-        $this->setName($composerFile['name']);
     }
 
     /**
@@ -236,6 +217,16 @@ class Package
     public function setRepository($repository)
     {
         $this->repository = $repository;
+
+        try {
+            $this->repositoryClass = $repo = $this->repositoryProvider->getRepository($this->repository);
+            if (!$repo) {
+                return;
+            }
+            $information = $repo->getComposerInformation($repo->getRootIdentifier());
+            $this->setName($information['name']);
+        } catch (\UnexpectedValueException $e) {}
+        // TODO use more specialized exception for repos
     }
 
     /**

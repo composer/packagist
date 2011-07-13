@@ -56,16 +56,26 @@ class WebController extends Controller
     public function submitPackageAction()
     {
         $package = new Package;
+        $package->setRepositoryProvider($this->get('packagist.repository_provider'));
         $form = $this->createForm(new PackageType, $package);
 
         $request = $this->getRequest();
         if ($request->getMethod() == 'POST') {
             $form->bindRequest($request);
-            $children = $form->getChildren();
-            if($children['repository']->isValid()) {
-                $this->get('session')->set('repository', $package->getRepository());
+            if ($form->isValid()) {
+                try {
+                    $user = $this->getUser();
+                    $package->addMaintainers($user);
+                    $em = $this->get('doctrine')->getEntityManager();
+                    $em->persist($package);
+                    $em->flush();
 
-                return new RedirectResponse($this->generateUrl('confirm'));
+                    $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, the repository will be parsed for releases in a bit.');
+                    return new RedirectResponse($this->generateUrl('home'));
+                } catch (\Exception $e) {
+                    $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+                    $this->get('session')->setFlash('error', $package->getName().' could not be saved.');
+                }
             }
         }
 
@@ -74,15 +84,16 @@ class WebController extends Controller
 
     /**
      * @Template()
-     * @Route("/submit/confirm", name="confirm")
+     * @Route("/submit/fetch-info", name="submit.fetch_info", defaults={"_format"="json"})
      */
-    public function confirmPackageAction()
+    public function fetchInfoAction()
     {
+        // TODO refactor, this must validate then retrive the name and return that as json, or just return the errors
         $session = $this->get('session');
         $em = $this->getDoctrine()->getEntityManager();
         $package = new Package;
 
-        if($repository = $session->get('repository')) {
+        if ($repository = $session->get('repository')) {
             $session->remove('repository');
             $package->setRepository($repository);
             $package->fromProvider($this->get('packagist.repository_provider'));
