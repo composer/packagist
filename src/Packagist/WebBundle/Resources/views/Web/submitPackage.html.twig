@@ -6,9 +6,8 @@
 
 {% block content %}
     <h1>Submit package</h1>
-    <form action="" method="POST" {{ form_enctype(form) }}>
-        <div id="form">
-            {{ form_errors(form) }}
+    <form id="submit-package-form" action="" data-check-url="{{ path('submit.fetch_info') }}" method="POST" {{ form_enctype(form) }}>
+        <div>
             <p>
                 {{ form_label(form.repository, "Repository URL (Git only at the moment)") }}
                 {{ form_errors(form.repository) }}

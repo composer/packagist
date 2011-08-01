@@ -194,6 +194,12 @@ textarea {
 input[type="submit"] {
   width: 406px;
   float: none;
+  background-image: url(../img/arrow.png);
+  background-position: 370px center;
+  background-repeat: no-repeat;
+}
+input[type="submit"].loading {
+  background-image: url(../img/loader.gif);
 }
 
 form ul {

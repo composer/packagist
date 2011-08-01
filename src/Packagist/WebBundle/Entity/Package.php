@@ -129,7 +129,7 @@ class Package
         // TODO use more specialized exception for repos
 
         if (!isset($information['name']) || !$information['name']) {
-            $context->addViolation('The package name was not be found, your composer.json file must be invalid or missing in your master branch/trunk.', array(), null);
+            $context->addViolation('The package name was not found, your composer.json file must be invalid or missing in your master branch/trunk. Maybe the URL you entered has a typo.', array(), null);
             return;
         }
     }

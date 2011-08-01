@@ -21,6 +21,7 @@ use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Form\PackageType;
 use Packagist\WebBundle\Form\VersionType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -83,47 +84,34 @@ class WebController extends Controller
     }
 
     /**
-     * @Template()
      * @Route("/submit/fetch-info", name="submit.fetch_info", defaults={"_format"="json"})
      */
     public function fetchInfoAction()
     {
-        // TODO refactor, this must validate then retrive the name and return that as json, or just return the errors
-        $session = $this->get('session');
-        $em = $this->getDoctrine()->getEntityManager();
         $package = new Package;
+        $package->setRepositoryProvider($this->get('packagist.repository_provider'));
+        $form = $this->createForm(new PackageType, $package);
 
-        if ($repository = $session->get('repository')) {
-            $session->remove('repository');
-            $package->setRepository($repository);
-            $package->fromProvider($this->get('packagist.repository_provider'));
-        }
-
-        $form = $this->createForm(new ConfirmPackageType, $package);
-
+        $response = array('status' => 'error', 'reason' => 'No data posted.');
         $request = $this->getRequest();
         if ($request->getMethod() == 'POST') {
             $form->bindRequest($request);
-            $package->fromProvider($this->get('packagist.repository_provider'));
-
-            $children = $form->getChildren();
-            if ($children['repository']->isValid()) {
-                $user = $this->getUser();
-                $package->addMaintainers($user);
-
-                $em = $this->getDoctrine()->getEntityManager();
-                $em->persist($package);
-                $em->flush();
-
-                $this->get('session')->remove('repository');
-
-                return new RedirectResponse($this->generateUrl('home'));
+            if ($form->isValid()) {
+                $response = array('status' => 'success', 'name' => $package->getName());
+            } else {
+                $errors = array();
+                foreach ($form->getChildren() as $child) {
+                    if ($child->hasErrors()) {
+                        foreach ($child->getErrors() as $error) {
+                            $errors[] = $error->getMessageTemplate();
+                        }
+                    }
+                }
+                $response = array('status' => 'error', 'reason' => $errors);
             }
-        } elseif (!$repository) {
-            return new RedirectResponse($this->generateUrl('submit'));
         }
 
-        return array('form' => $form->createView(), 'package' => $package, 'page' => 'submit');
+        return new Response(json_encode($response));
     }
 
     /**
