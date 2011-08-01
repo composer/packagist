@@ -4,18 +4,24 @@
     <h1>Packages</h1>
     {% for package in packages %}
         <section class="package">
-            <h2>{{ package.name }}</h2> by
-            {% for maintainer in package.maintainers %}
-                {{ maintainer.username }}{% if not loop.last %}, {% endif %}
-            {% endfor %}
-            <p class="description">{{ package.description }}</p>
+            <h2>{{ package.name }}</h2>
             {% if package.versions[0] is defined %}
+                <p class="description">{{ package.versions[0].description }}</p>
                 <p class="license">License: {{ package.versions[0].license|default("Unknown") }}</p>
                 <p class="links">
                     {% if package.versions[0].homepage %}
-                        <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a>
+                        Homepage: <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />
                     {% endif %}
+                    Tags: {% for tag in package.versions[0].tags %}{{ tag.name }}{{ loop.last ? '' : ', ' }}{% endfor %}
                 </p>
+                <p class="author">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
+                {% for maintainer in package.maintainers %}
+                    {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
+                {% endfor %}</p>
+            {% elseif package.crawledAt == null %}
+                This package has not been crawled yet, some information is missing.
+            {% else %}
+                This package has no released version yet, and little information is available yet.
             {% endif %}
         </section>
     {% endfor %}

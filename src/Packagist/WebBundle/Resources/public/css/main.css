@@ -226,9 +226,6 @@ form ul {
 .package .description {
   clear: left;
 }
-.package .links a {
-  display: block;
-}
 
 pre {
   background: #ddd;
