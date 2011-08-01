@@ -19,14 +19,14 @@
             };
             (function() {
                 var wf = document.createElement('script');
+                wf.src = ('https:' == document.location.protocol ? 'https' : 'http') +
+                    '://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
                 wf.src = '//ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
                 wf.type = 'text/javascript';
                 wf.async = 'true';
                 var s = document.getElementsByTagName('script')[0];
                 s.parentNode.insertBefore(wf, s);
             })();
-            
-            window.base = "{{ asset('.') }}";
         </script>
         <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" />
 
@@ -72,10 +72,6 @@
             <div class="main" role="main">
                 {% block content %}
                 {% endblock %}
-                
-                <div id="loader" class="hidden">
-                    <img src="{{ asset('bundles/packagistweb/img/loader.gif')}}"></img>
-                </div>
             </div>
         </div>
 
@@ -88,7 +84,7 @@
             g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
             s.parentNode.insertBefore(g,s)}(document,'script'));
         </script>#}
-        
+
         {% block scripts %}{% endblock %}
     </body>
 </html>
