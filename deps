@@ -4,7 +4,7 @@
 
 [twig]
     git=http://github.com/fabpot/Twig.git
-    version=v1.1.1
+    version=v1.1.2
 
 [monolog]
     git=http://github.com/Seldaek/monolog.git
@@ -61,3 +61,4 @@
 [FOSUserBundle]
     git=git://github.com/FriendsOfSymfony/FOSUserBundle.git
     target=/bundles/FOS/UserBundle
+    version=1.0.0
