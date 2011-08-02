@@ -31,4 +31,9 @@ class PackageType extends AbstractType
             'data_class' => 'Packagist\WebBundle\Entity\Package',
         );
     }
+
+    public function getName()
+    {
+        return 'package';
+    }
 }
