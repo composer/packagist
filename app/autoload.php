@@ -39,3 +39,8 @@ AnnotationRegistry::registerLoader(function($class) use ($loader) {
     return class_exists($class, false);
 });
 AnnotationRegistry::registerFile(__DIR__.'/../vendor/doctrine/lib/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php');
+
+// Swiftmailer needs a special autoloader to allow
+// the lazy loading of the init file (which is expensive)
+require_once __DIR__.'/../vendor/swiftmailer/lib/classes/Swift.php';
+Swift::registerAutoload(__DIR__.'/../vendor/swiftmailer/lib/swift_init.php');
