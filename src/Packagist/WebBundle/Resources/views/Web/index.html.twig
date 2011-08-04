@@ -15,9 +15,9 @@
                     Tags: {% for tag in package.versions[0].tags %}<a href="{{ url("tag", { "name" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}{% endfor %}
                 </p>
             {% elseif package.crawledAt is null %}
-                This package has not been crawled yet, some information is missing.
+                <p>This package has not been crawled yet, some information is missing.</p>
             {% else %}
-                This package has no released version yet, and little information is available yet.
+                <p>This package has no released version yet, and little information is available yet.</p>
             {% endif %}
 
             <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:

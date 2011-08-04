@@ -31,8 +31,8 @@
             {% endfor %}</p>
         {% endfor %}
     {% elseif package.crawledAt is null %}
-        This package has not been crawled yet, some information is missing.
+        <p>This package has not been crawled yet, some information is missing.</p>
     {% else %}
-        This package has no released version yet, and little information is available yet.
+        <p>This package has no released version yet, and little information is available yet.</p>
     {% endif %}
 {% endblock %}
