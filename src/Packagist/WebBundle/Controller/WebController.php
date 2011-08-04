@@ -44,7 +44,7 @@ class WebController extends Controller
     public function indexAction()
     {
         $packages = $this->getDoctrine()
-            ->getRepository('Packagist\WebBundle\Entity\Package')
+            ->getRepository('PackagistWebBundle:Package')
             ->findAll();
 
         return array('packages' => $packages, 'page' => 'home');

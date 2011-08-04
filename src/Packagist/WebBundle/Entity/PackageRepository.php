@@ -30,16 +30,30 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function findAll()
+    {
+        return $this->getBaseQueryBuilder()->getQuery()->getResult();
+    }
+
     public function findByTag($name)
     {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p, v, t')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->leftJoin('v.tags', 't')
+        $qb = $this->getBaseQueryBuilder()
+            // eliminate tags from the select, otherwise only $name is visible in the results' tags
+            ->select('p, v, m')
             ->where('t.name = ?0')
             ->groupBy('p.id')
             ->setParameters(array($name));
         return $qb->getQuery()->getResult();
+    }
+
+    private function getBaseQueryBuilder()
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p, v, t, m')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->leftJoin('p.versions', 'v')
+            ->leftJoin('p.maintainers', 'm')
+            ->leftJoin('v.tags', 't');
+        return $qb;
     }
 }
