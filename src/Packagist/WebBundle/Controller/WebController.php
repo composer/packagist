@@ -116,16 +116,16 @@ class WebController extends Controller
 
     /**
      * @Template()
-     * @Route("/view/{id}", name="view")
+     * @Route("/view/{name}", name="view")
      */
-    public function viewAction($id)
+    public function viewAction($name)
     {
         $package = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
-            ->findOneById($id);
+            ->findOneByName($name);
 
-        if (empty($package)) {
-            throw new NotFoundHttpException();
+        if (!$package) {
+            throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }
 
         return array('package' => $package);
