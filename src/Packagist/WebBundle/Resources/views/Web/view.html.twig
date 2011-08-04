@@ -2,7 +2,7 @@
 
 {% block content %}
     <h1>Viewing package {{ package.name }}</h1>
-    {% if package.versions[0] is defined %}
+    {% if package.versions is not empty %}
         {% for version in package.versions %}
             <h2>Version {{ version.version }}</h2>
 	        <p class="description">{{ version.description }}</p>
@@ -18,7 +18,7 @@
         {% for maintainer in package.maintainers %}
             {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
         {% endfor %}</p>
-    {% elseif package.crawledAt == null %}
+    {% elseif package.crawledAt is null %}
         This package has not been crawled yet, some information is missing.
     {% else %}
         This package has no released version yet, and little information is available yet.

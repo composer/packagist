@@ -124,7 +124,7 @@ class WebController extends Controller
             ->getRepository('PackagistWebBundle:Package')
             ->findOneById($id);
 
-        if(empty($package))  {
+        if (empty($package)) {
             throw new NotFoundHttpException();
         }
 
