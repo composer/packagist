@@ -131,10 +131,6 @@ class WebController extends Controller
 
         $versions = $tag->getVersions();
 
-        if (empty($versions)) {
-            throw new NotFoundHttpException();
-        }
-
         foreach($versions as $version) {
             $packages[] = $version->getPackage();
         }
