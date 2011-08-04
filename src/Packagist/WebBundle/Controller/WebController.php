@@ -122,20 +122,10 @@ class WebController extends Controller
      */
     public function tagAction($name)
     {
-        $tag = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Tag')
-            ->findOneByName($name);
-        if (empty($tag)) {
-            throw new NotFoundHttpException();
-        }
-
-        $versions = $tag->getVersions();
-
-        foreach($versions as $version) {
-            $packages[] = $version->getPackage();
-        }
-
-        return array('packages' => $packages, 'page' => 'home');
+        $packages = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Package')
+            ->findByTag($name);
+        return array('packages' => $packages, 'tag' => $name);
     }
 
     /**

@@ -29,4 +29,17 @@ class PackageRepository extends EntityRepository
             ->setParameters(array(new \DateTime('-1hour')));
         return $qb->getQuery()->getResult();
     }
+
+    public function findByTag($name)
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p, v, t')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->leftJoin('p.versions', 'v')
+            ->leftJoin('v.tags', 't')
+            ->where('t.name = ?0')
+            ->groupBy('p.id')
+            ->setParameters(array($name));
+        return $qb->getQuery()->getResult();
+    }
 }
