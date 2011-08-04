@@ -2,7 +2,7 @@
 
 {% block content %}
     <h1>Viewing package {{ package.name }}</h1>
-    {% if package.versions is not empty %}
+    {% if package.versions[0] is defined %}
         {% for version in package.versions %}
             <h2>Version {{ version.version }}</h2>
 	        <p class="description">{{ version.description }}</p>
