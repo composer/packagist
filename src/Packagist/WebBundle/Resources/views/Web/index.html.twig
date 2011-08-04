@@ -5,7 +5,7 @@
     {% for package in packages %}
         <section class="package">
             <h2><a href="{{ url('view', { 'id' : package.id }) }}">{{ package.name }}</a></h2>
-            {% if package.versions[0] is defined %}
+            {% if package.versions|length %}
                 <p class="description">{{ package.versions[0].description }}</p>
                 <p class="license">License: {{ package.versions[0].license|default("Unknown") }}</p>
                 <p class="links">
@@ -14,15 +14,16 @@
                     {% endif %}
                     Tags: {% for tag in package.versions[0].tags %}{{ tag.name }}{{ loop.last ? '' : ', ' }}{% endfor %}
                 </p>
-                <p class="author">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
-                {% for maintainer in package.maintainers %}
-                    {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
-                {% endfor %}</p>
             {% elseif package.crawledAt is null %}
                 This package has not been crawled yet, some information is missing.
             {% else %}
                 This package has no released version yet, and little information is available yet.
             {% endif %}
+
+            <p class="author">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
+            {% for maintainer in package.maintainers %}
+                {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
+            {% endfor %}</p>
         </section>
     {% endfor %}
 {% endblock %}
