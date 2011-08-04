@@ -12,7 +12,7 @@
                     {% if package.versions[0].homepage %}
                         Homepage: <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />
                     {% endif %}
-                    Tags: {% for tag in package.versions[0].tags %}{{ tag.name }}{{ loop.last ? '' : ', ' }}{% endfor %}
+                    Tags: {% for tag in package.versions[0].tags %}<a href="{{ url("tag", { "name" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}{% endfor %}
                 </p>
             {% elseif package.crawledAt is null %}
                 This package has not been crawled yet, some information is missing.
@@ -25,5 +25,7 @@
                 {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
             {% endfor %}</p>
         </section>
+    {% else %}
+        No packages found.
     {% endfor %}
 {% endblock %}
