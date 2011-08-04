@@ -16,7 +16,7 @@
                 </p>
                 <p class="author">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
                 {% for maintainer in package.maintainers %}
-                    {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
+                    <a href="{{ url("user_packages", { "id" : maintainer.id }) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
                 {% endfor %}</p>
             {% elseif package.crawledAt == null %}
                 This package has not been crawled yet, some information is missing.
