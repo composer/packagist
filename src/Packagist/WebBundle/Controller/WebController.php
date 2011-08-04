@@ -117,7 +117,7 @@ class WebController extends Controller
     /**
      * View all packages with the specified tag.
      *
-     * @Template("PackagistWebBundle:Web:index.html.twig")
+     * @Template()
      * @Route("/tag/{name}", name="tag")
      */
     public function tagAction($name)

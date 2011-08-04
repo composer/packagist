@@ -16,7 +16,7 @@
                 {% if version.homepage %}
                     Homepage: <a href="{{ version.homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
                 {% endif %}
-                Tags: {% for tag in version.tags %}{{ tag.name }}{{ loop.last ? '' : ', ' }}{% endfor %}
+                Tags: {% for tag in version.tags %}<a href="{{ url("tag", { "name" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}{% endfor %}
             </p>
             <p class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}:
             {% for author in version.authors %}
