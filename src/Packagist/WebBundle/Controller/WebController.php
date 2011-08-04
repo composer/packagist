@@ -43,7 +43,7 @@ class WebController extends Controller
      */
     public function indexAction()
     {
-        $packages = $this->get('doctrine')
+        $packages = $this->getDoctrine()
             ->getRepository('Packagist\WebBundle\Entity\Package')
             ->findAll();
 
@@ -67,7 +67,7 @@ class WebController extends Controller
                 try {
                     $user = $this->getUser();
                     $package->addMaintainers($user);
-                    $em = $this->get('doctrine')->getEntityManager();
+                    $em = $this->getDoctrine()->getEntityManager();
                     $em->persist($package);
                     $em->flush();
 
@@ -112,6 +112,19 @@ class WebController extends Controller
         }
 
         return new Response(json_encode($response));
+    }
+
+    /**
+     * @Template()
+     * @Route("/view/{id}", name="view")
+     */
+    public function viewAction($id)
+    {
+        $package = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Package')
+            ->findOneById($id);
+
+        return array('package' => $package);
     }
 
     /**
