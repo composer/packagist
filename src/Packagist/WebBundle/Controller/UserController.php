@@ -21,18 +21,22 @@ class UserController extends Controller
 {
     /**
      * @Template()
-     * @Route("/user/{id}/packages", name="user_packages")
+     * @Route("/user/{name}/packages", name="user_packages")
      */
-    public function packagesAction($id)
+    public function packagesAction($name)
     {
         $user = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:User')
-            ->findOneById($id);
+            ->findOneByUsername($name);
 
-        if (empty($user)) {
-            throw new NotFoundHttpException();
+        if (!$user) {
+            throw new NotFoundHttpException('The requested user, '.$name.', could not be found.');
         }
 
-        return array('user' => $user);
+        $packages = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Package')
+            ->findByMaintainer($user);
+
+        return array('packages' => $packages, 'user' => $user);
     }
 }

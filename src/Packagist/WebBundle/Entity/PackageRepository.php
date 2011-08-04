@@ -46,6 +46,17 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function findByMaintainer(User $user)
+    {
+        $qb = $this->getBaseQueryBuilder()
+            // eliminate maintainers from the select, otherwise only $user is visible in the results' maintainers
+            ->select('p, v, t')
+            ->where('m.id = ?0')
+            ->groupBy('p.id')
+            ->setParameters(array($user->getId()));
+        return $qb->getQuery()->getResult();
+    }
+
     private function getBaseQueryBuilder()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
