@@ -3,21 +3,24 @@
 {% block content %}
     <h1>Viewing package {{ package.name }}</h1>
     {% if package.versions[0] is defined %}
-                <p class="description">{{ package.versions[0].description }}</p>
-                <p class="license">License: {{ package.versions[0].license|default("Unknown") }}</p>
-                <p class="links">
-                    {% if package.versions[0].homepage %}
-                        Homepage: <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />
-                    {% endif %}
-                    Tags: {% for tag in package.versions[0].tags %}{{ tag.name }}{{ loop.last ? '' : ', ' }}{% endfor %}
-                </p>
-                <p class="author">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
-                {% for maintainer in package.maintainers %}
-                    {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
-                {% endfor %}</p>
-            {% elseif package.crawledAt == null %}
-                This package has not been crawled yet, some information is missing.
-            {% else %}
-                This package has no released version yet, and little information is available yet.
+        {% for version in package.versions %}
+            <h2>Version {{ version.version }}</h2>
+	        <p class="description">{{ version.description }}</p>
+	        <p class="license">License: {{ version.license|default("Unknown") }}</p>
+	        <p class="links">
+	            {% if version.homepage %}
+	                Homepage: <a href="{{ package.versions[0].homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
+	            {% endif %}
+	            Tags: {% for tag in version.tags %}{{ tag.name }}{{ loop.last ? '' : ', ' }}{% endfor %}
+	        </p>
+        {% endfor %}
+        <p class="author">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
+        {% for maintainer in package.maintainers %}
+            {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
+        {% endfor %}</p>
+    {% elseif package.crawledAt == null %}
+        This package has not been crawled yet, some information is missing.
+    {% else %}
+        This package has no released version yet, and little information is available yet.
     {% endif %}
 {% endblock %}
