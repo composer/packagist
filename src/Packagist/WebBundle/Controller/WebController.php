@@ -115,6 +115,34 @@ class WebController extends Controller
     }
 
     /**
+     * View all packages with the specified tag.
+     *
+     * @Template("PackagistWebBundle:Web:index.html.twig")
+     * @Route("/tag/{name}", name="tag")
+     */
+    public function tagAction($name)
+    {
+        $tag = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Tag')
+            ->findOneByName($name);
+        if (empty($tag)) {
+            throw new NotFoundHttpException();
+        }
+
+        $versions = $tag->getVersions();
+
+        if (empty($versions)) {
+            throw new NotFoundHttpException();
+        }
+
+        foreach($versions as $version) {
+            $packages[] = $version->getPackage();
+        }
+
+        return array('packages' => $packages, 'page' => 'home');
+    }
+
+    /**
      * @Template()
      * @Route("/about", name="about")
      */
