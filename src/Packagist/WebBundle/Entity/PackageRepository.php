@@ -41,7 +41,6 @@ class PackageRepository extends EntityRepository
             // eliminate maintainers & tags from the select, because of the groupBy
             ->select('p, v')
             ->where('t.name = ?0')
-            ->groupBy('p.id')
             ->setParameters(array($name));
         return $qb->getQuery()->getResult();
     }
@@ -52,7 +51,6 @@ class PackageRepository extends EntityRepository
             // eliminate maintainers & tags from the select, because of the groupBy
             ->select('p, v')
             ->where('m.id = ?0')
-            ->groupBy('p.id')
             ->setParameters(array($user->getId()));
         return $qb->getQuery()->getResult();
     }
@@ -64,7 +62,8 @@ class PackageRepository extends EntityRepository
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->leftJoin('p.maintainers', 'm')
-            ->leftJoin('v.tags', 't');
+            ->leftJoin('v.tags', 't')
+            ->orderBy('v.releasedAt', 'DESC');
         return $qb;
     }
 }
