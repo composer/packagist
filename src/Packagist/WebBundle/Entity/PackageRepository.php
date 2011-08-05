@@ -38,8 +38,8 @@ class PackageRepository extends EntityRepository
     public function findByTag($name)
     {
         $qb = $this->getBaseQueryBuilder()
-            // eliminate tags from the select, otherwise only $name is visible in the results' tags
-            ->select('p, v, m')
+            // eliminate maintainers & tags from the select, because of the groupBy
+            ->select('p, v')
             ->where('t.name = ?0')
             ->groupBy('p.id')
             ->setParameters(array($name));
@@ -49,8 +49,8 @@ class PackageRepository extends EntityRepository
     public function findByMaintainer(User $user)
     {
         $qb = $this->getBaseQueryBuilder()
-            // eliminate maintainers from the select, otherwise only $user is visible in the results' maintainers
-            ->select('p, v, t')
+            // eliminate maintainers & tags from the select, because of the groupBy
+            ->select('p, v')
             ->where('m.id = ?0')
             ->groupBy('p.id')
             ->setParameters(array($user->getId()));
