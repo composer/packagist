@@ -33,10 +33,6 @@ class UserController extends Controller
             throw new NotFoundHttpException('The requested user, '.$name.', could not be found.');
         }
 
-        $packages = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
-            ->findByMaintainer($user);
-
-        return array('packages' => $packages, 'user' => $user);
+        return array('user' => $user, 'packages' => $user->getPackages());
     }
 }
