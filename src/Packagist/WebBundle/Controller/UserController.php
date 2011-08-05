@@ -21,9 +21,9 @@ class UserController extends Controller
 {
     /**
      * @Template()
-     * @Route("/user/{name}/packages", name="user_packages")
+     * @Route("/user/{name}", name="user_profile")
      */
-    public function packagesAction($name)
+    public function profileAction($name)
     {
         $user = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:User')
@@ -33,10 +33,6 @@ class UserController extends Controller
             throw new NotFoundHttpException('The requested user, '.$name.', could not be found.');
         }
 
-        $packages = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
-            ->findByMaintainer($user);
-
-        return array('packages' => $packages, 'user' => $user);
+        return array('user' => $user, 'packages' => $user->getPackages());
     }
 }

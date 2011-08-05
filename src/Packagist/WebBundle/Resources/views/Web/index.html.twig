@@ -22,7 +22,7 @@
 
             <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
             {% for maintainer in package.maintainers %}
-                <a href="{{ url("user_packages", { "name" : maintainer.username }) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
+                <a href="{{ url("user_profile", { "name" : maintainer.username }) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
             {% endfor %}</p>
         </section>
     {% else %}
