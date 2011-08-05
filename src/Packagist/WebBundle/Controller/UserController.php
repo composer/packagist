@@ -21,9 +21,9 @@ class UserController extends Controller
 {
     /**
      * @Template()
-     * @Route("/user/{name}/packages", name="user_packages")
+     * @Route("/user/{name}", name="user_profile")
      */
-    public function packagesAction($name)
+    public function profileAction($name)
     {
         $user = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:User')
