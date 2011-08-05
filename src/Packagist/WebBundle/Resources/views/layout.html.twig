@@ -38,11 +38,13 @@
     </head>
     <body>
         <div class="container">
-            <div>
+            <div class="user">
                 {% if app.user %}
                     {{ app.user.username }} | <a href="{{ path('fos_user_security_logout') }}">logout</a>
                 {% else %}
-                    <a href="{{ path('fos_user_security_login') }}">login</a> | <a href="{{ path('fos_user_registration_register') }}">register</a>
+		            <a href="{{ path('fos_user_registration_register') }}">Create a new account</a>
+		            |
+		            <a href="{{ path('fos_user_security_login') }}">Login</a>
                 {% endif %}
             </div>
             <div class="betawarn">WARNING - This is an experimental site, packages may come and go, this is not ready yet.</div>
