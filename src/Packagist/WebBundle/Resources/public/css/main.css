@@ -148,6 +148,10 @@ header {
   border-radius: 5px;
 }
 
+.user {
+  text-align: right;
+}
+
 .submit, .submit:active, .submit:visited, input[type="submit"] {
   font-size: 22px;
   font-family: "Neuton";
