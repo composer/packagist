@@ -146,6 +146,7 @@ header {
   background: #ffa;
   padding: 10px;
   border-radius: 5px;
+  margin: 10px 0;
 }
 
 .user {
@@ -204,6 +205,13 @@ input[type="submit"] {
 }
 input[type="submit"].loading {
   background-image: url(../img/loader.gif);
+}
+
+input[type="checkbox"] {
+  float: left;
+  clear: left;
+  width: auto;
+  margin: 3px 5px 0 0;
 }
 
 form ul {
