@@ -8,4 +8,4 @@
 			$addMaintainerForm.addClass('hidden');
 		}		
 	});
-})($);
+})(jQuery);
