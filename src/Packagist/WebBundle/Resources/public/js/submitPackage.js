@@ -31,5 +31,5 @@
     });
 
     $('#package_repository').triggerHandler('change');
-})($);
+})(jQuery);
 
