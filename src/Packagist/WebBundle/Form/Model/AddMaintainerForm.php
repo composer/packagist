@@ -2,17 +2,19 @@
 
 namespace Packagist\WebBundle\Form\Model;
 
+use Packagist\WebBundle\Entity\User;
+
 class AddMaintainerForm
 {
-    protected $username;
+    protected $user;
 
-    public function setUsername($username)
+    public function setUser(User $user)
     {
-        $this->username = $username;
+        $this->user = $user;
     }
 
-    public function getUsername()
+    public function getUser()
     {
-        return $this->username;
+        return $this->user;
     }
 }

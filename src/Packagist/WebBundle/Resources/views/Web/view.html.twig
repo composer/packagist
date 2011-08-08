@@ -17,9 +17,9 @@
 		    <form id="add-maintainer-form" class="hidden" action="" method="POST" {{ form_enctype(form) }}>
 		        <div>
 		            <p>
-		                {{ form_label(form.username, "Username") }}
-		                {{ form_errors(form.username) }}
-		                {{ form_widget(form.username) }}
+		                {{ form_label(form.user, "Username") }}
+		                {{ form_errors(form.user) }}
+		                {{ form_widget(form.user) }}
 		            </p>
 		            {{ form_rest(form) }}
 		            <input id="submit" type="submit" value="Submit" />

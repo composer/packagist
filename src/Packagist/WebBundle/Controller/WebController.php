@@ -152,9 +152,7 @@ class WebController extends Controller
                 if ($form->isValid()) {
                     try {
                         $em = $this->getDoctrine()->getEntityManager();
-                        $user = $this->getDoctrine()
-                            ->getRepository('PackagistWebBundle:User')
-                            ->findOneByUsername($addMaintainerForm->getUsername());
+                        $user = $addMaintainerForm->getUser();
 
                         if (empty($user)) {
                             $this->get('session')->setFlash('error', 'The maintainer could not be found.');

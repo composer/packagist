@@ -22,7 +22,7 @@ class AddMaintainerFormType extends AbstractType
 {
     public function buildForm(FormBuilder $builder, array $options)
     {
-        $builder->add('username');
+        $builder->add('user', 'fos_user_username');
     }
 
     public function getDefaultOptions(array $options)
