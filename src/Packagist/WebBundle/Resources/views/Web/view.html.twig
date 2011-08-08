@@ -1,11 +1,33 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
+{% block scripts %}
+    <script src="{{ asset('bundles/packagistweb/js/view.js')}}"></script>
+{% endblock %}
+
 {% block content %}
     <h1>{{ package.name }}</h1>
     <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
     {% for maintainer in package.maintainers %}
         {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
     {% endfor %}</p>
+    
+    {% if form is defined %}
+        <div>
+		    <strong id="add-maintainer"><a href="#">Add Maintainer</a></strong>
+		    <form id="add-maintainer-form" class="hidden" action="" method="POST" {{ form_enctype(form) }}>
+		        <div>
+		            <p>
+		                {{ form_label(form.username, "Username") }}
+		                {{ form_errors(form.username) }}
+		                {{ form_widget(form.username) }}
+		            </p>
+		            {{ form_rest(form) }}
+		            <input id="submit" type="submit" value="Submit" />
+		        </div>
+		    </form>
+	    </div>
+    {% endif %}
+    
     {% if package.versions|length %}
         {% for version in package.versions %}
             <h2>Version {{ version.version }}</h2>

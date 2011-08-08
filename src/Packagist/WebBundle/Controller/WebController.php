@@ -12,6 +12,9 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Packagist\WebBundle\Form\AddMaintainerFormType;
+use Packagist\WebBundle\Form\AddMaintainerForm;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Packagist\WebBundle\Form\ConfirmPackageType;
 use Packagist\WebBundle\Form\ConfirmForm;
 use Packagist\WebBundle\Form\ConfirmFormType;
@@ -142,8 +145,48 @@ class WebController extends Controller
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }
 
+        if($package->getMaintainers()->contains($this->getUser())) {
+
+            $addMaintainerForm = new AddMaintainerForm;
+            $form = $this->createForm(new AddMaintainerFormType, $addMaintainerForm);
+
+            $request = $this->getRequest();
+            if ($request->getMethod() == 'POST') {
+                $form->bindRequest($request);
+                if ($form->isValid()) {
+                    try {
+                        $em = $this->getDoctrine()->getEntityManager();
+                        $user = $this->getDoctrine()
+                            ->getRepository('PackagistWebBundle:User')
+                            ->findOneByUsername($addMaintainerForm->getUsername());
+
+                        if(empty($user)) {
+                            $this->get('session')->setFlash('error', 'The maintainer could not be found.');
+
+                            return array('package' => $package, 'form' => $form->createView());
+                        }
+
+                        $package->addMaintainers($user);
+
+                        $em->persist($package);
+                        $em->flush();
+
+                        $this->get('session')->setFlash('success', 'Maintainer added.');
+                        return new RedirectResponse($this->generateUrl('home'));
+                    } catch (\Exception $e) {
+                        $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+                        $this->get('session')->setFlash('error', 'The maintainer could not be added.');
+                    }
+                }
+            }
+
+            return array('package' => $package, 'form' => $form->createView());
+        }
+
         return array('package' => $package);
     }
+
+
 
     /**
      * @Template()
