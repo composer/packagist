@@ -167,6 +167,7 @@ class WebController extends Controller
                         $em->flush();
 
                         $this->get('session')->setFlash('success', 'Maintainer added.');
+
                         return new RedirectResponse($this->generateUrl('home'));
                     } catch (\Exception $e) {
                         $this->get('logger')->crit($e->getMessage(), array('exception', $e));
