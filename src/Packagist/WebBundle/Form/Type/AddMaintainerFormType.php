@@ -10,7 +10,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Packagist\WebBundle\Form;
+namespace Packagist\WebBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilder;
@@ -28,7 +28,7 @@ class AddMaintainerFormType extends AbstractType
     public function getDefaultOptions(array $options)
     {
         return array(
-            'data_class' => 'Packagist\WebBundle\Form\AddMaintainerForm',
+            'data_class' => 'Packagist\WebBundle\Form\Model\AddMaintainerForm',
         );
     }
 

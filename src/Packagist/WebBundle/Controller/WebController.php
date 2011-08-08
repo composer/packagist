@@ -12,17 +12,13 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Packagist\WebBundle\Form\AddMaintainerFormType;
-use Packagist\WebBundle\Form\AddMaintainerForm;
+use Packagist\WebBundle\Form\Type\AddMaintainerFormType;
+use Packagist\WebBundle\Form\Model\AddMaintainerForm;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Packagist\WebBundle\Form\ConfirmPackageType;
-use Packagist\WebBundle\Form\ConfirmForm;
-use Packagist\WebBundle\Form\ConfirmFormType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
-use Packagist\WebBundle\Form\PackageType;
-use Packagist\WebBundle\Form\VersionType;
+use Packagist\WebBundle\Form\Type\PackageType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -97,7 +93,7 @@ class WebController extends Controller
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
         $request = $this->getRequest();
-        if ($request->getMethod() == 'POST') {
+        if ($request->getMethod() === 'POST') {
             $form->bindRequest($request);
             if ($form->isValid()) {
                 $response = array('status' => 'success', 'name' => $package->getName());
@@ -151,7 +147,7 @@ class WebController extends Controller
             $form = $this->createForm(new AddMaintainerFormType, $addMaintainerForm);
 
             $request = $this->getRequest();
-            if ($request->getMethod() == 'POST') {
+            if ($request->getMethod() === 'POST') {
                 $form->bindRequest($request);
                 if ($form->isValid()) {
                     try {
@@ -160,7 +156,7 @@ class WebController extends Controller
                             ->getRepository('PackagistWebBundle:User')
                             ->findOneByUsername($addMaintainerForm->getUsername());
 
-                        if(empty($user)) {
+                        if (empty($user)) {
                             $this->get('session')->setFlash('error', 'The maintainer could not be found.');
 
                             return array('package' => $package, 'form' => $form->createView());

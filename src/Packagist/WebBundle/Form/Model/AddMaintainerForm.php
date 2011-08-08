@@ -1,6 +1,6 @@
 <?php
 
-namespace Packagist\WebBundle\Form;
+namespace Packagist\WebBundle\Form\Model;
 
 class AddMaintainerForm
 {
