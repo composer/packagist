@@ -18,7 +18,7 @@ use Symfony\Component\Form\FormBuilder;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class AddMaintainerFormType extends AbstractType
+class AddMaintainerRequestType extends AbstractType
 {
     public function buildForm(FormBuilder $builder, array $options)
     {
@@ -28,7 +28,7 @@ class AddMaintainerFormType extends AbstractType
     public function getDefaultOptions(array $options)
     {
         return array(
-            'data_class' => 'Packagist\WebBundle\Form\Model\AddMaintainerForm',
+            'data_class' => 'Packagist\WebBundle\Form\Model\AddMaintainerRequest',
         );
     }
 

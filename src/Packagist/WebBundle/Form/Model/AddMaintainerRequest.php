@@ -4,7 +4,7 @@ namespace Packagist\WebBundle\Form\Model;
 
 use Packagist\WebBundle\Entity\User;
 
-class AddMaintainerForm
+class AddMaintainerRequest
 {
     protected $user;
 

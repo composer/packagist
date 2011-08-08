@@ -12,8 +12,8 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Packagist\WebBundle\Form\Type\AddMaintainerFormType;
-use Packagist\WebBundle\Form\Model\AddMaintainerForm;
+use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
+use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
@@ -144,8 +144,8 @@ class WebController extends Controller
 
         if($package->getMaintainers()->contains($this->getUser())) {
 
-            $addMaintainerForm = new AddMaintainerForm;
-            $form = $this->createForm(new AddMaintainerFormType, $addMaintainerForm);
+            $addMaintainerRequest = new AddMaintainerRequest;
+            $form = $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
 
             $request = $this->getRequest();
             if ('POST' === $request->getMethod()) {
@@ -153,7 +153,7 @@ class WebController extends Controller
                 if ($form->isValid()) {
                     try {
                         $em = $this->getDoctrine()->getEntityManager();
-                        $user = $addMaintainerForm->getUser();
+                        $user = $addMaintainerRequest->getUser();
 
                         if (empty($user)) {
                             $this->get('session')->setFlash('error', 'The maintainer could not be found.');
