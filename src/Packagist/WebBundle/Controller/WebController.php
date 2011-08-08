@@ -94,7 +94,7 @@ class WebController extends Controller
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
         $request = $this->getRequest();
-        if ($request->getMethod() === 'POST') {
+        if ('POST' === $request->getMethod()) {
             $form->bindRequest($request);
             if ($form->isValid()) {
                 $response = array('status' => 'success', 'name' => $package->getName());
@@ -148,7 +148,7 @@ class WebController extends Controller
             $form = $this->createForm(new AddMaintainerFormType, $addMaintainerForm);
 
             $request = $this->getRequest();
-            if ($request->getMethod() === 'POST') {
+            if ('POST' === $request->getMethod()) {
                 $form->bindRequest($request);
                 if ($form->isValid()) {
                     try {
