@@ -2,13 +2,13 @@
 
 namespace Packagist\WebBundle\Form\Model;
 
-use Packagist\WebBundle\Entity\User;
+use FOS\UserBundle\Model\UserInterface;
 
 class AddMaintainerRequest
 {
     protected $user;
 
-    public function setUser(User $user)
+    public function setUser(UserInterface $user)
     {
         $this->user = $user;
     }

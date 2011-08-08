@@ -14,7 +14,6 @@ namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
@@ -181,8 +180,6 @@ class WebController extends Controller
 
         return array('package' => $package);
     }
-
-
 
     /**
      * @Template()
