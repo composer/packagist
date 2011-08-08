@@ -71,6 +71,7 @@ class WebController extends Controller
                     $em->flush();
 
                     $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, the repository will be parsed for releases in a bit.');
+
                     return new RedirectResponse($this->generateUrl('home'));
                 } catch (\Exception $e) {
                     $this->get('logger')->crit($e->getMessage(), array('exception', $e));
