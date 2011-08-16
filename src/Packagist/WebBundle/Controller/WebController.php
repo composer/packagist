@@ -141,7 +141,7 @@ class WebController extends Controller
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }
 
-        if($package->getMaintainers()->contains($this->getUser())) {
+        if ($package->getMaintainers()->contains($this->getUser())) {
 
             $addMaintainerRequest = new AddMaintainerRequest;
             $form = $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
