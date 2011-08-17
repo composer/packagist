@@ -12,14 +12,12 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Packagist\WebBundle\Form\ConfirmPackageType;
-use Packagist\WebBundle\Form\ConfirmForm;
-use Packagist\WebBundle\Form\ConfirmFormType;
+use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
+use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
-use Packagist\WebBundle\Form\PackageType;
-use Packagist\WebBundle\Form\VersionType;
+use Packagist\WebBundle\Form\Type\PackageType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -72,6 +70,7 @@ class WebController extends Controller
                     $em->flush();
 
                     $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, the repository will be parsed for releases in a bit.');
+
                     return new RedirectResponse($this->generateUrl('home'));
                 } catch (\Exception $e) {
                     $this->get('logger')->crit($e->getMessage(), array('exception', $e));
@@ -94,7 +93,7 @@ class WebController extends Controller
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
         $request = $this->getRequest();
-        if ($request->getMethod() == 'POST') {
+        if ('POST' === $request->getMethod()) {
             $form->bindRequest($request);
             if ($form->isValid()) {
                 $response = array('status' => 'success', 'name' => $package->getName());
@@ -140,6 +139,43 @@ class WebController extends Controller
 
         if (!$package) {
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
+        }
+
+        if ($package->getMaintainers()->contains($this->getUser())) {
+
+            $addMaintainerRequest = new AddMaintainerRequest;
+            $form = $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
+
+            $request = $this->getRequest();
+            if ('POST' === $request->getMethod()) {
+                $form->bindRequest($request);
+                if ($form->isValid()) {
+                    try {
+                        $em = $this->getDoctrine()->getEntityManager();
+                        $user = $addMaintainerRequest->getUser();
+
+                        if (empty($user)) {
+                            $this->get('session')->setFlash('error', 'The maintainer could not be found.');
+
+                            return array('package' => $package, 'form' => $form->createView());
+                        }
+
+                        $package->addMaintainers($user);
+
+                        $em->persist($package);
+                        $em->flush();
+
+                        $this->get('session')->setFlash('success', 'Maintainer added.');
+
+                        return new RedirectResponse($this->generateUrl('home'));
+                    } catch (\Exception $e) {
+                        $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+                        $this->get('session')->setFlash('error', 'The maintainer could not be added.');
+                    }
+                }
+            }
+
+            return array('package' => $package, 'form' => $form->createView());
         }
 
         return array('package' => $package);

@@ -10,7 +10,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Packagist\WebBundle\Form;
+namespace Packagist\WebBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilder;
@@ -18,22 +18,22 @@ use Symfony\Component\Form\FormBuilder;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class PackageType extends AbstractType
+class AddMaintainerRequestType extends AbstractType
 {
     public function buildForm(FormBuilder $builder, array $options)
     {
-        $builder->add('repository');
+        $builder->add('user', 'fos_user_username');
     }
 
     public function getDefaultOptions(array $options)
     {
         return array(
-            'data_class' => 'Packagist\WebBundle\Entity\Package',
+            'data_class' => 'Packagist\WebBundle\Form\Model\AddMaintainerRequest',
         );
     }
 
     public function getName()
     {
-        return 'package';
+        return 'add_maintainer_form';
     }
 }
