@@ -39,9 +39,14 @@ class Package
     /**
      * Unique package name
      *
-     * @ORM\Column
+     * @ORM\Column()
      */
     private $name;
+
+    /**
+     * @ORM\Column(nullable="true")
+     */
+    private $type;
 
     /**
      * @ORM\Column(type="text", nullable="true")
@@ -104,6 +109,7 @@ class Package
             'dist-tags' => array(),
             'maintainers' => $maintainers,
             'versions' => $versions,
+            'type' => $this->type,
         );
         return json_encode($data);
     }
@@ -317,5 +323,25 @@ class Package
     public function getMaintainers()
     {
         return $this->maintainers;
+    }
+
+    /**
+     * Set type
+     *
+     * @param text $type
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+    }
+
+    /**
+     * Get type
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 }

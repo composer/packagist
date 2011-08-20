@@ -44,6 +44,16 @@ class Version
     private $description;
 
     /**
+     * @ORM\Column(nullable="true")
+     */
+    private $type;
+
+    /**
+     * @ORM\Column(type="array", nullable="true")
+     */
+    private $extra = array();
+
+    /**
      * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Tag", inversedBy="versions")
      * @ORM\JoinTable(name="version_tag",
      *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
@@ -149,6 +159,8 @@ class Version
             'source' => $this->getSource(),
             'time' => $this->releasedAt ? $this->releasedAt->format('Y-m-d\TH:i:sP') : null,
             'dist' => $this->getDist(),
+            'type' => $this->type,
+            'extra' => $this->extra,
         );
     }
 
@@ -489,5 +501,45 @@ class Version
     public function getRequirements()
     {
         return $this->requirements;
+    }
+
+    /**
+     * Set type
+     *
+     * @param string $type
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+    }
+
+    /**
+     * Get type
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * Set extra
+     *
+     * @param array $extra
+     */
+    public function setExtra($extra)
+    {
+        $this->extra = $extra;
+    }
+
+    /**
+     * Get extra
+     *
+     * @return array
+     */
+    public function getExtra()
+    {
+        return $this->extra;
     }
 }

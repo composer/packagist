@@ -123,6 +123,17 @@ EOF
         $version->setSource(array('type' => $repository->getType(), 'url' => $repository->getUrl()));
         $version->setDist($repository->getDist($identifier));
 
+        if (isset($data['type'])) {
+            $version->setType($data['type']);
+            if ($data['type'] && $data['type'] !== $package->getType()) {
+                $package->setType($data['type']);
+            }
+        }
+
+        if (isset($data['extra']) && is_array($data['extra'])) {
+            $version->setExtra($data['extra']);
+        }
+
         if (isset($data['keywords'])) {
             foreach ($data['keywords'] as $keyword) {
                 $version->addTags(Tag::getByName($em, $keyword, true));
