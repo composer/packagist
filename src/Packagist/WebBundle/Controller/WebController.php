@@ -155,7 +155,7 @@ class WebController extends Controller
                         $user = $addMaintainerRequest->getUser();
 
                         if (empty($user)) {
-                            $this->get('session')->setFlash('error', 'The maintainer could not be found.');
+                            $this->get('session')->setFlash('error', 'The user could not be found.');
 
                             return array('package' => $package, 'form' => $form->createView());
                         }
@@ -165,7 +165,7 @@ class WebController extends Controller
                         $em->persist($package);
                         $em->flush();
 
-                        $this->get('session')->setFlash('success', 'Maintainer added.');
+                        $this->get('session')->setFlash('success', $user->getUsername().' is now a '.$package->getName().' maintainer.');
 
                         return new RedirectResponse($this->generateUrl('home'));
                     } catch (\Exception $e) {
