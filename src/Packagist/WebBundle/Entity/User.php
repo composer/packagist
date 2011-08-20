@@ -29,10 +29,16 @@ class User extends BaseUser
      */
     private $authors;
 
+    /**
+     * @ORM\Column(type="datetime")
+     */
+    private $createdAt;
+
     public function __construct()
     {
         $this->packages = new ArrayCollection();
         $this->authors = new ArrayCollection();
+        $this->createdAt = new \DateTime();
         parent::__construct();
     }
 
