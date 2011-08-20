@@ -15,7 +15,7 @@
 
         <script type="text/javascript">
             WebFontConfig = {
-                google: { families: [ 'Neuton', 'PT Sans' ] }
+                google: { families: [ 'PT Sans' ] }
             };
             (function() {
                 var wf = document.createElement('script');
@@ -40,11 +40,11 @@
         <div class="container">
             <div class="user">
                 {% if app.user %}
-                    {{ app.user.username }} | <a href="{{ path('fos_user_security_logout') }}">logout</a>
+                    {{ app.user.username }} | <a href="{{ path('fos_user_security_logout') }}">Logout</a>
                 {% else %}
-		            <a href="{{ path('fos_user_registration_register') }}">Create a new account</a>
-		            |
-		            <a href="{{ path('fos_user_security_login') }}">Login</a>
+                    <a href="{{ path('fos_user_registration_register') }}">Create a new account</a>
+                    |
+                    <a href="{{ path('fos_user_security_login') }}">Login</a>
                 {% endif %}
             </div>
             <header>
@@ -54,26 +54,44 @@
                 <h1><a href="{{ path('home') }}">Packagist</a></h1>
                 <h2>The PHP package archivist.</h2>
                 {% if page is defined and page == 'home' %}
-                <p>Packagist is the main <a href="http://github.com/composer/composer">Composer</a> repository. It aggregates all sorts of PHP libraries that are installable with Composer. Browse packages below and if you have some open-source lib <a href="{{ path('submit') }}">submit it</a>!</p>
+                <p>Packagist is the main <a href="{{ path('about.composer') }}">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer. Browse packages below or <a href="{{ path('submit') }}">submit your own</a> (<a href="{{ path('about') }}">learn how</a>).</p>
                 {% endif %}
             </header>
 
-            {% if app.session.flash('success') %}
-                <div class="flash-message success">
-                    <p>{{ app.session.flash('success') }}</p>
-                </div>
-            {% endif %}
-            {% if app.session.flash('error') %}
-                <div class="flash-message error">
-                    <p>{{ app.session.flash('error') }}</p>
-                </div>
-            {% endif %}
-            {{ app.session.clearFlashes }}
-
             <div class="main" role="main">
+                {% if app.session.flash('success') %}
+                    <div class="flash-message success">
+                        <p>{{ app.session.flash('success') }}</p>
+                    </div>
+                {% endif %}
+                {% if app.session.flash('error') %}
+                    <div class="flash-message error">
+                        <p>{{ app.session.flash('error') }}</p>
+                    </div>
+                {% endif %}
+                {{ app.session.clearFlashes }}
+
                 {% block content %}
                 {% endblock %}
             </div>
+
+            <footer>
+                <ul>
+                    <li><a href="{{ path('about') }}">About Packagist</a></li>
+                    <li><a href="{{ path('about.composer') }}">About Composer</a></li>
+                    <li><a href="{{ path('home') }}">Home</a></li>
+                </ul>
+                <ul>
+                    {% if app.user %}
+                        <li><a href="{{ path('fos_user_profile_show') }}">Profile</a></li>
+                        <li><a href="{{ path('fos_user_security_logout') }}">Logout</a></li>
+                    {% else %}
+                        <li><a href="{{ path('fos_user_registration_register') }}">Register</a></li>
+                        <li><a href="{{ path('fos_user_security_login') }}">Login</a></li>
+                    {% endif %}
+                </ul>
+                <div class="clearfix"></div>
+            </footer>
         </div>
 
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>

@@ -104,12 +104,15 @@ a:hover {
 header h1 {
   font-size: 50px;
   margin-top: 0;
-  font-family: "Neuton", serif;
+  float: left;
 }
 
 header h2 {
   font-size: 30px;
-  margin: 10px 0;
+  position: relative;
+  top: 20px;
+  left: 20px;
+  display: inline;
 }
 
 header p {
@@ -129,6 +132,21 @@ header {
   font-size: 15px;
 }
 
+.main, header p {
+  clear: left;
+}
+
+footer {
+  border-top: 2px solid #eee;
+  padding-top: 30px;
+  margin-top: 30px;
+}
+footer ul {
+  width: 20%;
+  list-style: none;
+  float: right;
+}
+
 .flash-message {
   font-size: 20px;
   margin: 20px 0;
@@ -141,12 +159,10 @@ header {
   color: #a21a1a;
 }
 
-.betawarn {
-  border: 1px solid #cc0;
-  background: #ffa;
-  padding: 10px;
-  border-radius: 5px;
-  margin: 10px 0;
+p {
+  margin-bottom: 10px;
+  font-family: "Arial", sans-serif;
+  line-height: 150%;
 }
 
 .user {
@@ -176,11 +192,13 @@ header {
 }
 
 .main h1 {
-  font-size: 30px;
+  font-size: 25px;
+  margin-bottom: 10px;
 }
 
 .main h2 {
-  font-size: 23px;
+  font-size: 20px;
+  margin-bottom: 10px;
 }
 
 label {

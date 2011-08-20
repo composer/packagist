@@ -180,13 +180,4 @@ class WebController extends Controller
 
         return array('package' => $package);
     }
-
-    /**
-     * @Template()
-     * @Route("/about", name="about")
-     */
-    public function aboutAction()
-    {
-        return array();
-    }
 }

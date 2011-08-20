@@ -1,0 +1,49 @@
+{% extends "PackagistWebBundle::layout.html.twig" %}
+
+{% block content %}
+    <h1>What is Packagist?</h1>
+    <p>Packagist is a Composer package repository. It lets you find packages you want, and lets Composer know where to get the code from. You can use Composer to manage your project or libraries' dependencies - read more about it on the <a href="{{ path('about.composer') }}">Composer page</a>.</p>
+    <p>You can find the packagist.org source on <a href="https://github.com/composer/packagist">GitHub</a>.
+
+    <h1>How to submit packages?</h1>
+    <h2>Naming your package</h2>
+    <p>First of all, you must pick a package name. This is a very important step since it can not change, and it should be unique enough to avoid problems in the future.</p>
+    <p>The general rule for package naming is that for libraries and applications, you can use any name, although it's best to avoid using common names like DB, Logger, MySQL, etc. Try to be imaginative when naming your project.</p>
+    <p>For plugins, be it Typo3 extensions, Symfony2 bundles, Drupal modules, or whatever your project of choice calls them, you should prefix your plugin name by the project it applies to. For example <code>Symfony2-AcmePizzaBundle</code>, <code>Typo3-Session</code> and such. This ensures uniqueness across frameworks/applications, and clearly says what your package relates to. This prefix should match your package type by the way, but we will see that later.</p>
+    <h2>Creating a composer.json file</h2>
+    <p>The composer.json file should reside at the top of your package's git repository, and is the way you describe your package to both packagist and composer.</p>
+    <p>A typical composer.json file looks like this:
+<pre>
+{
+    "name": "Monolog",
+    "type": "Library",
+    "description": "Logging for PHP 5.3",
+    "keywords": ["log","logging"],
+    "homepage": "http://github.com/Seldaek/monolog",
+    "version": "1.0.0",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jordi Boggiano",
+            "email": "j.boggiano@seld.be",
+            "homepage": "http://seld.be"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0"
+    }
+}
+</pre>
+As you see in this case the type is Library, so the name doesn't contain any prefix. If if was a Symfony2 bundle, the type would be <code>Symfony2</code> and the name <code>Symfony2-MonologBundle</code></p>
+    <p>Once you have this file committed in your repository root, you can <a href="{{ path('submit') }}">submit the package</a> to Packagist by entering the public repository URL.</p>
+    <h1>Managing package versions</h1>
+    <p>Package versioning is done automatically based on the tags you create in your repository. You should update the version field in the composer.json file before creating a tag. Tag names should match 'X.Y.Z', or 'vX.Y.Z', with an optional suffix for RC, beta or alpha versions. Here are a few examples of valid tag names:
+<pre>
+1.0.0
+v1.0.0
+1.10.5-RC1
+v4.4.4beta2
+v2.0.0-alpha
+</pre>
+    In your master branch, or any other dev branch, you can use a -dev (e.g. <code>1.1.0-dev</code>) suffix to the version inside the composer.json file to indicate that this is a development branch leading to the future 1.1.0 (in this example) version.</p>
+{% endblock %}
