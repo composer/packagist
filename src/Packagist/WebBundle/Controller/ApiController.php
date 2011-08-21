@@ -44,6 +44,10 @@ class ApiController extends Controller
         }
         $data .= '}';
 
-        return new Response($data, 200, array('Content-Type' => 'application/json'));
+        $response = new Response($data, 200, array('Content-Type' => 'application/json'));
+        $response->setPublic();
+        $response->setSharedMaxAge(600);
+
+        return $response;
     }
 }
