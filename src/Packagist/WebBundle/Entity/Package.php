@@ -104,7 +104,7 @@ class Package
             $maintainers[] = $maintainer->toArray();
         }
         $data = array(
-            'name' => $this->name,
+            'name' => mb_strtolower($this->name, 'UTF-8'),
             'description' => $this->description,
             'dist-tags' => array(),
             'maintainers' => $maintainers,

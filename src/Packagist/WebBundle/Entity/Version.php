@@ -148,7 +148,7 @@ class Version
             $requirements[key($requirement)] = current($requirement);
         }
         return array(
-            'name' => $this->name,
+            'name' => mb_strtolower($this->name, 'UTF-8'),
             'description' => $this->description,
             'keywords' => $tags,
             'homepage' => $this->homepage,
@@ -159,7 +159,7 @@ class Version
             'source' => $this->getSource(),
             'time' => $this->releasedAt ? $this->releasedAt->format('Y-m-d\TH:i:sP') : null,
             'dist' => $this->getDist(),
-            'type' => $this->type,
+            'type' => mb_strtolower($this->type, 'UTF-8'),
             'extra' => $this->extra,
         );
     }

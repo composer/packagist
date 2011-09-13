@@ -46,7 +46,7 @@ class Requirement
 
     public function toArray()
     {
-        return array($this->packageName => $this->packageVersion);
+        return array(mb_strtolower($this->packageName, 'UTF-8') => $this->packageVersion);
     }
 
     public function setId($id)
