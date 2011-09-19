@@ -5,12 +5,13 @@
 {% endblock %}
 
 {% block content %}
+<div class="package">
     <h1>{{ package.name }}</h1>
     <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
     {% for maintainer in package.maintainers %}
         {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
     {% endfor %}</p>
-    
+
     {% if form is defined %}
         <div>
 		    <strong id="add-maintainer"><a href="#">Add Maintainer</a></strong>
@@ -27,10 +28,10 @@
 		    </form>
 	    </div>
     {% endif %}
-    
+
     {% if package.versions|length %}
         {% for version in package.versions %}
-            <h2>Version {{ version.version }}</h2>
+            <h2>Version {{ version.version }}{% if version.versionType %}-{{ version.versionType }}{% endif %}{% if version.development %}-dev{% endif %}</h2>
             <p class="description">{{ version.description }}</p>
             <p class="license">License: {{ version.license|default("Unknown") }}</p>
             <p class="release-date">Date: {{ version.releasedAt|date("Y-m-d") }}</p>
@@ -42,9 +43,12 @@
             </p>
             <p class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}:
             {% for author in version.authors %}
-                {{ author.name }}
+                {% if author.homepage %}
+                    <a href="{{ author.homepage }}">{{ author.name }}</a>
+                {% else %}
+                    {{ author.name }}
+                {% endif %}
                 {% if author.email %}&lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif %}
-                {% if author.homepage %}<a href="{{ author.homepage }}">{{ author.homepage }}</a>{% endif %}
                 <br />
             {% endfor %}</p>
             <p class="requires">Requirement{{ version.requirements|length > 1 ? 's' : '' }}:
@@ -57,4 +61,5 @@
     {% else %}
         <p>This package has no released version yet, and little information is available yet.</p>
     {% endif %}
+</div>
 {% endblock %}
