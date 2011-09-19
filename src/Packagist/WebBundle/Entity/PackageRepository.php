@@ -35,6 +35,14 @@ class PackageRepository extends EntityRepository
         return $this->getBaseQueryBuilder()->getQuery()->getResult();
     }
 
+    public function findOneByName($name)
+    {
+        $qb = $this->getBaseQueryBuilder()
+            ->where('p.name = ?0')
+            ->setParameters(array($name));
+        return $qb->getQuery()->getSingleResult();
+    }
+
     public function findByTag($name)
     {
         $qb = $this->getBaseQueryBuilder()
