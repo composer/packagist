@@ -71,15 +71,31 @@ EOF
 
             try {
                 foreach ($repository->getTags() as $tag => $identifier) {
-                    if ($repository->hasComposerFile($identifier)) {
-                        $this->fetchInformation($output, $doctrine, $package, $repository, $identifier);
+                    if ($repository->hasComposerFile($identifier) && $this->parseVersion($tag)) {
+                        $data = $repository->getComposerInformation($identifier);
+                        // Strip -dev that could have been left over accidentally in a tag
+                        $data['version'] = preg_replace('{-?dev$}i', '', $data['version']);
+                        $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
                     }
                 }
 
                 foreach ($repository->getBranches() as $branch => $identifier) {
-                    // TODO parse branch name, matching a "$num.x.x" version scheme, + the master one
-                    // use for all "x.y.z-dev" versions, usable through "latest-dev"
-                    $this->fetchInformation($output, $doctrine, $package, $repository, $identifier);
+                    if ($repository->hasComposerFile($identifier) && ($parsed = $this->parseBranch($branch))) {
+                        $data = $repository->getComposerInformation($identifier);
+                        $parsedVersion = $this->parseVersion($data['version']);
+
+                        // Skip branches that contain a version that's been tagged already
+                        foreach ($package->getVersions() as $existingVersion) {
+                            if ($parsedVersion['version'] === $existingVersion->getVersion() && !$existingVersion->getDevelopment()) {
+                                continue;
+                            }
+                        }
+
+                        // Force branches to use -dev type releases
+                        $data['version'] = $parsedVersion['version'].'-'.$parsedVersion['type'].'-dev';
+
+                        $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
+                    }
                 }
 
                 $package->setUpdatedAt(new \DateTime);
@@ -92,31 +108,68 @@ EOF
         }
     }
 
-    protected function fetchInformation(OutputInterface $output, RegistryInterface $doctrine, $package, RepositoryInterface $repository, $identifier)
+    private function parseBranch($branch)
     {
-        $data = $repository->getComposerInformation($identifier);
-        $em = $doctrine->getEntityManager();
-
-        // check if we have that version yet
-        foreach ($package->getVersions() as $version) {
-            if ($version->getVersion() === $data['version']) {
-                return;
-            }
+        if (in_array($branch, array('master', 'trunk'))) {
+            return 'master';
         }
 
+        if (!preg_match('#^v?(\d+)(\.(?:\d+|[x*]))?(\.[x*])?$#i', $branch, $matches)) {
+            return false;
+        }
+
+        return $matches[1]
+            .(!empty($matches[2]) ? strtr($matches[2], '*', 'x') : '.x')
+            .(!empty($matches[3]) ? strtr($matches[3], '*', 'x') : '.x');
+    }
+
+    private function parseVersion($version)
+    {
+        if (!preg_match('#^v?(\d+)(\.\d+)?(\.\d+)?-?((?:beta|RC|alpha)\d*)?-?(dev)?$#i', $version, $matches)) {
+            return false;
+        }
+
+        return array(
+            'version' => $matches[1]
+                .(!empty($matches[2]) ? $matches[2] : '.0')
+                .(!empty($matches[3]) ? $matches[3] : '.0'),
+            'type' => !empty($matches[4]) ? strtolower($matches[4]) : '',
+            'dev' => !empty($matches[5]),
+        );
+    }
+
+    private function updateInformation(OutputInterface $output, RegistryInterface $doctrine, $package, RepositoryInterface $repository, $identifier, array $data)
+    {
         if ($data['name'] !== $package->getName()) {
             $output->writeln('<error>Package name seems to have changed for '.$repository->getUrl().'@'.$identifier.', skipping.</error>');
             return;
         }
 
+        $em = $doctrine->getEntityManager();
         $version = new Version();
-        $em->persist($version);
 
-        foreach (array('name', 'description', 'homepage', 'license', 'version') as $field) {
-            if (isset($data[$field])) {
-                $version->{'set'.$field}($data[$field]);
+        $parsedVersion = $this->parseVersion($data['version']);
+        $version->setName($data['name']);
+        $version->setVersion($parsedVersion['version']);
+        $version->setVersionType($parsedVersion['type']);
+        $version->setDevelopment($parsedVersion['dev']);
+
+        // check if we have that version yet
+        foreach ($package->getVersions() as $existingVersion) {
+            if ($existingVersion->equals($version)) {
+                if ($existingVersion->getDevelopment()) {
+                    $version = $existingVersion;
+                    break;
+                }
+                return;
             }
         }
+
+        $em->persist($version);
+
+        $version->setDescription($data['description']);
+        $version->setHomepage($data['homepage']);
+        $version->setLicense($data['license']);
 
         $version->setPackage($package);
         $version->setUpdatedAt(new \DateTime);

@@ -19,7 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @ORM\Entity
  * @ORM\Table(
  *     name="package_version",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="pkg_ver_idx",columns={"package_id","version"})}
+ *     uniqueConstraints={@ORM\UniqueConstraint(name="pkg_ver_idx",columns={"package_id","version","versionType","development"})}
  * )
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
@@ -79,6 +79,18 @@ class Version
      * @Assert\NotBlank()
      */
     private $version;
+
+    /**
+     * @ORM\Column
+     * @Assert\NotBlank()
+     */
+    private $versionType;
+
+    /**
+     * @ORM\Column(type="boolean")
+     * @Assert\NotBlank()
+     */
+    private $development;
 
     /**
      * @ORM\Column(nullable="true")
@@ -152,7 +164,7 @@ class Version
             'description' => $this->description,
             'keywords' => $tags,
             'homepage' => $this->homepage,
-            'version' => $this->version,
+            'version' => $this->version . ($this->versionType ? '-'.$this->versionType : '') . ($this->development ? '-dev':''),
             'license' => $this->license,
             'authors' => $authors,
             'require' => $requirements,
@@ -162,6 +174,14 @@ class Version
             'type' => $this->type,
             'extra' => $this->extra,
         );
+    }
+
+    public function equals(Version $version)
+    {
+        return $version->getName() === $this->getName()
+            && $version->getVersion() === $this->getVersion()
+            && $version->getVersionType() === $this->getVersionType()
+            && $version->getDevelopment() === $this->getDevelopment();
     }
 
     /**
@@ -541,5 +561,45 @@ class Version
     public function getExtra()
     {
         return $this->extra;
+    }
+
+    /**
+     * Set versionType
+     *
+     * @param string $versionType
+     */
+    public function setVersionType($versionType)
+    {
+        $this->versionType = $versionType;
+    }
+
+    /**
+     * Get versionType
+     *
+     * @return string
+     */
+    public function getVersionType()
+    {
+        return $this->versionType;
+    }
+
+    /**
+     * Set development
+     *
+     * @param Boolean $development
+     */
+    public function setDevelopment($development)
+    {
+        $this->development = $development;
+    }
+
+    /**
+     * Get development
+     *
+     * @return Boolean
+     */
+    public function getDevelopment()
+    {
+        return $this->development;
     }
 }
