@@ -97,8 +97,19 @@ class GitHubRepository implements RepositoryInterface
      */
     public function getBranches()
     {
-        // TODO implement
-        return array();
+        if (null === $this->branches) {
+            $branchesData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/branches'), true);
+            $this->branches = $branchesData['branches'];
+        }
+        return $this->branches;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function hasComposerFile($identifier)
+    {
+        return (false !== @fopen('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$identifier.'/composer.json', 'r'));
     }
 
     protected function getRepositoryData()

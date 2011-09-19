@@ -71,8 +71,9 @@ EOF
 
             try {
                 foreach ($repository->getTags() as $tag => $identifier) {
-                    // TODO parse tag name (or fetch composer file?) w/ composer version parser, if no match, ignore the tag
-                    $this->fetchInformation($output, $doctrine, $package, $repository, $identifier);
+                    if ($repository->hasComposerFile($identifier)) {
+                        $this->fetchInformation($output, $doctrine, $package, $repository, $identifier);
+                    }
                 }
 
                 foreach ($repository->getBranches() as $branch => $identifier) {

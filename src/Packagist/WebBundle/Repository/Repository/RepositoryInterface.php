@@ -54,4 +54,12 @@ interface RepositoryInterface
      * @return string
      */
     function getType();
+    /**
+     * Return true if the repository has a composer file for a given identifier,
+     * false otherwise.
+     *
+     * @param string $identifier Any identifier to a specific branch/tag/commit
+     * @return boolean Whether the repository has a composer file for a given identifier.
+     */
+    function hasComposerFile($identifier);
 }
