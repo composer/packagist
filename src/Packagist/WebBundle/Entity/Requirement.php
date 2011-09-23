@@ -118,4 +118,9 @@ class Requirement
     {
         return $this->version;
     }
+
+    public function __toString()
+    {
+        return $this->packageName.' '.$this->packageVersion;
+    }
 }

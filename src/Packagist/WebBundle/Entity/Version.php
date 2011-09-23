@@ -140,6 +140,8 @@ class Version
     public function __construct()
     {
         $this->tags = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->requirements = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->authors = new \Doctrine\Common\Collections\ArrayCollection();
         $this->createdAt = new \DateTime;
         $this->updatedAt = new \DateTime;
     }

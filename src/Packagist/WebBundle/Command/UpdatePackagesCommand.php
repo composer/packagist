@@ -76,6 +76,7 @@ EOF
                         // Strip -dev that could have been left over accidentally in a tag
                         $data['version'] = preg_replace('{-?dev$}i', '', $data['version']);
                         $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
+                        $doctrine->getEntityManager()->flush();
                     }
                 }
 
@@ -95,6 +96,7 @@ EOF
                         $data['version'] = $parsedVersion['version'].'-'.$parsedVersion['type'].'-dev';
 
                         $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
+                        $doctrine->getEntityManager()->flush();
                     }
                 }
 
@@ -188,12 +190,14 @@ EOF
             $version->setExtra($data['extra']);
         }
 
+        $version->getTags()->clear();
         if (isset($data['keywords'])) {
             foreach ($data['keywords'] as $keyword) {
                 $version->addTags(Tag::getByName($em, $keyword, true));
             }
         }
 
+        $version->getAuthors()->clear();
         if (isset($data['authors'])) {
             foreach ($data['authors'] as $authorData) {
                 $author = null;
@@ -216,19 +220,34 @@ EOF
                     }
                 }
                 $author->setUpdatedAt(new \DateTime);
-                $version->addAuthors($author);
-                $author->addVersions($version);
+                if (!$version->getAuthors()->contains($author)) {
+                    $version->addAuthors($author);
+                }
+                if (!$author->getVersions()->contains($version)) {
+                    $author->addVersions($version);
+                }
+            }
+        }
+
+        foreach ($version->getRequirements() as $req) {
+            // clear requirements that have changed/disappeared (for updates)
+            if (!isset($data['require'][$req->getPackageName()]) || $data['require'][$req->getPackageName()] !== $req->getPackageVersion()) {
+                $version->getRequirements()->removeElement($req);
+                $em->remove($req);
+            } else {
+                // clear those that are already set
+                unset($data['require'][$req->getPackageName()]);
             }
         }
 
         if (isset($data['require'])) {
             foreach ($data['require'] as $requireName => $requireVersion) {
                 $requirement = new Requirement();
-                $em->persist($requirement);
                 $requirement->setPackageName($requireName);
                 $requirement->setPackageVersion($requireVersion);
                 $version->addRequirements($requirement);
                 $requirement->setVersion($version);
+                $em->persist($requirement);
             }
         }
     }
