@@ -142,7 +142,7 @@ EOF
 
     private function updateInformation(OutputInterface $output, RegistryInterface $doctrine, $package, RepositoryInterface $repository, $identifier, array $data)
     {
-        if ($data['name'] !== $package->getName()) {
+        if (strtolower($data['name']) !== strtolower($package->getName())) {
             $output->writeln('<error>Package name seems to have changed for '.$repository->getUrl().'@'.$identifier.', skipping.</error>');
             return;
         }
