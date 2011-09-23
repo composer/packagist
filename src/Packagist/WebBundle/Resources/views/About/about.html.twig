@@ -8,28 +8,29 @@
     <h1>How to submit packages?</h1>
     <h2>Naming your package</h2>
     <p>First of all, you must pick a package name. This is a very important step since it can not change, and it should be unique enough to avoid problems in the future.</p>
-    <p>The most important part is that the first bit of the package name must be the vendor name. This follows the <a href="http://groups.google.com/group/php-standards/web/psr-0-final-proposal">PSR0 standard</a> for namespaces naming.</p>
+    <p>The most important part is that the first bit of the package name must be the vendor name, suffixed by a forward slash (/). This follows the <a href="http://groups.google.com/group/php-standards/web/psr-0-final-proposal">PSR0 standard</a> for namespaces naming.</p>
     <p>For libraries and applications, the vendor is in most cases the library name itself, and you can use any name, although it's best to avoid using common names like DB, Logger, MySQL, etc. Try to be imaginative when naming your project.</p>
-    <p>For plugins, be it TYPO3 extensions, Symfony2 bundles, Drupal modules, or whatever your project of choice calls them, you are free to handle it as you wish, but you may want to add some specific information about the target platform in the package name to avoid conflicts if you provide many plugins to integrate one lib in many frameworks. For example, if your vendor name is Acme, and your library is called Email, you could have the following names: <code>Acme-EmailSymfonyBundle</code>, <code>Acme-EmailTYPO3Extension</code> and such. This ensures uniqueness across frameworks/applications, and clearly says what your package relates to. Here is a list of typical package names for reference:
+    <p>For plugins, be it TYPO3 extensions, Symfony2 bundles, Drupal modules, or whatever your project of choice calls them, you are free to handle it as you wish, but you may want to add some specific information about the target platform in the package name to avoid conflicts if you provide many plugins to integrate one lib in many frameworks. For example, if your vendor name is Acme, and your library is called Email, you could have the following names: <code>acme/email-symfony-bundle</code>, <code>acme/email-typo3-ext</code> and such. This ensures uniqueness across frameworks/applications, and clearly says what your package relates to. Here is a list of typical package names for reference:
 <pre>
 // Monolog is a library, so the vendor name is the complete package name.
-Monolog
+monolog
 
 // That could be the name of a drupal module.
-Monolog-MonologDrupalModule
+monolog/monolog-drupal-module
 
 // Acme is a company or person here, they can name their package with a common name (Email).
 // As long as it's in their own vendor namespace it does not conflict with anyone else.
-Acme-Email
+acme/email
 </pre></p>
+    <p>Note that package names are case-insensitive, but it's encouraged to use a dash (-) as separator instead of CamelCased names.</p>
 
     <h2>Creating a composer.json file</h2>
-    <p>The composer.json file should reside at the top of your package's git repository, and is the way you describe your package to both packagist and composer.</p>
+    <p>The composer.json file should reside at the top of your package's git/svn/.. repository, and is the way you describe your package to both packagist and composer.</p>
     <p>A typical composer.json file looks like this:
 <pre>
 {
-    "name": "Monolog",
-    "type": "Library",
+    "name": "monolog",
+    "type": "library",
     "description": "Logging for PHP 5.3",
     "keywords": ["log","logging"],
     "homepage": "http://github.com/Seldaek/monolog",
@@ -47,7 +48,8 @@ Acme-Email
     }
 }
 </pre>
-Most of this information is obvious, keywords are tags, require are list of dependencies that your package has. This can of course be of course packages, not only a php version. You can use ext/foo to require php extensions (e.g. ext/apc). Note that most extensions don't expose version information, so unless you know for sure it does, it's safer to use <code>"ext/apc": "*"</code> to allow any version of it. Finally the type field is in this case indicating that this is a library. If you do plugins for frameworks etc, and if they integrate composer, they may have a custom package type for their plugins that you can use to install the package with their own installer. In the absence of custom type, you can omit it or use Library.</p>
+Most of this information is obvious, keywords are tags, require are list of dependencies that your package has. This can of course be packages, not only a php version. You can use ext/foo to require php extensions (e.g. ext/apc). Note that most extensions don't expose version information, so unless you know for sure it does, it's safer to use <code>"ext/apc": "*"</code> to allow any version of it. Finally the type field is in this case indicating that this is a library. If you do plugins for frameworks etc, and if they integrate composer, they may have a custom package type for their plugins that you can use to install the package with their own installer. In the absence of custom type, you can omit it or use "library".</p>
+    <p>Known package types include: symfony-bundle</p>
     <p>Once you have this file committed in your repository root, you can <a href="{{ path('submit') }}">submit the package</a> to Packagist by entering the public repository URL.</p>
     <h1>Managing package versions</h1>
     <p>Package versioning is done automatically based on the tags you create in your repository. You should update the version field in the composer.json file before creating a tag. Tag names should match 'X.Y.Z', or 'vX.Y.Z', with an optional suffix for RC, beta or alpha versions. Here are a few examples of valid tag names:
