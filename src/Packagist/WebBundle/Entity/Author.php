@@ -136,11 +136,11 @@ class Author
     /**
      * Add versions
      *
-     * @param Packagist\WebBundle\Entity\Version $versions
+     * @param Packagist\WebBundle\Entity\Version $version
      */
-    public function addVersions(Version $versions)
+    public function addVersion(Version $version)
     {
-        $this->versions[] = $versions;
+        $this->versions[] = $version;
     }
 
     /**

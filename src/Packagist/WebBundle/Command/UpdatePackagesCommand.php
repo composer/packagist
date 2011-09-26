@@ -22,7 +22,6 @@ use Symfony\Component\Finder\Finder;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Author;
-use Packagist\WebBundle\Entity\Requirement;
 use Packagist\WebBundle\Repository\Repository\RepositoryInterface;
 
 /**
@@ -30,6 +29,15 @@ use Packagist\WebBundle\Repository\Repository\RepositoryInterface;
  */
 class UpdatePackagesCommand extends ContainerAwareCommand
 {
+    protected $supportedLinkTypes = array(
+        'require'   => 'RequireLink',
+        'conflict'  => 'ConflictLink',
+        'provide'   => 'ProvideLink',
+        'replace'   => 'ReplaceLink',
+        'recommend' => 'RecommendLink',
+        'suggest'   => 'SuggestLink',
+    );
+
     /**
      * {@inheritdoc}
      */
@@ -193,7 +201,7 @@ EOF
         $version->getTags()->clear();
         if (isset($data['keywords'])) {
             foreach ($data['keywords'] as $keyword) {
-                $version->addTags(Tag::getByName($em, $keyword, true));
+                $version->addTag(Tag::getByName($em, $keyword, true));
             }
         }
 
@@ -221,33 +229,36 @@ EOF
                 }
                 $author->setUpdatedAt(new \DateTime);
                 if (!$version->getAuthors()->contains($author)) {
-                    $version->addAuthors($author);
+                    $version->addAuthor($author);
                 }
                 if (!$author->getVersions()->contains($version)) {
-                    $author->addVersions($version);
+                    $author->addVersion($version);
                 }
             }
         }
 
-        foreach ($version->getRequirements() as $req) {
-            // clear requirements that have changed/disappeared (for updates)
-            if (!isset($data['require'][$req->getPackageName()]) || $data['require'][$req->getPackageName()] !== $req->getPackageVersion()) {
-                $version->getRequirements()->removeElement($req);
-                $em->remove($req);
-            } else {
-                // clear those that are already set
-                unset($data['require'][$req->getPackageName()]);
+        foreach ($this->supportedLinkTypes as $linkType => $linkEntity) {
+            foreach ($version->{'get'.$linkType}() as $link) {
+                // clear links that have changed/disappeared (for updates)
+                if (!isset($data[$linkType][$link->getPackageName()]) || $data[$linkType][$link->getPackageName()] !== $link->getPackageVersion()) {
+                    $version->get{'get'.$linkType}()->removeElement($link);
+                    $em->remove($link);
+                } else {
+                    // clear those that are already set
+                    unset($data[$linkType][$link->getPackageName()]);
+                }
             }
-        }
 
-        if (isset($data['require'])) {
-            foreach ($data['require'] as $requireName => $requireVersion) {
-                $requirement = new Requirement();
-                $requirement->setPackageName($requireName);
-                $requirement->setPackageVersion($requireVersion);
-                $version->addRequirements($requirement);
-                $requirement->setVersion($version);
-                $em->persist($requirement);
+            if (isset($data[$linkType])) {
+                foreach ($data[$linkType] as $linkPackageName => $linkPackageVersion) {
+                    $class = 'Packagist\WebBundle\Entity\\'.$linkEntity;
+                    $link = new $class;
+                    $link->setPackageName($linkPackageName);
+                    $link->setPackageVersion($linkPackageVersion);
+                    $version->{'add'.$linkType}($link);
+                    $link->setVersion($version);
+                    $em->persist($link);
+                }
             }
         }
     }

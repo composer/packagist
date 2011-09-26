@@ -308,11 +308,11 @@ class Package
     /**
      * Add maintainers
      *
-     * @param Packagist\WebBundle\Entity\User $maintainers
+     * @param Packagist\WebBundle\Entity\User $maintainer
      */
-    public function addMaintainers(User $maintainers)
+    public function addMaintainer(User $maintainer)
     {
-        $this->maintainers[] = $maintainers;
+        $this->maintainers[] = $maintainer;
     }
 
     /**

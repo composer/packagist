@@ -19,7 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @ORM\Entity
  * @ORM\Table(
  *     name="package_version",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="pkg_ver_idx",columns={"package_id","version","versionType","development"})}
+ *     uniqueConstraints={@ORM\UniqueConstraint(name="pkg_ver_idx",columns={"package_id","version"})}
  * )
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
@@ -81,12 +81,6 @@ class Version
     private $version;
 
     /**
-     * @ORM\Column
-     * @Assert\NotBlank()
-     */
-    private $versionType;
-
-    /**
      * @ORM\Column(type="boolean")
      * @Assert\NotBlank()
      */
@@ -107,9 +101,34 @@ class Version
     private $authors;
 
     /**
-     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Requirement", mappedBy="version")
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\RequireLink", mappedBy="version")
      */
-    private $requirements;
+    private $require;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\ReplaceLink", mappedBy="version")
+     */
+    private $replace;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\ConflictLink", mappedBy="version")
+     */
+    private $conflict;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\ProvideLink", mappedBy="version")
+     */
+    private $provide;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\RecommendLink", mappedBy="version")
+     */
+    private $recommend;
+
+    /**
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\SuggestLink", mappedBy="version")
+     */
+    private $suggest;
 
     /**
      * @ORM\Column(type="text")
@@ -166,7 +185,7 @@ class Version
             'description' => $this->description,
             'keywords' => $tags,
             'homepage' => $this->homepage,
-            'version' => $this->version . ($this->versionType ? '-'.$this->versionType : '') . ($this->development ? '-dev':''),
+            'version' => $this->version,
             'license' => $this->license,
             'authors' => $authors,
             'require' => $requirements,
@@ -180,10 +199,7 @@ class Version
 
     public function equals(Version $version)
     {
-        return $version->getName() === $this->getName()
-            && $version->getVersion() === $this->getVersion()
-            && $version->getVersionType() === $this->getVersionType()
-            && $version->getDevelopment() === $this->getDevelopment();
+        return $version->getName() === $this->getName() && $version->getVersion() === $this->getVersion();
     }
 
     /**
@@ -397,16 +413,6 @@ class Version
     }
 
     /**
-     * Add tags
-     *
-     * @param Packagist\WebBundle\Entity\Tag $tags
-     */
-    public function addTags(Tag $tags)
-    {
-        $this->tags[] = $tags;
-    }
-
-    /**
      * Get tags
      *
      * @return Doctrine\Common\Collections\Collection $tags
@@ -486,16 +492,6 @@ class Version
     }
 
     /**
-     * Add authors
-     *
-     * @param Packagist\WebBundle\Entity\Author $authors
-     */
-    public function addAuthors(Author $authors)
-    {
-        $this->authors[] = $authors;
-    }
-
-    /**
      * Get authors
      *
      * @return Doctrine\Common\Collections\Collection
@@ -503,26 +499,6 @@ class Version
     public function getAuthors()
     {
         return $this->authors;
-    }
-
-    /**
-     * Add requirements
-     *
-     * @param Packagist\WebBundle\Entity\Requirement $requirements
-     */
-    public function addRequirements(Requirement $requirements)
-    {
-        $this->requirements[] = $requirements;
-    }
-
-    /**
-     * Get requirements
-     *
-     * @return Doctrine\Common\Collections\Collection
-     */
-    public function getRequirements()
-    {
-        return $this->requirements;
     }
 
     /**
@@ -566,26 +542,6 @@ class Version
     }
 
     /**
-     * Set versionType
-     *
-     * @param string $versionType
-     */
-    public function setVersionType($versionType)
-    {
-        $this->versionType = $versionType;
-    }
-
-    /**
-     * Get versionType
-     *
-     * @return string
-     */
-    public function getVersionType()
-    {
-        return $this->versionType;
-    }
-
-    /**
      * Set development
      *
      * @param Boolean $development
@@ -603,5 +559,145 @@ class Version
     public function getDevelopment()
     {
         return $this->development;
+    }
+
+    /**
+     * Add tags
+     *
+     * @param Packagist\WebBundle\Entity\Tag $tags
+     */
+    public function addTag(\Packagist\WebBundle\Entity\Tag $tags)
+    {
+        $this->tags[] = $tags;
+    }
+
+    /**
+     * Add authors
+     *
+     * @param Packagist\WebBundle\Entity\Author $authors
+     */
+    public function addAuthor(\Packagist\WebBundle\Entity\Author $authors)
+    {
+        $this->authors[] = $authors;
+    }
+
+    /**
+     * Add require
+     *
+     * @param Packagist\WebBundle\Entity\RequireLink $require
+     */
+    public function addRequireLink(RequireLink $require)
+    {
+        $this->require[] = $require;
+    }
+
+    /**
+     * Get require
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getRequire()
+    {
+        return $this->require;
+    }
+
+    /**
+     * Add replace
+     *
+     * @param Packagist\WebBundle\Entity\ReplaceLink $replace
+     */
+    public function addReplaceLink(ReplaceLink $replace)
+    {
+        $this->replace[] = $replace;
+    }
+
+    /**
+     * Get replace
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getReplace()
+    {
+        return $this->replace;
+    }
+
+    /**
+     * Add conflict
+     *
+     * @param Packagist\WebBundle\Entity\ConflictLink $conflict
+     */
+    public function addConflictLink(ConflictLink $conflict)
+    {
+        $this->conflict[] = $conflict;
+    }
+
+    /**
+     * Get conflict
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getConflict()
+    {
+        return $this->conflict;
+    }
+
+    /**
+     * Add provide
+     *
+     * @param Packagist\WebBundle\Entity\ProvideLink $provide
+     */
+    public function addProvideLink(ProvideLink $provide)
+    {
+        $this->provide[] = $provide;
+    }
+
+    /**
+     * Get provide
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getProvide()
+    {
+        return $this->provide;
+    }
+
+    /**
+     * Add recommend
+     *
+     * @param Packagist\WebBundle\Entity\RecommendLink $recommend
+     */
+    public function addRecommendLink(RecommendLink $recommend)
+    {
+        $this->recommend[] = $recommend;
+    }
+
+    /**
+     * Get recommend
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getRecommend()
+    {
+        return $this->recommend;
+    }
+
+    /**
+     * Add suggest
+     *
+     * @param Packagist\WebBundle\Entity\SuggestLink $suggest
+     */
+    public function addSuggestLink(SuggestLink $suggest)
+    {
+        $this->suggest[] = $suggest;
+    }
+
+    /**
+     * Get suggest
+     *
+     * @return Doctrine\Common\Collections\Collection
+     */
+    public function getSuggest()
+    {
+        return $this->suggest;
     }
 }

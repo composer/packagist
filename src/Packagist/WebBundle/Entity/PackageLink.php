@@ -16,11 +16,10 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @ORM\Entity
- * @ORM\Table(name="requirement")
+ * @ORM\MappedSuperclass()
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class Requirement
+abstract class PackageLink
 {
     /**
      * @ORM\Id
@@ -38,11 +37,6 @@ class Requirement
      * @ORM\Column()
      */
     private $packageVersion;
-
-    /**
-     * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\Version", inversedBy="requirements")
-     */
-    private $version;
 
     public function toArray()
     {

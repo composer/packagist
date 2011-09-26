@@ -64,7 +64,7 @@ class WebController extends Controller
             if ($form->isValid()) {
                 try {
                     $user = $this->getUser();
-                    $package->addMaintainers($user);
+                    $package->addMaintainer($user);
                     $em = $this->getDoctrine()->getEntityManager();
                     $em->persist($package);
                     $em->flush();
