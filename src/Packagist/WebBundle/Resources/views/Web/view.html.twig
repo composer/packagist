@@ -31,9 +31,9 @@
 
     {% if package.versions|length %}
         {% for version in package.versions %}
-            <h2>Version {{ version.version }}{% if version.versionType %}-{{ version.versionType }}{% endif %}{% if version.development %}-dev{% endif %}</h2>
+            <h2>Version {{ version.version }}</h2>
             <p class="description">{{ version.description }}</p>
-            <p class="license">License: {{ version.license|default("Unknown") }}</p>
+            <p class="license">License: {{ version.license ? version.license|join(', ') : "Unknown" }}</p>
             <p class="release-date">Date: {{ version.releasedAt|date("Y-m-d") }}</p>
             <p class="links">
                 {% if version.homepage %}
@@ -51,8 +51,8 @@
                 {% if author.email %}&lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif %}
                 <br />
             {% endfor %}</p>
-            <p class="requires">Requirement{{ version.requirements|length > 1 ? 's' : '' }}:
-            {% for req in version.requirements %}
+            <p class="requires">Requirement{{ version.require|length > 1 ? 's' : '' }}:
+            {% for req in version.require %}
                 {{ req.packageName }} ({{ req.packageVersion }})<br />
             {% endfor %}</p>
         {% endfor %}

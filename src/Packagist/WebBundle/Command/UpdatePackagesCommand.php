@@ -23,12 +23,15 @@ use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Repository\Repository\RepositoryInterface;
+use Composer\Package\Version\VersionParser;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class UpdatePackagesCommand extends ContainerAwareCommand
 {
+    protected $versionParser;
+
     protected $supportedLinkTypes = array(
         'require'   => 'RequireLink',
         'conflict'  => 'ConflictLink',
@@ -65,6 +68,8 @@ EOF
         $logger = $this->getContainer()->get('logger');
         $provider = $this->getContainer()->get('packagist.repository_provider');
 
+        $this->versionParser = new VersionParser;
+
         $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
 
         foreach ($packages as $package) {
@@ -79,29 +84,32 @@ EOF
 
             try {
                 foreach ($repository->getTags() as $tag => $identifier) {
-                    if ($repository->hasComposerFile($identifier) && $this->parseVersion($tag)) {
+                    if ($repository->hasComposerFile($identifier) && $this->validateTag($tag)) {
                         $data = $repository->getComposerInformation($identifier);
+                        $data['version_normalized'] = $this->versionParser->normalize($data['version']);
                         // Strip -dev that could have been left over accidentally in a tag
-                        $data['version'] = preg_replace('{-?dev$}i', '', $data['version']);
+                        $data['version'] = preg_replace('{[.-]?dev$}i', '', $data['version']);
                         $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
                         $doctrine->getEntityManager()->flush();
                     }
                 }
 
                 foreach ($repository->getBranches() as $branch => $identifier) {
-                    if ($repository->hasComposerFile($identifier) && ($parsed = $this->parseBranch($branch))) {
+                    if ($repository->hasComposerFile($identifier) && $this->validateBranch($branch)) {
                         $data = $repository->getComposerInformation($identifier);
-                        $parsedVersion = $this->parseVersion($data['version']);
+                        $data['version_normalized'] = $this->versionParser->normalize($data['version']);
 
                         // Skip branches that contain a version that's been tagged already
                         foreach ($package->getVersions() as $existingVersion) {
-                            if ($parsedVersion['version'] === $existingVersion->getVersion() && !$existingVersion->getDevelopment()) {
+                            if ($data['version_normalized'] === $existingVersion->getNormalizedVersion() && !$existingVersion->getDevelopment()) {
                                 continue;
                             }
                         }
 
-                        // Force branches to use -dev type releases
-                        $data['version'] = $parsedVersion['version'].'-'.$parsedVersion['type'].'-dev';
+                        // Force branches to use -dev releases
+                        if (!preg_match('{[.-]?dev$}i', $data['version'])) {
+                            $data['version'] .= '-dev';
+                        }
 
                         $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
                         $doctrine->getEntityManager()->flush();
@@ -118,51 +126,34 @@ EOF
         }
     }
 
-    private function parseBranch($branch)
+    private function validateBranch($branch)
     {
         if (in_array($branch, array('master', 'trunk'))) {
-            return 'master';
+            return true;
         }
 
-        if (!preg_match('#^v?(\d+)(\.(?:\d+|[x*]))?(\.[x*])?$#i', $branch, $matches)) {
-            return false;
-        }
-
-        return $matches[1]
-            .(!empty($matches[2]) ? strtr($matches[2], '*', 'x') : '.x')
-            .(!empty($matches[3]) ? strtr($matches[3], '*', 'x') : '.x');
+        return (Boolean) preg_match('#^v?(\d+)(\.(?:\d+|[x*]))?(\.(?:\d+|[x*]))?(\.[x*])?$#i', $branch, $matches);
     }
 
-    private function parseVersion($version)
+    private function validateTag($version)
     {
-        if (!preg_match('#^v?(\d+)(\.\d+)?(\.\d+)?-?((?:beta|RC|alpha)\d*)?-?(dev)?$#i', $version, $matches)) {
+        try {
+            $this->versionParser->normalize($version);
+            return true;
+        } catch (\Exception $e) {
             return false;
         }
-
-        return array(
-            'version' => $matches[1]
-                .(!empty($matches[2]) ? $matches[2] : '.0')
-                .(!empty($matches[3]) ? $matches[3] : '.0'),
-            'type' => !empty($matches[4]) ? strtolower($matches[4]) : '',
-            'dev' => !empty($matches[5]),
-        );
     }
 
     private function updateInformation(OutputInterface $output, RegistryInterface $doctrine, $package, RepositoryInterface $repository, $identifier, array $data)
     {
-        if (strtolower($data['name']) !== strtolower($package->getName())) {
-            $output->writeln('<error>Package name seems to have changed for '.$repository->getUrl().'@'.$identifier.', skipping.</error>');
-            return;
-        }
-
         $em = $doctrine->getEntityManager();
         $version = new Version();
 
-        $parsedVersion = $this->parseVersion($data['version']);
-        $version->setName($data['name']);
-        $version->setVersion($parsedVersion['version']);
-        $version->setVersionType($parsedVersion['type']);
-        $version->setDevelopment($parsedVersion['dev']);
+        $version->setName($package->getName());
+        $version->setVersion($data['version']);
+        $version->setNormalizedVersion($data['version_normalized']);
+        $version->setDevelopment(substr($data['version'], -4) === '-dev');
 
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
@@ -179,12 +170,12 @@ EOF
 
         $version->setDescription($data['description']);
         $version->setHomepage($data['homepage']);
-        $version->setLicense($data['license']);
+        $version->setLicense(is_array($data['license']) ? $data['license'] : array($data['license']));
 
         $version->setPackage($package);
         $version->setUpdatedAt(new \DateTime);
         $version->setReleasedAt(new \DateTime($data['time']));
-        $version->setSource(array('type' => $repository->getType(), 'url' => $repository->getUrl()));
+        $version->setSource($repository->getSource($identifier));
         $version->setDist($repository->getDist($identifier));
 
         if (isset($data['type'])) {
@@ -255,7 +246,7 @@ EOF
                     $link = new $class;
                     $link->setPackageName($linkPackageName);
                     $link->setPackageVersion($linkPackageVersion);
-                    $version->{'add'.$linkType}($link);
+                    $version->{'add'.$linkType.'Link'}($link);
                     $link->setVersion($version);
                     $em->persist($link);
                 }

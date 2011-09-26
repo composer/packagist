@@ -25,5 +25,5 @@ class ProvideLink extends PackageLink
     /**
      * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\Version", inversedBy="provide")
      */
-    private $version;
+    protected $version;
 }

@@ -25,5 +25,5 @@ class ReplaceLink extends PackageLink
     /**
      * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\Version", inversedBy="replace")
      */
-    private $version;
+    protected $version;
 }

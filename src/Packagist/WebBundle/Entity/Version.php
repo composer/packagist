@@ -81,13 +81,19 @@ class Version
     private $version;
 
     /**
+     * @ORM\Column
+     * @Assert\NotBlank()
+     */
+    private $normalizedVersion;
+
+    /**
      * @ORM\Column(type="boolean")
      * @Assert\NotBlank()
      */
     private $development;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(type="text", nullable="true")
      */
     private $license;
 
@@ -159,7 +165,12 @@ class Version
     public function __construct()
     {
         $this->tags = new \Doctrine\Common\Collections\ArrayCollection();
-        $this->requirements = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->require = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->replace = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->conflict = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->provide = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->recommend = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->suggest = new \Doctrine\Common\Collections\ArrayCollection();
         $this->authors = new \Doctrine\Common\Collections\ArrayCollection();
         $this->createdAt = new \DateTime;
         $this->updatedAt = new \DateTime;
@@ -175,31 +186,45 @@ class Version
         foreach ($this->getAuthors() as $author) {
             $authors[] = $author->toArray();
         }
-        $requirements = array();
-        foreach ($this->getRequirements() as $requirement) {
-            $requirement = $requirement->toArray();
-            $requirements[key($requirement)] = current($requirement);
-        }
-        return array(
+
+        $data = array(
             'name' => $this->name,
             'description' => $this->description,
             'keywords' => $tags,
             'homepage' => $this->homepage,
             'version' => $this->version,
-            'license' => $this->license,
+            'license' => $this->getLicense(),
             'authors' => $authors,
-            'require' => $requirements,
             'source' => $this->getSource(),
             'time' => $this->releasedAt ? $this->releasedAt->format('Y-m-d\TH:i:sP') : null,
             'dist' => $this->getDist(),
             'type' => $this->type,
             'extra' => $this->extra,
         );
+
+        $supportedLinkTypes = array(
+            'require',
+            'conflict',
+            'provide',
+            'replace',
+            'recommend',
+            'suggest',
+        );
+
+        foreach ($supportedLinkTypes as $linkType) {
+            foreach ($this->{'get'.$linkType}() as $link) {
+                $link = $link->toArray();
+                $data[$linkType][key($link)] = current($link);
+            }
+        }
+
+        return $data;
     }
 
     public function equals(Version $version)
     {
-        return $version->getName() === $this->getName() && $version->getVersion() === $this->getVersion();
+        return strtolower($version->getName()) === strtolower($this->getName())
+            && $version->getNormalizedVersion() === $this->getNormalizedVersion();
     }
 
     /**
@@ -279,7 +304,7 @@ class Version
      */
     public function setVersion($version)
     {
-        $this->version = ltrim($version, 'vV.');
+        $this->version = $version;
     }
 
     /**
@@ -293,23 +318,43 @@ class Version
     }
 
     /**
+     * Set normalizedVersion
+     *
+     * @param string $normalizedVersion
+     */
+    public function setNormalizedVersion($normalizedVersion)
+    {
+        $this->normalizedVersion = $normalizedVersion;
+    }
+
+    /**
+     * Get normalizedVersion
+     *
+     * @return string $normalizedVersion
+     */
+    public function getNormalizedVersion()
+    {
+        return $this->normalizedVersion;
+    }
+
+    /**
      * Set license
      *
      * @param string $license
      */
-    public function setLicense($license)
+    public function setLicense(array $license)
     {
-        $this->license = $license;
+        $this->license = json_encode($license);
     }
 
     /**
      * Get license
      *
-     * @return string $license
+     * @return array $license
      */
     public function getLicense()
     {
-        return $this->license;
+        return json_decode($this->license, true);
     }
 
     /**

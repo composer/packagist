@@ -25,5 +25,5 @@ class RecommendLink extends PackageLink
     /**
      * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\Version", inversedBy="recommend")
      */
-    private $version;
+    protected $version;
 }

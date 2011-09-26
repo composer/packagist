@@ -45,18 +45,32 @@ class GitHubRepository implements RepositoryInterface
     /**
      * {@inheritDoc}
      */
+    public function getSource($identifier)
+    {
+        $label = array_search($identifier, (array) $this->tags) ?: $identifier;
+        return array('type' => $this->getType(), 'url' => $this->getUrl(), 'reference' => $label, 'shasum' => '');
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function getDist($identifier)
     {
         $repoData = $this->getRepositoryData();
-        if ($repoData['repository']['has_downloads']) {
-            $label = array_search($identifier, (array) $this->tags) ?: $identifier;
+        $attempts = 3;
+
+        while ($attempts--) {
+            $label = array_search($identifier, (array) $this->tags) ?: array_search($identifier, (array) $this->branches) ?: $identifier;
             $url = 'https://github.com/'.$this->owner.'/'.$this->repository.'/zipball/'.$label;
-            $checksum = hash_file('sha1', $url);
-            return array('type' => 'zip', 'url' => $url, 'shasum' => $checksum ?: '');
+            if (!$checksum = @hash_file('sha1', $url)) {
+                continue;
+            }
+
+            return array('type' => 'zip', 'url' => $url, 'shasum' => $checksum, 'reference' => $label);
         }
 
         // TODO clone the repo and build/host a zip ourselves. Not sure if this can happen, but it'll be needed for non-GitHub repos anyway
-        throw new \LogicException('Not implemented yet.');
+        throw new \LogicException('Could not retrieve dist file');
     }
 
     /**

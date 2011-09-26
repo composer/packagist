@@ -34,12 +34,16 @@ interface RepositoryInterface
     function getTags();
 
     /**
-     * Return the URL of the repository
-     *
      * @param string $identifier Any identifier to a specific branch/tag/commit
-     * @return array With type, url and shasum properties.
+     * @return array With type, url, reference and shasum keys.
      */
     function getDist($identifier);
+
+    /**
+     * @param string $identifier Any identifier to a specific branch/tag/commit
+     * @return array With type, url, reference and shasum keys.
+     */
+    function getSource($identifier);
 
     /**
      * Return the URL of the repository

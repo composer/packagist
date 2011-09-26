@@ -25,5 +25,5 @@ class RequireLink extends PackageLink
     /**
      * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\Version", inversedBy="require")
      */
-    private $version;
+    protected $version;
 }

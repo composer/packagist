@@ -129,7 +129,7 @@ class WebController extends Controller
 
     /**
      * @Template()
-     * @Route("/view/{name}", name="view")
+     * @Route("/view/{name}", name="view", requirements={"name"="[A-Za-z0-9/_-]+"})
      */
     public function viewAction($name)
     {

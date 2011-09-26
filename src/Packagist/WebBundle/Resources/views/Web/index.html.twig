@@ -7,7 +7,7 @@
             <h2><a href="{{ url('view', { 'name' : package.name }) }}">{{ package.name }}</a></h2>
             {% if package.versions|length %}
                 <p class="description">{{ package.versions[0].description }}</p>
-                <p class="license">License: {{ package.versions[0].license|default("Unknown") }}</p>
+                <p class="license">License: {{ package.versions[0].license ? package.versions[0].license|join(', ') : "Unknown" }}</p>
                 <p class="links">
                     {% if package.versions[0].homepage %}
                         Homepage: <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />
