@@ -5,12 +5,14 @@
     <p>Composer helps you manage your project or libraries' dependencies. You can find the Composer source on <a href="https://github.com/composer/composer">GitHub</a>.</p>
 
     <h1>Declaring dependencies</h1>
-    <p>To define your project's dependencies, you can use a composer.json file, just like in a library or plugin, but you don't have to specify the package name or most of the other fields.</p>
+    <p>To define your project's dependencies, you can use a composer.json file, just like in a library or plugin, but you don't have to specify most of the fields.</p>
     <p>A typical composer.json file for a project looks like this:
 <pre>
 {
+    "name": "my-project",
+    "version": "1.0.0",
     "require": {
-      "monolog": "1.0.0"
+      "monolog/monolog": "1.0.0"
     }
 }
 </pre>
@@ -18,14 +20,16 @@
     <p>You can add different repositories than Packagist, if needed, by specifying them by hand. For example git repositories can be used as repositories if they contain a composer.json, even if the packages are not available on Packagist. They could also be private repositories that you don't want to make accessible to everyone. Here's how to do it:
 <pre>
 {
+    "name": "my-project",
+    "version": "1.0.0",
     "repositories": {
         "MyRepo": {
             "git": "git://example.org/MyRepo.git"
         }
     },
     "require": {
-        "monolog": "1.0.0",
-        "mypackage": ">=1.0.0"
+        "monolog/monolog": "1.0.0",
+        "myvendor/mypackage": ">=1.0.0"
     }
 }
 </pre></p>

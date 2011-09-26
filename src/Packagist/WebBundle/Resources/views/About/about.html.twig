@@ -12,8 +12,8 @@
     <p>For libraries and applications, the vendor is in most cases the library name itself, and you can use any name, although it's best to avoid using common names like DB, Logger, MySQL, etc. Try to be imaginative when naming your project.</p>
     <p>For plugins, be it TYPO3 extensions, Symfony2 bundles, Drupal modules, or whatever your project of choice calls them, you are free to handle it as you wish, but you may want to add some specific information about the target platform in the package name to avoid conflicts if you provide many plugins to integrate one lib in many frameworks. For example, if your vendor name is Acme, and your library is called Email, you could have the following names: <code>acme/email-symfony-bundle</code>, <code>acme/email-typo3-ext</code> and such. This ensures uniqueness across frameworks/applications, and clearly says what your package relates to. Here is a list of typical package names for reference:
 <pre>
-// Monolog is a library, so the vendor name is the complete package name.
-monolog
+// Monolog is a library, so the vendor name and package name are the same.
+monolog/monolog
 
 // That could be the name of a drupal module (maintained/provided by monolog,
 // if the drupal team did it, the vendor would be drupal).
@@ -30,7 +30,7 @@ acme/email
     <p>A typical composer.json file looks like this:
 <pre>
 {
-    "name": "monolog",
+    "name": "monolog/monolog",
     "type": "library",
     "description": "Logging for PHP 5.3",
     "keywords": ["log","logging"],
@@ -49,11 +49,11 @@ acme/email
     }
 }
 </pre>
-Most of this information is obvious, keywords are tags, require are list of dependencies that your package has. This can of course be packages, not only a php version. You can use ext/foo to require php extensions (e.g. ext/apc). Note that most extensions don't expose version information, so unless you know for sure it does, it's safer to use <code>"ext/apc": "*"</code> to allow any version of it. Finally the type field is in this case indicating that this is a library. If you do plugins for frameworks etc, and if they integrate composer, they may have a custom package type for their plugins that you can use to install the package with their own installer. In the absence of custom type, you can omit it or use "library".</p>
+Most of this information is obvious, keywords are tags, require are list of dependencies that your package has. This can of course be packages, not only a php version. You can use ext/foo to require php extensions (e.g. ext/apc). Note that most extensions don't expose version information, so unless you know for sure it does, it's safer to use <code>"ext-apc": "*"</code> to allow any version of it. Finally the type field is in this case indicating that this is a library. If you do plugins for frameworks etc, and if they integrate composer, they may have a custom package type for their plugins that you can use to install the package with their own installer. In the absence of custom type, you can omit it or use "library".</p>
     <p>Known package types include: symfony-bundle</p>
     <p>Once you have this file committed in your repository root, you can <a href="{{ path('submit') }}">submit the package</a> to Packagist by entering the public repository URL.</p>
     <h1>Managing package versions</h1>
-    <p>Package versioning is done automatically based on the tags you create in your repository. You should update the version field in the composer.json file before creating a tag. Tag names should match 'X.Y.Z', or 'vX.Y.Z', with an optional suffix for RC, beta or alpha versions. Here are a few examples of valid tag names:
+    <p>New versions of your package are automatically fetched from tags you create in your repository. You should update the version field in the composer.json file before creating a tag. Tag/version names should match 'X.Y.Z', or 'vX.Y.Z', with an optional suffix for RC, beta, alpha or patch versions. Here are a few examples of valid tag names:
 <pre>
 1.0.0
 v1.0.0
@@ -61,5 +61,14 @@ v1.0.0
 v4.4.4beta2
 v2.0.0-alpha
 </pre>
-    In your master branch, or any other dev branch, you can use a -dev (e.g. <code>1.1.0-dev</code>) suffix to the version inside the composer.json file to indicate that this is a development branch leading to the future 1.1.0 (in this example) version.</p>
+    In your master branch, or any other dev branch, you should change the composer.json version to the next future version that will be released from this branch (e.g. <code>1.1.0</code>), packagist will automatically suffix -dev to it until it is moved to a tag.</p>
+    <p>Note that dev branches should follow one of the following patterns to be recognized:
+<pre>
+1.0
+1.*
+v1.x
+1.x.x
+1.*.*
+</pre>
+    Doing so will allow people to easily install pre-release versions of your code for testing or development purposes.</p>
 {% endblock %}
