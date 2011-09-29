@@ -82,7 +82,7 @@ h1, h2, h3, h4, h5, h6 { font-weight: bold; }
 body {
   background: #e5e5e5 url("../img/texture.png");
   font-size: 15px;
-  font-family: "PT Sans", sans-serif;
+  font-family: Helvetica, Arial;
   color: #555;
 }
 
@@ -100,28 +100,27 @@ a:hover {
 }
 
 header h1 {
-  font-size: 48px;
-  line-height: 1em;
-  margin: 6px 0 4px -4px;
-  text-shadow: rgba(0, 0, 0, 0.2) 1px 1px 0;
+  margin: 10px 0 0;
+  padding: 0;
 }
-header h1 a, header h1 a:visited {
-  color: #dc8501;
-}
-header h1 a:hover {
-  color: #FB9700;
+header h1 a {
+  display: inline-block;
+  text-decoration: none;
+  margin: 0;
+  width: 0;
+  height: 0;
+  padding: 85px 0 0 435px;
+  background: url("../img/logo.png") 0 0 no-repeat;
+  overflow: hidden;
 }
 
 header h2 {
-  margin: 0;
-  font-size: 24px;
-  line-height: 1em;
-  font-weight: normal;
+  display: none;
 }
 
 header p {
   clear: both;
-  margin: 10px -10px;
+  margin: 0 -10px 10px;
 }
 header p, .main {
   font-size: 15px;
@@ -256,11 +255,13 @@ ul.packages section {
   position: relative;	
 }
 ul.packages h1 {
+  font-family: Verdana;
+  font-size: 22px;
   line-height: 1em;
   font-weight: normal;
   margin: 0;
-  padding: 6px 4px 0 0;
-  height: 34px;
+  padding: 8px 4px 0 0;
+  height: 32px;
 }
 ul.packages li:hover, div.package-details {
   background: url("../img/package_corners.png") -20px 50% no-repeat;
@@ -374,7 +375,7 @@ form ul {
 }
 
 .package {
-  margin: 15px 0;
+  margin: 0 0 15px;
 }
 .package h2 {
   font-size: 25px;
