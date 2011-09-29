@@ -30,32 +30,39 @@
     {% endif %}
 
     {% if package.versions|length %}
+	<ul class="packages">
         {% for version in package.versions %}
-            <h2>Version {{ version.version }}</h2>
-            <p class="description">{{ version.description }}</p>
-            <p class="license">License: {{ version.license ? version.license|join(', ') : "Unknown" }}</p>
-            <p class="release-date">Date: {{ version.releasedAt|date("Y-m-d") }}</p>
-            <p class="links">
-                {% if version.homepage %}
-                    Homepage: <a href="{{ version.homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
-                {% endif %}
-                Tags: {% for tag in version.tags %}<a href="{{ url("tag", { "name" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}{% endfor %}
-            </p>
-            <p class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}:
-            {% for author in version.authors %}
-                {% if author.homepage %}
-                    <a href="{{ author.homepage }}">{{ author.name }}</a>
-                {% else %}
-                    {{ author.name }}
-                {% endif %}
-                {% if author.email %}&lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif %}
-                <br />
-            {% endfor %}</p>
-            <p class="requires">Requirement{{ version.require|length > 1 ? 's' : '' }}:
-            {% for req in version.require %}
-                {{ req.packageName }} ({{ req.packageVersion }})<br />
-            {% endfor %}</p>
+        <li>
+        	<section>
+	            <h1>Version {{ version.version }}</h1>
+    			<div class="package-details"><div>
+				<p class="description">{{ version.description }}</p>
+				<p class="license">License: {{ version.license ? version.license|join(', ') : "Unknown" }}</p>
+				<p class="release-date">Date: {{ version.releasedAt|date("Y-m-d") }}</p>
+				<p class="links">
+					{% if version.homepage %}
+						Homepage: <a href="{{ version.homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
+					{% endif %}
+					Tags: {% for tag in version.tags %}<a href="{{ url("tag", { "name" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}{% endfor %}
+				</p>
+				<p class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}:
+				{% for author in version.authors %}
+					{% if author.homepage %}
+						<a href="{{ author.homepage }}">{{ author.name }}</a>
+					{% else %}
+						{{ author.name }}
+					{% endif %}
+					{% if author.email %}&lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif %}
+					<br />
+				{% endfor %}</p>
+				<p class="requires">Requirement{{ version.require|length > 1 ? 's' : '' }}:
+				{% for req in version.require %}
+					{{ req.packageName }} ({{ req.packageVersion }})<br />
+				{% endfor %}</p>
+			</section>
+		</li>
         {% endfor %}
+	</ul>
     {% elseif package.crawledAt is null %}
         <p>This package has not been crawled yet, some information is missing.</p>
     {% else %}

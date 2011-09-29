@@ -80,13 +80,13 @@ h1, h2, h3, h4, h5, h6 { font-weight: bold; }
 */
 
 body {
-  background: #888;
+  background: #e5e5e5 url("../img/texture.png");
   font-size: 15px;
   font-family: "PT Sans", sans-serif;
   color: #555;
 }
 
-a, a:active, a:visited {
+a, a:visited, a:active {
   color: #fb9700;
   text-decoration: none;
 }
@@ -96,48 +96,61 @@ a:hover {
 
 .container {
   width: 900px;
-  background: #fff;
   margin: auto;
-  padding: 20px 40px 40px;
 }
 
 header h1 {
-  font-size: 50px;
-  margin-top: 0;
-  float: left;
+  font-size: 48px;
+  line-height: 1em;
+  margin: 6px 0 4px -4px;
+  text-shadow: rgba(0, 0, 0, 0.2) 1px 1px 0;
+}
+header h1 a, header h1 a:visited {
+  color: #dc8501;
+}
+header h1 a:hover {
+  color: #FB9700;
 }
 
 header h2 {
-  font-size: 30px;
-  position: relative;
-  top: 20px;
-  left: 20px;
-  display: inline;
+  margin: 0;
+  font-size: 24px;
+  line-height: 1em;
+  font-weight: normal;
 }
 
 header p {
-  font-size: 20px;
+  clear: both;
+  margin: 10px -10px;
 }
-
-header a {
-  text-shadow: 0 1px 0 #bf7300;
-}
-
-header a:hover {
-  text-shadow: 0 1px 0 #663e00;
+header p, .main {
+  font-size: 15px;
+  padding: 5px 7px;
+  background: #f5f5f5;
+  border: 1px solid #fff;
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 6px;
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.25) 0 1px 3px;
 }
 
 header {
-  margin-bottom: 20px;
+  margin: 0 10px 20px;
   font-size: 15px;
 }
 
-.main, header p {
+.main {
+  margin: 10px 0;
   clear: left;
 }
 
+.main:after {
+	display: block;
+	content: '';
+	clear: both;
+}
+
 footer {
-  border-top: 2px solid #eee;
   padding-top: 30px;
   margin-top: 30px;
 }
@@ -171,23 +184,44 @@ p {
 
 .user {
   text-align: right;
+  padding: 4px 8px 5px;
+  color: #fff;
+  background: #bf7300;
+  background: -moz-linear-gradient(top, #bf7300 0%, #cc8f33 100%);
+  background: -webkit-linear-gradient(top, #bf7300 0%, #cc8f33 100%);
+  background: -o-linear-gradient(top, #bf7300 0%, #cc8f33 100%);
+  background: -ms-linear-gradient(top, #bf7300 0%, #cc8f33 100%);
+  background: linear-gradient(top, #bf7300 0%, #cc8f33 100%);
+  box-shadow: rgba(0, 0, 0, 0.25) 0 1px 3px;
+  -webkit-border-bottom-right-radius: 6px;
+  -webkit-border-bottom-left-radius: 6px;
+  -moz-border-radius-bottomright: 6px;
+  -moz-border-radius-bottomleft: 6px;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 6px;
 }
+.user a, .user a:visited { color: #fff; }
+.user a:hover { text-decoration: underline; }
 
 .submit, .submit:active, .submit:visited, input[type="submit"] {
   font-size: 22px;
-  font-family: "Neuton";
   float: right;
-  background: #64c523;
+  background: #53a51d;
+  background: -moz-linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  background: -webkit-linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  background: -o-linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  background: -ms-linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  background: linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  border-width: 0;
   display: block;
-  padding: 9px 20px 12px;
+  padding: 12px 20px;
   color: #fff;
-  margin-top: 10px;
+  margin: 13px 0 10px;
   text-decoration: none;
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  border-radius: 5px;
-  border: 1px solid #519f1c;
-  box-shadow: 0 0 5px rgba(0, 0, 0, .2);
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 6px;
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.25) 0 1px 3px;
 }
 
 .submit:hover {
@@ -198,11 +232,90 @@ p {
 .main h1 {
   font-size: 25px;
   margin-bottom: 10px;
+  color: #53a51d;
+  font-weight: normal;
 }
 
 .main h2 {
   font-size: 20px;
   margin-bottom: 10px;
+}
+
+ul.packages {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  float: left;
+}
+ul.packages li {
+  margin: 0 -6px;
+  padding: 0;
+  padding-left: 10px;
+}
+ul.packages section {
+  position: relative;	
+}
+ul.packages h1 {
+  line-height: 1em;
+  font-weight: normal;
+  margin: 0;
+  padding: 6px 4px 0 0;
+  height: 34px;
+}
+ul.packages li:hover, div.package-details {
+  background: url("../img/package_corners.png") -20px 50% no-repeat;
+}
+ul.packages li:hover h1 {
+  color: #fff;
+  background: url("../img/package_bg.png") 0 50% repeat-x;
+}
+ul.packages li:hover h1 a, ul.packages li:hover h1 a:visited { 
+  color: #fff;
+}
+
+div.package-details {
+  display: none;
+  background-position: 0 50%;
+  position: absolute;
+  right: -20px;
+  width: 20px;
+  top: 0;
+  bottom: 0;
+}
+div.package-details > div {
+  position: absolute;
+  left: 20px;
+  min-width: 400px;
+  top: 0;
+  z-index: 2;
+  color: #fff;
+  padding: 4px 8px;
+  background: #53a51d;
+  background: -moz-linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  background: -webkit-linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  background: -o-linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  background: -ms-linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  background: linear-gradient(top, #53a51d 0%, #75b74a 100%);
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 6px;
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.25) 0 1px 3px;
+}
+ul.packages li:hover div.package-details, ul.packages li:hover div.package-details {
+  display: block;
+}
+
+ul.packages p {
+  margin-bottom: 4px;
+  line-height: 1.4em;
+}
+ul.packages p:last-child {
+  margin-bottom: 0;
+}
+
+ul.packages p a {
+	color: #fff;
+	text-decoration: underline;
 }
 
 label {
@@ -221,13 +334,31 @@ textarea {
 input[type="submit"] {
   width: 406px;
   float: none;
-  background-image: url(../img/arrow.png);
-  background-position: 370px center;
-  background-repeat: no-repeat;
+  background: #64c523 url("../img/arrow.png") 370px center no-repeat;
 }
 input[type="submit"].loading {
-  background-image: url(../img/loader.gif);
+  background-image: url("../img/loader.gif");
 }
+
+input[type="text"], input[type="password"], input[type="email"] {
+  padding: 4px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+input[type="text"]:hover, input[type="password"]:hover, input[type="email"]:hover,
+input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
+  border-color: #64c523;
+  outline-style: none;
+}
+input[type="text"]:invalid, input[type="password"]:invalid, input[type="email"]:invalid {
+  border-color: #fb9700;
+  color: #bf7300;
+}
+
 
 input[type="checkbox"] {
   float: left;
@@ -260,11 +391,16 @@ form ul {
   clear: left;
 }
 
+.package > p {
+  margin: 6px 0;
+}
+
 pre {
-  background: #ddd;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  border-radius: 5px;
+  background: #fff;
+  border: 1px solid #ddd;
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  border-radius: 6px;
   display: block;
   padding: 5px;
   margin: 10px 0;
