@@ -232,7 +232,7 @@ EOF
             foreach ($version->{'get'.$linkType}() as $link) {
                 // clear links that have changed/disappeared (for updates)
                 if (!isset($data[$linkType][$link->getPackageName()]) || $data[$linkType][$link->getPackageName()] !== $link->getPackageVersion()) {
-                    $version->get{'get'.$linkType}()->removeElement($link);
+                    $version->{'get'.$linkType}()->removeElement($link);
                     $em->remove($link);
                 } else {
                     // clear those that are already set
