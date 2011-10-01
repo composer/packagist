@@ -49,8 +49,7 @@ class WebController extends Controller
 
         $paginator = new Pagerfanta(new DoctrineORMAdapter($packages));
         $paginator->setMaxPerPage(20);
-        $paginator->setCurrentPage($this->get('request')->query->get('page', 1),
-        false, true);
+        $paginator->setCurrentPage($this->get('request')->query->get('page', 1), false, true);
 
         return array('packages' => $paginator, 'page' => 'home');
     }
