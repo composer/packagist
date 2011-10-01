@@ -17,6 +17,8 @@ $loader->registerNamespaces(array(
     'FOS'              => __DIR__.'/../vendor/bundles',
     'Composer'         => __DIR__.'/../vendor/composer/src',
     'Packagist'        => __DIR__.'/../src',
+    'WhiteOctober\PagerfantaBundle' => __DIR__.'/../vendor/bundles',
+    'Pagerfanta'  => __DIR__.'/../vendor/pagerfanta/src',
 ));
 $loader->registerPrefixes(array(
     'Twig_Extensions_' => __DIR__.'/../vendor/twig-extensions/lib',

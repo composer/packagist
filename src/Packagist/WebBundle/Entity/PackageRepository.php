@@ -32,7 +32,7 @@ class PackageRepository extends EntityRepository
 
     public function findAll()
     {
-        return $this->getBaseQueryBuilder()->getQuery()->getResult();
+        return $this->getBaseQueryBuilder();
     }
 
     public function findOneByName($name)
