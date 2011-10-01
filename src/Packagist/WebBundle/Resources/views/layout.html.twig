@@ -13,6 +13,10 @@
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
         <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
 
+        <!--[if lt IE 9]>
+        <script src="{{ asset('bundles/packagistweb/js/html5.js') }}"></script>
+        <![endif]-->
+
         <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" />
 
         {# {% stylesheets '@PackagistWebBundle/Resources/public/css/main.css' filter="yui_css" output='css/main.css' %}
@@ -59,25 +63,25 @@
                 {% block content %}
                 {% endblock %}
             </div>
-
-            <footer>
-                <ul>
-                    <li><a href="{{ path('about') }}">About Packagist</a></li>
-                    <li><a href="{{ path('about.composer') }}">About Composer</a></li>
-                    <li><a href="{{ path('home') }}">Home</a></li>
-                </ul>
-                <ul>
-                    {% if app.user %}
-                        <li><a href="{{ path('fos_user_profile_show') }}">Profile</a></li>
-                        <li><a href="{{ path('fos_user_security_logout') }}">Logout</a></li>
-                    {% else %}
-                        <li><a href="{{ path('fos_user_registration_register') }}">Register</a></li>
-                        <li><a href="{{ path('fos_user_security_login') }}">Login</a></li>
-                    {% endif %}
-                </ul>
-                <div class="clearfix"></div>
-            </footer>
         </div>
+
+        <footer>
+            <ul>
+                <li><a href="{{ path('about') }}">About Packagist</a></li>
+                <li><a href="{{ path('about.composer') }}">About Composer</a></li>
+                <li><a href="{{ path('home') }}">Home</a></li>
+            </ul>
+            <ul>
+                {% if app.user %}
+                    <li><a href="{{ path('fos_user_profile_show') }}">Profile</a></li>
+                    <li><a href="{{ path('fos_user_security_logout') }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ path('fos_user_registration_register') }}">Register</a></li>
+                    <li><a href="{{ path('fos_user_security_login') }}">Login</a></li>
+                {% endif %}
+            </ul>
+            <div class="clearfix"></div>
+        </footer>
 
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
         <script>!window.jQuery && document.write(unescape('%3Cscript src="/js/libs/jquery-1.5.2.min.js"%3E%3C/script%3E'))</script>

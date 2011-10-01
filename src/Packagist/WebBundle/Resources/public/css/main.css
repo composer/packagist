@@ -79,11 +79,16 @@ h1, h2, h3, h4, h5, h6 { font-weight: bold; }
     \\ ========================================== //
 */
 
+html {
+  height: 100%;
+}
+
 body {
-  background: #e5e5e5 url("../img/texture.png");
+  background: #555 url("../img/texture.png");
   font-size: 15px;
   font-family: Helvetica, Arial;
   color: #555;
+  min-height: 100%;
 }
 
 a, a:visited, a:active {
@@ -95,6 +100,13 @@ a:hover {
 }
 
 .container {
+  background: #e5e5e5 url("../img/texture.png");
+  padding-bottom: 20px;
+  border-bottom: 1px solid #fafafa;
+  min-height: 400px;
+}
+
+.container > div, .container > header {
   width: 900px;
   margin: auto;
 }
@@ -144,19 +156,33 @@ header {
 }
 
 .main:after {
-	display: block;
-	content: '';
-	clear: both;
+  display: block;
+  content: '';
+  clear: both;
 }
 
 footer {
-  padding-top: 30px;
-  margin-top: 30px;
+  width: 900px;
+  margin: 0 auto;
+  padding: 10px 0 4px;
 }
 footer ul {
   width: 20%;
   list-style: none;
   float: right;
+}
+footer li {
+  margin: 0;
+  padding: 2px;
+}
+footer a, footer a:visited {
+  color: #ddd;
+  padding-left: 11px;
+  background: url("../img/footer_arrows.png") 0 2px no-repeat;
+}
+footer a:hover {
+  color: #fff;
+  background-position: 0 -18px;
 }
 
 .flash-message {
@@ -252,7 +278,7 @@ ul.packages li {
   padding-left: 10px;
 }
 ul.packages section {
-  position: relative;	
+  position: relative;  
 }
 ul.packages h1 {
   font-family: Verdana;
@@ -315,8 +341,8 @@ ul.packages p:last-child {
 }
 
 ul.packages p a {
-	color: #fff;
-	text-decoration: underline;
+  color: #fff;
+  text-decoration: underline;
 }
 
 label {
