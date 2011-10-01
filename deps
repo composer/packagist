@@ -68,13 +68,11 @@
     git=git://github.com/FriendsOfSymfony/FOSUserBundle.git
     target=/bundles/FOS/UserBundle
     version=1.0.0
-[FOSUserBundle]
-    git=git://github.com/FriendsOfSymfony/FOSUserBundle.git
-    target=/bundles/FOS/UserBundle
-    version=1.0.0
+
 [WhiteOctoberPagerfanta]
     git=http://github.com/whiteoctober/Pagerfanta.git
     target=/pagerfanta
+
 [WhiteOctoberPagerfantaBundle]
     git=http://github.com/whiteoctober/WhiteOctoberPagerfantaBundle.git
     target=/bundles/WhiteOctober/PagerfantaBundle
