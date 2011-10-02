@@ -289,20 +289,36 @@ ul.packages h1 {
   padding: 8px 4px 0 0;
   height: 32px;
 }
-ul.packages li:hover, div.package-details {
-  background: url("../img/package_corners.png") -20px 50% no-repeat;
+ul.packages h1.has-description {
+  margin-bottom: 15px;
 }
-ul.packages li:hover h1 {
-  color: #fff;
-  background: url("../img/package_bg.png") 0 50% repeat-x;
+ul.packages li.has-popup:hover, div.package-details {
+  background: url("../img/package_corners.png") -20px 0 no-repeat;
 }
-ul.packages li:hover h1 a, ul.packages li:hover h1 a:visited { 
+ul.packages li.has-popup:hover h1 {
   color: #fff;
+  background: url("../img/package_bg.png") 0 0 repeat-x;
+}
+ul.packages li.has-popup:hover h1 a, ul.packages li.has-popup:hover h1 a:visited { 
+  color: #fff;
+}
+
+ul.packages p.package-description {
+  position: absolute;
+  height: 21px;
+  overflow: hidden;
+  margin-top: -24px;
+  left: 0;
+  width: 888px;
+  color: #808080;
+}
+div.package-full-details {
+  margin: -4px 0 6px;
 }
 
 div.package-details {
   display: none;
-  background-position: 0 50%;
+  background-position: 0 0;
   position: absolute;
   right: -20px;
   width: 20px;
@@ -328,7 +344,7 @@ div.package-details > div {
   border-radius: 6px;
   box-shadow: rgba(0, 0, 0, 0.25) 0 1px 3px;
 }
-ul.packages li:hover div.package-details, ul.packages li:hover div.package-details {
+ul.packages li.has-popup:hover div.package-details, ul.packages li.has-popup:hover div.package-details {
   display: block;
 }
 
@@ -340,7 +356,7 @@ ul.packages p:last-child {
   margin-bottom: 0;
 }
 
-ul.packages p a {
+ul.packages li.has-popup:hover div a, ul.packages li.has-popup:hover div a:visited, ul.packages li.has-popup:hover div a:hover {
   color: #fff;
   text-decoration: underline;
 }
