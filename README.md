@@ -1,7 +1,7 @@
 Packagist
 =========
 
-Package Repository Website for Composer
+Package Repository Website for Composer, see the [about page](http://packagist.org/about) on [packagist.org](http://packagist.org/) for more.
 
 Installation
 ------------
