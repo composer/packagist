@@ -12,9 +12,10 @@ framework:
     translator:      { fallback: en }
     templating:      { engines: ['twig'] } #assets_version: SomeVersionScheme
     session:
+        name:           packagist
         default_locale: %locale%
         lifetime:       3600
-        auto_start:     true
+        auto_start:     false
 
 # Twig Configuration
 twig:
