@@ -63,6 +63,7 @@ EOF
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $verbose = $input->getOption('verbose');
         $doctrine = $this->getContainer()->get('doctrine');
 
         $logger = $this->getContainer()->get('logger');
@@ -80,7 +81,9 @@ EOF
                 continue;
             }
 
-            $output->writeln('Importing '.$repository->getUrl());
+            if ($verbose) {
+                $output->writeln('Importing '.$repository->getUrl());
+            }
 
             try {
                 foreach ($repository->getTags() as $tag => $identifier) {
@@ -120,7 +123,7 @@ EOF
                 $package->setCrawledAt(new \DateTime);
                 $doctrine->getEntityManager()->flush();
             } catch (\Exception $e) {
-                $output->writeln('<error>Exception: '.$e->getMessage().', skipping package.</error>');
+                $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
                 continue;
             }
         }
