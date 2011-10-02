@@ -77,9 +77,9 @@ class Author
     public function toArray()
     {
         return array(
-            'name' => $this->name,
-            'email' => $this->email,
-            'homepage' => $this->homepage,
+            'name' => $this->getName(),
+            'email' => $this->getEmail(),
+            'homepage' => $this->getHomepage(),
         );
     }
 

@@ -188,18 +188,18 @@ class Version
         }
 
         $data = array(
-            'name' => $this->name,
-            'description' => $this->description,
+            'name' => $this->getName(),
+            'description' => $this->getDescription(),
             'keywords' => $tags,
-            'homepage' => $this->homepage,
-            'version' => $this->version,
+            'homepage' => $this->getHomepage(),
+            'version' => $this->getVersion(),
             'license' => $this->getLicense(),
             'authors' => $authors,
             'source' => $this->getSource(),
-            'time' => $this->releasedAt ? $this->releasedAt->format('Y-m-d\TH:i:sP') : null,
+            'time' => $this->getReleasedAt() ? $this->getReleasedAt()->format('Y-m-d\TH:i:sP') : null,
             'dist' => $this->getDist(),
-            'type' => $this->type,
-            'extra' => $this->extra,
+            'type' => $this->getType(),
+            'extra' => $this->getExtra(),
         );
 
         $supportedLinkTypes = array(

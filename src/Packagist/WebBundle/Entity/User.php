@@ -45,8 +45,8 @@ class User extends BaseUser
     public function toArray()
     {
         return array(
-            'name' => $this->username,
-            'email' => $this->email,
+            'name' => $this->getUsername(),
+            'email' => $this->getEmail(),
         );
     }
 
@@ -103,7 +103,7 @@ class User extends BaseUser
     /**
      * Get createdAt
      *
-     * @return datetime 
+     * @return datetime
      */
     public function getCreatedAt()
     {
