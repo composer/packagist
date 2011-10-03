@@ -25,7 +25,7 @@
                 <a href="{{ url("user_packages", { "name" : maintainer.username }) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
             {% endfor %}</p>
         </section>
-{{ pagerfanta(packages, 'default', { 'proximity': 2}) }}
+        {{ pagerfanta(packages, 'default', { 'proximity': 2}) }}
     {% else %}
         No packages found.
     {% endfor %}
