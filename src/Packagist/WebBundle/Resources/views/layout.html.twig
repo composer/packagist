@@ -84,10 +84,10 @@
                 <ul>
                     {% if app.user %}
                         <li><a href="{{ path('fos_user_profile_show') }}">{{ 'menu.profile' | trans }}</a></li>
-                        <li><a href="{{ path('fos_user_security_logout') }}">{{ 'menu.Logout' | trans }}</a></li>
+                        <li><a href="{{ path('fos_user_security_logout') }}">{{ 'menu.logout' | trans }}</a></li>
                     {% else %}
-                        <li><a href="{{ path('fos_user_registration_register') }}">{{ 'menu.Register' | trans }}</a></li>
-                        <li><a href="{{ path('fos_user_security_login') }}">{{ 'menu.Login' | trans }}</a></li>
+                        <li><a href="{{ path('fos_user_registration_register') }}">{{ 'menu.register' | trans }}</a></li>
+                        <li><a href="{{ path('fos_user_security_login') }}">{{ 'menu.login' | trans }}</a></li>
                     {% endif %}
                 </ul>
                 <div class="clearfix"></div>
