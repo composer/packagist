@@ -1,0 +1,8 @@
+menu:
+  about_packagist: About Packagist
+  about_composer: About Composer
+  home: Home
+  profile: Profile
+  logout: Logout
+  login: Login
+  register: Register
