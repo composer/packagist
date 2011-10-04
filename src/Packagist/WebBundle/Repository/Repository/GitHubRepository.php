@@ -60,7 +60,7 @@ class GitHubRepository implements RepositoryInterface
         $attempts = 3;
 
         while ($attempts--) {
-            $label = array_search($identifier, (array) $this->tags) ?: array_search($identifier, (array) $this->branches) ?: $identifier;
+            $label = array_search($identifier, (array) $this->tags) ?: $identifier;
             $url = 'https://github.com/'.$this->owner.'/'.$this->repository.'/zipball/'.$label;
             if (!$checksum = @hash_file('sha1', $url)) {
                 continue;
