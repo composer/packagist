@@ -12,6 +12,8 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Packagist\WebBundle\Form\Model\SearchRequest;
+use Packagist\WebBundle\Form\Type\SearchRequestType;
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -45,7 +47,31 @@ class WebController extends Controller
             ->getRepository('PackagistWebBundle:Package')
             ->findAll();
 
-        return array('packages' => $packages, 'page' => 'home');
+        return array('packages' => $packages, 'page' => 'home', 'search_form' => $this->createForm(new SearchRequestType())->createView());
+    }
+
+    /**
+     * @Template()
+     * @Route("/search", name="search")
+     */
+    public function searchAction()
+    {
+    	$searchRequest = new SearchRequest();
+    	$form = $this->createForm(new SearchRequestType(), $searchRequest);
+
+    	$request = $this->getRequest();
+    	if ($request->getMethod() == 'POST') {
+    		$form->bindRequest($request);
+    		if ($form->isValid()) {
+    			$packages = $this->getDoctrine()
+    				->getRepository('PackagistWebBundle:Package')
+    				->search($searchRequest->getQuery());
+
+    			return array('packages' => $packages, 'page' => 'home', 'search_form' => $form);
+    		}
+    	}
+
+    	return array('packages' => array(), 'search_form' => $form->createView());
     }
 
     /**
@@ -124,7 +150,7 @@ class WebController extends Controller
         $packages = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
             ->findByTag($name);
-        return array('packages' => $packages, 'tag' => $name);
+        return array('packages' => $packages, 'tag' => $name, 'search_form' => $this->createForm(new SearchRequest())->createView());
     }
 
     /**
