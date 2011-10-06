@@ -2,7 +2,7 @@
 
 namespace Packagist\WebBundle\Form\Model;
 
-class AddMaintainerRequest
+class SearchRequest
 {
     protected $query;
 
@@ -10,7 +10,7 @@ class AddMaintainerRequest
     {
         $this->query = $query;
     }
-    
+
     public function getQuery()
     {
         return $this->query;
