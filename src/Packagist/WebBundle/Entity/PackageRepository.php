@@ -19,6 +19,19 @@ use Doctrine\ORM\EntityRepository;
  */
 class PackageRepository extends EntityRepository
 {
+    public function search($query)
+    {
+        $pattern = '%'.str_replace(' ', '%', $query).'%';
+
+        $qb = $this->createQueryBuilder('e');
+        $qb->where($qb->expr()->orx(
+            $qb->expr()->like('e.name', ':name'),
+            $qb->expr()->like('e.description', ':description')
+        ));
+        $qb->setParameters(array('name' => $pattern, 'description' => $pattern));
+        return $qb->getQuery()->execute();
+    }
+    
     public function getStalePackages()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();

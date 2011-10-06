@@ -2,6 +2,10 @@
 
 {% block content %}
     {% block content_title %}<h1>Packages</h1>{% endblock %}
+    <form method="post" {{ form_enctype(search_form) }} action="{{ url('search') }}">
+        Search: {% form_widget(search_form) %}
+        <input type="submit" />
+    </form>
     {% for package in packages %}
         <section class="package">
             <h2><a href="{{ url('view', { 'name' : package.name }) }}">{{ package.name }}</a></h2>

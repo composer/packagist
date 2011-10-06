@@ -47,6 +47,15 @@ class WebController extends Controller
 
         return array('packages' => $packages, 'page' => 'home');
     }
+    
+    /**
+     * @Template()
+     * @Route("/search", name="search")
+     */
+    public function searchAction()
+    {
+
+    }
 
     /**
      * @Template()
