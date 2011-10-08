@@ -56,22 +56,22 @@ class WebController extends Controller
      */
     public function searchAction()
     {
-    	$searchRequest = new SearchRequest();
-    	$form = $this->createForm(new SearchRequestType(), $searchRequest);
+        $searchRequest = new SearchRequest();
+        $form = $this->createForm(new SearchRequestType(), $searchRequest);
 
-    	$request = $this->getRequest();
-    	if ($request->getMethod() == 'POST') {
-    		$form->bindRequest($request);
-    		if ($form->isValid()) {
-    			$packages = $this->getDoctrine()
-    				->getRepository('PackagistWebBundle:Package')
-    				->search($searchRequest->getQuery());
+        $request = $this->getRequest();
+        if ($request->getMethod() == 'POST') {
+            $form->bindRequest($request);
+            if ($form->isValid()) {
+                $packages = $this->getDoctrine()
+                    ->getRepository('PackagistWebBundle:Package')
+                    ->search($searchRequest->getQuery());
 
-    			return array('packages' => $packages, 'page' => 'home', 'search_form' => $form);
-    		}
-    	}
+                return array('packages' => $packages, 'page' => 'home', 'search_form' => $form);
+            }
+        }
 
-    	return array('packages' => array(), 'search_form' => $form->createView());
+        return array('packages' => array(), 'search_form' => $form->createView());
     }
 
     /**
@@ -150,6 +150,7 @@ class WebController extends Controller
         $packages = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
             ->findByTag($name);
+
         return array('packages' => $packages, 'tag' => $name, 'search_form' => $this->createForm(new SearchRequest())->createView());
     }
 

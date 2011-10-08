@@ -54,11 +54,13 @@ class Tag
                 ->where('t.name = ?1')
                 ->setMaxResults(1)
                 ->setParameter(1, $name);
+
             return $qb->getQuery()->getSingleResult();
         } catch (\Doctrine\ORM\NoResultException $e) {
         }
         $tag = new self($name);
         $em->persist($tag);
+
         return $tag;
     }
 

@@ -29,9 +29,10 @@ class PackageRepository extends EntityRepository
             $qb->expr()->like('e.description', ':description')
         ));
         $qb->setParameters(array('name' => $pattern, 'description' => $pattern));
+
         return $qb->getQuery()->execute();
     }
-    
+
     public function getStalePackages()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
@@ -40,6 +41,7 @@ class PackageRepository extends EntityRepository
             ->leftJoin('p.versions', 'v')
             ->where('p.crawledAt IS NULL OR p.crawledAt < ?0')
             ->setParameters(array(new \DateTime('-1hour')));
+
         return $qb->getQuery()->getResult();
     }
 
@@ -53,6 +55,7 @@ class PackageRepository extends EntityRepository
         $qb = $this->getBaseQueryBuilder()
             ->where('p.name = ?0')
             ->setParameters(array($name));
+
         return $qb->getQuery()->getSingleResult();
     }
 
@@ -63,6 +66,7 @@ class PackageRepository extends EntityRepository
             ->select('p, v')
             ->where('t.name = ?0')
             ->setParameters(array($name));
+
         return $qb->getQuery()->getResult();
     }
 
@@ -73,6 +77,7 @@ class PackageRepository extends EntityRepository
             ->select('p, v')
             ->where('m.id = ?0')
             ->setParameters(array($user->getId()));
+
         return $qb->getQuery()->getResult();
     }
 
@@ -85,6 +90,7 @@ class PackageRepository extends EntityRepository
             ->leftJoin('p.maintainers', 'm')
             ->leftJoin('v.tags', 't')
             ->orderBy('v.releasedAt', 'DESC');
+
         return $qb;
     }
 }

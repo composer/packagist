@@ -48,6 +48,7 @@ class GitHubRepository implements RepositoryInterface
     public function getSource($identifier)
     {
         $label = array_search($identifier, (array) $this->tags) ?: $identifier;
+
         return array('type' => $this->getType(), 'url' => $this->getUrl(), 'reference' => $label, 'shasum' => '');
     }
 
@@ -103,6 +104,7 @@ class GitHubRepository implements RepositoryInterface
             $tagsData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/tags'), true);
             $this->tags = $tagsData['tags'];
         }
+
         return $this->tags;
     }
 
@@ -115,6 +117,7 @@ class GitHubRepository implements RepositoryInterface
             $branchesData = json_decode(file_get_contents('http://github.com/api/v2/json/repos/show/'.$this->owner.'/'.$this->repository.'/branches'), true);
             $this->branches = $branchesData['branches'];
         }
+
         return $this->branches;
     }
 
@@ -135,6 +138,7 @@ class GitHubRepository implements RepositoryInterface
                 throw new \UnexpectedValueException('Failed to download from '.$url);
             }
         }
+
         return $this->repositoryData;
     }
 }

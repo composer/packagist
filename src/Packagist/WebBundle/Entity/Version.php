@@ -513,6 +513,7 @@ class Version
         foreach ($this->tags as $tag) {
             $tags[] = $tag->getName();
         }
+
         return implode(', ', $tags);
     }
 

@@ -142,6 +142,7 @@ EOF
     {
         try {
             $this->versionParser->normalize($version);
+
             return true;
         } catch (\Exception $e) {
             return false;
@@ -165,6 +166,7 @@ EOF
                     $version = $existingVersion;
                     break;
                 }
+
                 return;
             }
         }

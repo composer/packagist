@@ -40,7 +40,7 @@ check(function_exists('utf8_decode'), 'Checking that the utf8_decode() is availa
 check(function_exists('posix_isatty'), 'Checking that the posix_isatty() is available', 'Install and enable the php_posix extension (used to colorized the CLI output)', false);
 check(class_exists('Locale'), 'Checking that the intl extension is available', 'Install and enable the intl extension (used for validators)', false);
 
-$accelerator = 
+$accelerator =
     (function_exists('apc_store') && ini_get('apc.enabled'))
     ||
     function_exists('eaccelerator_put') && ini_get('eaccelerator.enable')

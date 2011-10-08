@@ -14,19 +14,19 @@
 
     {% if form is defined %}
         <div>
-		    <strong id="add-maintainer"><a href="#">Add Maintainer</a></strong>
-		    <form id="add-maintainer-form" class="hidden" action="" method="POST" {{ form_enctype(form) }}>
-		        <div>
-		            <p>
-		                {{ form_label(form.user, "Username") }}
-		                {{ form_errors(form.user) }}
-		                {{ form_widget(form.user) }}
-		            </p>
-		            {{ form_rest(form) }}
-		            <input id="submit" type="submit" value="Submit" />
-		        </div>
-		    </form>
-	    </div>
+            <strong id="add-maintainer"><a href="#">Add Maintainer</a></strong>
+            <form id="add-maintainer-form" class="hidden" action="" method="POST" {{ form_enctype(form) }}>
+                <div>
+                    <p>
+                        {{ form_label(form.user, "Username") }}
+                        {{ form_errors(form.user) }}
+                        {{ form_widget(form.user) }}
+                    </p>
+                    {{ form_rest(form) }}
+                    <input id="submit" type="submit" value="Submit" />
+                </div>
+            </form>
+        </div>
     {% endif %}
 
     {% if package.versions|length %}
