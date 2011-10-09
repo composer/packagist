@@ -188,6 +188,10 @@ EOF
             }
         }
 
+        if (isset($data['installAs'])) {
+            $version->setInstallAs($data['installAs']);
+        }
+
         if (isset($data['extra']) && is_array($data['extra'])) {
             $version->setExtra($data['extra']);
         }

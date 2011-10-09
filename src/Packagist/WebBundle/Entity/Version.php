@@ -49,6 +49,11 @@ class Version
     private $type;
 
     /**
+     * @ORM\Column(nullable="true")
+     */
+    private $installAs;
+
+    /**
      * @ORM\Column(type="array", nullable="true")
      */
     private $extra = array();
@@ -199,6 +204,7 @@ class Version
             'time' => $this->getReleasedAt() ? $this->getReleasedAt()->format('Y-m-d\TH:i:sP') : null,
             'dist' => $this->getDist(),
             'type' => $this->getType(),
+            'installAs' => $this->getInstallAs(),
             'extra' => $this->getExtra(),
         );
 
@@ -564,6 +570,26 @@ class Version
     public function getType()
     {
         return $this->type;
+    }
+
+    /**
+     * Set installAs
+     *
+     * @param text $installAs
+     */
+    public function setInstallAs($installAs)
+    {
+        $this->installAs = $installAs;
+    }
+
+    /**
+     * Get installAs
+     *
+     * @return string
+     */
+    public function getInstallAs()
+    {
+        return $this->installAs;
     }
 
     /**
