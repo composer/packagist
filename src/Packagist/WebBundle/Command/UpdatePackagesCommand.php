@@ -49,6 +49,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $this
             ->setName('pkg:update')
             ->setDefinition(array(
+                new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages'),
             ))
             ->setDescription('Updates packages')
             ->setHelp(<<<EOF
@@ -64,6 +65,7 @@ EOF
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $verbose = $input->getOption('verbose');
+        $force = $input->getOption('force');
         $doctrine = $this->getContainer()->get('doctrine');
 
         $logger = $this->getContainer()->get('logger');
@@ -71,7 +73,11 @@ EOF
 
         $this->versionParser = new VersionParser;
 
-        $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
+        if ($force) {
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findAll();
+        } else {
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
+        }
 
         foreach ($packages as $package) {
             $repository = $provider->getRepository($package->getRepository());
