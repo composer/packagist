@@ -178,7 +178,7 @@ EOF
         $version = new Version();
 
         $version->setName($package->getName());
-        $version->setNormalizedVersion($data['version_normalized']);
+        $version->setNormalizedVersion(preg_replace('{-dev$}i', '', $data['version_normalized']));
 
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
