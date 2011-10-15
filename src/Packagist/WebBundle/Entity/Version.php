@@ -39,22 +39,22 @@ class Version
     private $name;
 
     /**
-     * @ORM\Column(type="text", nullable="true")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $description;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(nullable=true)
      */
     private $type;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(nullable=true)
      */
     private $installAs;
 
     /**
-     * @ORM\Column(type="array", nullable="true")
+     * @ORM\Column(type="array", nullable=true)
      */
     private $extra = array();
 
@@ -74,7 +74,7 @@ class Version
     private $package;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(nullable=true)
      * @Assert\Url()
      */
     private $homepage;
@@ -98,7 +98,7 @@ class Version
     private $development;
 
     /**
-     * @ORM\Column(type="text", nullable="true")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $license;
 
