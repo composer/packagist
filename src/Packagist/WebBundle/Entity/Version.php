@@ -266,7 +266,7 @@ class Version
     /**
      * Set description
      *
-     * @param text $description
+     * @param string $description
      */
     public function setDescription($description)
     {
@@ -366,7 +366,7 @@ class Version
     /**
      * Set source
      *
-     * @param text $source
+     * @param string $source
      */
     public function setSource($source)
     {
@@ -386,7 +386,7 @@ class Version
     /**
      * Set dist
      *
-     * @param text $dist
+     * @param string $dist
      */
     public function setDist($dist)
     {
@@ -575,7 +575,7 @@ class Version
     /**
      * Set installAs
      *
-     * @param text $installAs
+     * @param string $installAs
      */
     public function setInstallAs($installAs)
     {

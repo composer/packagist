@@ -183,7 +183,7 @@ class Package
     /**
      * Set description
      *
-     * @param text $description
+     * @param string $description
      */
     public function setDescription($description)
     {
@@ -333,7 +333,7 @@ class Package
     /**
      * Set type
      *
-     * @param text $type
+     * @param string $type
      */
     public function setType($type)
     {

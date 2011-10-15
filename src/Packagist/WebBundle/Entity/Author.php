@@ -176,7 +176,7 @@ class Author
     /**
      * Set email
      *
-     * @param text $email
+     * @param string $email
      */
     public function setEmail($email)
     {
@@ -196,7 +196,7 @@ class Author
     /**
      * Set homepage
      *
-     * @param text $homepage
+     * @param string $homepage
      */
     public function setHomepage($homepage)
     {
