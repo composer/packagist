@@ -51,7 +51,7 @@ class Version
     /**
      * @ORM\Column(nullable=true)
      */
-    private $installAs;
+    private $targetDir;
 
     /**
      * @ORM\Column(type="array", nullable=true)
@@ -204,7 +204,7 @@ class Version
             'time' => $this->getReleasedAt() ? $this->getReleasedAt()->format('Y-m-d\TH:i:sP') : null,
             'dist' => $this->getDist(),
             'type' => $this->getType(),
-            'installAs' => $this->getInstallAs(),
+            'target-dir' => $this->getTargetDir(),
             'extra' => $this->getExtra(),
         );
 
@@ -573,23 +573,23 @@ class Version
     }
 
     /**
-     * Set installAs
+     * Set targetDir
      *
-     * @param string $installAs
+     * @param string $targetDir
      */
-    public function setInstallAs($installAs)
+    public function setTargetDir($targetDir)
     {
-        $this->installAs = $installAs;
+        $this->targetDir = $targetDir;
     }
 
     /**
-     * Get installAs
+     * Get targetDir
      *
      * @return string
      */
-    public function getInstallAs()
+    public function getTargetDir()
     {
-        return $this->installAs;
+        return $this->targetDir;
     }
 
     /**

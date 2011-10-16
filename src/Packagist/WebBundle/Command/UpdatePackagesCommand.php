@@ -188,8 +188,8 @@ EOF
             }
         }
 
-        if (isset($data['installAs'])) {
-            $version->setInstallAs($data['installAs']);
+        if (isset($data['target-dir'])) {
+            $version->setTargetDir($data['target-dir']);
         }
 
         if (isset($data['extra']) && is_array($data['extra'])) {
