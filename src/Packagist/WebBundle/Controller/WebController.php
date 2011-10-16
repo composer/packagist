@@ -24,6 +24,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Pagerfanta\Pagerfanta;
+use Pagerfanta\Adapter\DoctrineORMAdapter;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -45,7 +47,11 @@ class WebController extends Controller
             ->getRepository('PackagistWebBundle:Package')
             ->findAll();
 
-        return array('packages' => $packages, 'page' => 'home');
+        $paginator = new Pagerfanta(new DoctrineORMAdapter($packages));
+        $paginator->setMaxPerPage(20);
+        $paginator->setCurrentPage($this->get('request')->query->get('page', 1), false, true);
+
+        return array('packages' => $paginator, 'page' => 'home');
     }
 
     /**
