@@ -39,17 +39,22 @@ class Version
     private $name;
 
     /**
-     * @ORM\Column(type="text", nullable="true")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $description;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(nullable=true)
      */
     private $type;
 
     /**
-     * @ORM\Column(type="array", nullable="true")
+     * @ORM\Column(nullable=true)
+     */
+    private $targetDir;
+
+    /**
+     * @ORM\Column(type="array", nullable=true)
      */
     private $extra = array();
 
@@ -69,7 +74,7 @@ class Version
     private $package;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(nullable=true)
      * @Assert\Url()
      */
     private $homepage;
@@ -93,7 +98,7 @@ class Version
     private $development;
 
     /**
-     * @ORM\Column(type="text", nullable="true")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $license;
 
@@ -199,6 +204,7 @@ class Version
             'time' => $this->getReleasedAt() ? $this->getReleasedAt()->format('Y-m-d\TH:i:sP') : null,
             'dist' => $this->getDist(),
             'type' => $this->getType(),
+            'target-dir' => $this->getTargetDir(),
             'extra' => $this->getExtra(),
         );
 
@@ -260,7 +266,7 @@ class Version
     /**
      * Set description
      *
-     * @param text $description
+     * @param string $description
      */
     public function setDescription($description)
     {
@@ -360,7 +366,7 @@ class Version
     /**
      * Set source
      *
-     * @param text $source
+     * @param string $source
      */
     public function setSource($source)
     {
@@ -380,7 +386,7 @@ class Version
     /**
      * Set dist
      *
-     * @param text $dist
+     * @param string $dist
      */
     public function setDist($dist)
     {
@@ -564,6 +570,26 @@ class Version
     public function getType()
     {
         return $this->type;
+    }
+
+    /**
+     * Set targetDir
+     *
+     * @param string $targetDir
+     */
+    public function setTargetDir($targetDir)
+    {
+        $this->targetDir = $targetDir;
+    }
+
+    /**
+     * Get targetDir
+     *
+     * @return string
+     */
+    public function getTargetDir()
+    {
+        return $this->targetDir;
     }
 
     /**

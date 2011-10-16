@@ -44,12 +44,12 @@ class Package
     private $name;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(nullable=true)
      */
     private $type;
 
     /**
-     * @ORM\Column(type="text", nullable="true")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $description;
 
@@ -78,12 +78,12 @@ class Package
     private $createdAt;
 
     /**
-     * @ORM\Column(type="datetime", nullable="true")
+     * @ORM\Column(type="datetime", nullable=true)
      */
     private $updatedAt;
 
     /**
-     * @ORM\Column(type="datetime", nullable="true")
+     * @ORM\Column(type="datetime", nullable=true)
      */
     private $crawledAt;
 
@@ -182,7 +182,7 @@ class Package
     /**
      * Set description
      *
-     * @param text $description
+     * @param string $description
      */
     public function setDescription($description)
     {
@@ -332,7 +332,7 @@ class Package
     /**
      * Set type
      *
-     * @param text $type
+     * @param string $type
      */
     public function setType($type)
     {
