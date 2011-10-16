@@ -106,7 +106,6 @@ class Package
         $data = array(
             'name' => $this->getName(),
             'description' => $this->getDescription(),
-            'dist-tags' => array(),
             'maintainers' => $maintainers,
             'versions' => $versions,
             'type' => $this->getType(),

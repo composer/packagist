@@ -230,7 +230,7 @@ class Version
     public function equals(Version $version)
     {
         return strtolower($version->getName()) === strtolower($this->getName())
-            && $version->getNormalizedVersion() === $this->getNormalizedVersion();
+            && strtolower($version->getNormalizedVersion()) === strtolower($this->getNormalizedVersion());
     }
 
     /**
