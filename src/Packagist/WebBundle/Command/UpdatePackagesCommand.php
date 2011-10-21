@@ -49,6 +49,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $this
             ->setName('pkg:update')
             ->setDefinition(array(
+                new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages'),
             ))
             ->setDescription('Updates packages')
             ->setHelp(<<<EOF
@@ -63,6 +64,8 @@ EOF
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $verbose = $input->getOption('verbose');
+        $force = $input->getOption('force');
         $doctrine = $this->getContainer()->get('doctrine');
 
         $logger = $this->getContainer()->get('logger');
@@ -70,7 +73,11 @@ EOF
 
         $this->versionParser = new VersionParser;
 
-        $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
+        if ($force) {
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findAll();
+        } else {
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
+        }
 
         foreach ($packages as $package) {
             $repository = $provider->getRepository($package->getRepository());
@@ -80,35 +87,54 @@ EOF
                 continue;
             }
 
-            $output->writeln('Importing '.$repository->getUrl());
+            if ($verbose) {
+                $output->writeln('Importing '.$repository->getUrl());
+            }
 
             try {
                 foreach ($repository->getTags() as $tag => $identifier) {
-                    if ($repository->hasComposerFile($identifier) && $this->validateTag($tag)) {
+                    if ($repository->hasComposerFile($identifier) && $parsedTag = $this->validateTag($tag)) {
                         $data = $repository->getComposerInformation($identifier);
-                        $data['version_normalized'] = $this->versionParser->normalize($data['version']);
-                        // Strip -dev that could have been left over accidentally in a tag
-                        $data['version'] = preg_replace('{[.-]?dev$}i', '', $data['version']);
+
+                        // manually versioned package
+                        if (isset($data['version'])) {
+                            $data['version_normalized'] = $this->versionParser->normalize($data['version']);
+                            if ($data['version_normalized'] !== $parsedTag) {
+                                // broken package, version doesn't match tag
+                                continue;
+                            }
+                        } else {
+                            // auto-versionned package, read value from tag
+                            $data['version'] = preg_replace('{[.-]?dev$}i', '', $tag);
+                            $data['version_normalized'] = preg_replace('{[.-]?dev$}i', '', $parsedTag);
+                        }
                         $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
                         $doctrine->getEntityManager()->flush();
                     }
                 }
 
                 foreach ($repository->getBranches() as $branch => $identifier) {
-                    if ($repository->hasComposerFile($identifier) && $this->validateBranch($branch)) {
+                    if ($repository->hasComposerFile($identifier) && $parsedBranch = $this->validateBranch($branch)) {
                         $data = $repository->getComposerInformation($identifier);
-                        $data['version_normalized'] = $this->versionParser->normalize($data['version']);
 
-                        // Skip branches that contain a version that's been tagged already
+                        // manually versioned package
+                        if (isset($data['version'])) {
+                            $data['version_normalized'] = $this->versionParser->normalize($data['version']);
+                        } else {
+                            // auto-versionned package, read value from branch name
+                            $data['version'] = $branch;
+                            $data['version_normalized'] = $parsedBranch;
+                        }
+
+                        // make sure branch packages have a -dev flag
+                        $data['version'] = preg_replace('{[.-]?dev$}i', '', $data['version']) . '-dev';
+                        $data['version_normalized'] = preg_replace('{[.-]?dev$}i', '', $data['version_normalized']) . '-dev';
+
+                        // Skip branches that contain a version that has been tagged already
                         foreach ($package->getVersions() as $existingVersion) {
                             if ($data['version_normalized'] === $existingVersion->getNormalizedVersion() && !$existingVersion->getDevelopment()) {
                                 continue;
                             }
-                        }
-
-                        // Force branches to use -dev releases
-                        if (!preg_match('{[.-]?dev$}i', $data['version'])) {
-                            $data['version'] .= '-dev';
                         }
 
                         $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
@@ -116,11 +142,13 @@ EOF
                     }
                 }
 
+                // TODO -dev versions that were not updated should be deleted
+
                 $package->setUpdatedAt(new \DateTime);
                 $package->setCrawledAt(new \DateTime);
                 $doctrine->getEntityManager()->flush();
             } catch (\Exception $e) {
-                $output->writeln('<error>Exception: '.$e->getMessage().', skipping package.</error>');
+                $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
                 continue;
             }
         }
@@ -128,18 +156,17 @@ EOF
 
     private function validateBranch($branch)
     {
-        if (in_array($branch, array('master', 'trunk'))) {
-            return true;
+        try {
+            return $this->versionParser->normalizeBranch($branch);
+        } catch (\Exception $e) {
+            return false;
         }
-
-        return (Boolean) preg_match('#^v?(\d+)(\.(?:\d+|[x*]))?(\.(?:\d+|[x*]))?(\.[x*])?$#i', $branch, $matches);
     }
 
     private function validateTag($version)
     {
         try {
-            $this->versionParser->normalize($version);
-            return true;
+            return $this->versionParser->normalize($version);
         } catch (\Exception $e) {
             return false;
         }
@@ -151,9 +178,7 @@ EOF
         $version = new Version();
 
         $version->setName($package->getName());
-        $version->setVersion($data['version']);
-        $version->setNormalizedVersion($data['version_normalized']);
-        $version->setDevelopment(substr($data['version'], -4) === '-dev');
+        $version->setNormalizedVersion(preg_replace('{-dev$}i', '', $data['version_normalized']));
 
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
@@ -166,9 +191,13 @@ EOF
             }
         }
 
+        $version->setVersion($data['version']);
+        $version->setDevelopment(substr($data['version_normalized'], -4) === '-dev');
+
         $em->persist($version);
 
         $version->setDescription($data['description']);
+        $package->setDescription($data['description']);
         $version->setHomepage($data['homepage']);
         $version->setLicense(is_array($data['license']) ? $data['license'] : array($data['license']));
 
@@ -183,6 +212,10 @@ EOF
             if ($data['type'] && $data['type'] !== $package->getType()) {
                 $package->setType($data['type']);
             }
+        }
+
+        if (isset($data['target-dir'])) {
+            $version->setTargetDir($data['target-dir']);
         }
 
         if (isset($data['extra']) && is_array($data['extra'])) {
@@ -232,7 +265,7 @@ EOF
             foreach ($version->{'get'.$linkType}() as $link) {
                 // clear links that have changed/disappeared (for updates)
                 if (!isset($data[$linkType][$link->getPackageName()]) || $data[$linkType][$link->getPackageName()] !== $link->getPackageVersion()) {
-                    $version->get{'get'.$linkType}()->removeElement($link);
+                    $version->{'get'.$linkType}()->removeElement($link);
                     $em->remove($link);
                 } else {
                     // clear those that are already set
@@ -251,6 +284,10 @@ EOF
                     $em->persist($link);
                 }
             }
+        }
+
+        if (!$package->getVersions()->contains($version)) {
+            $package->addVersions($version);
         }
     }
 }

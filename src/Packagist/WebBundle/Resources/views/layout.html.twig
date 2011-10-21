@@ -67,17 +67,17 @@
 
         <footer>
             <ul>
-                <li><a href="{{ path('about') }}">About Packagist</a></li>
-                <li><a href="{{ path('about.composer') }}">About Composer</a></li>
-                <li><a href="{{ path('home') }}">Home</a></li>
+                <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
+                <li><a href="{{ path('about.composer') }}">{{ 'menu.about_composer'|trans }}</a></li>
+                <li><a href="{{ path('home') }}">{{ 'menu.home'|trans }}</a></li>
             </ul>
             <ul>
                 {% if app.user %}
-                    <li><a href="{{ path('fos_user_profile_show') }}">Profile</a></li>
-                    <li><a href="{{ path('fos_user_security_logout') }}">Logout</a></li>
+                    <li><a href="{{ path('fos_user_profile_show') }}">{{ 'menu.profile'|trans }}</a></li>
+                    <li><a href="{{ path('fos_user_security_logout') }}">{{ 'menu.logout'|trans }}</a></li>
                 {% else %}
-                    <li><a href="{{ path('fos_user_registration_register') }}">Register</a></li>
-                    <li><a href="{{ path('fos_user_security_login') }}">Login</a></li>
+                    <li><a href="{{ path('fos_user_registration_register') }}">{{ 'menu.register'|trans }}</a></li>
+                    <li><a href="{{ path('fos_user_security_login') }}">{{ 'menu.login'|trans }}</a></li>
                 {% endif %}
             </ul>
             <div class="clearfix"></div>

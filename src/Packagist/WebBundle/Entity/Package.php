@@ -44,12 +44,12 @@ class Package
     private $name;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(nullable=true)
      */
     private $type;
 
     /**
-     * @ORM\Column(type="text", nullable="true")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $description;
 
@@ -78,12 +78,12 @@ class Package
     private $createdAt;
 
     /**
-     * @ORM\Column(type="datetime", nullable="true")
+     * @ORM\Column(type="datetime", nullable=true)
      */
     private $updatedAt;
 
     /**
-     * @ORM\Column(type="datetime", nullable="true")
+     * @ORM\Column(type="datetime", nullable=true)
      */
     private $crawledAt;
 
@@ -93,7 +93,7 @@ class Package
         $this->createdAt = new \DateTime;
     }
 
-    public function toJson()
+    public function toArray()
     {
         $versions = array();
         foreach ($this->getVersions() as $version) {
@@ -104,14 +104,13 @@ class Package
             $maintainers[] = $maintainer->toArray();
         }
         $data = array(
-            'name' => $this->name,
-            'description' => $this->description,
-            'dist-tags' => array(),
+            'name' => $this->getName(),
+            'description' => $this->getDescription(),
             'maintainers' => $maintainers,
             'versions' => $versions,
-            'type' => $this->type,
+            'type' => $this->getType(),
         );
-        return json_encode($data);
+        return $data;
     }
 
     public function setRepositoryProvider(RepositoryProviderInterface $provider)
@@ -183,7 +182,7 @@ class Package
     /**
      * Set description
      *
-     * @param text $description
+     * @param string $description
      */
     public function setDescription($description)
     {
@@ -333,7 +332,7 @@ class Package
     /**
      * Set type
      *
-     * @param text $type
+     * @param string $type
      */
     public function setType($type)
     {

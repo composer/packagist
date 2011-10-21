@@ -34,16 +34,11 @@ class ApiController extends Controller
             ->getRepository('Packagist\WebBundle\Entity\Package')
             ->findAll();
 
-        $data = '{';
-        $cnt = count($packages);
-        foreach ($packages as $idx => $package) {
-            $data .= '"'.$package->getName().'":'.$package->toJson();
-            if ($cnt > $idx+1) {
-                $data .= ',';
-            }
+        $data = array();
+        foreach ($packages as $package) {
+            $data[$package->getName()] = $package->toArray();
         }
-        $data .= '}';
 
-        return new Response($data, 200, array('Content-Type' => 'application/json'));
+        return new Response(json_encode($data), 200, array('Content-Type' => 'application/json'));
     }
 }

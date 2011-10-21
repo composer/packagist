@@ -39,17 +39,22 @@ class Version
     private $name;
 
     /**
-     * @ORM\Column(type="text", nullable="true")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $description;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(nullable=true)
      */
     private $type;
 
     /**
-     * @ORM\Column(type="array", nullable="true")
+     * @ORM\Column(nullable=true)
+     */
+    private $targetDir;
+
+    /**
+     * @ORM\Column(type="array", nullable=true)
      */
     private $extra = array();
 
@@ -69,7 +74,7 @@ class Version
     private $package;
 
     /**
-     * @ORM\Column(nullable="true")
+     * @ORM\Column(nullable=true)
      * @Assert\Url()
      */
     private $homepage;
@@ -93,7 +98,7 @@ class Version
     private $development;
 
     /**
-     * @ORM\Column(type="text", nullable="true")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $license;
 
@@ -188,18 +193,19 @@ class Version
         }
 
         $data = array(
-            'name' => $this->name,
-            'description' => $this->description,
+            'name' => $this->getName(),
+            'description' => $this->getDescription(),
             'keywords' => $tags,
-            'homepage' => $this->homepage,
-            'version' => $this->version,
+            'homepage' => $this->getHomepage(),
+            'version' => $this->getVersion(),
             'license' => $this->getLicense(),
             'authors' => $authors,
             'source' => $this->getSource(),
-            'time' => $this->releasedAt ? $this->releasedAt->format('Y-m-d\TH:i:sP') : null,
+            'time' => $this->getReleasedAt() ? $this->getReleasedAt()->format('Y-m-d\TH:i:sP') : null,
             'dist' => $this->getDist(),
-            'type' => $this->type,
-            'extra' => $this->extra,
+            'type' => $this->getType(),
+            'target-dir' => $this->getTargetDir(),
+            'extra' => $this->getExtra(),
         );
 
         $supportedLinkTypes = array(
@@ -224,7 +230,7 @@ class Version
     public function equals(Version $version)
     {
         return strtolower($version->getName()) === strtolower($this->getName())
-            && $version->getNormalizedVersion() === $this->getNormalizedVersion();
+            && strtolower($version->getNormalizedVersion()) === strtolower($this->getNormalizedVersion());
     }
 
     /**
@@ -260,7 +266,7 @@ class Version
     /**
      * Set description
      *
-     * @param text $description
+     * @param string $description
      */
     public function setDescription($description)
     {
@@ -360,7 +366,7 @@ class Version
     /**
      * Set source
      *
-     * @param text $source
+     * @param string $source
      */
     public function setSource($source)
     {
@@ -380,7 +386,7 @@ class Version
     /**
      * Set dist
      *
-     * @param text $dist
+     * @param string $dist
      */
     public function setDist($dist)
     {
@@ -564,6 +570,26 @@ class Version
     public function getType()
     {
         return $this->type;
+    }
+
+    /**
+     * Set targetDir
+     *
+     * @param string $targetDir
+     */
+    public function setTargetDir($targetDir)
+    {
+        $this->targetDir = $targetDir;
+    }
+
+    /**
+     * Get targetDir
+     *
+     * @return string
+     */
+    public function getTargetDir()
+    {
+        return $this->targetDir;
     }
 
     /**
