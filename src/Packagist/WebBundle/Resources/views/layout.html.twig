@@ -13,21 +13,10 @@
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
         <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
 
-        <script type="text/javascript">
-            WebFontConfig = {
-                google: { families: [ 'PT Sans' ] }
-            };
-            (function() {
-                var wf = document.createElement('script');
-                wf.src = ('https:' == document.location.protocol ? 'https' : 'http') +
-                    '://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
-                wf.src = '//ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
-                wf.type = 'text/javascript';
-                wf.async = 'true';
-                var s = document.getElementsByTagName('script')[0];
-                s.parentNode.insertBefore(wf, s);
-            })();
-        </script>
+        <!--[if lt IE 9]>
+        <script src="{{ asset('bundles/packagistweb/js/html5.js') }}"></script>
+        <![endif]-->
+
         <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" />
 
         {# {% stylesheets '@PackagistWebBundle/Resources/public/css/main.css' filter="yui_css" output='css/main.css' %}
@@ -74,8 +63,9 @@
                 {% block content %}
                 {% endblock %}
             </div>
+        </div>
 
-            <footer>
+        <footer>
                 <ul>
                     <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
                     <li><a href="{{ path('about.composer') }}">{{ 'menu.about_composer'|trans }}</a></li>
@@ -90,12 +80,12 @@
                         <li><a href="{{ path('fos_user_security_login') }}">{{ 'menu.login'|trans }}</a></li>
                     {% endif %}
                 </ul>
-                <div class="clearfix"></div>
-            </footer>
-        </div>
+            <div class="clearfix"></div>
+        </footer>
 
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
         <script>!window.jQuery && document.write(unescape('%3Cscript src="/js/libs/jquery-1.5.2.min.js"%3E%3C/script%3E'))</script>
+        <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
         {#<script>
             var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']]; // TODO Change UA-XXXXX-X
             (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.async=1;
