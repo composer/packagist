@@ -238,12 +238,19 @@ EOF
             foreach ($data['authors'] as $authorData) {
                 $author = null;
                 // skip authors with no information
-                if (!isset($authorData['email']) && !isset($authorData['name'])) {
+                if (empty($authorData['email']) && empty($authorData['name'])) {
                     continue;
                 }
 
-                if (isset($authorData['email'])) {
+                if (!empty($authorData['email'])) {
                     $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneByEmail($authorData['email']);
+
+                    if (!$author && !empty($authorData['homepage'])) {
+                        $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneBy(array(
+                            'name' => $authorData['name'],
+                            'homepage' => $authorData['homepage']
+                        ));
+                    }
                 }
 
                 if (!$author) {
