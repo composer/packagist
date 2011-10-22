@@ -254,6 +254,18 @@ p {
   background: #53a51d;
 }
 
+.getting-started {
+  float: left;
+  width: 48%;
+  margin-right: 4%;
+}
+
+.recent-packages, .recent-versions {
+  float: right;
+  width: 48%;
+}
+
+
 .main h1 {
   font-size: 25px;
   margin-bottom: 10px;
@@ -278,7 +290,7 @@ ul.packages li {
   padding-left: 10px;
 }
 ul.packages section {
-  position: relative;  
+  position: relative;
 }
 ul.packages h1 {
   font-family: Verdana;
@@ -299,7 +311,7 @@ ul.packages li.has-popup:hover h1 {
   color: #fff;
   background: url("../img/package_bg.png") 0 0 repeat-x;
 }
-ul.packages li.has-popup:hover h1 a, ul.packages li.has-popup:hover h1 a:visited { 
+ul.packages li.has-popup:hover h1 a, ul.packages li.has-popup:hover h1 a:visited {
   color: #fff;
 }
 

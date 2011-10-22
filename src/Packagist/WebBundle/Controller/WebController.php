@@ -20,6 +20,7 @@ use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Form\Type\PackageType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -43,6 +44,23 @@ class WebController extends Controller
      */
     public function indexAction()
     {
+        return array('page' => 'home');
+    }
+
+    /**
+     * @Template()
+     * @Route("/packages/", name="browse")
+     */
+    public function browseAction(Request $req)
+    {
+        if ($tag = $req->query->get('tag')) {
+            $packages = $this->getDoctrine()
+                ->getRepository('PackagistWebBundle:Package')
+                ->findByTag($tag);
+
+            return $this->render('PackagistWebBundle:Web:tag.html.twig', array('packages' => $packages, 'tag' => $name));
+        }
+
         $packages = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
             ->findAll();
@@ -51,12 +69,12 @@ class WebController extends Controller
         $paginator->setMaxPerPage(20);
         $paginator->setCurrentPage($this->get('request')->query->get('page', 1), false, true);
 
-        return array('packages' => $paginator, 'page' => 'home');
+        return $this->render('PackagistWebBundle:Web:browse.html.twig', array('packages' => $packages));
     }
 
     /**
      * @Template()
-     * @Route("/submit", name="submit")
+     * @Route("/packages/submit", name="submit")
      */
     public function submitPackageAction()
     {
@@ -89,7 +107,7 @@ class WebController extends Controller
     }
 
     /**
-     * @Route("/submit/fetch-info", name="submit.fetch_info", defaults={"_format"="json"})
+     * @Route("/packages/fetch-info", name="submit.fetch_info", defaults={"_format"="json"})
      */
     public function fetchInfoAction()
     {
@@ -120,22 +138,8 @@ class WebController extends Controller
     }
 
     /**
-     * View all packages with the specified tag.
-     *
      * @Template()
-     * @Route("/tag/{name}", name="tag")
-     */
-    public function tagAction($name)
-    {
-        $packages = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
-            ->findByTag($name);
-        return array('packages' => $packages, 'tag' => $name);
-    }
-
-    /**
-     * @Template()
-     * @Route("/view/{name}", name="view", requirements={"name"="[A-Za-z0-9/_-]+"})
+     * @Route("/packages/{name}", name="view", requirements={"name"="[A-Za-z0-9/_-]+"})
      */
     public function viewAction($name)
     {

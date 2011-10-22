@@ -1,6 +1,7 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
 {% block content %}
+<<<<<<< HEAD
     {% block content_title %}<h1>Packages</h1>{% endblock %}
     {% if packages|length %}
         <ul class="packages">
@@ -42,4 +43,41 @@
     {% else %}
         <p>No packages found.</p>
     {% endif %}
+=======
+    <section class="getting-started">
+        <h1>Getting Started</h1>
+        <div>
+            <h2>Define Your Dependencies</h2>
+            <p>Put a file named <em>composer.json</em> at the root of your project, containing your project dependencies:</p>
+            <pre>
+{
+    "require": {
+        "vendor/package": "1.3.2",
+        "vendor/package2": "1.*",
+        "vendor/package3": ">=2.0.3"
+    }
+}
+</pre>
+            <h2>Installing Composer In Your Project</h2>
+            <p>Run this in your command line:</p>
+            <pre>
+wget http://getcomposer.org/composer.phar
+</pre>
+            <p>Or <a href="http://getcomposer.org/composer.phar">download composer</a> into your project root.</p>
+            <h2>Installing Dependencies</h2>
+            <p>Execute this in your project root.</p>
+            <pre>
+php composer.phar install
+</pre>
+        </div>
+    </section>
+    <section class="recent-packages">
+        <h1>Most Recent Packages</h1>
+        <div></div>
+    </section>
+    <section class="recent-versions">
+        <h1>Most Recent Versions</h1>
+        <div></div>
+    </section>
+>>>>>>> Update homepage and some URLs
 {% endblock %}

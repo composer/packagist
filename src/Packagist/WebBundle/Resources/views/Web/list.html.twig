@@ -1,0 +1,44 @@
+{% extends "PackagistWebBundle::layout.html.twig" %}
+
+{% block content %}
+    {% block content_title %}<h1>Packages</h1>{% endblock %}
+    {% if packages|length %}
+    <ul class="packages">
+    {% for package in packages %}
+        <li class="has-popup">
+            <section>
+                {% if package.versions|length and package.versions[0].description|length %}
+                    <h1 class="has-description"><a href="{{ url('view', { 'name' : package.name }) }}">{{ package.name }}</a></h1>
+                    <p class="package-description">{{ package.versions[0].description }}</p>
+                {% else %}
+                    <h1><a href="{{ url('view', { 'name' : package.name }) }}">{{ package.name }}</a></h1>
+                {% endif %}
+                <div class="package-details"><div>
+                {% if package.versions|length %}
+                    <p class="description">{{ package.versions[0].description }}</p>
+                    <p class="license">License: {{ package.versions[0].license ? package.versions[0].license|join(', ') : "Unknown" }}</p>
+                    <p class="links">
+                        {% if package.versions[0].homepage %}
+                            Homepage: <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />
+                        {% endif %}
+                        Tags: {% for tag in package.versions[0].tags %}<a href="{{ url("browse", { "tag" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}{% endfor %}
+                    </p>
+                {% elseif package.crawledAt is null %}
+                    <p>This package has not been crawled yet, some information is missing.</p>
+                {% else %}
+                    <p>This package has no released version yet, and little information is available yet.</p>
+                {% endif %}
+
+                <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
+                {% for maintainer in package.maintainers %}
+                    <a href="{{ url("user_packages", { "name" : maintainer.username }) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
+                {% endfor %}</p>
+                </div></div>
+            </section>
+        </li>
+    {% endfor %}
+    </ul>
+    {% else %}
+        <p>No packages found.</p>
+    {% endif %}
+{% endblock %}

@@ -36,14 +36,15 @@
                     <a href="{{ path('fos_user_security_login') }}">Login</a>
                 {% endif %}
             </div>
+
             <header>
-                {% if page is defined and page != 'submit' %}
+                {% if page is not defined or page != 'submit' %}
                 <a class="submit" href="{{ path('submit') }}">Submit Package</a>
                 {% endif %}
                 <h1><a href="{{ path('home') }}">Packagist</a></h1>
                 <h2>The PHP package archivist.</h2>
-                {% if page is defined and page == 'home' %}
-                <p>Packagist is the main <a href="{{ path('about.composer') }}">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer. Browse packages below or <a href="{{ path('submit') }}">submit your own</a> (<a href="{{ path('about') }}">learn how</a>).</p>
+                {% if page|default('') == 'home' %}
+                    <p>Packagist is the main <a href="{{ path('about.composer') }}">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.<br /><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a> (<a href="{{ path('about') }}">learn how</a>).</p>
                 {% endif %}
             </header>
 
