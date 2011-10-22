@@ -47,7 +47,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('pkg:update')
+            ->setName('packagist:update')
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages'),
             ))
