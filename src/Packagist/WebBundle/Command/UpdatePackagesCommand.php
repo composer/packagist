@@ -218,6 +218,10 @@ EOF
             $version->setTargetDir($data['target-dir']);
         }
 
+        if (isset($data['autoload'])) {
+            $version->setAutoload($data['autoload']);
+        }
+
         if (isset($data['extra']) && is_array($data['extra'])) {
             $version->setExtra($data['extra']);
         }

@@ -152,6 +152,11 @@ class Version
     private $dist;
 
     /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $autoload;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -205,6 +210,7 @@ class Version
             'dist' => $this->getDist(),
             'type' => $this->getType(),
             'target-dir' => $this->getTargetDir(),
+            'autoload' => $this->getAutoload(),
             'extra' => $this->getExtra(),
         );
 
@@ -401,6 +407,26 @@ class Version
     public function getDist()
     {
         return json_decode($this->dist, true);
+    }
+
+    /**
+     * Set autoload
+     *
+     * @param string $autoload
+     */
+    public function setAutoload($autoload)
+    {
+        $this->autoload = json_encode($autoload);
+    }
+
+    /**
+     * Get autoload
+     *
+     * @return text
+     */
+    public function getAutoload()
+    {
+        return json_decode($this->autoload, true);
     }
 
     /**
