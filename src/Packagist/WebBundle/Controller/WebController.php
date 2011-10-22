@@ -63,11 +63,11 @@ class WebController extends Controller
 
         $packages = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
-            ->findAll();
+            ->getBaseQueryBuilder();
 
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($packages));
-        $paginator->setMaxPerPage(20);
-        $paginator->setCurrentPage($this->get('request')->query->get('page', 1), false, true);
+        $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
+        $paginator->setMaxPerPage(15);
+        $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
         return $this->render('PackagistWebBundle:Web:browse.html.twig', array('packages' => $packages));
     }

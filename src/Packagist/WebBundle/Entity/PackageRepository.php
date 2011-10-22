@@ -30,11 +30,6 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function findAll()
-    {
-        return $this->getBaseQueryBuilder();
-    }
-
     public function findOneByName($name)
     {
         $qb = $this->getBaseQueryBuilder()
@@ -63,7 +58,7 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    private function getBaseQueryBuilder()
+    public function getBaseQueryBuilder()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p, v, t, m')

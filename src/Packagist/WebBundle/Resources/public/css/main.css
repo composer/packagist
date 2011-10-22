@@ -254,6 +254,15 @@ p {
   background: #53a51d;
 }
 
+.packages nav {
+  padding: 4px;
+}
+
+.packages nav span {
+  margin-right: 5px;
+  display: inline-block;
+}
+
 .getting-started {
   float: left;
   width: 48%;
