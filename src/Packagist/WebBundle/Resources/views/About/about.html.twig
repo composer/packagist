@@ -8,7 +8,7 @@
     <h1>How to submit packages?</h1>
     <h2>Naming your package</h2>
     <p>First of all, you must pick a package name. This is a very important step since it can not change, and it should be unique enough to avoid problems in the future.</p>
-    <p>The most important part is that the first bit of the package name must be the vendor name, suffixed by a forward slash (/). This follows the <a href="https://github.com/weierophinney/fig-standards/blob/master/accepted/PSR-0.md">PSR0 standard</a> for namespaces naming.</p>
+    <p>The most important part is that the first bit of the package name must be the vendor name, suffixed by a forward slash (/). This follows the <a href="https://github.com/weierophinney/fig-standards/blob/master/accepted/PSR-0.md">PSR-0 standard</a> for namespaces naming.</p>
     <p>For libraries and applications, the vendor is in most cases the library name itself, and you can use any name, although it's best to avoid using common names like DB, Logger, MySQL, etc. Try to be imaginative when naming your project.</p>
     <p>For plugins, be it TYPO3 extensions, Symfony2 bundles, Drupal modules, or whatever your project of choice calls them, you are free to handle it as you wish, but you may want to add some specific information about the target platform in the package name to avoid conflicts if you provide many plugins to integrate one lib in many frameworks. For example, if your vendor name is Acme, and your library is called Email, you could have the following names: <code>acme/email-symfony-bundle</code>, <code>acme/email-typo3-ext</code> and such. This ensures uniqueness across frameworks/applications, and clearly says what your package relates to. Here is a list of typical package names for reference:
 <pre>

@@ -81,7 +81,7 @@ class GitHubRepository implements RepositoryInterface
         if (!isset($this->infoCache[$identifier])) {
             $composer = json_decode(@file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$identifier.'/composer.json'), true);
             if (!$composer) {
-                throw new \UnexpectedValueException('Failed to download retrieve composer information for identifier '.$identifier.' in '.$this->getUrl());
+                throw new \UnexpectedValueException('Failed to retrieve composer information for identifier '.$identifier.' in '.$this->getUrl());
             }
 
             if (!isset($composer['time'])) {
