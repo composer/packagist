@@ -244,24 +244,30 @@ EOF
 
                 if (!empty($authorData['email'])) {
                     $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneByEmail($authorData['email']);
+                }
 
-                    if (!$author && !empty($authorData['homepage'])) {
-                        $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneBy(array(
-                            'name' => $authorData['name'],
-                            'homepage' => $authorData['homepage']
-                        ));
-                    }
+                if (!$author && !empty($authorData['homepage'])) {
+                    $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneBy(array(
+                        'name' => $authorData['name'],
+                        'homepage' => $authorData['homepage']
+                    ));
+                }
+
+                if (!$author && !empty($authorData['name'])) {
+                    $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneByNameAndPackage($authorData['name'], $package);
                 }
 
                 if (!$author) {
                     $author = new Author();
                     $em->persist($author);
                 }
+
                 foreach (array('email', 'name', 'homepage') as $field) {
                     if (isset($authorData[$field])) {
                         $author->{'set'.$field}($authorData[$field]);
                     }
                 }
+
                 $author->setUpdatedAt(new \DateTime);
                 if (!$version->getAuthors()->contains($author)) {
                     $version->addAuthor($author);
