@@ -79,6 +79,8 @@ EOF
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
         }
 
+        $start = new \DateTime();
+
         foreach ($packages as $package) {
             $repository = $provider->getRepository($package->getRepository());
 
@@ -142,7 +144,15 @@ EOF
                     }
                 }
 
-                // TODO -dev versions that were not updated should be deleted
+                // remove outdated -dev versions
+                foreach ($package->getVersions() as $version) {
+                    if ($version->getDevelopment() && $version->getUpdatedAt() < $start) {
+                        if ($verbose) {
+                            $output->writeln('Deleting stale version: '.$version->getVersion());
+                        }
+                        $doctrine->getRepository('PackagistWebBundle:Version')->remove($version);
+                    }
+                }
 
                 $package->setUpdatedAt(new \DateTime);
                 $package->setCrawledAt(new \DateTime);
