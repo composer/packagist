@@ -18,7 +18,7 @@ use Symfony\Component\Validator\ExecutionContext;
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\AuthorRepository")
  * @ORM\Table(name="author")
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */

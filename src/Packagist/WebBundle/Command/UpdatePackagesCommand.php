@@ -95,28 +95,45 @@ EOF
 
             try {
                 foreach ($repository->getTags() as $tag => $identifier) {
-                    if ($repository->hasComposerFile($identifier) && $parsedTag = $this->validateTag($tag)) {
+                    $parsedTag = $this->validateTag($tag);
+                    if ($parsedTag && $repository->hasComposerFile($identifier)) {
                         $data = $repository->getComposerInformation($identifier);
 
                         // manually versioned package
                         if (isset($data['version'])) {
                             $data['version_normalized'] = $this->versionParser->normalize($data['version']);
-                            if ($data['version_normalized'] !== $parsedTag) {
-                                // broken package, version doesn't match tag
-                                continue;
-                            }
                         } else {
                             // auto-versionned package, read value from tag
-                            $data['version'] = preg_replace('{[.-]?dev$}i', '', $tag);
-                            $data['version_normalized'] = preg_replace('{[.-]?dev$}i', '', $parsedTag);
+                            $data['version'] = $tag;
+                            $data['version_normalized'] = $parsedTag;
                         }
+
+                        // make sure tag packages have no -dev flag
+                        $data['version'] = preg_replace('{[.-]?dev$}i', '', $data['version']);
+                        $data['version_normalized'] = preg_replace('{[.-]?dev$}i', '', $data['version_normalized']);
+
+                        // broken package, version doesn't match tag
+                        if ($data['version_normalized'] !== $parsedTag) {
+                            if ($verbose) {
+                                $output->writeln('Skipped tag '.$tag.', tag ('.$parsedTag.') does not match version ('.$data['version_normalized'].') in composer.json');
+                            }
+                            continue;
+                        }
+
+                        if ($verbose) {
+                            $output->writeln('Importing tag '.$tag);
+                        }
+
                         $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
                         $doctrine->getEntityManager()->flush();
+                    } elseif ($verbose) {
+                        $output->writeln('Skipped tag '.$tag.', invalid name or no composer file');
                     }
                 }
 
                 foreach ($repository->getBranches() as $branch => $identifier) {
-                    if ($repository->hasComposerFile($identifier) && $parsedBranch = $this->validateBranch($branch)) {
+                    $parsedBranch = $this->validateBranch($branch);
+                    if ($parsedBranch && $repository->hasComposerFile($identifier)) {
                         $data = $repository->getComposerInformation($identifier);
 
                         // manually versioned package
@@ -129,18 +146,29 @@ EOF
                         }
 
                         // make sure branch packages have a -dev flag
+                        $normalizedStableVersion = preg_replace('{[.-]?dev$}i', '', $data['version_normalized']);
                         $data['version'] = preg_replace('{[.-]?dev$}i', '', $data['version']) . '-dev';
-                        $data['version_normalized'] = preg_replace('{[.-]?dev$}i', '', $data['version_normalized']) . '-dev';
+                        $data['version_normalized'] = $normalizedStableVersion . '-dev';
 
                         // Skip branches that contain a version that has been tagged already
                         foreach ($package->getVersions() as $existingVersion) {
-                            if ($data['version_normalized'] === $existingVersion->getNormalizedVersion() && !$existingVersion->getDevelopment()) {
-                                continue;
+                            if ($normalizedStableVersion === $existingVersion->getNormalizedVersion() && !$existingVersion->getDevelopment()) {
+                                if ($verbose) {
+                                    $output->writeln('Skipped branch '.$branch.', already tagged');
+                                }
+
+                                continue 2;
                             }
+                        }
+
+                        if ($verbose) {
+                            $output->writeln('Importing branch '.$branch);
                         }
 
                         $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
                         $doctrine->getEntityManager()->flush();
+                    } elseif ($verbose) {
+                        $output->writeln('Skipped branch '.$branch.', invalid name or no composer file');
                     }
                 }
 
@@ -169,8 +197,9 @@ EOF
         try {
             return $this->versionParser->normalizeBranch($branch);
         } catch (\Exception $e) {
-            return false;
         }
+
+        return false;
     }
 
     private function validateTag($version)
@@ -178,8 +207,9 @@ EOF
         try {
             return $this->versionParser->normalize($version);
         } catch (\Exception $e) {
-            return false;
         }
+
+        return false;
     }
 
     private function updateInformation(OutputInterface $output, RegistryInterface $doctrine, $package, RepositoryInterface $repository, $identifier, array $data)
