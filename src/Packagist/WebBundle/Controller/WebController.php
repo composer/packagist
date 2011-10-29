@@ -69,7 +69,7 @@ class WebController extends Controller
         $paginator->setMaxPerPage(15);
         $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
-        return $this->render('PackagistWebBundle:Web:browse.html.twig', array('packages' => $packages));
+        return $this->render('PackagistWebBundle:Web:browse.html.twig', array('packages' => $paginator));
     }
 
     /**
