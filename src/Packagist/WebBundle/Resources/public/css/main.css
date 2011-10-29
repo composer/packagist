@@ -269,7 +269,7 @@ p {
   margin-right: 4%;
 }
 
-.recent-packages, .recent-versions {
+.publishing-packages {
   float: right;
   width: 48%;
 }

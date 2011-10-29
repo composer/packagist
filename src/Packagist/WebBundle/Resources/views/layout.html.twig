@@ -44,7 +44,7 @@
                 <h1><a href="{{ path('home') }}">Packagist</a></h1>
                 <h2>The PHP package archivist.</h2>
                 {% if page|default('') == 'home' %}
-                    <p>Packagist is the main <a href="{{ path('about.composer') }}">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.<br /><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a> (<a href="{{ path('about') }}">learn how</a>).</p>
+                    <p>Packagist is the main <a href="{{ path('about.composer') }}">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.<br /><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a>.</p>
                 {% endif %}
             </header>
 
@@ -80,6 +80,9 @@
                         <li><a href="{{ path('fos_user_registration_register') }}">{{ 'menu.register'|trans }}</a></li>
                         <li><a href="{{ path('fos_user_security_login') }}">{{ 'menu.login'|trans }}</a></li>
                     {% endif %}
+                </ul>
+                <ul>
+                    <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
                 </ul>
             <div class="clearfix"></div>
         </footer>

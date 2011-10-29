@@ -15,26 +15,49 @@
     }
 }
 </pre>
-            <h2>Installing Composer In Your Project</h2>
+            <h2>Install Composer In Your Project</h2>
             <p>Run this in your command line:</p>
             <pre>
 wget http://getcomposer.org/composer.phar
 </pre>
             <p>Or <a href="http://getcomposer.org/composer.phar">download composer</a> into your project root.</p>
-            <h2>Installing Dependencies</h2>
+            <h2>Install Dependencies</h2>
             <p>Execute this in your project root.</p>
             <pre>
 php composer.phar install
 </pre>
+            <h2>Autoload Dependencies</h2>
+            <p>If all your packages follow the <a href="https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md">PSR-0</a> standard, you can autoload all the dependencies by adding this to your code:</p>
+            <pre>
+require '.composer/autoload.php';
+</pre>
+            <p>The .composer directory will be created besides the composer.json file, so adjust the path if needed</p>
+
+            <p><a href="{{ path('browse') }}">Browse</a> the packages we have to find more great libraries you can use in your project.</p>
         </div>
     </section>
-    <section class="recent-packages">
-        <h1>Most Recent Packages</h1>
-        <div></div>
+
+    <section class="publishing-packages">
+        <h1>Publishing Packages</h1>
+        <div>
+            <h2>Define Your Package</h2>
+            <p>Put a file named <em>composer.json</em> at the root of your package, containing this information:</p>
+            <pre>
+{
+    "name": "your-vendor-name/package-name",
+    "require": {
+        "php": ">=5.3.0",
+        "another-vendor/package": "1.*",
+    }
+}
+</pre>
+            <p>This is the strictly minimal information you have to give.</p>
+            <p>For more details about package naming and the fields you can use to document your package better, see the <a href="{{ path('about') }}">about</a> page.</p>
+            <h2>Commit The File</h2>
+            <p>You surely don't need help with that.</p>
+            <h2>Publish It</h2>
+            <p><a href="{{ path('fos_user_security_login') }}">Login</a> or <a href="{{ path('fos_user_registration_register') }}">register</a> on this site, then hit the big fat green button above that says <a href="{{ path('submit') }}">submit</a>.</p>
+            <p>Once you entered your public repository URL in there, your package will be automatically crawled periodically. You just have to make sure you keep the composer.json file up to date.</p>
+        </div>
     </section>
-    <section class="recent-versions">
-        <h1>Most Recent Versions</h1>
-        <div></div>
-    </section>
->>>>>>> Update homepage and some URLs
 {% endblock %}

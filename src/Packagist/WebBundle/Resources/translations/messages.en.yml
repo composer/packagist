@@ -6,3 +6,4 @@ menu:
   logout: Logout
   login: Login
   register: Register
+  browse_packages: Browse Packages
