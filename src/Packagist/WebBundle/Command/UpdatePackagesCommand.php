@@ -50,6 +50,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             ->setName('packagist:update')
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages'),
+                new InputOption('package', null, InputOption::VALUE_NONE, 'Package name to update (implicitly enables --force)'),
             ))
             ->setDescription('Updates packages')
             ->setHelp(<<<EOF
@@ -66,6 +67,7 @@ EOF
     {
         $verbose = $input->getOption('verbose');
         $force = $input->getOption('force');
+        $package = $input->getOption('package');
         $doctrine = $this->getContainer()->get('doctrine');
 
         $logger = $this->getContainer()->get('logger');
@@ -73,7 +75,9 @@ EOF
 
         $this->versionParser = new VersionParser;
 
-        if ($force) {
+        if ($package) {
+            $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
+        } elseif ($force) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findAll();
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
