@@ -58,7 +58,11 @@ class WebController extends Controller
                 ->getRepository('PackagistWebBundle:Package')
                 ->findByTag($tag);
 
-            return $this->render('PackagistWebBundle:Web:tag.html.twig', array('packages' => $packages, 'tag' => $name));
+            $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
+            $paginator->setMaxPerPage(15);
+            $paginator->setCurrentPage($req->query->get('page', 1), false, true);
+
+            return $this->render('PackagistWebBundle:Web:tag.html.twig', array('packages' => $paginator, 'tag' => $tag));
         }
 
         $packages = $this->getDoctrine()
