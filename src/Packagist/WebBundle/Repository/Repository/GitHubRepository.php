@@ -2,6 +2,8 @@
 
 namespace Packagist\WebBundle\Repository\Repository;
 
+use Composer\Json\JsonFile;
+
 class GitHubRepository implements RepositoryInterface
 {
     protected $owner;
@@ -79,10 +81,12 @@ class GitHubRepository implements RepositoryInterface
     public function getComposerInformation($identifier)
     {
         if (!isset($this->infoCache[$identifier])) {
-            $composer = json_decode(@file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$identifier.'/composer.json'), true);
+            $composer = @file_get_contents('https://raw.github.com/'.$this->owner.'/'.$this->repository.'/'.$identifier.'/composer.json');
             if (!$composer) {
                 throw new \UnexpectedValueException('Failed to retrieve composer information for identifier '.$identifier.' in '.$this->getUrl());
             }
+
+            $composer = JsonFile::parseJson($composer);
 
             if (!isset($composer['time'])) {
                 $commit = json_decode(file_get_contents('http://github.com/api/v2/json/commits/show/'.$this->owner.'/'.$this->repository.'/'.$identifier), true);
