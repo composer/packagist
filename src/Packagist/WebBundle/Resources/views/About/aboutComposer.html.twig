@@ -12,11 +12,13 @@
     "name": "my-project",
     "version": "1.0.0",
     "require": {
-      "monolog/monolog": "1.0.0"
+        "monolog/monolog": "1.0.0"
     }
 }
 </pre>
     In this example, the project only requires the Monolog library as a dependency.</p>
+
+    <h2>Adding more package repositories</h2>
     <p>You can add different repositories than Packagist, if needed, by specifying them by hand. For example git repositories can be used as repositories if they contain a composer.json, even if the packages are not available on Packagist. They could also be private repositories that you don't want to make accessible to everyone. Here's how to do it:
 <pre>
 {
@@ -24,7 +26,9 @@
     "version": "1.0.0",
     "repositories": {
         "MyRepo": {
-            "git": "git://example.org/MyRepo.git"
+            "git": {
+                "url": "git://example.org/MyRepo.git"
+            }
         }
     },
     "require": {
@@ -34,6 +38,68 @@
 }
 </pre></p>
 
+    <h2>Adding code that does not support composer</h2>
+    <p>If you wish to use a repository that does not contain composer.json as a dependency, you can define its package information inline with the package repository, for example:
+<pre>
+{
+    "repositories": {
+        "annoying-vendor": {
+            "package": {
+                "name": "annoying/package",
+                "version": "1.0.0",
+                "dist": {
+                    "url": "http://example.org/package.zip",
+                    "type": "zip"
+                },
+                "source": {
+                    "url": "git://example.org/package.git",
+                    "type": "git",
+                    "reference": "tag name, branch name or commit hash"
+                }
+            }
+        }
+    },
+    "require": {
+        "annoying/package": "1.0.0"
+    }
+}
+</pre>
+    You only have to specify one of the two dist/source keys, but specifying both makes it more flexble.</p>
+
+    <h2>Adding PEAR packages</h2>
+    <p>If a library does not have a composer package but offers PEAR packages, you can also add it to composer. You just need to specify it's PEAR channel and all the channels of it's dependencies:
+<pre>
+{
+    "repositories": {
+        "example org": {
+            "pear": {
+                "url": "http://pear.example.org"
+            }
+        },
+        "example com": {
+            "pear": {
+                "url": "http://pear.example.com"
+            }
+        }
+    },
+    "require": {
+        "SomePackage": "1.0.0"
+    }
+}
+</pre>
+    Note that SomePackage does not take the channel name in front of it. Also be careful, this can take quite a while with large channels containing many versions.</p>
+
+    <h2>Removing the default Packagist repository</h2>
+    <p>If you do not wish to work with Packagist packages, you can disable it like that:
+<pre>
+{
+    "repositories": {
+        "packagist": false
+    }
+}
+</pre>
+    Of course if you do that you should define an alternative repository or Composer will be pretty useless.</p>
+
     <h1>Community</h1>
-    <p>If you have questions about composer or want to help out, come and join us in the <em>#composer-dev</em> channel on irc.freenode.net.</p>
+    <p>If you have questions about composer or want to help out, come and join us in the <em><a href="irc://irc.freenode.net/#composer-dev">#composer-dev</a></em> channel on irc.freenode.net.</p>
 {% endblock %}
