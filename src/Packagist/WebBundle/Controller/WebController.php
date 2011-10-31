@@ -174,7 +174,7 @@ class WebController extends Controller
                             return array('package' => $package, 'form' => $form->createView());
                         }
 
-                        $package->addMaintainers($user);
+                        $package->addMaintainer($user);
 
                         $em->persist($package);
                         $em->flush();
