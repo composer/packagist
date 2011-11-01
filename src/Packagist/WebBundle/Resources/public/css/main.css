@@ -258,7 +258,7 @@ p {
   padding: 4px;
 }
 
-.packages nav span {
+.packages nav span, .packages nav a {
   margin-right: 5px;
   display: inline-block;
 }
