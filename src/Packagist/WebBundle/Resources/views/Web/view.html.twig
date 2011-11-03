@@ -5,79 +5,81 @@
 {% endblock %}
 
 {% block content %}
-<div class="package">
-    <h1>{{ package.name }}</h1>
-    <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
-    {% for maintainer in package.maintainers %}
-        {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
-    {% endfor %}</p>
+    <div class="box clearfix">
+        <div class="package">
+            <h1>{{ package.name }}</h1>
+            <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
+            {% for maintainer in package.maintainers %}
+                {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
+            {% endfor %}</p>
 
-    {% if form is defined %}
-        <div>
-            <strong id="add-maintainer"><a href="#">Add Maintainer</a></strong>
-            <form id="add-maintainer-form" class="hidden" action="" method="POST" {{ form_enctype(form) }}>
+            {% if form is defined %}
                 <div>
-                    <p>
-                        {{ form_label(form.user, "Username") }}
-                        {{ form_errors(form.user) }}
-                        {{ form_widget(form.user) }}
-                    </p>
-                    {{ form_rest(form) }}
-                    <input id="submit" type="submit" value="Submit" />
+                    <strong id="add-maintainer"><a href="#">Add Maintainer</a></strong>
+                    <form id="add-maintainer-form" class="hidden" action="" method="POST" {{ form_enctype(form) }}>
+                        <div>
+                            <p>
+                                {{ form_label(form.user, "Username") }}
+                                {{ form_errors(form.user) }}
+                                {{ form_widget(form.user) }}
+                            </p>
+                            {{ form_rest(form) }}
+                            <input id="submit" type="submit" value="Submit" />
+                        </div>
+                    </form>
                 </div>
-            </form>
-        </div>
-    {% endif %}
+            {% endif %}
 
-    {% if package.versions|length %}
-        <ul class="packages">
-            {% for version in package.versions %}
-                <li{% if loop.index0 > 0 and not ('-dev' in version.version) %} class="has-popup"{% endif %}>
-                    <section>
-                        <h1>{{ version.version }}</h1>
-                        {% if loop.index0 > 0 and not ('-dev' in version.version) %}
-                            <div class="package-details"><div>
-                        {% else %}
-                            <div class="package-full-details"><div>
-                        {% endif %}
-                        <p class="description">{{ version.description }}</p>
-                        <p class="license">License: {{ version.license ? version.license|join(', ') : "Unknown" }}</p>
-                        <p class="release-date">Date: {{ version.releasedAt|date("Y-m-d") }}</p>
-                        <p class="links">
-                            {% if version.homepage %}
-                                Homepage: <a href="{{ version.homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
-                            {% endif %}
-                        </p>
-                        <p class="links">
-                            Tags:
-                            {% for tag in version.tags -%}
-                                <a href="{{ url("browse", { "tag" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}
-                            {%- endfor %}
-                        </p>
-                        <p class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}:
-                            {% for author in version.authors %}
-                                {% if author.homepage %}
-                                    <a href="{{ author.homepage }}">{{ author.name }}</a>
+            {% if package.versions|length %}
+                <ul class="packages">
+                    {% for version in package.versions %}
+                        <li{% if loop.index0 > 0 and not ('-dev' in version.version) %} class="has-popup"{% endif %}>
+                            <section>
+                                <h1>{{ version.version }}</h1>
+                                {% if loop.index0 > 0 and not ('-dev' in version.version) %}
+                                    <div class="package-details"><div>
                                 {% else %}
-                                    {{ author.name }}
+                                    <div class="package-full-details"><div>
                                 {% endif %}
-                                {% if author.email %}&lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif %}
-                                <br />
-                            {% endfor %}
-                        </p>
-                        <p class="requires">Requirement{{ version.require|length > 1 ? 's' : '' }}:
-                            {% for req in version.require %}
-                                {{ req.packageName }} ({{ req.packageVersion }})<br />
-                            {% endfor %}
-                        </p>
-                    </section>
-                </li>
-            {% endfor %}
-        </ul>
-    {% elseif package.crawledAt is null %}
-        <p>This package has not been crawled yet, some information is missing.</p>
-    {% else %}
-        <p>This package has no released version yet, and little information is available yet.</p>
-    {% endif %}
-</div>
+                                <p class="description">{{ version.description }}</p>
+                                <p class="license">License: {{ version.license ? version.license|join(', ') : "Unknown" }}</p>
+                                <p class="release-date">Date: {{ version.releasedAt|date("Y-m-d") }}</p>
+                                <p class="links">
+                                    {% if version.homepage %}
+                                        Homepage: <a href="{{ version.homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
+                                    {% endif %}
+                                </p>
+                                <p class="links">
+                                    Tags:
+                                    {% for tag in version.tags -%}
+                                        <a href="{{ url("browse", { "tag" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}
+                                    {%- endfor %}
+                                </p>
+                                <p class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}:
+                                    {% for author in version.authors %}
+                                        {% if author.homepage %}
+                                            <a href="{{ author.homepage }}">{{ author.name }}</a>
+                                        {% else %}
+                                            {{ author.name }}
+                                        {% endif %}
+                                        {% if author.email %}&lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif %}
+                                        <br />
+                                    {% endfor %}
+                                </p>
+                                <p class="requires">Requirement{{ version.require|length > 1 ? 's' : '' }}:
+                                    {% for req in version.require %}
+                                        {{ req.packageName }} ({{ req.packageVersion }})<br />
+                                    {% endfor %}
+                                </p>
+                            </section>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% elseif package.crawledAt is null %}
+                <p>This package has not been crawled yet, some information is missing.</p>
+            {% else %}
+                <p>This package has no released version yet, and little information is available yet.</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

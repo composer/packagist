@@ -106,7 +106,7 @@ a:hover {
   min-height: 400px;
 }
 
-.container > div, .container > header {
+.container div.user, .container div.box, .container header {
   width: 900px;
   margin: auto;
 }
@@ -134,7 +134,8 @@ header p {
   clear: both;
   margin: 0 -8px 10px;
 }
-header p, .main {
+.box {
+  width: 900px;
   font-size: 15px;
   padding: 5px 7px;
   background: #f5f5f5;
@@ -201,6 +202,9 @@ p {
   margin-bottom: 10px;
   font-family: "Arial", sans-serif;
   line-height: 150%;
+}
+div.box > p:last-child {
+  margin-bottom: 0;
 }
 
 .package p {
