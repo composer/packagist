@@ -7,6 +7,7 @@
 {% block content %}
     <div class="box clearfix">
         <div class="package">
+            <p style="float: right;"><a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">View more packages from {{ package.vendor }}.</a></p>
             <h1>{{ package.name }}</h1>
             <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
             {% for maintainer in package.maintainers %}

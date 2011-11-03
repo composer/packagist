@@ -181,6 +181,16 @@ class Package
     }
 
     /**
+     * Get vendor
+     *
+     * @return string $vendor
+     */
+    public function getVendor()
+    {
+        return preg_replace('{/.*$}', '', $this->name);
+    }
+
+    /**
      * Set description
      *
      * @param string $description

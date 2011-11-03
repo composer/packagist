@@ -143,9 +143,30 @@ class WebController extends Controller
 
     /**
      * @Template()
-     * @Route("/packages/{name}", name="view", requirements={"name"="[A-Za-z0-9/_-]+"})
+     * @Route("/packages/{vendor}/", name="view_vendor", requirements={"vendor"="[A-Za-z0-9_.-]+"})
      */
-    public function viewAction($name)
+    public function viewVendorAction($vendor)
+    {
+        $packages = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Package')
+            ->createQueryBuilder('p')
+            ->where('p.name LIKE ?0')
+            ->setParameters(array($vendor.'/%'))
+            ->getQuery()
+            ->getResult();
+
+        if (!$packages) {
+            throw new NotFoundHttpException('The requested vendor, '.$vendor.', was not found.');
+        }
+
+        return array('packages' => $packages, 'vendor' => $vendor, 'paginate' => false);
+    }
+
+    /**
+     * @Template()
+     * @Route("/packages/{name}", name="view_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9/_.-]+"})
+     */
+    public function viewPackageAction($name)
     {
         $package = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')

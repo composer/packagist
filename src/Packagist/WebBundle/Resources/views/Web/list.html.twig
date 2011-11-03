@@ -9,10 +9,10 @@
                     <li class="has-popup">
                         <section>
                             {% if package.versions|length and package.versions[0].description|length %}
-                                <h1 class="has-description"><a href="{{ url('view', { 'name' : package.name }) }}">{{ package.name }}</a></h1>
+                                <h1 class="has-description"><a href="{{ path('view_package', { 'name' : package.name }) }}">{{ package.name }}</a></h1>
                                 <p class="package-description">{{ package.versions[0].description }}</p>
                             {% else %}
-                                <h1><a href="{{ url('view', { 'name' : package.name }) }}">{{ package.name }}</a></h1>
+                                <h1><a href="{{ path('view_package', { 'name' : package.name }) }}">{{ package.name }}</a></h1>
                             {% endif %}
                             <div class="package-details"><div>
                             {% if package.versions|length %}
@@ -22,7 +22,7 @@
                                     {% if package.versions[0].homepage %}
                                         Homepage: <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />
                                     {% endif %}
-                                    Tags: {% for tag in package.versions[0].tags %}<a href="{{ url("browse", { "tag" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}{% endfor %}
+                                    Tags: {% for tag in package.versions[0].tags %}<a href="{{ path("browse", { "tag" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}{% endfor %}
                                 </p>
                             {% elseif package.crawledAt is null %}
                                 <p>This package has not been crawled yet, some information is missing.</p>
@@ -32,13 +32,16 @@
 
                             <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
                             {% for maintainer in package.maintainers %}
-                                <a href="{{ url("user_packages", { "name" : maintainer.username }) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
+                                <a href="{{ path("user_packages", { "name" : maintainer.username }) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
                             {% endfor %}</p>
                             </div></div>
                         </section>
                     </li>
                 {% endfor %}
-                {{ pagerfanta(packages, 'default', {'proximity': 2}) }}
+
+                {% if paginate is defined and paginate %}
+                    {{ pagerfanta(packages, 'default', {'proximity': 2}) }}
+                {% endif %}
             </ul>
         {% else %}
             <p>No packages found.</p>
