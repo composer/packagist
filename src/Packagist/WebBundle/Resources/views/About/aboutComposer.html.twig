@@ -48,14 +48,14 @@
         <p>Of course if you do that you should define an alternative repository or Composer will be pretty useless.</p>
 
         <h2>Adding a git repository containing a composer package</h2>
-        <p>Git repositories can be used as repositories if they contain a composer.json, even if the packages are not available on Packagist. They could also be private repositories that you don't want to make accessible to everyone. Here's how to do it:</p>
+        <p>VCS (only Git so far) repositories can be used as repositories if they contain a composer.json, even if the packages are not available on Packagist. They could also be private repositories that you don't want to make accessible to everyone. Here's how to do it:</p>
 <pre>
 {
     "name": "my-project",
     "version": "1.0.0",
     "repositories": {
         "MyRepo": {
-            "git": {
+            "vcs": {
                 "url": "git://example.org/MyRepo.git"
             }
         }
