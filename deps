@@ -50,6 +50,10 @@
     target=/bundles/JMS/SecurityExtraBundle
     version=origin/1.0.x
 
+[SensioDistributionBundle]
+    git=http://github.com/sensio/SensioDistributionBundle.git
+    target=/bundles/Sensio/Bundle/DistributionBundle
+
 [SensioGeneratorBundle]
     git=http://github.com/sensio/SensioGeneratorBundle.git
     target=/bundles/Sensio/Bundle/GeneratorBundle
