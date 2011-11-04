@@ -10,6 +10,8 @@
  * file that was distributed with this source code.
  */
 
+set_time_limit(0);
+
 $rootDir = dirname(__DIR__);
 $vendorDir = $rootDir.'/vendor';
 
@@ -22,22 +24,33 @@ Specify a command to run:
 
  install: install vendors as specified in deps or deps.lock (recommended)
  update:  update vendors to their latest versions (as specified in deps)
+ lock:  lock vendors to their current versions
+
+EOF
+    );
+}
+
+if (!in_array($command = array_shift($argv), array('install', 'update', 'lock'))) {
+    exit(sprintf("Command \"%s\" does not exist.\n", $command));
+}
+
+/*
+ * Check wether this project is based on the Standard Edition that was
+ * shipped with vendors or not.
+ */
+if (is_dir($vendorDir.'/symfony') && !is_dir($vendorDir.'/symfony/.git') && !in_array('--reinstall', $argv)) {
+    exit(<<<EOF
+Your project seems to be based on a Standard Edition that includes vendors.
+
+Try to run ./bin/vendors install --reinstall
 
 
 EOF
     );
 }
 
-if (!in_array($command = array_shift($argv), array('install', 'update'))) {
-    exit(sprintf("Command \"%s\" does not exist.\n", $command));
-}
-
 if (!is_dir($vendorDir)) {
     mkdir($vendorDir, 0777, true);
-}
-
-if (!file_exists($rootDir.'/app/config/parameters.ini')) {
-    copy($rootDir.'/app/config/parameters.ini.dist', $rootDir.'/app/config/parameters.ini');
 }
 
 // versions
@@ -54,39 +67,46 @@ if ('install' === $command && file_exists($rootDir.'/deps.lock')) {
 
 $newversions = array();
 $deps = parse_ini_file($rootDir.'/deps', true, INI_SCANNER_RAW);
+if (false === $deps) {
+    exit("The deps file is not valid ini syntax. Perhaps missing a trailing newline?\n");
+}
 foreach ($deps as $name => $dep) {
-    // revision
-    if (isset($versions[$name])) {
-        $rev = $versions[$name];
-    } else {
-        $rev = isset($dep['version']) ? $dep['version'] : 'origin/HEAD';
-    }
+    $dep = array_map('trim', $dep);
 
     // install dir
     $installDir = isset($dep['target']) ? $vendorDir.'/'.$dep['target'] : $vendorDir.'/'.$name;
     if (in_array('--reinstall', $argv)) {
-        if (PHP_OS == 'WINNT') {
+        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
             system(sprintf('rmdir /S /Q %s', escapeshellarg(realpath($installDir))));
         } else {
             system(sprintf('rm -rf %s', escapeshellarg($installDir)));
         }
     }
 
-    echo "> Installing/Updating $name\n";
+    if ('install' === $command || 'update' === $command) {
+        echo "> Installing/Updating $name\n";
 
-    // url
-    if (!isset($dep['git'])) {
-        exit(sprintf('The "git" value for the "%s" dependency must be set.', $name));
+        // url
+        if (!isset($dep['git'])) {
+            exit(sprintf('The "git" value for the "%s" dependency must be set.', $name));
+        }
+        $url = $dep['git'];
+
+        if (!is_dir($installDir)) {
+            system(sprintf('git clone %s %s', escapeshellarg($url), escapeshellarg($installDir)));
+        }
+
+        // revision
+        if (isset($versions[$name])) {
+            $rev = $versions[$name];
+        } else {
+            $rev = isset($dep['version']) ? $dep['version'] : 'origin/HEAD';
+        }
+
+        system(sprintf('cd %s && git fetch origin && git reset --hard %s', escapeshellarg($installDir), escapeshellarg($rev)));
     }
-    $url = $dep['git'];
 
-    if (!is_dir($installDir)) {
-        system(sprintf('git clone %s %s', escapeshellarg($url), escapeshellarg($installDir)));
-    }
-
-    system(sprintf('cd %s && git fetch origin && git reset --hard %s', escapeshellarg($installDir), escapeshellarg($rev)));
-
-    if ('update' === $command) {
+    if ('update' === $command || 'lock' === $command) {
         ob_start();
         system(sprintf('cd %s && git log -n 1 --format=%%H', escapeshellarg($installDir)));
         $newversions[] = trim($name.' '.ob_get_clean());
@@ -94,15 +114,17 @@ foreach ($deps as $name => $dep) {
 }
 
 // update?
-if ('update' === $command) {
+if ('update' === $command || 'lock' === $command) {
+    echo "> Updating deps.lock\n";
+
     file_put_contents($rootDir.'/deps.lock', implode("\n", $newversions));
 }
 
 // php on windows can't use the shebang line from system()
-$interpreter = PHP_OS == 'WINNT' ? 'php.exe' : '';
+$interpreter = defined('PHP_WINDOWS_VERSION_BUILD') ? 'php.exe' : '';
 
 // Update the bootstrap files
-system(sprintf('%s %s', $interpreter, escapeshellarg($rootDir.'/vendor/bundles/Sensio/Bundle/DistributionBundle/Resources/bin/build_bootstrap.php')));
+system(sprintf('%s %s %s', $interpreter, escapeshellarg($rootDir.'/vendor/bundles/Sensio/Bundle/DistributionBundle/Resources/bin/build_bootstrap.php'), escapeshellarg($rootDir)));
 
 // Update assets
 system(sprintf('%s %s assets:install %s', $interpreter, escapeshellarg($rootDir.'/app/console'), escapeshellarg($rootDir.'/web/')));

@@ -29,7 +29,7 @@
         <div class="container">
             <div class="user">
                 {% if app.user %}
-                    {{ app.user.username }} | <a href="{{ path('fos_user_security_logout') }}">Logout</a>
+                    <a href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a> | <a href="{{ path('fos_user_security_logout') }}">Logout</a>
                 {% else %}
                     <a href="{{ path('fos_user_registration_register') }}">Create a new account</a>
                     |
@@ -39,13 +39,10 @@
 
             <header>
                 {% if page is not defined or page != 'submit' %}
-                <a class="submit" href="{{ path('submit') }}">Submit Package</a>
+                    <a class="submit" href="{{ path('submit') }}">Submit Package</a>
                 {% endif %}
                 <h1><a href="{{ path('home') }}">Packagist</a></h1>
                 <h2>The PHP package archivist.</h2>
-                {% if page|default('') == 'home' %}
-                    <p>Packagist is the main <a href="{{ path('about.composer') }}">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.<br /><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a>.</p>
-                {% endif %}
             </header>
 
             <div class="main" role="main">

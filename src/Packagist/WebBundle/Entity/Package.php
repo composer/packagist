@@ -136,8 +136,8 @@ class Package
                 return;
             }
 
-            if (!preg_match('{^[a-z0-9_-]+/[a-z0-9_-]+$}i', $information['name'])) {
-                $context->addViolation('The package name '.$information['name'].' is invalid, it should have a vendor name, a forward slash, and a package name, matching <em>[a-z0-9_-]+/[a-z0-9_-]+</em>.', array(), null);
+            if (!preg_match('{^[a-z0-9_.-]+/[a-z0-9_.-]+$}i', $information['name'])) {
+                $context->addViolation('The package name '.$information['name'].' is invalid, it should have a vendor name, a forward slash, and a package name, matching <em>[a-z0-9_.-]+/[a-z0-9_.-]+</em>.', array(), null);
                 return;
             }
         } catch (\UnexpectedValueException $e) {
@@ -178,6 +178,16 @@ class Package
     public function getName()
     {
         return $this->name;
+    }
+
+    /**
+     * Get vendor
+     *
+     * @return string $vendor
+     */
+    public function getVendor()
+    {
+        return preg_replace('{/.*$}', '', $this->name);
     }
 
     /**
