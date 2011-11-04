@@ -1,0 +1,17 @@
+{% extends "PackagistWebBundle::layout.html.twig" %}
+
+{% import "PackagistWebBundle::macros.html.twig" as macros %}
+
+{% block content %}
+    <div class="box clearfix">
+        <h1>{{ user.username }} (that's you!)</h1>
+        <p>This is your profile. You can <a href="{{ path('fos_user_profile_edit') }}">edit</a>.</p>
+
+        <h1>Your packages</h1>
+        {% if user.packages|length %}
+            {{ macros.listPackages(user.packages) }}
+        {% else %}
+            <p>No packages found.</p>
+        {% endif %}
+    </div>
+{% endblock %}

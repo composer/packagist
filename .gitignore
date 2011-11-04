@@ -1,5 +1,5 @@
 web/bundles/
-app/config/parameters.ini
+app/config/parameters.yml
 app/bootstrap*
 app/cache/*
 app/logs/*
