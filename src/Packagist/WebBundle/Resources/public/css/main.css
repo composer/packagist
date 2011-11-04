@@ -106,7 +106,7 @@ a:hover {
   min-height: 400px;
 }
 
-.container div.user, .container div.box, .container header {
+.container div.user, .container div.box, .container header, .container div.flash-message {
   width: 900px;
   margin: auto;
 }
