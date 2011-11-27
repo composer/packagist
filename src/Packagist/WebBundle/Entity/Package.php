@@ -12,11 +12,12 @@
 
 namespace Packagist\WebBundle\Entity;
 
-use Packagist\WebBundle\Repository\RepositoryProviderInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ExecutionContext;
 use Doctrine\Common\Collections\ArrayCollection;
+use Composer\Repository\VcsRepository;
+use Composer\Repository\RepositoryManager;
 
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\PackageRepository")
@@ -87,6 +88,8 @@ class Package
      */
     private $crawledAt;
 
+    private $entityRepository;
+
     public function __construct()
     {
         $this->versions = new ArrayCollection();
@@ -111,11 +114,6 @@ class Package
             'type' => $this->getType(),
         );
         return $data;
-    }
-
-    public function setRepositoryProvider(RepositoryProviderInterface $provider)
-    {
-        $this->repositoryProvider = $provider;
     }
 
     public function isRepositoryValid(ExecutionContext $context)
@@ -145,9 +143,18 @@ class Package
         }
     }
 
+    public function setEntityRepository($repository)
+    {
+        $this->entityRepository = $repository;
+    }
+
     public function isPackageUnique(ExecutionContext $context)
     {
-        // TODO check for uniqueness of package name
+        if ($this->entityRepository->findOneByName($this->name)) {
+            $propertyPath = $context->getPropertyPath() . '.repository';
+            $context->setPropertyPath($propertyPath);
+            $context->addViolation('A package with the name '.$this->name.' already exists.', array(), null);
+        }
     }
 
     /**

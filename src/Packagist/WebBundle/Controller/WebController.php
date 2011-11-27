@@ -83,11 +83,11 @@ class WebController extends Controller
     public function submitPackageAction()
     {
         $package = new Package;
-        $package->setRepositoryProvider($this->get('packagist.repository_provider'));
+        $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $form = $this->createForm(new PackageType, $package);
 
         $request = $this->getRequest();
-        if ($request->getMethod() == 'POST') {
+        if ('POST' === $request->getMethod()) {
             $form->bindRequest($request);
             if ($form->isValid()) {
                 try {
@@ -116,7 +116,7 @@ class WebController extends Controller
     public function fetchInfoAction()
     {
         $package = new Package;
-        $package->setRepositoryProvider($this->get('packagist.repository_provider'));
+        $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $form = $this->createForm(new PackageType, $package);
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');

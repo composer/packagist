@@ -17,6 +17,9 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 
+/**
+ * @author Jordi Boggiano <j.boggiano@seld.be>
+ */
 class UserController extends Controller
 {
     /**
