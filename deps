@@ -44,6 +44,7 @@
 [SensioFrameworkExtraBundle]
     git=http://github.com/sensio/SensioFrameworkExtraBundle.git
     target=/bundles/Sensio/Bundle/FrameworkExtraBundle
+    version=origin/2.0
 
 [SensioDistributionBundle]
     git=http://github.com/sensio/SensioDistributionBundle.git
