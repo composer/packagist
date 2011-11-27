@@ -239,15 +239,23 @@ class Package
     {
         $this->repository = $repository;
 
+        $repositoryManager = new RepositoryManager;
+        $repositoryManager->setRepositoryClass('composer', 'Composer\Repository\ComposerRepository');
+        $repositoryManager->setRepositoryClass('vcs', 'Composer\Repository\VcsRepository');
+        $repositoryManager->setRepositoryClass('pear', 'Composer\Repository\PearRepository');
+        $repositoryManager->setRepositoryClass('package', 'Composer\Repository\PackageRepository');
+
         try {
-            $this->repositoryClass = $repo = $this->repositoryProvider->getRepository($this->repository);
+            $repository = new VcsRepository(array('url' => $repository));
+            $repository->setRepositoryManager($repositoryManager);
+
+            $repo = $this->repositoryClass = $repository->getDriver();
             if (!$repo) {
                 return;
             }
             $information = $repo->getComposerInformation($repo->getRootIdentifier());
             $this->setName($information['name']);
         } catch (\UnexpectedValueException $e) {}
-        // TODO use more specialized exception for repos
     }
 
     /**

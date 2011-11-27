@@ -19,7 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\VersionRepository")
  * @ORM\Table(
  *     name="package_version",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="pkg_ver_idx",columns={"package_id","version"})}
+ *     uniqueConstraints={@ORM\UniqueConstraint(name="pkg_ver_idx",columns={"package_id","normalizedVersion"})}
  * )
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
@@ -142,12 +142,12 @@ class Version
     private $suggest;
 
     /**
-     * @ORM\Column(type="text")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $source;
 
     /**
-     * @ORM\Column(type="text")
+     * @ORM\Column(type="text", nullable=true)
      */
     private $dist;
 
@@ -167,8 +167,7 @@ class Version
     private $updatedAt;
 
     /**
-     * @ORM\Column(type="datetime")
-     * @Assert\NotBlank()
+     * @ORM\Column(type="datetime", nullable=true)
      */
     private $releasedAt;
 

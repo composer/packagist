@@ -24,6 +24,9 @@ use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Repository\Repository\RepositoryInterface;
 use Composer\Package\Version\VersionParser;
+use Composer\Repository\VcsRepository;
+use Composer\Package\PackageInterface;
+use Composer\Repository\RepositoryManager;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -66,18 +69,15 @@ EOF
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $verbose = $input->getOption('verbose');
-        $force = $input->getOption('force');
-        $package = $input->getOption('package');
         $doctrine = $this->getContainer()->get('doctrine');
 
         $logger = $this->getContainer()->get('logger');
-        $provider = $this->getContainer()->get('packagist.repository_provider');
 
         $this->versionParser = new VersionParser;
 
-        if ($package) {
-            $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
-        } elseif ($force) {
+        if ($input->getOption('package')) {
+            $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($input->getOption('package')));
+        } elseif ($input->getOption('force')) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findAll();
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
@@ -85,95 +85,39 @@ EOF
 
         $start = new \DateTime();
 
+        $repositoryManager = new RepositoryManager;
+        $repositoryManager->setRepositoryClass('composer', 'Composer\Repository\ComposerRepository');
+        $repositoryManager->setRepositoryClass('vcs', 'Composer\Repository\VcsRepository');
+        $repositoryManager->setRepositoryClass('pear', 'Composer\Repository\PearRepository');
+        $repositoryManager->setRepositoryClass('package', 'Composer\Repository\PackageRepository');
+
         foreach ($packages as $package) {
-            $repository = $provider->getRepository($package->getRepository());
-
-            if (!$repository) {
-                $output->writeln('<error>Unsupported repository: '.$package->getRepository().'</error>');
-                continue;
-            }
-
             if ($verbose) {
-                $output->writeln('Importing '.$repository->getUrl());
+                $output->writeln('Importing '.$package->getRepository());
             }
 
             try {
-                foreach ($repository->getTags() as $tag => $identifier) {
-                    $parsedTag = $this->validateTag($tag);
-                    if ($parsedTag && $repository->hasComposerFile($identifier)) {
-                        $data = $repository->getComposerInformation($identifier);
-
-                        // manually versioned package
-                        if (isset($data['version'])) {
-                            $data['version_normalized'] = $this->versionParser->normalize($data['version']);
-                        } else {
-                            // auto-versionned package, read value from tag
-                            $data['version'] = $tag;
-                            $data['version_normalized'] = $parsedTag;
-                        }
-
-                        // make sure tag packages have no -dev flag
-                        $data['version'] = preg_replace('{[.-]?dev$}i', '', $data['version']);
-                        $data['version_normalized'] = preg_replace('{[.-]?dev$}i', '', $data['version_normalized']);
-
-                        // broken package, version doesn't match tag
-                        if ($data['version_normalized'] !== $parsedTag) {
-                            if ($verbose) {
-                                $output->writeln('Skipped tag '.$tag.', tag ('.$parsedTag.') does not match version ('.$data['version_normalized'].') in composer.json');
-                            }
-                            continue;
-                        }
-
-                        if ($verbose) {
-                            $output->writeln('Importing tag '.$tag);
-                        }
-
-                        $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
-                        $doctrine->getEntityManager()->flush();
-                    } elseif ($verbose) {
-                        $output->writeln('Skipped tag '.$tag.', invalid name or no composer file');
-                    }
+                $repository = new VcsRepository(array('url' => $package->getRepository()));
+                $repository->setRepositoryManager($repositoryManager);
+                if ($verbose) {
+                    $repository->setDebug(true);
                 }
+                $versions = $repository->getPackages();
 
-                foreach ($repository->getBranches() as $branch => $identifier) {
-                    $parsedBranch = $this->validateBranch($branch);
-                    if ($parsedBranch && $repository->hasComposerFile($identifier)) {
-                        $data = $repository->getComposerInformation($identifier);
-
-                        // manually versioned package
-                        if (isset($data['version'])) {
-                            $data['version_normalized'] = $this->versionParser->normalize($data['version']);
-                        } else {
-                            // auto-versionned package, read value from branch name
-                            $data['version'] = $branch;
-                            $data['version_normalized'] = $parsedBranch;
-                        }
-
-                        // make sure branch packages have a -dev flag
-                        $normalizedStableVersion = preg_replace('{[.-]?dev$}i', '', $data['version_normalized']);
-                        $data['version'] = preg_replace('{[.-]?dev$}i', '', $data['version']) . '-dev';
-                        $data['version_normalized'] = $normalizedStableVersion . '-dev';
-
-                        // Skip branches that contain a version that has been tagged already
-                        foreach ($package->getVersions() as $existingVersion) {
-                            if ($normalizedStableVersion === $existingVersion->getNormalizedVersion() && !$existingVersion->getDevelopment()) {
-                                if ($verbose) {
-                                    $output->writeln('Skipped branch '.$branch.', already tagged');
-                                }
-
-                                continue 2;
-                            }
-                        }
-
-                        if ($verbose) {
-                            $output->writeln('Importing branch '.$branch);
-                        }
-
-                        $this->updateInformation($output, $doctrine, $package, $repository, $identifier, $data);
-                        $doctrine->getEntityManager()->flush();
-                    } elseif ($verbose) {
-                        $output->writeln('Skipped branch '.$branch.', invalid name or no composer file');
+                usort($versions, function ($a, $b) {
+                    if ($a->getVersion() == $b->getVersion()) {
+                        return 0;
                     }
+                    return version_compare($a, $b, '<') ? -1 : 1;
+                });
+
+                foreach ($versions as $version) {
+                    if ($verbose) {
+                        $output->writeln('Storing '.$version->getPrettyVersion().' ('.$version->getVersion().')');
+                    }
+
+                    $this->updateInformation($output, $doctrine, $package, $version);
+                    $doctrine->getEntityManager()->flush();
                 }
 
                 // remove outdated -dev versions
@@ -191,38 +135,17 @@ EOF
                 $doctrine->getEntityManager()->flush();
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
-                continue;
             }
         }
     }
 
-    private function validateBranch($branch)
-    {
-        try {
-            return $this->versionParser->normalizeBranch($branch);
-        } catch (\Exception $e) {
-        }
-
-        return false;
-    }
-
-    private function validateTag($version)
-    {
-        try {
-            return $this->versionParser->normalize($version);
-        } catch (\Exception $e) {
-        }
-
-        return false;
-    }
-
-    private function updateInformation(OutputInterface $output, RegistryInterface $doctrine, $package, RepositoryInterface $repository, $identifier, array $data)
+    private function updateInformation(OutputInterface $output, RegistryInterface $doctrine, $package, PackageInterface $data)
     {
         $em = $doctrine->getEntityManager();
         $version = new Version();
 
         $version->setName($package->getName());
-        $version->setNormalizedVersion(preg_replace('{-dev$}i', '', $data['version_normalized']));
+        $version->setNormalizedVersion(preg_replace('{-dev$}i', '', $data->getVersion()));
 
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
@@ -235,51 +158,56 @@ EOF
             }
         }
 
-        $version->setVersion($data['version']);
-        $version->setDevelopment(substr($data['version_normalized'], -4) === '-dev');
+        $version->setVersion($data->getPrettyVersion());
+        $version->setDevelopment(substr($data->getVersion(), -4) === '-dev');
 
         $em->persist($version);
 
-        $version->setDescription($data['description']);
-        $package->setDescription($data['description']);
-        $version->setHomepage($data['homepage']);
-        $version->setLicense(is_array($data['license']) ? $data['license'] : array($data['license']));
+        $version->setDescription($data->getDescription());
+        $package->setDescription($data->getDescription());
+        $version->setHomepage($data->getHomepage());
+        $version->setLicense($data->getLicense() ?: array());
 
         $version->setPackage($package);
         $version->setUpdatedAt(new \DateTime);
-        $version->setReleasedAt(new \DateTime($data['time']));
-        $version->setSource($repository->getSource($identifier));
-        $version->setDist($repository->getDist($identifier));
+        $version->setReleasedAt($data->getReleaseDate());
 
-        if (isset($data['type'])) {
-            $version->setType($data['type']);
-            if ($data['type'] && $data['type'] !== $package->getType()) {
-                $package->setType($data['type']);
+        if ($data->getSourceType()) {
+            $source['type'] = $data->getSourceType();
+            $source['url'] = $data->getSourceUrl();
+            $source['reference'] = $data->getSourceReference();
+            $version->setSource($source);
+        }
+
+        if ($data->getDistType()) {
+            $dist['type'] = $data->getDistType();
+            $dist['url'] = $data->getDistUrl();
+            $dist['reference'] = $data->getDistReference();
+            $dist['shasum'] = $data->getDistSha1Checksum();
+            $version->setDist($dist);
+        }
+
+        if ($data->getType()) {
+            $version->setType($data->getType());
+            if ($data->getType() && $data->getType() !== $package->getType()) {
+                $package->setType($data->getType());
             }
         }
 
-        if (isset($data['target-dir'])) {
-            $version->setTargetDir($data['target-dir']);
-        }
-
-        if (isset($data['autoload'])) {
-            $version->setAutoload($data['autoload']);
-        }
-
-        if (isset($data['extra']) && is_array($data['extra'])) {
-            $version->setExtra($data['extra']);
-        }
+        $version->setTargetDir($data->getTargetDir());
+        $version->setAutoload($data->getAutoload());
+        $version->setExtra($data->getExtra());
 
         $version->getTags()->clear();
-        if (isset($data['keywords'])) {
-            foreach ($data['keywords'] as $keyword) {
+        if ($data->getKeywords()) {
+            foreach ($data->getKeywords() as $keyword) {
                 $version->addTag(Tag::getByName($em, $keyword, true));
             }
         }
 
         $version->getAuthors()->clear();
-        if (isset($data['authors'])) {
-            foreach ($data['authors'] as $authorData) {
+        if ($data->getAuthors()) {
+            foreach ($data->getAuthors() as $authorData) {
                 $author = null;
                 // skip authors with no information
                 if (empty($authorData['email']) && empty($authorData['name'])) {
@@ -323,27 +251,30 @@ EOF
         }
 
         foreach ($this->supportedLinkTypes as $linkType => $linkEntity) {
+            $links = array();
+            foreach ($data->{'get'.$linkType.'s'}() as $link) {
+                $links[$link->getTarget()] = $link->getPrettyConstraint();
+            }
+
             foreach ($version->{'get'.$linkType}() as $link) {
                 // clear links that have changed/disappeared (for updates)
-                if (!isset($data[$linkType][$link->getPackageName()]) || $data[$linkType][$link->getPackageName()] !== $link->getPackageVersion()) {
+                if (!isset($links[$link->getPackageName()]) || $links[$link->getPackageName()] !== $link->getPackageVersion()) {
                     $version->{'get'.$linkType}()->removeElement($link);
                     $em->remove($link);
                 } else {
                     // clear those that are already set
-                    unset($data[$linkType][$link->getPackageName()]);
+                    unset($links[$link->getPackageName()]);
                 }
             }
 
-            if (isset($data[$linkType])) {
-                foreach ($data[$linkType] as $linkPackageName => $linkPackageVersion) {
-                    $class = 'Packagist\WebBundle\Entity\\'.$linkEntity;
-                    $link = new $class;
-                    $link->setPackageName($linkPackageName);
-                    $link->setPackageVersion($linkPackageVersion);
-                    $version->{'add'.$linkType.'Link'}($link);
-                    $link->setVersion($version);
-                    $em->persist($link);
-                }
+            foreach ($links as $linkPackageName => $linkPackageVersion) {
+                $class = 'Packagist\WebBundle\Entity\\'.$linkEntity;
+                $link = new $class;
+                $link->setPackageName($linkPackageName);
+                $link->setPackageVersion($linkPackageVersion);
+                $version->{'add'.$linkType.'Link'}($link);
+                $link->setVersion($version);
+                $em->persist($link);
             }
         }
 
