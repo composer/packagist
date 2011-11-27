@@ -164,7 +164,7 @@ class WebController extends Controller
 
     /**
      * @Template()
-     * @Route("/packages/{name}", name="view_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9/_.-]+"})
+     * @Route("/packages/{name}", name="view_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
     public function viewPackageAction($name)
     {
@@ -176,43 +176,73 @@ class WebController extends Controller
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }
 
+        $data = array('package' => $package);
+
         if ($package->getMaintainers()->contains($this->getUser())) {
+            $data['form'] = $this->createAddMaintainerForm()->createView();
+        }
 
-            $addMaintainerRequest = new AddMaintainerRequest;
-            $form = $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
+        return $data;
+    }
 
-            $request = $this->getRequest();
-            if ('POST' === $request->getMethod()) {
-                $form->bindRequest($request);
-                if ($form->isValid()) {
-                    try {
-                        $em = $this->getDoctrine()->getEntityManager();
-                        $user = $addMaintainerRequest->getUser();
+    /**
+     * @Template("PackagistWebBundle:Web:viewPackage.html.twig")
+     * @Route("/packages/{name}/maintainers/", name="add_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9/_.-]+"})
+     */
+    public function createMaintainerAction(Request $req, $name)
+    {
+        $package = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Package')
+            ->findOneByName($name);
 
-                        if (empty($user)) {
-                            $this->get('session')->setFlash('error', 'The user could not be found.');
+        if (!$package) {
+            throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
+        }
 
-                            return array('package' => $package, 'form' => $form->createView());
+        $form = $this->createAddMaintainerForm();
+        $data = array(
+            'package' => $package,
+            'form' => $form->createView(),
+            'show_maintainer_form' => true,
+        );
+
+        if ('POST' === $req->getMethod()) {
+            if (!$package->getMaintainers()->contains($this->getUser())) {
+                throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
+            }
+
+            $form->bindRequest($req);
+            if ($form->isValid()) {
+                try {
+                    $em = $this->getDoctrine()->getEntityManager();
+                    $user = $form->getData()->getUser();
+
+                    if (!empty($user)) {
+                        if (!$package->getMaintainers()->contains($user)) {
+                            $package->addMaintainer($user);
                         }
-
-                        $package->addMaintainer($user);
 
                         $em->persist($package);
                         $em->flush();
 
                         $this->get('session')->setFlash('success', $user->getUsername().' is now a '.$package->getName().' maintainer.');
 
-                        return new RedirectResponse($this->generateUrl('home'));
-                    } catch (\Exception $e) {
-                        $this->get('logger')->crit($e->getMessage(), array('exception', $e));
-                        $this->get('session')->setFlash('error', 'The maintainer could not be added.');
+                        return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
                     }
+                    $this->get('session')->setFlash('error', 'The user could not be found.');
+                } catch (\Exception $e) {
+                    $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+                    $this->get('session')->setFlash('error', 'The maintainer could not be added.');
                 }
             }
-
-            return array('package' => $package, 'form' => $form->createView());
         }
 
-        return array('package' => $package);
+        return $data;
+    }
+
+    private function createAddMaintainerForm()
+    {
+        $addMaintainerRequest = new AddMaintainerRequest;
+        return $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
     }
 }

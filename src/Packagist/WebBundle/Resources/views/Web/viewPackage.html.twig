@@ -17,7 +17,7 @@
             {% if form is defined %}
                 <div>
                     <strong id="add-maintainer"><a href="#">Add Maintainer</a></strong>
-                    <form id="add-maintainer-form" class="hidden" action="" method="POST" {{ form_enctype(form) }}>
+                    <form id="add-maintainer-form" class="{{ show_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('add_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(form) }}>
                         <div>
                             <p>
                                 {{ form_label(form.user, "Username") }}
