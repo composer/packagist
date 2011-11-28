@@ -13,3 +13,6 @@ parameters:
     locale: en
 
     secret: CHANGE_ME_IN_PROD
+
+    google_analytics:
+        key:

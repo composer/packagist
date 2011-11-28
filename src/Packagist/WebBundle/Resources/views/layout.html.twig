@@ -87,12 +87,15 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
         <script>!window.jQuery && document.write(unescape('%3Cscript src="/js/libs/jquery-1.5.2.min.js"%3E%3C/script%3E'))</script>
         <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
-        {#<script>
-            var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']]; // TODO Change UA-XXXXX-X
-            (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.async=1;
-            g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
-            s.parentNode.insertBefore(g,s)}(document,'script'));
-        </script>#}
+
+        {% if not app.debug and google_analytics.key %}
+            <script>
+                var _gaq=[['_setAccount','{{ google_analytics.key }}'],['_trackPageview']];
+                (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.async=1;
+                g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+                s.parentNode.insertBefore(g,s)}(document,'script'));
+            </script>
+        {% endif %}
 
         {% block scripts %}{% endblock %}
     </body>
