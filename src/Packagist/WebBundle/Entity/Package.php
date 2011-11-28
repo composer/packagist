@@ -150,11 +150,13 @@ class Package
 
     public function isPackageUnique(ExecutionContext $context)
     {
-        if ($this->entityRepository->findOneByName($this->name)) {
-            $propertyPath = $context->getPropertyPath() . '.repository';
-            $context->setPropertyPath($propertyPath);
-            $context->addViolation('A package with the name '.$this->name.' already exists.', array(), null);
-        }
+        try {
+            if ($this->entityRepository->findOneByName($this->name)) {
+                $propertyPath = $context->getPropertyPath() . '.repository';
+                $context->setPropertyPath($propertyPath);
+                $context->addViolation('A package with the name '.$this->name.' already exists.', array(), null);
+            }
+        } catch (\Doctrine\ORM\NoResultException $e) {}
     }
 
     /**

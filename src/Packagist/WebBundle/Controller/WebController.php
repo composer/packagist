@@ -97,9 +97,9 @@ class WebController extends Controller
                     $em->persist($package);
                     $em->flush();
 
-                    $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, the repository will be parsed for releases in a bit.');
+                    $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, the repository will be parsed for releases soon.');
 
-                    return new RedirectResponse($this->generateUrl('home'));
+                    return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
                 } catch (\Exception $e) {
                     $this->get('logger')->crit($e->getMessage(), array('exception', $e));
                     $this->get('session')->setFlash('error', $package->getName().' could not be saved.');
