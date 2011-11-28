@@ -105,10 +105,7 @@ EOF
                 $versions = $repository->getPackages();
 
                 usort($versions, function ($a, $b) {
-                    if ($a->getVersion() == $b->getVersion()) {
-                        return 0;
-                    }
-                    return version_compare($a, $b, '<') ? -1 : 1;
+                    return version_compare($a->getVersion(), $b->getVersion());
                 });
 
                 foreach ($versions as $version) {
