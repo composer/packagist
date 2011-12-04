@@ -178,7 +178,8 @@ class WebController extends Controller
 
         $data = array('package' => $package);
 
-        if ($package->getMaintainers()->contains($this->getUser())) {
+        $user = $this->getUser();
+        if ($user && $package->getMaintainers()->contains($user)) {
             $data['form'] = $this->createAddMaintainerForm()->createView();
         }
 
@@ -199,6 +200,10 @@ class WebController extends Controller
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }
 
+        if (!$package->getMaintainers()->contains($this->getUser())) {
+            throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
+        }
+
         $form = $this->createAddMaintainerForm();
         $data = array(
             'package' => $package,
@@ -207,10 +212,6 @@ class WebController extends Controller
         );
 
         if ('POST' === $req->getMethod()) {
-            if (!$package->getMaintainers()->contains($this->getUser())) {
-                throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
-            }
-
             $form->bindRequest($req);
             if ($form->isValid()) {
                 try {
