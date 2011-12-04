@@ -157,6 +157,11 @@ class Version
     private $autoload;
 
     /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $binaries;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -212,6 +217,10 @@ class Version
             'autoload' => $this->getAutoload(),
             'extra' => $this->getExtra(),
         );
+
+        if ($this->getBinaries()) {
+            $data['bin'] = $this->getBinaries();
+        }
 
         $supportedLinkTypes = array(
             'require',
@@ -426,6 +435,26 @@ class Version
     public function getAutoload()
     {
         return json_decode($this->autoload, true);
+    }
+
+    /**
+     * Set binaries
+     *
+     * @param string $binaries
+     */
+    public function setBinaries($binaries)
+    {
+        $this->binaries = json_encode($binaries);
+    }
+
+    /**
+     * Get binaries
+     *
+     * @return text
+     */
+    public function getBinaries()
+    {
+        return json_decode($this->binaries, true);
     }
 
     /**

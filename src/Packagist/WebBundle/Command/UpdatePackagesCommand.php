@@ -206,6 +206,7 @@ EOF
         $version->setTargetDir($data->getTargetDir());
         $version->setAutoload($data->getAutoload());
         $version->setExtra($data->getExtra());
+        $version->setBinaries($data->getBinaries());
 
         $version->getTags()->clear();
         if ($data->getKeywords()) {
