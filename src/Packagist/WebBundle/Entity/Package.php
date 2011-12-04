@@ -190,13 +190,23 @@ class Package
     }
 
     /**
-     * Get vendor
+     * Get vendor prefix
      *
-     * @return string $vendor
+     * @return string
      */
     public function getVendor()
     {
         return preg_replace('{/.*$}', '', $this->name);
+    }
+
+    /**
+     * Get package name without vendor
+     *
+     * @return string
+     */
+    public function getPackageName()
+    {
+        return preg_replace('{^[^/]*/}', '', $this->name);
     }
 
     /**

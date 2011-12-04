@@ -5,20 +5,38 @@
 {% endblock %}
 
 {% block content %}
-    <div class="box clearfix">
+    <div class="box">
         <div class="package">
-            <p style="float: right;"><a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">View more packages from {{ package.vendor }}.</a></p>
-            <h1>{{ package.name }}</h1>
-            <p class="maintainers">Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:
-            {% for maintainer in package.maintainers %}
-                {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
-            {% endfor %}</p>
+            <h1>
+                <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
+            </h1>
+            {% if package.versions|length and package.versions[0].tags|length %}
+                <p class="tags">
+                    {%- for tag in package.versions[0].tags -%}
+                        <a href="{{ url("browse", { "tag" : tag.name }) }}">{{ tag.name }}</a>
+                    {%- endfor -%}
+                </p>
+            {% endif %}
+
+            <p class="description">{{ package.description }}</p>
+            <p class="details">
+                <span>Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:</span>
+                {% for maintainer in package.maintainers %}
+                    {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
+                {% endfor %}
+                {% if form is defined %}<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}">Add Maintainer</a>{% endif %}
+                <br />
+                {% if package.versions|length and package.versions[0].homepage %}
+                    <span>Homepage:</span> <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />
+                {% endif %}
+                <span>Repository:</span> <a href="{{ package.repository }}">{{ package.repository }}</a>
+            </p>
 
             {% if form is defined %}
                 <div>
-                    <strong id="add-maintainer"><a href="#">Add Maintainer</a></strong>
                     <form id="add-maintainer-form" class="{{ show_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('add_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(form) }}>
                         <div>
+                            <h2>Add Maintainer</h2>
                             <p>
                                 {{ form_label(form.user, "Username") }}
                                 {{ form_errors(form.user) }}
@@ -32,46 +50,106 @@
             {% endif %}
 
             {% if package.versions|length %}
-                <ul class="packages">
+                <ul class="versions">
                     {% for version in package.versions %}
-                        <li{% if loop.index0 > 0 and not ('-dev' in version.version) %} class="has-popup"{% endif %}>
+                        <li class="version{% if loop.last %} last{% endif %}">
                             <section>
-                                <h1>{{ version.version }}</h1>
-                                {% if loop.index0 > 0 and not ('-dev' in version.version) %}
-                                    <div class="package-details"><div>
-                                {% else %}
-                                    <div class="package-full-details"><div>
-                                {% endif %}
-                                <p class="description">{{ version.description }}</p>
-                                <p class="license">License: {{ version.license ? version.license|join(', ') : "Unknown" }}</p>
-                                <p class="release-date">Date: {{ version.releasedAt|date("Y-m-d") }}</p>
-                                <p class="links">
-                                    {% if version.homepage %}
-                                        Homepage: <a href="{{ version.homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
-                                    {% endif %}
-                                </p>
-                                <p class="links">
-                                    Tags:
-                                    {% for tag in version.tags -%}
-                                        <a href="{{ url("browse", { "tag" : tag.name }) }}">{{ tag.name }}</a>{{ loop.last ? '' : ', ' }}
-                                    {%- endfor %}
-                                </p>
-                                <p class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}:
-                                    {% for author in version.authors %}
-                                        {% if author.homepage %}
-                                            <a href="{{ author.homepage }}">{{ author.name }}</a>
-                                        {% else %}
-                                            {{ author.name }}
-                                        {% endif %}
-                                        {% if author.email %}&lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif %}
-                                        <br />
-                                    {% endfor %}
-                                </p>
-                                <p class="requires">Requirement{{ version.require|length > 1 ? 's' : '' }}:
-                                    {% for req in version.require %}
-                                        {{ req.packageName }} ({{ req.packageVersion }})<br />
-                                    {% endfor %}
-                                </p>
+                                <h1>
+                                    {{ version.version }}
+                                    <span class="release-date">{{ version.releasedAt|date("Y-m-d") }}</span>
+                                    <span class="license">{{ version.license ? version.license|join(', ') : '' }}</span>
+                                </h1>
+
+                                <div class="details {% if loop.index0 == 0 %} open{% endif %}">
+                                    <h2 class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}</h2>
+                                    <ul>
+                                        {% for author in version.authors %}
+                                            <li>
+                                                {%- if author.homepage -%}
+                                                    <a href="{{ author.homepage }}">{{ author.name }}</a>
+                                                {%- else -%}
+                                                    {{ author.name }}
+                                                {%- endif -%}
+                                                {% if author.email %} &lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif -%}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                    <div class="clearfix package-links">
+                                        <div class="requires">
+                                            <h2>Requires</h2>
+                                            {% if version.require|length %}
+                                                <ul>
+                                                    {%- for req in version.require -%}
+                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                    {%- endfor -%}
+                                                </ul>
+                                            {% else %}
+                                                None
+                                            {% endif %}
+                                        </div>
+                                        <div class="recommends">
+                                            <h2>Recommends</h2>
+                                            {% if version.recommend|length %}
+                                                <ul>
+                                                    {%- for req in version.recommend -%}
+                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                    {%- endfor -%}
+                                                </ul>
+                                            {% else %}
+                                                None
+                                            {% endif %}
+                                        </div>
+                                        <div class="suggests">
+                                            <h2>Suggests</h2>
+                                            {% if version.suggest|length %}
+                                                <ul>
+                                                    {%- for req in version.suggest -%}
+                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                    {%- endfor -%}
+                                                </ul>
+                                            {% else %}
+                                                None
+                                            {% endif %}
+                                        </div>
+                                        <div class="provides">
+                                            <h2>Provides</h2>
+                                            {% if version.provide|length %}
+                                                <ul>
+                                                    {%- for req in version.provide -%}
+                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                    {%- endfor -%}
+                                                </ul>
+                                            {% else %}
+                                                None
+                                            {% endif %}
+                                        </div>
+                                        <div class="conflicts">
+                                            <h2>Conflicts</h2>
+                                            {% if version.conflict|length %}
+                                                <ul>
+                                                    {%- for req in version.conflict -%}
+                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                    {%- endfor -%}
+                                                </ul>
+                                            {% else %}
+                                                None
+                                            {% endif %}
+                                        </div>
+                                        <div class="replaces">
+                                            <h2>Replaces</h2>
+                                            {% if version.replace|length %}
+                                                <ul>
+                                                    {%- for req in version.replace -%}
+                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                    {%- endfor -%}
+                                                </ul>
+                                            {% else %}
+                                                None
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="details-toggler{% if loop.index0 == 0 %} open{% endif %}"></div>
                             </section>
                         </li>
                     {% endfor %}
@@ -79,7 +157,7 @@
             {% elseif package.crawledAt is null %}
                 <p>This package has not been crawled yet, some information is missing.</p>
             {% else %}
-                <p>This package has no released version yet, and little information is available yet.</p>
+                <p>This package has no released version yet, and little information is available.</p>
             {% endif %}
         </div>
     </div>
