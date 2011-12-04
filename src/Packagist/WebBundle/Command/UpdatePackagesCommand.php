@@ -97,6 +97,18 @@ EOF
             }
 
             try {
+                // clear versions to force a clean reloading if --force is enabled
+                if ($input->getOption('force')) {
+                    $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
+                    foreach ($package->getVersions() as $version) {
+                        $versionRepo->remove($version);
+                    }
+
+                    $doctrine->getEntityManager()->flush();
+                    $doctrine->getEntityManager()->detach($package);
+                    $package = $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package->getName());
+                }
+
                 $repository = new VcsRepository(array('url' => $package->getRepository()));
                 $repository->setRepositoryManager($repositoryManager);
                 if ($verbose) {
