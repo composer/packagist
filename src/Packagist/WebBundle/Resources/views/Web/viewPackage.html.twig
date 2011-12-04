@@ -22,9 +22,9 @@
             <p class="details">
                 <span>Maintainer{{ package.maintainers|length > 1 ? 's' : '' }}:</span>
                 {% for maintainer in package.maintainers %}
-                    {{ maintainer.username }}{{ loop.last ? '' : ', ' }}
+                    <a href="{{ path('user_profile', {'name': maintainer.username}) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
                 {% endfor %}
-                {% if form is defined %}<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}">Add Maintainer</a>{% endif %}
+                {% if form is defined %}(<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}">add maintainer</a>){% endif %}
                 <br />
                 {% if package.versions|length and package.versions[0].homepage %}
                     <span>Homepage:</span> <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />

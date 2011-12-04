@@ -47,14 +47,14 @@ class PackageRepository extends EntityRepository
             ->setParameters(array($name));
     }
 
-    public function findByMaintainer(User $user)
+    public function getQueryBuilderByMaintainer(User $user)
     {
         $qb = $this->getBaseQueryBuilder()
             // eliminate maintainers & tags from the select, because of the groupBy
             ->select('p, v')
             ->where('m.id = ?0')
             ->setParameters(array($user->getId()));
-        return $qb->getQuery()->getResult();
+        return $qb;
     }
 
     public function getBaseQueryBuilder()

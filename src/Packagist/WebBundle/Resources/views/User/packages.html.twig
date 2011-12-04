@@ -1,7 +1,5 @@
-{% extends "PackagistWebBundle:Web:index.html.twig" %}
+{% extends "PackagistWebBundle:Web:list.html.twig" %}
 
 {% block content_title %}
-    <div class="box clearfix">
-        <h1>Packages maintained by {{ user.username }}</h1>
-    </div>
+    <h1>Packages maintained by {{ user.username }}</h1>
 {% endblock %}
