@@ -14,6 +14,8 @@ namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
+use Packagist\WebBundle\Form\Type\SearchQueryType;
+use Packagist\WebBundle\Form\Model\SearchQuery;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
@@ -24,6 +26,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Pagerfanta\Pagerfanta;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
@@ -74,6 +77,47 @@ class WebController extends Controller
         $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
         return $this->render('PackagistWebBundle:Web:browse.html.twig', array('packages' => $paginator));
+    }
+
+    /**
+     * @Template()
+     * @Route("/search/", name="search")
+     */
+    public function searchAction(Request $req)
+    {
+        $searchQuery = new SearchQuery;
+        $form = $this->createForm(new SearchQueryType, $searchQuery);
+
+        if ('POST' === $req->getMethod()) {
+            $form->bindRequest($req);
+            if ($form->isValid()) {
+                $solarium = $this->get('solarium.client');
+
+                $query = $solarium->createSelect();
+                $query->setQuery($searchQuery->getQuery());
+
+                $resultset = $solarium->select($query);
+
+                $packageIds = array_map(
+                    function ($document) {
+                        return $document->id;
+                    },
+                    iterator_to_array($resultset)
+                );
+
+                $packages = $this->getDoctrine()
+                    ->getRepository('PackagistWebBundle:Package')
+                    ->findByIds($packageIds);
+
+                $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
+                $paginator->setMaxPerPage(15);
+                $paginator->setCurrentPage($req->query->get('page', 1), false, true);
+
+                return $this->render('PackagistWebBundle:Web:search.html.twig', array('packages' => $paginator, 'form' => $form->createView()));
+            }
+        }
+
+        return $this->render('PackagistWebBundle:Web:search.html.twig', array('form' => $form->createView()));
     }
 
     /**

@@ -1,0 +1,21 @@
+{% extends "PackagistWebBundle:Web:list.html.twig" %}
+
+{% block content %}
+    <div class="box clearfix">
+        <h1>Search packages</h1>
+        <form id="search-form" action="{{ path('search') }}" method="POST" {{ form_enctype(form) }}>
+            <div>
+                <p>
+                    {{ form_errors(form.query) }}
+                    {{ form_widget(form.query) }}
+                </p>
+                {{ form_rest(form) }}
+                <input id="submit" type="submit" value="Search" />
+            </div>
+        </form>
+    </div>
+
+    {% if packages is defined %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}
