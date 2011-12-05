@@ -105,8 +105,7 @@ EOF
                     }
 
                     $doctrine->getEntityManager()->flush();
-                    $doctrine->getEntityManager()->detach($package);
-                    $package = $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package->getName());
+                    $doctrine->getEntityManager()->refresh($package);
                 }
 
                 $repository = new VcsRepository(array('url' => $package->getRepository()));
