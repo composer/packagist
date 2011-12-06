@@ -63,3 +63,6 @@ fos_user:
 #    from_email:
 #        address:        webmaster@example.com
 #        sender_name:    Admin
+
+nelmio_solarium:
+    adapter: ~
