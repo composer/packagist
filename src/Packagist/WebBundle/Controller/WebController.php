@@ -30,6 +30,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Pagerfanta\Pagerfanta;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Adapter\SolariumAdapter;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -47,7 +48,10 @@ class WebController extends Controller
      */
     public function indexAction()
     {
-        return array('page' => 'home');
+        $searchQuery = new SearchQuery;
+        $form = $this->createForm(new SearchQueryType, $searchQuery);
+
+        return array('page' => 'home', 'form' => $form->createView());
     }
 
     /**
@@ -88,7 +92,7 @@ class WebController extends Controller
         $searchQuery = new SearchQuery;
         $form = $this->createForm(new SearchQueryType, $searchQuery);
 
-        if ('POST' === $req->getMethod()) {
+        if ($req->query->has('search_query')) {
             $form->bindRequest($req);
             if ($form->isValid()) {
                 $solarium = $this->get('solarium.client');
@@ -96,20 +100,7 @@ class WebController extends Controller
                 $query = $solarium->createSelect();
                 $query->setQuery($searchQuery->getQuery());
 
-                $resultset = $solarium->select($query);
-
-                $packageIds = array_map(
-                    function ($document) {
-                        return $document->id;
-                    },
-                    iterator_to_array($resultset)
-                );
-
-                $packages = $this->getDoctrine()
-                    ->getRepository('PackagistWebBundle:Package')
-                    ->findByIds($packageIds);
-
-                $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
+                $paginator = new Pagerfanta(new SolariumAdapter($solarium, $query));
                 $paginator->setMaxPerPage(15);
                 $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 

@@ -22,13 +22,14 @@ class SearchQueryType extends AbstractType
 {
     public function buildForm(FormBuilder $builder, array $options)
     {
-        $builder->add('query');
+        $builder->add('query', 'search');
     }
 
     public function getDefaultOptions(array $options)
     {
         return array(
             'data_class' => 'Packagist\WebBundle\Form\Model\SearchQuery',
+            'csrf_protection' => false,
         );
     }
 
