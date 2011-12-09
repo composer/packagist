@@ -7,6 +7,21 @@
 
     &nbsp;
 
+    <div class="box">
+        <form id="search-form" action="{{ path('search') }}" method="GET" {{ form_enctype(form) }}>
+            <div>
+                <p>
+                    {{ form_errors(form.query) }}
+                    {{ form_widget(form.query) }}
+                </p>
+                {{ form_rest(form) }}
+                <input id="submit" type="submit" value="Search" />
+            </div>
+        </form>
+    </div>
+
+    &nbsp;
+
     <div class="box clearfix">
         <section class="getting-started">
             <h1>Getting Started</h1>
