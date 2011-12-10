@@ -59,15 +59,6 @@ class PackageRepository extends EntityRepository
             ->setParameters(array($name));
     }
 
-    public function findByIds(array $ids)
-    {
-        $qb = $this->getBaseQueryBuilder();
-
-        return $qb->where(
-            $qb->expr()->in('p.id', $ids)
-        );
-    }
-
     public function getQueryBuilderByMaintainer(User $user)
     {
         $qb = $this->getBaseQueryBuilder()
