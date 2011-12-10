@@ -104,14 +104,11 @@ class WebController extends Controller
                 $paginator->setMaxPerPage(15);
                 $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
-                $acceptTypes = $req->getAcceptableContentTypes();
-                if ($acceptTypes && 'application/json' === $acceptTypes[0]) {
-                    $packages = array();
-                    foreach ($paginator as $doc) {
-                        $packages[] = $doc->getFields();
-                    }
-                    $data = array('packages' => $packages);
-                    return new Response(json_encode($data));
+                if ($req->isXmlHttpRequest()) {
+                    return $this->render('PackagistWebBundle:Web:list.html.twig', array(
+                        'packages' => $paginator,
+                        'noLayout' => true,
+                    ));
                 }
 
                 return $this->render('PackagistWebBundle:Web:search.html.twig', array('packages' => $paginator, 'form' => $form->createView()));
