@@ -92,15 +92,23 @@ EOF
                 $document->name = $package->getName();
                 $document->description = $package->getDescription();
 
+                $tags = array();
+                foreach ($package->getVersions() as $version) {
+                    foreach ($version->getTags() as $tag) {
+                        $tags[] = $tag->getName();
+                    }
+                }
+                $document->tags = array_unique($tags);
+
                 $update->addDocument($document);
                 $update->addCommit();
+
+                $solarium->update($update);
 
                 $package->setIndexedAt(new \DateTime);
 
                 $em = $doctrine->getEntityManager();
                 $em->flush();
-
-                $solarium->update($update);
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
             }

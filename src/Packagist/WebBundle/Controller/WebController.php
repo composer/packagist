@@ -97,10 +97,16 @@ class WebController extends Controller
             if ($form->isValid()) {
                 $solarium = $this->get('solarium.client');
 
-                $query = $solarium->createSelect();
-                $query->setQuery($searchQuery->getQuery());
+                $select = $solarium->createSelect();
 
-                $paginator = new Pagerfanta(new SolariumAdapter($solarium, $query));
+                $queryParts = array();
+                foreach (array('name', 'description', 'tags') as $field) {
+                    $escaped = $select->getHelper()->escapePhrase($searchQuery->getQuery());
+                    $queryParts[] = $field.':'.$escaped.'';
+                }
+                $select->setQuery(implode(' OR ', $queryParts));
+
+                $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
                 $paginator->setMaxPerPage(15);
                 $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
