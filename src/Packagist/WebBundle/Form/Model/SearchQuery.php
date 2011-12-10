@@ -12,8 +12,13 @@
 
 namespace Packagist\WebBundle\Form\Model;
 
+use Symfony\Component\Validator\Constraints as Assert;
+
 class SearchQuery
 {
+    /**
+     * @Assert\NotBlank()
+     */
     protected $query;
 
     public function setQuery($query)
