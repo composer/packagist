@@ -88,6 +88,11 @@ class Package
      */
     private $crawledAt;
 
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $indexedAt;
+
     private $entityRepository;
 
     public function __construct()
@@ -345,6 +350,26 @@ class Package
     public function getCrawledAt()
     {
         return $this->crawledAt;
+    }
+
+    /**
+     * Set indexedAt
+     *
+     * @param datetime $indexedAt
+     */
+    public function setIndexedAt($indexedAt)
+    {
+        $this->indexedAt = $indexedAt;
+    }
+
+    /**
+     * Get indexedAt
+     *
+     * @return datetime $indexedAt
+     */
+    public function getIndexedAt()
+    {
+        return $this->indexedAt;
     }
 
     /**

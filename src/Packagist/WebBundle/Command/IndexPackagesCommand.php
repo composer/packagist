@@ -31,7 +31,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             ->setName('packagist:index')
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-indexing of all packages'),
-                new InputOption('package', null, InputOption::VALUE_NONE, 'Package name to index (implicitly enables --force)'),
+                new InputOption('package', null, InputOption::VALUE_NONE, 'Package name to index'),
             ))
             ->setDescription('Indexes packages')
             ->setHelp(<<<EOF
@@ -47,16 +47,36 @@ EOF
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $verbose = $input->getOption('verbose');
+        $force = $input->getOption('force');
+        $package = $input->getOption('package');
+
         $doctrine = $this->getContainer()->get('doctrine');
         $solarium = $this->getContainer()->get('solarium.client');
 
-        if ($input->getOption('package')) {
+        if ($force && !$package) {
+            if ($verbose) {
+                $output->writeln('Deleting existing index');
+            }
+
+            $update = $solarium->createUpdate();
+
+            $update->addDeleteQuery('*:*');
+            $update->addCommit();
+
+            $solarium->update($update);
+
+            $doctrine
+                ->getEntityManager()
+                ->createQuery('UPDATE PackagistWebBundle:Package p SET p.indexedAt = NULL')
+                ->getResult();
+        }
+
+        if ($package) {
             $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($input->getOption('package')));
-        } elseif ($input->getOption('force')) {
+        } elseif ($force) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findAll();
         } else {
-            // TODO: query for unindexed packages
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForIndexing();
         }
 
         foreach ($packages as $package) {
@@ -75,9 +95,12 @@ EOF
                 $update->addDocument($document);
                 $update->addCommit();
 
-                $result = $solarium->update($update);
+                $package->setIndexedAt(new \DateTime);
 
-                var_dump($result->getStatus());
+                $em = $doctrine->getEntityManager();
+                $em->flush();
+
+                $solarium->update($update);
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
             }

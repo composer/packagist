@@ -30,6 +30,17 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function getStalePackagesForIndexing()
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p, v')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->leftJoin('p.versions', 'v')
+            ->where('p.indexedAt IS NULL OR p.indexedAt < ?0')
+            ->setParameters(array(new \DateTime('-1hour')));
+        return $qb->getQuery()->getResult();
+    }
+
     public function findOneByName($name)
     {
         $qb = $this->getBaseQueryBuilder()
