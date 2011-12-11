@@ -99,12 +99,11 @@ class WebController extends Controller
 
                 $select = $solarium->createSelect();
 
-                $queryParts = array();
-                foreach (array('name', 'description', 'tags') as $field) {
-                    $escaped = $select->getHelper()->escapePhrase($searchQuery->getQuery());
-                    $queryParts[] = $field.':'.$escaped.'';
-                }
-                $select->setQuery(implode(' OR ', $queryParts));
+                $dismax = $select->getDisMax();
+                $dismax->setQueryFields(array('name', 'description', 'tags'));
+                $dismax->setBoostQuery('name:"'.$searchQuery->getQuery().'"^2');
+                $dismax->setQueryParser('edismax');
+                $select->setQuery($searchQuery->getQuery());
 
                 $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
                 $paginator->setMaxPerPage(15);
