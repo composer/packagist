@@ -3,7 +3,8 @@
         showResults,
         doSearch,
         searching = false,
-        searchQueued = false;
+        searchQueued = false,
+        previousQuery;
 
     showResults = function (page) {
         var list = $('.package-list'),
@@ -25,14 +26,23 @@
     };
 
     doSearch = function () {
+        var currentQuery;
+
         if (searching) {
             searchQueued = true;
             return;
         }
 
-        $.get(form.attr('action'), form.serialize(), showResults);
+        currentQuery = form.serialize();
+
+        if (previousQuery === currentQuery) {
+            return;
+        }
+
+        $.get(form.attr('action'), currentQuery, showResults);
 
         searching = true;
+        previousQuery = currentQuery;
     };
 
     form.bind('keyup search', doSearch);
