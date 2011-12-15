@@ -112,6 +112,7 @@ class Package
             'maintainers' => $maintainers,
             'versions' => $versions,
             'type' => $this->getType(),
+            'repository' => $this->getRepository()
         );
         return $data;
     }
