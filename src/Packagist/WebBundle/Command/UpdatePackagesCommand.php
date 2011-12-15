@@ -109,7 +109,6 @@ EOF
                 }
 
                 $repository = new VcsRepository(array('url' => $package->getRepository()));
-                $repository->setRepositoryManager($repositoryManager);
                 if ($verbose) {
                     $repository->setDebug(true);
                 }
