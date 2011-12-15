@@ -49,7 +49,7 @@ class Author
     private $homepage;
 
     /**
-     * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Version", mappedBy="tags")
+     * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Version", mappedBy="authors")
      */
     private $versions;
 
