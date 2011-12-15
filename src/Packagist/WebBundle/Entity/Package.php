@@ -267,7 +267,6 @@ class Package
 
         try {
             $repository = new VcsRepository(array('url' => $repository));
-            $repository->setRepositoryManager($repositoryManager);
 
             $repo = $this->repositoryClass = $repository->getDriver();
             if (!$repo) {
