@@ -57,10 +57,6 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update (implicitly enables --force)'),
             ))
             ->setDescription('Updates packages')
-            ->setHelp(<<<EOF
-
-EOF
-            )
         ;
     }
 

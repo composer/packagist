@@ -36,11 +36,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-indexing of all packages'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to index'),
             ))
-            ->setDescription('Indexes packages')
-            ->setHelp(<<<EOF
-
-EOF
-            )
+            ->setDescription('Indexes packages in Solr')
         ;
     }
 
@@ -56,24 +52,6 @@ EOF
         $doctrine = $this->getContainer()->get('doctrine');
         $solarium = $this->getContainer()->get('solarium.client');
 
-        if ($force && !$package) {
-            if ($verbose) {
-                $output->writeln('Deleting existing index');
-            }
-
-            $update = $solarium->createUpdate();
-
-            $update->addDeleteQuery('*:*');
-            $update->addCommit();
-
-            $solarium->update($update);
-
-            $doctrine
-                ->getEntityManager()
-                ->createQuery('UPDATE PackagistWebBundle:Package p SET p.indexedAt = NULL')
-                ->getResult();
-        }
-
         if ($package) {
             $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
         } elseif ($force) {
@@ -82,6 +60,20 @@ EOF
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForIndexing();
         }
 
+        // clear index before a full-update
+        if ($force && !$package) {
+            if ($verbose) {
+                $output->writeln('Deleting existing index');
+            }
+
+            $update = $solarium->createUpdate();
+            $update->addDeleteQuery('*:*');
+            $update->addCommit();
+
+            $solarium->update($update);
+        }
+
+        // update package index
         foreach ($packages as $package) {
             if ($verbose) {
                 $output->writeln('Indexing '.$package->getName());
@@ -89,24 +81,18 @@ EOF
 
             try {
                 $update = $solarium->createUpdate();
-
                 $document = $update->createDocument();
-
                 $this->updateDocumentFromPackage($document, $package);
-
                 $update->addDocument($document);
                 $update->addCommit();
-
                 $solarium->update($update);
-
                 $package->setIndexedAt(new \DateTime);
-
-                $em = $doctrine->getEntityManager();
-                $em->flush();
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
             }
         }
+
+        $doctrine->getEntityManager()->flush();
     }
 
     private function updateDocumentFromPackage(\Solarium_Document_ReadWrite $document, Package $package)
