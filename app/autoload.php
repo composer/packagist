@@ -19,10 +19,12 @@ $loader->registerNamespaces(array(
     'Packagist'        => __DIR__.'/../src',
     'WhiteOctober\PagerfantaBundle' => __DIR__.'/../vendor/bundles',
     'Pagerfanta'  => __DIR__.'/../vendor/pagerfanta/src',
+    'Nelmio'           => __DIR__.'/../vendor/bundles',
 ));
 $loader->registerPrefixes(array(
     'Twig_Extensions_' => __DIR__.'/../vendor/twig-extensions/lib',
     'Twig_'            => __DIR__.'/../vendor/twig/lib',
+    'Solarium_'        => __DIR__.'/../vendor/solarium/library',
 ));
 
 // intl

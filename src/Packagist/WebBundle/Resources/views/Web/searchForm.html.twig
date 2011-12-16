@@ -1,0 +1,10 @@
+<form id="search-form" action="{{ path('search') }}" method="GET" {{ form_enctype(form) }} autocomplete="off">
+    <div>
+        <p>
+            {{ form_errors(form.query) }}
+            {{ form_widget(form.query, {'attr': {'autocomplete': 'off'}}) }}
+        </p>
+        {{ form_rest(form) }}
+        <input id="submit" type="submit" value="Search" />
+    </div>
+</form>

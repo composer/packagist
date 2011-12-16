@@ -1,8 +1,23 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
+{% block scripts %}
+    <script src="{{ asset('bundles/packagistweb/js/search.js?v=2')}}"></script>
+{% endblock %}
+
 {% block content %}
     <div class="box">
         <p>Packagist is the main <a href="{{ path('about.composer') }}">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.<br /><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a>.</p>
+    </div>
+
+    &nbsp;
+
+    <div class="box">
+        {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
+    </div>
+
+    &nbsp;
+
+    <div class="box package-list hidden">
     </div>
 
     &nbsp;

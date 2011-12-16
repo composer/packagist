@@ -72,3 +72,11 @@
 [WhiteOctoberPagerfantaBundle]
     git=http://github.com/whiteoctober/WhiteOctoberPagerfantaBundle.git
     target=/bundles/WhiteOctober/PagerfantaBundle
+
+[solarium]
+    git=https://github.com/basdenooijer/solarium.git
+    version=2.3.0-RC1
+
+[NelmioSolariumBundle]
+    git=https://github.com/nelmio/NelmioSolariumBundle.git
+    target=/bundles/Nelmio/SolariumBundle
