@@ -7,16 +7,7 @@
 {% block content %}
     <div class="box clearfix">
         <h1>Search packages</h1>
-        <form id="search-form" action="{{ path('search') }}" method="GET" {{ form_enctype(form) }}>
-            <div>
-                <p>
-                    {{ form_errors(form.query) }}
-                    {{ form_widget(form.query) }}
-                </p>
-                {{ form_rest(form) }}
-                <input id="submit" type="submit" value="Search" />
-            </div>
-        </form>
+        {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
     </div>
 
     &nbsp;
