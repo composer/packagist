@@ -1,4 +1,4 @@
-(function ($){
+(function ($) {
     $('#add-maintainer').click(function (e) {
         $('#add-maintainer-form').toggleClass('hidden');
         e.preventDefault();
