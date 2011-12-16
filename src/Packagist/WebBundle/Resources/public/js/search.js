@@ -1,3 +1,5 @@
+"use strict";
+
 (function ($) {
     var form = $('form#search-form'),
         showResults,

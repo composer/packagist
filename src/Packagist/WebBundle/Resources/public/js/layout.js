@@ -1,3 +1,5 @@
+"use strict";
+
 /*
     Adjust width for packades data
 */
