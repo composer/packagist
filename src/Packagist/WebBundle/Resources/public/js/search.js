@@ -41,7 +41,11 @@
             return;
         }
 
-        $.get(form.attr('action'), currentQuery, showResults);
+        $.ajax({
+            url: form.attr('action'),
+            data: currentQuery,
+            success: showResults
+        });
 
         searching = true;
         previousQuery = currentQuery;
