@@ -14,6 +14,8 @@ namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
+use Packagist\WebBundle\Form\Type\SearchQueryType;
+use Packagist\WebBundle\Form\Model\SearchQuery;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
@@ -24,9 +26,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Pagerfanta\Pagerfanta;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Adapter\SolariumAdapter;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -44,7 +48,10 @@ class WebController extends Controller
      */
     public function indexAction()
     {
-        return array('page' => 'home');
+        $searchQuery = new SearchQuery;
+        $form = $this->createForm(new SearchQueryType, $searchQuery);
+
+        return array('page' => 'home', 'form' => $form->createView());
     }
 
     /**
@@ -74,6 +81,46 @@ class WebController extends Controller
         $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
         return $this->render('PackagistWebBundle:Web:browse.html.twig', array('packages' => $paginator));
+    }
+
+    /**
+     * @Template()
+     * @Route("/search/", name="search")
+     */
+    public function searchAction(Request $req)
+    {
+        $searchQuery = new SearchQuery;
+        $form = $this->createForm(new SearchQueryType, $searchQuery);
+
+        if ($req->query->has('search_query')) {
+            $form->bindRequest($req);
+            if ($form->isValid()) {
+                $solarium = $this->get('solarium.client');
+
+                $select = $solarium->createSelect();
+
+                $dismax = $select->getDisMax();
+                $dismax->setQueryFields(array('name', 'description', 'tags'));
+                $dismax->setBoostQuery('name:"'.$searchQuery->getQuery().'"^2');
+                $dismax->setQueryParser('edismax');
+                $select->setQuery($searchQuery->getQuery());
+
+                $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
+                $paginator->setMaxPerPage(15);
+                $paginator->setCurrentPage($req->query->get('page', 1), false, true);
+
+                if ($req->isXmlHttpRequest()) {
+                    return $this->render('PackagistWebBundle:Web:list.html.twig', array(
+                        'packages' => $paginator,
+                        'noLayout' => true,
+                    ));
+                }
+
+                return $this->render('PackagistWebBundle:Web:search.html.twig', array('packages' => $paginator, 'form' => $form->createView()));
+            }
+        }
+
+        return $this->render('PackagistWebBundle:Web:search.html.twig', array('form' => $form->createView()));
     }
 
     /**
