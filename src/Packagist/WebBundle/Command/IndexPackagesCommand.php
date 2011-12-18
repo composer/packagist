@@ -104,9 +104,9 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $tags = array();
         foreach ($package->getVersions() as $version) {
             foreach ($version->getTags() as $tag) {
-                $tags[] = $tag->getName();
+                $tags[mb_strtolower($tag->getName(), 'UTF-8')] = true;
             }
         }
-        $document->tags = array_unique($tags);
+        $document->tags = array_keys($tags);
     }
 }
