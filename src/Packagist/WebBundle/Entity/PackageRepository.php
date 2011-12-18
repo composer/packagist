@@ -19,6 +19,11 @@ use Doctrine\ORM\EntityRepository;
  */
 class PackageRepository extends EntityRepository
 {
+    public function getPackageNames()
+    {
+        
+    }
+    
     public function getStalePackages()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
