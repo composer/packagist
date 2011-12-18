@@ -14,3 +14,17 @@
         {% endif %}
     </ul>
 {% endmacro %}
+
+{% macro package_link(package_name) %}
+    
+    {% if not packagist_is_package_name(package_name) %}
+        {{ package_name }}
+    {% else %}
+        {% if packagist_package_exists(package_name) %}
+            <a href="{{ path('view_package', { 'name': package_name }) }}">{{ package_name }}</a>
+        {% else %}
+            {{ package_name }}
+        {% endif %}
+    {% endif %}
+
+{% endmacro %}

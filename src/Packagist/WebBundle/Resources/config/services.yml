@@ -1,1 +1,6 @@
 services:
+  packagist.twig.extension:
+    class: Packagist\WebBundle\Twig\PackagistExtension
+    arguments: [@service_container]
+    tags:
+      - { name: twig.extension }

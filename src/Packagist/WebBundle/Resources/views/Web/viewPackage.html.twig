@@ -1,4 +1,5 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
+{% import "PackagistWebBundle::macros.html.twig" as packagist %}
 
 {% block scripts %}
     <script src="{{ asset('bundles/packagistweb/js/view.js?v=2')}}"></script>
@@ -80,7 +81,8 @@
                                             {% if version.require|length %}
                                                 <ul>
                                                     {%- for req in version.require -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                        <li>
+                                                            {{ packagist.package_link(req.packageName) }}: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}

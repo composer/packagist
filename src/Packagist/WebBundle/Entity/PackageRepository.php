@@ -19,9 +19,21 @@ use Doctrine\ORM\EntityRepository;
  */
 class PackageRepository extends EntityRepository
 {
+    public function packageExists($package)
+    {
+        return in_array($package, $this->getPackageNames());
+    }
+    
     public function getPackageNames()
     {
+        //todo: caching
+        $names = array_map(function($value) {
+            return $value['name'];
+        }, $this->getEntityManager()
+                ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p")
+                ->getResult());
         
+        return $names;
     }
     
     public function getStalePackages()
