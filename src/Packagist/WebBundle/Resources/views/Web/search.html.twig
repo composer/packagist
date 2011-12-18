@@ -9,10 +9,9 @@
 
 {% block search %}
     <div class="box clearfix">
-        <h1>Search packages</h1>
         {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
 
-        <div class="search-list hidden">
+        <div class="search-list {% if packages is not defined %}hidden{% endif %}">
             {% if packages is defined %}
                 {{ block('list') }}
             {% endif %}
