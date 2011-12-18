@@ -21,16 +21,7 @@ The search index uses [Solr](http://lucene.apache.org/solr/), so you will have t
 If you are running it on a non-standard host or port, you will have to adjust the configuration. See the
 [NelmioSolariumBundle](https://github.com/nelmio/NelmioSolariumBundle) for more details.
 
-You will also have to configure Solr. The standard `schema.xml` already covers most fields like `title` and
-`description`. The following need to be added though:
-
-    <fields>
-        ...
-
-        <field name="tags" type="text_general" indexed="true" stored="true" multiValued="true"/>
-
-        ....
-    </fields>
+You will also have to configure Solr. Use the `schema.xml` provided in the doc/ directory for that.
 
 To index packages, just run `app/console packagist:index`. It is recommended to set up a cron job for
 this command, and have it run every few minutes.
