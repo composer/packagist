@@ -28,8 +28,6 @@ class ApiController extends Controller
      */
     public function packagesAction()
     {
-        $version = $this->get('request')->query->get('version');
-
         $packages = $this->get('doctrine')
             ->getRepository('Packagist\WebBundle\Entity\Package')
             ->findAll();
