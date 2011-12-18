@@ -48,14 +48,10 @@ class WebController extends Controller
      */
     public function indexAction()
     {
-        $searchQuery = new SearchQuery;
-        $form = $this->createForm(new SearchQueryType, $searchQuery);
-
-        return array('page' => 'home', 'form' => $form->createView());
+        return array('page' => 'home', 'searchForm' => $this->createSearchForm()->createView());
     }
 
     /**
-     * @Template()
      * @Route("/packages/", name="browse")
      */
     public function browseAction(Request $req)
@@ -84,13 +80,11 @@ class WebController extends Controller
     }
 
     /**
-     * @Template()
      * @Route("/search/", name="search")
      */
     public function searchAction(Request $req)
     {
-        $searchQuery = new SearchQuery;
-        $form = $this->createForm(new SearchQueryType, $searchQuery);
+        $form = $this->createSearchForm();
 
         if ($req->query->has('search_query')) {
             $form->bindRequest($req);
@@ -154,7 +148,7 @@ class WebController extends Controller
             }
         }
 
-        return array('form' => $form->createView(), 'page' => 'submit');
+        return array('form' => $form->createView(), 'page' => 'submit', 'searchForm' => $this->createSearchForm()->createView());
     }
 
     /**
@@ -206,7 +200,7 @@ class WebController extends Controller
             throw new NotFoundHttpException('The requested vendor, '.$vendor.', was not found.');
         }
 
-        return array('packages' => $packages, 'vendor' => $vendor, 'paginate' => false);
+        return array('packages' => $packages, 'vendor' => $vendor, 'paginate' => false, 'searchForm' => $this->createSearchForm()->createView());
     }
 
     /**
@@ -229,6 +223,8 @@ class WebController extends Controller
         if ($user && $package->getMaintainers()->contains($user)) {
             $data['form'] = $this->createAddMaintainerForm()->createView();
         }
+
+        $data['searchForm'] = $this->createSearchForm()->createView();
 
         return $data;
     }
@@ -285,12 +281,24 @@ class WebController extends Controller
             }
         }
 
+        $data['searchForm'] = $this->createSearchForm()->createView();
         return $data;
+    }
+
+    public function render($view, array $parameters = array(), Response $response = null)
+    {
+        $parameters['searchForm'] = $this->createSearchForm()->createView();
+        return parent::render($view, $parameters, $response);
     }
 
     private function createAddMaintainerForm()
     {
         $addMaintainerRequest = new AddMaintainerRequest;
         return $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
+    }
+
+    private function createSearchForm()
+    {
+        return $this->createForm(new SearchQueryType, new SearchQuery);
     }
 }

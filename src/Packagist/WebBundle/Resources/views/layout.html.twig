@@ -62,6 +62,16 @@
                 {% endif %}
                 {{ app.session.clearFlashes }}
 
+                {% block search %}
+                    {% if searchForm is defined %}
+                        <div class="box">
+                            {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
+                            <div class="search-list hidden">
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endblock %}
+
                 {% block content %}
                 {% endblock %}
             </div>
@@ -92,6 +102,7 @@
         <script>!window.jQuery && document.write(unescape('%3Cscript src="/js/libs/jquery-1.5.2.min.js"%3E%3C/script%3E'))</script>
         <script src="{{ asset('js/libs/humane.min.js') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
+        <script src="{{ asset('bundles/packagistweb/js/search.js')}}"></script>
 
         {% if not app.debug and google_analytics.ga_key %}
             <script>

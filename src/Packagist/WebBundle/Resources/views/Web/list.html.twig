@@ -5,10 +5,12 @@
 {% block content %}
     <div class="box clearfix package-list">
         {% block content_title %}<h1>Packages</h1>{% endblock %}
-        {% if packages|length %}
-            {{ macros.listPackages(packages, paginate is not defined or paginate) }}
-        {% else %}
-            <p>No packages found.</p>
-        {% endif %}
+        {% block list %}
+            {% if packages|length %}
+                {{ macros.listPackages(packages, paginate is not defined or paginate) }}
+            {% else %}
+                <p>No packages found.</p>
+            {% endif %}
+        {% endblock %}
     </div>
 {% endblock %}

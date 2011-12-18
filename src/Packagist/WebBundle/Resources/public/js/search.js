@@ -9,15 +9,11 @@
         previousQuery;
 
     showResults = function (page) {
-        var list = $('.package-list'),
+        var list = $('.search-list'),
             newList = $(page);
 
-        if (newList.find('.packages li').length) {
-            list.replaceWith(newList);
-            list.show();
-        } else {
-            list.hide();
-        }
+        list.html(newList.html());
+        list.removeClass('hidden');
 
         searching = false;
 

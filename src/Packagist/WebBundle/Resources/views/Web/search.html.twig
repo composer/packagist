@@ -5,14 +5,17 @@
 {% endblock %}
 
 {% block content %}
+{% endblock %}
+
+{% block search %}
     <div class="box clearfix">
         <h1>Search packages</h1>
         {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
+
+        <div class="search-list hidden">
+            {% if packages is defined %}
+                {{ block('list') }}
+            {% endif %}
+        </div>
     </div>
-
-    &nbsp;
-
-    {% if packages is defined %}
-        {{ parent() }}
-    {% endif %}
 {% endblock %}

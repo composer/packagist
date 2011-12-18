@@ -108,7 +108,8 @@ a:hover {
 
 .container div.user, .container div.box, .container header, .container div.flash-message {
   width: 900px;
-  margin: auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 header h1 {
@@ -144,10 +145,11 @@ header p {
   -moz-border-radius: 6px;
   border-radius: 6px;
   box-shadow: rgba(0, 0, 0, 0.25) 0 1px 3px;
+  margin-bottom: 10px;
 }
 
 header {
-  margin: 0 10px 20px;
+  margin: 0 10px;
   font-size: 15px;
 }
 
@@ -351,17 +353,15 @@ input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focu
   border-color: #64c523;
   outline-style: none;
 }
-input[type="text"]:invalid, input[type="password"]:invalid, input[type="email"]:invalid, input[type="search"]:invalid {
+input[type="text"]:invalid, input[type="password"]:invalid, input[type="email"]:invalid {
   border-color: #c67700;
   color: #bf7300;
 }
-
 input[type="search"] {
   -moz-appearance:none;
   -webkit-appearance:none;
   font-size: 25px;
 }
-
 
 input[type="checkbox"] {
   float: left;
@@ -376,6 +376,27 @@ form ul {
   margin: 10px 0;
 }
 
+/* Search */
+#search_query_query {
+  width: 780px;
+}
+#search-form .submit-wrapper {
+  width: 100px;
+  float: right;
+}
+#search-form .submit {
+  margin: 0;
+  padding: 6px 20px;
+  width: 100px;
+}
+#search-form p {
+  margin: 0;
+}
+.search-list {
+  margin-top: 10px;
+}
+
+/* Package */
 .package form h2 {
   margin: 10px 0;
 }
