@@ -527,55 +527,6 @@ class Version
         return $this->tags;
     }
 
-    public function setTagsText($text)
-    {
-        $tags = array();
-        if (trim($text)) {
-            $tags = preg_split('#[\s,]+#', trim($text));
-            $tags = array_map(function($el) {
-                return trim(ltrim($el, '#'), '"\'');
-            }, $tags);
-            $uniqueTags = array();
-            foreach ($tags as $tag) {
-                if ($tag && !isset($uniqueTags[strtolower($tag)])) {
-                    $uniqueTags[strtolower($tag)] = $tag;
-                }
-            }
-            $tags = array_values($uniqueTags);
-        }
-
-        foreach ($this->tags as $k => $tag) {
-            if (false !== ($idx = array_search($tag->getName(), $tags))) {
-                unset($tags[$idx]);
-            } else {
-                unset($this->tags[$k]);
-            }
-        }
-
-        foreach ($tags as $tag) {
-            $this->addTags($this->getTagEntity($tag));
-        }
-    }
-
-    public function setEntityManager($em)
-    {
-        $this->em = $em;
-    }
-
-    protected function getTagEntity($name)
-    {
-        return Tag::getByName($this->em, $name, true);
-    }
-
-    public function getTagsText()
-    {
-        $tags = array();
-        foreach ($this->tags as $tag) {
-            $tags[] = $tag->getName();
-        }
-        return implode(', ', $tags);
-    }
-
     /**
      * Set updatedAt
      *
