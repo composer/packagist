@@ -19,23 +19,36 @@ use Doctrine\ORM\EntityRepository;
  */
 class PackageRepository extends EntityRepository
 {
+
     public function packageExists($package)
     {
         return in_array($package, $this->getPackageNames());
     }
-    
+
     public function getPackageNames()
     {
-        //todo: caching
-        $names = array_map(function($value) {
-            return $value['name'];
-        }, $this->getEntityManager()
-                ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p")
-                ->getResult());
-        
+        //todo: move caching to some mature bundle, not apc
+        //use container to set caching key and ttl
+        if (extension_loaded('apc')) {
+            $names = apc_fetch('packagist_package_names');
+        }
+
+        if ($names === false) {
+            $names = array_map(function($value)
+                    {
+                        return $value['name'];
+                    }, $this->getEntityManager()
+                            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p")
+                            ->getResult());
+
+            if (extension_loaded('apc')) {
+                apc_store('packagist_package_names', $names, 3600);
+            }
+        }
+
         return $names;
     }
-    
+
     public function getStalePackages()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
@@ -70,10 +83,10 @@ class PackageRepository extends EntityRepository
     public function findByTag($name)
     {
         return $this->getBaseQueryBuilder()
-            // eliminate maintainers & tags from the select, because of the groupBy
-            ->select('p, v')
-            ->where('t.name = ?0')
-            ->setParameters(array($name));
+                    // eliminate maintainers & tags from the select, because of the groupBy
+                    ->select('p, v')
+                    ->where('t.name = ?0')
+                    ->setParameters(array($name));
     }
 
     public function getQueryBuilderByMaintainer(User $user)
@@ -98,4 +111,5 @@ class PackageRepository extends EntityRepository
             ->addOrderBy('v.releasedAt', 'DESC');
         return $qb;
     }
+
 }
