@@ -83,10 +83,10 @@ class PackageRepository extends EntityRepository
     public function findByTag($name)
     {
         return $this->getBaseQueryBuilder()
-                // eliminate maintainers & tags from the select, because of the groupBy
-                ->select('p, v')
-                ->where('t.name = ?0')
-                ->setParameters(array($name));
+            // eliminate maintainers & tags from the select, because of the groupBy
+            ->select('p, v')
+            ->where('t.name = ?0')
+            ->setParameters(array($name));
     }
 
     public function getQueryBuilderByMaintainer(User $user)
