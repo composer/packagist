@@ -53,10 +53,10 @@ class PackageRepository extends EntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p, v')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->where('p.crawledAt IS NULL OR p.crawledAt < ?0')
-            ->setParameters(array(new \DateTime('-1hour')));
+                ->from('Packagist\WebBundle\Entity\Package', 'p')
+                ->leftJoin('p.versions', 'v')
+                ->where('p.crawledAt IS NULL OR p.crawledAt < ?0')
+                ->setParameters(array(new \DateTime('-1hour')));
         return $qb->getQuery()->getResult();
     }
 
@@ -64,19 +64,19 @@ class PackageRepository extends EntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p, v, t')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->leftJoin('v.tags', 't')
-            ->where('p.indexedAt IS NULL OR p.indexedAt < ?0')
-            ->setParameters(array(new \DateTime('-1hour')));
+                ->from('Packagist\WebBundle\Entity\Package', 'p')
+                ->leftJoin('p.versions', 'v')
+                ->leftJoin('v.tags', 't')
+                ->where('p.indexedAt IS NULL OR p.indexedAt < ?0')
+                ->setParameters(array(new \DateTime('-1hour')));
         return $qb->getQuery()->getResult();
     }
 
     public function findOneByName($name)
     {
         $qb = $this->getBaseQueryBuilder()
-            ->where('p.name = ?0')
-            ->setParameters(array($name));
+                ->where('p.name = ?0')
+                ->setParameters(array($name));
         return $qb->getQuery()->getSingleResult();
     }
 
@@ -92,10 +92,10 @@ class PackageRepository extends EntityRepository
     public function getQueryBuilderByMaintainer(User $user)
     {
         $qb = $this->getBaseQueryBuilder()
-            // eliminate maintainers & tags from the select, because of the groupBy
-            ->select('p, v')
-            ->where('m.id = ?0')
-            ->setParameters(array($user->getId()));
+                // eliminate maintainers & tags from the select, because of the groupBy
+                ->select('p, v')
+                ->where('m.id = ?0')
+                ->setParameters(array($user->getId()));
         return $qb;
     }
 
@@ -103,12 +103,12 @@ class PackageRepository extends EntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p, v, t, m')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->leftJoin('p.maintainers', 'm')
-            ->leftJoin('v.tags', 't')
-            ->orderBy('v.development', 'DESC')
-            ->addOrderBy('v.releasedAt', 'DESC');
+                ->from('Packagist\WebBundle\Entity\Package', 'p')
+                ->leftJoin('p.versions', 'v')
+                ->leftJoin('p.maintainers', 'm')
+                ->leftJoin('v.tags', 't')
+                ->orderBy('v.development', 'DESC')
+                ->addOrderBy('v.releasedAt', 'DESC');
         return $qb;
     }
 
