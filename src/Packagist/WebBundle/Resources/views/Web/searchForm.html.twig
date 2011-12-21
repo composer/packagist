@@ -1,0 +1,9 @@
+<form id="search-form" action="{{ path('search') }}" method="GET" {{ form_enctype(searchForm) }} autocomplete="off">
+    <p class="submit-wrapper"><input class="submit" type="submit" value="Search" /></p>
+    <p>
+        {{ form_errors(searchForm.query) }}
+        {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'placeholder': 'Search packages...'}}) }}
+        {{ form_rest(searchForm) }}
+    </p>
+</form>
+

@@ -1,4 +1,4 @@
-(function($) {
+(function ($) {
     var onSubmit = function(e) {
         var success;
         $('div > ul, div.confirmation', this).remove();

@@ -14,6 +14,8 @@ namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
+use Packagist\WebBundle\Form\Type\SearchQueryType;
+use Packagist\WebBundle\Form\Model\SearchQuery;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
@@ -24,9 +26,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Pagerfanta\Pagerfanta;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Adapter\SolariumAdapter;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -44,11 +48,10 @@ class WebController extends Controller
      */
     public function indexAction()
     {
-        return array('page' => 'home');
+        return array('page' => 'home', 'searchForm' => $this->createSearchForm()->createView());
     }
 
     /**
-     * @Template()
      * @Route("/packages/", name="browse")
      */
     public function browseAction(Request $req)
@@ -74,6 +77,46 @@ class WebController extends Controller
         $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
         return $this->render('PackagistWebBundle:Web:browse.html.twig', array('packages' => $paginator));
+    }
+
+    /**
+     * @Route("/search/", name="search")
+     */
+    public function searchAction(Request $req)
+    {
+        $form = $this->createSearchForm();
+
+        if ($req->query->has('search_query')) {
+            $form->bindRequest($req);
+            if ($form->isValid()) {
+                $solarium = $this->get('solarium.client');
+
+                $select = $solarium->createSelect();
+
+                $escapedQuery = $select->getHelper()->escapePhrase($form->getData()->getQuery());
+
+                $dismax = $select->getDisMax();
+                $dismax->setQueryFields(array('name', 'description', 'tags', 'text', 'text_ngram', 'name_split'));
+                $dismax->setBoostQuery('name:"'.$escapedQuery.'"^2 name_split:"'.$escapedQuery.'"^1.5');
+                $dismax->setQueryParser('edismax');
+                $select->setQuery($form->getData()->getQuery());
+
+                $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
+                $paginator->setMaxPerPage(15);
+                $paginator->setCurrentPage($req->query->get('page', 1), false, true);
+
+                if ($req->isXmlHttpRequest()) {
+                    return $this->render('PackagistWebBundle:Web:list.html.twig', array(
+                        'packages' => $paginator,
+                        'noLayout' => true,
+                    ));
+                }
+
+                return $this->render('PackagistWebBundle:Web:search.html.twig', array('packages' => $paginator, 'form' => $form->createView()));
+            }
+        }
+
+        return $this->render('PackagistWebBundle:Web:search.html.twig', array('form' => $form->createView()));
     }
 
     /**
@@ -107,7 +150,7 @@ class WebController extends Controller
             }
         }
 
-        return array('form' => $form->createView(), 'page' => 'submit');
+        return array('form' => $form->createView(), 'page' => 'submit', 'searchForm' => $this->createSearchForm()->createView());
     }
 
     /**
@@ -159,7 +202,7 @@ class WebController extends Controller
             throw new NotFoundHttpException('The requested vendor, '.$vendor.', was not found.');
         }
 
-        return array('packages' => $packages, 'vendor' => $vendor, 'paginate' => false);
+        return array('packages' => $packages, 'vendor' => $vendor, 'paginate' => false, 'searchForm' => $this->createSearchForm()->createView());
     }
 
     /**
@@ -182,6 +225,8 @@ class WebController extends Controller
         if ($user && $package->getMaintainers()->contains($user)) {
             $data['form'] = $this->createAddMaintainerForm()->createView();
         }
+
+        $data['searchForm'] = $this->createSearchForm()->createView();
 
         return $data;
     }
@@ -238,12 +283,24 @@ class WebController extends Controller
             }
         }
 
+        $data['searchForm'] = $this->createSearchForm()->createView();
         return $data;
+    }
+
+    public function render($view, array $parameters = array(), Response $response = null)
+    {
+        $parameters['searchForm'] = $this->createSearchForm()->createView();
+        return parent::render($view, $parameters, $response);
     }
 
     private function createAddMaintainerForm()
     {
         $addMaintainerRequest = new AddMaintainerRequest;
         return $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
+    }
+
+    private function createSearchForm()
+    {
+        return $this->createForm(new SearchQueryType, new SearchQuery);
     }
 }

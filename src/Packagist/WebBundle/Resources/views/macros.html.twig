@@ -3,8 +3,8 @@
         {% for package in packages %}
             <li>
                 <h1><a href="{{ path('view_package', { 'name' : package.name }) }}">{{ package.name }}</a></h1>
-                {% if package.versions|length and package.versions[0].description|length %}
-                    <p class="package-description">{{ package.versions[0].description }}</p>
+                {% if package.description %}
+                    <p class="package-description">{{ package.description }}</p>
                 {% endif %}
             </li>
         {% endfor %}

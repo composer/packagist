@@ -1,0 +1,20 @@
+{% extends "PackagistWebBundle:Web:list.html.twig" %}
+
+{% block scripts %}
+    <script src="{{ asset('bundles/packagistweb/js/search.js?v=2')}}"></script>
+{% endblock %}
+
+{% block content %}
+{% endblock %}
+
+{% block search %}
+    <div class="box clearfix">
+        {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
+
+        <div class="search-list {% if packages is not defined %}hidden{% endif %}">
+            {% if packages is defined %}
+                {{ block('list') }}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

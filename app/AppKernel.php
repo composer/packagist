@@ -22,6 +22,7 @@ class AppKernel extends Kernel
             new FOS\UserBundle\FOSUserBundle(),
             new Packagist\WebBundle\PackagistWebBundle(),
             new WhiteOctober\PagerfantaBundle\WhiteOctoberPagerfantaBundle(),
+            new Nelmio\SolariumBundle\NelmioSolariumBundle(),
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test'))) {

@@ -1,12 +1,14 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
-{% block content %}
+{% block search %}
     <div class="box">
         <p>Packagist is the main <a href="{{ path('about.composer') }}">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.<br /><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a>.</p>
     </div>
 
-    &nbsp;
+    {{ parent() }}
+{% endblock %}
 
+{% block content %}
     <div class="box clearfix">
         <section class="getting-started">
             <h1>Getting Started</h1>

@@ -17,9 +17,13 @@
         <script src="{{ asset('bundles/packagistweb/js/html5.js') }}"></script>
         <![endif]-->
 
-        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=2') }}" />
+        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=3') }}" />
+        <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css?v=2') }}" />
 
-        {# {% stylesheets '@PackagistWebBundle/Resources/public/css/main.css' filter="yui_css" output='css/main.css' %}
+        {# {% stylesheets
+            '@PackagistWebBundle/Resources/public/css/main.css'
+            'css/humane/jackedup.css'
+            filter="yui_css" output='css/main.css' %}
             <link rel="stylesheet" href="{{ asset_url }}" />
         {% endstylesheets %} #}
 
@@ -58,6 +62,16 @@
                 {% endif %}
                 {{ app.session.clearFlashes }}
 
+                {% block search %}
+                    {% if searchForm is defined %}
+                        <div class="box">
+                            {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
+                            <div class="search-list hidden">
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endblock %}
+
                 {% block content %}
                 {% endblock %}
             </div>
@@ -86,7 +100,9 @@
 
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
         <script>!window.jQuery && document.write(unescape('%3Cscript src="/js/libs/jquery-1.5.2.min.js"%3E%3C/script%3E'))</script>
+        <script src="{{ asset('js/libs/humane.min.js') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
+        <script src="{{ asset('bundles/packagistweb/js/search.js')}}"></script>
 
         {% if not app.debug and google_analytics.ga_key %}
             <script>

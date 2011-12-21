@@ -16,6 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Finder\Finder;
@@ -53,13 +54,9 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             ->setName('packagist:update')
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages'),
-                new InputOption('package', null, InputOption::VALUE_NONE, 'Package name to update (implicitly enables --force)'),
+                new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update (implicitly enables --force)'),
             ))
             ->setDescription('Updates packages')
-            ->setHelp(<<<EOF
-
-EOF
-            )
         ;
     }
 
@@ -69,15 +66,17 @@ EOF
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $verbose = $input->getOption('verbose');
-        $doctrine = $this->getContainer()->get('doctrine');
+        $force = $input->getOption('force');
+        $package = $input->getArgument('package');
 
+        $doctrine = $this->getContainer()->get('doctrine');
         $logger = $this->getContainer()->get('logger');
 
         $this->versionParser = new VersionParser;
 
-        if ($input->getOption('package')) {
-            $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($input->getOption('package')));
-        } elseif ($input->getOption('force')) {
+        if ($package) {
+            $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
+        } elseif ($force) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findAll();
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
@@ -98,7 +97,7 @@ EOF
 
             try {
                 // clear versions to force a clean reloading if --force is enabled
-                if ($input->getOption('force')) {
+                if ($force) {
                     $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
                     foreach ($package->getVersions() as $version) {
                         $versionRepo->remove($version);
