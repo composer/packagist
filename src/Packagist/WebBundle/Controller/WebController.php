@@ -216,11 +216,11 @@ class WebController extends Controller
      */
     public function viewPackageAction($name)
     {
-        $package = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
-            ->findOneByName($name);
-
-        if (!$package) {
+        try {
+            $package = $this->getDoctrine()
+                ->getRepository('PackagistWebBundle:Package')
+                ->findOneByName($name);
+        } catch (\Doctrine\ORM\NoResultException $e) {
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
