@@ -117,11 +117,11 @@ class WebController extends Controller
                     ));
                 }
 
-                return $this->render('PackagistWebBundle:Web:search.html.twig', array('packages' => $paginator, 'form' => $form->createView()));
+                return $this->render('PackagistWebBundle:Web:search.html.twig', array('packages' => $paginator, 'searchForm' => $form->createView()));
             }
         }
 
-        return $this->render('PackagistWebBundle:Web:search.html.twig', array('form' => $form->createView()));
+        return $this->render('PackagistWebBundle:Web:search.html.twig', array('searchForm' => $form->createView()));
     }
 
     /**
@@ -294,7 +294,9 @@ class WebController extends Controller
 
     public function render($view, array $parameters = array(), Response $response = null)
     {
-        $parameters['searchForm'] = $this->createSearchForm()->createView();
+        if (!isset($parameters['searchForm'])) {
+            $parameters['searchForm'] = $this->createSearchForm()->createView();
+        }
         return parent::render($view, $parameters, $response);
     }
 
