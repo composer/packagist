@@ -86,6 +86,11 @@ class WebController extends Controller
     {
         $form = $this->createSearchForm();
 
+        // transform q=search shortcut
+        if ($req->query->has('q')) {
+            $req->query->set('search_query', array('query' => $req->query->get('q')));
+        }
+
         if ($req->query->has('search_query')) {
             $form->bindRequest($req);
             if ($form->isValid()) {
@@ -199,7 +204,7 @@ class WebController extends Controller
             ->getResult();
 
         if (!$packages) {
-            throw new NotFoundHttpException('The requested vendor, '.$vendor.', was not found.');
+            return $this->redirect($this->generateUrl('search', array('q' => $vendor, 'reason' => 'vendor_not_found')));
         }
 
         return array('packages' => $packages, 'vendor' => $vendor, 'paginate' => false, 'searchForm' => $this->createSearchForm()->createView());
@@ -216,7 +221,7 @@ class WebController extends Controller
             ->findOneByName($name);
 
         if (!$package) {
-            throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
+            return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
         $data = array('package' => $package);
