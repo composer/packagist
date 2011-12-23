@@ -81,7 +81,7 @@
                                             {% if version.require|length %}
                                                 <ul>
                                                     {%- for req in version.require -%}
-                                                        <li>{{ packagist.package_link(req.packageName) }}: {{ req.packageVersion }}</li>
+                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -93,7 +93,7 @@
                                             {% if version.recommend|length %}
                                                 <ul>
                                                     {%- for req in version.recommend -%}
-                                                        <li>{{ packagist.package_link(req.packageName) }}: {{ req.packageVersion }}</li>
+                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -105,7 +105,7 @@
                                             {% if version.suggest|length %}
                                                 <ul>
                                                     {%- for req in version.suggest -%}
-                                                        <li>{{ packagist.package_link(req.packageName) }}: {{ req.packageVersion }}</li>
+                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -117,7 +117,7 @@
                                             {% if version.provide|length %}
                                                 <ul>
                                                     {%- for req in version.provide -%}
-                                                        <li>{{ packagist.package_link(req.packageName) }}: {{ req.packageVersion }}</li>
+                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -129,7 +129,7 @@
                                             {% if version.conflict|length %}
                                                 <ul>
                                                     {%- for req in version.conflict -%}
-                                                        <li>{{ packagist.package_link(req.packageName) }}: {{ req.packageVersion }}</li>
+                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -141,7 +141,7 @@
                                             {% if version.replace|length %}
                                                 <ul>
                                                     {%- for req in version.replace -%}
-                                                        <li>{{ packagist.package_link(req.packageName) }} {{ req.packageVersion }}</li>
+                                                        <li>{{ packagist.packageLink(req.packageName) }} {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}

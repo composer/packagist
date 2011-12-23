@@ -10,33 +10,33 @@ class PackagistExtension extends \Twig_Extension
      * @var ContainerInterface
      */
     private $container;
-    
+
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
     }
-    
-    public function getFunctions()
+
+    public function getTests()
     {
-        return array('packagist_package_exists' => new \Twig_Function_Method($this, 'getPackageExists'),
-            'packagist_is_package_name' => new \Twig_Function_Method($this, 'validatePackageName'));
+        return array('packagistPackageName' => new \Twig_Test_Method($this, 'validPackageNameTest'),
+            'existingPackagistPackage' => new \Twig_Test_Method($this, 'packageExistsTest'));
     }
-    
+
     public function getName()
     {
         return 'packagist';
     }
-    
-    public function getPackageExists($package)
+
+    public function packageExistsTest($package)
     {
         $doctrine = $this->container->get('doctrine');
         /* @var $doctrine Symfony\Bundle\DoctrineBundle\Registry */
-        
+
         return $doctrine->getRepository('PackagistWebBundle:Package')
                 ->packageExists($package);
     }
-    
-    public function validatePackageName($package)
+
+    public function validPackageNameTest($package)
     {
         return preg_match('/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/', $package);
     }

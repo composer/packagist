@@ -15,15 +15,15 @@
     </ul>
 {% endmacro %}
 
-{% macro package_link(package_name) %}
-    
-    {% if not packagist_is_package_name(package_name) %}
-        {{ package_name }}
+{% macro packageLink(packageName) %}
+
+    {% if packageName is not packagistPackageName %}
+        {{ packageName }}
     {% else %}
-        {% if packagist_package_exists(package_name) %}
-            <a href="{{ path('view_package', { 'name': package_name }) }}">{{ package_name }}</a>
+        {% if packageName is existingPackagistPackage %}
+            <a href="{{ path('view_package', { 'name': packageName }) }}">{{ packageName }}</a>
         {% else %}
-            {{ package_name }}
+            {{ packageName }}
         {% endif %}
     {% endif %}
 
