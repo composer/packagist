@@ -19,7 +19,6 @@ use Doctrine\ORM\EntityRepository;
  */
 class PackageRepository extends EntityRepository
 {
-
     public function packageExists($package)
     {
         return in_array($package, $this->getPackageNames());
@@ -27,13 +26,14 @@ class PackageRepository extends EntityRepository
 
     public function getPackageNames()
     {
+        $names = false;
         //todo: move caching to some mature bundle, not apc
         //use container to set caching key and ttl
         if (extension_loaded('apc')) {
             $names = apc_fetch('packagist_package_names');
         }
 
-        if ($names === false) {
+        if (false === $names) {
             $names = array_map(function($value)
                     {
                         return $value['name'];
@@ -111,5 +111,4 @@ class PackageRepository extends EntityRepository
             ->addOrderBy('v.releasedAt', 'DESC');
         return $qb;
     }
-
 }
