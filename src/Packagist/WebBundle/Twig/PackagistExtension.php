@@ -3,18 +3,20 @@
 namespace Packagist\WebBundle\Twig;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Bundle\DoctrineBundle\Registry;
 
 class PackagistExtension extends \Twig_Extension
 {
     /**
-     * @var ContainerInterface
+     * @var Symfony\Bundle\DoctrineBundle\Registry
      */
-    private $container;
+    private $doctrine;
 
-    public function __construct(ContainerInterface $container)
+    public function setDoctrine(Registry $doctrine)
     {
-        $this->container = $container;
+        $this->doctrine = $doctrine;
     }
+
 
     public function getTests()
     {
@@ -29,10 +31,7 @@ class PackagistExtension extends \Twig_Extension
 
     public function packageExistsTest($package)
     {
-        $doctrine = $this->container->get('doctrine');
-        /* @var $doctrine Symfony\Bundle\DoctrineBundle\Registry */
-
-        return $doctrine->getRepository('PackagistWebBundle:Package')
+        return $this->doctrine->getRepository('PackagistWebBundle:Package')
                 ->packageExists($package);
     }
 
