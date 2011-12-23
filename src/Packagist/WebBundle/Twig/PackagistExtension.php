@@ -3,16 +3,16 @@
 namespace Packagist\WebBundle\Twig;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Bundle\DoctrineBundle\Registry;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
 class PackagistExtension extends \Twig_Extension
 {
     /**
-     * @var Symfony\Bundle\DoctrineBundle\Registry
+     * @var Symfony\Bridge\Doctrine\RegistryInterface
      */
     private $doctrine;
 
-    public function setDoctrine(Registry $doctrine)
+    public function setDoctrine(RegistryInterface $doctrine)
     {
         $this->doctrine = $doctrine;
     }
