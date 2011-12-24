@@ -80,7 +80,7 @@
                                             {% if version.require|length %}
                                                 <ul>
                                                     {%- for req in version.require -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                        <li><a href="{{ path('view_package', { 'name' : req.packageName }) }}">{{ req.packageName }}</a>: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -92,7 +92,7 @@
                                             {% if version.recommend|length %}
                                                 <ul>
                                                     {%- for req in version.recommend -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                        <li><a href="{{ path('view_package', { 'name' : req.packageName }) }}">{{ req.packageName }}</a>: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -104,7 +104,7 @@
                                             {% if version.suggest|length %}
                                                 <ul>
                                                     {%- for req in version.suggest -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                        <li><a href="{{ path('view_package', { 'name' : req.packageName }) }}">{{ req.packageName }}</a>: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -116,7 +116,7 @@
                                             {% if version.provide|length %}
                                                 <ul>
                                                     {%- for req in version.provide -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                        <li><a href="{{ path('view_package', { 'name' : req.packageName }) }}">{{ req.packageName }}</a>: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -128,7 +128,7 @@
                                             {% if version.conflict|length %}
                                                 <ul>
                                                     {%- for req in version.conflict -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                        <li><a href="{{ path('view_package', { 'name' : req.packageName }) }}">{{ req.packageName }}</a>: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
@@ -140,7 +140,7 @@
                                             {% if version.replace|length %}
                                                 <ul>
                                                     {%- for req in version.replace -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
+                                                        <li><a href="{{ path('view_package', { 'name' : req.packageName }) }}">{{ req.packageName }}</a>: {{ req.packageVersion }}</li>
                                                     {%- endfor -%}
                                                 </ul>
                                             {% else %}
