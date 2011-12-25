@@ -1,7 +1,6 @@
 services:
   packagist.twig.extension:
     class: Packagist\WebBundle\Twig\PackagistExtension
-    calls:
-      - [ setDoctrine, [@doctrine] ]
+    arguments: [ @doctrine ]
     tags:
       - { name: twig.extension }

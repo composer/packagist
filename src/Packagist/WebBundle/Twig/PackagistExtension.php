@@ -2,7 +2,6 @@
 
 namespace Packagist\WebBundle\Twig;
 
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
 class PackagistExtension extends \Twig_Extension
@@ -12,11 +11,10 @@ class PackagistExtension extends \Twig_Extension
      */
     private $doctrine;
 
-    public function setDoctrine(RegistryInterface $doctrine)
+    public function __construct(RegistryInterface $doctrine)
     {
         $this->doctrine = $doctrine;
     }
-
 
     public function getTests()
     {
