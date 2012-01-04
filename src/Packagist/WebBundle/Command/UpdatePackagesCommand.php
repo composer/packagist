@@ -96,17 +96,6 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             }
 
             try {
-                // clear versions to force a clean reloading if --force is enabled
-                if ($force) {
-                    $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
-                    foreach ($package->getVersions() as $version) {
-                        $versionRepo->remove($version);
-                    }
-
-                    $doctrine->getEntityManager()->flush();
-                    $doctrine->getEntityManager()->refresh($package);
-                }
-
                 $repository = new VcsRepository(array('url' => $package->getRepository()));
                 if ($verbose) {
                     $repository->setDebug(true);
@@ -116,6 +105,17 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                 usort($versions, function ($a, $b) {
                     return version_compare($a->getVersion(), $b->getVersion());
                 });
+
+                // clear existing versions to force a clean reloading if --force is enabled
+                if ($force) {
+                    $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
+                    foreach ($package->getVersions() as $version) {
+                        $versionRepo->remove($version);
+                    }
+
+                    $doctrine->getEntityManager()->flush();
+                    $doctrine->getEntityManager()->refresh($package);
+                }
 
                 foreach ($versions as $version) {
                     if ($verbose) {
