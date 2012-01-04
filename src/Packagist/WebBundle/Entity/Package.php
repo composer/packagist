@@ -94,6 +94,7 @@ class Package
     private $indexedAt;
 
     private $entityRepository;
+    private $repositoryClass;
 
     public function __construct()
     {
@@ -129,7 +130,11 @@ class Package
 
         $repo = $this->repositoryClass;
         if (!$repo) {
-            $context->addViolation('No valid/supported repository was found at the given URL', array(), null);
+            if (preg_match('{//.+@}', $this->repository)) {
+                $context->addViolation('URLs with user@host are not supported, use a read-only public URL', array(), null);
+            } else {
+                $context->addViolation('No valid/supported repository was found at the given URL', array(), null);
+            }
             return;
         }
         try {
@@ -263,6 +268,11 @@ class Package
     public function setRepository($repository)
     {
         $this->repository = $repository;
+
+        // avoid user@host URLs
+        if (preg_match('{//.+@}', $repository)) {
+            return;
+        }
 
         $repositoryManager = new RepositoryManager;
         $repositoryManager->setRepositoryClass('composer', 'Composer\Repository\ComposerRepository');
