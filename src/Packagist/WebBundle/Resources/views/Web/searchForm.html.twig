@@ -2,7 +2,7 @@
     <p class="submit-wrapper"><input class="submit" type="submit" value="Search" /></p>
     <p>
         {{ form_errors(searchForm.query) }}
-        {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'placeholder': 'Search packages...'}}) }}
+        {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
         {{ form_rest(searchForm) }}
     </p>
 </form>
