@@ -37,8 +37,7 @@ class PackageRepository extends EntityRepository
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->leftJoin('v.tags', 't')
-            ->where('p.indexedAt IS NULL OR p.indexedAt < ?0')
-            ->setParameters(array(new \DateTime('-1hour')));
+            ->where('p.indexedAt IS NULL OR p.indexedAt < p.crawledAt');
         return $qb->getQuery()->getResult();
     }
 
