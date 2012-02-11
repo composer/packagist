@@ -12,27 +12,36 @@
 
 namespace Packagist\WebBundle\Package;
 
-use Packagist\WebBundle\Entity\Package;
-
 use Composer\Package\PackageInterface;
 use Composer\Repository\VcsRepository;
 use Composer\IO\NullIO;
 use Packagist\WebBundle\Entity\Author;
+use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Version;
 use Symfony\Bridge\Doctrine\RegistryInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Request;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Updater
 {
+    /**
+     * Doctrine
+     * @var RegistryInterface
+     */
+    protected $doctrine;
+
+    /**
+     * Start
+     * @var DateTime
+     */
+    protected $start;
+
+    /**
+     * Supported link types
+     * @var array
+     */
     protected $supportedLinkTypes = array(
         'require'   => 'RequireLink',
         'conflict'  => 'ConflictLink',
@@ -44,56 +53,64 @@ class Updater
 
 
     /**
+     * Constructor
+     * 
+     * @param RegistryInterface $doctrine
+     * @param \DateTime $start
+     */
+    public function __construct(RegistryInterface $doctrine, \DateTime $start = null)
+    {
+        $this->doctrine = $doctrine;
+        $this->start = null !== $start ? $start : new \DateTime();
+    }
+
+    /**
      * Update a project
      *
-     * @param RegistryInterface $doctrine
      * @param PackageInterface $package
      * @param boolean $clearExistingVersions
      */
-    public function update(RegistryInterface $doctrine, Package $package, \DateTime $start = null, $clearExistingVersions = false)
+    public function update(Package $package, $clearExistingVersions = false)
     {
-        
-        if (null === $start) {
-            $start = new \DateTime();
-        }
-        
         $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO());
         $versions = $repository->getPackages();
+        $em = $this->doctrine->getEntityManager();
         
         usort($versions, function ($a, $b) {
             return version_compare($a->getVersion(), $b->getVersion());
         });
 
+        $versionRepository = $this->doctrine->getRepository('PackagistWebBundle:Version');
+        
         if ($clearExistingVersions) {
-            $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
             foreach ($package->getVersions() as $version) {
                 $versionRepo->remove($version);
             }
         
-            $doctrine->getEntityManager()->flush();
-            $doctrine->getEntityManager()->refresh($package);
+            $em->flush();
+            $em->refresh($package);
         }
 
        foreach ($versions as $version) {
-            $this->updateInformation($doctrine, $package, $version);
-            $doctrine->getEntityManager()->flush();
+            $this->updateInformation($package, $version);
+            $em->flush();
         }
         
         // remove outdated -dev versions
         foreach ($package->getVersions() as $version) {
-            if ($version->getDevelopment() && $version->getUpdatedAt() < $start) {
-                $doctrine->getRepository('PackagistWebBundle:Version')->remove($version);
+            if ($version->getDevelopment() && $version->getUpdatedAt() < $this->start) {
+                $versionRepository->remove($version);
             }
         }
         
         $package->setUpdatedAt(new \DateTime);
         $package->setCrawledAt(new \DateTime);
-        $doctrine->getEntityManager()->flush();
+        $em->flush();
     }
 
-    private function updateInformation(RegistryInterface $doctrine, $package, PackageInterface $data)
+    private function updateInformation(Package $package, PackageInterface $data)
     {
-        $em = $doctrine->getEntityManager();
+        $em = $this->doctrine->getEntityManager();
         $version = new Version();
     
         $version->setName($package->getName());
@@ -161,6 +178,8 @@ class Updater
                 $version->addTag(Tag::getByName($em, $keyword, true));
             }
         }
+        
+        $authorRepository = $this->doctrine->getRepository('PackagistWebBundle:Author');
     
         $version->getAuthors()->clear();
         if ($data->getAuthors()) {
@@ -172,18 +191,18 @@ class Updater
                 }
     
                 if (!empty($authorData['email'])) {
-                    $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneByEmail($authorData['email']);
+                    $author = $authorRepository->findOneByEmail($authorData['email']);
                 }
     
                 if (!$author && !empty($authorData['homepage'])) {
-                    $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneBy(array(
-                            'name' => $authorData['name'],
-                            'homepage' => $authorData['homepage']
+                    $author = $authorRepository->findOneBy(array(
+                        'name' => $authorData['name'],
+                        'homepage' => $authorData['homepage']
                     ));
                 }
     
                 if (!$author && !empty($authorData['name'])) {
-                    $author = $doctrine->getRepository('PackagistWebBundle:Author')->findOneByNameAndPackage($authorData['name'], $package);
+                    $author = $authorRepository->findOneByNameAndPackage($authorData['name'], $package);
                 }
     
                 if (!$author) {

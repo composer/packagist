@@ -31,15 +31,6 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
  */
 class ApiController extends Controller
 {
-    protected $supportedLinkTypes = array(
-        'require'   => 'RequireLink',
-        'conflict'  => 'ConflictLink',
-        'provide'   => 'ProvideLink',
-        'replace'   => 'ReplaceLink',
-        'recommend' => 'RecommendLink',
-        'suggest'   => 'SuggestLink',
-    );
-
     /**
      * @Template()
      * @Route("/packages.json", name="packages", defaults={"_format" = "json"})
@@ -91,18 +82,14 @@ class ApiController extends Controller
 
         foreach ($user->getPackages() as $package) {
             if (false !== strpos($package->getRepository(), $payloadRepositoryChunk)) {
-
-                //
                 // We found the package that was referenced.
-                //
 
-                $updater = new Updater();
-                $updater->update($doctrine, $package);
+                $updater = new Updater($doctrine);
+                $updater->update($package);
 
                 return new Response('{ "status": "success" }', 202);
             }
         }
         return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
     }
-
 }

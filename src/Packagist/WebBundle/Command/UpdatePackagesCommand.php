@@ -82,15 +82,14 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
         }
 
-        $start = new \DateTime();
-        $updater = new Updater();
+        $updater = new Updater($doctrine);
 
         foreach ($packages as $package) {
             if ($verbose) {
                 $output->writeln('Importing '.$package->getRepository());
             }
             try {
-                $updater->update($doctrine, $package, $start, $force);
+                $updater->update($package, $force);
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
             }
