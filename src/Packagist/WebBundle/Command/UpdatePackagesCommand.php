@@ -116,7 +116,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                         $output->writeln('Storing '.$version->getPrettyVersion().' ('.$version->getVersion().')');
                     }
 
-                    $this->updateInformation($output, $doctrine, $package, $version);
+                    $this->updateInformation($doctrine, $package, $version);
                     $doctrine->getEntityManager()->flush();
                 }
 
@@ -139,7 +139,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         }
     }
 
-    private function updateInformation(OutputInterface $output, RegistryInterface $doctrine, $package, PackageInterface $data)
+    private function updateInformation(RegistryInterface $doctrine, $package, PackageInterface $data)
     {
         $em = $doctrine->getEntityManager();
         $version = new Version();
