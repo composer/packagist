@@ -33,12 +33,6 @@ class Updater
     protected $doctrine;
 
     /**
-     * Start
-     * @var DateTime
-     */
-    protected $start;
-
-    /**
      * Supported link types
      * @var array
      */
@@ -57,10 +51,9 @@ class Updater
      * @param RegistryInterface $doctrine
      * @param \DateTime $start
      */
-    public function __construct(RegistryInterface $doctrine, \DateTime $start = null)
+    public function __construct(RegistryInterface $doctrine)
     {
         $this->doctrine = $doctrine;
-        $this->start = null !== $start ? $start : new \DateTime();
     }
 
     /**
@@ -69,8 +62,12 @@ class Updater
      * @param PackageInterface $package
      * @param boolean $clearExistingVersions
      */
-    public function update(Package $package, $clearExistingVersions = false)
+    public function update(Package $package, \DateTime $start = null, $clearExistingVersions = false)
     {
+        if (null === $start) {
+            $start = new \DateTime();
+        }
+
         $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO());
         $versions = $repository->getPackages();
         $em = $this->doctrine->getEntityManager();
@@ -83,7 +80,7 @@ class Updater
         
         if ($clearExistingVersions) {
             foreach ($package->getVersions() as $version) {
-                $versionRepo->remove($version);
+                $versionRepository->remove($version);
             }
         
             $em->flush();
@@ -97,7 +94,7 @@ class Updater
         
         // remove outdated -dev versions
         foreach ($package->getVersions() as $version) {
-            if ($version->getDevelopment() && $version->getUpdatedAt() < $this->start) {
+            if ($version->getDevelopment() && $version->getUpdatedAt() < $start) {
                 $versionRepository->remove($version);
             }
         }

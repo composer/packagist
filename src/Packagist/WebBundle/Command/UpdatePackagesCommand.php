@@ -13,29 +13,18 @@
 namespace Packagist\WebBundle\Command;
 
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\HttpKernel\KernelInterface;
-use Symfony\Component\Finder\Finder;
-use Packagist\WebBundle\Entity\Version;
-use Packagist\WebBundle\Entity\Tag;
-use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Package\Updater;
-use Packagist\WebBundle\Repository\Repository\RepositoryInterface;
-use Composer\Package\Version\VersionParser;
 use Composer\Repository\VcsRepository;
-use Composer\Repository\RepositoryManager;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class UpdatePackagesCommand extends ContainerAwareCommand
 {
-    protected $versionParser;
-
     protected $supportedLinkTypes = array(
         'require'   => 'RequireLink',
         'conflict'  => 'ConflictLink',
@@ -72,8 +61,6 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $doctrine = $this->getContainer()->get('doctrine');
         $logger = $this->getContainer()->get('logger');
 
-        $this->versionParser = new VersionParser;
-
         if ($package) {
             $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
         } elseif ($force) {
@@ -83,13 +70,14 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         }
 
         $updater = new Updater($doctrine);
+        $start = new \DateTime();
 
         foreach ($packages as $package) {
             if ($verbose) {
                 $output->writeln('Importing '.$package->getRepository());
             }
             try {
-                $updater->update($package, $force);
+                $updater->update($package, $start, $force);
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
             }
