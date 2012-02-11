@@ -51,7 +51,6 @@ class Updater
         'suggest'   => 'SuggestLink',
     );
 
-
     /**
      * Constructor
      * 
