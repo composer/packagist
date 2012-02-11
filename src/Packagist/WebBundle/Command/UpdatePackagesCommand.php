@@ -25,15 +25,6 @@ use Composer\Repository\VcsRepository;
  */
 class UpdatePackagesCommand extends ContainerAwareCommand
 {
-    protected $supportedLinkTypes = array(
-        'require'   => 'RequireLink',
-        'conflict'  => 'ConflictLink',
-        'provide'   => 'ProvideLink',
-        'replace'   => 'ReplaceLink',
-        'recommend' => 'RecommendLink',
-        'suggest'   => 'SuggestLink',
-    );
-
     /**
      * {@inheritdoc}
      */
