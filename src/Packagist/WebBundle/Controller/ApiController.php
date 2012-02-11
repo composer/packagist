@@ -12,13 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Composer\Package\PackageInterface;
-use Composer\Repository\VcsRepository;
-use Packagist\WebBundle\Entity\Author;
-use Packagist\WebBundle\Entity\Tag;
-use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Package\Updater;
-use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
@@ -90,6 +84,7 @@ class ApiController extends Controller
                 return new Response('{ "status": "success" }', 202);
             }
         }
+
         return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
     }
 }

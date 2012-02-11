@@ -59,7 +59,6 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $package = $input->getArgument('package');
 
         $doctrine = $this->getContainer()->get('doctrine');
-        $logger = $this->getContainer()->get('logger');
 
         if ($package) {
             $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
@@ -77,7 +76,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                 $output->writeln('Importing '.$package->getRepository());
             }
             try {
-                $updater->update($package, $start, $force);
+                $updater->update($package, $force, $start);
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
             }

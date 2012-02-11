@@ -49,7 +49,6 @@ class Updater
      * Constructor
      * 
      * @param RegistryInterface $doctrine
-     * @param \DateTime $start
      */
     public function __construct(RegistryInterface $doctrine)
     {
@@ -61,8 +60,9 @@ class Updater
      *
      * @param PackageInterface $package
      * @param boolean $clearExistingVersions
+     * @param DateTime $start
      */
-    public function update(Package $package, \DateTime $start = null, $clearExistingVersions = false)
+    public function update(Package $package, $clearExistingVersions = false, \DateTime $start = null)
     {
         if (null === $start) {
             $start = new \DateTime();
