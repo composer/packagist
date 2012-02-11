@@ -45,7 +45,7 @@ class User extends BaseUser
     private $createdAt;
 
     /**
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="string", length=20, nullable=true)
      * @var string
      */
     private $apiToken;
@@ -162,6 +162,6 @@ class User extends BaseUser
      */
     protected function generateApiToken()
     {
-        return base_convert(sha1(uniqid(mt_rand(), true)), 16, 36);
+        return substr($this->generateToken(), 0, 20);
     }
 }
