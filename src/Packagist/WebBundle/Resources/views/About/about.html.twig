@@ -77,5 +77,15 @@ v1.x
 1.1.*
 </pre>
         Doing so will allow people to easily install pre-release versions of your code for testing or development purposes.</p>
+
+        <h1>Update Schedule</h1>
+
+        <p>New packages will be crawled <strong>within ten minutes</strong>.</p>
+
+        <p>Existing packages will be crawled <strong>every hour</strong>.</p>
+
+        <p>The search index is updated <strong>every five minutes</strong>. It will index (or reindex) any package that has been crawled since the last time the search indexer ran.</p>
+
+        <p>Crawling cannot currently be triggered on commit or by other means. This is planned for a future release.</p>
     </div>
 {% endblock %}
