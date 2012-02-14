@@ -219,7 +219,7 @@ class WebController extends Controller
         try {
             $package = $this->getDoctrine()
                 ->getRepository('PackagistWebBundle:Package')
-                ->findOneByName($name);
+                ->getFullPackageByName($name);
         } catch (\Doctrine\ORM\NoResultException $e) {
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
