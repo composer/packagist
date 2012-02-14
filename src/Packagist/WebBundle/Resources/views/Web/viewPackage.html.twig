@@ -1,5 +1,17 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
+{% macro show_package_link(packages) %}
+<ul>
+    {%- for pkg in packages -%}
+        {% if pkg.packageName|match_name %}
+            <li><a href="{{ path('view_package', { 'name' : pkg.packageName }) }}">{{ pkg.packageName }}</a>: {{ pkg.packageVersion }}</li>
+        {% else %}
+            <li>{{ pkg.packageName }}: {{ pkg.packageVersion }}</li>
+        {% endif %}
+    {%- endfor -%}
+</ul>
+{% endmacro %}
+
 {% block scripts %}
     <script src="{{ asset('bundles/packagistweb/js/view.js?v=2')}}"></script>
 {% endblock %}
@@ -78,11 +90,7 @@
                                         <div class="requires">
                                             <h2>Requires</h2>
                                             {% if version.require|length %}
-                                                <ul>
-                                                    {%- for req in version.require -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
+                                                {{ _self.show_package_link(version.require) }}
                                             {% else %}
                                                 None
                                             {% endif %}
@@ -90,11 +98,7 @@
                                         <div class="recommends">
                                             <h2>Recommends</h2>
                                             {% if version.recommend|length %}
-                                                <ul>
-                                                    {%- for req in version.recommend -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
+                                                {{ _self.show_package_link(version.recommend) }}
                                             {% else %}
                                                 None
                                             {% endif %}
@@ -102,11 +106,7 @@
                                         <div class="suggests">
                                             <h2>Suggests</h2>
                                             {% if version.suggest|length %}
-                                                <ul>
-                                                    {%- for req in version.suggest -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
+                                                {{ _self.show_package_link(version.suggest) }}
                                             {% else %}
                                                 None
                                             {% endif %}
@@ -114,11 +114,7 @@
                                         <div class="provides">
                                             <h2>Provides</h2>
                                             {% if version.provide|length %}
-                                                <ul>
-                                                    {%- for req in version.provide -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
+                                                {{ _self.show_package_link(version.provide) }}
                                             {% else %}
                                                 None
                                             {% endif %}
@@ -126,11 +122,7 @@
                                         <div class="conflicts">
                                             <h2>Conflicts</h2>
                                             {% if version.conflict|length %}
-                                                <ul>
-                                                    {%- for req in version.conflict -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
+                                                {{ _self.show_package_link(version.conflict) }}
                                             {% else %}
                                                 None
                                             {% endif %}
@@ -138,11 +130,7 @@
                                         <div class="replaces">
                                             <h2>Replaces</h2>
                                             {% if version.replace|length %}
-                                                <ul>
-                                                    {%- for req in version.replace -%}
-                                                        <li>{{ req.packageName }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
+                                                {{ _self.show_package_link(version.replace) }}
                                             {% else %}
                                                 None
                                             {% endif %}

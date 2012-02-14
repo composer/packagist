@@ -1,1 +1,5 @@
 services:
+    project.twig.extension:
+        class: Packagist\WebBundle\Twig\Extension\PackageExtension
+        tags:
+            - { name: twig.extension }
