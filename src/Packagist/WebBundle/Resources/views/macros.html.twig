@@ -16,11 +16,9 @@
 {% endmacro %}
 
 {% macro packageLink(packageName) %}
-
-    {% if packageName is packagistPackageName and packageName is existingPackagistPackage %}
+    {%- if packageName is existing_package -%}
         <a href="{{ path('view_package', { 'name': packageName }) }}">{{ packageName }}</a>
-    {% else %}
+    {%- else -%}
         {{ packageName }}
-    {% endif %}
-
+    {%- endif -%}
 {% endmacro %}

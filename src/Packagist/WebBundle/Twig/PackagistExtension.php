@@ -19,8 +19,7 @@ class PackagistExtension extends \Twig_Extension
     public function getTests()
     {
         return array(
-            'packagistPackageName' => new \Twig_Test_Method($this, 'validPackageNameTest'),
-            'existingPackagistPackage' => new \Twig_Test_Method($this, 'packageExistsTest')
+            'existing_package' => new \Twig_Test_Method($this, 'packageExistsTest')
         );
     }
 
@@ -31,12 +30,11 @@ class PackagistExtension extends \Twig_Extension
 
     public function packageExistsTest($package)
     {
+        if (!preg_match('/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/', $package)) {
+            return false;
+        }
+
         return $this->doctrine->getRepository('PackagistWebBundle:Package')
             ->packageExists($package);
-    }
-
-    public function validPackageNameTest($package)
-    {
-        return preg_match('/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/', $package);
     }
 }

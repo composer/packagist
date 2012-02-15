@@ -19,36 +19,49 @@ use Doctrine\ORM\EntityRepository;
  */
 class PackageRepository extends EntityRepository
 {
-    public function packageExists($package)
+    /**
+     * Lists all package names array(name => true)
+     *
+     * @var array
+     */
+    private $packageNames;
+
+    public function packageExists($name)
     {
-        return in_array($package, $this->getPackageNames());
+        $packages = $this->getPackageNames();
+        return isset($packages[$name]);
     }
 
     public function getPackageNames()
     {
-        $names = false;
+        if (null !== $this->packageNames) {
+            return $this->packageNames;
+        }
+
+        $names = null;
         $apc = extension_loaded('apc');
-        
-        //todo: move caching to some mature bundle, not apc
-        //use container to set caching key and ttl
+
+        // TODO use container to set caching key and ttl
         if ($apc) {
             $names = apc_fetch('packagist_package_names');
         }
 
-        if (false === $names) {
-            $names = array_map(function($value)
-                    {
-                        return $value['name'];
-                    }, $this->getEntityManager()
-                            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p")
-                            ->getResult());
+        if (!is_array($names)) {
+            $names = array();
+
+            $query = $this->getEntityManager()
+                ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p");
+
+            foreach ($query->getScalarResult() as $package) {
+                $names[$package['name']] = true;
+            }
 
             if ($apc) {
                 apc_store('packagist_package_names', $names, 3600);
             }
         }
 
-        return $names;
+        return $this->packageNames = $names;
     }
 
     public function getStalePackages()
