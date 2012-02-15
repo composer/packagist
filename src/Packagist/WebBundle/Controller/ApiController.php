@@ -37,6 +37,8 @@ class ApiController extends Controller
             $data[$package->getName()] = $package->toArray();
         }
 
-        return new Response(json_encode($data), 200, array('Content-Type' => 'application/json'));
+        $response = new Response(json_encode($data), 200, array('Content-Type' => 'application/json'));
+        $response->setSharedMaxAge(60);
+        return $response;
     }
 }
