@@ -65,6 +65,21 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getSingleResult();
     }
 
+    public function getFullPackages()
+    {
+        $qb = $this->getBaseQueryBuilder()
+            ->addSelect('a', 'req', 'rec', 'sug', 'rep', 'con', 'pro')
+            ->leftJoin('v.authors', 'a')
+            ->leftJoin('v.require', 'req')
+            ->leftJoin('v.recommend', 'rec')
+            ->leftJoin('v.suggest', 'sug')
+            ->leftJoin('v.replace', 'rep')
+            ->leftJoin('v.conflict', 'con')
+            ->leftJoin('v.provide', 'pro');
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function findByTag($name)
     {
         return $this->getBaseQueryBuilder()

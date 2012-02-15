@@ -30,7 +30,7 @@ class ApiController extends Controller
     {
         $packages = $this->get('doctrine')
             ->getRepository('Packagist\WebBundle\Entity\Package')
-            ->findAll();
+            ->getFullPackages();
 
         $data = array();
         foreach ($packages as $package) {
