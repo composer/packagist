@@ -1,6 +1,6 @@
 services:
-  packagist.twig.extension:
-    class: Packagist\WebBundle\Twig\PackagistExtension
-    arguments: [ @doctrine ]
-    tags:
-      - { name: twig.extension }
+    packagist.twig.extension:
+        class: Packagist\WebBundle\Twig\PackagistExtension
+        arguments: [ @doctrine ]
+        tags:
+            - { name: twig.extension }

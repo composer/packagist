@@ -7,7 +7,7 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
 class PackagistExtension extends \Twig_Extension
 {
     /**
-     * @var Symfony\Bridge\Doctrine\RegistryInterface
+     * @var \Symfony\Bridge\Doctrine\RegistryInterface
      */
     private $doctrine;
 
@@ -18,8 +18,10 @@ class PackagistExtension extends \Twig_Extension
 
     public function getTests()
     {
-        return array('packagistPackageName' => new \Twig_Test_Method($this, 'validPackageNameTest'),
-            'existingPackagistPackage' => new \Twig_Test_Method($this, 'packageExistsTest'));
+        return array(
+            'packagistPackageName' => new \Twig_Test_Method($this, 'validPackageNameTest'),
+            'existingPackagistPackage' => new \Twig_Test_Method($this, 'packageExistsTest')
+        );
     }
 
     public function getName()
@@ -30,7 +32,7 @@ class PackagistExtension extends \Twig_Extension
     public function packageExistsTest($package)
     {
         return $this->doctrine->getRepository('PackagistWebBundle:Package')
-                ->packageExists($package);
+            ->packageExists($package);
     }
 
     public function validPackageNameTest($package)

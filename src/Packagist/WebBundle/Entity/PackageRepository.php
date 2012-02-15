@@ -27,9 +27,11 @@ class PackageRepository extends EntityRepository
     public function getPackageNames()
     {
         $names = false;
+        $apc = extension_loaded('apc');
+        
         //todo: move caching to some mature bundle, not apc
         //use container to set caching key and ttl
-        if (extension_loaded('apc')) {
+        if ($apc) {
             $names = apc_fetch('packagist_package_names');
         }
 
@@ -41,7 +43,7 @@ class PackageRepository extends EntityRepository
                             ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p")
                             ->getResult());
 
-            if (extension_loaded('apc')) {
+            if ($apc) {
                 apc_store('packagist_package_names', $names, 3600);
             }
         }
