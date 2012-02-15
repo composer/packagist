@@ -30,7 +30,7 @@ class PackagistExtension extends \Twig_Extension
 
     public function packageExistsTest($package)
     {
-        if (!preg_match('/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/', $package)) {
+        if (!preg_match('/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/', $package)) {
             return false;
         }
 
