@@ -19,6 +19,38 @@ use Doctrine\ORM\EntityRepository;
  */
 class PackageRepository extends EntityRepository
 {
+    public function packageExists($package)
+    {
+        return in_array($package, $this->getPackageNames());
+    }
+
+    public function getPackageNames()
+    {
+        $names = false;
+        $apc = extension_loaded('apc');
+        
+        //todo: move caching to some mature bundle, not apc
+        //use container to set caching key and ttl
+        if ($apc) {
+            $names = apc_fetch('packagist_package_names');
+        }
+
+        if (false === $names) {
+            $names = array_map(function($value)
+                    {
+                        return $value['name'];
+                    }, $this->getEntityManager()
+                            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p")
+                            ->getResult());
+
+            if ($apc) {
+                apc_store('packagist_package_names', $names, 3600);
+            }
+        }
+
+        return $names;
+    }
+
     public function getStalePackages()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
