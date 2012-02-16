@@ -1,7 +1,7 @@
 {% macro listPackages(packages, paginate) %}
     <ul class="packages">
         {% for package in packages %}
-            <li>
+            <li data-url="{{ path('view_package', { 'name' : package.name }) }}">
                 <h1><a href="{{ path('view_package', { 'name' : package.name }) }}">{{ package.name }}</a></h1>
                 {% if package.description %}
                     <p class="package-description">{{ package.description }}</p>
