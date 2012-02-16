@@ -21,11 +21,8 @@ class UserRepository extends EntityRepository
 {
     public function findUsersMissingApiToken()
     {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('u')
-            ->from('Packagist\WebBundle\Entity\User', 'u')
-            ->where('u.apiToken IS NULL or u.apiToken = ?0')
-            ->setParameters(array(''));
+        $qb = $this->createQueryBuilder('u')
+            ->where('u.apiToken IS NULL');
         return $qb->getQuery()->getResult();
     }
 }

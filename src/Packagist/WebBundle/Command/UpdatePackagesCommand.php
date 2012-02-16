@@ -18,7 +18,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Packagist\WebBundle\Package\Updater;
-use Composer\Repository\VcsRepository;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>

@@ -52,7 +52,7 @@ class ApiController extends Controller
     public function githubPostReceive(Request $request)
     {
         $payload = json_decode($request->request->get('payload'), true);
-        if (!$payload or !isset($payload['repository']['url'])) {
+        if (!$payload || !isset($payload['repository']['url'])) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
         }
 
