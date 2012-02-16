@@ -317,6 +317,10 @@ ul.packages li {
     padding: 0 0 0 10px;
 }
 
+ul.packages li.selected {
+  background: #F9F9EE;
+}
+
 label {
   display: block;
   margin: 0 0 5px;
