@@ -70,7 +70,7 @@
         event.preventDefault();
 
         currentSelected = list.find('ul.packages li.selected');
-        nextSelected = (keymap.down === event.which) ? currentSelected.next() : currentSelected.prev();
+        nextSelected = (keymap.down === event.which) ? currentSelected.next('li') : currentSelected.prev('li');
 
         if (keymap.enter === event.which) {
             window.location = currentSelected.attr('data-url');
