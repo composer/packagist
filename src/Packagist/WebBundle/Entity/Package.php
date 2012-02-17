@@ -173,7 +173,7 @@ class Package
     /**
      * Get id
      *
-     * @return string $id
+     * @return string
      */
     public function getId()
     {
@@ -193,7 +193,7 @@ class Package
     /**
      * Get name
      *
-     * @return string $name
+     * @return string
      */
     public function getName()
     {
@@ -233,7 +233,7 @@ class Package
     /**
      * Get description
      *
-     * @return text $description
+     * @return string
      */
     public function getDescription()
     {
@@ -243,7 +243,7 @@ class Package
     /**
      * Set createdAt
      *
-     * @param datetime $createdAt
+     * @param \DateTime $createdAt
      */
     public function setCreatedAt($createdAt)
     {
@@ -253,7 +253,7 @@ class Package
     /**
      * Get createdAt
      *
-     * @return datetime $createdAt
+     * @return \DateTime
      */
     public function getCreatedAt()
     {
@@ -305,7 +305,7 @@ class Package
     /**
      * Add versions
      *
-     * @param Packagist\WebBundle\Entity\Version $versions
+     * @param \Packagist\WebBundle\Entity\Version $versions
      */
     public function addVersions(Version $versions)
     {
@@ -315,7 +315,7 @@ class Package
     /**
      * Get versions
      *
-     * @return string $versions
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getVersions()
     {
@@ -325,7 +325,7 @@ class Package
     /**
      * Set updatedAt
      *
-     * @param datetime $updatedAt
+     * @param \DateTime $updatedAt
      */
     public function setUpdatedAt($updatedAt)
     {
@@ -335,7 +335,7 @@ class Package
     /**
      * Get updatedAt
      *
-     * @return datetime $updatedAt
+     * @return \DateTime
      */
     public function getUpdatedAt()
     {
@@ -345,7 +345,7 @@ class Package
     /**
      * Set crawledAt
      *
-     * @param datetime $crawledAt
+     * @param \DateTime $crawledAt
      */
     public function setCrawledAt($crawledAt)
     {
@@ -355,7 +355,7 @@ class Package
     /**
      * Get crawledAt
      *
-     * @return datetime $crawledAt
+     * @return \DateTime
      */
     public function getCrawledAt()
     {
@@ -365,7 +365,7 @@ class Package
     /**
      * Set indexedAt
      *
-     * @param datetime $indexedAt
+     * @param \DateTime $indexedAt
      */
     public function setIndexedAt($indexedAt)
     {
@@ -375,7 +375,7 @@ class Package
     /**
      * Get indexedAt
      *
-     * @return datetime $indexedAt
+     * @return \DateTime
      */
     public function getIndexedAt()
     {
@@ -385,7 +385,7 @@ class Package
     /**
      * Add maintainers
      *
-     * @param Packagist\WebBundle\Entity\User $maintainer
+     * @param \Packagist\WebBundle\Entity\User $maintainer
      */
     public function addMaintainer(User $maintainer)
     {
@@ -395,7 +395,7 @@ class Package
     /**
      * Get maintainers
      *
-     * @return Doctrine\Common\Collections\Collection $maintainers
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getMaintainers()
     {
