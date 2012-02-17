@@ -72,8 +72,8 @@
         currentSelected = list.find('ul.packages li.selected');
         nextSelected = (keymap.down === event.which) ? currentSelected.next('li') : currentSelected.prev('li');
 
-        if (keymap.enter === event.which) {
-            window.location = currentSelected.attr('data-url');
+        if (keymap.enter === event.which && currentSelected.data('url')) {
+            window.location = currentSelected.data('url');
             return;
         }
 
