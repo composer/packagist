@@ -16,6 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ExecutionContext;
 use Doctrine\Common\Collections\ArrayCollection;
+use Composer\IO\NullIO;
 use Composer\Repository\VcsRepository;
 use Composer\Repository\RepositoryManager;
 
@@ -274,14 +275,8 @@ class Package
             return;
         }
 
-        $repositoryManager = new RepositoryManager;
-        $repositoryManager->setRepositoryClass('composer', 'Composer\Repository\ComposerRepository');
-        $repositoryManager->setRepositoryClass('vcs', 'Composer\Repository\VcsRepository');
-        $repositoryManager->setRepositoryClass('pear', 'Composer\Repository\PearRepository');
-        $repositoryManager->setRepositoryClass('package', 'Composer\Repository\PackageRepository');
-
         try {
-            $repository = new VcsRepository(array('url' => $repository));
+            $repository = new VcsRepository(array('url' => $repository), new NullIO());
 
             $repo = $this->repositoryClass = $repository->getDriver();
             if (!$repo) {
