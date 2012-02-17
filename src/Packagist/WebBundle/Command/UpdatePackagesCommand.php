@@ -23,7 +23,7 @@ use Symfony\Component\Finder\Finder;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Author;
-use Packagist\WebBundle\Repository\Repository\RepositoryInterface;
+use Composer\IO\NullIO;
 use Composer\Package\Version\VersionParser;
 use Composer\Repository\VcsRepository;
 use Composer\Package\PackageInterface;
@@ -84,19 +84,13 @@ class UpdatePackagesCommand extends ContainerAwareCommand
 
         $start = new \DateTime();
 
-        $repositoryManager = new RepositoryManager;
-        $repositoryManager->setRepositoryClass('composer', 'Composer\Repository\ComposerRepository');
-        $repositoryManager->setRepositoryClass('vcs', 'Composer\Repository\VcsRepository');
-        $repositoryManager->setRepositoryClass('pear', 'Composer\Repository\PearRepository');
-        $repositoryManager->setRepositoryClass('package', 'Composer\Repository\PackageRepository');
-
         foreach ($packages as $package) {
             if ($verbose) {
                 $output->writeln('Importing '.$package->getRepository());
             }
 
             try {
-                $repository = new VcsRepository(array('url' => $package->getRepository()));
+                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO());
                 if ($verbose) {
                     $repository->setDebug(true);
                 }
