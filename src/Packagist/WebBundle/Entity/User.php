@@ -17,7 +17,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\UserRepository")
  * @ORM\Table(name="fos_user")
  */
 class User extends BaseUser
@@ -44,11 +44,18 @@ class User extends BaseUser
      */
     private $createdAt;
 
+    /**
+     * @ORM\Column(type="string", length=20, nullable=true)
+     * @var string
+     */
+    private $apiToken;
+
     public function __construct()
     {
         $this->packages = new ArrayCollection();
         $this->authors = new ArrayCollection();
         $this->createdAt = new \DateTime();
+        $this->regenerateApiToken();
         parent::__construct();
     }
 
@@ -118,5 +125,33 @@ class User extends BaseUser
     public function getCreatedAt()
     {
         return $this->createdAt;
+    }
+    
+    /**
+     * Set apiToken
+     *
+     * @param string $apiToken
+     */
+    public function setApiToken($apiToken)
+    {
+        $this->apiToken = $apiToken;
+    }
+
+    /**
+     * Get apiToken
+     * 
+     * @return string
+     */
+    public function getApiToken()
+    {
+        return $this->apiToken;
+    }
+
+    /**
+     * Regenerate the apiToken
+     */
+    public function regenerateApiToken()
+    {
+        $this->apiToken = substr($this->generateToken(), 0, 20);
     }
 }
