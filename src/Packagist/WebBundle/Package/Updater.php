@@ -66,6 +66,8 @@ class Updater
         if (null === $start) {
             $start = new \DateTime();
         }
+        $pruneDate = clone $start;
+        $pruneDate->modify('-8days');
 
         $versions = $repository->getPackages();
         $em = $this->doctrine->getEntityManager();
@@ -92,7 +94,7 @@ class Updater
 
         // remove outdated -dev versions
         foreach ($package->getVersions() as $version) {
-            if ($version->getDevelopment() && $version->getUpdatedAt() < $start) {
+            if ($version->getDevelopment() && $version->getUpdatedAt() < $pruneDate) {
                 $versionRepository->remove($version);
             }
         }
