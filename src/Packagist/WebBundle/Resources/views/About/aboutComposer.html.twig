@@ -26,13 +26,12 @@
         <p>Packagist is a Composer repository, it contains a list of all packages under <em>/packages.json</em>. You can set one up for your own use, you will find the sources on <a href="https://github.com/composer/packagist">GitHub</a>. You can set it up in Composer like this:
 <pre>
 {
-    "repositories": {
-        "my-repo": {
-            "composer": {
-                "url": "http://example.org"
-            }
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "http://example.org"
         }
-    }
+    ]
 }
 </pre>
 
@@ -40,9 +39,11 @@
         <p>If you do not wish to work with Packagist.org packages, you can disable it like that:</p>
 <pre>
 {
-    "repositories": {
-        "packagist": false
-    }
+    "repositories": [
+        {
+            "packagist": false
+        }
+    ]
 }
 </pre>
         <p>Of course if you do that you should define an alternative repository or Composer will be pretty useless.</p>
@@ -53,13 +54,12 @@
 {
     "name": "my-project",
     "version": "1.0.0",
-    "repositories": {
-        "MyRepo": {
-            "vcs": {
-                "url": "git://example.org/MyRepo.git"
-            }
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git://example.org/MyRepo.git"
         }
-    },
+    ],
     "require": {
         "monolog/monolog": "1.0.0",
         "myvendor/mypackage": ">=1.0.0"
@@ -71,8 +71,9 @@
         <p>If you wish to use a repository that does not contain composer.json as a dependency, you can define its package information inline with the package repository, for example:</p>
 <pre>
 {
-    "repositories": {
-        "some vendor repo": {
+    "repositories": [
+        {
+            "type": "package",
             "package": {
                 "name": "vendor/package",
                 "version": "1.0.0",
@@ -87,7 +88,7 @@
                 }
             }
         }
-    },
+    ],
     "require": {
         "vendor/package": "1.0.0"
     }
@@ -99,18 +100,16 @@
         <p>If a library does not have a composer package but offers PEAR packages, you can also add it to composer. You just need to specify it's PEAR channel and all the channels of it's dependencies:</p>
 <pre>
 {
-    "repositories": {
-        "example org": {
-            "pear": {
-                "url": "http://pear.example.org"
-            }
+    "repositories": [
+        {
+            "type": "pear",
+            "url": "http://pear.example.org"
         },
-        "example com": {
-            "pear": {
-                "url": "http://pear.example.com"
-            }
+        {
+            "type": "pear",
+            "url": "http://pear.example.com"
         }
-    },
+    ],
     "require": {
         "SomePackage": "1.0.0"
     }
