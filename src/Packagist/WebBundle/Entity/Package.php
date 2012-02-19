@@ -94,6 +94,11 @@ class Package
      */
     private $indexedAt;
 
+    /**
+     * @ORM\Column(type="boolean")
+     */
+    private $autoUpdated;
+
     private $entityRepository;
     private $repositoryClass;
 
@@ -415,5 +420,25 @@ class Package
     public function getType()
     {
         return $this->type;
+    }
+
+    /**
+     * Set autoUpdated
+     *
+     * @param Boolean $autoUpdated
+     */
+    public function setAutoUpdated($autoUpdated)
+    {
+        $this->autoUpdated = $autoUpdated;
+    }
+
+    /**
+     * Get autoUpdated
+     *
+     * @return Boolean
+     */
+    public function getAutoUpdated()
+    {
+        return $this->autoUpdated;
     }
 }

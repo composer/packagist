@@ -70,8 +70,12 @@ class PackageRepository extends EntityRepository
         $qb->select('p, v')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
-            ->where('p.crawledAt IS NULL OR p.crawledAt < ?0')
-            ->setParameters(array(new \DateTime('-1hour')));
+            ->where('p.crawledAt IS NULL')
+            ->orWhere('(p.autoUpdated = false AND p.crawledAt < :crawled)')
+            ->orWhere('(p.crawledAt < :autocrawled)')
+            ->setParameter('crawled', new \DateTime('-1hour')) // crawl packages by hand once an hour
+            ->setParameter('autocrawled', new \DateTime('-1week')); // crawl auto-updated packages just in case once a week
+
         return $qb->getQuery()->getResult();
     }
 
@@ -83,6 +87,7 @@ class PackageRepository extends EntityRepository
             ->leftJoin('p.versions', 'v')
             ->leftJoin('v.tags', 't')
             ->where('p.indexedAt IS NULL OR p.indexedAt < p.crawledAt');
+
         return $qb->getQuery()->getResult();
     }
 
