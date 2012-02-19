@@ -68,20 +68,19 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
         }
 
-        if (! preg_match('~(github.com/[\w_\-\.]+/[\w_\-\.]+)$~', $payload['repository']['url'], $matches)) {
+        if (!preg_match('{github.com/[\w.-]+/[\w.-]+$}', $payload['repository']['url'], $match)) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL',)), 406);
         }
 
-        $payloadRepositoryChunk = $matches[1];
+        $payloadRepositoryChunk = $match[0];
 
         foreach ($user->getPackages() as $package) {
             if (false !== strpos($package->getRepository(), $payloadRepositoryChunk)) {
                 // We found the package that was referenced.
-
                 $updater = new Updater($doctrine);
                 $updater->update($package);
 
-                return new Response('{ "status": "success" }', 202);
+                return new Response('{"status": "success"}', 202);
             }
         }
 
