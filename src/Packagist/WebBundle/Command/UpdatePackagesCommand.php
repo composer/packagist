@@ -18,6 +18,9 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Packagist\WebBundle\Package\Updater;
+use Composer\Repository\VcsRepository;
+use Composer\IO\NullIO;
+use Composer\IO\ConsoleIO;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -61,12 +64,19 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $updater = new Updater($doctrine);
         $start = new \DateTime();
 
+        $input->setInteractive(false);
+        $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new NullIO;
+
         foreach ($packages as $package) {
             if ($verbose) {
                 $output->writeln('Importing '.$package->getRepository());
             }
             try {
-                $updater->update($package, $force, $start);
+                $repository = new VcsRepository(array('url' => $package->getRepository()), $io);
+                if ($verbose) {
+                    $repository->setDebug(true);
+                }
+                $updater->update($package, $repository, $force, $start);
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
             }

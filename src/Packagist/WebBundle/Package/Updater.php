@@ -13,8 +13,7 @@
 namespace Packagist\WebBundle\Package;
 
 use Composer\Package\PackageInterface;
-use Composer\Repository\VcsRepository;
-use Composer\IO\NullIO;
+use Composer\Repository\RepositoryInterface;
 use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Tag;
@@ -47,7 +46,7 @@ class Updater
 
     /**
      * Constructor
-     * 
+     *
      * @param RegistryInterface $doctrine
      */
     public function __construct(RegistryInterface $doctrine)
@@ -62,43 +61,42 @@ class Updater
      * @param boolean $clearExistingVersions
      * @param DateTime $start
      */
-    public function update(Package $package, $clearExistingVersions = false, \DateTime $start = null)
+    public function update(Package $package, RepositoryInterface $repository, $clearExistingVersions = false, \DateTime $start = null)
     {
         if (null === $start) {
             $start = new \DateTime();
         }
 
-        $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO());
         $versions = $repository->getPackages();
         $em = $this->doctrine->getEntityManager();
-        
+
         usort($versions, function ($a, $b) {
             return version_compare($a->getVersion(), $b->getVersion());
         });
 
         $versionRepository = $this->doctrine->getRepository('PackagistWebBundle:Version');
-        
+
         if ($clearExistingVersions) {
             foreach ($package->getVersions() as $version) {
                 $versionRepository->remove($version);
             }
-        
+
             $em->flush();
             $em->refresh($package);
         }
 
-       foreach ($versions as $version) {
+        foreach ($versions as $version) {
             $this->updateInformation($package, $version);
             $em->flush();
         }
-        
+
         // remove outdated -dev versions
         foreach ($package->getVersions() as $version) {
             if ($version->getDevelopment() && $version->getUpdatedAt() < $start) {
                 $versionRepository->remove($version);
             }
         }
-        
+
         $package->setUpdatedAt(new \DateTime);
         $package->setCrawledAt(new \DateTime);
         $em->flush();
@@ -126,28 +124,28 @@ class Updater
                 return;
             }
         }
-    
+
         $version->setVersion($data->getPrettyVersion());
         $version->setDevelopment(substr($data->getVersion(), -4) === '-dev');
     
         $em->persist($version);
-    
+
         $version->setDescription($data->getDescription());
         $package->setDescription($data->getDescription());
         $version->setHomepage($data->getHomepage());
         $version->setLicense($data->getLicense() ?: array());
-    
+
         $version->setPackage($package);
         $version->setUpdatedAt(new \DateTime);
         $version->setReleasedAt($data->getReleaseDate());
-    
+
         if ($data->getSourceType()) {
             $source['type'] = $data->getSourceType();
             $source['url'] = $data->getSourceUrl();
             $source['reference'] = $data->getSourceReference();
             $version->setSource($source);
         }
-    
+
         if ($data->getDistType()) {
             $dist['type'] = $data->getDistType();
             $dist['url'] = $data->getDistUrl();
@@ -155,28 +153,28 @@ class Updater
             $dist['shasum'] = $data->getDistSha1Checksum();
             $version->setDist($dist);
         }
-    
+
         if ($data->getType()) {
             $version->setType($data->getType());
             if ($data->getType() && $data->getType() !== $package->getType()) {
                 $package->setType($data->getType());
             }
         }
-    
+
         $version->setTargetDir($data->getTargetDir());
         $version->setAutoload($data->getAutoload());
         $version->setExtra($data->getExtra());
         $version->setBinaries($data->getBinaries());
-    
+
         $version->getTags()->clear();
         if ($data->getKeywords()) {
             foreach ($data->getKeywords() as $keyword) {
                 $version->addTag(Tag::getByName($em, $keyword, true));
             }
         }
-        
+
         $authorRepository = $this->doctrine->getRepository('PackagistWebBundle:Author');
-    
+
         $version->getAuthors()->clear();
         if ($data->getAuthors()) {
             foreach ($data->getAuthors() as $authorData) {
@@ -185,33 +183,33 @@ class Updater
                 if (empty($authorData['email']) && empty($authorData['name'])) {
                     continue;
                 }
-    
+
                 if (!empty($authorData['email'])) {
                     $author = $authorRepository->findOneByEmail($authorData['email']);
                 }
-    
+
                 if (!$author && !empty($authorData['homepage'])) {
                     $author = $authorRepository->findOneBy(array(
                         'name' => $authorData['name'],
                         'homepage' => $authorData['homepage']
                     ));
                 }
-    
+
                 if (!$author && !empty($authorData['name'])) {
                     $author = $authorRepository->findOneByNameAndPackage($authorData['name'], $package);
                 }
-    
+
                 if (!$author) {
                     $author = new Author();
                     $em->persist($author);
                 }
-    
+
                 foreach (array('email', 'name', 'homepage') as $field) {
                     if (isset($authorData[$field])) {
                         $author->{'set'.$field}($authorData[$field]);
                     }
                 }
-    
+
                 $author->setUpdatedAt(new \DateTime);
                 if (!$version->getAuthors()->contains($author)) {
                     $version->addAuthor($author);
@@ -221,13 +219,13 @@ class Updater
                 }
             }
         }
-    
+
         foreach ($this->supportedLinkTypes as $linkType => $linkEntity) {
             $links = array();
             foreach ($data->{'get'.$linkType.'s'}() as $link) {
                 $links[$link->getTarget()] = $link->getPrettyConstraint();
             }
-    
+
             foreach ($version->{'get'.$linkType}() as $link) {
                 // clear links that have changed/disappeared (for updates)
                 if (!isset($links[$link->getPackageName()]) || $links[$link->getPackageName()] !== $link->getPackageVersion()) {
@@ -238,7 +236,7 @@ class Updater
                     unset($links[$link->getPackageName()]);
                 }
             }
-    
+
             foreach ($links as $linkPackageName => $linkPackageVersion) {
                 $class = 'Packagist\WebBundle\Entity\\'.$linkEntity;
                 $link = new $class;
@@ -249,7 +247,7 @@ class Updater
                 $em->persist($link);
             }
         }
-    
+
         if (!$package->getVersions()->contains($version)) {
             $package->addVersions($version);
         }

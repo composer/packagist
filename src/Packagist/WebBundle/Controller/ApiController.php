@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Composer\IO\NullIO;
 use Packagist\WebBundle\Package\Updater;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
@@ -78,7 +79,10 @@ class ApiController extends Controller
             if (false !== strpos($package->getRepository(), $payloadRepositoryChunk)) {
                 // We found the package that was referenced.
                 $updater = new Updater($doctrine);
-                $updater->update($package);
+
+                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO);
+                $package->setAutoUpdated(true);
+                $updater->update($package, $repository);
 
                 return new Response('{"status": "success"}', 202);
             }
