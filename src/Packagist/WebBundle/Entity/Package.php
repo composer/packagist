@@ -437,7 +437,7 @@ class Package
      *
      * @return Boolean
      */
-    public function getAutoUpdated()
+    public function isAutoUpdated()
     {
         return $this->autoUpdated;
     }
