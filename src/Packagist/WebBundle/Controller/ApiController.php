@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Controller;
 
 use Composer\IO\NullIO;
+use Composer\Repository\VcsRepository;
 use Packagist\WebBundle\Package\Updater;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
