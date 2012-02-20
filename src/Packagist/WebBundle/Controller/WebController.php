@@ -102,9 +102,9 @@ class WebController extends Controller
 
                 $dismax = $select->getDisMax();
                 $dismax->setQueryFields(array('name', 'description', 'tags', 'text', 'text_ngram', 'name_split'));
-                $dismax->setBoostQuery('name:"'.$escapedQuery.'"^2 name_split:"'.$escapedQuery.'"^1.5');
+                $dismax->setBoostQuery('name:'.$escapedQuery.'^2 name_split:'.$escapedQuery.'^1.5');
                 $dismax->setQueryParser('edismax');
-                $select->setQuery($form->getData()->getQuery());
+                $select->setQuery($escapedQuery);
 
                 $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
                 $paginator->setMaxPerPage(15);
