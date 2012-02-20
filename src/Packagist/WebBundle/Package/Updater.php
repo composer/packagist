@@ -108,10 +108,10 @@ class Updater
     {
         $em = $this->doctrine->getEntityManager();
         $version = new Version();
-    
+
         $version->setName($package->getName());
-        $version->setNormalizedVersion(preg_replace('{-dev$}i', '', $data->getVersion()));
-    
+        $version->setNormalizedVersion($data->getVersion());
+
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
             if ($existingVersion->equals($version)) {
@@ -128,8 +128,8 @@ class Updater
         }
 
         $version->setVersion($data->getPrettyVersion());
-        $version->setDevelopment(substr($data->getVersion(), -4) === '-dev');
-    
+        $version->setDevelopment($data->isDev());
+
         $em->persist($version);
 
         $version->setDescription($data->getDescription());
