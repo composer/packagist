@@ -97,7 +97,7 @@ class Package
     /**
      * @ORM\Column(type="boolean")
      */
-    private $autoUpdated;
+    private $autoUpdated = false;
 
     private $entityRepository;
     private $repositoryClass;
