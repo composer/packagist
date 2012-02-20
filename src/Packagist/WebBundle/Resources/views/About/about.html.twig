@@ -11,7 +11,7 @@
         <p>First of all, you must pick a package name. This is a very important step since it can not change, and it should be unique enough to avoid problems in the future.</p>
         <p>The most important part is that the first bit of the package name must be the vendor name, suffixed by a forward slash (/). This follows the <a href="https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md">PSR-0 standard</a> for namespaces naming.</p>
         <p>For libraries and applications, the vendor is in most cases the library name itself, and you can use any name, although it's best to avoid using common names like DB, Logger, MySQL, etc. Try to be imaginative when naming your project.</p>
-        <p>For plugins, be it TYPO3 extensions, Symfony2 bundles, Drupal modules, or whatever your project of choice calls them, you are free to handle it as you wish, but you may want to add some specific information about the target platform in the package name to avoid conflicts if you provide many plugins to integrate one lib in many frameworks. For example, if your vendor name is Acme, and your library is called Email, you could have the following names: <code>acme/email-symfony-bundle</code>, <code>acme/email-typo3-ext</code> and such. This ensures uniqueness across frameworks/applications, and clearly says what your package relates to. Here is a list of typical package names for reference:
+        <p>Here is a list of typical package names for reference:
 <pre>
 // Monolog is a library, so the vendor name and package name are the same.
 monolog/monolog
@@ -46,6 +46,11 @@ acme/email
     ],
     "require": {
         "php": ">=5.3.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "Monolog": "src"
+        }
     }
 }
 </pre>
@@ -65,18 +70,9 @@ v4.4.4beta2
 v2.0.0-alpha
 v2.0.4-p1
 </pre>
-        With manual versioning, in your master branch, or any other dev branch, you should change the composer.json version to the next future version that will be released from this branch (e.g. <code>1.1.0</code>), packagist will automatically add a -dev suffix to it until it is moved to a tag.</p>
-        <p>Note that dev branches should follow one of the following patterns to be recognized:
-<pre>
-master
-trunk
-1.0
-1.*
-v1.x
-1.1.x
-1.1.*
-</pre>
-        Doing so will allow people to easily install pre-release versions of your code for testing or development purposes.</p>
+        Branches will automatically appear as "dev" versions that are easily installable by anyone that wants to try your library's latest and greatest, but that does not mean you should not tag releases. The use of <a href="http://semver.org/">Semantic Versioning</a> is strongly encouraged.</p>
+
+        <p>If you specify the version manually, it will be ignored by Packagist for branches, and tags will have to contain the same version number as the tag name to be valid, so there is really no benefit to doing this.</p>
 
         <h1>Update Schedule</h1>
 
