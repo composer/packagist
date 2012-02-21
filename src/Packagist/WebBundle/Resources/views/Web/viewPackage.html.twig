@@ -57,7 +57,7 @@
                             <section>
                                 <h1>
                                     {{ version.version }}
-                                    <span class="release-date">{{ version.releasedAt|date("Y-m-d") }}</span>
+                                    <span class="release-date">{{ version.releasedAt|date("Y-m-d H:i") }}</span>
                                     <span class="license">{{ version.license ? version.license|join(', ') : '' }}</span>
                                 </h1>
 
