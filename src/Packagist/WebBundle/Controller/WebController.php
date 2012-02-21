@@ -269,7 +269,7 @@ class WebController extends Controller
             $request->query->get('apiToken');
 
         $update = $request->request->get('update', $request->query->get('update'));
-        $autoUpdated = $request->request->get('auto_updated', $request->query->get('auto_updated'));
+        $autoUpdated = $request->request->get('autoUpdated', $request->query->get('autoUpdated'));
 
         $user = $doctrine
             ->getRepository('PackagistWebBundle:User')
