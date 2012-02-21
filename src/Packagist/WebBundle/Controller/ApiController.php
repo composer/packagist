@@ -58,12 +58,17 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
         }
 
-        $username = $request->query->get('username');
-        $apiToken = $request->query->get('apiToken');
+        $username = $request->request->has('username') ?
+            $request->request->get('username') :
+            $request->query->get('username');
+
+        $apiToken = $request->request->has('apiToken') ?
+            $request->request->get('apiToken') :
+            $request->query->get('apiToken');
 
         $doctrine = $this->get('doctrine');
         $user = $doctrine
-            ->getRepository('Packagist\WebBundle\Entity\User')
+            ->getRepository('PackagistWebBundle:User')
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 
         if (!$user) {
