@@ -282,6 +282,7 @@ class WebController extends Controller
         if ($package->getMaintainers()->contains($user)) {
             if (null !== $autoUpdated) {
                 $package->setAutoUpdated((Boolean) $autoUpdated);
+                $doctrine->getEntityManager()->flush();
             }
 
             if ($update) {
