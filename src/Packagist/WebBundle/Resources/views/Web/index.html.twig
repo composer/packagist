@@ -35,6 +35,13 @@ curl -s http://getcomposer.org/installer | php
                 <pre>
 php composer.phar install
 </pre>
+                <p>This installs all required dependencies and locks their versions in composer.lock. Run this command anytime composer.lock changes.</p>
+                <h2>Update Dependencies</h2>
+                <p>Execute this in your project root.</p>
+                <pre>
+php composer.phar update
+</pre>
+                <p>This adds or updates all required dependencies and locks their versions in composer.lock. Run this command anytime composer.json changes.</p>
                 <h2>Autoload Dependencies</h2>
                 <p>If all your packages follow the <a href="https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md">PSR-0</a> standard, you can autoload all the dependencies by adding this to your code:</p>
                 <pre>
