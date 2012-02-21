@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Controller;
 
 use Composer\IO\NullIO;
 use Composer\Repository\VcsRepository;
+use Doctrine\ORM\NoResultException;
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
@@ -133,9 +134,8 @@ class WebController extends Controller
      */
     public function submitPackageAction()
     {
-        $doctrine = $this->getDoctrine();
         $package = new Package;
-        $package->setEntityRepository($doctrine->getRepository('PackagistWebBundle:Package'));
+        $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $form = $this->createForm(new PackageType, $package);
 
         $request = $this->getRequest();
@@ -145,17 +145,11 @@ class WebController extends Controller
                 try {
                     $user = $this->getUser();
                     $package->addMaintainer($user);
-                    $em = $doctrine->getEntityManager();
+                    $em = $this->getDoctrine()->getEntityManager();
                     $em->persist($package);
-
-                    $updater = new Updater($doctrine);
-
-                    $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO);
-                    $updater->update($package, $repository);
-
                     $em->flush();
 
-                    $this->get('session')->setFlash('success', $package->getName().' has been added');
+                    $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, the repository will be parsed for releases soon.');
 
                     return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
                 } catch (\Exception $e) {
@@ -250,7 +244,7 @@ class WebController extends Controller
     /**
      * @Template()
      * @Route("/packages/{name}", name="update_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
-     * @Method({"POST"})
+     * @Method({"PUT"})
      */
     public function updatePackageAction($name)
     {
@@ -260,7 +254,7 @@ class WebController extends Controller
             $package = $doctrine
                 ->getRepository('PackagistWebBundle:Package')
                 ->getFullPackageByName($name);
-        } catch (\Doctrine\ORM\NoResultException $e) {
+        } catch (NoResultException $e) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Package not found',)), 404);
         }
 
@@ -274,6 +268,9 @@ class WebController extends Controller
             $request->request->get('apiToken') :
             $request->query->get('apiToken');
 
+        $update = $request->request->get('update', $request->query->get('update'));
+        $autoUpdated = $request->request->get('auto_updated', $request->query->get('auto_updated'));
+
         $user = $doctrine
             ->getRepository('PackagistWebBundle:User')
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
@@ -283,11 +280,16 @@ class WebController extends Controller
         }
 
         if ($package->getMaintainers()->contains($user)) {
-            $updater = new Updater($doctrine);
+            if (null !== $autoUpdated) {
+                $package->setAutoUpdated((Boolean) $autoUpdated);
+            }
 
-            $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO);
-            $package->setAutoUpdated(true);
-            $updater->update($package, $repository);
+            if ($update) {
+                $updater = new Updater($doctrine);
+
+                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO);
+                $updater->update($package, $repository);
+            }
 
             return new Response('{"status": "success"}', 202);
         }
