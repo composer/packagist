@@ -26,4 +26,7 @@
         });
         submit.addClass('loading');
     });
+    if ($('.package').data('force-crawl')) {
+        $('.package .force-update').submit();
+    }
 })(jQuery);

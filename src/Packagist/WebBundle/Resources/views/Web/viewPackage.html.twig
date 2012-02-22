@@ -7,7 +7,7 @@
 
 {% block content %}
     <div class="box">
-        <div class="package">
+        <div class="package"{% if app.user and package.maintainers.contains(app.user) and package.crawledAt is null %} data-force-crawl="true"{% endif %}>
             {% if app.user and package.maintainers.contains(app.user) %}
                 <form class="force-update" action="{{ path('update_package', {name: package.name}) }}" method="POST">
                     <input type="hidden" name="_method" value="PUT" />
