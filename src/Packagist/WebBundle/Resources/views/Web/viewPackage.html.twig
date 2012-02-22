@@ -2,12 +2,19 @@
 {% import "PackagistWebBundle::macros.html.twig" as packagist %}
 
 {% block scripts %}
-    <script src="{{ asset('bundles/packagistweb/js/view.js?v=2')}}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/view.js?v=3')}}"></script>
 {% endblock %}
 
 {% block content %}
     <div class="box">
         <div class="package">
+            {% if app.user and package.maintainers.contains(app.user) %}
+                <form class="force-update" action="{{ path('update_package', {name: package.name}) }}" method="POST">
+                    <input type="hidden" name="_method" value="PUT" />
+                    <input type="hidden" name="update" value="1" />
+                    <input type="submit" value="Force package update" />
+                </form>
+            {% endif %}
             <h1>
                 <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
             </h1>
@@ -57,7 +64,7 @@
                             <section>
                                 <h1>
                                     {{ version.version }}
-                                    <span class="release-date">{{ version.releasedAt|date("Y-m-d H:i") }}</span>
+                                    <span class="release-date">{{ version.releasedAt|date("Y-m-d H:i") }} UTC</span>
                                     <span class="license">{{ version.license ? version.license|join(', ') : '' }}</span>
                                 </h1>
 

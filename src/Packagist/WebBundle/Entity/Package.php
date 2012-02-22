@@ -155,7 +155,7 @@ class Package
                 $context->addViolation('The package name '.$information['name'].' is invalid, it should have a vendor name, a forward slash, and a package name, matching <em>[a-z0-9_.-]+/[a-z0-9_.-]+</em>.', array(), null);
                 return;
             }
-        } catch (\UnexpectedValueException $e) {
+        } catch (\Exception $e) {
             $context->addViolation('We had problems parsing your composer.json file, the parser reports: '.$e->getMessage(), array(), null);
         }
     }
@@ -289,7 +289,8 @@ class Package
             }
             $information = $repo->getComposerInformation($repo->getRootIdentifier());
             $this->setName($information['name']);
-        } catch (\UnexpectedValueException $e) {}
+        } catch (\Exception $e) {
+        }
     }
 
     /**

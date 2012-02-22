@@ -270,7 +270,7 @@ class WebController extends Controller
         $update = $req->request->get('update', $req->query->get('update'));
         $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
 
-        $user = $doctrine
+        $user = $this->getUser() ?: $doctrine
             ->getRepository('PackagistWebBundle:User')
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 

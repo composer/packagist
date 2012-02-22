@@ -382,11 +382,18 @@ form ul {
 
 /* Search */
 #search_query_query {
+  width: 890px;
+}
+.no-js #search_query_query {
   width: 780px;
 }
 #search-form .submit-wrapper {
   width: 100px;
   float: right;
+  display: none;
+}
+.no-js #search-form .submit-wrapper {
+  display: block;
 }
 #search-form .submit {
   margin: 0;
@@ -522,6 +529,25 @@ form ul {
 }
 .package .description, .package .details {
   margin-bottom: 10px;
+}
+
+.no-js .package .force-update {
+  display: none;
+}
+.package .force-update {
+  float: right;
+}
+.package .force-update input {
+  width: auto;
+  font-size: 16px;
+  margin: 0;
+  padding: 8px;
+  background-image: none;
+}
+.package .force-update input.loading {
+  background-position: 10px center;
+  background-image: url("../img/loader.gif");
+  padding-left: 30px;
 }
 
 
