@@ -132,15 +132,14 @@ class WebController extends Controller
      * @Template()
      * @Route("/packages/submit", name="submit")
      */
-    public function submitPackageAction()
+    public function submitPackageAction(Request $req)
     {
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $form = $this->createForm(new PackageType, $package);
 
-        $request = $this->getRequest();
-        if ('POST' === $request->getMethod()) {
-            $form->bindRequest($request);
+        if ('POST' === $req->getMethod()) {
+            $form->bindRequest($req);
             if ($form->isValid()) {
                 try {
                     $user = $this->getUser();
@@ -172,9 +171,9 @@ class WebController extends Controller
         $form = $this->createForm(new PackageType, $package);
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
-        $request = $this->getRequest();
-        if ('POST' === $request->getMethod()) {
-            $form->bindRequest($request);
+        $req = $this->getRequest();
+        if ('POST' === $req->getMethod()) {
+            $form->bindRequest($req);
             if ($form->isValid()) {
                 $response = array('status' => 'success', 'name' => $package->getName());
             } else {
@@ -225,7 +224,7 @@ class WebController extends Controller
             $package = $this->getDoctrine()
                 ->getRepository('PackagistWebBundle:Package')
                 ->getFullPackageByName($name);
-        } catch (\Doctrine\ORM\NoResultException $e) {
+        } catch (NoResultException $e) {
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
@@ -246,7 +245,7 @@ class WebController extends Controller
      * @Route("/packages/{name}", name="update_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
      * @Method({"PUT"})
      */
-    public function updatePackageAction($name)
+    public function updatePackageAction(Request $req, $name)
     {
         $doctrine = $this->getDoctrine();
 
@@ -258,18 +257,18 @@ class WebController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Package not found',)), 404);
         }
 
-        $request = $this->getRequest();
+        $req = $this->getRequest();
 
-        $username = $request->request->has('username') ?
-            $request->request->get('username') :
-            $request->query->get('username');
+        $username = $req->request->has('username') ?
+            $req->request->get('username') :
+            $req->query->get('username');
 
-        $apiToken = $request->request->has('apiToken') ?
-            $request->request->get('apiToken') :
-            $request->query->get('apiToken');
+        $apiToken = $req->request->has('apiToken') ?
+            $req->request->get('apiToken') :
+            $req->query->get('apiToken');
 
-        $update = $request->request->get('update', $request->query->get('update'));
-        $autoUpdated = $request->request->get('autoUpdated', $request->query->get('autoUpdated'));
+        $update = $req->request->get('update', $req->query->get('update'));
+        $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
 
         $user = $doctrine
             ->getRepository('PackagistWebBundle:User')
