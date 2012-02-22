@@ -12,10 +12,14 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Composer\IO\NullIO;
+use Composer\Repository\VcsRepository;
+use Doctrine\ORM\NoResultException;
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
 use Packagist\WebBundle\Form\Model\SearchQuery;
+use Packagist\WebBundle\Package\Updater;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
@@ -213,6 +217,7 @@ class WebController extends Controller
     /**
      * @Template()
      * @Route("/packages/{name}", name="view_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
+     * @Method({"GET"})
      */
     public function viewPackageAction($name)
     {
@@ -234,6 +239,63 @@ class WebController extends Controller
         $data['searchForm'] = $this->createSearchForm()->createView();
 
         return $data;
+    }
+
+    /**
+     * @Template()
+     * @Route("/packages/{name}", name="update_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
+     * @Method({"PUT"})
+     */
+    public function updatePackageAction($name)
+    {
+        $doctrine = $this->getDoctrine();
+
+        try {
+            $package = $doctrine
+                ->getRepository('PackagistWebBundle:Package')
+                ->getFullPackageByName($name);
+        } catch (NoResultException $e) {
+            return new Response(json_encode(array('status' => 'error', 'message' => 'Package not found',)), 404);
+        }
+
+        $request = $this->getRequest();
+
+        $username = $request->request->has('username') ?
+            $request->request->get('username') :
+            $request->query->get('username');
+
+        $apiToken = $request->request->has('apiToken') ?
+            $request->request->get('apiToken') :
+            $request->query->get('apiToken');
+
+        $update = $request->request->get('update', $request->query->get('update'));
+        $autoUpdated = $request->request->get('autoUpdated', $request->query->get('autoUpdated'));
+
+        $user = $doctrine
+            ->getRepository('PackagistWebBundle:User')
+            ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
+
+        if (!$user) {
+            return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
+        }
+
+        if ($package->getMaintainers()->contains($user)) {
+            if (null !== $autoUpdated) {
+                $package->setAutoUpdated((Boolean) $autoUpdated);
+                $doctrine->getEntityManager()->flush();
+            }
+
+            if ($update) {
+                $updater = new Updater($doctrine);
+
+                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO);
+                $updater->update($package, $repository);
+            }
+
+            return new Response('{"status": "success"}', 202);
+        }
+
+        return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
     }
 
     /**
