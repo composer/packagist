@@ -55,6 +55,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
 
         if ($package) {
             $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
+            $force = true;
         } elseif ($force) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findAll();
         } else {
