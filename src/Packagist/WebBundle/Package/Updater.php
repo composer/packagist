@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle\Package;
 
+use Composer\Package\AliasPackage;
 use Composer\Package\PackageInterface;
 use Composer\Repository\RepositoryInterface;
 use Packagist\WebBundle\Entity\Author;
@@ -88,6 +89,9 @@ class Updater
         }
 
         foreach ($versions as $version) {
+            if ($version instanceof AliasPackage) {
+                continue;
+            }
             $this->updateInformation($package, $version);
             $em->flush();
         }
