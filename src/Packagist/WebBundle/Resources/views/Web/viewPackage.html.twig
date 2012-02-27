@@ -86,78 +86,20 @@
                                         {% endfor %}
                                     </ul>
                                     <div class="clearfix package-links">
-                                        <div class="requires">
-                                            <h2>Requires</h2>
-                                            {% if version.require|length %}
-                                                <ul>
-                                                    {%- for req in version.require -%}
-                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
-                                            {% else %}
-                                                None
-                                            {% endif %}
-                                        </div>
-                                        <div class="recommends">
-                                            <h2>Recommends</h2>
-                                            {% if version.recommend|length %}
-                                                <ul>
-                                                    {%- for req in version.recommend -%}
-                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
-                                            {% else %}
-                                                None
-                                            {% endif %}
-                                        </div>
-                                        <div class="suggests">
-                                            <h2>Suggests</h2>
-                                            {% if version.suggest|length %}
-                                                <ul>
-                                                    {%- for req in version.suggest -%}
-                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
-                                            {% else %}
-                                                None
-                                            {% endif %}
-                                        </div>
-                                        <div class="provides">
-                                            <h2>Provides</h2>
-                                            {% if version.provide|length %}
-                                                <ul>
-                                                    {%- for req in version.provide -%}
-                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
-                                            {% else %}
-                                                None
-                                            {% endif %}
-                                        </div>
-                                        <div class="conflicts">
-                                            <h2>Conflicts</h2>
-                                            {% if version.conflict|length %}
-                                                <ul>
-                                                    {%- for req in version.conflict -%}
-                                                        <li>{{ packagist.packageLink(req.packageName) }}: {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
-                                            {% else %}
-                                                None
-                                            {% endif %}
-                                        </div>
-                                        <div class="replaces">
-                                            <h2>Replaces</h2>
-                                            {% if version.replace|length %}
-                                                <ul>
-                                                    {%- for req in version.replace -%}
-                                                        <li>{{ packagist.packageLink(req.packageName) }} {{ req.packageVersion }}</li>
-                                                    {%- endfor -%}
-                                                </ul>
-                                            {% else %}
-                                                None
-                                            {% endif %}
-                                        </div>
+                                        {% for type in ["require", "recommend", "suggest", "provide", "conflict", "replace"] %}
+                                            <div class="{{ type }}s">
+                                                <h2>{{ type|title }}s</h2>
+                                                {% if attribute(version, type)|length %}
+                                                    <ul>
+                                                        {%- for link in attribute(version, type) -%}
+                                                            <li>{{ packagist.packageLink(link.packageName) }}: {{ link.packageVersion == 'self.version' ? version.version : link.packageVersion }}</li>
+                                                        {%- endfor -%}
+                                                    </ul>
+                                                {% else %}
+                                                    None
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
                                     </div>
                                 </div>
                                 <div class="details-toggler{% if loop.index0 == 0 %} open{% endif %}"></div>
