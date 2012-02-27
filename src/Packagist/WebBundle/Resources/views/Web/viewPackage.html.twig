@@ -1,6 +1,8 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 {% import "PackagistWebBundle::macros.html.twig" as packagist %}
 
+{% block title %}{{ package.name }} - {{ parent() }}{% endblock %}
+
 {% block scripts %}
     <script src="{{ asset('bundles/packagistweb/js/view.js?v=3')}}"></script>
 {% endblock %}
