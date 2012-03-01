@@ -113,6 +113,9 @@ class Package
         $versions = array();
         foreach ($this->getVersions() as $version) {
             $versions[$version->getVersion()] = $version->toArray();
+            if ($version->hasVersionAlias()) {
+                $versions[$version->getVersionAlias()] = $version->toArray();
+            }
         }
         $maintainers = array();
         foreach ($this->getMaintainers() as $maintainer) {

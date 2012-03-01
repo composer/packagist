@@ -66,8 +66,8 @@
                             <section>
                                 <h1>
                                     {{ version.version }}
-                                    {% if version.development and version.extra['branch-alias'][version.version] is defined %}
-                                        / {{ version.extra['branch-alias'][version.version] }}
+                                    {% if version.hasVersionAlias %}
+                                        / {{ version.versionAlias }}
                                     {% endif %}
                                     <span class="release-date">{{ version.releasedAt|date("Y-m-d H:i") }} UTC</span>
                                     <span class="license">{{ version.license ? version.license|join(', ') : '' }}</span>
