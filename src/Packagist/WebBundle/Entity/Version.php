@@ -618,6 +618,26 @@ class Version
     }
 
     /**
+     * @return boolean
+     */
+    public function hasVersionAlias()
+    {
+        return $this->getDevelopment() && (boolean) $this->getVersionAlias();
+    }
+
+    /**
+     * @return string
+     */
+    public function getVersionAlias()
+    {
+        $extra = $this->getExtra();
+
+        if (isset($extra['branch-alias'][$this->getVersion()])) {
+            return $extra['branch-alias'][$this->getVersion()];
+        }
+    }
+
+    /**
      * Set development
      *
      * @param Boolean $development
