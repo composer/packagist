@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Composer\Package\Version\VersionParser;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -776,6 +777,30 @@ class Version
     {
         return $this->suggest;
     }
+
+    /**
+     * @return Boolean
+     */
+    public function hasVersionAlias()
+    {
+        return $this->getDevelopment() && $this->getVersionAlias();
+    }
+
+    /**
+     * @return string
+     */
+    public function getVersionAlias()
+    {
+        $extra = $this->getExtra();
+
+        if (isset($extra['branch-alias'][$this->getVersion()])) {
+            $parser = new VersionParser;
+            $version = $parser->normalizeBranch(str_replace('-dev', '', $extra['branch-alias'][$this->getVersion()]));
+            return preg_replace('{(\.9{7})+}', '.x', $version);
+        }
+    }
+
+
 
     public function __toString()
     {
