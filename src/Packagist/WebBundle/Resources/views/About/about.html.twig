@@ -3,7 +3,7 @@
 {% block content %}
     <div class="box clearfix">
         <h1>What is Packagist?</h1>
-        <p>Packagist is a Composer package repository. It lets you find packages you want, and lets Composer know where to get the code from. You can use Composer to manage your project or libraries' dependencies - read more about it on the <a href="{{ path('about.composer') }}">Composer page</a>.</p>
+        <p>Packagist is a Composer package repository. It lets you find packages and lets Composer know where to get the code from. You can use Composer to manage your project or libraries' dependencies - read more about it on the <a href="http://getcomposer.org/">Composer website</a>.</p>
         <p>You can find the packagist.org source on <a href="https://github.com/composer/packagist">GitHub</a>.
 
         <h1>How to submit packages?</h1>
@@ -76,12 +76,15 @@ v2.0.4-p1
 
         <h1>Update Schedule</h1>
 
-        <p>New packages will be crawled <strong>within ten minutes</strong>.</p>
+        <p>New packages will be crawled <strong>within ten minutes</strong> unless you add the GitHub service hook. To do so you can go to your GitHub repository, click the "Admin" button, then "Service Hooks". Pick Packagist in the list, and add the API key you will find on your <a href="{{ path('fos_user_profile_show') }}">profile</a>, plus your Packagist username if it's not the same as on GitHub.</p>
 
-        <p>Existing packages will be crawled <strong>every hour</strong>.</p>
+        <p>Existing packages will be crawled <strong>every hour</strong>. When the GitHub is enabled packages are only crawled once a week unless the GitHub hook triggers crawling. You can also trigger a manual build on your package page if you are logged-in.</p>
 
         <p>The search index is updated <strong>every five minutes</strong>. It will index (or reindex) any package that has been crawled since the last time the search indexer ran.</p>
 
-        <p>Crawling cannot currently be triggered on commit or by other means. This is planned for a future release.</p>
+        <h1>Community</h1>
+
+        <p>If you have questions about composer or want to help out, come and join us in the <em><a href="irc://irc.freenode.net/#composer-dev">#composer-dev</a></em> channel on irc.freenode.net.</p>
+        <p>Also join the <em><a href="http://groups.google.com/group/composer-dev">composer-dev mailing list</a></em>.</p>
     </div>
 {% endblock %}

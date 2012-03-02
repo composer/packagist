@@ -30,13 +30,4 @@ class AboutController extends Controller
     {
         return array();
     }
-
-    /**
-     * @Template()
-     * @Route("/about-composer", name="about.composer")
-     */
-    public function aboutComposerAction()
-    {
-        return array();
-    }
 }
