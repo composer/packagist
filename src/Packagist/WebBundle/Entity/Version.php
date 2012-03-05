@@ -800,8 +800,6 @@ class Version
         }
     }
 
-
-
     public function __toString()
     {
         return $this->name.' '.$this->version.' ('.$this->normalizedVersion.')';
