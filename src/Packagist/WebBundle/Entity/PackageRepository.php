@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\AbstractQuery;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -62,6 +63,16 @@ class PackageRepository extends EntityRepository
         }
 
         return $this->packageNames = $names;
+    }
+
+    public function getLastUpdate()
+    {
+        $lastUpdate = $this->getEntityManager()->createQueryBuilder();
+            ->select('MAX(p.updated_at)')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->getQuery()->getOneOrNullResult(AbstractQuery::HYDRATE_SINGLE_SCALAR);
+
+        return new \DateTime($lastUpdate);
     }
 
     public function getStalePackages()
