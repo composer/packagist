@@ -33,17 +33,25 @@ class ApiController extends Controller
      */
     public function packagesAction()
     {
-        $packages = $this->get('doctrine')
-            ->getRepository('Packagist\WebBundle\Entity\Package')
-            ->getFullPackages();
+        $packageRepository = $this->get('doctrine')->getRepository('Packagist\WebBundle\Entity\Package');
 
+        $response = new Response();
+        $reponse->setLastModified($packageRepository->getLastUpdate());
+
+        if ($response->isNotModified($this->getRequest())) {
+            return $response;
+        }
+
+        $packages = $packageRepository->getFullPackages();
         $data = array();
         foreach ($packages as $package) {
             $data[$package->getName()] = $package->toArray();
         }
 
-        $response = new Response(json_encode($data), 200);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->setContent(json_encode($data));
         $response->setSharedMaxAge(60);
+
         return $response;
     }
 
