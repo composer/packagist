@@ -60,9 +60,9 @@ fos_user:
     firewall_name: main
     user_class:  Packagist\WebBundle\Entity\User
     use_username_form_type: true
-#    from_email:
-#        address:        webmaster@example.com
-#        sender_name:    Admin
+    from_email:
+        address:        %mailer_from_email%
+        sender_name:    %mailer_from_name%
 
 nelmio_solarium:
     adapter: ~

@@ -1,0 +1,10 @@
+# Password resetting
+resetting:
+    email: |
+        Reset Password
+        Hello %username%
+
+        To reset your password - please visit %confirmationUrl%
+
+        Regards,
+        The Packagist Team

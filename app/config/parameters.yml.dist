@@ -9,6 +9,8 @@ parameters:
     mailer_host: localhost
     mailer_user:
     mailer_password:
+    mailer_from_email: admin@example.org
+    mailer_from_name: Admin Team
 
     locale: en
 
