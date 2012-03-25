@@ -20,6 +20,7 @@ $loader->registerNamespaces(array(
     'WhiteOctober\PagerfantaBundle' => __DIR__.'/../vendor/bundles',
     'Pagerfanta'  => __DIR__.'/../vendor/pagerfanta/src',
     'Nelmio'           => __DIR__.'/../vendor/bundles',
+    'Seld\JsonLint'    => __DIR__.'/../vendor/jsonlint/src',
 ));
 $loader->registerPrefixes(array(
     'Twig_Extensions_' => __DIR__.'/../vendor/twig-extensions/lib',

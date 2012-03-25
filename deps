@@ -82,3 +82,6 @@
 [NelmioSolariumBundle]
     git=https://github.com/nelmio/NelmioSolariumBundle.git
     target=/bundles/Nelmio/SolariumBundle
+
+[jsonlint]
+    git=https://github.com/Seldaek/jsonlint.git

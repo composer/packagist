@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\Package;
 use Composer\Package\AliasPackage;
 use Composer\Package\PackageInterface;
 use Composer\Repository\RepositoryInterface;
+use Composer\Util\ErrorHandler;
 use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Tag;
@@ -53,6 +54,8 @@ class Updater
     public function __construct(RegistryInterface $doctrine)
     {
         $this->doctrine = $doctrine;
+
+        ErrorHandler::register();
     }
 
     /**
