@@ -353,6 +353,14 @@ class WebController extends Controller
         return $data;
     }
 
+    /**
+     * @Route("/about-composer")
+     */
+    public function aboutComposerFallbackAction()
+    {
+        return new RedirectResponse('http://getcomposer.org/', 301);
+    }
+
     public function render($view, array $parameters = array(), Response $response = null)
     {
         if (!isset($parameters['searchForm'])) {
