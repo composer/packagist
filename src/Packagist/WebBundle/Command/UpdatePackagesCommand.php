@@ -57,7 +57,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
             $force = true;
         } elseif ($force) {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findAll();
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages();
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
         }
@@ -74,9 +74,6 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             }
             try {
                 $repository = new VcsRepository(array('url' => $package->getRepository()), $io);
-                if ($verbose) {
-                    $repository->setDebug(true);
-                }
                 $updater->update($package, $repository, $force, $start);
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');

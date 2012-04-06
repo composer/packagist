@@ -8,7 +8,7 @@ swiftmailer v4.1.5
 assetic v1.0.2
 twig-extensions 1dfff8e793f50f651c4f74f796c2c68a4aee3147
 metadata 1.0.0
-composer 5026fbb1e9fe3ab8dc1f5baf7603f842a21c9a05
+composer bfd48b06bd85619a36f660c43dda4fabfe980a67
 SensioFrameworkExtraBundle 638f545b7020b9e9d5944a7e3167f60ed848250d
 SensioDistributionBundle 20b66a408084ad8752f98e50f10533f5245310bf
 SensioGeneratorBundle dd37fc4487bc09ac01bdcf89e0ff4ee4484b7fab
