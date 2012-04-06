@@ -20,7 +20,11 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\VersionRepository")
  * @ORM\Table(
  *     name="package_version",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="pkg_ver_idx",columns={"package_id","normalizedVersion"})}
+ *     uniqueConstraints={@ORM\UniqueConstraint(name="pkg_ver_idx",columns={"package_id","normalizedVersion"})},
+ *     indexes={
+ *         @ORM\Index(name="release_idx",columns={"releasedAt"}),
+ *         @ORM\Index(name="is_devel_idx",columns={"development"})
+ *     }
  * )
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */

@@ -82,10 +82,17 @@ class PackageRepository extends EntityRepository
     public function getStalePackagesForIndexing()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p, v, t')
+        $qb->select('p, v, t, a, req, rec, sug, rep, con, pro')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->leftJoin('v.tags', 't')
+            ->leftJoin('v.authors', 'a')
+            ->leftJoin('v.require', 'req')
+            ->leftJoin('v.recommend', 'rec')
+            ->leftJoin('v.suggest', 'sug')
+            ->leftJoin('v.replace', 'rep')
+            ->leftJoin('v.conflict', 'con')
+            ->leftJoin('v.provide', 'pro')
             ->where('p.indexedAt IS NULL OR p.indexedAt < p.crawledAt');
 
         return $qb->getQuery()->getResult();
@@ -117,15 +124,20 @@ class PackageRepository extends EntityRepository
 
     public function getFullPackages()
     {
-        $qb = $this->getBaseQueryBuilder()
-            ->addSelect('a', 'req', 'rec', 'sug', 'rep', 'con', 'pro')
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p, v, t, a, req, rec, sug, rep, con, pro')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->join('p.versions', 'v')
+            ->leftJoin('v.tags', 't')
             ->leftJoin('v.authors', 'a')
             ->leftJoin('v.require', 'req')
             ->leftJoin('v.recommend', 'rec')
             ->leftJoin('v.suggest', 'sug')
             ->leftJoin('v.replace', 'rep')
             ->leftJoin('v.conflict', 'con')
-            ->leftJoin('v.provide', 'pro');
+            ->leftJoin('v.provide', 'pro')
+            ->orderBy('v.development', 'DESC')
+            ->addOrderBy('v.releasedAt', 'DESC');
 
         return $qb->getQuery()->getResult();
     }
