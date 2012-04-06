@@ -4,3 +4,7 @@ services:
         arguments: [ @doctrine ]
         tags:
             - { name: twig.extension }
+
+    packagist.package_dumper:
+        class: Packagist\WebBundle\Package\Dumper
+        arguments: [ @doctrine, @filesystem, %kernel.root_dir%/../web/, %kernel.cache_dir% ]

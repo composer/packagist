@@ -24,7 +24,12 @@ use Composer\Repository\RepositoryManager;
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\PackageRepository")
  * @ORM\Table(
  *     name="package",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})}
+ *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})},
+ *     indexes={
+ *         @ORM\Index(name="indexed_idx",columns={"indexedAt"}),
+ *         @ORM\Index(name="crawled_idx",columns={"crawledAt"}),
+ *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"})
+ *     }
  * )
  * @Assert\Callback(methods={"isPackageUnique","isRepositoryValid"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -93,6 +98,11 @@ class Package
      * @ORM\Column(type="datetime", nullable=true)
      */
     private $indexedAt;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $dumpedAt;
 
     /**
      * @ORM\Column(type="boolean")
@@ -381,6 +391,26 @@ class Package
     public function getIndexedAt()
     {
         return $this->indexedAt;
+    }
+
+    /**
+     * Set dumpedAt
+     *
+     * @param \DateTime $dumpedAt
+     */
+    public function setDumpedAt($dumpedAt)
+    {
+        $this->dumpedAt = $dumpedAt;
+    }
+
+    /**
+     * Get dumpedAt
+     *
+     * @return \DateTime
+     */
+    public function getDumpedAt()
+    {
+        return $this->dumpedAt;
     }
 
     /**

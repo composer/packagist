@@ -98,6 +98,25 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function getStalePackagesForDumping()
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p, v, t, a, req, rec, sug, rep, con, pro')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->leftJoin('p.versions', 'v')
+            ->leftJoin('v.tags', 't')
+            ->leftJoin('v.authors', 'a')
+            ->leftJoin('v.require', 'req')
+            ->leftJoin('v.recommend', 'rec')
+            ->leftJoin('v.suggest', 'sug')
+            ->leftJoin('v.replace', 'rep')
+            ->leftJoin('v.conflict', 'con')
+            ->leftJoin('v.provide', 'pro')
+            ->where('p.dumpedAt IS NULL OR p.dumpedAt < p.crawledAt');
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function findOneByName($name)
     {
         $qb = $this->getBaseQueryBuilder()
