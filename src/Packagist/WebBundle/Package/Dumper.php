@@ -40,7 +40,7 @@ class Dumper
     /**
      * @var string
      */
-    protected $cacheDir;
+    protected $buildDir;
 
     /**
      * Data cache
@@ -59,8 +59,8 @@ class Dumper
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
-        $this->webDir = $webDir;
-        $this->cacheDir = $cacheDir . '/composer-packages-build/';
+        $this->webDir = realpath($webDir);
+        $this->buildDir = $cacheDir . '/composer-packages-build';
     }
 
     /**
@@ -72,8 +72,8 @@ class Dumper
     public function dump(array $packages, $force = false)
     {
         // prepare build dir
-        $webDir = realpath($this->webDir);
-        $buildDir = realpath($this->cacheDir);
+        $webDir = $this->webDir;
+        $buildDir = $this->buildDir;
         $this->fs->remove($buildDir);
         $this->fs->mkdir($buildDir);
         if (!$force) {
@@ -115,14 +115,14 @@ class Dumper
 
         // dump files to build dir
         foreach ($modifiedFiles as $file => $dummy) {
-            $this->dumpFile($file);
-            $this->files['packages.json']['includes'][$file] = array('sha1' => sha1_file($file));
+            $this->dumpFile($buildDir.'/'.$file);
+            $this->files['packages.json']['includes'][$file] = array('sha1' => sha1_file($buildDir.'/'.$file));
         }
         $this->dumpFile($rootFile);
 
         // put the new files in production
         foreach ($modifiedFiles as $file => $dummy) {
-            rename($file, $webDir.'/'.$file);
+            rename($buildDir.'/'.$file, $webDir.'/'.$file);
         }
         rename($rootFile, $webDir.'/'.basename($rootFile));
 
