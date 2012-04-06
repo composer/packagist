@@ -643,6 +643,14 @@ class Version
     }
 
     /**
+     * @return Boolean
+     */
+    public function isDevelopment()
+    {
+        return $this->getDevelopment();
+    }
+
+    /**
      * Add tags
      *
      * @param Packagist\WebBundle\Entity\Tag $tags
