@@ -39,7 +39,7 @@
                 {% if package.versions|length and package.versions[0].homepage %}
                     <span>Homepage:</span> <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />
                 {% endif %}
-                <span>Repository:</span> <a href="{{ package.repository }}">{{ package.repository }}</a>
+                <span>Repository:</span> <a href="{{ package.repository|replace({'git://github.com/': 'http://github.com/'}) }}">{{ package.repository }}</a>
             </p>
 
             {% if form is defined %}
