@@ -178,7 +178,10 @@ class Updater
         $version->getTags()->clear();
         if ($data->getKeywords()) {
             foreach ($data->getKeywords() as $keyword) {
-                $version->addTag(Tag::getByName($em, $keyword, true));
+                $tag = Tag::getByName($em, $keyword, true);
+                if (!$version->getTags()->contains($tag)) {
+                    $version->addTag($tag);
+                }
             }
         }
 
