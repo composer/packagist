@@ -36,7 +36,8 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             ->setName('packagist:update')
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages'),
-                new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update (implicitly enables --force)'),
+                new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all versions before an update'),
+                new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
             ))
             ->setDescription('Updates packages')
         ;
@@ -53,13 +54,20 @@ class UpdatePackagesCommand extends ContainerAwareCommand
 
         $doctrine = $this->getContainer()->get('doctrine');
 
+        $flags = 0;
+
         if ($package) {
             $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
-            $force = true;
+            $flags = Updater::UPDATE_TAGS;
         } elseif ($force) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages();
+            $flags = Updater::UPDATE_TAGS;
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
+        }
+
+        if ($input->getOption('delete-before')) {
+            $flags = Updater::DELETE_BEFORE;
         }
 
         $updater = new Updater($doctrine);
@@ -74,7 +82,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             }
             try {
                 $repository = new VcsRepository(array('url' => $package->getRepository()), $io);
-                $updater->update($package, $repository, $force, $start);
+                $updater->update($package, $repository, $flags, $start);
             } catch (\Exception $e) {
                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
             }

@@ -288,7 +288,7 @@ class WebController extends Controller
                 $updater = new Updater($doctrine);
 
                 $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO);
-                $updater->update($package, $repository);
+                $updater->update($package, $repository, Updater::UPDATE_TAGS);
             }
 
             return new Response('{"status": "success"}', 202);

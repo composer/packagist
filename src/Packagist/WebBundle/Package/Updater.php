@@ -27,6 +27,9 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
  */
 class Updater
 {
+    const UPDATE_TAGS = 1;
+    const DELETE_BEFORE = 2;
+
     /**
      * Doctrine
      * @var RegistryInterface
@@ -62,10 +65,11 @@ class Updater
      * Update a project
      *
      * @param PackageInterface $package
-     * @param boolean $clearExistingVersions
+     * @param RepositoryInterface $repository the repository instance used to update from
+     * @param int $flags a few of the constants of this class
      * @param DateTime $start
      */
-    public function update(Package $package, RepositoryInterface $repository, $clearExistingVersions = false, \DateTime $start = null)
+    public function update(Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null)
     {
         if (null === $start) {
             $start = new \DateTime();
@@ -82,7 +86,7 @@ class Updater
 
         $versionRepository = $this->doctrine->getRepository('PackagistWebBundle:Version');
 
-        if ($clearExistingVersions) {
+        if ($flags & self::DELETE_BEFORE) {
             foreach ($package->getVersions() as $version) {
                 $versionRepository->remove($version);
             }
@@ -95,7 +99,7 @@ class Updater
             if ($version instanceof AliasPackage) {
                 continue;
             }
-            $this->updateInformation($package, $version);
+            $this->updateInformation($package, $version, $flags);
             $em->flush();
         }
 
@@ -111,7 +115,7 @@ class Updater
         $em->flush();
     }
 
-    private function updateInformation(Package $package, PackageInterface $data)
+    private function updateInformation(Package $package, PackageInterface $data, $flags)
     {
         $em = $this->doctrine->getEntityManager();
         $version = new Version();
@@ -126,7 +130,7 @@ class Updater
                 if ($existingVersion->getReleasedAt() > $data->getReleaseDate()) {
                     return;
                 }
-                if ($existingVersion->getDevelopment()) {
+                if ($existingVersion->getDevelopment() || ($flags & self::UPDATE_TAGS)) {
                     $version = $existingVersion;
                     break;
                 }
