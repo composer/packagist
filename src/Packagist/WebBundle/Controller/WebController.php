@@ -403,6 +403,60 @@ class WebController extends Controller
     }
 
     /**
+     * @Route("/statistics", name="stats")
+     * @Template
+     */
+    public function statsAction()
+    {
+        $packages = $this->getDoctrine()
+            ->getConnection()
+            ->fetchAll('SELECT COUNT(*) count, DATE_FORMAT(createdAt, "%Y-%m") month FROM `package` GROUP BY month');
+
+        $versions = $this->getDoctrine()
+            ->getConnection()
+            ->fetchAll('SELECT COUNT(*) count, DATE_FORMAT(releasedAt, "%Y-%m") month FROM `package_version` GROUP BY month');
+
+        $chart = array('versions' => array(), 'packages' => array(), 'months' => array());
+
+        // prepare x axis
+        $date = new \DateTime($packages[0]['month'].'-01');
+        $now = new \DateTime;
+        while ($date < $now) {
+            $chart['months'][] = $month = $date->format('Y-m');
+            $date->modify('+1month');
+        }
+
+        // prepare data
+        $count = 0;
+        foreach ($packages as $key => $dataPoint) {
+            $count += $dataPoint['count'];
+            $chart['packages'][$dataPoint['month']] = $count;
+        }
+
+        $count = 0;
+        foreach ($versions as $key => $dataPoint) {
+            $count += $dataPoint['count'];
+            if (in_array($dataPoint['month'], $chart['months'])) {
+                $chart['versions'][$dataPoint['month']] = $count;
+            }
+        }
+
+        // fill gaps at the end of the chart
+        if (count($chart['months']) > count($chart['packages'])) {
+            $chart['packages'] += array_fill(0, count($chart['months']) - count($chart['packages']), max($chart['packages']));
+        }
+        if (count($chart['months']) > count($chart['versions'])) {
+           $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), max($chart['versions']));
+        }
+
+        return array(
+            'chart' => $chart,
+            'packages' => max($chart['packages']),
+            'versions' => max($chart['versions'])
+        );
+    }
+
+    /**
      * @Route("/about-composer")
      */
     public function aboutComposerFallbackAction()
