@@ -236,6 +236,9 @@ class WebController extends Controller
         }
 
         $data['searchForm'] = $this->createSearchForm()->createView();
+        if ($deleteForm = $this->createDeletePackageForm()) {
+           $data['deleteForm'] = $deleteForm->createView();
+        }
 
         return $data;
     }
@@ -278,7 +281,7 @@ class WebController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
         }
 
-        if ($package->getMaintainers()->contains($user)) {
+        if ($package->getMaintainers()->contains($user) || $this->get('security.context')->isGranted('ROLE_UPDATE_PACKAGES')) {
             if (null !== $autoUpdated) {
                 $package->setAutoUpdated((Boolean) $autoUpdated);
                 $doctrine->getEntityManager()->flush();
@@ -295,6 +298,52 @@ class WebController extends Controller
         }
 
         return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
+    }
+
+    /**
+     * @Template()
+     * @Route("/packages/{name}", name="delete_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
+     * @Method({"DELETE"})
+     */
+    public function deletePackageAction(Request $req, $name)
+    {
+        if (!$this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+            throw new AccessDeniedException;
+        }
+
+        $doctrine = $this->getDoctrine();
+
+        try {
+            $package = $doctrine
+                ->getRepository('PackagistWebBundle:Package')
+                ->findOneByName($name);
+        } catch (NoResultException $e) {
+            throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
+        }
+
+        $form = $this->createDeletePackageForm();
+        $form->bind($req->request->get('form'));
+        if ($form->isValid()) {
+            $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
+            foreach ($package->getVersions() as $version) {
+                $versionRepo->remove($version);
+            }
+
+            $em = $doctrine->getEntityManager();
+            $em->remove($package);
+            $em->flush();
+
+            return new RedirectResponse($this->generateUrl('home'));
+        }
+
+        return new Response('Invalid form input', 400);
+    }
+
+    protected function createDeletePackageForm()
+    {
+        if ($this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+            return $this->createFormBuilder(array())->getForm();
+        }
     }
 
     /**

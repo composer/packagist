@@ -26,6 +26,12 @@
         });
         submit.addClass('loading');
     });
+    $('.package .force-delete').submit(function (e) {
+        e.preventDefault();
+        if (confirm('Are you sure?')) {
+            e.target.submit();
+        }
+    });
     if ($('.package').data('force-crawl')) {
         $('.package .force-update').submit();
     }

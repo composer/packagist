@@ -10,11 +10,18 @@
 {% block content %}
     <div class="box">
         <div class="package"{% if app.user and package.maintainers.contains(app.user) and package.crawledAt is null %} data-force-crawl="true"{% endif %}>
-            {% if app.user and package.maintainers.contains(app.user) %}
-                <form class="force-update" action="{{ path('update_package', {name: package.name}) }}" method="POST">
+            {% if is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
+                <form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="POST">
                     <input type="hidden" name="_method" value="PUT" />
                     <input type="hidden" name="update" value="1" />
                     <input type="submit" value="Force package update" />
+                </form>
+            {% endif %}
+            {% if deleteForm is defined %}
+                <form class="force-delete action" action="{{ path('delete_package', {name: package.name}) }}" method="POST">
+                    <input type="hidden" name="_method" value="DELETE" />
+                    {{ form_widget(deleteForm._token) }}
+                    <input type="submit" value="Delete" />
                 </form>
             {% endif %}
             <h1>

@@ -33,5 +33,8 @@ security:
         - { path: ^/admin/, role: ROLE_ADMIN }
 
     role_hierarchy:
-        ROLE_ADMIN:       ROLE_USER
-        ROLE_SUPERADMIN:  ROLE_ADMIN
+        ROLE_UPDATE_PACKAGES: ~
+        ROLE_DELETE_PACKAGES: ~
+
+        ROLE_ADMIN:       [ ROLE_USER, ROLE_UPDATE_PACKAGES, ROLE_DELETE_PACKAGES ]
+        ROLE_SUPERADMIN:  [ ROLE_ADMIN ]

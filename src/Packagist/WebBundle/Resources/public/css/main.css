@@ -534,17 +534,18 @@ form ul {
 .no-js .package .force-update {
   display: none;
 }
-.package .force-update {
+.package .action {
   float: right;
+  margin-left: 10px;
 }
-.package .force-update input {
+.package .action input {
   width: auto;
   font-size: 16px;
   margin: 0;
   padding: 8px;
   background-image: none;
 }
-.package .force-update input.loading {
+.package .action input.loading {
   background-position: 10px center;
   background-image: url("../img/loader.gif");
   padding-left: 30px;
