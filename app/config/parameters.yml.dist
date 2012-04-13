@@ -12,6 +12,8 @@ parameters:
     mailer_from_email: admin@example.org
     mailer_from_name: Admin Team
 
+    redis_dsn: redis://localhost/1
+
     locale: en
 
     secret: CHANGE_ME_IN_PROD

@@ -7,4 +7,4 @@ services:
 
     packagist.package_dumper:
         class: Packagist\WebBundle\Package\Dumper
-        arguments: [ @doctrine, @filesystem, %kernel.root_dir%/../web/, %kernel.cache_dir% ]
+        arguments: [ @doctrine, @filesystem, @router, %kernel.root_dir%/../web/, %kernel.cache_dir% ]

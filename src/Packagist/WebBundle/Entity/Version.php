@@ -212,6 +212,7 @@ class Version
             'keywords' => $tags,
             'homepage' => $this->getHomepage(),
             'version' => $this->getVersion(),
+            'version_normalized' => $this->getNormalizedVersion(),
             'license' => $this->getLicense(),
             'authors' => $authors,
             'source' => $this->getSource(),
