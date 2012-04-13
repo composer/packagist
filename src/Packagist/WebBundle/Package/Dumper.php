@@ -14,7 +14,7 @@ namespace Packagist\WebBundle\Package;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Bridge\Doctrine\RegistryInterface;
-use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Packagist\WebBundle\Entity\Version;
 
 /**
@@ -44,7 +44,7 @@ class Dumper
     protected $buildDir;
 
     /**
-     * @var RouterInterface
+     * @var UrlGeneratorInterface
      */
     protected $router;
 
@@ -61,7 +61,7 @@ class Dumper
      * @param string $webDir web root
      * @param string $cacheDir cache dir
      */
-    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, RouterInterface $router, $webDir, $cacheDir)
+    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, $webDir, $cacheDir)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
