@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Package;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Bridge\Doctrine\RegistryInterface;
+use Symfony\Component\Routing\RouterInterface;
 use Packagist\WebBundle\Entity\Version;
 
 /**
@@ -43,6 +44,11 @@ class Dumper
     protected $buildDir;
 
     /**
+     * @var RouterInterface
+     */
+    protected $router;
+
+    /**
      * Data cache
      * @var array
      */
@@ -55,10 +61,11 @@ class Dumper
      * @param string $webDir web root
      * @param string $cacheDir cache dir
      */
-    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, $webDir, $cacheDir)
+    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, RouterInterface $router, $webDir, $cacheDir)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
+        $this->router = $router;
         $this->webDir = realpath($webDir);
         $this->buildDir = $cacheDir . '/composer-packages-build';
     }
@@ -112,6 +119,8 @@ class Dumper
         if (!isset($this->files['packages.json']['packages'])) {
             $this->files['packages.json']['packages'] = array();
         }
+        $url = $this->router->generate('track_download', array('name' => 'VND/PKG'));
+        $this->files['packages.json']['notify'] = str_replace('VND/PKG', '%package%', $url);
 
         // dump files to build dir
         foreach ($modifiedFiles as $file => $dummy) {

@@ -85,3 +85,12 @@
 
 [jsonlint]
     git=https://github.com/Seldaek/jsonlint.git
+
+[SncRedisBundle]
+    git=git://github.com/snc/SncRedisBundle.git
+    target=/bundles/Snc/RedisBundle
+    version=origin/master
+
+[predis]
+    git=git://github.com/nrk/predis.git
+    version=origin/v0.7

@@ -15,6 +15,8 @@ $loader->registerNamespaces(array(
     'Assetic'          => __DIR__.'/../vendor/assetic/src',
     'Metadata'         => __DIR__.'/../vendor/metadata/src',
     'FOS'              => __DIR__.'/../vendor/bundles',
+    'Snc'              => __DIR__.'/../vendor/bundles',
+    'Predis'           => __DIR__.'/../vendor/predis/lib',
     'Composer'         => __DIR__.'/../vendor/composer/src',
     'Packagist'        => __DIR__.'/../src',
     'WhiteOctober\PagerfantaBundle' => __DIR__.'/../vendor/bundles',
