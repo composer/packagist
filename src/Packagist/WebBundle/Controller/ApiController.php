@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\Controller;
 use Composer\IO\NullIO;
 use Composer\Repository\VcsRepository;
 use Packagist\WebBundle\Package\Updater;
+use Packagist\WebBundle\Entity\Package;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,14 +41,19 @@ class ApiController extends Controller
         $packages = $em->getRepository('Packagist\WebBundle\Entity\Package')
             ->getFullPackages();
 
-        $data = array();
+        $notifyUrl = $this->generateUrl('track_download', array('name' => 'VND/PKG'));
+
+        $data = array(
+            'notify' => str_replace('VND/PKG', '%package%', $notifyUrl),
+            'packages' => array(),
+        );
         foreach ($packages as $package) {
             $versions = array();
             foreach ($package->getVersions() as $version) {
                 $versions[$version->getVersion()] = $version->toArray();
                 $em->detach($version);
             }
-            $data[$package->getName()] = array('versions' => $versions);
+            $data['packages'][$package->getName()] = array($versions);
             $em->detach($package);
         }
         unset($versions, $package, $packages);
@@ -105,5 +111,47 @@ class ApiController extends Controller
         }
 
         return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
+    }
+
+    /**
+     * @Route("/downloads/{name}", name="track_download", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
+     * @Method({"POST"})
+     */
+    public function trackDownloadAction(Request $request, $name)
+    {
+        $result = $this->getDoctrine()->getConnection()->fetchAssoc(
+            'SELECT p.id, v.id vid
+            FROM package p
+            LEFT JOIN package_version v ON p.id = v.package_id
+            WHERE p.name = ?
+            AND v.normalizedVersion = ?
+            LIMIT 1',
+            array($name, $request->request->get('version_normalized'))
+        );
+
+        if (!$result) {
+            return new Response('{"status": "error", "message": "Package not found"}', 200);
+        }
+
+        $redis = $this->get('snc_redis.default');
+        $id = $result['id'];
+        $version = $result['vid'];
+
+        $throttleKey = 'dl:'.$id.':'.$request->getClientIp().':'.date('Ymd');
+        $requests = $redis->incr($throttleKey);
+        if (1 === $requests) {
+            $redis->expire($throttleKey, 86400);
+        }
+        if ($requests <= 10) {
+            $redis->incr('dl:'.$id.':'.date('Ymd'));
+            $redis->incr('dl:'.$id.':'.date('Ym'));
+            $redis->incr('dl:'.$id);
+
+            $redis->incr('dl:'.$id.'-'.$version.':'.date('Ymd'));
+            $redis->incr('dl:'.$id.'-'.$version.':'.date('Ym'));
+            $redis->incr('dl:'.$id.'-'.$version);
+        }
+
+        return new Response('{"status": "success"}', 201);
     }
 }
