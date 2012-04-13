@@ -48,6 +48,13 @@ doctrine:
         auto_generate_proxy_classes: %kernel.debug%
         auto_mapping: true
 
+snc_redis:
+    clients:
+        default:
+            type: predis
+            alias: default
+            dsn: redis://localhost
+
 # Swiftmailer Configuration
 swiftmailer:
     transport: %mailer_transport%
