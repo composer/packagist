@@ -143,13 +143,15 @@ class ApiController extends Controller
             $redis->expire($throttleKey, 86400);
         }
         if ($requests <= 10) {
-            $redis->incr('dl:'.$id.':'.date('Ymd'));
-            $redis->incr('dl:'.$id.':'.date('Ym'));
-            $redis->incr('dl:'.$id);
+            $redis->incr('downloads');
 
-            $redis->incr('dl:'.$id.'-'.$version.':'.date('Ymd'));
-            $redis->incr('dl:'.$id.'-'.$version.':'.date('Ym'));
+            $redis->incr('dl:'.$id);
+            $redis->incr('dl:'.$id.':'.date('Ym'));
+            $redis->incr('dl:'.$id.':'.date('Ymd'));
+
             $redis->incr('dl:'.$id.'-'.$version);
+            $redis->incr('dl:'.$id.'-'.$version.':'.date('Ym'));
+            $redis->incr('dl:'.$id.'-'.$version.':'.date('Ymd'));
         }
 
         return new Response('{"status": "success"}', 201);
