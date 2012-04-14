@@ -215,10 +215,15 @@ class WebController extends Controller
 
     /**
      * @Template()
-     * @Route("/packages/{name}", name="view_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
+     * @Route(
+     *     "/packages/{name}.{_format}",
+     *     name="view_package",
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"},
+     *     defaults={"_format"="html"}
+     * )
      * @Method({"GET"})
      */
-    public function viewPackageAction($name)
+    public function viewPackageAction(Request $req, $name)
     {
         try {
             $package = $this->getDoctrine()
@@ -226,6 +231,10 @@ class WebController extends Controller
                 ->getFullPackageByName($name);
         } catch (NoResultException $e) {
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
+        }
+
+        if ('json' === $req->getRequestFormat()) {
+            return new Response(json_encode(array('package' => $package->toArray())), 200);
         }
 
         $data = array('package' => $package);
