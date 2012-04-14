@@ -243,10 +243,11 @@ class WebController extends Controller
 
         try {
             $redis = $this->get('snc_redis.default');
+            $counts = $redis->mget('dl:'.$id, 'dl:'.$id.':'.date('Ym'), 'dl:'.$id.':'.date('Ymd'));
             $data['downloads'] = array(
-                'total' => $redis->get('dl:'.$id) ?: 0,
-                'monthly' => $redis->get('dl:'.$id.':'.date('Ym')) ?: 0,
-                'daily' => $redis->get('dl:'.$id.':'.date('Ymd')) ?: 0,
+                'total' => $counts[0] ?: 0,
+                'monthly' => $counts[1] ?: 0,
+                'daily' => $counts[2] ?: 0,
             );
         } catch (\Exception $e) {
             $data['downloads'] = array(
