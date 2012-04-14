@@ -12,6 +12,12 @@ security:
                 use_forward:    false
                 check_path:     /login_check
                 failure_path:   null
+            remember_me:
+                key: %remember_me.secret%
+                user_providers: fos_userbundle
+                name: pauth
+                remember_me_parameter: _remember_me
+                lifetime: 31104000 # 1y
             logout:       true
             anonymous:    true
 

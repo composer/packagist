@@ -17,6 +17,7 @@ parameters:
     locale: en
 
     secret: CHANGE_ME_IN_PROD
+    remember_me.secret: CHANGE_ME_IN_PROD
 
     google_analytics:
         ga_key:
