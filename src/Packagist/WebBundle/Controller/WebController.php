@@ -239,6 +239,23 @@ class WebController extends Controller
 
         $data = array('package' => $package);
 
+        $id = $package->getId();
+
+        try {
+            $redis = $this->get('snc_redis.default');
+            $data['downloads'] = array(
+                'total' => $redis->get('dl:'.$id) ?: 0,
+                'monthly' => $redis->get('dl:'.$id.':'.date('Ym')) ?: 0,
+                'daily' => $redis->get('dl:'.$id.':'.date('Ymd')) ?: 0,
+            );
+        } catch (\Exception $e) {
+            $data['downloads'] = array(
+                'total' => 'N/A',
+                'monthly' => 'N/A',
+                'daily' => 'N/A',
+            );
+        }
+
         $user = $this->getUser();
         if ($user && $package->getMaintainers()->contains($user)) {
             $data['form'] = $this->createAddMaintainerForm()->createView();

@@ -446,6 +446,21 @@ form ul {
   margin-top: 10px;
   padding-top: 10px;
 }
+.package .downloads {
+  clear: both;
+  float: right;
+  border: 1px solid #bbb;
+  background: #eee;
+  padding: 5px 10px;
+  margin: 0 0 10px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+}
+.package .downloads span {
+  display: inline-block;
+  width: 90px;
+}
 .package .details span {
   float: left;
   display: block;
@@ -454,6 +469,7 @@ form ul {
 }
 .package .versions {
   list-style: none;
+  clear: both;
   margin: 0;
 }
 .package .version {
