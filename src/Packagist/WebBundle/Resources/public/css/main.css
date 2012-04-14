@@ -415,6 +415,17 @@ form ul {
   float: left;
   margin-right: 20px;
 }
+.package .warning {
+  clear: both;
+  border: 1px solid #800;
+  background: #fee;
+  text-align: center;
+  padding: 5px;
+  margin: 20px 0;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+}
 .package .tags {
   line-height: 34px;
 }

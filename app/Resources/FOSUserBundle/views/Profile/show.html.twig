@@ -12,13 +12,9 @@
         {% if app.user.apiToken %}
             <h1>Your API Token</h1>
             <p><pre><code>{{ app.user.apiToken }}</code></pre></p>
-            <p>
-            You can use your API token to interact with the Packagist API.
-            </p>
-            <p>Your <a href="http://help.github.com/post-receive-hooks/">GitHub Post-Receive URL</a> is:</p>
-            <p>
-            <pre><code>{{ url('github_postreceive', { 'username': app.user.username, 'apiToken': app.user.apiToken }) }}</code></pre>
-            </p>
+            <p>You can use your API token to interact with the Packagist API.</p>
+            <h1>GitHub Service Hook</h1>
+            <p>Enabling the Packagist service hook ensures that your package will always be updated instantly when you push to GitHub. To do so you can go to your GitHub repository, click the "Admin" button, then "Service Hooks". Pick "Packagist" in the list, and add your API token (see above), plus your Packagist username if it is not the same as on GitHub. Check the "Active" box and submit the form.</p>
         {% endif %}
 
         <h1>Your packages</h1>

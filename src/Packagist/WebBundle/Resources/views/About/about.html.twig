@@ -76,9 +76,11 @@ v2.0.4-p1
 
         <h1>Update Schedule</h1>
 
-        <p>New packages will be crawled <strong>within ten minutes</strong> unless you add the GitHub service hook. To do so you can go to your GitHub repository, click the "Admin" button, then "Service Hooks". Pick Packagist in the list, and add the API key you will find on your <a href="{{ path('fos_user_profile_show') }}">profile</a>, plus your Packagist username if it's not the same as on GitHub.</p>
+        <p>New packages will be crawled <strong>immediately</strong> after submission if you have JS enabled.</p>
 
-        <p>Existing packages will be crawled <strong>every hour</strong>. When the GitHub is enabled packages are only crawled once a week unless the GitHub hook triggers crawling. You can also trigger a manual build on your package page if you are logged-in.</p>
+        <p>Existing packages without auto-updating (GitHub hook) will be crawled <strong>once a day</strong> for updates. When the GitHub hook is enabled packages are crawled whenever you push, or at least once a week in case the crawl failed. You can also trigger a manual update on your package page if you are logged-in as a maintainer.</p>
+
+        <p>It is highly recommended to set up the <strong>GitHub service hook</strong> for all your packages. This reduces the load on our side, and ensures your package is updated almost instantly. To do so you can go to your GitHub repository, click the "Admin" button, then "Service Hooks". Pick "Packagist" in the list, and add the API key you will find on your <a href="{{ path('fos_user_profile_show') }}">profile</a>, plus your Packagist username if it is not the same as on GitHub. Check the "Active" box and submit the form.</p>
 
         <p>The search index is updated <strong>every five minutes</strong>. It will index (or reindex) any package that has been crawled since the last time the search indexer ran.</p>
 
