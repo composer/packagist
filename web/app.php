@@ -1,6 +1,6 @@
 <?php
 
-$_SERVER['REQUEST_URI'] = str_replace('//get', '/get', $_SERVER['REQUEST_URI']);
+ini_set('date.timezone', 'UTC');
 
 require_once __DIR__.'/../app/bootstrap.php.cache';
 require_once __DIR__.'/../app/AppKernel.php';
