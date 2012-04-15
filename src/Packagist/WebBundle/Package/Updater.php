@@ -285,7 +285,7 @@ class Updater
             foreach ($version->getSuggest() as $link) {
                 // clear links that have changed/disappeared (for updates)
                 if (!isset($suggests[$link->getPackageName()]) || $suggests[$link->getPackageName()] !== $link->getPackageVersion()) {
-                    $version->{'get'.$linkType}()->removeElement($link);
+                    $version->getSuggest()->removeElement($link);
                     $em->remove($link);
                 } else {
                     // clear those that are already set
