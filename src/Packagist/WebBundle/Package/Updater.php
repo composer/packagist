@@ -20,6 +20,7 @@ use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Version;
+use Packagist\WebBundle\Entity\SuggestLink;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
@@ -41,12 +42,26 @@ class Updater
      * @var array
      */
     protected $supportedLinkTypes = array(
-        'require'   => 'RequireLink',
-        'conflict'  => 'ConflictLink',
-        'provide'   => 'ProvideLink',
-        'replace'   => 'ReplaceLink',
-        'recommend' => 'RecommendLink',
-        'suggest'   => 'SuggestLink',
+        'require'     => array(
+            'method' => 'getRequires',
+            'entity' => 'RequireLink',
+        ),
+        'conflict'    => array(
+            'method' => 'getConflicts',
+            'entity' => 'ConflictLink',
+        ),
+        'provide'     => array(
+            'method' => 'getProvides',
+            'entity' => 'ProvideLink',
+        ),
+        'replace'     => array(
+            'method' => 'getReplaces',
+            'entity' => 'ReplaceLink',
+        ),
+        'devRequire' => array(
+            'method' => 'getDevRequires',
+            'entity' => 'DevRequireLink',
+        ),
     );
 
     /**
@@ -236,9 +251,10 @@ class Updater
             }
         }
 
-        foreach ($this->supportedLinkTypes as $linkType => $linkEntity) {
+        // handle links
+        foreach ($this->supportedLinkTypes as $linkType => $opts) {
             $links = array();
-            foreach ($data->{'get'.$linkType.'s'}() as $link) {
+            foreach ($data->{$opts['method']}() as $link) {
                 $links[$link->getTarget()] = $link->getPrettyConstraint();
             }
 
@@ -254,11 +270,34 @@ class Updater
             }
 
             foreach ($links as $linkPackageName => $linkPackageVersion) {
-                $class = 'Packagist\WebBundle\Entity\\'.$linkEntity;
+                $class = 'Packagist\WebBundle\Entity\\'.$opts['entity'];
                 $link = new $class;
                 $link->setPackageName($linkPackageName);
                 $link->setPackageVersion($linkPackageVersion);
                 $version->{'add'.$linkType.'Link'}($link);
+                $link->setVersion($version);
+                $em->persist($link);
+            }
+        }
+
+        // handle suggests
+        if ($suggests = $data->getSuggests()) {
+            foreach ($version->getSuggest() as $link) {
+                // clear links that have changed/disappeared (for updates)
+                if (!isset($suggests[$link->getPackageName()]) || $suggests[$link->getPackageName()] !== $link->getPackageVersion()) {
+                    $version->{'get'.$linkType}()->removeElement($link);
+                    $em->remove($link);
+                } else {
+                    // clear those that are already set
+                    unset($suggests[$link->getPackageName()]);
+                }
+            }
+
+            foreach ($suggests as $linkPackageName => $linkPackageVersion) {
+                $link = new SuggestLink;
+                $link->setPackageName($linkPackageName);
+                $link->setPackageVersion($linkPackageVersion);
+                $version->addSuggestLink($link);
                 $link->setVersion($version);
                 $em->persist($link);
             }

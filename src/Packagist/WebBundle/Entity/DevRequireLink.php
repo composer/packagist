@@ -17,13 +17,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="link_recommend")
+ * @ORM\Table(name="link_require_dev")
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class RecommendLink extends PackageLink
+class DevRequireLink extends PackageLink
 {
     /**
-     * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\Version", inversedBy="recommend")
+     * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\Version", inversedBy="devRequire")
      */
     protected $version;
 }

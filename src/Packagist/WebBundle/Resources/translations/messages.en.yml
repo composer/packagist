@@ -10,3 +10,11 @@ menu:
     twitter: Follow @packagist
     contact: Contact
     stats: Statistics
+
+link_type:
+    require: Requires
+    devRequire: Requires (Dev)
+    suggest: Suggests
+    conflict: Conflicts
+    replace: Replaces
+    provide: Provides

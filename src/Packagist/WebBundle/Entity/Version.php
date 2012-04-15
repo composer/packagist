@@ -137,9 +137,9 @@ class Version
     private $provide;
 
     /**
-     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\RecommendLink", mappedBy="version")
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\DevRequireLink", mappedBy="version")
      */
-    private $recommend;
+    private $devRequire;
 
     /**
      * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\SuggestLink", mappedBy="version")
@@ -230,11 +230,11 @@ class Version
 
         $supportedLinkTypes = array(
             'require',
+            'devRequire',
+            'suggest',
             'conflict',
             'provide',
             'replace',
-            'recommend',
-            'suggest',
         );
 
         foreach ($supportedLinkTypes as $linkType) {
@@ -752,23 +752,23 @@ class Version
     }
 
     /**
-     * Add recommend
+     * Add devRequire
      *
-     * @param Packagist\WebBundle\Entity\RecommendLink $recommend
+     * @param Packagist\WebBundle\Entity\DevRequireLink $devRequire
      */
-    public function addRecommendLink(RecommendLink $recommend)
+    public function addDevRequireLink(DevRequireLink $devRequire)
     {
-        $this->recommend[] = $recommend;
+        $this->devRequire[] = $devRequire;
     }
 
     /**
-     * Get recommend
+     * Get devRequire
      *
      * @return Doctrine\Common\Collections\Collection
      */
-    public function getRecommend()
+    public function getDevRequire()
     {
-        return $this->recommend;
+        return $this->devRequire;
     }
 
     /**

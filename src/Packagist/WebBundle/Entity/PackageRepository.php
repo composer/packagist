@@ -67,7 +67,7 @@ class PackageRepository extends EntityRepository
     public function getStalePackages()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p, v')
+        $qb->select('p', 'v')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->where('p.crawledAt IS NULL')
@@ -82,13 +82,13 @@ class PackageRepository extends EntityRepository
     public function getStalePackagesForIndexing()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p, v, t, a, req, rec, sug, rep, con, pro')
+        $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->leftJoin('v.tags', 't')
             ->leftJoin('v.authors', 'a')
             ->leftJoin('v.require', 'req')
-            ->leftJoin('v.recommend', 'rec')
+            ->leftJoin('v.devRequire', 'devReq')
             ->leftJoin('v.suggest', 'sug')
             ->leftJoin('v.replace', 'rep')
             ->leftJoin('v.conflict', 'con')
@@ -101,13 +101,13 @@ class PackageRepository extends EntityRepository
     public function getStalePackagesForDumping()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p, v, t, a, req, rec, sug, rep, con, pro')
+        $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->leftJoin('v.tags', 't')
             ->leftJoin('v.authors', 'a')
             ->leftJoin('v.require', 'req')
-            ->leftJoin('v.recommend', 'rec')
+            ->leftJoin('v.devRequire', 'devReq')
             ->leftJoin('v.suggest', 'sug')
             ->leftJoin('v.replace', 'rep')
             ->leftJoin('v.conflict', 'con')
@@ -128,10 +128,10 @@ class PackageRepository extends EntityRepository
     public function getFullPackageByName($name)
     {
         $qb = $this->getBaseQueryBuilder()
-            ->addSelect('a', 'req', 'rec', 'sug', 'rep', 'con', 'pro')
+            ->addSelect('a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
             ->leftJoin('v.authors', 'a')
             ->leftJoin('v.require', 'req')
-            ->leftJoin('v.recommend', 'rec')
+            ->leftJoin('v.devRequire', 'devReq')
             ->leftJoin('v.suggest', 'sug')
             ->leftJoin('v.replace', 'rep')
             ->leftJoin('v.conflict', 'con')
@@ -144,13 +144,13 @@ class PackageRepository extends EntityRepository
     public function getFullPackages()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p, v, t, a, req, rec, sug, rep, con, pro')
+        $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->join('p.versions', 'v')
             ->leftJoin('v.tags', 't')
             ->leftJoin('v.authors', 'a')
             ->leftJoin('v.require', 'req')
-            ->leftJoin('v.recommend', 'rec')
+            ->leftJoin('v.devRequire', 'devReq')
             ->leftJoin('v.suggest', 'sug')
             ->leftJoin('v.replace', 'rep')
             ->leftJoin('v.conflict', 'con')
@@ -165,7 +165,7 @@ class PackageRepository extends EntityRepository
     {
         return $this->getBaseQueryBuilder()
             // eliminate maintainers & tags from the select, because of the groupBy
-            ->select('p, v')
+            ->select('p', 'v')
             ->where('t.name = ?0')
             ->setParameters(array($name));
     }
@@ -174,7 +174,7 @@ class PackageRepository extends EntityRepository
     {
         $qb = $this->getBaseQueryBuilder()
             // eliminate maintainers & tags from the select, because of the groupBy
-            ->select('p, v')
+            ->select('p', 'v')
             ->where('m.id = ?0')
             ->setParameters(array($user->getId()));
         return $qb;
@@ -183,7 +183,7 @@ class PackageRepository extends EntityRepository
     public function getBaseQueryBuilder()
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p, v, t, m')
+        $qb->select('p', 'v', 't', 'm')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->leftJoin('p.maintainers', 'm')
