@@ -476,10 +476,18 @@ class WebController extends Controller
            $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), max($chart['versions']));
         }
 
+        try {
+            $redis = $this->get('snc_redis.default');
+            $downloads = $redis->get('downloads') ?: 0;
+        } catch (\Exception $e) {
+            $downloads = 'N/A';
+        }
+
         return array(
             'chart' => $chart,
             'packages' => max($chart['packages']),
-            'versions' => max($chart['versions'])
+            'versions' => max($chart['versions']),
+            'downloads' => $downloads,
         );
     }
 
