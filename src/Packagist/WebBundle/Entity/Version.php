@@ -188,7 +188,7 @@ class Version
         $this->replace = new \Doctrine\Common\Collections\ArrayCollection();
         $this->conflict = new \Doctrine\Common\Collections\ArrayCollection();
         $this->provide = new \Doctrine\Common\Collections\ArrayCollection();
-        $this->recommend = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->devRequire = new \Doctrine\Common\Collections\ArrayCollection();
         $this->suggest = new \Doctrine\Common\Collections\ArrayCollection();
         $this->authors = new \Doctrine\Common\Collections\ArrayCollection();
         $this->createdAt = new \DateTime;
