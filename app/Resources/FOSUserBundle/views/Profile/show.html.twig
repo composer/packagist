@@ -19,7 +19,7 @@
 
         <h1>Your packages</h1>
         {% if user.packages|length %}
-            {{ macros.listPackages(user.packages) }}
+            {{ macros.listPackages(user.packages, null, true) }}
         {% else %}
             <p>No packages found.</p>
         {% endif %}

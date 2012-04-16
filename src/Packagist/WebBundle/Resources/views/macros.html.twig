@@ -1,8 +1,13 @@
-{% macro listPackages(packages, paginate) %}
+{% macro listPackages(packages, paginate, showAutoUpdateWarning) %}
     <ul class="packages">
         {% for package in packages %}
             <li data-url="{{ path('view_package', { 'name' : package.name }) }}">
-                <h1><a href="{{ path('view_package', { 'name' : package.name }) }}">{{ package.name }}</a></h1>
+                <h1>
+                    <a href="{{ path('view_package', { 'name' : package.name }) }}">{{ package.name }}</a>
+                    {% if showAutoUpdateWarning and not package.autoUpdated %}
+                        [Not auto-updated]
+                    {% endif %}
+                </h1>
                 {% if package.description %}
                     <p class="package-description">{{ package.description }}</p>
                 {% endif %}
