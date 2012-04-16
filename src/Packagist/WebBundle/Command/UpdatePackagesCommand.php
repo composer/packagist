@@ -84,7 +84,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                 $repository = new VcsRepository(array('url' => $package->getRepository()), $io);
                 $updater->update($package, $repository, $flags, $start);
             } catch (\Exception $e) {
-                $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
+                $output->writeln('<error>Exception: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().', skipping package '.$package->getName().'.</error>');
             }
         }
     }
