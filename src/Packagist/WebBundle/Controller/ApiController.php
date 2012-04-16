@@ -91,11 +91,11 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
         }
 
-        if (!preg_match('{github.com/[\w.-]+/[\w.-]+$}', $payload['repository']['url'], $match)) {
+        if (!preg_match('{(github.com/[\w.-]+/[\w.-]+?)(\.git)?$}', $payload['repository']['url'], $match)) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL',)), 406);
         }
 
-        $payloadRepositoryChunk = $match[0];
+        $payloadRepositoryChunk = $match[1];
 
         foreach ($user->getPackages() as $package) {
             if (false !== strpos($package->getRepository(), $payloadRepositoryChunk)) {
@@ -104,6 +104,7 @@ class ApiController extends Controller
 
                 $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO);
                 $package->setAutoUpdated(true);
+                $doctrine->getEntityManager()->flush();
                 $updater->update($package, $repository);
 
                 return new Response('{"status": "success"}', 202);
