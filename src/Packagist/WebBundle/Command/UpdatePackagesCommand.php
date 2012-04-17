@@ -57,13 +57,18 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $flags = 0;
 
         if ($package) {
-            $packages = array($doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package));
+            $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
             $flags = Updater::UPDATE_TAGS;
         } elseif ($force) {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages();
+            $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
             $flags = Updater::UPDATE_TAGS;
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
+        }
+
+        $ids = array();
+        foreach ($packages as $package) {
+            $ids[] = $package['id'];
         }
 
         if ($input->getOption('delete-before')) {
@@ -76,16 +81,23 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $input->setInteractive(false);
         $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new NullIO;
 
-        foreach ($packages as $package) {
-            if ($verbose) {
-                $output->writeln('Importing '.$package->getRepository());
+        while ($ids) {
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages(array_splice($ids, 0, 50));
+
+            foreach ($packages as $package) {
+                if ($verbose) {
+                    $output->writeln('Importing '.$package->getRepository());
+                }
+                try {
+                    $repository = new VcsRepository(array('url' => $package->getRepository()), $io);
+                    $updater->update($package, $repository, $flags, $start);
+                } catch (\Exception $e) {
+                    $output->writeln('<error>Exception: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().', skipping package '.$package->getName().'.</error>');
+                }
             }
-            try {
-                $repository = new VcsRepository(array('url' => $package->getRepository()), $io);
-                $updater->update($package, $repository, $flags, $start);
-            } catch (\Exception $e) {
-                $output->writeln('<error>Exception: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().', skipping package '.$package->getName().'.</error>');
-            }
+
+            $doctrine->getEntityManager()->clear();
+            unset($packages);
         }
     }
 }

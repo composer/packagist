@@ -66,17 +66,19 @@ class PackageRepository extends EntityRepository
 
     public function getStalePackages()
     {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p', 'v')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->where('p.crawledAt IS NULL')
-            ->orWhere('(p.autoUpdated = false AND p.crawledAt < :crawled)')
-            ->orWhere('(p.crawledAt < :autocrawled)')
-            ->setParameter('crawled', new \DateTime('-1hour')) // crawl packages by hand once an hour
-            ->setParameter('autocrawled', new \DateTime('-1week')); // crawl auto-updated packages just in case once a week
+        $conn = $this->getEntityManager()->getConnection();
 
-        return $qb->getQuery()->getResult();
+        return $conn->fetchAll(
+            'SELECT p.id FROM package p
+            WHERE p.crawledAt IS NULL
+            OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
+            OR (p.crawledAt < :autocrawled)
+            ORDER BY p.id ASC',
+            array(
+                'crawled' => date('Y-m-d H:i:s', strtotime('-4hours')),
+                'autocrawled' => date('Y-m-d H:i:s', strtotime('-1week')),
+            )
+        );
     }
 
     public function getStalePackagesForIndexing()
