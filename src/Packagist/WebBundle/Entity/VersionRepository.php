@@ -24,7 +24,7 @@ class VersionRepository extends EntityRepository
         'conflict',
         'provide',
         'replace',
-        'recommend',
+        'devRequire',
         'suggest',
     );
 
