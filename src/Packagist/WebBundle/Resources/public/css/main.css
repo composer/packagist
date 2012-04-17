@@ -531,7 +531,7 @@ form ul {
   clear: left;
 }
 .package .package-links .requires,
-.package .package-links .recommends,
+.package .package-links .devRequires,
 .package .package-links .provides,
 .package .package-links .conflicts {
   margin-right: 5px;
