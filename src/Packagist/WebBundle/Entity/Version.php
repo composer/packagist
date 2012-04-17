@@ -229,16 +229,16 @@ class Version
         }
 
         $supportedLinkTypes = array(
-            'require',
-            'devRequire',
-            'suggest',
-            'conflict',
-            'provide',
-            'replace',
+            'require'    => 'require',
+            'devRequire' => 'require-dev',
+            'suggest'    => 'suggest',
+            'conflict'   => 'conflict',
+            'provide'    => 'provide',
+            'replace'    => 'replace',
         );
 
-        foreach ($supportedLinkTypes as $linkType) {
-            foreach ($this->{'get'.$linkType}() as $link) {
+        foreach ($supportedLinkTypes as $method => $linkType) {
+            foreach ($this->{'get'.$method}() as $link) {
                 $link = $link->toArray();
                 $data[$linkType][key($link)] = current($link);
             }
