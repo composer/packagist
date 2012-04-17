@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+ini_set('date.timezone', 'UTC');
+
 require_once __DIR__.'/bootstrap.php.cache';
 require_once __DIR__.'/AppKernel.php';
 
