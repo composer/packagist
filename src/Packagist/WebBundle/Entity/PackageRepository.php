@@ -100,21 +100,9 @@ class PackageRepository extends EntityRepository
 
     public function getStalePackagesForDumping()
     {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->leftJoin('v.tags', 't')
-            ->leftJoin('v.authors', 'a')
-            ->leftJoin('v.require', 'req')
-            ->leftJoin('v.devRequire', 'devReq')
-            ->leftJoin('v.suggest', 'sug')
-            ->leftJoin('v.replace', 'rep')
-            ->leftJoin('v.conflict', 'con')
-            ->leftJoin('v.provide', 'pro')
-            ->where('p.dumpedAt IS NULL OR p.dumpedAt < p.crawledAt');
+        $conn = $this->getEntityManager()->getConnection();
 
-        return $qb->getQuery()->getResult();
+        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAt IS NULL OR p.dumpedAt < p.crawledAt  ORDER BY p.id ASC');
     }
 
     public function findOneByName($name)
@@ -141,7 +129,7 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getSingleResult();
     }
 
-    public function getFullPackages()
+    public function getFullPackages(array $ids = null)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
@@ -157,6 +145,10 @@ class PackageRepository extends EntityRepository
             ->leftJoin('v.provide', 'pro')
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC');
+
+        if (null !== $ids) {
+            $qb->where($qb->expr()->in('p.id', $ids));
+        }
 
         return $qb->getQuery()->getResult();
     }

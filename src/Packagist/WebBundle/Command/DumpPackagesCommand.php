@@ -42,14 +42,20 @@ class DumpPackagesCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $force = $input->getOption('force');
+        $force = (Boolean) $input->getOption('force');
+        $verbose = (Boolean) $input->getOption('verbose');
 
         $doctrine = $this->getContainer()->get('doctrine');
 
         if ($force) {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages();
+            $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForDumping();
+        }
+
+        $ids = array();
+        foreach ($packages as $package) {
+            $ids[] = $package['id'];
         }
 
         $lock = $this->getContainer()->getParameter('kernel.cache_dir').'/composer-dumper.lock';
@@ -57,11 +63,14 @@ class DumpPackagesCommand extends ContainerAwareCommand
 
         // another dumper is still active
         if (file_exists($lock) && filemtime($lock) > time() - $timeout) {
+            if ($verbose) {
+                $output->writeln('Aborting, '.$lock.' file present');
+            }
             return;
         }
 
         touch($lock);
-        $this->getContainer()->get('packagist.package_dumper')->dump($packages);
+        $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
         unlink($lock);
     }
 }

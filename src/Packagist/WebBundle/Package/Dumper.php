@@ -73,10 +73,10 @@ class Dumper
     /**
      * Dump a set of packages to the web root
      *
-     * @param array $packages
+     * @param array $packageIds
      * @param Boolean $force
      */
-    public function dump(array $packages, $force = false)
+    public function dump(array $packageIds, $force = false, $verbose = false)
     {
         // prepare build dir
         $webDir = $this->webDir;
@@ -91,26 +91,41 @@ class Dumper
 
         $modifiedFiles = array();
 
-        // prepare packages in memory
-        foreach ($packages as $package) {
-            // clean up all versions of that package
-            foreach (glob($buildDir.'/packages*.json') as $file) {
-                $key = basename($file);
-                $this->loadFile($file);
-                if (isset($this->files[$key]['packages'][$package->getName()])) {
-                    unset($this->files[$key]['packages'][$package->getName()]);
-                    $modifiedFiles[$key] = true;
+        while ($packageIds) {
+            $packages = $this->doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages(array_splice($packageIds, 0, 50));
+
+            if ($verbose) {
+                echo 'Processing '.count($packages).' packages...'.PHP_EOL;
+            }
+
+            // prepare packages in memory
+            foreach ($packages as $package) {
+
+                // clean up all versions of that package
+                foreach (glob($buildDir.'/packages*.json') as $file) {
+                    $key = basename($file);
+                    $this->loadFile($file);
+                    if (isset($this->files[$key]['packages'][$package->getName()])) {
+                        unset($this->files[$key]['packages'][$package->getName()]);
+                        $modifiedFiles[$key] = true;
+                    }
                 }
+
+                // (re)write versions
+                foreach ($package->getVersions() as $version) {
+                    $file = $buildDir.'/'.$this->getTargetFile($version);
+                    $modifiedFiles[basename($file)] = true;
+                    $this->dumpVersion($version, $file);
+                }
+
+                $package->setDumpedAt(new \DateTime);
+
             }
 
-            // (re)write versions
-            foreach ($package->getVersions() as $version) {
-                $file = $buildDir.'/'.$this->getTargetFile($version);
-                $modifiedFiles[basename($file)] = true;
-                $this->dumpVersion($version, $file);
-            }
-
-            $package->setDumpedAt(new \DateTime);
+            // update dump dates
+            $this->doctrine->getEntityManager()->flush();
+            $this->doctrine->getEntityManager()->clear();
+            unset($packages);
         }
 
         // prepare root file
@@ -143,9 +158,6 @@ class Dumper
                 }
             }
         }
-
-        // update dump dates
-        $this->doctrine->getEntityManager()->flush();
     }
 
     private function loadFile($file)
