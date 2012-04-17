@@ -83,21 +83,9 @@ class PackageRepository extends EntityRepository
 
     public function getStalePackagesForIndexing()
     {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->leftJoin('v.tags', 't')
-            ->leftJoin('v.authors', 'a')
-            ->leftJoin('v.require', 'req')
-            ->leftJoin('v.devRequire', 'devReq')
-            ->leftJoin('v.suggest', 'sug')
-            ->leftJoin('v.replace', 'rep')
-            ->leftJoin('v.conflict', 'con')
-            ->leftJoin('v.provide', 'pro')
-            ->where('p.indexedAt IS NULL OR p.indexedAt < p.crawledAt');
+        $conn = $this->getEntityManager()->getConnection();
 
-        return $qb->getQuery()->getResult();
+        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.indexedAt IS NULL OR p.indexedAt < p.crawledAt ORDER BY p.id ASC');
     }
 
     public function getStalePackagesForDumping()
