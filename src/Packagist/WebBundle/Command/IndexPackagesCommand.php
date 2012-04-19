@@ -92,13 +92,14 @@ class IndexPackagesCommand extends ContainerAwareCommand
                     $document = $update->createDocument();
                     $this->updateDocumentFromPackage($document, $package);
                     $update->addDocument($document);
-                    $update->addCommit();
-                    $solarium->update($update);
                     $package->setIndexedAt(new \DateTime);
                 } catch (\Exception $e) {
                     $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
                 }
             }
+
+            $update->addCommit();
+            $solarium->update($update);
 
             $doctrine->getEntityManager()->flush();
             $doctrine->getEntityManager()->clear();
