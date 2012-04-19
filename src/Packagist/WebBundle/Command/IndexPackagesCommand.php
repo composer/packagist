@@ -61,8 +61,8 @@ class IndexPackagesCommand extends ContainerAwareCommand
         }
 
         $ids = array();
-        foreach ($packages as $package) {
-            $ids[] = $package['id'];
+        foreach ($packages as $row) {
+            $ids[] = $row['id'];
         }
 
         // clear index before a full-update
