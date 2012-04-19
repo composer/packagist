@@ -53,7 +53,7 @@ class ApiController extends Controller
                 $versions[$version->getVersion()] = $version->toArray();
                 $em->detach($version);
             }
-            $data['packages'][$package->getName()] = array($versions);
+            $data['packages'][$package->getName()] = $versions;
             $em->detach($package);
         }
         unset($versions, $package, $packages);
