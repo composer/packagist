@@ -86,6 +86,8 @@ class Updater
      */
     public function update(Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null)
     {
+        $blacklist = '{^symfony/symfony (2.0.[456]|dev-charset|dev-console)}i';
+
         if (null === $start) {
             $start = new \DateTime();
         }
@@ -114,6 +116,11 @@ class Updater
             if ($version instanceof AliasPackage) {
                 continue;
             }
+
+            if (preg_match($blacklist, $version->getName().' '.$version->getPrettyVersion())) {
+                continue;
+            }
+
             $this->updateInformation($package, $version, $flags);
             $em->flush();
         }
