@@ -56,17 +56,25 @@ EOF
         $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
         $versions = $versionRepo->findAll();
 
+        $packageNames = array();
         foreach ($versions as $version) {
             $name = $version->getName().' '.$version->getVersion();
             if (!$filter || preg_match('{'.$filter.'}i', $name)) {
                 $output->writeln('Clearing '.$name);
                 if ($force) {
+                    $packageNames[] = $version->getName();
                     $versionRepo->remove($version);
                 }
             }
         }
 
         if ($force) {
+            $packageRepo = $doctrine->getRepository('PackagistWebBundle:Package');
+            foreach ($packageNames as $name) {
+                $package = $packageRepo->findOneByName($name);
+                $package->setCrawledAt(new \DateTime);
+            }
+
             $doctrine->getEntityManager()->flush();
         }
     }
