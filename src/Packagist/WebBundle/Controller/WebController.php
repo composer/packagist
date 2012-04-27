@@ -218,7 +218,7 @@ class WebController extends Controller
      * @Route(
      *     "/packages/{name}.{_format}",
      *     name="view_package",
-     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"},
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(html|json)"},
      *     defaults={"_format"="html"}
      * )
      * @Method({"GET"})
