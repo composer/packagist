@@ -233,6 +233,10 @@ class Updater
                     ));
                 }
 
+                if (!empty($authorData['role'])) {
+                    $author = $authorRepository->findOneByRole($authorData['role']);
+                }
+
                 if (!$author && !empty($authorData['name'])) {
                     $author = $authorRepository->findOneByNameAndPackage($authorData['name'], $package);
                 }
@@ -242,7 +246,7 @@ class Updater
                     $em->persist($author);
                 }
 
-                foreach (array('email', 'name', 'homepage') as $field) {
+                foreach (array('email', 'name', 'homepage', 'role') as $field) {
                     if (isset($authorData[$field])) {
                         $author->{'set'.$field}($authorData[$field]);
                     }

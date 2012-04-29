@@ -49,6 +49,11 @@ class Author
     private $homepage;
 
     /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $role;
+
+    /**
      * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Version", mappedBy="authors")
      */
     private $versions;
@@ -211,6 +216,26 @@ class Author
     public function getHomepage()
     {
         return $this->homepage;
+    }
+
+    /**
+     * Set role
+     *
+     * @param string $role
+     */
+    public function setRole($role)
+    {
+        $this->role = $role;
+    }
+
+    /**
+     * Get role
+     *
+     * @return string $role
+     */
+    public function getRole()
+    {
+        return $this->role;
     }
 
     /**
