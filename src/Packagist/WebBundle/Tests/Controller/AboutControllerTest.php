@@ -13,12 +13,4 @@ class AboutControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/about');
         $this->assertEquals('What is Packagist?', $crawler->filter('.box h1')->first()->text());
     }
-    
-    public function testComposer()
-    {
-        $client = self::createClient();
-
-        $crawler = $client->request('GET', '/about-composer');
-        $this->assertEquals('What is Composer?', $crawler->filter('.box h1')->first()->text());
-    }
 }
