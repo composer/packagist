@@ -85,6 +85,7 @@ class Author
             'name' => $this->getName(),
             'email' => $this->getEmail(),
             'homepage' => $this->getHomepage(),
+            'role' => $this->getRole(),
         );
     }
 
