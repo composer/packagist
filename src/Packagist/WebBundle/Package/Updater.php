@@ -233,10 +233,6 @@ class Updater
                     ));
                 }
 
-                if (!empty($authorData['role'])) {
-                    $author = $authorRepository->findOneByRole($authorData['role']);
-                }
-
                 if (!$author && !empty($authorData['name'])) {
                     $author = $authorRepository->findOneByNameAndPackage($authorData['name'], $package);
                 }
