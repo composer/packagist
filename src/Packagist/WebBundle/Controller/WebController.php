@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Controller;
 
 use Composer\IO\NullIO;
+use Composer\Factory;
 use Composer\Repository\VcsRepository;
 use Doctrine\ORM\NoResultException;
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
@@ -317,7 +318,8 @@ class WebController extends Controller
             if ($update) {
                 $updater = new Updater($doctrine);
 
-                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO);
+                $config = Factory::createConfig();
+                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
                 $updater->update($package, $repository, Updater::UPDATE_TAGS);
             }
 

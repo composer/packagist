@@ -19,6 +19,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Packagist\WebBundle\Package\Updater;
 use Composer\Repository\VcsRepository;
+use Composer\Factory;
 use Composer\IO\NullIO;
 use Composer\IO\ConsoleIO;
 
@@ -89,7 +90,8 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                     $output->writeln('Importing '.$package->getRepository());
                 }
                 try {
-                    $repository = new VcsRepository(array('url' => $package->getRepository()), $io);
+                    $config = Factory::createConfig();
+                    $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                     $updater->update($package, $repository, $flags, $start);
                 } catch (\Exception $e) {
                     $output->writeln('<error>Exception: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().', skipping package '.$package->getName().'.</error>');

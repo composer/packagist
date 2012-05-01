@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Controller;
 
 use Composer\IO\NullIO;
+use Composer\Factory;
 use Composer\Repository\VcsRepository;
 use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Package;
@@ -102,7 +103,8 @@ class ApiController extends Controller
                 // We found the package that was referenced.
                 $updater = new Updater($doctrine);
 
-                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO);
+                $config = Factory::createConfig();
+                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
                 $package->setAutoUpdated(true);
                 $doctrine->getEntityManager()->flush();
                 $updater->update($package, $repository);

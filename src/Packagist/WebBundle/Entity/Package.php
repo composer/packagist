@@ -17,6 +17,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ExecutionContext;
 use Doctrine\Common\Collections\ArrayCollection;
 use Composer\IO\NullIO;
+use Composer\Factory;
 use Composer\Repository\VcsRepository;
 use Composer\Repository\RepositoryManager;
 
@@ -291,7 +292,8 @@ class Package
         }
 
         try {
-            $repository = new VcsRepository(array('url' => $repository), new NullIO());
+            $config = Factory::createConfig();
+            $repository = new VcsRepository(array('url' => $repository), new NullIO(), $config);
 
             $repo = $this->repositoryClass = $repository->getDriver();
             if (!$repo) {
