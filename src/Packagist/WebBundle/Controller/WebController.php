@@ -61,27 +61,46 @@ class WebController extends Controller
      */
     public function browseAction(Request $req)
     {
+        $repository = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $packages = $repository->getBaseQueryBuilder();
+        $view = 'PackagistWebBundle:Web:browse.html.twig';
+        $extra_view_options = array();
+
         if ($tag = $req->query->get('tag')) {
             $packages = $this->getDoctrine()
                 ->getRepository('PackagistWebBundle:Package')
                 ->findByTag($tag);
-
-            $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
-            $paginator->setMaxPerPage(15);
-            $paginator->setCurrentPage($req->query->get('page', 1), false, true);
-
-            return $this->render('PackagistWebBundle:Web:tag.html.twig', array('packages' => $paginator, 'tag' => $tag));
+            $view               = 'PackagistWebBundle:Web:tag.html.twig';
+            $extra_view_options = array('tag' => $tag);
+        } elseif ($type = $req->query->get('type')) {
+            $packages->where('p.type=:type')->setParameter('type', $type);
+            $view               = 'PackagistWebBundle:Web:type.html.twig';
+            $extra_view_options = array('type' => $type);
         }
 
-        $packages = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
-            ->getBaseQueryBuilder();
+        $page = $req->query->get('page', 1);
+        return $this->render(
+            $view,
+            array_merge(
+                array('packages' => $this->setupPager($packages, $page)),
+                $extra_view_options
+            )
+        );
+    }
 
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
+    /**
+     * Initializes the pager for a query.
+     *
+     * @param \Doctrine\ORM\QueryBuilder $query Query for packages
+     * @param int                        $page  Pagenumber to retrieve.
+     * @return \Pagerfanta\Pagerfanta
+     */
+    protected function setupPager($query, $page)
+    {
+        $paginator = new Pagerfanta(new DoctrineORMAdapter($query, true));
         $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage($req->query->get('page', 1), false, true);
-
-        return $this->render('PackagistWebBundle:Web:browse.html.twig', array('packages' => $paginator));
+        $paginator->setCurrentPage($page, false, true);
+        return $paginator;
     }
 
     /**

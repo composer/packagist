@@ -119,7 +119,7 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getSingleResult();
     }
 
-    public function getFullPackages(array $ids = null)
+    public function getFullPackages(array $ids = null, $filter_fields = array())
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
@@ -139,6 +139,10 @@ class PackageRepository extends EntityRepository
         if (null !== $ids) {
             $qb->where($qb->expr()->in('p.id', $ids));
         }
+        foreach ($filter_fields as $name => $value) {
+            $qb->andWhere('p.' . $name . ' = :' . $name);
+        }
+        $qb->setParameters($filter_fields);
 
         return $qb->getQuery()->getResult();
     }
