@@ -64,26 +64,38 @@ class WebController extends Controller
         $repository = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
         $packages = $repository->getBaseQueryBuilder();
         $view = 'PackagistWebBundle:Web:browse.html.twig';
-        $extra_view_options = array();
+        $extraViewOptions = array();
 
-        if ($tag = $req->query->get('tag')) {
+        $type = $req->query->get('type');
+        $tag = $req->query->get('tag');
+        $page = $req->query->get('page', 1);
+
+        if ($tag) {
             $packages = $this->getDoctrine()
                 ->getRepository('PackagistWebBundle:Package')
                 ->findByTag($tag);
-            $view               = 'PackagistWebBundle:Web:tag.html.twig';
-            $extra_view_options = array('tag' => $tag);
-        } elseif ($type = $req->query->get('type')) {
-            $packages->where('p.type=:type')->setParameter('type', $type);
-            $view               = 'PackagistWebBundle:Web:type.html.twig';
-            $extra_view_options = array('type' => $type);
+            $view = 'PackagistWebBundle:Web:tag.html.twig';
+            $extraViewOptions['tag'] = $tag;
         }
 
-        $page = $req->query->get('page', 1);
+        if ($type) {
+            // this andWhere either tags onto the $packages defined in the $tag
+            // if-statement, or if tags onto the $packages defined at the start
+            // of the method
+            $packages->andWhere('p.type=:type')->setParameter('type', $type);
+            $view = 'PackagistWebBundle:Web:type.html.twig';
+            $extraViewOptions['type'] = $type;
+        }
+
+        if ($tag && $type) {
+            $view = 'PackagistWebBundle:Web:tagAndType.html.twig';
+        }
+
         return $this->render(
             $view,
             array_merge(
                 array('packages' => $this->setupPager($packages, $page)),
-                $extra_view_options
+                $extraViewOptions
             )
         );
     }
@@ -100,6 +112,7 @@ class WebController extends Controller
         $paginator = new Pagerfanta(new DoctrineORMAdapter($query, true));
         $paginator->setMaxPerPage(15);
         $paginator->setCurrentPage($page, false, true);
+
         return $paginator;
     }
 
