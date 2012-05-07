@@ -136,13 +136,15 @@ class PackageRepository extends EntityRepository
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC');
 
-        if (null !== $ids) {
-            $qb->where($qb->expr()->in('p.id', $ids));
-        }
         foreach ($filterFields as $name => $value) {
             $qb->andWhere('p.' . $name . ' = :' . $name);
         }
         $qb->setParameters($filterFields);
+
+        if (null !== $ids) {
+            $qb->where($qb->expr()->in('p.id', ':ids'))
+                ->setParameter('ids', $ids);
+        }
 
         return $qb->getQuery()->getResult();
     }
