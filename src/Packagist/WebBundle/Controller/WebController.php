@@ -73,7 +73,7 @@ class WebController extends Controller
         if ($tag) {
             $packages = $this->getDoctrine()
                 ->getRepository('PackagistWebBundle:Package')
-                ->findByTag($tag);
+                ->getQueryBuilderByTag($tag);
             $view = 'PackagistWebBundle:Web:tag.html.twig';
             $extraViewOptions['tag'] = $tag;
         }

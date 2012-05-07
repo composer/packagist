@@ -119,7 +119,7 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getSingleResult();
     }
 
-    public function getFullPackages(array $ids = null, $filter_fields = array())
+    public function getFullPackages(array $ids = null, $filterFields = array())
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
@@ -139,15 +139,15 @@ class PackageRepository extends EntityRepository
         if (null !== $ids) {
             $qb->where($qb->expr()->in('p.id', $ids));
         }
-        foreach ($filter_fields as $name => $value) {
+        foreach ($filterFields as $name => $value) {
             $qb->andWhere('p.' . $name . ' = :' . $name);
         }
-        $qb->setParameters($filter_fields);
+        $qb->setParameters($filterFields);
 
         return $qb->getQuery()->getResult();
     }
 
-    public function findByTag($name)
+    public function getQueryBuilderByTag($name)
     {
         return $this->getBaseQueryBuilder()
             // eliminate maintainers & tags from the select, because of the groupBy
