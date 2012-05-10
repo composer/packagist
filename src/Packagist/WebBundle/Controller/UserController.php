@@ -63,7 +63,7 @@ class UserController extends Controller
     {
         $packages = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
-            ->getQueryBuilderByMaintainer($user);
+            ->getFilteredQueryBuilder(array('maintainer' => $user->getId()));
 
         $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
         $paginator->setMaxPerPage(15);

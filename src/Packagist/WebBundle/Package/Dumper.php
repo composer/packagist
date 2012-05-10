@@ -129,18 +129,18 @@ class Dumper
         }
 
         // prepare root file
-        $rootFile = $buildDir.'/packages.json';
+        $rootFile = $buildDir.'/packages_root.json';
         $this->loadFile($rootFile);
-        if (!isset($this->files['packages.json']['packages'])) {
-            $this->files['packages.json']['packages'] = array();
+        if (!isset($this->files['packages_root.json']['packages'])) {
+            $this->files['packages_root.json']['packages'] = array();
         }
         $url = $this->router->generate('track_download', array('name' => 'VND/PKG'));
-        $this->files['packages.json']['notify'] = str_replace('VND/PKG', '%package%', $url);
+        $this->files['packages_root.json']['notify'] = str_replace('VND/PKG', '%package%', $url);
 
         // dump files to build dir
         foreach ($modifiedFiles as $file => $dummy) {
             $this->dumpFile($buildDir.'/'.$file);
-            $this->files['packages.json']['includes'][$file] = array('sha1' => sha1_file($buildDir.'/'.$file));
+            $this->files['packages_root.json']['includes'][$file] = array('sha1' => sha1_file($buildDir.'/'.$file));
         }
         $this->dumpFile($rootFile);
 

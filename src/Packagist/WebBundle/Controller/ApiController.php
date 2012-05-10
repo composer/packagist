@@ -33,19 +33,23 @@ class ApiController extends Controller
      * @Template()
      * @Route("/packages.json", name="packages", defaults={"_format" = "json"})
      */
-    public function packagesAction()
+    public function packagesAction(Request $req)
     {
+        if (!$req->query->all()) {
+            return new Response(file_get_contents($this->container->getParameter('kernel.root_dir').'/../web/packages_root.json'));
+        }
+
         $em = $this->get('doctrine')->getEntityManager();
 
-        $filterFields = array();
-        if ($this->getRequest()->get('type')) {
-            $filterFields['type'] = $this->getRequest()->get('type');
-        }
+        $filters = array(
+            'type' => $req->query->get('type'),
+            'tag' => $req->query->get('tag'),
+        );
 
         gc_enable();
 
         $packages = $em->getRepository('Packagist\WebBundle\Entity\Package')
-            ->getFullPackages(null, $filterFields);
+            ->getFullPackages(null, $filters);
 
         $notifyUrl = $this->generateUrl('track_download', array('name' => 'VND/PKG'));
 

@@ -57,47 +57,29 @@ class WebController extends Controller
     }
 
     /**
+     * @Template()
      * @Route("/packages/", name="browse")
      */
     public function browseAction(Request $req)
     {
         $repository = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-        $packages = $repository->getBaseQueryBuilder();
-        $view = 'PackagistWebBundle:Web:browse.html.twig';
-        $extraViewOptions = array();
 
-        $type = $req->query->get('type');
-        $tag = $req->query->get('tag');
+        $filters = array(
+            'type' => $req->query->get('type'),
+            'tag' => $req->query->get('tag'),
+        );
+
+        $data = $filters;
         $page = $req->query->get('page', 1);
 
-        if ($tag) {
-            $packages = $this->getDoctrine()
-                ->getRepository('PackagistWebBundle:Package')
-                ->getQueryBuilderByTag($tag);
-            $view = 'PackagistWebBundle:Web:tag.html.twig';
-            $extraViewOptions['tag'] = $tag;
-        }
+        $packages = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Package')
+            ->getFilteredQueryBuilder($filters);
 
-        if ($type) {
-            // this andWhere either tags onto the $packages defined in the $tag
-            // if-statement, or if tags onto the $packages defined at the start
-            // of the method
-            $packages->andWhere('p.type=:type')->setParameter('type', $type);
-            $view = 'PackagistWebBundle:Web:type.html.twig';
-            $extraViewOptions['type'] = $type;
-        }
+        $data['packages'] = $this->setupPager($packages, $page);
+        $data['searchForm'] = $this->createSearchForm()->createView();
 
-        if ($tag && $type) {
-            $view = 'PackagistWebBundle:Web:tagAndType.html.twig';
-        }
-
-        return $this->render(
-            $view,
-            array_merge(
-                array('packages' => $this->setupPager($packages, $page)),
-                $extraViewOptions
-            )
-        );
+        return $data;
     }
 
     /**

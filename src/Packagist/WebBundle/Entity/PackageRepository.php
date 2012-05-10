@@ -119,7 +119,7 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getSingleResult();
     }
 
-    public function getFullPackages(array $ids = null, $filterFields = array())
+    public function getFullPackages(array $ids = null, $filters = array())
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
@@ -136,36 +136,49 @@ class PackageRepository extends EntityRepository
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC');
 
-        foreach ($filterFields as $name => $value) {
-            $qb->andWhere('p.' . $name . ' = :' . $name);
-        }
-        $qb->setParameters($filterFields);
-
         if (null !== $ids) {
             $qb->where($qb->expr()->in('p.id', ':ids'))
                 ->setParameter('ids', $ids);
         }
 
+        $this->addFilters($qb, $filters);
+
         return $qb->getQuery()->getResult();
     }
 
-    public function getQueryBuilderByTag($name)
-    {
-        return $this->getBaseQueryBuilder()
-            // eliminate maintainers & tags from the select, because of the groupBy
-            ->select('p', 'v')
-            ->where('t.name = ?0')
-            ->setParameters(array($name));
-    }
-
-    public function getQueryBuilderByMaintainer(User $user)
+    public function getFilteredQueryBuilder(array $filters = array())
     {
         $qb = $this->getBaseQueryBuilder()
-            // eliminate maintainers & tags from the select, because of the groupBy
-            ->select('p', 'v')
-            ->where('m.id = ?0')
-            ->setParameters(array($user->getId()));
+            ->select('p', 'v');
+
+        $this->addFilters($qb, $filters);
+
         return $qb;
+    }
+
+    private function addFilters($qb, array $filters)
+    {
+        foreach ($filters as $name => $value) {
+            if (null === $value) {
+                continue;
+            }
+
+            switch ($name) {
+                case 'tag':
+                    $qb->andWhere($qb->expr()->in('t.name', ':'.$name));
+                    break;
+
+                case 'maintainer':
+                    $qb->andWhere($qb->expr()->in('m.id', ':'.$name));
+                    break;
+
+                default:
+                    $qb->andWhere($qb->expr()->in('p.'.$name, ':'.$name));
+                    break;
+            }
+
+            $qb->setParameter($name, $value);
+        }
     }
 
     public function getBaseQueryBuilder()
