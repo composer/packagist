@@ -1,20 +1,20 @@
 security:
     providers:
-        fos_userbundle:
-            id: fos_user.user_manager
+        packagist:
+            id: packagist.user_provider
 
     firewalls:
         main:
             pattern:      .*
             form_login:
-                provider:       fos_userbundle
+                provider:       packagist
                 login_path:     /login
                 use_forward:    false
                 check_path:     /login_check
                 failure_path:   null
             remember_me:
                 key: %remember_me.secret%
-                user_providers: fos_userbundle
+                user_providers: packagist
                 name: pauth
                 remember_me_parameter: _remember_me
                 lifetime: 31104000 # 1y
