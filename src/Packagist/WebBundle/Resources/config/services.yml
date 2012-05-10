@@ -8,3 +8,8 @@ services:
     packagist.package_dumper:
         class: Packagist\WebBundle\Package\Dumper
         arguments: [ @doctrine, @filesystem, @router, %kernel.root_dir%/../web/, %kernel.cache_dir% ]
+
+    packagist.user_provider:
+        class: Packagist\WebBundle\Security\Provider\UserProvider
+        public: false
+        arguments: ["@fos_user.user_manager"]
