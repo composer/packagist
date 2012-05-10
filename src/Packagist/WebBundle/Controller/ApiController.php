@@ -37,10 +37,15 @@ class ApiController extends Controller
     {
         $em = $this->get('doctrine')->getEntityManager();
 
+        $filterFields = array();
+        if ($this->getRequest()->get('type')) {
+            $filterFields['type'] = $this->getRequest()->get('type');
+        }
+
         gc_enable();
 
         $packages = $em->getRepository('Packagist\WebBundle\Entity\Package')
-            ->getFullPackages();
+            ->getFullPackages(null, $filterFields);
 
         $notifyUrl = $this->generateUrl('track_download', array('name' => 'VND/PKG'));
 
