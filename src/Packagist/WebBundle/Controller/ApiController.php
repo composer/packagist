@@ -35,8 +35,9 @@ class ApiController extends Controller
      */
     public function packagesAction(Request $req)
     {
-        if (!$req->query->all()) {
-            return new Response(file_get_contents($this->container->getParameter('kernel.root_dir').'/../web/packages_root.json'));
+        $rootJson = $this->container->getParameter('kernel.root_dir').'/../web/packages_root.json';
+        if (!$req->query->all() && file_exists($rootJson)) {
+            return new Response(file_get_contents($rootJson));
         }
 
         $em = $this->get('doctrine')->getEntityManager();
