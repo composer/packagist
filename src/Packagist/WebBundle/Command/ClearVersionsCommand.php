@@ -54,21 +54,41 @@ EOF
         $doctrine = $this->getContainer()->get('doctrine');
 
         $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
-        $versions = $versionRepo->findAll();
+
+        $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+        $ids = array();
+        foreach ($packages as $package) {
+            $ids[] = $package['id'];
+        }
 
         $packageNames = array();
-        foreach ($versions as $version) {
-            $name = $version->getName().' '.$version->getVersion();
-            if (!$filter || preg_match('{'.$filter.'}i', $name)) {
-                $output->writeln('Clearing '.$name);
-                if ($force) {
-                    $packageNames[] = $version->getName();
-                    $versionRepo->remove($version);
+
+        while ($ids) {
+            $qb = $versionRepo->createQueryBuilder('v');
+            $qb
+                ->join('v.package', 'p')
+                ->where($qb->expr()->in('p.id', array_splice($ids, 0, 50)));
+            $versions = $qb->getQuery()->iterate();
+
+            foreach ($versions as $version) {
+                $version = $version[0];
+                $name = $version->getName().' '.$version->getVersion();
+                if (!$filter || preg_match('{'.$filter.'}i', $name)) {
+                    $output->writeln('Clearing '.$name);
+                    if ($force) {
+                        $packageNames[] = $version->getName();
+                        $versionRepo->remove($version);
+                    }
                 }
             }
+
+            $doctrine->getEntityManager()->flush();
+            $doctrine->getEntityManager()->clear();
+            unset($versions);
         }
 
         if ($force) {
+            // mark packages as recently crawled so that they get updated
             $packageRepo = $doctrine->getRepository('PackagistWebBundle:Package');
             foreach ($packageNames as $name) {
                 $package = $packageRepo->findOneByName($name);
