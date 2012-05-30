@@ -167,6 +167,11 @@ class Version
     private $binaries;
 
     /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $includePaths;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -222,6 +227,7 @@ class Version
             'target-dir' => $this->getTargetDir(),
             'autoload' => $this->getAutoload(),
             'extra' => $this->getExtra(),
+            'include-path' => $this->getIncludePaths(),
         );
 
         if ($this->getBinaries()) {
@@ -461,6 +467,26 @@ class Version
     public function getBinaries()
     {
         return json_decode($this->binaries, true);
+    }
+
+    /**
+     * Set include paths.
+     *
+     * @param array $paths
+     */
+    public function setIncludePaths($paths)
+    {
+        $this->includePaths = json_encode($paths);
+    }
+
+    /**
+     * Get include paths.
+     *
+     * @return array|null
+     */
+    public function getIncludePaths()
+    {
+        return json_decode($this->includePaths, true);
     }
 
     /**
