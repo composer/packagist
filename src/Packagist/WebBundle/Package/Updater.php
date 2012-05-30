@@ -200,6 +200,7 @@ class Updater
         $version->setAutoload($data->getAutoload());
         $version->setExtra($data->getExtra());
         $version->setBinaries($data->getBinaries());
+        $version->setIncludePaths($data->getIncludePaths());
 
         $version->getTags()->clear();
         if ($data->getKeywords()) {
