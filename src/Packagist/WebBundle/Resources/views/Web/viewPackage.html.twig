@@ -8,6 +8,8 @@
 {% endblock %}
 
 {% block content %}
+    {% set version = package.versions|length ? package.versions[0] : null %}
+
     <div class="box">
         <div class="package"{% if app.user and package.maintainers.contains(app.user) and package.crawledAt is null %} data-force-crawl="true"{% endif %}>
             {% if is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
@@ -27,9 +29,9 @@
             <h1>
                 <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
             </h1>
-            {% if package.versions|length and package.versions[0].tags|length %}
+            {% if version and version.tags|length %}
                 <p class="tags">
-                    {%- for tag in package.versions[0].tags -%}
+                    {%- for tag in version.tags -%}
                         <a href="{{ url("browse", { "tag" : tag.name }) }}">{{ tag.name }}</a>
                     {%- endfor -%}
                 </p>
@@ -56,10 +58,23 @@
                 {% endfor %}
                 {% if form is defined %}(<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}">add maintainer</a>){% endif %}
                 <br />
-                {% if package.versions|length and package.versions[0].homepage %}
-                    <span>Homepage:</span> <a href="{{ package.versions[0].homepage }}">{{ package.versions[0].homepage|replace({'http://': ''}) }}</a><br />
+                {% if version and version.homepage %}
+                    <span>Homepage:</span> <a href="{{ version.homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
                 {% endif %}
-                <span>Repository:</span> <a href="{{ package.repository|replace({'git://github.com/': 'http://github.com/'}) }}">{{ package.repository|replace({'git://github.com/': 'http://github.com/'}) }}</a>
+                {% set repoUrl = version and version.support.source is defined ? version.support.source : package.repository|replace({'git://github.com/': 'http://github.com/'}) %}
+                <span>Sources:</span> <a href="{{ repoUrl }}">{{ repoUrl }}</a><br />
+                {% if version and version.support.issues is defined %}
+                    <span>Issues:</span> <a href="{{ version.support.issues }}">{{ version.support.issues }}</a><br />
+                {% endif %}
+                {% if version and version.support.irc is defined %}
+                    <span>IRC:</span> <a href="{{ version.support.irc }}">{{ version.support.irc }}</a><br />
+                {% endif %}
+                {% if version and version.support.forum is defined %}
+                    <span>Forum:</span> <a href="{{ version.support.forum }}">{{ version.support.forum }}</a><br />
+                {% endif %}
+                {% if version and version.support.wiki is defined %}
+                    <span>Wiki:</span> <a href="{{ version.support.wiki }}">{{ version.support.wiki }}</a><br />
+                {% endif %}
             </p>
 
             {% if form is defined %}

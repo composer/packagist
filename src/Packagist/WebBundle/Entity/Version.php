@@ -172,6 +172,11 @@ class Version
     private $includePaths;
 
     /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $support;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -476,7 +481,7 @@ class Version
      */
     public function setIncludePaths($paths)
     {
-        $this->includePaths = json_encode($paths);
+        $this->includePaths = $paths ? json_encode($paths) : null;
     }
 
     /**
@@ -487,6 +492,26 @@ class Version
     public function getIncludePaths()
     {
         return json_decode($this->includePaths, true);
+    }
+
+    /**
+     * Set support
+     *
+     * @param array $support
+     */
+    public function setSupport($support)
+    {
+        $this->support = $support ? json_encode($support) : null;
+    }
+
+    /**
+     * Get support
+     *
+     * @return array|null
+     */
+    public function getSupport()
+    {
+        return json_decode($this->support, true);
     }
 
     /**
