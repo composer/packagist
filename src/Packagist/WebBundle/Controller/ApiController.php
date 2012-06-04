@@ -109,7 +109,7 @@ class ApiController extends Controller
         $payloadRepositoryChunk = $match[1];
 
         foreach ($user->getPackages() as $package) {
-            if (false !== strpos($package->getRepository(), $payloadRepositoryChunk)) {
+            if (preg_match('{'.preg_quote($payloadRepositoryChunk).'(\.git)?$}', $package->getRepository())) {
                 // We found the package that was referenced.
                 $updater = new Updater($doctrine);
 
