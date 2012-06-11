@@ -62,7 +62,7 @@
     version=v1.0.1
 
 [FOSUserBundle]
-    git=git://github.com/FriendsOfSymfony/FOSUserBundle.git
+    git=http://github.com/FriendsOfSymfony/FOSUserBundle.git
     target=/bundles/FOS/UserBundle
     version=1.1.0
 
@@ -87,10 +87,10 @@
     git=https://github.com/Seldaek/jsonlint.git
 
 [SncRedisBundle]
-    git=git://github.com/snc/SncRedisBundle.git
+    git=http://github.com/snc/SncRedisBundle.git
     target=/bundles/Snc/RedisBundle
     version=origin/master
 
 [predis]
-    git=git://github.com/nrk/predis.git
+    git=http://github.com/nrk/predis.git
     version=origin/v0.7
