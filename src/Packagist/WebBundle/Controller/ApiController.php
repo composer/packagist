@@ -110,6 +110,7 @@ class ApiController extends Controller
 
         foreach ($user->getPackages() as $package) {
             if (preg_match('{'.preg_quote($payloadRepositoryChunk).'(\.git)?$}', $package->getRepository())) {
+                set_time_limit(3600);
                 // We found the package that was referenced.
                 $updater = new Updater($doctrine);
 

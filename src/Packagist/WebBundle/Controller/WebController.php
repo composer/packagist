@@ -330,6 +330,7 @@ class WebController extends Controller
             }
 
             if ($update) {
+                set_time_limit(3600);
                 $updater = new Updater($doctrine);
 
                 $config = Factory::createConfig();
