@@ -148,10 +148,6 @@ class Updater
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
             if ($existingVersion->equals($version)) {
-                // avoid updating newer versions, in case two branches have the same version in their composer.json
-                if ($existingVersion->getReleasedAt() > $data->getReleaseDate()) {
-                    return;
-                }
                 if ($existingVersion->getDevelopment() || ($flags & self::UPDATE_TAGS)) {
                     $version = $existingVersion;
                     break;
