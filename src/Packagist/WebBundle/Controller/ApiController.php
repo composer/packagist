@@ -108,8 +108,10 @@ class ApiController extends Controller
 
         $payloadRepositoryChunk = $match[1];
 
+        $updated = false;
         foreach ($user->getPackages() as $package) {
             if (preg_match('{'.preg_quote($payloadRepositoryChunk).'(\.git)?$}', $package->getRepository())) {
+                $updated = true;
                 set_time_limit(3600);
                 // We found the package that was referenced.
                 $updater = new Updater($doctrine);
@@ -119,9 +121,11 @@ class ApiController extends Controller
                 $package->setAutoUpdated(true);
                 $doctrine->getEntityManager()->flush();
                 $updater->update($package, $repository);
-
-                return new Response('{"status": "success"}', 202);
             }
+        }
+
+        if ($updated) {
+            return new Response('{"status": "success"}', 202);
         }
 
         return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
