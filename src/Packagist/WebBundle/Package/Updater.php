@@ -98,6 +98,19 @@ class Updater
         $em = $this->doctrine->getEntityManager();
 
         usort($versions, function ($a, $b) {
+            $aVersion = $a->getVersion();
+            $bVersion = $b->getVersion();
+            if ($aVersion === '9999999-dev' || 'dev-' === substr($aVersion, 0, 4)) {
+                $aVersion = 'dev';
+            }
+            if ($bVersion === '9999999-dev' || 'dev-' === substr($bVersion, 0, 4)) {
+                $bVersion = 'dev';
+            }
+
+            if ($aVersion === $bVersion) {
+                return $a->getReleaseDate() > $b->getReleaseDate() ? 1 : -1;
+            }
+
             return version_compare($a->getVersion(), $b->getVersion());
         });
 
