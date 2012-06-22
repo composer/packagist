@@ -11,11 +11,11 @@ framework:
     validation:      { enable_annotations: true }
     translator:      { fallback: en }
     templating:      { engines: ['twig'] } #assets_version: SomeVersionScheme
+    default_locale: %locale%
     session:
         name:           packagist
-        default_locale: %locale%
         lifetime:       3600
-        auto_start:     false
+        auto_start:     true
 
 # Twig Configuration
 twig:

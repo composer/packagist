@@ -50,17 +50,16 @@
             </header>
 
             <div class="main" role="main">
-                {% if app.session.flash('success') %}
+                {% for flashMessage in app.session.flashbag.get('success') %}
                     <div class="flash-message success">
-                        <p>{{ app.session.flash('success') }}</p>
+                        <p>{{ flashMessage }}</p>
                     </div>
-                {% endif %}
-                {% if app.session.flash('error') %}
+                {% endfor %}
+                {% for flashMessage in app.session.flashbag.get('error') %}
                     <div class="flash-message error">
-                        <p>{{ app.session.flash('error') }}</p>
+                        <p>{{ flashMessage }}</p>
                     </div>
-                {% endif %}
-                {{ app.session.clearFlashes }}
+                {% endfor %}
 
                 {% block search %}
                     {% if searchForm is defined %}

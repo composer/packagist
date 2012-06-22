@@ -13,23 +13,24 @@
 namespace Packagist\WebBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilder;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class AddMaintainerRequestType extends AbstractType
 {
-    public function buildForm(FormBuilder $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->add('user', 'fos_user_username');
     }
 
-    public function getDefaultOptions(array $options)
+    public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
-        return array(
+        $resolver->setDefaults(array(
             'data_class' => 'Packagist\WebBundle\Form\Model\AddMaintainerRequest',
-        );
+        ));
     }
 
     public function getName()

@@ -9,3 +9,4 @@ vendor/
 /.settings
 /.buildpath
 /.project
+composer.phar

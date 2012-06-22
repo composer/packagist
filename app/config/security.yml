@@ -1,4 +1,14 @@
+jms_security_extra:
+    secure_all_services: false
+    expressions: true
+
 security:
+    encoders:
+        FOS\UserBundle\Model\UserInterface:
+            algorithm:        sha512
+            encode_as_base64: false
+            iterations:       1
+
     providers:
         packagist:
             id: packagist.user_provider
