@@ -142,15 +142,13 @@ class Package
 
     public function isRepositoryValid(ExecutionContext $context)
     {
-        $propertyPath = $context->getPropertyPath() . '.repository';
-        $context->setPropertyPath($propertyPath);
-
+        $property = 'repository';
         $repo = $this->repositoryClass;
         if (!$repo) {
             if (preg_match('{//.+@}', $this->repository)) {
-                $context->addViolation('URLs with user@host are not supported, use a read-only public URL', array(), null);
+                $context->addViolationAtSubPath($property, 'URLs with user@host are not supported, use a read-only public URL', array(), null);
             } else {
-                $context->addViolation('No valid/supported repository was found at the given URL', array(), null);
+                $context->addViolationAtSubPath($property, 'No valid/supported repository was found at the given URL', array(), null);
             }
             return;
         }
@@ -158,16 +156,16 @@ class Package
             $information = $repo->getComposerInformation($repo->getRootIdentifier());
 
             if (!isset($information['name']) || !$information['name']) {
-                $context->addViolation('The package name was not found in the composer.json, make sure there is a name present.', array(), null);
+                $context->addViolationAtSubPath($property, 'The package name was not found in the composer.json, make sure there is a name present.', array(), null);
                 return;
             }
 
             if (!preg_match('{^[a-z0-9_.-]+/[a-z0-9_.-]+$}i', $information['name'])) {
-                $context->addViolation('The package name '.$information['name'].' is invalid, it should have a vendor name, a forward slash, and a package name, matching <em>[a-z0-9_.-]+/[a-z0-9_.-]+</em>.', array(), null);
+                $context->addViolationAtSubPath($property, 'The package name '.$information['name'].' is invalid, it should have a vendor name, a forward slash, and a package name, matching <em>[a-z0-9_.-]+/[a-z0-9_.-]+</em>.', array(), null);
                 return;
             }
         } catch (\Exception $e) {
-            $context->addViolation('We had problems parsing your composer.json file, the parser reports: '.$e->getMessage(), array(), null);
+            $context->addViolationAtSubPath($property, 'We had problems parsing your composer.json file, the parser reports: '.$e->getMessage(), array(), null);
         }
     }
 
@@ -180,9 +178,7 @@ class Package
     {
         try {
             if ($this->entityRepository->findOneByName($this->name)) {
-                $propertyPath = $context->getPropertyPath() . '.repository';
-                $context->setPropertyPath($propertyPath);
-                $context->addViolation('A package with the name '.$this->name.' already exists.', array(), null);
+                $context->addViolationAtSubPath('repository', 'A package with the name '.$this->name.' already exists.', array(), null);
             }
         } catch (\Doctrine\ORM\NoResultException $e) {}
     }

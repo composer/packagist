@@ -1,0 +1,64 @@
+{
+    "name": "composer/packagist",
+    "description": "Package Repository Website",
+    "keywords": ["package", "composer"],
+    "homepage": "http://packagist.org/",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nils Adermann",
+            "email": "naderman@naderman.de",
+            "homepage": "http://www.naderman.de"
+        },
+        {
+            "name": "Jordi Boggiano",
+            "email": "j.boggiano@seld.be",
+            "homepage": "http://seld.be"
+        }
+    ],
+    "support": {
+          "email": "contact@packagist.org"
+    },
+    "autoload": {
+        "psr-0": { "Packagist": "src/" }
+    },
+    "require": {
+        "php": ">=5.3.2",
+        "composer/composer": "dev-master",
+        "doctrine/doctrine-bundle": "dev-master",
+        "doctrine/orm": "2.2.*",
+        "friendsofsymfony/user-bundle": "dev-master",
+        "nelmio/solarium-bundle": "dev-master",
+        "predis/predis": "0.7.*",
+        "sensio/distribution-bundle": "dev-master",
+        "sensio/framework-extra-bundle": "dev-master",
+        "sensio/generator-bundle": "dev-master",
+        "snc/redis-bundle": "dev-master",
+        "symfony/assetic-bundle": "2.1.*",
+        "symfony/monolog-bundle": "2.1.*",
+        "symfony/swiftmailer-bundle": "2.1.*",
+        "symfony/symfony": "2.1.*",
+        "twig/extensions": "dev-master",
+        "white-october/pagerfanta-bundle": "dev-master"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets"
+        ],
+        "post-update-cmd": [
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets"
+        ]
+    },
+    "config": {
+        "bin-dir": "bin"
+    },
+    "extra": {
+        "symfony-app-dir": "app",
+        "symfony-web-dir": "web"
+    }
+}

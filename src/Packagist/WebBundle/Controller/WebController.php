@@ -42,11 +42,6 @@ use Pagerfanta\Adapter\SolariumAdapter;
  */
 class WebController extends Controller
 {
-    protected function getUser()
-    {
-        return $user = $this->get('security.context')->getToken()->getUser();
-    }
-
     /**
      * @Template()
      * @Route("/", name="home")
