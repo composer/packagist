@@ -29,8 +29,6 @@
         "doctrine/doctrine-bundle": "dev-master",
         "doctrine/orm": "2.2.*",
         "friendsofsymfony/user-bundle": "dev-master",
-        "jms/di-extra-bundle": "1.0.*",
-        "jms/security-extra-bundle": "1.1.*",
         "nelmio/solarium-bundle": "dev-master",
         "predis/predis": "0.7.*",
         "sensio/distribution-bundle": "dev-master",
