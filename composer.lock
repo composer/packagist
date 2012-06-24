@@ -4,7 +4,8 @@
         {
             "package": "composer/composer",
             "version": "dev-master",
-            "source-reference": "6e90c0be5193ba0bd3bdafcb442175ccbc9ea9ed"
+            "source-reference": "fd776853a411b08d04551192348b2896061d39c9",
+            "commit-date": "1340550830"
         },
         {
             "package": "doctrine/common",
@@ -19,7 +20,8 @@
         {
             "package": "doctrine/doctrine-bundle",
             "version": "dev-master",
-            "source-reference": "94951737d6c692500d6b13bb92871935568a4ba5"
+            "source-reference": "94951737d6c692500d6b13bb92871935568a4ba5",
+            "commit-date": "1340102167"
         },
         {
             "package": "doctrine/orm",
@@ -62,7 +64,8 @@
         {
             "package": "pagerfanta/pagerfanta",
             "version": "dev-master",
-            "source-reference": "c490684def33e992241e7fad33bcbd03d9d18643"
+            "source-reference": "c490684def33e992241e7fad33bcbd03d9d18643",
+            "commit-date": "1327253097"
         },
         {
             "package": "predis/predis",
@@ -89,13 +92,14 @@
         {
             "package": "sensio/generator-bundle",
             "version": "dev-master",
-            "source-reference": "43ed45c48db18e4a0e48aec0c098f42e56e22d36"
+            "source-reference": "43ed45c48db18e4a0e48aec0c098f42e56e22d36",
+            "commit-date": "1340138445"
         },
         {
             "package": "snc/redis-bundle",
             "version": "dev-master",
-            "source-reference": "dc0e74c069aeda7e11b5bd88ad83b351d1faf36f",
-            "commit-date": "1339335453"
+            "source-reference": "3e7ea0b504ce64059354736619c17b9196b2d6ad",
+            "commit-date": "1340539404"
         },
         {
             "package": "solarium/solarium",
@@ -124,7 +128,8 @@
         {
             "package": "symfony/assetic-bundle",
             "version": "dev-master",
-            "source-reference": "8fe7b898b08103c1d6fce64c3e279a7afd61adfc"
+            "source-reference": "8fe7b898b08103c1d6fce64c3e279a7afd61adfc",
+            "commit-date": "1340234971"
         },
         {
             "package": "symfony/monolog-bundle",
@@ -135,7 +140,8 @@
         {
             "package": "symfony/monolog-bundle",
             "version": "dev-master",
-            "source-reference": "0b5046d3d1ef93cd59ceabfa37de2665f5118c7f"
+            "source-reference": "0b5046d3d1ef93cd59ceabfa37de2665f5118c7f",
+            "commit-date": "1339708477"
         },
         {
             "package": "symfony/swiftmailer-bundle",
@@ -146,7 +152,8 @@
         {
             "package": "symfony/swiftmailer-bundle",
             "version": "dev-master",
-            "source-reference": "d05c9c514a631ee688c53c4cc5505da757bd50d3"
+            "source-reference": "d05c9c514a631ee688c53c4cc5505da757bd50d3",
+            "commit-date": "1340144744"
         },
         {
             "package": "symfony/symfony",
@@ -163,7 +170,8 @@
         {
             "package": "twig/extensions",
             "version": "dev-master",
-            "source-reference": "feb6d3f10c411e2631997c0a905aa581c80305c1"
+            "source-reference": "feb6d3f10c411e2631997c0a905aa581c80305c1",
+            "commit-date": "1337599699"
         },
         {
             "package": "twig/twig",
@@ -180,7 +188,8 @@
         {
             "package": "white-october/pagerfanta-bundle",
             "version": "dev-master",
-            "source-reference": "6d7c84759ca85a4c3a993a844922dc4629d42adf"
+            "source-reference": "6d7c84759ca85a4c3a993a844922dc4629d42adf",
+            "commit-date": "1339403763"
         }
     ],
     "packages-dev": null,
