@@ -326,7 +326,7 @@ class WebController extends Controller
 
             if ($update) {
                 set_time_limit(3600);
-                $updater = new Updater($doctrine);
+                $updater = $this->get('packagist.package_updater');
 
                 $config = Factory::createConfig();
                 $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);

@@ -93,9 +93,9 @@ class ApiController extends Controller
             $request->request->get('apiToken') :
             $request->query->get('apiToken');
 
-        $doctrine = $this->get('doctrine');
-        $user = $doctrine
-            ->getRepository('PackagistWebBundle:User')
+        $updater = $this->get('packagist.package_updater');
+        $em = $this->get('doctrine.orm.entity_manager');
+        $user = $this->get('packagist.user_repository')
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 
         if (!$user) {
@@ -109,17 +109,15 @@ class ApiController extends Controller
         $payloadRepositoryChunk = $match[1];
 
         $updated = false;
+        $config = Factory::createConfig();
         foreach ($user->getPackages() as $package) {
             if (preg_match('{'.preg_quote($payloadRepositoryChunk).'(\.git)?$}', $package->getRepository())) {
-                $updated = true;
                 set_time_limit(3600);
-                // We found the package that was referenced.
-                $updater = new Updater($doctrine);
+                $updated = true;
 
-                $config = Factory::createConfig();
                 $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
                 $package->setAutoUpdated(true);
-                $doctrine->getEntityManager()->flush();
+                $em->flush();
                 $updater->update($package, $repository);
             }
         }
@@ -137,7 +135,7 @@ class ApiController extends Controller
      */
     public function trackDownloadAction(Request $request, $name)
     {
-        $result = $this->getDoctrine()->getConnection()->fetchAssoc(
+        $result = $this->get('doctrine.dbal.default_connection')->fetchAssoc(
             'SELECT p.id, v.id vid
             FROM package p
             LEFT JOIN package_version v ON p.id = v.package_id

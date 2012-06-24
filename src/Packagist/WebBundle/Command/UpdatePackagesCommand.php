@@ -76,11 +76,12 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             $flags = Updater::DELETE_BEFORE;
         }
 
-        $updater = new Updater($doctrine);
+        $updater = $this->getContainer()->get('packagist.package_updater');
         $start = new \DateTime();
 
         $input->setInteractive(false);
         $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new NullIO;
+        $config = Factory::createConfig();
 
         while ($ids) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages(array_splice($ids, 0, 50));
@@ -90,7 +91,6 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                     $output->writeln('Importing '.$package->getRepository());
                 }
                 try {
-                    $config = Factory::createConfig();
                     $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                     $updater->update($package, $repository, $flags, $start);
                 } catch (\Exception $e) {
