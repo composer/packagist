@@ -15,7 +15,7 @@ framework:
     session:
         name:           packagist
         lifetime:       3600
-        auto_start:     false
+        auto_start:     true
 
 # Twig Configuration
 twig:
