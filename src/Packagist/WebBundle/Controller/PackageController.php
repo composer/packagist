@@ -18,7 +18,7 @@ class PackageController extends Controller
      *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
      * )
      */
-    function editAction(Request $req, $name)
+    public function editAction(Request $req, $name)
     {
         $package = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
@@ -32,7 +32,7 @@ class PackageController extends Controller
             ->add("repository", "text")
             ->getForm();
 
-        if ($req->getMethod() == 'POST') {
+        if ('POST' === $req->getMethod()) {
             $form->bindRequest($req);
 
             if ($form->isValid()) {
@@ -41,13 +41,6 @@ class PackageController extends Controller
         }
 
         return array("package" => $package, "form" => $form->createView());
-    }
-
-    /**
-     * @Route("/packages/{name}/update", name="package_update")
-     */
-    function updateAction()
-    {
     }
 }
 
