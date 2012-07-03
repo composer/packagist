@@ -164,6 +164,14 @@ class Package
                 $context->addViolationAtSubPath($property, 'The package name '.$information['name'].' is invalid, it should have a vendor name, a forward slash, and a package name, matching <em>[a-z0-9_.-]+/[a-z0-9_.-]+</em>.', array(), null);
                 return;
             }
+
+            if (preg_match('{[A-Z}', $information['name'])) {
+                $suggestName = preg_replace('/(([a-z])([A-Z])|([A-Z])([A-Z][a-z]))/', '\\2\\4-\\3\\5', $information['name']);
+                $suggestName = strtolower($suggestName);
+
+                $context->addViolationAtSubPath($property, 'The package name '.$information['name'].' is invalid, it should not contain uppercase characters. We suggect using '.$suggestName.' instead.');
+                return;
+            }
         } catch (\Exception $e) {
             $context->addViolationAtSubPath($property, 'We had problems parsing your composer.json file, the parser reports: '.$e->getMessage(), array(), null);
         }
