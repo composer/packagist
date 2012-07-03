@@ -165,11 +165,11 @@ class Package
                 return;
             }
 
-            if (preg_match('{[A-Z}', $information['name'])) {
-                $suggestName = preg_replace('/(([a-z])([A-Z])|([A-Z])([A-Z][a-z]))/', '\\2\\4-\\3\\5', $information['name']);
+            if (preg_match('{[A-Z]}', $information['name'])) {
+                $suggestName = preg_replace('{(?:([a-z])([A-Z])|([A-Z])([A-Z][a-z]))}', '\\1\\3-\\2\\4', $information['name']);
                 $suggestName = strtolower($suggestName);
 
-                $context->addViolationAtSubPath($property, 'The package name '.$information['name'].' is invalid, it should not contain uppercase characters. We suggect using '.$suggestName.' instead.');
+                $context->addViolationAtSubPath($property, 'The package name '.$information['name'].' is invalid, it should not contain uppercase characters. We suggest using '.$suggestName.' instead.');
                 return;
             }
         } catch (\Exception $e) {
