@@ -40,21 +40,22 @@ class PackageController extends Controller
             throw new AccessDeniedException;
         }
 
-        $form = $this->createFormBuilder($package)
+        $form = $this->createFormBuilder($package, array("validation_groups" => array("update")))
             ->add("repository", "text")
             ->getForm();
 
-        if ('POST' === $req->getMethod()) {
+        if ($req->isMethod("POST")) {
             $package->setEntityRepository($packages);
 
             $form->bindRequest($req);
 
-            if ($this->get("validator")->validateProperty($package, "repository")) {
+            if ($form->isValid()) {
+                // Force updating of packages once the package is viewed after the redirect.
+                $package->setCrawledAt(null);
+
                 $em = $this->getDoctrine()->getEntityManager();
                 $em->persist($package);
                 $em->flush();
-
-                $this->updatePackage($package);
 
                 $this->get("session")->setFlash("notice", "Changes saved.");
 
@@ -67,18 +68,6 @@ class PackageController extends Controller
         return array(
             "package" => $package, "form" => $form->createView()
         );
-    }
-
-    private function updatePackage(Package $package)
-    {
-        $doctrine = $this->getDoctrine();
-
-        set_time_limit(3600);
-        $updater = $this->get('packagist.package_updater');
-
-        $config = Factory::createConfig();
-        $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
-        $updater->update($package, $repository, Updater::UPDATE_TAGS);
     }
 }
 

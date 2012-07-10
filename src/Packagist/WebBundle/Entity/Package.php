@@ -74,7 +74,7 @@ class Package
 
     /**
      * @ORM\Column()
-     * @Assert\NotBlank()
+     * @Assert\NotBlank(groups={"update"})
      */
     private $repository;
 
