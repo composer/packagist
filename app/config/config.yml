@@ -4,7 +4,6 @@ imports:
 
 framework:
     secret:          %secret%
-    charset:         UTF-8
     router:          { resource: "%kernel.root_dir%/config/routing.yml" }
     form:            true
     csrf_protection: true
@@ -15,7 +14,6 @@ framework:
     session:
         name:           packagist
         lifetime:       3600
-        auto_start:     true
 
 # Twig Configuration
 twig:
