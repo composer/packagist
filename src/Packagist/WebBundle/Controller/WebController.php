@@ -94,7 +94,7 @@ class WebController extends Controller
     }
 
     /**
-     * @Route("/search/", name="search")
+     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format" = "html"})
      */
     public function searchAction(Request $req)
     {
@@ -123,6 +123,29 @@ class WebController extends Controller
                 $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
                 $paginator->setMaxPerPage(15);
                 $paginator->setCurrentPage($req->query->get('page', 1), false, true);
+                
+                if ($req->getRequestFormat() === 'json') {
+                    
+                    $response = new Response();
+                    $result = array();
+
+                    foreach ($paginator as $package)
+                    {
+                        $url = $this->get('router')->generate('view_package', array(
+                                  'name' => $package->name, 
+                                  '_format' => 'json'
+                        ), true);
+                        
+                        $result[] = array(
+                            'name' => $package->name,
+                            'description' => $package->description ?: '',
+                            'url' => $url   
+                        );
+                    }
+                    $response->headers->set('Content-Type', 'application/json');
+                    $response->setContent(json_encode($result));
+                    return $response;
+                }
 
                 if ($req->isXmlHttpRequest()) {
                     return $this->render('PackagistWebBundle:Web:list.html.twig', array(
