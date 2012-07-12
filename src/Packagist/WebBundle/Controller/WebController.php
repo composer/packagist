@@ -94,7 +94,7 @@ class WebController extends Controller
     }
 
     /**
-     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format" = "html"})
+     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search")
      */
     public function searchAction(Request $req)
     {
@@ -129,11 +129,10 @@ class WebController extends Controller
                     $response = new Response();
                     $result = array();
 
-                    foreach ($paginator as $package)
-                    {
+                    foreach ($paginator as $package) {
                         $url = $this->get('router')->generate('view_package', array(
-                                  'name' => $package->name, 
-                                  '_format' => 'json'
+                            'name' => $package->name, 
+                            '_format' => 'json'
                         ), true);
                         
                         $result[] = array(
@@ -142,7 +141,6 @@ class WebController extends Controller
                             'url' => $url   
                         );
                     }
-                    $response->headers->set('Content-Type', 'application/json');
                     $response->setContent(json_encode($result));
                     return $response;
                 }
