@@ -27,6 +27,7 @@ use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Form\Type\PackageType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
@@ -94,7 +95,8 @@ class WebController extends Controller
     }
 
     /**
-     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search")
+     * @Route("/search/")
+     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"})
      */
     public function searchAction(Request $req)
     {
@@ -103,6 +105,8 @@ class WebController extends Controller
         // transform q=search shortcut
         if ($req->query->has('q')) {
             $req->query->set('search_query', array('query' => $req->query->get('q')));
+        } elseif ($req->getRequestFormat() === 'json') {
+            return new JsonResponse(array('error' => 'Missing search query, example: ?q=example'), 400);
         }
 
         if ($req->query->has('search_query')) {
@@ -123,26 +127,30 @@ class WebController extends Controller
                 $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
                 $paginator->setMaxPerPage(15);
                 $paginator->setCurrentPage($req->query->get('page', 1), false, true);
-                
-                if ($req->getRequestFormat() === 'json') {
-                    
-                    $response = new Response();
-                    $result = array();
 
+                if ($req->getRequestFormat() === 'json') {
+                    $result = array(
+                        'results' => array(),
+                        'total' => $paginator->getNbResults(),
+                    );
                     foreach ($paginator as $package) {
-                        $url = $this->get('router')->generate('view_package', array(
-                            'name' => $package->name, 
-                            '_format' => 'json'
-                        ), true);
-                        
-                        $result[] = array(
+                        $url = $this->generateUrl('view_package', array('name' => $package->name), true);
+
+                        $result['results'][] = array(
                             'name' => $package->name,
                             'description' => $package->description ?: '',
-                            'url' => $url   
+                            'url' => $url
                         );
                     }
-                    $response->setContent(json_encode($result));
-                    return $response;
+                    if ($paginator->hasNextPage()) {
+                        $result['next'] = $this->generateUrl('search', array(
+                            '_format' => 'json',
+                            'q' => $form->getData()->getQuery(),
+                            'page' => $paginator->getNextPage()
+                        ), true);
+                    }
+
+                    return new JsonResponse($result);
                 }
 
                 if ($req->isXmlHttpRequest()) {
