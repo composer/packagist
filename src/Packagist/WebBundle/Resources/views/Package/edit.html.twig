@@ -1,0 +1,20 @@
+{% extends "PackagistWebBundle::layout.html.twig" %}
+
+{% block title %}
+    Edit Package {{ package.name }}
+{% endblock %}
+
+{% block content %}
+    <div class="box clearfix">
+        <h1>
+            Edit {{ package.name }}
+        </h1>
+
+        <form action="{{ path('edit_package', {'name': package.name}) }}" method="post" {{ form_enctype(form) }}>
+            {{ form_widget(form) }}
+
+            <input type="submit" value="Update" />
+        </form>
+    </div>
+{% endblock %}
+
