@@ -55,7 +55,6 @@ class User extends BaseUser
         $this->packages = new ArrayCollection();
         $this->authors = new ArrayCollection();
         $this->createdAt = new \DateTime();
-        $this->regenerateApiToken();
         parent::__construct();
     }
 
@@ -126,7 +125,7 @@ class User extends BaseUser
     {
         return $this->createdAt;
     }
-    
+
     /**
      * Set apiToken
      *
@@ -139,19 +138,11 @@ class User extends BaseUser
 
     /**
      * Get apiToken
-     * 
+     *
      * @return string
      */
     public function getApiToken()
     {
         return $this->apiToken;
-    }
-
-    /**
-     * Regenerate the apiToken
-     */
-    public function regenerateApiToken()
-    {
-        $this->apiToken = substr($this->generateToken(), 0, 20);
     }
 }

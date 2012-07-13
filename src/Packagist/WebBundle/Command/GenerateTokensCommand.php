@@ -39,9 +39,12 @@ class GenerateTokensCommand extends ContainerAwareCommand
     {
         $doctrine = $this->getContainer()->get('doctrine');
         $userRepo = $doctrine->getRepository('PackagistWebBundle:User');
+        $tokenGenerator = $this->getContainer()->get('fos_user.util.token_generator');
+
         $users = $userRepo->findUsersMissingApiToken();
         foreach ($users as $user) {
-            $user->regenerateApiToken();
+            $apiToken = substr($tokenGenerator->generateToken(), 0, 20);
+            $user->setApiToken($apiToken);
         }
         $doctrine->getEntityManager()->flush();
     }
