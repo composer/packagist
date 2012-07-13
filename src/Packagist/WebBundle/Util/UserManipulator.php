@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Util;
 
 use FOS\UserBundle\Model\UserManagerInterface;
+use FOS\UserBundle\Util\TokenGeneratorInterface;
 use FOS\UserBundle\Util\UserManipulator as BaseManipulator;
 
 class UserManipulator extends BaseManipulator
@@ -23,7 +24,7 @@ class UserManipulator extends BaseManipulator
     /**
      * {@inheritdoc}
      */
-    public function __construct(UserManagerInterface $userManager, $tokenGenerator)
+    public function __construct(UserManagerInterface $userManager, TokenGeneratorInterface $tokenGenerator)
     {
         $this->userManager = $userManager;
         $this->tokenGenerator = $tokenGenerator;
