@@ -26,14 +26,8 @@ services:
 
     packagist.form.handler.registration:
         class: Packagist\WebBundle\Form\Handler\RegistrationFormHandler
-        arguments:
-            - @fos_user.registration.form
-            - @request
-            - @fos_user.user_manager
-            - @fos_user.mailer
-            - @fos_user.util.token_generator
+        parent: fos_user.registration.form.handler.default
         scope: request
-        public: false
 
     fos_user.util.user_manipulator:
         class: Packagist\WebBundle\Util\UserManipulator
