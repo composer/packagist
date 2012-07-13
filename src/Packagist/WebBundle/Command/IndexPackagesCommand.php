@@ -78,22 +78,24 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $solarium->update($update);
         }
 
+        $total = count($ids);
+        $current = 0;
+
         // update package index
         while ($ids) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages(array_splice($ids, 0, 50));
+            $update = $solarium->createUpdate();
 
             foreach ($packages as $package) {
+                $current++;
                 if ($verbose) {
-                    $output->writeln('Indexing '.$package->getName());
+                    $output->writeln('['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
                 }
 
                 try {
-                    $update = $solarium->createUpdate();
                     $document = $update->createDocument();
                     $this->updateDocumentFromPackage($document, $package);
                     $update->addDocument($document);
-                    $update->addCommit();
-                    $solarium->update($update);
 
                     $package->setIndexedAt(new \DateTime);
                 } catch (\Exception $e) {
@@ -104,6 +106,9 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $doctrine->getEntityManager()->flush();
             $doctrine->getEntityManager()->clear();
             unset($packages);
+
+            $update->addCommit();
+            $solarium->update($update);
         }
     }
 
