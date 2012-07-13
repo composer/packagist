@@ -95,7 +95,7 @@ class WebController extends Controller
     }
 
     /**
-     * @Route("/search/")
+     * @Route("/search/", name="search.ajax")
      * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"})
      */
     public function searchAction(Request $req)
