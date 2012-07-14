@@ -12,15 +12,16 @@
 
     <div class="box">
         <div class="package"{% if app.user and package.maintainers.contains(app.user) and package.crawledAt is null %} data-force-crawl="true"{% endif %}>
-            {% if is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
+            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
                 <form class="action" action="{{ path("edit_package", {name: package.name}) }}">
-                    <input type="submit" value="Edit Package" />
+                    <input type="submit" value="Edit" />
                 </form>
-
+            {% endif %}
+            {% if is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
                 <form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="POST">
                     <input type="hidden" name="_method" value="PUT" />
                     <input type="hidden" name="update" value="1" />
-                    <input type="submit" value="Force package update" />
+                    <input type="submit" value="Force Update" />
                 </form>
             {% endif %}
             {% if deleteForm is defined %}
