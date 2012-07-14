@@ -23,3 +23,12 @@ services:
     packagist.package_updater:
         class: Packagist\WebBundle\Package\Updater
         arguments: [@doctrine]
+
+    packagist.form.handler.registration:
+        class: Packagist\WebBundle\Form\Handler\RegistrationFormHandler
+        parent: fos_user.registration.form.handler.default
+        scope: request
+
+    fos_user.util.user_manipulator:
+        class: Packagist\WebBundle\Util\UserManipulator
+        arguments: [@fos_user.user_manager, @fos_user.util.token_generator]

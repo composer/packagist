@@ -4,8 +4,8 @@
 
     {% for type, flashMessages in app.session.flashbag.all() %}
         {% for flashMessage in flashMessages %}
-            <div class="{{ type }}" style="margin-bottom: 5px;">
-                {{ flashMessage|trans({}, 'FOSUserBundle') }}
+            <div class="box clearfix {{ type }}" style="margin-bottom: 5px;">
+                <p>{{ flashMessage|trans({}, 'FOSUserBundle') }}</p>
             </div>
         {% endfor %}
     {% endfor %}
