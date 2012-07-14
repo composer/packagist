@@ -71,3 +71,6 @@ fos_user:
 
 nelmio_solarium:
     adapter: ~
+
+parameters:
+    session.flashbag.class: Symfony\Component\HttpFoundation\Session\Flash\FlashBag

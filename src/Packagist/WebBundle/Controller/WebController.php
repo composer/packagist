@@ -187,12 +187,12 @@ class WebController extends Controller
                     $em->persist($package);
                     $em->flush();
 
-                    $this->get('session')->setFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
+                    $this->get('session')->getFlashBag()->set('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
 
                     return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
                 } catch (\Exception $e) {
                     $this->get('logger')->crit($e->getMessage(), array('exception', $e));
-                    $this->get('session')->setFlash('error', $package->getName().' could not be saved.');
+                    $this->get('session')->getFlashBag()->set('error', $package->getName().' could not be saved.');
                 }
             }
         }
@@ -454,14 +454,14 @@ class WebController extends Controller
                         $em->persist($package);
                         $em->flush();
 
-                        $this->get('session')->setFlash('success', $user->getUsername().' is now a '.$package->getName().' maintainer.');
+                        $this->get('session')->getFlashBag()->set('success', $user->getUsername().' is now a '.$package->getName().' maintainer.');
 
                         return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
                     }
-                    $this->get('session')->setFlash('error', 'The user could not be found.');
+                    $this->get('session')->getFlashBag()->set('error', 'The user could not be found.');
                 } catch (\Exception $e) {
                     $this->get('logger')->crit($e->getMessage(), array('exception', $e));
-                    $this->get('session')->setFlash('error', 'The maintainer could not be added.');
+                    $this->get('session')->getFlashBag()->set('error', 'The maintainer could not be added.');
                 }
             }
         }

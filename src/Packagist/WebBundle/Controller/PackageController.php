@@ -29,8 +29,8 @@ class PackageController extends Controller
      */
     public function editAction(Request $req, $name)
     {
-        $packages = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-        $package = $packages->findOneByName($name);
+        $packageRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $package = $packageRepo->findOneByName($name);
 
         if (!$package) {
             throw $this->createNotFoundException("The requested package, $name, could not be found.");
@@ -45,7 +45,7 @@ class PackageController extends Controller
             ->getForm();
 
         if ($req->isMethod("POST")) {
-            $package->setEntityRepository($packages);
+            $package->setEntityRepository($packageRepo);
 
             $form->bindRequest($req);
 
@@ -57,7 +57,7 @@ class PackageController extends Controller
                 $em->persist($package);
                 $em->flush();
 
-                $this->get("session")->setFlash("notice", "Changes saved.");
+                $this->get("session")->getFlashBag()->set("success", "Changes saved.");
 
                 return $this->redirect(
                     $this->generateUrl("view_package", array("name" => $package->getName()))

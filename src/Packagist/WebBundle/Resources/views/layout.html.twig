@@ -50,15 +50,12 @@
             </header>
 
             <div class="main" role="main">
-                {% for flashMessage in app.session.flashbag.get('success') %}
-                    <div class="flash-message success">
-                        <p>{{ flashMessage }}</p>
-                    </div>
-                {% endfor %}
-                {% for flashMessage in app.session.flashbag.get('error') %}
-                    <div class="flash-message error">
-                        <p>{{ flashMessage }}</p>
-                    </div>
+                {% for type, flashMessages in app.session.flashbag.all() %}
+                    {% for flashMessage in flashMessages %}
+                        <div class="flash-message {{ type }}">
+                            <p>{{ flashMessage }}</p>
+                        </div>
+                    {% endfor %}
                 {% endfor %}
 
                 {% block search %}
