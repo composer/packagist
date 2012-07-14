@@ -68,6 +68,9 @@ fos_user:
     from_email:
         address:        %mailer_from_email%
         sender_name:    %mailer_from_name%
+    registration:
+        form:
+            handler: packagist.form.handler.registration
 
 nelmio_solarium:
     adapter: ~
