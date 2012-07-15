@@ -22,7 +22,7 @@
         $('#submit').addClass('loading');
         // TODO display loader icon
         e.preventDefault();
-    }
+    };
 
     $('#package_repository').change(function() {
         $('#submit-package-form').unbind('submit');

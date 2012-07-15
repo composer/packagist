@@ -58,8 +58,6 @@ class WebController extends Controller
      */
     public function browseAction(Request $req)
     {
-        $repository = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-
         $filters = array(
             'type' => $req->query->get('type'),
             'tag' => $req->query->get('tag'),
@@ -110,8 +108,9 @@ class WebController extends Controller
         }
 
         if ($req->query->has('search_query')) {
-            $form->bindRequest($req);
+            $form->bind($req);
             if ($form->isValid()) {
+                /** @var $solarium \Solarium_Client */
                 $solarium = $this->get('solarium.client');
 
                 $select = $solarium->createSelect();
@@ -178,12 +177,12 @@ class WebController extends Controller
         $form = $this->createForm(new PackageType, $package);
 
         if ('POST' === $req->getMethod()) {
-            $form->bindRequest($req);
+            $form->bind($req);
             if ($form->isValid()) {
                 try {
                     $user = $this->getUser();
                     $package->addMaintainer($user);
-                    $em = $this->getDoctrine()->getEntityManager();
+                    $em = $this->getDoctrine()->getManager();
                     $em->persist($package);
                     $em->flush();
 
@@ -212,12 +211,12 @@ class WebController extends Controller
         $response = array('status' => 'error', 'reason' => 'No data posted.');
         $req = $this->getRequest();
         if ('POST' === $req->getMethod()) {
-            $form->bindRequest($req);
+            $form->bind($req);
             if ($form->isValid()) {
                 $response = array('status' => 'success', 'name' => $package->getName());
             } else {
                 $errors = array();
-                foreach ($form->getChildren() as $child) {
+                foreach ($form->all() as $child) {
                     if ($child->hasErrors()) {
                         foreach ($child->getErrors() as $error) {
                             $errors[] = $error->getMessageTemplate();
@@ -265,6 +264,7 @@ class WebController extends Controller
     public function viewPackageAction(Request $req, $name)
     {
         try {
+            /** @var $package Package */
             $package = $this->getDoctrine()
                 ->getRepository('PackagistWebBundle:Package')
                 ->getFullPackageByName($name);
@@ -281,6 +281,7 @@ class WebController extends Controller
         $id = $package->getId();
 
         try {
+            /** @var $redis Redis */
             $redis = $this->get('snc_redis.default');
             $counts = $redis->mget('dl:'.$id, 'dl:'.$id.':'.date('Ym'), 'dl:'.$id.':'.date('Ymd'));
             $data['downloads'] = array(
@@ -314,7 +315,7 @@ class WebController extends Controller
      * @Route("/packages/{name}", name="update_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
      * @Method({"PUT"})
      */
-    public function updatePackageAction(Request $req, $name)
+    public function updatePackageAction($name)
     {
         $doctrine = $this->getDoctrine();
 
@@ -350,7 +351,7 @@ class WebController extends Controller
         if ($package->getMaintainers()->contains($user) || $this->get('security.context')->isGranted('ROLE_UPDATE_PACKAGES')) {
             if (null !== $autoUpdated) {
                 $package->setAutoUpdated((Boolean) $autoUpdated);
-                $doctrine->getEntityManager()->flush();
+                $doctrine->getManager()->flush();
             }
 
             if ($update) {
@@ -397,7 +398,7 @@ class WebController extends Controller
                 $versionRepo->remove($version);
             }
 
-            $em = $doctrine->getEntityManager();
+            $em = $doctrine->getManager();
             $em->remove($package);
             $em->flush();
 
@@ -409,9 +410,11 @@ class WebController extends Controller
 
     protected function createDeletePackageForm()
     {
-        if ($this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
-            return $this->createFormBuilder(array())->getForm();
+        if (!$this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+            throw new AccessDeniedException;
         }
+
+        return $this->createFormBuilder(array())->getForm();
     }
 
     /**
@@ -420,6 +423,7 @@ class WebController extends Controller
      */
     public function createMaintainerAction(Request $req, $name)
     {
+        /** @var $package Package */
         $package = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
             ->findOneByName($name);
@@ -440,10 +444,10 @@ class WebController extends Controller
         );
 
         if ('POST' === $req->getMethod()) {
-            $form->bindRequest($req);
+            $form->bind($req);
             if ($form->isValid()) {
                 try {
-                    $em = $this->getDoctrine()->getEntityManager();
+                    $em = $this->getDoctrine()->getManager();
                     $user = $form->getData()->getUser();
 
                     if (!empty($user)) {
@@ -496,13 +500,13 @@ class WebController extends Controller
 
         // prepare data
         $count = 0;
-        foreach ($packages as $key => $dataPoint) {
+        foreach ($packages as $dataPoint) {
             $count += $dataPoint['count'];
             $chart['packages'][$dataPoint['month']] = $count;
         }
 
         $count = 0;
-        foreach ($versions as $key => $dataPoint) {
+        foreach ($versions as $dataPoint) {
             $count += $dataPoint['count'];
             if (in_array($dataPoint['month'], $chart['months'])) {
                 $chart['versions'][$dataPoint['month']] = $count;

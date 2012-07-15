@@ -38,6 +38,8 @@ abstract class PackageLink
      */
     private $packageVersion;
 
+    protected $version;
+
     public function toArray()
     {
         return array($this->getPackageName() => $this->getPackageVersion());
@@ -96,9 +98,9 @@ abstract class PackageLink
     /**
      * Set version
      *
-     * @param Packagist\WebBundle\Entity\Version $version
+     * @param \Packagist\WebBundle\Entity\Version $version
      */
-    public function setVersion(\Packagist\WebBundle\Entity\Version $version)
+    public function setVersion(Version $version)
     {
         $this->version = $version;
     }
@@ -106,7 +108,7 @@ abstract class PackageLink
     /**
      * Get version
      *
-     * @return Packagist\WebBundle\Entity\Version
+     * @return \Packagist\WebBundle\Entity\Version
      */
     public function getVersion()
     {

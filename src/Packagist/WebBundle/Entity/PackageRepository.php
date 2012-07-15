@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -156,7 +157,7 @@ class PackageRepository extends EntityRepository
         return $qb;
     }
 
-    private function addFilters($qb, array $filters)
+    private function addFilters(QueryBuilder $qb, array $filters)
     {
         foreach ($filters as $name => $value) {
             if (null === $value) {
