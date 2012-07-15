@@ -13,11 +13,15 @@
 namespace Packagist\WebBundle\Security\Provider;
 
 use FOS\UserBundle\Model\UserManagerInterface;
+use HWI\Bundle\OAuthBundle\Connect\AccountConnectorInterface;
+use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
+use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
+use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
-class UserProvider implements UserProviderInterface
+class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInterface
 {
     /**
      * @var UserManagerInterface
@@ -30,6 +34,39 @@ class UserProvider implements UserProviderInterface
     public function __construct(UserManagerInterface $userManager)
     {
         $this->userManager = $userManager;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function connect($user, UserResponseInterface $response)
+    {
+        $username = $response->getUsername();
+
+        // 'disconnect' a previous account
+        if (null !== $previousUser = $this->userManager->findUserBy(array('githubId' => $username))) {
+            $previousUser->setGithubId(null);
+            $this->userManager->updateUser($previousUser);
+        }
+
+        $user->setGithubId($username);
+
+        $this->userManager->updateUser($user);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function loadUserByOAuthUserResponse(UserResponseInterface $response)
+    {
+        $username = $response->getUsername();
+        $user = $this->userManager->findUserBy(array('githubId' => $username));
+
+        if (!$user) {
+            throw new AccountNotLinkedException(sprintf('No user with github username "%s" was found.', $username));
+        }
+
+        return $user;
     }
 
     /**

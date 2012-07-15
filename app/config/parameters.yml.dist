@@ -21,3 +21,7 @@ parameters:
 
     google_analytics:
         ga_key:
+
+    github:
+        client_id:
+        client_secret:
