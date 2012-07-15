@@ -29,6 +29,7 @@
         "doctrine/doctrine-bundle": "dev-master",
         "doctrine/orm": "2.2.*",
         "friendsofsymfony/user-bundle": "dev-master",
+        "hwi/oauth-bundle": "dev-master",
         "nelmio/solarium-bundle": "dev-master",
         "predis/predis": "0.7.*",
         "sensio/distribution-bundle": "dev-master",
