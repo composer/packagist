@@ -29,7 +29,9 @@ class PackageController extends Controller
      */
     public function editAction(Request $req, $name)
     {
+        /** @var $packageRepo \Packagist\WebBundle\Entity\PackageRepository */
         $packageRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        /** @var $package Package */
         $package = $packageRepo->findOneByName($name);
 
         if (!$package) {
@@ -47,13 +49,13 @@ class PackageController extends Controller
         if ($req->isMethod("POST")) {
             $package->setEntityRepository($packageRepo);
 
-            $form->bindRequest($req);
+            $form->bind($req);
 
             if ($form->isValid()) {
                 // Force updating of packages once the package is viewed after the redirect.
                 $package->setCrawledAt(null);
 
-                $em = $this->getDoctrine()->getEntityManager();
+                $em = $this->getDoctrine()->getManager();
                 $em->persist($package);
                 $em->flush();
 

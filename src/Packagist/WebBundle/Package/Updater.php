@@ -79,10 +79,10 @@ class Updater
     /**
      * Update a project
      *
-     * @param PackageInterface $package
+     * @param \Packagist\WebBundle\Entity\Package $package
      * @param RepositoryInterface $repository the repository instance used to update from
      * @param int $flags a few of the constants of this class
-     * @param DateTime $start
+     * @param \DateTime $start
      */
     public function update(Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null)
     {

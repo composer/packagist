@@ -14,6 +14,8 @@ namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\EntityManager;
 
 /**
  * @ORM\Entity
@@ -45,7 +47,15 @@ class Tag
         $this->name = $name;
     }
 
-    public static function getByName($em, $name, $create = false)
+    /**
+     * @param \Doctrine\ORM\EntityManager $em
+     * @param                             $name
+     * @param bool                        $create
+     *
+     * @return mixed|Tag
+     * @throws \Doctrine\ORM\NoResultException
+     */
+    public static function getByName(EntityManager $em, $name, $create = false)
     {
         try {
             $qb = $em->createQueryBuilder();
@@ -54,12 +64,17 @@ class Tag
                 ->where('t.name = ?1')
                 ->setMaxResults(1)
                 ->setParameter(1, $name);
+
             return $qb->getQuery()->getSingleResult();
         } catch (\Doctrine\ORM\NoResultException $e) {
+            if ($create) {
+                $tag = new self($name);
+                $em->persist($tag);
+
+                return $tag;
+            }
+            throw $e;
         }
-        $tag = new self($name);
-        $em->persist($tag);
-        return $tag;
     }
 
     public function setId($id)
@@ -85,9 +100,9 @@ class Tag
     /**
      * Add versions
      *
-     * @param Packagist\WebBundle\Entity\Version $versions
+     * @param \Packagist\WebBundle\Entity\Version $versions
      */
-    public function addVersions(\Packagist\WebBundle\Entity\Version $versions)
+    public function addVersions(Version $versions)
     {
         $this->versions[] = $versions;
     }
@@ -95,7 +110,7 @@ class Tag
     /**
      * Get versions
      *
-     * @return Doctrine\Common\Collections\Collection $versions
+     * @return \Doctrine\Common\Collections\Collection $versions
      */
     public function getVersions()
     {

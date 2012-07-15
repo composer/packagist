@@ -122,7 +122,7 @@ class Author
     /**
      * Set createdAt
      *
-     * @param datetime $createdAt
+     * @param \DateTime $createdAt
      */
     public function setCreatedAt($createdAt)
     {
@@ -132,7 +132,7 @@ class Author
     /**
      * Get createdAt
      *
-     * @return datetime $createdAt
+     * @return \DateTime $createdAt
      */
     public function getCreatedAt()
     {
@@ -142,7 +142,7 @@ class Author
     /**
      * Add versions
      *
-     * @param Packagist\WebBundle\Entity\Version $version
+     * @param \Packagist\WebBundle\Entity\Version $version
      */
     public function addVersion(Version $version)
     {
@@ -162,9 +162,9 @@ class Author
     /**
      * Set updatedAt
      *
-     * @param datetime $updatedAt
+     * @param \DateTime $updatedAt
      */
-    public function setUpdatedAt($updatedAt)
+    public function setUpdatedAt(\DateTime $updatedAt)
     {
         $this->updatedAt = $updatedAt;
     }
@@ -172,7 +172,7 @@ class Author
     /**
      * Get updatedAt
      *
-     * @return datetime $updatedAt
+     * @return \DateTime $updatedAt
      */
     public function getUpdatedAt()
     {
@@ -192,7 +192,7 @@ class Author
     /**
      * Get email
      *
-     * @return text
+     * @return string
      */
     public function getEmail()
     {
@@ -212,7 +212,7 @@ class Author
     /**
      * Get homepage
      *
-     * @return text
+     * @return string
      */
     public function getHomepage()
     {
@@ -242,7 +242,7 @@ class Author
     /**
      * Set owner
      *
-     * @param Packagist\WebBundle\Entity\User $owner
+     * @param \Packagist\WebBundle\Entity\User $owner
      */
     public function setOwner(User $owner)
     {
@@ -252,7 +252,7 @@ class Author
     /**
      * Get owner
      *
-     * @return Packagist\WebBundle\Entity\User
+     * @return \Packagist\WebBundle\Entity\User
      */
     public function getOwner()
     {

@@ -114,9 +114,9 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
     private function updateDocumentFromPackage(\Solarium_Document_ReadWrite $document, Package $package)
     {
-        $document->id = $package->getId();
-        $document->name = $package->getName();
-        $document->description = $package->getDescription();
+        $document->setField('id', $package->getId());
+        $document->setField('name', $package->getName());
+        $document->setField('description', $package->getDescription());
 
         $tags = array();
         foreach ($package->getVersions() as $version) {
@@ -124,6 +124,6 @@ class IndexPackagesCommand extends ContainerAwareCommand
                 $tags[mb_strtolower($tag->getName(), 'UTF-8')] = true;
             }
         }
-        $document->tags = array_keys($tags);
+        $document->setField('tags', array_keys($tags));
     }
 }

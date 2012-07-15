@@ -58,6 +58,8 @@ class Dumper
      * Constructor
      *
      * @param RegistryInterface $doctrine
+     * @param Filesystem $filesystem
+     * @param UrlGeneratorInterface $router
      * @param string $webDir web root
      * @param string $cacheDir cache dir
      */
@@ -75,6 +77,7 @@ class Dumper
      *
      * @param array $packageIds
      * @param Boolean $force
+     * @param Boolean $verbose
      */
     public function dump(array $packageIds, $force = false, $verbose = false)
     {
