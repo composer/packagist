@@ -281,7 +281,7 @@ class WebController extends Controller
         $id = $package->getId();
 
         try {
-            /** @var $redis Redis */
+            /** @var $redis \Snc\RedisBundle\Client\Phpredis\Client */
             $redis = $this->get('snc_redis.default');
             $counts = $redis->mget('dl:'.$id, 'dl:'.$id.':'.date('Ym'), 'dl:'.$id.':'.date('Ymd'));
             $data['downloads'] = array(
@@ -410,11 +410,11 @@ class WebController extends Controller
 
     protected function createDeletePackageForm()
     {
-        if (!$this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
-            throw new AccessDeniedException;
+        if ($this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+            return $this->createFormBuilder(array())->getForm();
         }
 
-        return $this->createFormBuilder(array())->getForm();
+        return false;
     }
 
     /**

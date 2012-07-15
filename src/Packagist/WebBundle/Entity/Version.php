@@ -15,7 +15,6 @@ namespace Packagist\WebBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\Common\Collections\ArrayCollection;
-
 use Composer\Package\Version\VersionParser;
 
 /**
@@ -581,7 +580,7 @@ class Version
     /**
      * Get tags
      *
-     * @return \Doctrine\Common\Collections\ArrayCollection $tags
+     * @return \Doctrine\Common\Collections\Collection $tags
      */
     public function getTags()
     {
@@ -611,7 +610,7 @@ class Version
     /**
      * Get authors
      *
-     * @return \Doctrine\Common\Collections\ArrayCollection
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getAuthors()
     {
@@ -739,7 +738,7 @@ class Version
     /**
      * Get require
      *
-     * @return \Doctrine\Common\Collections\ArrayCollection
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getRequire()
     {
@@ -759,7 +758,7 @@ class Version
     /**
      * Get replace
      *
-     * @return \Doctrine\Common\Collections\ArrayCollection
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getReplace()
     {
@@ -779,7 +778,7 @@ class Version
     /**
      * Get conflict
      *
-     * @return \Doctrine\Common\Collections\ArrayCollection
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getConflict()
     {
@@ -799,7 +798,7 @@ class Version
     /**
      * Get provide
      *
-     * @return \Doctrine\Common\Collections\ArrayCollection
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getProvide()
     {
@@ -819,7 +818,7 @@ class Version
     /**
      * Get devRequire
      *
-     * @return \Doctrine\Common\Collections\ArrayCollection
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getDevRequire()
     {
@@ -839,7 +838,7 @@ class Version
     /**
      * Get suggest
      *
-     * @return \Doctrine\Common\Collections\ArrayCollection
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getSuggest()
     {

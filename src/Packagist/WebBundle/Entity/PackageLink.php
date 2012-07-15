@@ -38,7 +38,7 @@ abstract class PackageLink
      */
     private $packageVersion;
 
-    protected $version;
+    private $version;
 
     public function toArray()
     {

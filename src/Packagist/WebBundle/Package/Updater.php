@@ -150,7 +150,7 @@ class Updater
         $em->flush();
     }
 
-    private function updateInformation(PackageInterface $package, PackageInterface $data, $flags)
+    private function updateInformation(Package $package, PackageInterface $data, $flags)
     {
         $em = $this->doctrine->getEntityManager();
         $version = new Version();

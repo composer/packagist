@@ -15,7 +15,6 @@ namespace Packagist\WebBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\Common\Collections\Collection;
-
 use Doctrine\ORM\EntityManager;
 
 /**
@@ -49,8 +48,6 @@ class Tag
     }
 
     /**
-     * @static
-     *
      * @param \Doctrine\ORM\EntityManager $em
      * @param                             $name
      * @param bool                        $create
