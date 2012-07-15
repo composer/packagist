@@ -288,6 +288,11 @@ class Package
      */
     public function setRepository($repository)
     {
+        // prevent local filesystem URLs
+        if (preg_match('{^(\.|[a-z]:|/)}i', $repository)) {
+            return;
+        }
+
         $this->repository = $repository;
 
         // avoid user@host URLs
