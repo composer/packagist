@@ -413,8 +413,6 @@ class WebController extends Controller
         if ($this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
             return $this->createFormBuilder(array())->getForm();
         }
-
-        return false;
     }
 
     /**
