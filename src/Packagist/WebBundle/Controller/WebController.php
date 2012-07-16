@@ -298,7 +298,7 @@ class WebController extends Controller
         }
 
         $data['searchForm'] = $this->createSearchForm()->createView();
-        if ($maintainerForm = $this->createAddMaintainerForm()) {
+        if ($maintainerForm = $this->createAddMaintainerForm($package)) {
             $data['form'] = $maintainerForm->createView();
         }
         if ($deleteForm = $this->createDeletePackageForm()) {
@@ -421,11 +421,10 @@ class WebController extends Controller
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }
 
-        if (!$package->getMaintainers()->contains($this->getUser())) {
+        if (!$form = $this->createAddMaintainerForm($package)) {
             throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
         }
 
-        $form = $this->createAddMaintainerForm();
         $data = array(
             'package' => $package,
             'form' => $form->createView(),
@@ -542,7 +541,7 @@ class WebController extends Controller
         return parent::render($view, $parameters, $response);
     }
 
-    private function createAddMaintainerForm()
+    private function createAddMaintainerForm($package)
     {
         if (!$user = $this->getUser()) {
             return;
