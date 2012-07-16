@@ -112,9 +112,9 @@ class Package
 
     private $entityRepository;
     /**
-     * @var \Composer\Repository\RepositoryInterface
+     * @var \Composer\Repository\Vcs\VcsDriverInterface
      */
-    private $repositoryClass;
+    private $vcsDriver;
 
     public function __construct()
     {
@@ -148,8 +148,8 @@ class Package
     public function isRepositoryValid(ExecutionContext $context)
     {
         $property = 'repository';
-        $repo = $this->repositoryClass;
-        if (!$repo) {
+        $driver = $this->vcsDriver;
+        if (!$driver) {
             if (preg_match('{//.+@}', $this->repository)) {
                 $context->addViolationAtSubPath($property, 'URLs with user@host are not supported, use a read-only public URL', array(), null);
             } else {
@@ -158,7 +158,7 @@ class Package
             return;
         }
         try {
-            $information = $repo->getComposerInformation($repo->getRootIdentifier());
+            $information = $driver->getComposerInformation($driver->getRootIdentifier());
 
             if (!isset($information['name']) || !$information['name']) {
                 $context->addViolationAtSubPath($property, 'The package name was not found in the composer.json, make sure there is a name present.', array(), null);
@@ -309,11 +309,11 @@ class Package
             $config = Factory::createConfig();
             $repository = new VcsRepository(array('url' => $repository), new NullIO(), $config);
 
-            $repo = $this->repositoryClass = $repository->getDriver();
-            if (!$repo) {
+            $driver = $this->vcsDriver = $repository->getDriver();
+            if (!$driver) {
                 return;
             }
-            $information = $repo->getComposerInformation($repo->getRootIdentifier());
+            $information = $driver->getComposerInformation($driver->getRootIdentifier());
             $this->setName($information['name']);
         } catch (\Exception $e) {
         }

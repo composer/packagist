@@ -297,14 +297,12 @@ class WebController extends Controller
             );
         }
 
-        $user = $this->getUser();
-        if ($user && $package->getMaintainers()->contains($user)) {
-            $data['form'] = $this->createAddMaintainerForm()->createView();
-        }
-
         $data['searchForm'] = $this->createSearchForm()->createView();
+        if ($maintainerForm = $this->createAddMaintainerForm()) {
+            $data['form'] = $maintainerForm->createView();
+        }
         if ($deleteForm = $this->createDeletePackageForm()) {
-           $data['deleteForm'] = $deleteForm->createView();
+            $data['deleteForm'] = $deleteForm->createView();
         }
 
         return $data;
@@ -406,13 +404,6 @@ class WebController extends Controller
         }
 
         return new Response('Invalid form input', 400);
-    }
-
-    protected function createDeletePackageForm()
-    {
-        if ($this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
-            return $this->createFormBuilder(array())->getForm();
-        }
     }
 
     /**
@@ -547,13 +538,27 @@ class WebController extends Controller
         if (!isset($parameters['searchForm'])) {
             $parameters['searchForm'] = $this->createSearchForm()->createView();
         }
+
         return parent::render($view, $parameters, $response);
     }
 
     private function createAddMaintainerForm()
     {
-        $addMaintainerRequest = new AddMaintainerRequest;
-        return $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
+        if (!$user = $this->getUser()) {
+            return;
+        }
+
+        if ($this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
+            $addMaintainerRequest = new AddMaintainerRequest;
+            return $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
+        }
+    }
+
+    private function createDeletePackageForm()
+    {
+        if ($this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+            return $this->createFormBuilder(array())->getForm();
+        }
     }
 
     private function createSearchForm()
