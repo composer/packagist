@@ -19,7 +19,10 @@ use Doctrine\ORM\EntityManager;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="tag")
+ * @ORM\Table(
+ *     name="tag",
+ *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})}
+ * )
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Tag
