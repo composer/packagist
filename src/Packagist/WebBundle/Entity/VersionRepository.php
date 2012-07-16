@@ -34,11 +34,13 @@ class VersionRepository extends EntityRepository
         $version->getPackage()->getVersions()->removeElement($version);
 
         foreach ($version->getAuthors() as $author) {
+            /** @var $author Author */
             $author->getVersions()->removeElement($version);
         }
         $version->getAuthors()->clear();
 
         foreach ($version->getTags() as $tag) {
+            /** @var $tag Tag */
             $tag->getVersions()->removeElement($version);
         }
         $version->getTags()->clear();

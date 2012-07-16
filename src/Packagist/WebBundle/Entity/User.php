@@ -69,7 +69,7 @@ class User extends BaseUser
     /**
      * Add packages
      *
-     * @param Packagist\WebBundle\Entity\Package $packages
+     * @param \Packagist\WebBundle\Entity\Package $packages
      */
     public function addPackages(Package $packages)
     {
@@ -79,7 +79,7 @@ class User extends BaseUser
     /**
      * Get packages
      *
-     * @return Doctrine\Common\Collections\Collection $packages
+     * @return \Doctrine\Common\Collections\Collection $packages
      */
     public function getPackages()
     {
@@ -89,7 +89,7 @@ class User extends BaseUser
     /**
      * Add authors
      *
-     * @param Packagist\WebBundle\Entity\Author $authors
+     * @param \Packagist\WebBundle\Entity\Author $authors
      */
     public function addAuthors(\Packagist\WebBundle\Entity\Author $authors)
     {
@@ -99,7 +99,7 @@ class User extends BaseUser
     /**
      * Get authors
      *
-     * @return Doctrine\Common\Collections\Collection
+     * @return \Doctrine\Common\Collections\Collection
      */
     public function getAuthors()
     {
@@ -109,7 +109,7 @@ class User extends BaseUser
     /**
      * Set createdAt
      *
-     * @param datetime $createdAt
+     * @param \DateTime $createdAt
      */
     public function setCreatedAt($createdAt)
     {
@@ -119,7 +119,7 @@ class User extends BaseUser
     /**
      * Get createdAt
      *
-     * @return datetime
+     * @return \DateTime
      */
     public function getCreatedAt()
     {

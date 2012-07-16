@@ -111,6 +111,9 @@ class Package
     private $autoUpdated = false;
 
     private $entityRepository;
+    /**
+     * @var \Composer\Repository\RepositoryInterface
+     */
     private $repositoryClass;
 
     public function __construct()
@@ -123,10 +126,12 @@ class Package
     {
         $versions = array();
         foreach ($this->getVersions() as $version) {
+            /** @var $version Version */
             $versions[$version->getVersion()] = $version->toArray();
         }
         $maintainers = array();
         foreach ($this->getMaintainers() as $maintainer) {
+            /** @var $maintainer Maintainer */
             $maintainers[] = $maintainer->toArray();
         }
         $data = array(
@@ -367,7 +372,7 @@ class Package
     /**
      * Set crawledAt
      *
-     * @param \DateTime $crawledAt
+     * @param \DateTime|null $crawledAt
      */
     public function setCrawledAt($crawledAt)
     {
