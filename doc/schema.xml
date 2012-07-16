@@ -37,12 +37,12 @@
     <!-- A edge-ngram'd text field that can be used for wildcard matching -->
     <fieldType name="text_edgengram" class="solr.TextField" positionIncrementGap="100">
         <analyzer type="index">
-            <tokenizer class="solr.KeywordTokenizerFactory"/>
+            <tokenizer class="solr.StandardTokenizerFactory"/>
             <filter class="solr.LowerCaseFilterFactory"/>
             <filter class="solr.EdgeNGramFilterFactory" minGramSize="1" maxGramSize="100" />
         </analyzer>
         <analyzer type="query">
-            <tokenizer class="solr.KeywordTokenizerFactory"/>
+            <tokenizer class="solr.StandardTokenizerFactory"/>
             <filter class="solr.LowerCaseFilterFactory"/>
         </analyzer>
     </fieldType>
