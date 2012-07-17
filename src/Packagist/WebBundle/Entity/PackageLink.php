@@ -38,7 +38,11 @@ abstract class PackageLink
      */
     private $packageVersion;
 
-    private $version;
+    /**
+     * Base property holding the version - this must remain protected since it
+     * is redefined with an annotation in the child class
+     */
+    protected $version;
 
     public function toArray()
     {
