@@ -165,8 +165,8 @@ class Package
                 return;
             }
 
-            if (!preg_match('{^[a-z0-9_.-]+/[a-z0-9_.-]+$}i', $information['name'])) {
-                $context->addViolationAtSubPath($property, 'The package name '.$information['name'].' is invalid, it should have a vendor name, a forward slash, and a package name, matching <em>[a-z0-9_.-]+/[a-z0-9_.-]+</em>.', array(), null);
+            if (!preg_match('{^[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*$}i', $information['name'])) {
+                $context->addViolationAtSubPath($property, 'The package name '.$information['name'].' is invalid, it should have a vendor name, a forward slash, and a package name. The vendor and package name can be words separated by -, . or _. The complete name should match "[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*".', array(), null);
                 return;
             }
 
