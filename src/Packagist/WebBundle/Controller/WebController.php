@@ -408,7 +408,7 @@ class WebController extends Controller
 
     /**
      * @Template("PackagistWebBundle:Web:viewPackage.html.twig")
-     * @Route("/packages/{name}/maintainers/", name="add_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9/_.-]+"})
+     * @Route("/packages/{name}/maintainers/", name="add_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
     public function createMaintainerAction(Request $req, $name)
     {
