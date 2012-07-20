@@ -15,6 +15,8 @@ namespace Packagist\WebBundle\Controller;
 use Composer\IO\NullIO;
 use Composer\Factory;
 use Composer\Repository\VcsRepository;
+use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\Package\Loader\ArrayLoader;
 use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Package;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -110,12 +112,14 @@ class ApiController extends Controller
 
         $updated = false;
         $config = Factory::createConfig();
+        $loader = new ValidatingArrayLoader(new ArrayLoader());
         foreach ($user->getPackages() as $package) {
             if (preg_match('{'.preg_quote($payloadRepositoryChunk).'(\.git)?$}', $package->getRepository())) {
                 set_time_limit(3600);
                 $updated = true;
 
                 $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
+                $repository->setLoader($loader);
                 $package->setAutoUpdated(true);
                 $em->flush();
                 $updater->update($package, $repository);

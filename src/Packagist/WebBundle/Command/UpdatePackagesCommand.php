@@ -20,6 +20,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Packagist\WebBundle\Package\Updater;
 use Composer\Repository\VcsRepository;
 use Composer\Factory;
+use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\Package\Loader\ArrayLoader;
 use Composer\IO\NullIO;
 use Composer\IO\ConsoleIO;
 
@@ -82,6 +84,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $input->setInteractive(false);
         $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new NullIO;
         $config = Factory::createConfig();
+        $loader = new ValidatingArrayLoader(new ArrayLoader());
 
         while ($ids) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages(array_splice($ids, 0, 50));
@@ -92,6 +95,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                 }
                 try {
                     $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
+                    $repository->setLoader($loader);
                     $updater->update($package, $repository, $flags, $start);
                 } catch (\Exception $e) {
                     $output->writeln('<error>Exception: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().', skipping package '.$package->getName().'.</error>');
