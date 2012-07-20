@@ -38,11 +38,12 @@
     <fieldType name="text_edgengram" class="solr.TextField" positionIncrementGap="100">
         <analyzer type="index">
             <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.WordDelimiterFilterFactory" splitOnCaseChange="1" generateWordParts="1" preserveOriginal="1"/>
             <filter class="solr.LowerCaseFilterFactory"/>
             <filter class="solr.EdgeNGramFilterFactory" minGramSize="1" maxGramSize="100" />
         </analyzer>
         <analyzer type="query">
-            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <tokenizer class="solr.WhitespaceTokenizerFactory"/>
             <filter class="solr.LowerCaseFilterFactory"/>
         </analyzer>
     </fieldType>
@@ -267,6 +268,5 @@
    <copyField source="name" dest="name_split"/>
 
    <copyField source="name" dest="text_ngram"/>
-   <copyField source="description" dest="text_ngram"/>
    <copyField source="tags" dest="text_ngram"/>
 </schema>
