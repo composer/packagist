@@ -86,7 +86,7 @@ class WebController extends Controller
             ->getRepository('PackagistWebBundle:Package')
             ->getPackageNames();
 
-        return new Response(json_encode(array('packageNames' => $packageNames)), 200);
+        return new Response(json_encode(array('packageNames' => array_keys($packageNames))), 200);
     }
 
     /**
