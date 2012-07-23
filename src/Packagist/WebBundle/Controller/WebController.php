@@ -77,6 +77,19 @@ class WebController extends Controller
     }
 
     /**
+     * @Route("/packages/list.json", name="list", defaults={"_format"="json"})
+     * @Method({"GET"})
+     */
+    public function listAction(Request $req)
+    {
+        $packageNames = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Package')
+            ->getPackageNames();
+
+        return new Response(json_encode(array('packageNames' => $packageNames)), 200);
+    }
+
+    /**
      * Initializes the pager for a query.
      *
      * @param \Doctrine\ORM\QueryBuilder $query Query for packages
