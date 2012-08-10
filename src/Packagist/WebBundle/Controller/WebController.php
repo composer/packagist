@@ -128,11 +128,13 @@ class WebController extends Controller
 
                 $select = $solarium->createSelect();
 
-                $escapedQuery = $select->getHelper()->escapePhrase($form->getData()->getQuery());
+                $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
 
                 $dismax = $select->getDisMax();
-                $dismax->setQueryFields(array('name', 'description', 'tags', 'text', 'text_ngram', 'name_split'));
-                $dismax->setBoostQuery('name:'.$escapedQuery.'^2 name_split:'.$escapedQuery.'^1.5');
+                $dismax->setQueryFields(array('name^2', 'description', 'tags', 'text', 'text_ngram', 'name_split^1.5'));
+                $dismax->setPhraseFields(array('description^30'));
+                //this is very lenient, and may want to be refined
+                $dismax->setMinimumMatch(1);
                 $dismax->setQueryParser('edismax');
                 $select->setQuery($escapedQuery);
 
