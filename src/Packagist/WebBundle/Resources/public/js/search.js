@@ -32,6 +32,14 @@
             return;
         }
 
+        if (history.pushState) {
+            if (typeof previousQuery === 'undefined') {
+                history.pushState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
+            } else {
+                history.replaceState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
+            }
+        }
+
         currentQuery = form.serialize();
 
         if (previousQuery === currentQuery) {
