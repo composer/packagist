@@ -32,3 +32,20 @@ services:
     fos_user.util.user_manipulator:
         class: Packagist\WebBundle\Util\UserManipulator
         arguments: [@fos_user.user_manager, @fos_user.util.token_generator]
+
+    packagist.oauth.registration_form_handler:
+        class: Packagist\WebBundle\Form\Handler\OAuthRegistrationFormHandler
+        arguments: [@fos_user.user_manager, @fos_user.util.token_generator]
+
+    packagist.oauth.registration_form_type:
+        class: Packagist\WebBundle\Form\Type\OAuthRegistrationFormType
+        tags:
+            - { name: form.type, alias: packagist_oauth_user_registration }
+
+    packagist.oauth.registration_form:
+        factory_method: createNamed
+        factory_service: form.factory
+        class: Symfony\Component\Form\Form
+        arguments:
+            - 'packagist_oauth_user_registration'
+            - 'packagist_oauth_user_registration'

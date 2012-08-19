@@ -26,6 +26,13 @@ security:
                 lifetime: 31104000 # 1y
             logout:       true
             anonymous:    true
+            oauth:
+                resource_owners:
+                    github: "/login/check-github"
+                login_path:        /login
+                failure_path:      /login
+                oauth_user_provider:
+                    service: packagist.user_provider
 
     access_control:
         # The WDT has to be allowed to anonymous users to avoid requiring the login with the AJAX request
