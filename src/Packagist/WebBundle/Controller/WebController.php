@@ -286,6 +286,10 @@ class WebController extends Controller
                 ->getRepository('PackagistWebBundle:Package')
                 ->getFullPackageByName($name);
         } catch (NoResultException $e) {
+            if ('json' === $req->getRequestFormat()) {
+                return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 404);
+            }
+
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
