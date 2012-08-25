@@ -10,8 +10,8 @@
         {
             "package": "composer/composer",
             "version": "dev-master",
-            "source-reference": "730c76ef85bdbfaf111268afc4ec4c9d4864f0fd",
-            "commit-date": "1344607144"
+            "source-reference": "01593e06282492203c1b5868302a556890e109c6",
+            "commit-date": "1345833153"
         },
         {
             "package": "doctrine/common",

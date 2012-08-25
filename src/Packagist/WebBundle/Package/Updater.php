@@ -138,9 +138,9 @@ class Updater
             $em->flush();
         }
 
-        // remove outdated -dev versions
+        // remove outdated versions
         foreach ($package->getVersions() as $version) {
-            if ($version->getDevelopment() && $version->getUpdatedAt() < $pruneDate) {
+            if ($version->getUpdatedAt() < $pruneDate) {
                 $versionRepository->remove($version);
             }
         }
@@ -165,6 +165,10 @@ class Updater
                     $version = $existingVersion;
                     break;
                 }
+
+                // mark it updated to avoid it being pruned
+                $existingVersion->setUpdatedAt(new \DateTime);
+
                 return;
             }
         }
