@@ -6,9 +6,4 @@ app/cache/*
 app/logs/*
 build/
 vendor/
-/.settings
-/.buildpath
-/.project
-/.idea
 composer.phar
-/nbproject
