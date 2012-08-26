@@ -27,7 +27,9 @@ class AuthorRepository extends EntityRepository
             ->leftJoin('v.package', 'p')
             ->where('p.id = :packageId')
             ->andWhere('a.name = :author')
+            ->setMaxResults(1)
             ->setParameters(array('author' => $author, 'packageId' => $package->getId()));
+
         return $qb->getQuery()->getOneOrNullResult();
     }
 }
