@@ -11,4 +11,4 @@ vendor/
 /.project
 /.idea
 composer.phar
-/nbproject/private/
+/nbproject
