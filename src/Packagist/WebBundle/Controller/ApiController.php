@@ -87,9 +87,9 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
         }
 
-        $response = $this->checkCredentials($request);
-        if ($response instanceof Response) {
-            return $response;
+        $user = $this->checkCredentials($request);
+        if ($user instanceof Response) {
+            return $user;
         }
 
         if (!preg_match('{(github.com/[\w.-]+/[\w.-]+?)(\.git)?$}', $payload['repository']['url'], $match)) {
@@ -101,6 +101,9 @@ class ApiController extends Controller
         $updated = false;
         $config = Factory::createConfig();
         $loader = new ValidatingArrayLoader(new ArrayLoader());
+        $updater = $this->get('packagist.package_updater');
+        $em = $this->get('doctrine.orm.entity_manager');
+
         foreach ($user->getPackages() as $package) {
             if (preg_match('{'.preg_quote($payloadRepositoryChunk).'(\.git)?$}', $package->getRepository())) {
                 set_time_limit(3600);
@@ -132,9 +135,9 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
         }
 
-        $response = $this->checkCredentials($request);
-        if ($response instanceof Response) {
-            return $response;
+        $user = $this->checkCredentials($request);
+        if ($user instanceof Response) {
+            return $user;
         }
 
         if (!preg_match('{(bitbucket.org/[\w.-]+/[\w.-]+?)/?$}', $payload['repository']['url'], $match)) {
@@ -146,6 +149,9 @@ class ApiController extends Controller
         $updated = false;
         $config = Factory::createConfig();
         $loader = new ValidatingArrayLoader(new ArrayLoader());
+        $updater = $this->get('packagist.package_updater');
+        $em = $this->get('doctrine.orm.entity_manager');
+
         foreach ($user->getPackages() as $package) {
             if (preg_match('{'.preg_quote($payloadRepositoryChunk).'/?$}', $package->getRepository())) {
                 set_time_limit(3600);
@@ -220,8 +226,6 @@ class ApiController extends Controller
             $request->request->get('apiToken') :
             $request->query->get('apiToken');
 
-        $updater = $this->get('packagist.package_updater');
-        $em = $this->get('doctrine.orm.entity_manager');
         $user = $this->get('packagist.user_repository')
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 
@@ -229,6 +233,6 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
         }
 
-        return null;
+        return $user;
     }
 }
