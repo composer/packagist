@@ -82,7 +82,7 @@ class ApiController extends Controller
      */
     public function githubPostReceive(Request $request)
     {
-        return $this->receivePost($request, '{(^|//)(github\.com/[\w.-]+/[\w.-]+?)(\.git)?$}', '(\.git)?$');
+        return $this->receivePost($request, '{(^|//)(?P<url>github\.com/[\w.-]+/[\w.-]+?)(\.git)?$}', '(\.git)?$');
     }
 
     /**
@@ -91,7 +91,7 @@ class ApiController extends Controller
      */
     public function bitbucketPostReceive(Request $request)
     {
-        return $this->receivePost($request, '{(^|//)(bitbucket\.org/[\w.-]+/[\w.-]+?)/?$}', '/?$');
+        return $this->receivePost($request, '{(^|//)(?P<url>bitbucket\.org/[\w.-]+/[\w.-]+?)/?$}', '/?$');
     }
 
     /**
@@ -150,7 +150,7 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL',)), 406);
         }
 
-        $payloadRepositoryChunk = $match[1];
+        $payloadRepositoryChunk = $match['url'];
 
         $username = $request->request->has('username') ?
             $request->request->get('username') :
