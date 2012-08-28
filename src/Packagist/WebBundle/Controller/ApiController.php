@@ -82,46 +82,7 @@ class ApiController extends Controller
      */
     public function githubPostReceive(Request $request)
     {
-        $payload = json_decode($request->request->get('payload'), true);
-        if (!$payload || !isset($payload['repository']['url'])) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
-        }
-
-        $user = $this->checkCredentials($request);
-        if ($user instanceof Response) {
-            return $user;
-        }
-
-        if (!preg_match('{(github.com/[\w.-]+/[\w.-]+?)(\.git)?$}', $payload['repository']['url'], $match)) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL',)), 406);
-        }
-
-        $payloadRepositoryChunk = $match[1];
-
-        $updated = false;
-        $config = Factory::createConfig();
-        $loader = new ValidatingArrayLoader(new ArrayLoader());
-        $updater = $this->get('packagist.package_updater');
-        $em = $this->get('doctrine.orm.entity_manager');
-
-        foreach ($user->getPackages() as $package) {
-            if (preg_match('{'.preg_quote($payloadRepositoryChunk).'(\.git)?$}', $package->getRepository())) {
-                set_time_limit(3600);
-                $updated = true;
-
-                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
-                $repository->setLoader($loader);
-                $package->setAutoUpdated(true);
-                $em->flush();
-                $updater->update($package, $repository);
-            }
-        }
-
-        if ($updated) {
-            return new Response('{"status": "success"}', 202);
-        }
-
-        return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
+        return $this->receivePost($request, '{(github.com/[\w.-]+/[\w.-]+?)(\.git)?$}', '(\.git)?$');
     }
 
     /**
@@ -130,46 +91,7 @@ class ApiController extends Controller
      */
     public function bitbucketPostReceive(Request $request)
     {
-        $payload = json_decode($request->request->get('payload'), true);
-        if (!$payload || !isset($payload['repository']['url'])) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
-        }
-
-        $user = $this->checkCredentials($request);
-        if ($user instanceof Response) {
-            return $user;
-        }
-
-        if (!preg_match('{(bitbucket.org/[\w.-]+/[\w.-]+?)/?$}', $payload['repository']['url'], $match)) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL',)), 406);
-        }
-
-        $payloadRepositoryChunk = $match[1];
-
-        $updated = false;
-        $config = Factory::createConfig();
-        $loader = new ValidatingArrayLoader(new ArrayLoader());
-        $updater = $this->get('packagist.package_updater');
-        $em = $this->get('doctrine.orm.entity_manager');
-
-        foreach ($user->getPackages() as $package) {
-            if (preg_match('{'.preg_quote($payloadRepositoryChunk).'/?$}', $package->getRepository())) {
-                set_time_limit(3600);
-                $updated = true;
-
-                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
-                $repository->setLoader($loader);
-                $package->setAutoUpdated(true);
-                $em->flush();
-                $updater->update($package, $repository);
-            }
-        }
-
-        if ($updated) {
-            return new Response('{"status": "success"}', 202);
-        }
-
-        return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
+        return $this->receivePost($request, '{(bitbucket.org/[\w.-]+/[\w.-]+?)/?$}', '/?$');
     }
 
     /**
@@ -216,8 +138,20 @@ class ApiController extends Controller
         return new Response('{"status": "success"}', 201);
     }
 
-    protected function checkCredentials(Request $request)
+    protected function receivePost(Request $request, $urlRegex, $optionalRepositorySuffix)
     {
+        $payload = json_decode($request->request->get('payload'), true);
+        if (!$payload || !isset($payload['repository']['url'])) {
+            return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
+        }
+
+        // try to parse the URL first to avoid the DB lookup on malformed requests
+        if (!preg_match($urlRegex, $payload['repository']['url'], $match)) {
+            return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL',)), 406);
+        }
+
+        $payloadRepositoryChunk = $match[1];
+
         $username = $request->request->has('username') ?
             $request->request->get('username') :
             $request->query->get('username');
@@ -233,6 +167,29 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
         }
 
-        return $user;
+        $updated = false;
+        $config = Factory::createConfig();
+        $loader = new ValidatingArrayLoader(new ArrayLoader());
+        $updater = $this->get('packagist.package_updater');
+        $em = $this->get('doctrine.orm.entity_manager');
+
+        foreach ($user->getPackages() as $package) {
+            if (preg_match('{'.preg_quote($payloadRepositoryChunk).$optionalRepositorySuffix.'}', $package->getRepository())) {
+                set_time_limit(3600);
+                $updated = true;
+
+                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
+                $repository->setLoader($loader);
+                $package->setAutoUpdated(true);
+                $em->flush();
+                $updater->update($package, $repository);
+            }
+        }
+
+        if ($updated) {
+            return new Response('{"status": "success"}', 202);
+        }
+
+        return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
     }
 }
