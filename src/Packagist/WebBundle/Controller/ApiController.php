@@ -82,7 +82,7 @@ class ApiController extends Controller
      */
     public function githubPostReceive(Request $request)
     {
-        return $this->receivePost($request, '{(github.com/[\w.-]+/[\w.-]+?)(\.git)?$}', '(\.git)?$');
+        return $this->receivePost($request, '{(^|//)(github\.com/[\w.-]+/[\w.-]+?)(\.git)?$}', '(\.git)?$');
     }
 
     /**
@@ -91,7 +91,7 @@ class ApiController extends Controller
      */
     public function bitbucketPostReceive(Request $request)
     {
-        return $this->receivePost($request, '{(bitbucket.org/[\w.-]+/[\w.-]+?)/?$}', '/?$');
+        return $this->receivePost($request, '{(^|//)(bitbucket\.org/[\w.-]+/[\w.-]+?)/?$}', '/?$');
     }
 
     /**
