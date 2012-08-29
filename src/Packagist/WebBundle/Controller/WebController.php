@@ -330,7 +330,7 @@ class WebController extends Controller
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
             $data['form'] = $maintainerForm->createView();
         }
-        if ($deleteForm = $this->createDeletePackageForm()) {
+        if ($deleteForm = $this->createDeletePackageForm($package)) {
             $data['deleteForm'] = $deleteForm->createView();
         }
 
@@ -438,7 +438,7 @@ class WebController extends Controller
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }
 
-        $form = $this->createDeletePackageForm();
+        $form = $this->createDeletePackageForm($package);
         $form->bind($req->request->get('form'));
         if ($form->isValid()) {
             $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
@@ -603,11 +603,34 @@ class WebController extends Controller
         }
     }
 
-    private function createDeletePackageForm()
+    private function createDeletePackageForm(Package $package)
     {
-        if ($this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
-            return $this->createFormBuilder(array())->getForm();
+        if (!$user = $this->getUser()) {
+            return;
         }
+
+        // super admins bypass additional checks
+        if (!$this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+            // non maintainers can not delete
+            if (!$package->getMaintainers()->contains($user)) {
+                return;
+            }
+
+            try {
+                /** @var $redis \Snc\RedisBundle\Client\Phpredis\Client */
+                $redis = $this->get('snc_redis.default');
+                $downloads = $redis->get('dl:'.$package->getId());
+            } catch (\Exception $e) {
+                return;
+            }
+
+            // more than 50 downloads = established package, do not allow deletion by maintainers
+            if ($downloads > 50) {
+                return;
+            }
+        }
+
+        return $this->createFormBuilder(array())->getForm();
     }
 
     private function createSearchForm()
