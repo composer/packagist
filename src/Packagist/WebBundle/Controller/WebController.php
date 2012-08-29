@@ -280,11 +280,11 @@ class WebController extends Controller
      */
     public function viewPackageAction(Request $req, $name)
     {
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+
         try {
             /** @var $package Package */
-            $package = $this->getDoctrine()
-                ->getRepository('PackagistWebBundle:Package')
-                ->getFullPackageByName($name);
+            $package = $repo->findOneByName($name);
         } catch (NoResultException $e) {
             if ('json' === $req->getRequestFormat()) {
                 return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 404);
@@ -294,10 +294,18 @@ class WebController extends Controller
         }
 
         if ('json' === $req->getRequestFormat()) {
+            $package = $repo->getFullPackageByName($name);
+
             return new Response(json_encode(array('package' => $package->toArray())), 200);
         }
 
-        $data = array('package' => $package);
+        $version = null;
+        if (count($package->getVersions())) {
+            $versionRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+            $version = $versionRepo->getFullVersion($package->getVersions()->first()->getId());
+        }
+
+        $data = array('package' => $package, 'version' => $version);
 
         $id = $package->getId();
 
@@ -327,6 +335,25 @@ class WebController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * @Template()
+     * @Route(
+     *     "/versions/{versionId}.{_format}",
+     *     name="view_version",
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "versionId"="[0-9]+", "_format"="(json)"}
+     * )
+     * @Method({"GET"})
+     */
+    public function viewPackageVersionAction(Request $req, $versionId)
+    {
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $version = $repo->getFullVersion($versionId);
+
+        $html = $this->renderView('PackagistWebBundle:Web:versionDetails.html.twig', array('version' => $version));
+
+        return new JsonResponse(array('content' => $html));
     }
 
     /**

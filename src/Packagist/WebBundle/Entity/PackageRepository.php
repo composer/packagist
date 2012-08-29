@@ -192,6 +192,7 @@ class PackageRepository extends EntityRepository
             ->leftJoin('v.tags', 't')
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC');
+
         return $qb;
     }
 }

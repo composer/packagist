@@ -1,15 +1,12 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
-{% import "PackagistWebBundle::macros.html.twig" as packagist %}
 
 {% block title %}{{ package.name }} - {{ parent() }}{% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('bundles/packagistweb/js/view.js?v=3')}}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/view.js?v=4')}}"></script>
 {% endblock %}
 
 {% block content %}
-    {% set version = package.versions|length ? package.versions[0] : null %}
-
     <div class="box">
         <div class="package"{% if app.user and package.maintainers.contains(app.user) and package.crawledAt is null %} data-force-crawl="true"{% endif %}>
             {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
@@ -116,38 +113,12 @@
                                     <span class="license">{{ version.license ? version.license|join(', ') : '' }}</span>
                                 </h1>
 
-                                <div class="details {% if loop.index0 == 0 %} open{% endif %}">
-                                    <h2 class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}</h2>
-                                    <ul>
-                                        {% for author in version.authors %}
-                                            <li>
-                                                {%- if author.homepage -%}
-                                                    <a href="{{ author.homepage }}">{{ author.name }}</a>
-                                                {%- else -%}
-                                                    {{ author.name }}
-                                                {%- endif -%}
-                                                {% if author.email %} &lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif -%}
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                    <div class="clearfix package-links">
-                                        {% for type in ["require", "devRequire", "suggest", "provide", "conflict", "replace"] %}
-                                            <div class="{{ type }}s">
-                                                <h2>{{ ('link_type.' ~ type)|trans }}</h2>
-                                                {% if attribute(version, type)|length %}
-                                                    <ul>
-                                                        {%- for link in attribute(version, type) -%}
-                                                            <li>{{ packagist.packageLink(link.packageName) }}: {{ link.packageVersion == 'self.version' ? version.version : link.packageVersion }}</li>
-                                                        {%- endfor -%}
-                                                    </ul>
-                                                {% else %}
-                                                    None
-                                                {% endif %}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
+                                <div class="details{% if loop.index0 == 0 %} open{% endif %}">
+                                    {% if loop.index0 == 0 %}
+                                        {% include 'PackagistWebBundle:Web:versionDetails.html.twig' with {version: version} %}
+                                    {% endif %}
                                 </div>
-                                <div class="details-toggler{% if loop.index0 == 0 %} open{% endif %}"></div>
+                                <div class="details-toggler{% if loop.index0 == 0 %} open{% endif %}"{% if loop.index0 %} data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}"{% endif %}></div>
                             </section>
                         </li>
                     {% endfor %}

@@ -1,0 +1,31 @@
+{% import "PackagistWebBundle::macros.html.twig" as packagist %}
+
+<h2 class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}</h2>
+<ul>
+    {% for author in version.authors %}
+        <li>
+            {%- if author.homepage -%}
+                <a href="{{ author.homepage }}">{{ author.name }}</a>
+            {%- else -%}
+                {{ author.name }}
+            {%- endif -%}
+            {% if author.email %} &lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif -%}
+        </li>
+    {% endfor %}
+</ul>
+<div class="clearfix package-links">
+    {% for type in ["require", "devRequire", "suggest", "provide", "conflict", "replace"] %}
+        <div class="{{ type }}s">
+            <h2>{{ ('link_type.' ~ type)|trans }}</h2>
+            {% if attribute(version, type)|length %}
+                <ul>
+                    {%- for link in attribute(version, type) -%}
+                        <li>{{ packagist.packageLink(link.packageName) }}: {{ link.packageVersion == 'self.version' ? version.version : link.packageVersion }}</li>
+                    {%- endfor -%}
+                </ul>
+            {% else %}
+                None
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>

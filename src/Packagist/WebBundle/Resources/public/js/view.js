@@ -4,8 +4,19 @@
         e.preventDefault();
     });
     $('.package .details-toggler').click(function (e) {
-        $(this).toggleClass('open')
+        var target = $(this);
+        target.toggleClass('open')
             .prev().toggleClass('open');
+        if (target.attr('data-load-more')) {
+            $.ajax({
+                url: target.attr('data-load-more'),
+                dataType: 'json',
+                success: function (data) {
+                    target.attr('data-load-more', '')
+                        .prev().html(data.content);
+                }
+            });
+        }
     });
     $('.package .force-update').submit(function (e) {
         var submit = $('input[type=submit]', this);

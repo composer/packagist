@@ -54,4 +54,23 @@ class VersionRepository extends EntityRepository
 
         $em->remove($version);
     }
+
+    public function getFullVersion($versionId)
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
+            ->from('Packagist\WebBundle\Entity\Version', 'v')
+            ->leftJoin('v.tags', 't')
+            ->leftJoin('v.authors', 'a')
+            ->leftJoin('v.require', 'req')
+            ->leftJoin('v.devRequire', 'devReq')
+            ->leftJoin('v.suggest', 'sug')
+            ->leftJoin('v.replace', 'rep')
+            ->leftJoin('v.conflict', 'con')
+            ->leftJoin('v.provide', 'pro')
+            ->where('v.id = :id')
+            ->setParameter('id', $versionId);
+
+        return $qb->getQuery()->getSingleResult();
+    }
 }
