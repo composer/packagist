@@ -26,6 +26,8 @@ security:
                 lifetime: 31104000 # 1y
             logout:       true
             anonymous:    true
+            switch_user:
+                provider: packagist
 
     access_control:
         # The WDT has to be allowed to anonymous users to avoid requiring the login with the AJAX request
@@ -50,4 +52,4 @@ security:
         ROLE_EDIT_PACKAGES: ~
 
         ROLE_ADMIN:       [ ROLE_USER, ROLE_UPDATE_PACKAGES, ROLE_EDIT_PACKAGES, ROLE_DELETE_PACKAGES ]
-        ROLE_SUPERADMIN:  [ ROLE_ADMIN ]
+        ROLE_SUPERADMIN:  [ ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH ]
