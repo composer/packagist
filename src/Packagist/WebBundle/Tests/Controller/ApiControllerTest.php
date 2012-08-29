@@ -71,13 +71,13 @@ class ApiControllerTest extends WebTestCase
 
         if (!$expectedOK) {
             $this->assertEquals(406, $status, 'POST method should return 406 "Not Acceptable" if an unknown URL was sent');
-        }
-        else {
+        } else {
             $this->assertEquals(403, $status, 'POST method should return 403 "Forbidden" for a valid URL with bad credentials.');
         }
     }
 
-    public function urlProvider() {
+    public function urlProvider()
+    {
         return array(
             // valid github URLs
             array('github', 'github.com/user/repo', true),
