@@ -12,7 +12,7 @@
                 $('#submit-package-form div').prepend('<ul>'+html+'</ul>');
             } else {
                 $('#submit-package-form input[type="submit"]').before(
-                    '<div class="confirmation">The package name found for your repository is: '+data.name+', press Submit to confirm.</div>'
+                    '<div class="confirmation">The package name found for your repository is: <strong>'+data.name+'</strong>, press Submit to confirm.</div>'
                 );
                 $('#submit').val('Submit');
                 $('#submit-package-form').unbind('submit');
