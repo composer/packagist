@@ -57,12 +57,13 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
             if ($form->isValid()) {
                 $randomPassword = $this->tokenGenerator->generateToken();
                 $user->setPlainPassword($randomPassword);
+                $user->setEnabled(true);
 
                 return true;
             }
         // if the form is not posted we'll try to set some properties
         } else {
-            $user->setUsername($this->getUniqueUsername($userInformation->getUsername()));
+            $user->setUsername($this->getUniqueUsername($userInformation->getNickname()));
 
             if ($userInformation instanceof AdvancedUserResponseInterface) {
                 $user->setEmail($userInformation->getEmail());

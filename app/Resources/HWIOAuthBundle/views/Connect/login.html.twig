@@ -1,0 +1,31 @@
+{% extends 'HWIOAuthBundle::layout.html.twig' %}
+
+{% block hwi_oauth_content %}
+    {% if error %}
+        <div>{{ error }}</div>
+    {% endif %}
+    {% for owner in hwi_oauth_resource_owners() %}
+    <a class="submit" href="{{ hwi_oauth_login_url(owner) }}">Login with {{ owner | trans({}, 'HWIOAuthBundle') }}</a> <br />
+    {% endfor %}
+
+    <form action="{{ path('login_check') }}" method="post">
+        <div>
+            <label for="username">{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}</label>
+            <input type="text" id="username" name="_username" />
+        </div>
+
+        <div>
+            <label for="password">{{ 'security.login.password'|trans({}, 'FOSUserBundle') }}</label>
+            <input type="password" id="password" name="_password" />
+        </div>
+
+        <div>
+            <input type="checkbox" id="remember_me" name="_remember_me" value="on" checked="checked" />
+            <label for="remember_me">{{ 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}</label>
+        </div>
+
+        <input type="submit" id="_submit" name="_submit" value="{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}" />
+    </form>
+
+    <a href="{{ path('fos_user_resetting_request') }}">Forgot password?</a>
+{% endblock hwi_oauth_content %}
