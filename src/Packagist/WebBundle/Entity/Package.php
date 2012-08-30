@@ -32,7 +32,7 @@ use Composer\Repository\RepositoryManager;
  *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"})
  *     }
  * )
- * @Assert\Callback(methods={"isPackageUnique","isRepositoryValid"})
+ * @Assert\Callback(methods={"isPackageUnique","isRepositoryValid"}, groups={"update"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package
@@ -314,7 +314,9 @@ class Package
                 return;
             }
             $information = $driver->getComposerInformation($driver->getRootIdentifier());
-            $this->setName($information['name']);
+            if (null === $this->getName()) {
+                $this->setName($information['name']);
+            }
         } catch (\Exception $e) {
         }
     }
