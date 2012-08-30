@@ -31,6 +31,7 @@ class OAuthRegistrationFormType extends AbstractType
         $resolver->setDefaults(array(
             'data_class' => 'Packagist\WebBundle\Entity\User',
             'intention'  => 'registration',
+            'validation_groups' => array('Default', 'Profile'),
         ));
     }
 
