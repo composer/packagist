@@ -4,14 +4,8 @@
         {
             "package": "composer/composer",
             "version": "dev-master",
-            "alias-pretty-version": "1.0.x-dev",
-            "alias-version": "1.0.9999999.9999999-dev"
-        },
-        {
-            "package": "composer/composer",
-            "version": "dev-master",
-            "source-reference": "01593e06282492203c1b5868302a556890e109c6",
-            "commit-date": "1345833153"
+            "source-reference": "a04591bbd7202cc1d0c73000b5f6f845b3a1e9c9",
+            "commit-date": "1346332162"
         },
         {
             "package": "doctrine/common",
