@@ -424,10 +424,6 @@ class WebController extends Controller
      */
     public function deletePackageAction(Request $req, $name)
     {
-        if (!$this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
-            throw new AccessDeniedException;
-        }
-
         $doctrine = $this->getDoctrine();
 
         try {
@@ -438,7 +434,9 @@ class WebController extends Controller
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }
 
-        $form = $this->createDeletePackageForm($package);
+        if (!$form = $this->createDeletePackageForm($package)) {
+            throw new AccessDeniedException;
+        }
         $form->bind($req->request->get('form'));
         if ($form->isValid()) {
             $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
