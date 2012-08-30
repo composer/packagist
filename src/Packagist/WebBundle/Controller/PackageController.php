@@ -42,13 +42,11 @@ class PackageController extends Controller
             throw new AccessDeniedException;
         }
 
-        $form = $this->createFormBuilder($package, array("validation_groups" => array("update")))
+        $form = $this->createFormBuilder($package, array("validation_groups" => array("Update")))
             ->add("repository", "text")
             ->getForm();
 
         if ($req->isMethod("POST")) {
-            $package->setEntityRepository($packageRepo);
-
             $form->bind($req);
 
             if ($form->isValid()) {

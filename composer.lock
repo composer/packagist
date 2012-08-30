@@ -15,7 +15,7 @@
         },
         {
             "package": "doctrine/common",
-            "version": "2.2.2"
+            "version": "2.2.3"
         },
         {
             "package": "doctrine/dbal",
@@ -170,8 +170,8 @@
         {
             "package": "symfony/symfony",
             "version": "dev-master",
-            "source-reference": "31536c36ec8875aee1406aa7d7a0b5e38a04af66",
-            "commit-date": "1344599303"
+            "source-reference": "569e29d91fd35e91acc2dbcf490ad0f645eecd6d",
+            "commit-date": "1346331893"
         },
         {
             "package": "twig/extensions",
@@ -188,8 +188,8 @@
         {
             "package": "twig/twig",
             "version": "dev-master",
-            "source-reference": "f2f698c820d4396f519ef4175ad6fe79fcfb9ecf",
-            "commit-date": "1344328685"
+            "source-reference": "f76ed618c890165fd107a9cd4a06c7d73da75b9c",
+            "commit-date": "1346324412"
         },
         {
             "package": "white-october/pagerfanta-bundle",

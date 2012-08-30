@@ -32,7 +32,8 @@ use Composer\Repository\RepositoryManager;
  *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"})
  *     }
  * )
- * @Assert\Callback(methods={"isPackageUnique","isRepositoryValid"}, groups={"update"})
+ * @Assert\Callback(methods={"isPackageUnique"})
+ * @Assert\Callback(methods={"isRepositoryValid"}, groups={"Update", "Default"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package
@@ -74,7 +75,7 @@ class Package
 
     /**
      * @ORM\Column()
-     * @Assert\NotBlank(groups={"update"})
+     * @Assert\NotBlank(groups={"Update", "Default"})
      */
     private $repository;
 
@@ -111,10 +112,11 @@ class Package
     private $autoUpdated = false;
 
     private $entityRepository;
+
     /**
      * @var \Composer\Repository\Vcs\VcsDriverInterface
      */
-    private $vcsDriver;
+    private $vcsDriver = true;
 
     public function __construct()
     {
@@ -147,9 +149,14 @@ class Package
 
     public function isRepositoryValid(ExecutionContext $context)
     {
+        // vcs driver was not nulled which means the repository was not set/modified and is still valid
+        if (true === $this->vcsDriver && null !== $this->getName()) {
+            return;
+        }
+
         $property = 'repository';
         $driver = $this->vcsDriver;
-        if (!$driver) {
+        if (!is_object($driver)) {
             if (preg_match('{//.+@}', $this->repository)) {
                 $context->addViolationAtSubPath($property, 'URLs with user@host are not supported, use a read-only public URL', array(), null);
             } else {
@@ -293,6 +300,8 @@ class Package
      */
     public function setRepository($repository)
     {
+        $this->vcsDriver = null;
+
         // prevent local filesystem URLs
         if (preg_match('{^(\.|[a-z]:|/)}i', $repository)) {
             return;
