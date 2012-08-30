@@ -43,8 +43,15 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     {
         $username = $response->getUsername();
 
+        $previousUser = $this->userManager->findUserBy(array('githubId' => $username));
+
+        // The account is already connected. Do nothing
+        if ($previousUser === $user) {
+            return;
+        }
+
         // 'disconnect' a previous account
-        if (null !== $previousUser = $this->userManager->findUserBy(array('githubId' => $username))) {
+        if (null !== $previousUser) {
             $previousUser->setGithubId(null);
             $this->userManager->updateUser($previousUser);
         }

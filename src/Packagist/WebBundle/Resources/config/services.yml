@@ -43,9 +43,8 @@ services:
             - { name: form.type, alias: packagist_oauth_user_registration }
 
     packagist.oauth.registration_form:
-        factory_method: createNamed
+        factory_method: create
         factory_service: form.factory
         class: Symfony\Component\Form\Form
         arguments:
-            - 'packagist_oauth_user_registration'
             - 'packagist_oauth_user_registration'

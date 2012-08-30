@@ -16,6 +16,7 @@ use FOS\UserBundle\Model\UserManagerInterface;
 use FOS\UserBundle\Util\TokenGeneratorInterface;
 use HWI\Bundle\OAuthBundle\Form\RegistrationFormHandlerInterface;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
+use HWI\Bundle\OAuthBundle\OAuth\Response\AdvancedUserResponseInterface;
 use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -33,6 +34,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
      * Constructor.
      *
      * @param UserManagerInterface $userManager
+     * @param TokenGeneratorInterface $tokenGenerator
      */
     public function __construct(UserManagerInterface $userManager, TokenGeneratorInterface $tokenGenerator)
     {
@@ -43,32 +45,28 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
     /**
      * {@inheritDoc}
      */
-    function process(Request $request, Form $form, UserResponseInterface $userInformation)
+    public function process(Request $request, Form $form, UserResponseInterface $userInformation)
     {
         $user = $this->userManager->createUser();
 
         $form->setData($user);
 
         if ('POST' === $request->getMethod()) {
-            $form->bindRequest($request);
+            $form->bind($request);
 
             if ($form->isValid()) {
                 $randomPassword = $this->tokenGenerator->generateToken();
-                $form->getData()->setPassword($randomPassword);
+                $user->setPlainPassword($randomPassword);
 
                 return true;
             }
         // if the form is not posted we'll try to set some properties
         } else {
-            $user = $form->getData();
-
             $user->setUsername($this->getUniqueUsername($userInformation->getUsername()));
 
             if ($userInformation instanceof AdvancedUserResponseInterface) {
                 $user->setEmail($userInformation->getEmail());
             }
-
-            $form->setData($user);
         }
 
         return false;

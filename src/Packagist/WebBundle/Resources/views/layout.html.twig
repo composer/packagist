@@ -33,7 +33,7 @@
         <div class="container">
             <div class="user">
                 {% if app.user %}
-                    <a href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a> | <a href="/logout">Logout</a>
+                    <a href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a> | <a href="{{ path('logout') }}">Logout</a>
                 {% else %}
                     <a href="{{ path('fos_user_registration_register') }}">Create a new account</a>
                     |
@@ -81,7 +81,7 @@
             <ul>
                 {% if app.user %}
                     <li><a href="{{ path('fos_user_profile_show') }}">{{ 'menu.profile'|trans }}</a></li>
-                    <li><a href="/logout">{{ 'menu.logout'|trans }}</a></li>
+                    <li><a href="{{ path('logout') }}">{{ 'menu.logout'|trans }}</a></li>
                 {% else %}
                     <li><a href="{{ path('fos_user_registration_register') }}">{{ 'menu.register'|trans }}</a></li>
                     <li><a href="{{ path('hwi_oauth_connect') }}">{{ 'menu.login'|trans }}</a></li>
