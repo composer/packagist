@@ -49,6 +49,15 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
     {
         $user = $this->userManager->createUser();
 
+        // Try to get some properties for the initial form when coming from github
+        if ('GET' === $request->getMethod()) {
+            $user->setUsername($this->getUniqueUsername($userInformation->getNickname()));
+
+            if ($userInformation instanceof AdvancedUserResponseInterface) {
+                $user->setEmail($userInformation->getEmail());
+            }
+        }
+
         $form->setData($user);
 
         if ('POST' === $request->getMethod()) {
@@ -60,13 +69,6 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
                 $user->setEnabled(true);
 
                 return true;
-            }
-        // if the form is not posted we'll try to set some properties
-        } else {
-            $user->setUsername($this->getUniqueUsername($userInformation->getNickname()));
-
-            if ($userInformation instanceof AdvancedUserResponseInterface) {
-                $user->setEmail($userInformation->getEmail());
             }
         }
 
