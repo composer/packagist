@@ -38,8 +38,8 @@
         {
             "package": "hwi/oauth-bundle",
             "version": "dev-master",
-            "source-reference": "ad2f468abdfe09e8f9c1398ad4637f51df7d7791",
-            "commit-date": "1342353157"
+            "source-reference": "007ecd7dd6838d58ae55740aa1c294a3f2d9449a",
+            "commit-date": "1346188791"
         },
         {
             "package": "justinrainbow/json-schema",
