@@ -155,12 +155,11 @@ class Updater
         $em = $this->doctrine->getEntityManager();
         $version = new Version();
 
-        $version->setName($package->getName());
         $version->setNormalizedVersion($data->getVersion());
 
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
-            if ($existingVersion->equals($version)) {
+            if ($existingVersion->getNormalizedVersion() === $version->getNormalizedVersion()) {
                 if ($existingVersion->getDevelopment() || ($flags & self::UPDATE_TAGS)) {
                     $version = $existingVersion;
                     break;
@@ -173,6 +172,7 @@ class Updater
             }
         }
 
+        $version->setName($package->getName());
         $version->setVersion($data->getPrettyVersion());
         $version->setDevelopment($data->isDev());
 
