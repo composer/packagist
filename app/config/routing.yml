@@ -31,9 +31,6 @@ hwi_oauth_redirect:
     resource: "@HWIOAuthBundle/Resources/config/routing/redirect.xml"
     prefix:   /login
 
-github_login:
-    pattern: /login/github
-
 github_check:
     pattern: /login/check-github
 

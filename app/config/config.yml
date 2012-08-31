@@ -83,7 +83,6 @@ hwi_oauth:
             type:          github
             client_id:     %github.client_id%
             client_secret: %github.client_secret%
-            scope:         ""
 
 nelmio_solarium:
     adapter: ~
