@@ -8,6 +8,9 @@
     <a class="submit" href="{{ hwi_oauth_login_url(owner) }}">Login with {{ owner | trans({}, 'HWIOAuthBundle') }}</a> <br />
     {% endfor %}
 
+    {# HWIOAuthBundle uses the same template for the login and the connect functionality currently
+       so we need to check if the user is already authenticated. #}
+    {% if not app.user %}
     <form action="{{ path('login_check') }}" method="post">
         <div>
             <label for="username">{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}</label>
@@ -28,4 +31,5 @@
     </form>
 
     <a href="{{ path('fos_user_resetting_request') }}">Forgot password?</a>
+    {% endif %}
 {% endblock hwi_oauth_content %}
