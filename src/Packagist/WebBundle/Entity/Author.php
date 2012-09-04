@@ -81,12 +81,22 @@ class Author
 
     public function toArray()
     {
-        return array(
-            'name' => $this->getName(),
-            'email' => $this->getEmail(),
-            'homepage' => $this->getHomepage(),
-            'role' => $this->getRole(),
-        );
+        $data = array();
+
+        if ($this->getName()) {
+            $data['name'] = $this->getName();
+        }
+        if ($this->getEmail()) {
+            $data['email'] = $this->getEmail();
+        }
+        if ($this->getHomepage()) {
+            $data['homepage'] = $this->getHomepage();
+        }
+        if ($this->getRole()) {
+            $data['role'] = $this->getRole();
+        }
+
+        return $data;
     }
 
     /**

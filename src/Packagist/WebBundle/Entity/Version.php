@@ -221,23 +221,33 @@ class Version
 
         $data = array(
             'name' => $this->getName(),
-            'description' => $this->getDescription(),
+            'description' => (string) $this->getDescription(),
             'keywords' => $tags,
-            'homepage' => $this->getHomepage(),
+            'homepage' => (string) $this->getHomepage(),
             'version' => $this->getVersion(),
             'version_normalized' => $this->getNormalizedVersion(),
             'license' => $this->getLicense(),
             'authors' => $authors,
             'source' => $this->getSource(),
-            'time' => $this->getReleasedAt() ? $this->getReleasedAt()->format('Y-m-d\TH:i:sP') : null,
             'dist' => $this->getDist(),
             'type' => $this->getType(),
-            'target-dir' => $this->getTargetDir(),
-            'autoload' => $this->getAutoload(),
-            'extra' => $this->getExtra(),
-            'include-path' => $this->getIncludePaths(),
         );
 
+        if ($this->getReleasedAt()) {
+            $data['time'] = $this->getReleasedAt()->format('Y-m-d\TH:i:sP');
+        }
+        if ($this->getAutoload()) {
+            $data['autoload'] = $this->getAutoload();
+        }
+        if ($this->getExtra()) {
+            $data['extra'] = $this->getExtra();
+        }
+        if ($this->getTargetDir()) {
+            $data['target-dir'] = $this->getTargetDir();
+        }
+        if ($this->getIncludePaths()) {
+            $data['include-path'] = $this->getIncludePaths();
+        }
         if ($this->getBinaries()) {
             $data['bin'] = $this->getBinaries();
         }
