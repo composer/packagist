@@ -74,6 +74,18 @@ fos_user:
         form:
             handler: packagist.form.handler.registration
 
+hwi_oauth:
+    firewall_name: main
+    connect:
+        account_connector: packagist.user_provider
+        registration_form_handler: packagist.oauth.registration_form_handler
+        registration_form: packagist.oauth.registration_form
+    resource_owners:
+        github:
+            type:          github
+            client_id:     %github.client_id%
+            client_secret: %github.client_secret%
+
 nelmio_solarium:
     adapter: ~
 

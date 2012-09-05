@@ -1,5 +1,5 @@
 {
-    "hash": "7ec0e6e0a9c4da86f2c0093fc032a99a",
+    "hash": "5bc65e1bfee6c7cde7f85f19d7cf2f19",
     "packages": [
         {
             "package": "composer/composer",
@@ -36,6 +36,12 @@
             "commit-date": "1346762108"
         },
         {
+            "package": "hwi/oauth-bundle",
+            "version": "dev-master",
+            "source-reference": "2493f45a1b84247f9fd4eeb7ef85a1dcd366a059",
+            "commit-date": "1346365181"
+        },
+        {
             "package": "justinrainbow/json-schema",
             "version": "1.1.0"
         },
@@ -50,6 +56,10 @@
             "version": "dev-master",
             "source-reference": "86b637e9f64ddcbd17d9eda944384812b5836254",
             "commit-date": "1346695911"
+        },
+        {
+            "package": "kriswallsmith/buzz",
+            "version": "v0.7"
         },
         {
             "package": "monolog/monolog",
@@ -209,6 +219,7 @@
         "composer/composer": 20,
         "doctrine/doctrine-bundle": 20,
         "friendsofsymfony/user-bundle": 20,
+        "hwi/oauth-bundle": 20,
         "nelmio/solarium-bundle": 20,
         "sensio/distribution-bundle": 20,
         "sensio/framework-extra-bundle": 20,
