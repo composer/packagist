@@ -147,6 +147,25 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function getPackagesWithVersions(array $ids = null, $filters = array())
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p', 'v')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->leftJoin('p.versions', 'v')
+            ->orderBy('v.development', 'DESC')
+            ->addOrderBy('v.releasedAt', 'DESC');
+
+        if (null !== $ids) {
+            $qb->where($qb->expr()->in('p.id', ':ids'))
+                ->setParameter('ids', $ids);
+        }
+
+        $this->addFilters($qb, $filters);
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function getFilteredQueryBuilder(array $filters = array())
     {
         $qb = $this->getBaseQueryBuilder()

@@ -52,10 +52,24 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $doctrine = $this->getContainer()->get('doctrine');
         $solarium = $this->getContainer()->get('solarium.client');
 
+        $lock = $this->getContainer()->getParameter('kernel.cache_dir').'/composer-indexer.lock';
+        $timeout = 600;
+
+        // another dumper is still active
+        if (file_exists($lock) && filemtime($lock) > time() - $timeout) {
+            if ($verbose) {
+                $output->writeln('Aborting, '.$lock.' file present');
+            }
+            return;
+        }
+
+        touch($lock);
+
         if ($package) {
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
         } elseif ($force) {
             $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $doctrine->getEntityManager()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForIndexing();
         }
@@ -83,7 +97,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
         // update package index
         while ($ids) {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages(array_splice($ids, 0, 50));
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($ids, 0, 50));
             $update = $solarium->createUpdate();
 
             foreach ($packages as $package) {
@@ -110,6 +124,8 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $update->addCommit();
             $solarium->update($update);
         }
+
+        unlink($lock);
     }
 
     private function updateDocumentFromPackage(\Solarium_Document_ReadWrite $document, Package $package)
