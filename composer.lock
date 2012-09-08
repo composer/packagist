@@ -4,8 +4,8 @@
         {
             "package": "composer/composer",
             "version": "dev-master",
-            "source-reference": "d5916ce73184fa6ef00b9cdfbc977f65b34a161a",
-            "commit-date": "1346783045"
+            "source-reference": "fe4516aff874e17c33a951400213dc518bf6a284",
+            "commit-date": "1347062402"
         },
         {
             "package": "doctrine/common",

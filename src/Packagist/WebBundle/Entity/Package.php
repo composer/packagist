@@ -323,6 +323,9 @@ class Package
                 return;
             }
             $information = $driver->getComposerInformation($driver->getRootIdentifier());
+            if (!isset($information['name'])) {
+                throw new \RuntimeException('No name found in composer.json');
+            }
             if (null === $this->getName()) {
                 $this->setName($information['name']);
             }
