@@ -95,7 +95,7 @@ class Dumper
         $modifiedFiles = array();
 
         while ($packageIds) {
-            $packages = $this->doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages(array_splice($packageIds, 0, 50));
+            $packages = $this->doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($packageIds, 0, 50));
 
             if ($verbose) {
                 echo 'Processing '.count($packages).' packages...'.PHP_EOL;

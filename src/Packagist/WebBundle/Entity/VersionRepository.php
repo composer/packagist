@@ -65,14 +65,6 @@ class VersionRepository extends EntityRepository
             ->where('v.id = :id')
             ->setParameter('id', $versionId);
 
-        $version = $qb->getQuery()->getSingleResult();
-        $version->getRequire();
-        $version->getDevRequire();
-        $version->getSuggest();
-        $version->getReplace();
-        $version->getConflict();
-        $version->getProvide();
-
-        return $version;
+        return $qb->getQuery()->getSingleResult();
     }
 }

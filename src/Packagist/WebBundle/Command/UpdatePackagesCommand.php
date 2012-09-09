@@ -87,7 +87,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $loader = new ValidatingArrayLoader(new ArrayLoader());
 
         while ($ids) {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getFullPackages(array_splice($ids, 0, 50));
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($ids, 0, 50));
 
             foreach ($packages as $package) {
                 if ($verbose) {
