@@ -18,8 +18,8 @@
         {% endif %}
 
         <h1>Your packages</h1>
-        {% if user.packages|length %}
-            {{ macros.listPackages(user.packages, null, true) }}
+        {% if packages|length %}
+            {{ macros.listPackages(packages, true, true) }}
         {% else %}
             <p>No packages found.</p>
         {% endif %}

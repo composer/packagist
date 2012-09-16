@@ -19,6 +19,8 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Pagerfanta\Pagerfanta;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
+use FOS\UserBundle\Model\UserInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -42,6 +44,20 @@ class UserController extends Controller
         return array('packages' => $this->getUserPackages($req, $user), 'user' => $user);
     }
 
+    public function myProfileAction(Request $req)
+    {
+        $user = $this->container->get('security.context')->getToken()->getUser();
+        if (!is_object($user) || !$user instanceof UserInterface) {
+            throw new AccessDeniedException('This user does not have access to this section.');
+        }
+
+        return $this->container->get('templating')->renderResponse(
+            'FOSUserBundle:Profile:show.html.'.$this->container->getParameter('fos_user.template.engine'),
+            array('user' => $user, 'packages' => $this->getUserPackages($req, $user))
+        );
+    }
+
+
     /**
      * @Template()
      * @Route("/users/{name}/", name="user_profile")
@@ -63,7 +79,8 @@ class UserController extends Controller
     {
         $packages = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
-            ->getFilteredQueryBuilder(array('maintainer' => $user->getId()));
+            ->getFilteredQueryBuilder(array('maintainer' => $user->getId()))
+            ->orderBy('p.name');
 
         $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
         $paginator->setMaxPerPage(15);

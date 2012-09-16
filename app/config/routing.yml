@@ -9,6 +9,12 @@ fos_user_profile:
     resource: "@FOSUserBundle/Resources/config/routing/profile.xml"
     prefix: /profile
 
+fos_user_profile_show:
+    pattern: /profile/
+    defaults: { _controller: PackagistWebBundle:User:myProfile }
+    requirements:
+        _method: GET
+
 fos_user_register:
     resource: "@FOSUserBundle/Resources/config/routing/registration.xml"
     prefix: /register
