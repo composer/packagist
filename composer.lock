@@ -1,5 +1,5 @@
 {
-    "hash": "3d783589fb4afc2bee7d0d7c67ade76b",
+    "hash": "935255dfdcb9876ff6d3b91eea1e5842",
     "packages": [
         {
             "name": "composer/composer",
@@ -423,7 +423,7 @@
                 "symfony/framework-bundle": "2.*",
                 "jms/cg": "1.0.0"
             },
-            "time": "2012-01-02 17:50:26",
+            "time": "2012-01-02 16:50:26",
             "type": "symfony-bundle",
             "installation-source": "dist",
             "autoload": {
@@ -465,7 +465,7 @@
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-01-02 17:40:52",
+            "time": "2012-01-02 16:40:52",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -565,7 +565,7 @@
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-01-02 18:32:49",
+            "time": "2012-01-02 17:32:49",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -674,7 +674,7 @@
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-01-01 11:33:17",
+            "time": "2012-01-01 10:33:17",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -950,7 +950,7 @@
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-03-10 18:52:32",
+            "time": "2012-03-10 17:52:32",
             "bin": [
                 "bin/jsonlint"
             ],
@@ -1422,12 +1422,12 @@
             "source": {
                 "type": "git",
                 "url": "git://github.com/symfony/symfony.git",
-                "reference": "846df269dd32c495fde203d4568c50e3214b4365"
+                "reference": "9993b86a4844af0b3dcd79f1c795eb4a8f5ab7d9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/symfony/symfony/zipball/846df269dd32c495fde203d4568c50e3214b4365",
-                "reference": "846df269dd32c495fde203d4568c50e3214b4365",
+                "url": "https://github.com/symfony/symfony/zipball/9993b86a4844af0b3dcd79f1c795eb4a8f5ab7d9",
+                "reference": "9993b86a4844af0b3dcd79f1c795eb4a8f5ab7d9",
                 "shasum": ""
             },
             "require": {
@@ -1476,7 +1476,7 @@
                 "propel/propel1": "dev-master",
                 "monolog/monolog": "dev-master"
             },
-            "time": "1347781262",
+            "time": "1347864860",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -1634,16 +1634,13 @@
             ]
         }
     ],
-    "packages-dev": [
-
-    ],
+    "packages-dev": null,
     "aliases": [
 
     ],
     "minimum-stability": "dev",
     "stability-flags": {
         "composer/composer": 20,
-        "friendsofsymfony/user-bundle": 20,
         "nelmio/solarium-bundle": 20,
         "snc/redis-bundle": 20,
         "white-october/pagerfanta-bundle": 20

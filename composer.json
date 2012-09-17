@@ -39,7 +39,7 @@
         "jms/di-extra-bundle": "1.1.*",
 
         "composer/composer": "dev-master",
-        "friendsofsymfony/user-bundle": "dev-master",
+        "friendsofsymfony/user-bundle": "2.0.*",
         "nelmio/solarium-bundle": "dev-master",
         "predis/predis": "0.7.*",
         "snc/redis-bundle": "dev-master",
