@@ -171,7 +171,13 @@ class FeedController extends Controller
      */
     protected function buildResponse($feed, $format)
     {
-        $response = new Response($feed->export($format), 200, array('Content-Type' => "application/$format+xml"));
+        $content = $feed->export($format);
+        $lastContent = $feed->getEntry(0);
+        $etag = md5($content);
+
+        $response = new Response($content, 200, array('Content-Type' => "application/$format+xml"));
+        $response->setEtag($etag);
+        $response->setLastModified($lastContent->getDateModified());
 
         return $response;
     }
