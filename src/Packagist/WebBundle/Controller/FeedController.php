@@ -55,9 +55,9 @@ class FeedController extends Controller
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-        $packages = $repo->getPackagesWithVersions();
+        $packages = $repo->getLatestPackages();
 
-        $feed = $this->buildFeed('Latest Packages', 'Latest updated packages.', $packages, $format);
+        $feed = $this->buildFeed('Latest Packages', 'Latest packages updated on Packagist.', $packages, $format);
 
         return $this->buildResponse($feed, $format);
     }
@@ -73,35 +73,33 @@ class FeedController extends Controller
      */
     public function newestAction($format)
     {
+        /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-    }
+        $packages = $repo->getNewestPackages();
 
-    /**
-     * @Route(
-     *     "/popular.{format}",
-     *     name="feed_popular",
-     *     requirements={"format"="(rss|atom)"},
-     *     defaults={"format"="rss"}
-     * )
-     * @Method({"GET"})
-     */
-    public function popularAction($format)
-    {
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $feed = $this->buildFeed('Newest Packages', 'Latest packages added to Packagist.', $packages, $format);
+
+        return $this->buildResponse($feed, $format);
     }
 
     /**
      * @Route(
      *     "/vendor.{filter}.{format}",
      *     name="feed_vendor",
-     *     requirements={"filter"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "format"="(rss|atom)"},
+     *     requirements={"format"="(rss|atom)"},
      *     defaults={"format"="rss"}
      * )
      * @Method({"GET"})
      */
-    public function vendorAction($format)
+    public function vendorAction($filter, $format)
     {
+        /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $packages = $repo->getLatestPackagesByVendor($filter);
+
+        $feed = $this->buildFeed("$filter Packages", "Latest packages updated on Packagist for $filter.", $packages, $format);
+
+        return $this->buildResponse($feed, $format);
     }
 
     /**
@@ -137,6 +135,8 @@ class FeedController extends Controller
     }
 
     /**
+     * Creates a new feed entry from the selected package
+     *
      * @param \Zend\Feed\Writer\Entry $entry
      * @param Package $package
      *
@@ -144,9 +144,8 @@ class FeedController extends Controller
      */
     protected function populatePackageEntry($entry, $package)
     {
-        //todo get version number properly
         /** @var $version Version */
-        $version = $package->getVersions()->first();
+        $version = $package->getVersions()->first() ?: new Version();
 
         $entry->setTitle("{$package->getPackageName()} {$version->getVersion()}");
         $entry->setLink($this->generateUrl('view_package', array('name' => $package->getName()), true));
@@ -164,6 +163,8 @@ class FeedController extends Controller
     }
 
     /**
+     * Creates a HTTP Response and exports feed
+     * 
      * @param \Zend\Feed\Writer\Feed $feed
      * @param string $format
      *
