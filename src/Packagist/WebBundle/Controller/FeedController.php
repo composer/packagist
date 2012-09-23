@@ -164,7 +164,7 @@ class FeedController extends Controller
 
     /**
      * Creates a HTTP Response and exports feed
-     * 
+     *
      * @param \Zend\Feed\Writer\Feed $feed
      * @param string $format
      *
@@ -173,13 +173,16 @@ class FeedController extends Controller
     protected function buildResponse($feed, $format)
     {
         $content = $feed->export($format);
-        $lastContent = $feed->getEntry(0);
+
         $etag = md5($content);
 
         $response = new Response($content, 200, array('Content-Type' => "application/$format+xml"));
         $response->setEtag($etag);
-        $response->setLastModified($lastContent->getDateModified());
 
+        if ($feed->count() > 0) {
+            $response->setLastModified($feed->getEntry(0)->getDateModified());
+        }
+        
         return $response;
     }
 }
