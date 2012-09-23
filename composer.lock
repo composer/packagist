@@ -1,5 +1,5 @@
 {
-    "hash": "935255dfdcb9876ff6d3b91eea1e5842",
+    "hash": "4daa5a30754435b037974489b31e4153",
     "packages": [
         {
             "name": "composer/composer",
@@ -27,7 +27,6 @@
                 "ext-zip": "Enabling the zip extension allows you to unzip archives, and allows gzip compression of all internet traffic",
                 "ext-openssl": "Enabling the openssl extension allows you to access https URLs for repositories and packages"
             },
-            "time": "1347812386",
             "bin": [
                 "bin/composer"
             ],
@@ -65,7 +64,8 @@
                 "package",
                 "dependency",
                 "autoload"
-            ]
+            ],
+            "time": "1347812386"
         },
         {
             "name": "doctrine/common",
@@ -153,7 +153,6 @@
                 "php": ">=5.3.2",
                 "doctrine/common": "2.3.*"
             },
-            "time": "1346866589",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -195,7 +194,8 @@
                 "persistence",
                 "dbal",
                 "queryobject"
-            ]
+            ],
+            "time": "1346866589"
         },
         {
             "name": "doctrine/doctrine-bundle",
@@ -226,7 +226,6 @@
             "suggest": {
                 "doctrine/orm": "The Doctrine ORM integration is optional in the bundle."
             },
-            "time": "1347289964",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -263,7 +262,8 @@
                 "orm",
                 "persistence",
                 "dbal"
-            ]
+            ],
+            "time": "1347289964"
         },
         {
             "name": "doctrine/orm",
@@ -288,7 +288,6 @@
             "suggest": {
                 "symfony/yaml": "If you want to use YAML Metadata Mapping Driver"
             },
-            "time": "1346869007",
             "bin": [
                 "bin/doctrine",
                 "bin/doctrine.php"
@@ -332,7 +331,8 @@
             "keywords": [
                 "database",
                 "orm"
-            ]
+            ],
+            "time": "1346869007"
         },
         {
             "name": "friendsofsymfony/user-bundle",
@@ -423,7 +423,7 @@
                 "symfony/framework-bundle": "2.*",
                 "jms/cg": "1.0.0"
             },
-            "time": "2012-01-02 16:50:26",
+            "time": "2012-01-02 11:50:26",
             "type": "symfony-bundle",
             "installation-source": "dist",
             "autoload": {
@@ -465,7 +465,7 @@
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-01-02 16:40:52",
+            "time": "2012-01-02 11:40:52",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -565,7 +565,7 @@
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-01-02 17:32:49",
+            "time": "2012-01-02 12:32:49",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -628,7 +628,6 @@
                 "symfony/form": "*",
                 "symfony/validator": "*"
             },
-            "time": "1346947943",
             "type": "symfony-bundle",
             "installation-source": "source",
             "autoload": {
@@ -655,7 +654,8 @@
                 "security",
                 "secure",
                 "expression"
-            ]
+            ],
+            "time": "1346947943"
         },
         {
             "name": "justinrainbow/json-schema",
@@ -674,7 +674,7 @@
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-01-01 10:33:17",
+            "time": "2012-01-01 05:33:17",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -750,7 +750,6 @@
                 "ptachoire/cssembed": "Assetic provides the integration with phpcssembed to embed data uris",
                 "leafo/scssphp-compass": "Assetic provides the integration with the SCSS compass plugin"
             },
-            "time": "1347622188",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -782,7 +781,8 @@
                 "assets",
                 "compression",
                 "minification"
-            ]
+            ],
+            "time": "1347622188"
         },
         {
             "name": "monolog/monolog",
@@ -809,7 +809,6 @@
                 "ext-amqp": "Allow sending log messages to an AMQP server (1.0+ required)",
                 "ext-mongo": "Allow sending log messages to a MongoDB server"
             },
-            "time": "1347363321",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -838,7 +837,8 @@
             "keywords": [
                 "log",
                 "logging"
-            ]
+            ],
+            "time": "1347363321"
         },
         {
             "name": "nelmio/solarium-bundle",
@@ -862,7 +862,6 @@
             "require-dev": {
                 "symfony/yaml": "2.*"
             },
-            "time": "1345050695",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -874,7 +873,8 @@
                 "psr-0": {
                     "Nelmio\\SolariumBundle": ""
                 }
-            }
+            },
+            "time": "1345050695"
         },
         {
             "name": "pagerfanta/pagerfanta",
@@ -898,14 +898,14 @@
                 "doctrine/mongodb-odm": "2.*",
                 "solarium/solarium": "2.*"
             },
-            "time": "1345672591",
             "type": "library",
             "installation-source": "source",
             "autoload": {
                 "psr-0": {
                     "Pagerfanta\\": "src/"
                 }
-            }
+            },
+            "time": "1345672591"
         },
         {
             "name": "predis/predis",
@@ -924,14 +924,14 @@
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "1346694780",
             "type": "library",
             "installation-source": "source",
             "autoload": {
                 "psr-0": {
                     "Predis": "lib/"
                 }
-            }
+            },
+            "time": "1346694780"
         },
         {
             "name": "seld/jsonlint",
@@ -950,7 +950,7 @@
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-03-10 17:52:32",
+            "time": "2012-03-10 12:52:32",
             "bin": [
                 "bin/jsonlint"
             ],
@@ -998,7 +998,6 @@
             "require": {
                 "symfony/framework-bundle": "2.1.*"
             },
-            "time": "1347340208",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -1024,7 +1023,8 @@
             "keywords": [
                 "distribution",
                 "configuration"
-            ]
+            ],
+            "time": "1347340208"
         },
         {
             "name": "sensio/framework-extra-bundle",
@@ -1045,7 +1045,6 @@
                 "symfony/framework-bundle": "2.1.*",
                 "doctrine/common": ">=2.1,<2.4-dev"
             },
-            "time": "1347780475",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -1071,7 +1070,8 @@
             "keywords": [
                 "annotations",
                 "controllers"
-            ]
+            ],
+            "time": "1347780475"
         },
         {
             "name": "sensio/generator-bundle",
@@ -1099,7 +1099,6 @@
             "suggest": {
                 "doctrine/doctrine-bundle": "to generate entities and their crud controller"
             },
-            "time": "1346138171",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -1121,7 +1120,8 @@
                     "email": "fabien@symfony.com"
                 }
             ],
-            "description": "This bundle generates code for you"
+            "description": "This bundle generates code for you",
+            "time": "1346138171"
         },
         {
             "name": "snc/redis-bundle",
@@ -1151,7 +1151,6 @@
                 "monolog/monolog": "If you want to use the monolog redis handler.",
                 "predis/predis": "If you want to use predis (currently only v0.7.x is supported)."
             },
-            "time": "1345897840",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -1163,7 +1162,8 @@
                 "psr-0": {
                     "Snc\\RedisBundle": ""
                 }
-            }
+            },
+            "time": "1345897840"
         },
         {
             "name": "solarium/solarium",
@@ -1290,7 +1290,6 @@
             "suggest": {
                 "symfony/twig-bundle": "2.1.*"
             },
-            "time": "1347626244",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -1319,7 +1318,8 @@
                 "assets",
                 "compression",
                 "minification"
-            ]
+            ],
+            "time": "1347626244"
         },
         {
             "name": "symfony/monolog-bundle",
@@ -1347,7 +1347,6 @@
                 "symfony/yaml": "2.1.*",
                 "symfony/config": "2.1.*"
             },
-            "time": "1347283885",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -1374,7 +1373,8 @@
                 }
             ],
             "description": "Symfony MonologBundle",
-            "homepage": "http://symfony.com"
+            "homepage": "http://symfony.com",
+            "time": "1347283885"
         },
         {
             "name": "symfony/swiftmailer-bundle",
@@ -1402,7 +1402,6 @@
                 "symfony/config": "2.1.*",
                 "symfony/yaml": "2.1.*"
             },
-            "time": "1346243146",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -1414,7 +1413,8 @@
                 "psr-0": {
                     "Symfony\\Bundle\\SwiftmailerBundle": ""
                 }
-            }
+            },
+            "time": "1346243146"
         },
         {
             "name": "symfony/symfony",
@@ -1476,7 +1476,6 @@
                 "propel/propel1": "dev-master",
                 "monolog/monolog": "dev-master"
             },
-            "time": "1347864860",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -1507,7 +1506,8 @@
             "homepage": "http://symfony.com",
             "keywords": [
                 "framework"
-            ]
+            ],
+            "time": "1347864860"
         },
         {
             "name": "twig/extensions",
@@ -1526,7 +1526,6 @@
             "require": {
                 "twig/twig": "1.*"
             },
-            "time": "1346770278",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -1538,7 +1537,8 @@
                 "psr-0": {
                     "Twig_Extensions_": "lib/"
                 }
-            }
+            },
+            "time": "1346770278"
         },
         {
             "name": "twig/twig",
@@ -1557,7 +1557,6 @@
             "require": {
                 "php": ">=5.2.4"
             },
-            "time": "1347806324",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -1587,7 +1586,8 @@
             "homepage": "http://twig.sensiolabs.org",
             "keywords": [
                 "templating"
-            ]
+            ],
+            "time": "1347806324"
         },
         {
             "name": "white-october/pagerfanta-bundle",
@@ -1608,7 +1608,6 @@
                 "symfony/framework-bundle": "2.*",
                 "pagerfanta/pagerfanta": "dev-master"
             },
-            "time": "1343134121",
             "type": "symfony-bundle",
             "installation-source": "source",
             "autoload": {
@@ -1631,6 +1630,272 @@
             "keywords": [
                 "page",
                 "paging"
+            ],
+            "time": "1343134121"
+        },
+        {
+            "name": "zendframework/zend-escaper",
+            "version": "2.0.2",
+            "target-dir": "Zend/Escaper",
+            "dist": {
+                "type": "zip",
+                "url": "http://packages.zendframework.com/composer/Zend_Escaper-2.0.2.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Zend\\Escaper": ""
+                }
+            },
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": " ",
+            "homepage": "http://packages.zendframework.com/",
+            "keywords": [
+                "zf2",
+                "escaper"
+            ]
+        },
+        {
+            "name": "zendframework/zend-feed",
+            "version": "2.0.2",
+            "target-dir": "Zend/Feed",
+            "dist": {
+                "type": "zip",
+                "url": "http://packages.zendframework.com/composer/Zend_Feed-2.0.2.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "require": {
+                "php": ">=5.3.3",
+                "zendframework/zend-escaper": "self.version",
+                "zendframework/zend-stdlib": "self.version"
+            },
+            "suggest": {
+                "zendframework/zend-uri": "Zend\\Uri component",
+                "zendframework/zend-validator": "Zend\\Validator component"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Zend\\Feed": ""
+                }
+            },
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": "provides functionality for consuming RSS and Atom feeds",
+            "homepage": "http://packages.zendframework.com/",
+            "keywords": [
+                "zf2",
+                "feed"
+            ]
+        },
+        {
+            "name": "zendframework/zend-i18n",
+            "version": "2.0.2",
+            "target-dir": "Zend/I18n",
+            "dist": {
+                "type": "zip",
+                "url": "http://packages.zendframework.com/composer/Zend_I18n-2.0.2.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "require": {
+                "php": ">=5.3.3",
+                "ext-intl": "*",
+                "zendframework/zend-stdlib": "self.version"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Zend\\I18n": ""
+                }
+            },
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": " ",
+            "homepage": "http://packages.zendframework.com/",
+            "keywords": [
+                "zf2",
+                "i18n"
+            ]
+        },
+        {
+            "name": "zendframework/zend-servicemanager",
+            "version": "2.0.2",
+            "target-dir": "Zend/ServiceManager",
+            "dist": {
+                "type": "zip",
+                "url": "http://packages.zendframework.com/composer/Zend_ServiceManager-2.0.2.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "suggest": {
+                "zendframework/zend-di": "Zend\\Di component"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Zend\\ServiceManager": ""
+                }
+            },
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": " ",
+            "homepage": "http://packages.zendframework.com/",
+            "keywords": [
+                "zf2",
+                "servicemanager"
+            ]
+        },
+        {
+            "name": "zendframework/zend-stdlib",
+            "version": "2.0.2",
+            "target-dir": "Zend/Stdlib",
+            "dist": {
+                "type": "zip",
+                "url": "http://packages.zendframework.com/composer/Zend_Stdlib-2.0.2.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "suggest": {
+                "pecl-weakref": "Implementation of weak references for Stdlib\\CallbackHandler"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Zend\\Stdlib": ""
+                }
+            },
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": " ",
+            "homepage": "http://packages.zendframework.com/",
+            "keywords": [
+                "zf2",
+                "stdlib"
+            ]
+        },
+        {
+            "name": "zendframework/zend-uri",
+            "version": "2.0.2",
+            "target-dir": "Zend/Uri",
+            "dist": {
+                "type": "zip",
+                "url": "http://packages.zendframework.com/composer/Zend_Uri-2.0.2.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "require": {
+                "php": ">=5.3.3",
+                "zendframework/zend-escaper": "self.version",
+                "zendframework/zend-validator": "self.version"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Zend\\Uri": ""
+                }
+            },
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": "a component that aids in manipulating and validating » Uniform Resource Identifiers (URIs)",
+            "homepage": "http://packages.zendframework.com/",
+            "keywords": [
+                "zf2",
+                "uri"
+            ]
+        },
+        {
+            "name": "zendframework/zend-validator",
+            "version": "2.0.2",
+            "target-dir": "Zend/Validator",
+            "dist": {
+                "type": "zip",
+                "url": "http://packages.zendframework.com/composer/Zend_Validator-2.0.2.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "require": {
+                "php": ">=5.3.3",
+                "zendframework/zend-i18n": "self.version",
+                "zendframework/zend-stdlib": "self.version"
+            },
+            "require-dev": {
+                "zendframework/zend-math": "self.version"
+            },
+            "suggest": {
+                "zendframework/zend-db": "Zend\\Db component",
+                "zendframework/zend-math": "Zend\\Math component"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Zend\\Validator": ""
+                }
+            },
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": "provides a set of commonly needed validators",
+            "homepage": "http://packages.zendframework.com/",
+            "keywords": [
+                "zf2",
+                "validator"
+            ]
+        },
+        {
+            "name": "zendframework/zend-version",
+            "version": "2.0.2",
+            "target-dir": "Zend/Version",
+            "dist": {
+                "type": "zip",
+                "url": "http://packages.zendframework.com/composer/Zend_Version-2.0.2.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-0": {
+                    "Zend\\Version": ""
+                }
+            },
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": " ",
+            "homepage": "http://packages.zendframework.com/",
+            "keywords": [
+                "zf2",
+                "version"
             ]
         }
     ],
