@@ -13,6 +13,9 @@
 namespace Packagist\WebBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Doctrine\ORM\QueryBuilder;
+use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Pagerfanta;
 use Zend\Feed\Writer\Entry;
 use Zend\Feed\Writer\Feed;
 use Packagist\WebBundle\Entity\Package;
@@ -40,8 +43,8 @@ class FeedController extends Controller
     {
         /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
-        $packages = $repo->getLatestVersionWithPackage(
-            $this->container->getParameter('packagist_web.rss_max_items')
+        $packages = $this->getLimitedResults(
+            $repo->getQueryBuilderForLatestVersionWithPackage()
         );
 
         $feed = $this->buildFeed(
@@ -65,8 +68,8 @@ class FeedController extends Controller
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-        $packages = $repo->getNewestPackages(
-            $this->container->getParameter('packagist_web.rss_max_items')
+        $packages = $this->getLimitedResults(
+            $repo->getQueryBuilderForNewestPackages()
         );
 
         $feed = $this->buildFeed(
@@ -90,9 +93,8 @@ class FeedController extends Controller
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-        $packages = $repo->getLatestPackagesByVendor(
-            $filter,
-            $this->container->getParameter('packagist_web.rss_max_items')
+        $packages = $this->getLimitedResults(
+            $repo->getQueryBuilderForLatestPackagesByVendor($filter)
         );
 
         $feed = $this->buildFeed(
@@ -102,6 +104,24 @@ class FeedController extends Controller
         );
 
         return $this->buildResponse($feed);
+    }
+
+    /**
+     * Limits a query to the desired number of results
+     *
+     * @param \Doctrine\ORM\QueryBuilder $queryBuilder
+     *
+     * @return array|\Traversable
+     */
+    protected function getLimitedResults(QueryBuilder $queryBuilder)
+    {
+        $paginator = new Pagerfanta(new DoctrineORMAdapter($queryBuilder));
+        $paginator->setMaxPerPage(
+            $this->container->getParameter('packagist_web.rss_max_items')
+        );
+        $paginator->setCurrentPage(1);
+
+        return $paginator->getCurrentPageResults();
     }
 
     /**
@@ -128,7 +148,10 @@ class FeedController extends Controller
         }
 
         if ($this->getRequest()->getRequestFormat() == 'atom') {
-            $feed->setFeedLink($this->getRequest()->getUri(), $this->getRequest()->getRequestFormat());
+            $feed->setFeedLink(
+                $this->getRequest()->getUri(),
+                $this->getRequest()->getRequestFormat()
+            );
         }
 
         return $feed;
