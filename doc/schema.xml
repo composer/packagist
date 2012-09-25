@@ -235,6 +235,7 @@
    <field name="name" type="text_general_rev" indexed="true" stored="true"/>
    <field name="description" type="text_general_rev" indexed="true" stored="true"/>
    <field name="tags" type="text_general_rev" indexed="true" stored="true" multiValued="true"/>
+   <field name="type" type="text_general_rev" indexed="true" stored="true"/>
 
    <!-- catchall field, containing all other searchable text fields (implemented
         via copyField further on in this schema  -->
