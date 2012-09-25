@@ -130,15 +130,14 @@ class WebController extends Controller
 
                 $select = $solarium->createSelect();
                 $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
-                $typeFilter = $req->get('type');
-                
+                $typeFilter = $req->query->get('type');
+
                 // filter by type
                 if ($typeFilter !== null) {
-                	$filterQueryTerm = sprintf('type:%s', $select->getHelper()->escapeTerm($typeFilter));
-                	$filterQuery = $select->createFilterQuery('type')->setQuery($filterQueryTerm);
-                	$select->addFilterQuery($filterQuery);
+                    $filterQueryTerm = sprintf('type:%s', $select->getHelper()->escapeTerm($typeFilter));
+                    $filterQuery = $select->createFilterQuery('type')->setQuery($filterQueryTerm);
+                    $select->addFilterQuery($filterQuery);
                 }
-                
                 $dismax = $select->getDisMax();
                 $dismax->setQueryFields(array('name^2', 'description', 'tags', 'text', 'text_ngram', 'name_split^1.5'));
                 $dismax->setPhraseFields(array('description^30'));
