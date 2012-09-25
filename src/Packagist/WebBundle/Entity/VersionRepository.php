@@ -71,9 +71,11 @@ class VersionRepository extends EntityRepository
     /**
      * Returns the latest versions released
      *
+     * @param int|null $max
+     *
      * @return array
      */
-    public function getLatestVersionWithPackage()
+    public function getLatestVersionWithPackage($max = null)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('v', 't', 'a', 'p')
@@ -82,6 +84,10 @@ class VersionRepository extends EntityRepository
             ->leftJoin('v.authors', 'a')
             ->leftJoin('v.package', 'p')
             ->orderBy('v.releasedAt', 'DESC');
+
+        if ($max !== null) {
+            $qb->setMaxResults($max);
+        }
 
         return $qb->getQuery()->getResult();
     }

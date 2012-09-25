@@ -215,26 +215,36 @@ class PackageRepository extends EntityRepository
         return $qb;
     }
 
-    public function getLatestPackages()
-    {
-        $qb = $this->getBaseQueryBuilder();
-
-        $qb->orderBy('v.releasedAt', 'DESC');
-
-        return $qb->getQuery()->getResult();
-    }
-
-    public function getNewestPackages()
+    /**
+     * Gets the most recent packages created
+     *
+     * @param int|null $max
+     *
+     * @return array
+     */
+    public function getNewestPackages($max = null)
     {
         $qb = $this->getBaseQueryBuilder();
 
         $qb->orderBy('p.createdAt', 'DESC');
         $qb->addOrderBy('v.releasedAt', 'DESC');
 
+        if ($max !== null) {
+            $qb->setMaxResults($max);
+        }
+
         return $qb->getQuery()->getResult();
     }
 
-    public function getLatestPackagesByVendor($vendor)
+    /**
+     * Gets the latest packages/versions released by a selected vendor
+     *
+     * @param string $vendor
+     * @param int|null $max
+     *
+     * @return array
+     */
+    public function getLatestPackagesByVendor($vendor, $max = null)
     {
         $qb = $this->getBaseQueryBuilder();
 
@@ -242,6 +252,10 @@ class PackageRepository extends EntityRepository
 
         $qb->where('p.name LIKE ?0');
         $qb->setParameter(0, $vendor.'/%');
+
+        if ($max !== null) {
+            $qb->setMaxResults($max);
+        }
 
         return $qb->getQuery()->getResult();
     }

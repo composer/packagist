@@ -55,9 +55,16 @@ class FeedController extends Controller
     {
         /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
-        $packages = $repo->getLatestVersionWithPackage();
+        $packages = $repo->getLatestVersionWithPackage(
+            $this->container->getParameter('packagist_web.rss_max_items')
+        );
 
-        $feed = $this->buildFeed('Latest Packages', 'Latest packages updated on Packagist.', $packages, $format);
+        $feed = $this->buildFeed(
+            'Latest Packages',
+            'Latest packages updated on Packagist.',
+            $packages,
+            $format
+        );
 
         return $this->buildResponse($feed, $format);
     }
@@ -75,9 +82,16 @@ class FeedController extends Controller
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-        $packages = $repo->getNewestPackages();
+        $packages = $repo->getNewestPackages(
+            $this->container->getParameter('packagist_web.rss_max_items')
+        );
 
-        $feed = $this->buildFeed('Latest Released Packages', 'Latest packages added to Packagist.', $packages, $format);
+        $feed = $this->buildFeed(
+            'Latest Released Packages',
+            'Latest packages added to Packagist.',
+            $packages,
+            $format
+        );
 
         return $this->buildResponse($feed, $format);
     }
@@ -95,9 +109,17 @@ class FeedController extends Controller
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-        $packages = $repo->getLatestPackagesByVendor($filter);
+        $packages = $repo->getLatestPackagesByVendor(
+            $filter,
+            $this->container->getParameter('packagist_web.rss_max_items')
+        );
 
-        $feed = $this->buildFeed("$filter Packages", "Latest packages updated on Packagist for $filter.", $packages, $format);
+        $feed = $this->buildFeed(
+            "$filter Packages",
+            "Latest packages updated on Packagist for $filter.",
+            $packages,
+            $format
+        );
 
         return $this->buildResponse($feed, $format);
     }
@@ -163,7 +185,13 @@ class FeedController extends Controller
     protected function populatePackageData($entry, $package)
     {
         $entry->setTitle($package->getPackageName());
-        $entry->setLink($this->generateUrl('view_package', array('name' => $package->getName()), true));
+        $entry->setLink(
+            $this->generateUrl(
+                'view_package',
+                array('name' => $package->getName()),
+                true
+            )
+        );
 
         $entry->setDateModified($package->getUpdatedAt());
         $entry->setDateCreated($package->getCreatedAt());
@@ -200,8 +228,9 @@ class FeedController extends Controller
     {
         $content = $feed->export($format);
         $etag = md5($content);
+        $headers = array('Content-Type' => "application/$format+xml");
 
-        $response = new Response($content, 200, array('Content-Type' => "application/$format+xml"));
+        $response = new Response($content, 200, $headers);
         $response->setEtag($etag);
         $response->setSharedMaxAge(3600);
 
