@@ -14,16 +14,16 @@ class Configuration implements ConfigurationInterface
 {
     /**
      * {@inheritDoc}
-     * @return \Symfony\Component\Config\Definition\Builder\TreeBuilder
      */
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('packagist_web');
 
-        $rootNode->children()
-                    ->scalarNode('rss_max_items')->defaultValue(40)->end()
-                 ->end();
+        $rootNode
+            ->children()
+                ->scalarNode('rss_max_items')->defaultValue(40)->end()
+            ->end();
 
         return $treeBuilder;
     }

@@ -12,20 +12,14 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Composer\IO\NullIO;
-use Composer\Factory;
-use Composer\Package\Loader\ArrayLoader;
-use Packagist\WebBundle\Package\Updater;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Zend\Feed\Writer\Entry;
+use Zend\Feed\Writer\Feed;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * @author Rafael Dohms <rafael@doh.ms>
@@ -35,23 +29,14 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 class FeedController extends Controller
 {
     /**
-     * @Route("/", name="feed_home")
-     */
-    public function indexAction()
-    {
-        return $this->forward('PackagistFeedController:Feed:latest');
-    }
-
-    /**
      * @Route(
-     *     "/packages.{format}",
+     *     "/packages.{_format}",
      *     name="feed_packages",
-     *     requirements={"format"="(rss|atom)"},
-     *     defaults={"format"="rss"}
+     *     requirements={"_format"="(rss|atom)"}
      * )
      * @Method({"GET"})
      */
-    public function packagesAction($format)
+    public function packagesAction()
     {
         /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
@@ -62,23 +47,21 @@ class FeedController extends Controller
         $feed = $this->buildFeed(
             'Latest Packages',
             'Latest packages updated on Packagist.',
-            $packages,
-            $format
+            $packages
         );
 
-        return $this->buildResponse($feed, $format);
+        return $this->buildResponse($feed);
     }
 
     /**
      * @Route(
-     *     "/releases.{format}",
+     *     "/releases.{_format}",
      *     name="feed_releases",
-     *     requirements={"format"="(rss|atom)"},
-     *     defaults={"format"="rss"}
+     *     requirements={"_format"="(rss|atom)"}
      * )
      * @Method({"GET"})
      */
-    public function releasesAction($format)
+    public function releasesAction()
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
@@ -89,23 +72,21 @@ class FeedController extends Controller
         $feed = $this->buildFeed(
             'Latest Released Packages',
             'Latest packages added to Packagist.',
-            $packages,
-            $format
+            $packages
         );
 
-        return $this->buildResponse($feed, $format);
+        return $this->buildResponse($feed);
     }
 
     /**
      * @Route(
-     *     "/vendor.{filter}.{format}",
+     *     "/vendor.{filter}.{_format}",
      *     name="feed_vendor",
-     *     requirements={"format"="(rss|atom)"},
-     *     defaults={"format"="rss"}
+     *     requirements={"_format"="(rss|atom)"}
      * )
      * @Method({"GET"})
      */
-    public function vendorAction($filter, $format)
+    public function vendorAction($filter)
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
@@ -117,11 +98,10 @@ class FeedController extends Controller
         $feed = $this->buildFeed(
             "$filter Packages",
             "Latest packages updated on Packagist for $filter.",
-            $packages,
-            $format
+            $packages
         );
 
-        return $this->buildResponse($feed, $format);
+        return $this->buildResponse($feed);
     }
 
     /**
@@ -129,14 +109,13 @@ class FeedController extends Controller
      *
      * @param string $title
      * @param string $description
-     * @param array $items
-     * @param string $format
+     * @param array  $items
      *
      * @return \Zend\Feed\Writer\Feed
      */
-    protected function buildFeed($title, $description, $items, $format)
+    protected function buildFeed($title, $description, $items)
     {
-        $feed = new \Zend\Feed\Writer\Feed();
+        $feed = new Feed();
         $feed->setTitle($title);
         $feed->setDescription($description);
         $feed->setLink($this->getRequest()->getSchemeAndHttpHost());
@@ -148,8 +127,8 @@ class FeedController extends Controller
             $feed->addEntry($entry);
         }
 
-        if ($format == 'atom'){
-            $feed->setFeedLink($this->getRequest()->getUri(), $format);
+        if ($this->getRequest()->getRequestFormat() == 'atom') {
+            $feed->setFeedLink($this->getRequest()->getUri(), $this->getRequest()->getRequestFormat());
         }
 
         return $feed;
@@ -159,9 +138,9 @@ class FeedController extends Controller
      * Receives either a Package or a Version and populates a feed entry.
      *
      * @param \Zend\Feed\Writer\Entry $entry
-     * @param Package|Version $item
+     * @param Package|Version         $item
      */
-    protected function populateEntry($entry, $item)
+    protected function populateEntry(Entry $entry, $item)
     {
         if ($item instanceof Package) {
             $version = $item->getVersions()->first() ?: new Version();
@@ -180,9 +159,9 @@ class FeedController extends Controller
      * Populates a feed entry with data coming from Package objects.
      *
      * @param \Zend\Feed\Writer\Entry $entry
-     * @param Package $package
+     * @param Package                 $package
      */
-    protected function populatePackageData($entry, $package)
+    protected function populatePackageData(Entry $entry, Package $package)
     {
         $entry->setTitle($package->getPackageName());
         $entry->setLink(
@@ -202,9 +181,9 @@ class FeedController extends Controller
      * Populates a feed entry with data coming from Version objects.
      *
      * @param \Zend\Feed\Writer\Entry $entry
-     * @param Version $version
+     * @param Version                 $version
      */
-    protected function populateVersionData($entry, $version)
+    protected function populateVersionData(Entry $entry, Version $version)
     {
         $entry->setTitle($entry->getTitle()." ({$version->getVersion()})");
 
@@ -220,23 +199,15 @@ class FeedController extends Controller
      * Creates a HTTP Response and exports feed
      *
      * @param \Zend\Feed\Writer\Feed $feed
-     * @param string $format
      *
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    protected function buildResponse($feed, $format)
+    protected function buildResponse(Feed $feed)
     {
-        $content = $feed->export($format);
-        $etag = md5($content);
-        $headers = array('Content-Type' => "application/$format+xml");
+        $content = $feed->export($this->getRequest()->getRequestFormat());
 
-        $response = new Response($content, 200, $headers);
-        $response->setEtag($etag);
+        $response = new Response($content, 200);
         $response->setSharedMaxAge(3600);
-
-        if ($feed->count() > 0) {
-            $response->setLastModified($feed->getEntry(0)->getDateModified());
-        }
 
         return $response;
     }

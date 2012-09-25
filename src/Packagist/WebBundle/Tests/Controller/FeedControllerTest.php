@@ -18,7 +18,7 @@ class FeedControllerTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $url = $client->getContainer()->get('router')->generate($feed, array('format' => $format, 'filter' => $filter));
+        $url = $client->getContainer()->get('router')->generate($feed, array('_format' => $format, 'filter' => $filter));
 
         $crawler = $client->request('GET', $url);
 

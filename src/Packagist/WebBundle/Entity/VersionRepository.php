@@ -85,7 +85,7 @@ class VersionRepository extends EntityRepository
             ->leftJoin('v.package', 'p')
             ->orderBy('v.releasedAt', 'DESC');
 
-        if ($max !== null) {
+        if (null !== $max) {
             $qb->setMaxResults($max);
         }
 

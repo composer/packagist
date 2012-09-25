@@ -229,7 +229,7 @@ class PackageRepository extends EntityRepository
         $qb->orderBy('p.createdAt', 'DESC');
         $qb->addOrderBy('v.releasedAt', 'DESC');
 
-        if ($max !== null) {
+        if (null !== $max) {
             $qb->setMaxResults($max);
         }
 
@@ -253,7 +253,7 @@ class PackageRepository extends EntityRepository
         $qb->where('p.name LIKE ?0');
         $qb->setParameter(0, $vendor.'/%');
 
-        if ($max !== null) {
+        if (null !== $max) {
             $qb->setMaxResults($max);
         }
 
