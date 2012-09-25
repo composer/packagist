@@ -9,36 +9,38 @@ class FeedControllerTest extends WebTestCase
     /**
      * @param $feed
      * @param $format
+     * @param null $filter
      *
+     * @return void
      * @dataProvider provideForFeed
      */
     public function testFeedAction($feed, $format, $filter = null)
     {
         $client = self::createClient();
 
-        $filterExtra = ($filter !== null)? ".$filter":'';
+        $url = $client->getContainer()->get('router')->generate($feed, array('format' => $format, 'filter' => $filter));
 
-        $crawler = $client->request('GET', "/feed/$feed$filterExtra.$format");
+        $crawler = $client->request('GET', $url);
 
-        var_dump($client->getResponse()->getContent());
         $this->assertEquals(200, $client->getResponse()->getStatusCode());
         $this->assertContains($format, $client->getResponse()->getContent());
 
         if ($filter !== null) {
             $this->assertContains($filter, $client->getResponse()->getContent());
         }
+
     }
 
 
     public function provideForFeed()
     {
         return array(
-            array('latest', 'rss'),
-            array('latest', 'atom'),
-            array('newest', 'rss'),
-            array('newest', 'atom'),
-            array('vendor', 'rss', 'symfony'),
-            array('vendor', 'atom', 'symfony'),
+            array('feed_packages', 'rss'),
+            array('feed_packages', 'atom'),
+            array('feed_releases', 'rss'),
+            array('feed_releases', 'atom'),
+            array('feed_vendor', 'rss', 'symfony'),
+            array('feed_vendor', 'atom', 'symfony'),
         );
     }
 

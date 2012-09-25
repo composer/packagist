@@ -30,7 +30,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 /**
  * @author Rafael Dohms <rafael@doh.ms>
  *
- * @Route("/feed")
+ * @Route("/feeds")
  */
 class FeedController extends Controller
 {
@@ -44,18 +44,18 @@ class FeedController extends Controller
 
     /**
      * @Route(
-     *     "/latest.{format}",
-     *     name="feed_latest",
+     *     "/packages.{format}",
+     *     name="feed_packages",
      *     requirements={"format"="(rss|atom)"},
      *     defaults={"format"="rss"}
      * )
      * @Method({"GET"})
      */
-    public function latestAction($format)
+    public function packagesAction($format)
     {
-        /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
-        $packages = $repo->getLatestPackages();
+        /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $packages = $repo->getLatestVersionWithPackage();
 
         $feed = $this->buildFeed('Latest Packages', 'Latest packages updated on Packagist.', $packages, $format);
 
@@ -64,20 +64,20 @@ class FeedController extends Controller
 
     /**
      * @Route(
-     *     "/newest.{format}",
-     *     name="feed_newest",
+     *     "/releases.{format}",
+     *     name="feed_releases",
      *     requirements={"format"="(rss|atom)"},
      *     defaults={"format"="rss"}
      * )
      * @Method({"GET"})
      */
-    public function newestAction($format)
+    public function releasesAction($format)
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
         $packages = $repo->getNewestPackages();
 
-        $feed = $this->buildFeed('Newest Packages', 'Latest packages added to Packagist.', $packages, $format);
+        $feed = $this->buildFeed('Latest Released Packages', 'Latest packages added to Packagist.', $packages, $format);
 
         return $this->buildResponse($feed, $format);
     }
@@ -107,12 +107,12 @@ class FeedController extends Controller
      *
      * @param string $title
      * @param string $description
-     * @param array $packages
+     * @param array $items
      * @param string $format
      *
      * @return \Zend\Feed\Writer\Feed
      */
-    protected function buildFeed($title, $description, $packages, $format)
+    protected function buildFeed($title, $description, $items, $format)
     {
         $feed = new \Zend\Feed\Writer\Feed();
         $feed->setTitle($title);
@@ -120,10 +120,9 @@ class FeedController extends Controller
         $feed->setLink($this->getRequest()->getSchemeAndHttpHost());
         $feed->setDateModified(time());
 
-        foreach ($packages as $package) {
+        foreach ($items as $item) {
             $entry = $feed->createEntry();
-            $this->populatePackageEntry($entry, $package);
-
+            $this->populateEntry($entry, $item);
             $feed->addEntry($entry);
         }
 
@@ -135,24 +134,51 @@ class FeedController extends Controller
     }
 
     /**
-     * Creates a new feed entry from the selected package
+     * Receives either a Package or a Version and populates a feed entry.
+     *
+     * @param \Zend\Feed\Writer\Entry $entry
+     * @param Package|Version $item
+     */
+    protected function populateEntry($entry, $item)
+    {
+        if ($item instanceof Package) {
+            $version = $item->getVersions()->first() ?: new Version();
+
+            $this->populatePackageData($entry, $item);
+            $this->populateVersionData($entry, $version);
+        }
+
+        if ($item instanceof Version) {
+            $this->populatePackageData($entry, $item->getPackage());
+            $this->populateVersionData($entry, $item);
+        }
+    }
+
+    /**
+     * Populates a feed entry with data coming from Package objects.
      *
      * @param \Zend\Feed\Writer\Entry $entry
      * @param Package $package
-     *
-     * @return void
      */
-    protected function populatePackageEntry($entry, $package)
+    protected function populatePackageData($entry, $package)
     {
-        /** @var $version Version */
-        $version = $package->getVersions()->first() ?: new Version();
-
-        $entry->setTitle("{$package->getPackageName()} {$version->getVersion()}");
+        $entry->setTitle($package->getPackageName());
         $entry->setLink($this->generateUrl('view_package', array('name' => $package->getName()), true));
 
         $entry->setDateModified($package->getUpdatedAt());
         $entry->setDateCreated($package->getCreatedAt());
         $entry->setDescription($package->getDescription());
+    }
+
+    /**
+     * Populates a feed entry with data coming from Version objects.
+     *
+     * @param \Zend\Feed\Writer\Entry $entry
+     * @param Version $version
+     */
+    protected function populateVersionData($entry, $version)
+    {
+        $entry->setTitle($entry->getTitle()." ({$version->getVersion()})");
 
         foreach ($version->getAuthors() as $author) {
             /** @var $author \Packagist\WebBundle\Entity\Author */
@@ -173,16 +199,16 @@ class FeedController extends Controller
     protected function buildResponse($feed, $format)
     {
         $content = $feed->export($format);
-
         $etag = md5($content);
 
         $response = new Response($content, 200, array('Content-Type' => "application/$format+xml"));
         $response->setEtag($etag);
+        $response->setSharedMaxAge(3600);
 
         if ($feed->count() > 0) {
             $response->setLastModified($feed->getEntry(0)->getDateModified());
         }
-        
+
         return $response;
     }
 }

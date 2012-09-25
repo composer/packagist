@@ -67,4 +67,22 @@ class VersionRepository extends EntityRepository
 
         return $qb->getQuery()->getSingleResult();
     }
+
+    /**
+     * Returns the latest versions released
+     *
+     * @return array
+     */
+    public function getLatestVersionWithPackage()
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('v', 't', 'a', 'p')
+            ->from('Packagist\WebBundle\Entity\Version', 'v')
+            ->leftJoin('v.tags', 't')
+            ->leftJoin('v.authors', 'a')
+            ->leftJoin('v.package', 'p')
+            ->orderBy('v.releasedAt', 'DESC');
+
+        return $qb->getQuery()->getResult();
+    }
 }
