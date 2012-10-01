@@ -1,5 +1,6 @@
 web/bundles/
 web/packages*.json
+web/p/
 app/config/parameters.yml
 app/bootstrap*
 app/cache/*

@@ -307,6 +307,23 @@ class Version
         return $this->name;
     }
 
+    public function getNames()
+    {
+        $names = array(
+            strtolower($this->name) => true
+        );
+
+        foreach ($this->getReplace() as $link) {
+            $names[strtolower($link->getPackageName())] = true;
+        }
+
+        foreach ($this->getProvide() as $link) {
+            $names[strtolower($link->getPackageName())] = true;
+        }
+
+        return array_keys($names);
+    }
+
     /**
      * Set description
      *
