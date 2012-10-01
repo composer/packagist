@@ -61,6 +61,8 @@ class DumpPackagesCommand extends ContainerAwareCommand
         $lock = $this->getContainer()->getParameter('kernel.cache_dir').'/composer-dumper.lock';
         $timeout = 600;
 
+        ini_set('memory_limit', -1);
+
         // another dumper is still active
         if (file_exists($lock) && filemtime($lock) > time() - $timeout) {
             if ($verbose) {
