@@ -7,11 +7,10 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 class FeedControllerTest extends WebTestCase
 {
     /**
-     * @param $feed
-     * @param $format
-     * @param null $filter
+     * @param string $feed
+     * @param string $format
+     * @param string|null $filter
      *
-     * @return void
      * @dataProvider provideForFeed
      */
     public function testFeedAction($feed, $format, $filter = null)
