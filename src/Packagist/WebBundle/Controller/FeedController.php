@@ -139,7 +139,6 @@ class FeedController extends Controller
         $feed->setTitle($title);
         $feed->setDescription($description);
         $feed->setLink($this->getRequest()->getSchemeAndHttpHost());
-        $feed->setDateModified(time());
 
         foreach ($items as $item) {
             $entry = $feed->createEntry();
@@ -153,6 +152,8 @@ class FeedController extends Controller
                 $this->getRequest()->getRequestFormat()
             );
         }
+
+        $feed->setDateModified($feed->getEntry(0)->getDateModified());
 
         return $feed;
     }
