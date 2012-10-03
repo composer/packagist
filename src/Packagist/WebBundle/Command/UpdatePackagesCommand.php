@@ -56,6 +56,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $package = $input->getArgument('package');
 
         $doctrine = $this->getContainer()->get('doctrine');
+        $router = $this->getContainer()->get('router');
 
         $flags = 0;
 
@@ -98,7 +99,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                     $repository->setLoader($loader);
                     $updater->update($package, $repository, $flags, $start);
                 } catch (\Exception $e) {
-                    $output->writeln('<error>Exception: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().', skipping package '.$package->getName().'.</error>');
+                    $output->writeln('<error>Exception: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().', skipping package '.$router->generate('view_package', array('name' => $package->getName()), true).'</error>');
                 }
             }
 
