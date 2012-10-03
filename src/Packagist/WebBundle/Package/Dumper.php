@@ -56,6 +56,12 @@ class Dumper
     private $files = array();
 
     /**
+     * Data cache
+     * @var array
+     */
+    private $individualFiles = array();
+
+    /**
      * Constructor
      *
      * @param RegistryInterface $doctrine
