@@ -26,3 +26,14 @@ You will also have to configure Solr. Use the `schema.xml` provided in the doc/ 
 
 To index packages, just run `app/console packagist:index`. It is recommended to set up a cron job for
 this command, and have it run every few minutes.
+
+Day-to-Day Operation
+--------------------
+
+There are a few commands you should run periodically (ideally set up a cron job running every minute or so):
+
+    app/console packagist:update --no-debug --env=prod
+    app/console packagist:dump --no-debug --env=prod
+    app/console packagist:index --no-debug --env=prod
+
+The latter is optional and only required if you are running a solr server.
