@@ -214,4 +214,38 @@ class PackageRepository extends EntityRepository
 
         return $qb;
     }
+
+    /**
+     * Gets the most recent packages created
+     *
+     * @return QueryBuilder
+     */
+    public function getQueryBuilderForNewestPackages()
+    {
+        $qb = $this->getBaseQueryBuilder();
+
+        $qb->orderBy('p.createdAt', 'DESC');
+        $qb->addOrderBy('v.releasedAt', 'DESC');
+
+        return $qb;
+    }
+
+    /**
+     * Gets the latest packages/versions released by a selected vendor
+     *
+     * @param string $vendor
+     *
+     * @return QueryBuilder
+     */
+    public function getQueryBuilderForLatestPackagesByVendor($vendor)
+    {
+        $qb = $this->getBaseQueryBuilder();
+
+        $qb->orderBy('v.releasedAt', 'DESC');
+
+        $qb->where('p.name LIKE ?0');
+        $qb->setParameter(0, $vendor.'/%');
+
+        return $qb;
+    }
 }

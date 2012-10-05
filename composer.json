@@ -43,7 +43,12 @@
         "nelmio/solarium-bundle": "dev-master",
         "predis/predis": "0.7.*",
         "snc/redis-bundle": "dev-master",
-        "white-october/pagerfanta-bundle": "dev-master"
+        "white-october/pagerfanta-bundle": "dev-master",
+        "zendframework/zend-feed": "2.0.*",
+
+        "zendframework/zend-servicemanager": "2.0.*",
+        "zendframework/zend-uri": "2.0.*",
+        "zendframework/zend-version": "2.0.*"
     },
     "scripts": {
         "post-install-cmd": [
@@ -60,5 +65,11 @@
     "extra": {
         "symfony-app-dir": "app",
         "symfony-web-dir": "web"
-    }
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "http://packages.zendframework.com/"
+        }
+    ]
 }
