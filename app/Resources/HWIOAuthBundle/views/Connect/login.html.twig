@@ -4,32 +4,40 @@
     {% if error %}
         <div>{{ error }}</div>
     {% endif %}
-    {% for owner in hwi_oauth_resource_owners() %}
-    <a class="submit" href="{{ hwi_oauth_login_url(owner) }}">Login with {{ owner | trans({}, 'HWIOAuthBundle') }}</a> <br />
-    {% endfor %}
 
     {# HWIOAuthBundle uses the same template for the login and the connect functionality currently
        so we need to check if the user is already authenticated. #}
     {% if not app.user %}
-    <form action="{{ path('login_check') }}" method="post">
-        <div>
-            <label for="username">{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}</label>
-            <input type="text" id="username" name="_username" />
+        <div class="loginForm">
+            <form action="{{ path('login_check') }}" method="post">
+                <div>
+                    <label for="username">{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}</label>
+                    <input type="text" id="username" name="_username" />
+                </div>
+
+                <div>
+                    <label for="password">{{ 'security.login.password'|trans({}, 'FOSUserBundle') }}</label>
+                    <input type="password" id="password" name="_password" />
+                </div>
+
+                <div>
+                    <input type="checkbox" id="remember_me" name="_remember_me" value="on" checked="checked" />
+                    <label for="remember_me">{{ 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}</label>
+                </div>
+
+                <input type="submit" id="_submit" name="_submit" value="{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}" />
+            </form>
+
+            <p>
+                <a href="{{ path('fos_user_resetting_request') }}">Forgot password?</a>
+                {% for owner in hwi_oauth_resource_owners() %}
+                    <a class="login-{{ owner }}" href="{{ hwi_oauth_login_url(owner) }}">Login with {{ owner | trans({}, 'HWIOAuthBundle') }}</a> <br />
+                {% endfor %}
+            </p>
         </div>
-
-        <div>
-            <label for="password">{{ 'security.login.password'|trans({}, 'FOSUserBundle') }}</label>
-            <input type="password" id="password" name="_password" />
-        </div>
-
-        <div>
-            <input type="checkbox" id="remember_me" name="_remember_me" value="on" checked="checked" />
-            <label for="remember_me">{{ 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}</label>
-        </div>
-
-        <input type="submit" id="_submit" name="_submit" value="{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}" />
-    </form>
-
-    <a href="{{ path('fos_user_resetting_request') }}">Forgot password?</a>
+    {% else %}
+        {% for owner in hwi_oauth_resource_owners() %}
+            <a class="login-{{ owner }}" href="{{ hwi_oauth_login_url(owner) }}">Login with {{ owner | trans({}, 'HWIOAuthBundle') }}</a> <br />
+        {% endfor %}
     {% endif %}
 {% endblock hwi_oauth_content %}
