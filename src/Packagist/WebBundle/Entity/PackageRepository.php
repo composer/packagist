@@ -222,29 +222,10 @@ class PackageRepository extends EntityRepository
      */
     public function getQueryBuilderForNewestPackages()
     {
-        $qb = $this->getBaseQueryBuilder();
-
-        $qb->orderBy('p.createdAt', 'DESC');
-        $qb->addOrderBy('v.releasedAt', 'DESC');
-
-        return $qb;
-    }
-
-    /**
-     * Gets the latest packages/versions released by a selected vendor
-     *
-     * @param string $vendor
-     *
-     * @return QueryBuilder
-     */
-    public function getQueryBuilderForLatestPackagesByVendor($vendor)
-    {
-        $qb = $this->getBaseQueryBuilder();
-
-        $qb->orderBy('v.releasedAt', 'DESC');
-
-        $qb->where('p.name LIKE ?0');
-        $qb->setParameter(0, $vendor.'/%');
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->orderBy('p.id', 'DESC');
 
         return $qb;
     }

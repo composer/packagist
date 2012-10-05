@@ -42,14 +42,14 @@ class FeedController extends Controller
     public function packagesAction()
     {
         /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
         $packages = $this->getLimitedResults(
-            $repo->getQueryBuilderForLatestVersionWithPackage()
+            $repo->getQueryBuilderForNewestPackages()
         );
 
         $feed = $this->buildFeed(
-            'Latest Packages',
-            'Latest packages updated on Packagist.',
+            'Newly Submitted Packages',
+            'Latest packages submitted to Packagist.',
             $this->generateUrl('browse', array(), true),
             $packages
         );
@@ -68,14 +68,14 @@ class FeedController extends Controller
     public function releasesAction()
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
         $packages = $this->getLimitedResults(
-            $repo->getQueryBuilderForNewestPackages()
+            $repo->getQueryBuilderForLatestVersionWithPackage()
         );
 
         $feed = $this->buildFeed(
-            'Latest Released Packages',
-            'Latest packages added to Packagist.',
+            'New Releases',
+            'Latest releases of all packages.',
             $this->generateUrl('browse', array(), true),
             $packages
         );
@@ -94,14 +94,14 @@ class FeedController extends Controller
     public function vendorAction($vendor)
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
         $packages = $this->getLimitedResults(
-            $repo->getQueryBuilderForLatestPackagesByVendor($vendor)
+            $repo->getQueryBuilderForLatestVersionWithPackage($vendor)
         );
 
         $feed = $this->buildFeed(
-            "$vendor Packages",
-            "Latest packages updated on Packagist for $vendor.",
+            "$vendor packages",
+            "Latest packages updated on Packagist of $vendor.",
             $this->generateUrl('view_vendor', array('vendor' => $vendor), true),
             $packages
         );
@@ -170,10 +170,7 @@ class FeedController extends Controller
     protected function populateEntry(Entry $entry, $item)
     {
         if ($item instanceof Package) {
-            $version = $item->getVersions()->first() ?: new Version();
-
             $this->populatePackageData($entry, $item);
-            $this->populateVersionData($entry, $version);
         } elseif ($item instanceof Version) {
             $this->populatePackageData($entry, $item->getPackage());
             $this->populateVersionData($entry, $item);
@@ -197,7 +194,7 @@ class FeedController extends Controller
             )
         );
 
-        $entry->setDateModified($package->getUpdatedAt());
+        $entry->setDateModified($package->getCreatedAt());
         $entry->setDateCreated($package->getCreatedAt());
         $entry->setDescription($package->getDescription() ?: ' ');
     }
@@ -211,6 +208,9 @@ class FeedController extends Controller
     protected function populateVersionData(Entry $entry, Version $version)
     {
         $entry->setTitle($entry->getTitle()." ({$version->getVersion()})");
+
+        $entry->setDateModified($version->getReleasedAt());
+        $entry->setDateCreated($version->getReleasedAt());
 
         foreach ($version->getAuthors() as $author) {
             /** @var $author \Packagist\WebBundle\Entity\Author */
