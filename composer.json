@@ -42,6 +42,7 @@
         "friendsofsymfony/user-bundle": "2.0.*",
         "hwi/oauth-bundle": "dev-master",
         "nelmio/solarium-bundle": "dev-master",
+        "nelmio/security-bundle": "dev-master",
         "predis/predis": "0.7.*",
         "snc/redis-bundle": "dev-master",
         "white-october/pagerfanta-bundle": "dev-master",

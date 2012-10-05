@@ -17,6 +17,7 @@ framework:
         name:           packagist
         lifetime:       3600
 
+
 # Twig Configuration
 twig:
     debug:            %kernel.debug%

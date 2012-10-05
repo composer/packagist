@@ -16,3 +16,15 @@ monolog:
             type:  stream
             path:  %kernel.logs_dir%/%kernel.environment%.log
             level: debug
+
+framework:
+    session:
+        secure:         %force_ssl%
+
+nelmio_security:
+    clickjacking:
+        paths:
+            '^/.*': DENY
+    forced_ssl:
+        enabled: %force_ssl%
+        hsts_max_age: 2592000 # 30 days

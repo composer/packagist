@@ -27,3 +27,5 @@ parameters:
 
     github.client_id:
     github.client_secret:
+
+    force_ssl: false

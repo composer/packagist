@@ -1,5 +1,5 @@
 {
-    "hash": "ba9c0437196577b6006030095f3a42d9",
+    "hash": "31cfbd428dcd9c7da7d44c1d5ffebc57",
     "packages": [
         {
             "name": "composer/composer",
@@ -964,6 +964,51 @@
             "keywords": [
                 "log",
                 "logging"
+            ]
+        },
+        {
+            "name": "nelmio/security-bundle",
+            "version": "dev-master",
+            "target-dir": "Nelmio/SecurityBundle",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nelmio/NelmioSecurityBundle",
+                "reference": "95bbc09e1b18bd2f1dceae6789af97fcd232a4cb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://github.com/nelmio/NelmioSecurityBundle/zipball/95bbc09e1b18bd2f1dceae6789af97fcd232a4cb",
+                "reference": "95bbc09e1b18bd2f1dceae6789af97fcd232a4cb",
+                "shasum": ""
+            },
+            "require": {
+                "symfony/framework-bundle": "2.*",
+                "symfony/security": "2.*"
+            },
+            "time": "1349439945",
+            "type": "symfony-bundle",
+            "installation-source": "source",
+            "autoload": {
+                "psr-0": {
+                    "Nelmio\\SecurityBundle": ""
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nelmio",
+                    "homepage": "http://nelm.io"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://github.com/nelmio/NelmioSecurityBundle/contributors"
+                }
+            ],
+            "description": "Extra security-related features for Symfony2",
+            "keywords": [
+                "security"
             ]
         },
         {
@@ -2115,6 +2160,7 @@
         "composer/composer": 20,
         "hwi/oauth-bundle": 20,
         "nelmio/solarium-bundle": 20,
+        "nelmio/security-bundle": 20,
         "snc/redis-bundle": 20,
         "white-october/pagerfanta-bundle": 20
     }

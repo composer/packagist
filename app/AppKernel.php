@@ -25,6 +25,7 @@ class AppKernel extends Kernel
             new Packagist\WebBundle\PackagistWebBundle(),
             new WhiteOctober\PagerfantaBundle\WhiteOctoberPagerfantaBundle(),
             new Nelmio\SolariumBundle\NelmioSolariumBundle(),
+            new Nelmio\SecurityBundle\NelmioSecurityBundle(),
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test'))) {
