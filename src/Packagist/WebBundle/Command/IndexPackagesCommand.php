@@ -133,6 +133,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $document->setField('id', $package->getId());
         $document->setField('name', $package->getName());
         $document->setField('description', $package->getDescription());
+        $document->setField('type', $package->getType());
 
         $tags = array();
         foreach ($package->getVersions() as $version) {
