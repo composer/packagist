@@ -35,10 +35,15 @@ class ApiController extends Controller
      * @Template()
      * @Route("/packages.json", name="packages", defaults={"_format" = "json"})
      */
-    public function packagesAction(Request $req)
+    public function packagesAction()
     {
+        // fallback if any of the dumped files exist
         $rootJson = $this->container->getParameter('kernel.root_dir').'/../web/packages_root.json';
-        if (!$req->query->all() && file_exists($rootJson)) {
+        if (file_exists($rootJson)) {
+            return new Response(file_get_contents($rootJson));
+        }
+        $rootJson = $this->container->getParameter('kernel.root_dir').'/../web/packages.json';
+        if (file_exists($rootJson)) {
             return new Response(file_get_contents($rootJson));
         }
 
