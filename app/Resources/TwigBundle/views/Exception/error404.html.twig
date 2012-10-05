@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!--[if lte IE 8 ]> <html lang="en" class="no-js oldie"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--> <html lang="en" class="no-js"> <!--<![endif]-->
+<head>
+    <meta charset="UTF-8" />
+
+    <title>{% block title %}Packagist{% endblock %}</title>
+    <meta name="description" content="" />
+    <meta name="author" content="Jordi Boggiano" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
+
+    <!--[if lt IE 9]>
+    <script src="{{ asset('bundles/packagistweb/js/html5.js') }}"></script>
+    <![endif]-->
+
+    <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=6') }}" />
+    <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css?v=2') }}" />
+
+    {# {% stylesheets
+            '@PackagistWebBundle/Resources/public/css/main.css'
+            'css/humane/jackedup.css'
+            filter="yui_css" output='css/main.css' %}
+            <link rel="stylesheet" href="{{ asset_url }}" />
+        {% endstylesheets %} #}
+
+        <script src="/js/libs/modernizr-1.7.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="user"></div>
+    <header>
+        <h1><a href="{{ path('home') }}">Packagist</a></h1>
+        <h2>The PHP package archivist.</h2>
+    </header>
+
+    <div class="main" role="main">
+        <div class="box clearfix">
+            <h1>Whooooops!</h1>
+            <p>Looks like you requested a page that was not found. Bummer! Go back to the <a href="{{ path('home') }}">homepage</a>?</p>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <ul>
+        <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
+        <li><a href="{{ path('home') }}">{{ 'menu.home'|trans }}</a></li>
+    </ul>
+    <ul>
+        <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
+        <li><a href="{{ path('stats') }}">{{ 'menu.stats'|trans }}</a></li>
+    </ul>
+    <ul>
+        <li><a href="https://twitter.com/packagist">{{ 'menu.twitter'|trans }}</a></li>
+        <li><a href="mailto:contact@packagist.org">{{ 'menu.contact'|trans }}</a></li>
+    </ul>
+    <div class="clearfix"></div>
+</footer>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+<script>!window.jQuery && document.write(unescape('%3Cscript src="/js/libs/jquery-1.5.2.min.js"%3E%3C/script%3E'))</script>
+<script src="{{ asset('js/libs/humane.min.js') }}"></script>
+<script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
+<script src="{{ asset('bundles/packagistweb/js/search.js')}}"></script>
+
+{% if not app.debug and google_analytics.ga_key %}
+<script>
+    var _gaq=[['_setAccount','{{ google_analytics.ga_key }}'],['_trackPageview']];
+    (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.async=1;
+        g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+        s.parentNode.insertBefore(g,s)}(document,'script'));
+</script>
+{% endif %}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
+
