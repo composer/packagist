@@ -9,23 +9,23 @@ class FeedControllerTest extends WebTestCase
     /**
      * @param string $feed
      * @param string $format
-     * @param string|null $filter
+     * @param string|null $vendor
      *
      * @dataProvider provideForFeed
      */
-    public function testFeedAction($feed, $format, $filter = null)
+    public function testFeedAction($feed, $format, $vendor = null)
     {
         $client = self::createClient();
 
-        $url = $client->getContainer()->get('router')->generate($feed, array('_format' => $format, 'filter' => $filter));
+        $url = $client->getContainer()->get('router')->generate($feed, array('_format' => $format, 'vendor' => $vendor));
 
         $crawler = $client->request('GET', $url);
 
         $this->assertEquals(200, $client->getResponse()->getStatusCode());
         $this->assertContains($format, $client->getResponse()->getContent());
 
-        if ($filter !== null) {
-            $this->assertContains($filter, $client->getResponse()->getContent());
+        if ($vendor !== null) {
+            $this->assertContains($vendor, $client->getResponse()->getContent());
         }
 
     }
