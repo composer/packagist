@@ -1,5 +1,9 @@
 {% import "PackagistWebBundle::macros.html.twig" as packagist %}
 
+<div class="include">
+    "{{ version.package.vendor }}/{{ version.package.packageName }}": "{{ version.version }}"
+</div>
+
 <h2 class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}</h2>
 <ul>
     {% for author in version.authors %}
