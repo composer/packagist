@@ -50,6 +50,7 @@ class FeedController extends Controller
         $feed = $this->buildFeed(
             'Latest Packages',
             'Latest packages updated on Packagist.',
+            $this->generateUrl('browse', array(), true),
             $packages
         );
 
@@ -75,6 +76,7 @@ class FeedController extends Controller
         $feed = $this->buildFeed(
             'Latest Released Packages',
             'Latest packages added to Packagist.',
+            $this->generateUrl('browse', array(), true),
             $packages
         );
 
@@ -83,23 +85,24 @@ class FeedController extends Controller
 
     /**
      * @Route(
-     *     "/vendor.{filter}.{_format}",
+     *     "/vendor.{vendor}.{_format}",
      *     name="feed_vendor",
-     *     requirements={"_format"="(rss|atom)"}
+     *     requirements={"_format"="(rss|atom)", "vendor"="[A-Za-z0-9_.-]+"}
      * )
      * @Method({"GET"})
      */
-    public function vendorAction($filter)
+    public function vendorAction($vendor)
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
         $packages = $this->getLimitedResults(
-            $repo->getQueryBuilderForLatestPackagesByVendor($filter)
+            $repo->getQueryBuilderForLatestPackagesByVendor($vendor)
         );
 
         $feed = $this->buildFeed(
-            "$filter Packages",
-            "Latest packages updated on Packagist for $filter.",
+            "$vendor Packages",
+            "Latest packages updated on Packagist for $vendor.",
+            $this->generateUrl('view_vendor', array('vendor' => $vendor), true),
             $packages
         );
 
@@ -133,12 +136,12 @@ class FeedController extends Controller
      *
      * @return \Zend\Feed\Writer\Feed
      */
-    protected function buildFeed($title, $description, $items)
+    protected function buildFeed($title, $description, $url, $items)
     {
         $feed = new Feed();
         $feed->setTitle($title);
         $feed->setDescription($description);
-        $feed->setLink($this->getRequest()->getSchemeAndHttpHost());
+        $feed->setLink($url);
 
         foreach ($items as $item) {
             $entry = $feed->createEntry();
@@ -171,9 +174,7 @@ class FeedController extends Controller
 
             $this->populatePackageData($entry, $item);
             $this->populateVersionData($entry, $version);
-        }
-
-        if ($item instanceof Version) {
+        } elseif ($item instanceof Version) {
             $this->populatePackageData($entry, $item->getPackage());
             $this->populateVersionData($entry, $item);
         }
@@ -187,7 +188,7 @@ class FeedController extends Controller
      */
     protected function populatePackageData(Entry $entry, Package $package)
     {
-        $entry->setTitle($package->getPackageName());
+        $entry->setTitle($package->getName());
         $entry->setLink(
             $this->generateUrl(
                 'view_package',
