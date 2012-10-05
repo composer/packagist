@@ -50,6 +50,12 @@ class User extends BaseUser
      */
     private $apiToken;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     * @var string
+     */
+    private $githubId;
+
     public function __construct()
     {
         $this->packages = new ArrayCollection();
@@ -144,5 +150,25 @@ class User extends BaseUser
     public function getApiToken()
     {
         return $this->apiToken;
+    }
+
+    /**
+     * Get githubId.
+     *
+     * @return string
+     */
+    public function getGithubId()
+    {
+        return $this->githubId;
+    }
+
+    /**
+     * Set githubId.
+     *
+     * @param string $githubId
+     */
+    public function setGithubId($githubId)
+    {
+        $this->githubId = $githubId;
     }
 }

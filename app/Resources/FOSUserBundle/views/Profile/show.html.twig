@@ -7,6 +7,9 @@
         <h1>{{ user.username }} (that's you!)</h1>
         <p><a href="{{ path('fos_user_profile_edit') }}">Edit your information</a></p>
         <p><a href="{{ path('fos_user_change_password') }}">Change your password</a></p>
+        {% if not user.githubId %}
+        <p><a href="{{ path('hwi_oauth_connect_service', {'service': 'github'}) }}">Connect your github account</a></p>
+        {% endif %}
         <p><a href="{{ path('user_profile', {'name':app.user.username}) }}">View your public profile</a></p>
 
         {% if app.user.apiToken %}
