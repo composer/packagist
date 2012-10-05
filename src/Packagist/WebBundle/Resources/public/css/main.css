@@ -517,6 +517,9 @@ form ul {
   text-align: right;
   line-height: 12px;
 }
+.package .version .license.unknown {
+  color: #c00;
+}
 .package .version .details {
   display: none;
 }
