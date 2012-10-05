@@ -43,6 +43,9 @@
             e.target.submit();
         }
     });
+    $('.package').on('click', '.requireme input', function (e) {
+        this.select();
+    });
     if ($('.package').data('force-crawl')) {
         $('.package .force-update').submit();
     }

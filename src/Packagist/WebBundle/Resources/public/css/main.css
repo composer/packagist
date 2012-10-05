@@ -527,9 +527,16 @@ form ul {
   margin-left: 2px;
   list-style: disc inside none;
 }
-.package .include {
-    font-family: courier;
-    padding: 3px 0 3px 0;
+.package .requireme {
+  padding: 3px 0 3px 0;
+}
+.package .requireme input {
+  border: 0 !important;
+  border-radius: 0;
+  background-color: transparent;
+  font-family: Courier;
+  min-width: 300px;
+  width: auto;
 }
 .package .package-links .provides {
   clear: left;
