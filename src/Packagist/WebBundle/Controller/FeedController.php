@@ -198,7 +198,7 @@ class FeedController extends Controller
 
         $entry->setDateModified($package->getUpdatedAt());
         $entry->setDateCreated($package->getCreatedAt());
-        $entry->setDescription($package->getDescription());
+        $entry->setDescription($package->getDescription() ?: ' ');
     }
 
     /**
@@ -213,9 +213,11 @@ class FeedController extends Controller
 
         foreach ($version->getAuthors() as $author) {
             /** @var $author \Packagist\WebBundle\Entity\Author */
-            $entry->addAuthor(array(
-                'name'  => $author->getName()
-            ));
+            if ($author->getName()) {
+                $entry->addAuthor(array(
+                    'name' => $author->getName()
+                ));
+            }
         }
     }
 
