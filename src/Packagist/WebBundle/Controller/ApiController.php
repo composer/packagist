@@ -82,55 +82,16 @@ class ApiController extends Controller
      */
     public function githubPostReceive(Request $request)
     {
-        $payload = json_decode($request->request->get('payload'), true);
-        if (!$payload || !isset($payload['repository']['url'])) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
-        }
+        return $this->receivePost($request, '{(^|//)(?P<url>github\.com/[\w.-]+/[\w.-]+?)(\.git)?$}', '(\.git)?$');
+    }
 
-        $username = $request->request->has('username') ?
-            $request->request->get('username') :
-            $request->query->get('username');
-
-        $apiToken = $request->request->has('apiToken') ?
-            $request->request->get('apiToken') :
-            $request->query->get('apiToken');
-
-        $updater = $this->get('packagist.package_updater');
-        $em = $this->get('doctrine.orm.entity_manager');
-        $user = $this->get('packagist.user_repository')
-            ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
-
-        if (!$user) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
-        }
-
-        if (!preg_match('{(github.com/[\w.-]+/[\w.-]+?)(\.git)?$}', $payload['repository']['url'], $match)) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL',)), 406);
-        }
-
-        $payloadRepositoryChunk = $match[1];
-
-        $updated = false;
-        $config = Factory::createConfig();
-        $loader = new ValidatingArrayLoader(new ArrayLoader());
-        foreach ($user->getPackages() as $package) {
-            if (preg_match('{'.preg_quote($payloadRepositoryChunk).'(\.git)?$}', $package->getRepository())) {
-                set_time_limit(3600);
-                $updated = true;
-
-                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
-                $repository->setLoader($loader);
-                $package->setAutoUpdated(true);
-                $em->flush();
-                $updater->update($package, $repository);
-            }
-        }
-
-        if ($updated) {
-            return new Response('{"status": "success"}', 202);
-        }
-
-        return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
+    /**
+     * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"})
+     * @Method({"POST"})
+     */
+    public function bitbucketPostReceive(Request $request)
+    {
+        return $this->receivePost($request, '{(^|//)(?P<url>bitbucket\.org/[\w.-]+/[\w.-]+?)/?$}', '/?$');
     }
 
     /**
@@ -175,5 +136,60 @@ class ApiController extends Controller
         }
 
         return new Response('{"status": "success"}', 201);
+    }
+
+    protected function receivePost(Request $request, $urlRegex, $optionalRepositorySuffix)
+    {
+        $payload = json_decode($request->request->get('payload'), true);
+        if (!$payload || !isset($payload['repository']['url'])) {
+            return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
+        }
+
+        // try to parse the URL first to avoid the DB lookup on malformed requests
+        if (!preg_match($urlRegex, $payload['repository']['url'], $match)) {
+            return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL',)), 406);
+        }
+
+        $payloadRepositoryChunk = $match['url'];
+
+        $username = $request->request->has('username') ?
+            $request->request->get('username') :
+            $request->query->get('username');
+
+        $apiToken = $request->request->has('apiToken') ?
+            $request->request->get('apiToken') :
+            $request->query->get('apiToken');
+
+        $user = $this->get('packagist.user_repository')
+            ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
+
+        if (!$user) {
+            return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
+        }
+
+        $updated = false;
+        $config = Factory::createConfig();
+        $loader = new ValidatingArrayLoader(new ArrayLoader());
+        $updater = $this->get('packagist.package_updater');
+        $em = $this->get('doctrine.orm.entity_manager');
+
+        foreach ($user->getPackages() as $package) {
+            if (preg_match('{'.preg_quote($payloadRepositoryChunk).$optionalRepositorySuffix.'}', $package->getRepository())) {
+                set_time_limit(3600);
+                $updated = true;
+
+                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
+                $repository->setLoader($loader);
+                $package->setAutoUpdated(true);
+                $em->flush();
+                $updater->update($package, $repository);
+            }
+        }
+
+        if ($updated) {
+            return new Response('{"status": "success"}', 202);
+        }
+
+        return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
     }
 }
