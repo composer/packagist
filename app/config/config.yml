@@ -24,6 +24,7 @@ twig:
     strict_variables: %kernel.debug%
     globals:
         google_analytics: %google_analytics%
+        packagist_host: %packagist_host%
 
 # Assetic Configuration
 assetic:
