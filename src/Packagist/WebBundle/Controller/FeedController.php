@@ -156,7 +156,9 @@ class FeedController extends Controller
             );
         }
 
-        $feed->setDateModified($feed->getEntry(0)->getDateModified());
+        if ($feed->count()) {
+            $feed->setDateModified($feed->getEntry(0)->getDateModified());
+        }
 
         return $feed;
     }
