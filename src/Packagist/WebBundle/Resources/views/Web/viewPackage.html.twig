@@ -29,6 +29,9 @@
                 </form>
             {% endif %}
             <h1>
+                {% if is_favorite is defined %}
+                    <a class="mark-favorite{% if is_favorite %} is-favorite{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></a>
+                {% endif %}
                 <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
             </h1>
             {% if version and version.tags|length %}

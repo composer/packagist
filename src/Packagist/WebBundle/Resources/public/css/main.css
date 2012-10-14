@@ -589,7 +589,17 @@ form ul {
   margin-bottom: 10px;
 }
 
-.no-js .package .force-update {
+.package .mark-favorite {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background: black;
+}
+.package .mark-favorite.is-favorite {
+  background: green;
+}
+
+.no-js .package .force-update, .no-js .package .mark-favorite {
   display: none;
 }
 .package .action {

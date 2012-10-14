@@ -3,6 +3,14 @@ Packagist
 
 Package Repository Website for Composer, see the [about page](http://packagist.org/about) on [packagist.org](http://packagist.org/) for more.
 
+Requirements
+------------
+
+- MySQL for the main data store
+- Redis for some functionality (favorites, download statistics)
+- Solr for search
+- git/svn/hg depending on which repositories you want to support
+
 Installation
 ------------
 
