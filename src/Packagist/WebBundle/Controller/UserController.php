@@ -15,12 +15,18 @@ namespace Packagist\WebBundle\Controller;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Pagerfanta\Pagerfanta;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use FOS\UserBundle\Model\UserInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Packagist\WebBundle\Entity\User;
+use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Model\RedisAdapter;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -30,17 +36,10 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/packages/", name="user_packages")
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function packagesAction(Request $req, $name)
+    public function packagesAction(Request $req, User $user)
     {
-        $user = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:User')
-            ->findOneByUsername($name);
-
-        if (!$user) {
-            throw new NotFoundHttpException('The requested user, '.$name.', could not be found.');
-        }
-
         return array('packages' => $this->getUserPackages($req, $user), 'user' => $user);
     }
 
@@ -61,18 +60,70 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/", name="user_profile")
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function profileAction(Request $req, $name)
+    public function profileAction(Request $req, User $user)
     {
-        $user = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:User')
-            ->findOneByUsername($name);
+        return array('packages' => $this->getUserPackages($req, $user), 'user' => $user);
+    }
 
-        if (!$user) {
-            throw new NotFoundHttpException('The requested user, '.$name.', could not be found.');
+    /**
+     * @Template()
+     * @Route("/users/{name}/favorites/", name="user_favorites")
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @Method({"GET"})
+     */
+    public function favoritesAction(Request $req, User $user)
+    {
+        $paginator = new Pagerfanta(
+            new RedisAdapter($this->get('packagist.favorite_manager'), $user, 'getFavorites', 'getFavoriteCount')
+        );
+
+        return array('packages' => $paginator, 'user' => $user);
+    }
+
+    /**
+     * @Route("/users/{name}/favorites/", name="user_add_fav", defaults={"_format" = "json"})
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @Method({"POST"})
+     */
+    public function postFavoriteAction(User $user)
+    {
+        if ($user->getId() !== $this->getUser()->getId()) {
+            throw new AccessDeniedException('You can only change your own favorites');
         }
 
-        return array('packages' => $this->getUserPackages($req, $user), 'user' => $user);
+        $req = $this->getRequest();
+
+        $package = $req->request->get('package');
+        try {
+            $package = $this->getDoctrine()
+                ->getRepository('PackagistWebBundle:Package')
+                ->findOneByName($package);
+        } catch (NoResultException $e) {
+            throw new NotFoundHttpException('The given package "'.$package.'" was not found.');
+        }
+
+        $this->get('packagist.favorite_manager')->markFavorite($user, $package);
+
+        return new Response('{"status": "success"}', 201);
+    }
+
+    /**
+     * @Route("/users/{name}/favorites/{package}", name="user_remove_fav", defaults={"_format" = "json"}, requirements={"package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"})
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("package", options={"mapping": {"package": "name"}})
+     * @Method({"DELETE"})
+     */
+    public function deleteFavoriteAction(User $user, Package $package)
+    {
+        if ($user->getId() !== $this->getUser()->getId()) {
+            throw new AccessDeniedException('You can only change your own favorites');
+        }
+
+        $this->get('packagist.favorite_manager')->removeFavorite($user, $package);
+
+        return new Response('{"status": "success"}', 204);
     }
 
     protected function getUserPackages($req, $user)

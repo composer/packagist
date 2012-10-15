@@ -20,6 +20,12 @@ services:
         factory_method: getRepository
         arguments: ["PackagistWebBundle:User"]
 
+    packagist.package_repository:
+        class: Packagist\WebBundle\Entity\PackageRepository
+        factory_service: doctrine
+        factory_method: getRepository
+        arguments: ["PackagistWebBundle:Package"]
+
     packagist.package_updater:
         class: Packagist\WebBundle\Package\Updater
         arguments: [@doctrine]
@@ -48,3 +54,10 @@ services:
         class: Symfony\Component\Form\Form
         arguments:
             - 'packagist_oauth_user_registration'
+
+    packagist.favorite_manager:
+        class: Packagist\WebBundle\Model\FavoriteManager
+        arguments:
+            - @snc_redis.default_client
+            - @packagist.package_repository
+            - @packagist.user_repository

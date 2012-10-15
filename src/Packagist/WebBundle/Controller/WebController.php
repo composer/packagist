@@ -324,6 +324,9 @@ class WebController extends Controller
                 'monthly' => $counts[1] ?: 0,
                 'daily' => $counts[2] ?: 0,
             );
+            if ($this->getUser()) {
+                $data['is_favorite'] = $this->get('packagist.favorite_manager')->isMarked($this->getUser(), $package);
+            }
         } catch (\Exception $e) {
             $data['downloads'] = array(
                 'total' => 'N/A',

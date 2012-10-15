@@ -37,6 +37,30 @@
         });
         submit.addClass('loading');
     });
+    $('.package .mark-favorite').click(function (e) {
+        var options = {
+            dataType: 'json',
+            cache: false,
+            success: function (data) {
+                $(this).removeClass('loading').toggleClass('is-favorite');
+            },
+            context: this
+        };
+        e.preventDefault();
+        if ($(this).is('.loading')) {
+            return;
+        }
+        if ($(this).is('.is-favorite')) {
+            options.type = 'DELETE';
+            options.url = $(this).data('remove-url');
+        } else {
+            options.type = 'POST';
+            options.data = {"package": $(this).data('package')};
+            options.url = $(this).data('add-url');
+        }
+        $.ajax(options);
+        $(this).addClass('loading');
+    });
     $('.package .force-delete').submit(function (e) {
         e.preventDefault();
         if (confirm('Are you sure?')) {
