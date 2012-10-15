@@ -71,6 +71,7 @@ class UserController extends Controller
      * @Template()
      * @Route("/users/{name}/favorites/", name="user_favorites")
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @Method({"GET"})
      */
     public function favoritesAction(Request $req, User $user)
     {
@@ -82,7 +83,7 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/users/{name}/favorites", name="user_add_fav", defaults={"_format" = "json"})
+     * @Route("/users/{name}/favorites/", name="user_add_fav", defaults={"_format" = "json"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      * @Method({"POST"})
      */

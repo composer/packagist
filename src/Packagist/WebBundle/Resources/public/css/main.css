@@ -590,13 +590,14 @@ form ul {
 }
 
 .package .mark-favorite {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   display: inline-block;
-  background: black;
+  background: url(../img/favorite.png) 0 -17px no-repeat;
+  cursor: pointer;
 }
 .package .mark-favorite.is-favorite {
-  background: green;
+  background-position: 0 0;
 }
 
 .no-js .package .force-update, .no-js .package .mark-favorite {
