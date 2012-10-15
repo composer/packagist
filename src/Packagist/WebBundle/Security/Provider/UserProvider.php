@@ -45,6 +45,9 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
 
         $previousUser = $this->userManager->findUserBy(array('githubId' => $username));
 
+        $user->setGithubId($username);
+        $user->setGithubToken($response->getAccessToken());
+
         // The account is already connected. Do nothing
         if ($previousUser === $user) {
             return;
@@ -53,10 +56,9 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         // 'disconnect' a previous account
         if (null !== $previousUser) {
             $previousUser->setGithubId(null);
+            $previousUser->setGithubToken(null);
             $this->userManager->updateUser($previousUser);
         }
-
-        $user->setGithubId($username);
 
         $this->userManager->updateUser($user);
     }
@@ -71,6 +73,11 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
 
         if (!$user) {
             throw new AccountNotLinkedException(sprintf('No user with github username "%s" was found.', $username));
+        }
+
+        if (!$user->getGithubToken()) {
+            $user->setGithubToken($response->getAccessToken());
+            $this->userManager->updateUser($user);
         }
 
         return $user;
