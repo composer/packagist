@@ -230,7 +230,7 @@ class Dumper
 
             $listing = $this->getTargetListing($file);
             $this->listings[$listing]['providers'][$key] = array('sha256' => hash_file('sha256', $file));
-            $individualListings[] = $listing;
+            $individualListings[$listing] = true;
         }
 
         // prepare root file
@@ -247,7 +247,7 @@ class Dumper
         }
 
         // dump listings to build dir
-        foreach ($individualListings as $listing) {
+        foreach ($individualListings as $listing => $dummy) {
             $this->dumpListing($buildDir.'/'.$listing);
             $this->files['packages.json']['providers-includes'][$listing] = array('sha256' => hash_file('sha256', $buildDir.'/'.$listing));
         }
@@ -278,7 +278,7 @@ class Dumper
 
         // put the new files in production
         rename($rootFile, $webDir.'/'.basename($rootFile));
-        foreach ($individualListings as $file) {
+        foreach ($individualListings as $file => $dummy) {
             rename($buildDir.'/'.$file, $webDir.'/'.$file);
         }
         foreach ($modifiedFiles as $file => $dummy) {
@@ -304,7 +304,7 @@ class Dumper
             }
 
             foreach (glob($webDir.'/providers-*.json') as $file) {
-                if (!in_array(basename($file), $individualListings)) {
+                if (!isset($individualListings[basename($file)])) {
                     unlink($file);
                 }
             }
