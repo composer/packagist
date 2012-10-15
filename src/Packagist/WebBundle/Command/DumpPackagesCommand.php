@@ -59,7 +59,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
         }
 
         $lock = $this->getContainer()->getParameter('kernel.cache_dir').'/composer-dumper.lock';
-        $timeout = 600;
+        $timeout = 30*60;
 
         ini_set('memory_limit', -1);
 
