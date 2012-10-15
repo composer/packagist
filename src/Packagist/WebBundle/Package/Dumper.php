@@ -243,7 +243,7 @@ class Dumper
         $this->files['packages.json']['notify'] = str_replace('VND/PKG', '%package%', $url);
 
         if ($verbose) {
-            echo 'Dumping final files'.PHP_EOL;
+            echo 'Dumping individual listings'.PHP_EOL;
         }
 
         // dump listings to build dir
@@ -252,10 +252,18 @@ class Dumper
             $this->files['packages.json']['providers-includes'][$listing] = array('sha256' => hash_file('sha256', $buildDir.'/'.$listing));
         }
 
+        if ($verbose) {
+            echo 'Dumping package metadata'.PHP_EOL;
+        }
+
         // dump files to build dir
         foreach ($modifiedFiles as $file => $dummy) {
             $this->dumpFile($buildDir.'/'.$file);
             $this->files['packages.json']['includes'][$file] = array('sha1' => sha1_file($buildDir.'/'.$file));
+        }
+
+        if ($verbose) {
+            echo 'Dumping root'.PHP_EOL;
         }
 
         // sort & dump root file
