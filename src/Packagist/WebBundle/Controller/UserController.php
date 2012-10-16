@@ -79,6 +79,17 @@ class UserController extends Controller
             new RedisAdapter($this->get('packagist.favorite_manager'), $user, 'getFavorites', 'getFavoriteCount')
         );
 
+        $paginator->setMaxPerPage(15);
+        $paginator->setCurrentPage($req->query->get('page', 1), false, true);
+
+        try {
+            $this->get('snc_redis.default')->connect();
+        } catch (\Exception $e) {
+            $this->get('session')->getFlashBag()->set('error', 'Could not connect to the Redis database.');
+
+            return array('user' => $user, 'packages' => array());
+        }
+
         return array('packages' => $paginator, 'user' => $user);
     }
 

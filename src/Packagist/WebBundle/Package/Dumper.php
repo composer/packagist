@@ -417,8 +417,6 @@ class Dumper
 
     private function getTargetListing($file)
     {
-        $distribution = 8;
-
         $mtime = filemtime($file);
         $now = time();
 
