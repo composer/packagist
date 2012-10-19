@@ -277,7 +277,14 @@ class Updater
         foreach ($this->supportedLinkTypes as $linkType => $opts) {
             $links = array();
             foreach ($data->{$opts['method']}() as $link) {
-                $links[$link->getTarget()] = $link->getPrettyConstraint();
+                $constraint = $link->getPrettyConstraint();
+                if (false !== strpos($constraint, '~')) {
+                    $constraint = str_replace(array('[', ']'), '', $link->getConstraint());
+                    $constraint = preg_replace('{(\d\.\d)(\.0)+(?=$|,|-)}', '$1', $constraint);
+                    $constraint = preg_replace('{([><=,]) }', '$1', $constraint);
+                    $constraint = preg_replace('{(<[0-9.]+)-dev}', '$1', $constraint);
+                }
+                $links[$link->getTarget()] = $constraint;
             }
 
             foreach ($version->{'get'.$linkType}() as $link) {
