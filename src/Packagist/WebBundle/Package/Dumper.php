@@ -148,7 +148,7 @@ class Dumper
 
                     foreach ($files as $file) {
                         $key = $this->getIndividualFileKey($buildDir.'/'.$file);
-                        $this->loadIndividualFile($buildDir.'/'.$file);
+                        $this->loadIndividualFile($buildDir.'/'.$file, $key);
                         if (isset($this->individualFiles[$key]['packages'][$name])) {
                             unset($this->individualFiles[$key]['packages'][$name]);
                             $modifiedIndividualFiles[$key] = true;
