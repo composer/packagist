@@ -144,7 +144,7 @@ class Dumper
 
                 // clean up versions in individual files
                 if (file_exists($buildDir.'/p/'.$name.'.files')) {
-                    $files = json_decode(file_get_contents($buildDir.'/p/'.$name.'.files.json'));
+                    $files = json_decode(file_get_contents($buildDir.'/p/'.$name.'.files'));
 
                     foreach ($files as $file) {
                         $key = $this->getIndividualFileKey($buildDir.'/'.$file);
@@ -173,8 +173,8 @@ class Dumper
 
                 // store affected files to clean up properly in the next update
                 $this->fs->mkdir(dirname($buildDir.'/p/'.$name));
-                file_put_contents($buildDir.'/p/'.$name.'.files.json', json_encode(array_keys($affectedFiles)));
-                $modifiedIndividualFiles['p/'.$name.'.files.json'] = true;
+                file_put_contents($buildDir.'/p/'.$name.'.files', json_encode(array_keys($affectedFiles)));
+                $modifiedIndividualFiles['p/'.$name.'.files'] = true;
 
                 // clean up all versions of that package
                 foreach (glob($buildDir.'/packages*.json') as $file) {
@@ -309,7 +309,7 @@ class Dumper
                 }
             }
 
-            $finder = Finder::create()->files()->ignoreVCS(true)->name('*.json')->in($webDir.'/p/');
+            $finder = Finder::create()->files()->ignoreVCS(true)->name('/\.(json|files)$/')->in($webDir.'/p/');
             foreach ($finder as $file) {
                 $key = $this->getIndividualFileKey(strtr($file, '\\', '/'));
                 if (!isset($modifiedIndividualFiles[$key])) {
@@ -435,6 +435,6 @@ class Dumper
 
     private function getIndividualFileKey($path)
     {
-        return preg_replace('{^.*?[/\\\\](p[/\\\\].+?(?:\.files)?\.json)$}', '$1', $path);
+        return preg_replace('{^.*?[/\\\\](p[/\\\\].+?\.(json|files))$}', '$1', $path);
     }
 }
