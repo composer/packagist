@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
-<ShortName>Packagist.org Search</ShortName>
-<Description>Use Packagist.org to search for packages.</Description>
-<Tags>packagist composer</Tags>
-<Contact>contact@packagist.org</Contact>
-<Url type="text/html" 
-    template="http://packagist.org/search/?q={searchTerms}"/>
+    <ShortName>Packagist</ShortName>
+    <Description>Use Packagist.org to search for packages.</Description>
+    <Tags>packagist composer</Tags>
+    <Contact>contact@packagist.org</Contact>
+    <Url type="text/html" template="http://packagist.org/search/?q={searchTerms}"/>
 </OpenSearchDescription>
