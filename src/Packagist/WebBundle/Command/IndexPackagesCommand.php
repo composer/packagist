@@ -138,7 +138,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
     private function updateDocumentFromPackage(\Solarium_Document_ReadWrite $document, Package $package)
     {
-        $document->setField('id', $package->getId());
+        $document->setField('id', strtolower($package->getName()));
         $document->setField('name', $package->getName());
         $document->setField('description', $package->getDescription());
         $document->setField('type', $package->getType());
