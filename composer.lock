@@ -7,27 +7,27 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer",
-                "reference": "344df03253194b1decd4187db5e288b3979bf0a2"
+                "reference": "2b065030273bb116849a6785cdabaec8c889b24d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/composer/composer/zipball/344df03253194b1decd4187db5e288b3979bf0a2",
-                "reference": "344df03253194b1decd4187db5e288b3979bf0a2",
+                "url": "https://github.com/composer/composer/zipball/2b065030273bb116849a6785cdabaec8c889b24d",
+                "reference": "2b065030273bb116849a6785cdabaec8c889b24d",
                 "shasum": ""
             },
             "require": {
                 "justinrainbow/json-schema": "1.1.*",
                 "seld/jsonlint": "1.*",
                 "php": ">=5.3.2",
-                "symfony/finder": "2.1.*",
-                "symfony/console": "2.1.*@dev",
-                "symfony/process": "2.1.*@dev"
+                "symfony/console": ">=2.1,<3.0",
+                "symfony/finder": ">=2.1,<3.0",
+                "symfony/process": ">=2.1,<3.0"
             },
             "suggest": {
                 "ext-zip": "Enabling the zip extension allows you to unzip archives, and allows gzip compression of all internet traffic",
                 "ext-openssl": "Enabling the openssl extension allows you to access https URLs for repositories and packages"
             },
-            "time": "1350663528",
+            "time": "1351209214",
             "bin": [
                 "bin/composer"
             ],

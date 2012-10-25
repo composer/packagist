@@ -239,6 +239,11 @@ class WebController extends Controller
                 $response = array('status' => 'success', 'name' => $package->getName());
             } else {
                 $errors = array();
+                if ($form->hasErrors()) {
+                    foreach ($form->getErrors() as $error) {
+                        $errors[] = $error->getMessageTemplate();
+                    }
+                }
                 foreach ($form->all() as $child) {
                     if ($child->hasErrors()) {
                         foreach ($child->getErrors() as $error) {
