@@ -45,6 +45,14 @@ class DumpPackagesCommand extends ContainerAwareCommand
         $force = (Boolean) $input->getOption('force');
         $verbose = (Boolean) $input->getOption('verbose');
 
+        $deployLock = $this->getContainer()->getParameter('kernel.cache_dir').'/deploy.globallock';
+        if (file_exists($deployLock)) {
+            if ($verbose) {
+                $output->writeln('Aborting, '.$deployLock.' file present');
+            }
+            return;
+        }
+
         $doctrine = $this->getContainer()->get('doctrine');
 
         if ($force) {

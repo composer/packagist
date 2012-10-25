@@ -49,6 +49,14 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $force = $input->getOption('force');
         $package = $input->getArgument('package');
 
+        $deployLock = $this->getContainer()->getParameter('kernel.cache_dir').'/deploy.globallock';
+        if (file_exists($deployLock)) {
+            if ($verbose) {
+                $output->writeln('Aborting, '.$deployLock.' file present');
+            }
+            return;
+        }
+
         $doctrine = $this->getContainer()->get('doctrine');
         $solarium = $this->getContainer()->get('solarium.client');
 
