@@ -1,5 +1,6 @@
 menu:
     about_packagist: About Packagist
+    rss_feeds: Atom/RSS Feeds
     about_composer: About Composer
     home: Home
     profile: Profile

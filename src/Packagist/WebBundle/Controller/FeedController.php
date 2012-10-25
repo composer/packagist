@@ -23,6 +23,7 @@ use Packagist\WebBundle\Entity\Version;
 use Symfony\Component\HttpFoundation\Response;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 
 /**
  * @author Rafael Dohms <rafael@doh.ms>
@@ -31,6 +32,15 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
  */
 class FeedController extends Controller
 {
+    /**
+     * @Route("/", name="feeds")
+     * @Template
+     */
+    public function feedsAction()
+    {
+        return array();
+    }
+
     /**
      * @Route(
      *     "/packages.{_format}",
@@ -110,6 +120,32 @@ class FeedController extends Controller
     }
 
     /**
+     * @Route(
+     *     "/package.{package}.{_format}",
+     *     name="feed_package",
+     *     requirements={"_format"="(rss|atom)", "package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}
+     * )
+     * @Method({"GET"})
+     */
+    public function packageAction($package)
+    {
+        /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $packages = $this->getLimitedResults(
+            $repo->getQueryBuilderForLatestVersionWithPackage(null, $package)
+        );
+
+        $feed = $this->buildFeed(
+            "$package releases",
+            "Latest releases on Packagist of $package.",
+            $this->generateUrl('view_package', array('name' => $package), true),
+            $packages
+        );
+
+        return $this->buildResponse($feed);
+    }
+
+    /**
      * Limits a query to the desired number of results
      *
      * @param \Doctrine\ORM\QueryBuilder $queryBuilder
@@ -142,6 +178,7 @@ class FeedController extends Controller
         $feed->setTitle($title);
         $feed->setDescription($description);
         $feed->setLink($url);
+        $feed->setGenerator('Packagist');
 
         foreach ($items as $item) {
             $entry = $feed->createEntry();

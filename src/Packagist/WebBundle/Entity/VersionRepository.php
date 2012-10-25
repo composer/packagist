@@ -72,9 +72,10 @@ class VersionRepository extends EntityRepository
      * Returns the latest versions released
      *
      * @param string $vendor optional vendor filter
+     * @param string $package optional vendor/package filter
      * @return \Doctrine\ORM\QueryBuilder
      */
-    public function getQueryBuilderForLatestVersionWithPackage($vendor = null)
+    public function getQueryBuilderForLatestVersionWithPackage($vendor = null, $package = null)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('v', 't', 'a', 'p')
@@ -88,6 +89,11 @@ class VersionRepository extends EntityRepository
         if ($vendor) {
             $qb->andWhere('p.name LIKE ?0');
             $qb->setParameter(0, $vendor.'/%');
+        }
+
+        if ($package) {
+            $qb->andWhere('p.name = ?0')
+                ->setParameter(0, $package);
         }
 
         return $qb;

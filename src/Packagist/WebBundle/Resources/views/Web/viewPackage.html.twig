@@ -2,6 +2,11 @@
 
 {% block title %}{{ package.name }} - {{ parent() }}{% endblock %}
 
+{% block head_additions %}
+    <link rel="alternate" type="application/rss+xml" title="New Releases - {{ package.name }}" href="{{ url('feed_package', {package: package.name, _format: 'rss'}) }}" />
+    <link rel="alternate" type="application/rss+xml" title="New Releases - {{ package.vendor }}" href="{{ url('feed_vendor', {vendor: package.vendor, _format: 'rss'}) }}" />
+{% endblock %}
+
 {% block scripts %}
     <script src="{{ asset('bundles/packagistweb/js/view.js?v=6')}}"></script>
 {% endblock %}
