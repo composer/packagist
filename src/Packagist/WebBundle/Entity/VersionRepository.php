@@ -89,9 +89,7 @@ class VersionRepository extends EntityRepository
         if ($vendor) {
             $qb->andWhere('p.name LIKE ?0');
             $qb->setParameter(0, $vendor.'/%');
-        }
-
-        if ($package) {
+        } elseif ($package) {
             $qb->andWhere('p.name = ?0')
                 ->setParameter(0, $package);
         }
