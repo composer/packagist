@@ -20,8 +20,10 @@
         <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=9') }}" />
         <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css?v=2') }}" />
 
+        {% block head_feeds %}
         <link rel="alternate" type="application/rss+xml" title="Newly Submitted Packages - Packagist" href="{{ url('feed_packages', {_format: 'rss'}) }}" />
         <link rel="alternate" type="application/rss+xml" title="New Releases - Packagist" href="{{ url('feed_releases', {_format: 'rss'}) }}" />
+        {% endblock %}
 
         <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist" />
 

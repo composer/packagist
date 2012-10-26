@@ -2,9 +2,10 @@
 
 {% block title %}{{ package.name }} - {{ parent() }}{% endblock %}
 
-{% block head_additions %}
+{% block head_feeds %}
     <link rel="alternate" type="application/rss+xml" title="New Releases - {{ package.name }}" href="{{ url('feed_package', {package: package.name, _format: 'rss'}) }}" />
     <link rel="alternate" type="application/rss+xml" title="New Releases - {{ package.vendor }}" href="{{ url('feed_vendor', {vendor: package.vendor, _format: 'rss'}) }}" />
+    {{ parent() }}
 {% endblock %}
 
 {% block scripts %}
