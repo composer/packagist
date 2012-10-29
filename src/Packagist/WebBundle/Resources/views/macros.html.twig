@@ -8,7 +8,7 @@
                         [Not auto-updated]
                     {% endif %}
                 </h1>
-                {% if package.description %}
+                {% if package.description is defined and package.description %}
                     <p class="package-description">{{ package.description }}</p>
                 {% endif %}
             </li>
