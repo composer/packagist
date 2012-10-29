@@ -1018,12 +1018,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/nelmio/NelmioSolariumBundle",
-                "reference": "61b8a7f2b99edd13d90e377335f571607721a7f2"
+                "reference": "39ebcb37ea839e812a6c752b9156e6a13a52b27c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/nelmio/NelmioSolariumBundle/zipball/61b8a7f2b99edd13d90e377335f571607721a7f2",
-                "reference": "61b8a7f2b99edd13d90e377335f571607721a7f2",
+                "url": "https://github.com/nelmio/NelmioSolariumBundle/zipball/39ebcb37ea839e812a6c752b9156e6a13a52b27c",
+                "reference": "39ebcb37ea839e812a6c752b9156e6a13a52b27c",
                 "shasum": ""
             },
             "require": {
@@ -1033,7 +1033,7 @@
             "require-dev": {
                 "symfony/yaml": "2.*"
             },
-            "time": "1345050695",
+            "time": "1351527839",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
@@ -1045,7 +1045,26 @@
                 "psr-0": {
                     "Nelmio\\SolariumBundle": ""
                 }
-            }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nelmio",
+                    "homepage": "http://nelm.io"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://github.com/nelmio/NelmioSolariumBundle/contributors"
+                }
+            ],
+            "description": "Integration with solarium solr client.",
+            "keywords": [
+                "solr",
+                "search",
+                "solarium"
+            ]
         },
         {
             "name": "pagerfanta/pagerfanta",

@@ -88,8 +88,7 @@ hwi_oauth:
             client_id:     %github.client_id%
             client_secret: %github.client_secret%
 
-nelmio_solarium:
-    adapter: ~
+nelmio_solarium: ~
 
 parameters:
     session.flashbag.class: Symfony\Component\HttpFoundation\Session\Flash\FlashBag
