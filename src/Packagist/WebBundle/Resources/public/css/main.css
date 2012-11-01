@@ -555,7 +555,7 @@ form ul {
   border-radius: 0;
   background-color: transparent;
   font-family: Courier;
-  min-width: 300px;
+  min-width: 500px;
   width: auto;
 }
 .package .package-links .provides {
