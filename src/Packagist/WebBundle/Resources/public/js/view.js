@@ -34,7 +34,7 @@
                 window.location.href = window.location.href;
             },
             context: this
-        });
+        }).complete(function () { submit.removeClass('loading'); });
         submit.addClass('loading');
     });
     $('.package .mark-favorite').click(function (e) {
@@ -42,7 +42,7 @@
             dataType: 'json',
             cache: false,
             success: function (data) {
-                $(this).removeClass('loading').toggleClass('is-favorite');
+                $(this).toggleClass('is-favorite');
             },
             context: this
         };
@@ -58,7 +58,7 @@
             options.data = {"package": $(this).data('package')};
             options.url = $(this).data('add-url');
         }
-        $.ajax(options);
+        $.ajax(options).complete(function () { $(this).removeClass('loading'); });
         $(this).addClass('loading');
     });
     $('.package .force-delete').submit(function (e) {

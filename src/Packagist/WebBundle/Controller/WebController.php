@@ -12,7 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Composer\IO\NullIO;
+use Composer\IO\ArrayIO;
 use Composer\Factory;
 use Composer\Repository\VcsRepository;
 use Composer\Package\Loader\ValidatingArrayLoader;
@@ -32,6 +32,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Console\Output\OutputInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
@@ -418,11 +419,21 @@ class WebController extends Controller
                 set_time_limit(3600);
                 $updater = $this->get('packagist.package_updater');
 
+                $io = new ArrayIO('', OutputInterface::VERBOSITY_VERBOSE);
                 $config = Factory::createConfig();
-                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
-                $loader = new ValidatingArrayLoader(new ArrayLoader());
+                $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
+                $loader = new ValidatingArrayLoader(new ArrayLoader(), false);
                 $repository->setLoader($loader);
-                $updater->update($package, $repository, Updater::UPDATE_TAGS);
+
+                try {
+                    $updater->update($package, $repository, Updater::UPDATE_TAGS);
+                } catch (\Exception $e) {
+                    return new Response(json_encode(array(
+                        'status' => 'error',
+                        'message' => '['.get_class($e).'] '.$e->getMessage(),
+                        'details' => '<pre>'.$io->getOutput().'</pre>'
+                    )), 400);
+                }
             }
 
             return new Response('{"status": "success"}', 202);

@@ -85,7 +85,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $input->setInteractive(false);
         $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new NullIO;
         $config = Factory::createConfig();
-        $loader = new ValidatingArrayLoader(new ArrayLoader());
+        $loader = new ValidatingArrayLoader(new ArrayLoader(), false);
 
         while ($ids) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($ids, 0, 50));
@@ -99,7 +99,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                     $repository->setLoader($loader);
                     $updater->update($package, $repository, $flags, $start);
                 } catch (\Exception $e) {
-                    $output->writeln('<error>Exception: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().', skipping package '.$router->generate('view_package', array('name' => $package->getName()), true).'</error>');
+                    $output->writeln('<error>Error updating '.$router->generate('view_package', array('name' => $package->getName()), true).' ['.get_class($e).']: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().'</error>');
                 }
             }
 

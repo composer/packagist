@@ -169,7 +169,7 @@ class ApiController extends Controller
 
         $updated = false;
         $config = Factory::createConfig();
-        $loader = new ValidatingArrayLoader(new ArrayLoader());
+        $loader = new ValidatingArrayLoader(new ArrayLoader(), false);
         $updater = $this->get('packagist.package_updater');
         $em = $this->get('doctrine.orm.entity_manager');
 
@@ -182,7 +182,13 @@ class ApiController extends Controller
                 $repository->setLoader($loader);
                 $package->setAutoUpdated(true);
                 $em->flush();
-                $updater->update($package, $repository);
+                try {
+                    $updater->update($package, $repository);
+                } catch (\Exception $e) {
+                    // TODO send email to maintainer
+
+                    return new Response(json_encode(array('status' => 'error', 'message' => '['.get_class($e).'] '.$e->getMessage())), 400);
+                }
             }
         }
 
