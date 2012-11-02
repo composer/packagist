@@ -6,6 +6,7 @@
         <h1>Statistics</h1>
         <h2>Packages/versions over time</h2>
         <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ versions }}&amp;chxl=1:|{{ chart.months|join('|') }}&amp;chxt=y,x&amp;chs=900x250&amp;chds=0,{{ versions }},0,{{ versions }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ chart.versions|join(',') }}|{{ chart.packages|join(',') }}&amp;chdl=Versions|Packages&amp;chls=2|2" /></p>
+        <p>The last data point is for the current month and shows partial data.</p>
 
         <h2>Totals</h2>
         <p>{{ packages|number_format(0, '.', " ") }} packages registered</p>
