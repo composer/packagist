@@ -152,10 +152,18 @@ class WebController extends Controller
                 $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
                 if ($req->getRequestFormat() === 'json') {
-                    $result = array(
-                        'results' => array(),
-                        'total' => $paginator->getNbResults(),
-                    );
+                    try {
+                        $result = array(
+                            'results' => array(),
+                            'total' => $paginator->getNbResults(),
+                        );
+                    } catch (\Solarium_Client_HttpException $e) {
+                        return new JsonResponse(array(
+                            'status' => 'error',
+                            'message' => 'Could not connect to the search server',
+                        ), 500);
+                    }
+
                     foreach ($paginator as $package) {
                         $url = $this->generateUrl('view_package', array('name' => $package->name), true);
 
@@ -177,10 +185,20 @@ class WebController extends Controller
                 }
 
                 if ($req->isXmlHttpRequest()) {
-                    return $this->render('PackagistWebBundle:Web:list.html.twig', array(
-                        'packages' => $paginator,
-                        'noLayout' => true,
-                    ));
+                    try {
+                        return $this->render('PackagistWebBundle:Web:list.html.twig', array(
+                            'packages' => $paginator,
+                            'noLayout' => true,
+                        ));
+                    } catch (\Twig_Error_Runtime $e) {
+                        if (!$e->getPrevious() instanceof \Solarium_Client_HttpException) {
+                            throw $e;
+                        }
+                        return new JsonResponse(array(
+                            'status' => 'error',
+                            'message' => 'Could not connect to the search server',
+                        ), 500);
+                    }
                 }
 
                 return $this->render('PackagistWebBundle:Web:search.html.twig', array('packages' => $paginator, 'searchForm' => $form->createView()));
