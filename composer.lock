@@ -7,12 +7,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer",
-                "reference": "2b065030273bb116849a6785cdabaec8c889b24d"
+                "reference": "6549360dac38da2d57f4d4bcb7e9aa62051f9523"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/composer/composer/zipball/2b065030273bb116849a6785cdabaec8c889b24d",
-                "reference": "2b065030273bb116849a6785cdabaec8c889b24d",
+                "url": "https://github.com/composer/composer/zipball/6549360dac38da2d57f4d4bcb7e9aa62051f9523",
+                "reference": "6549360dac38da2d57f4d4bcb7e9aa62051f9523",
                 "shasum": ""
             },
             "require": {
@@ -27,7 +27,7 @@
                 "ext-zip": "Enabling the zip extension allows you to unzip archives, and allows gzip compression of all internet traffic",
                 "ext-openssl": "Enabling the openssl extension allows you to access https URLs for repositories and packages"
             },
-            "time": "1351209214",
+            "time": "1351876388",
             "bin": [
                 "bin/composer"
             ],
@@ -1125,22 +1125,22 @@
         },
         {
             "name": "seld/jsonlint",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "source": {
                 "type": "git",
                 "url": "http://github.com/Seldaek/jsonlint",
-                "reference": "1.0.0"
+                "reference": "1.0.1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/Seldaek/jsonlint/zipball/1.0.0",
-                "reference": "1.0.0",
+                "url": "https://github.com/Seldaek/jsonlint/zipball/1.0.1",
+                "reference": "1.0.1",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-03-10 16:52:32",
+            "time": "2012-08-13 07:00:11",
             "bin": [
                 "bin/jsonlint"
             ],
