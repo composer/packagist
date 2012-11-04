@@ -12,7 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Composer\IO\ArrayIO;
+use Composer\IO\BufferIO;
 use Composer\Factory;
 use Composer\Repository\VcsRepository;
 use Composer\Package\Loader\ValidatingArrayLoader;
@@ -437,7 +437,7 @@ class WebController extends Controller
                 set_time_limit(3600);
                 $updater = $this->get('packagist.package_updater');
 
-                $io = new ArrayIO('', OutputInterface::VERBOSITY_VERBOSE);
+                $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE);
                 $config = Factory::createConfig();
                 $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                 $loader = new ValidatingArrayLoader(new ArrayLoader(), false);
