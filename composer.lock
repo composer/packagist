@@ -7,12 +7,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer",
-                "reference": "e7e04689f1a896fbfb00f596bcdfc363ffb751d7"
+                "reference": "e05391dc4438d951cfb0d420bc985ce514434f92"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/composer/composer/archive/e7e04689f1a896fbfb00f596bcdfc363ffb751d7.zip",
-                "reference": "e7e04689f1a896fbfb00f596bcdfc363ffb751d7",
+                "url": "https://github.com/composer/composer/archive/e05391dc4438d951cfb0d420bc985ce514434f92.zip",
+                "reference": "e05391dc4438d951cfb0d420bc985ce514434f92",
                 "shasum": ""
             },
             "require": {
@@ -27,7 +27,7 @@
                 "ext-zip": "Enabling the zip extension allows you to unzip archives, and allows gzip compression of all internet traffic",
                 "ext-openssl": "Enabling the openssl extension allows you to access https URLs for repositories and packages"
             },
-            "time": "1352120123",
+            "time": "1352121484",
             "bin": [
                 "bin/composer"
             ],

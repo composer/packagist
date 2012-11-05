@@ -12,7 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Composer\IO\NullIO;
+use Composer\IO\BufferIO;
 use Composer\Factory;
 use Composer\Repository\VcsRepository;
 use Composer\Package\Loader\ValidatingArrayLoader;
