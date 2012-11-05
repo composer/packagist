@@ -634,6 +634,9 @@ pre {
 
 .humane pre {
   text-align: left;
+  background-color: #111;
+  color: #fff;
+  text-shadow: none;
 }
 
 /*

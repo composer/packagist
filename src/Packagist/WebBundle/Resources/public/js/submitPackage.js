@@ -20,7 +20,6 @@
         };
         $.post($(this).data('check-url'), $(this).serializeArray(), success);
         $('#submit').addClass('loading');
-        // TODO display loader icon
         e.preventDefault();
     };
 
