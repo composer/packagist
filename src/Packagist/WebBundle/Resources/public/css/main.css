@@ -326,6 +326,13 @@ ul.packages h1 {
   height: 32px;
 }
 
+ul.packages h1 .metadata {
+  float: right;
+  color: #555;
+  font-size: 18px;
+  margin-right: 10px;
+}
+
 ul.packages li {
     background: none repeat scroll 0 0 #EEEEEE;
     border: 1px solid #BBBBBB;
@@ -590,14 +597,12 @@ form ul {
 }
 
 .package .mark-favorite {
-  width: 16px;
-  height: 16px;
-  display: inline-block;
-  background: url(../img/favorite.png) 0 -17px no-repeat;
+  font-size: 20px;
   cursor: pointer;
+  color: #c4b90c;
 }
-.package .mark-favorite.is-favorite {
-  background-position: 0 0;
+.package .mark-favorite.icon-star {
+  color: #eadc00;
 }
 
 .no-js .package .force-update, .no-js .package .mark-favorite {

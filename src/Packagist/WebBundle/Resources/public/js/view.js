@@ -42,7 +42,7 @@
             dataType: 'json',
             cache: false,
             success: function (data) {
-                $(this).toggleClass('is-favorite');
+                $(this).toggleClass('icon-star').toggleClass('icon-star-empty');
             },
             context: this
         };
@@ -50,7 +50,7 @@
         if ($(this).is('.loading')) {
             return;
         }
-        if ($(this).is('.is-favorite')) {
+        if ($(this).is('.icon-star')) {
             options.type = 'DELETE';
             options.url = $(this).data('remove-url');
         } else {

@@ -12,7 +12,7 @@
         <p>Member since {{ user.createdAt|date('M d, Y') }}
         <h2>Packages</h2>
         {% if packages|length %}
-            {{ macros.listPackages(packages, true) }}
+            {{ macros.listPackages(packages, true, false, meta) }}
         {% else %}
             <p>No packages found.</p>
         {% endif %}

@@ -24,7 +24,6 @@ use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
 use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Package\Updater;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Form\Type\PackageType;
@@ -75,6 +74,7 @@ class WebController extends Controller
             ->getFilteredQueryBuilder($filters);
 
         $data['packages'] = $this->setupPager($packages, $page);
+        $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['searchForm'] = $this->createSearchForm()->createView();
 
         return $data;
@@ -189,6 +189,7 @@ class WebController extends Controller
                     try {
                         return $this->render('PackagistWebBundle:Web:list.html.twig', array(
                             'packages' => $paginator,
+                            'meta' => $this->getPackagesMetadata($paginator),
                             'noLayout' => true,
                         ));
                     } catch (\Twig_Error_Runtime $e) {
@@ -202,7 +203,11 @@ class WebController extends Controller
                     }
                 }
 
-                return $this->render('PackagistWebBundle:Web:search.html.twig', array('packages' => $paginator, 'searchForm' => $form->createView()));
+                return $this->render('PackagistWebBundle:Web:search.html.twig', array(
+                    'packages' => $paginator,
+                    'meta' => $this->getPackagesMetadata($paginator),
+                    'searchForm' => $form->createView(),
+                ));
             }
         }
 
@@ -296,7 +301,13 @@ class WebController extends Controller
             return $this->redirect($this->generateUrl('search', array('q' => $vendor, 'reason' => 'vendor_not_found')));
         }
 
-        return array('packages' => $packages, 'vendor' => $vendor, 'paginate' => false, 'searchForm' => $this->createSearchForm()->createView());
+        return array(
+            'packages' => $packages,
+            'meta' => $this->getPackagesMetadata($packages),
+            'vendor' => $vendor,
+            'paginate' => false,
+            'searchForm' => $this->createSearchForm()->createView()
+        );
     }
 
     /**

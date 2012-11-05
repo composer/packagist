@@ -17,8 +17,12 @@
         <script src="{{ asset('bundles/packagistweb/js/html5.js') }}"></script>
         <![endif]-->
 
-        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=9') }}" />
+        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=10') }}" />
         <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css?v=3') }}" />
+        <link rel="stylesheet" href="{{ asset('css/fontawesome/font-awesome.css') }}" />
+        <!--[if lt IE 8]>
+        <link rel="stylesheet" href="{{ asset('css/fontawesome/font-awesome-ie7.css') }}" />
+        <![endif]-->
 
         {% block head_feeds %}
         <link rel="alternate" type="application/rss+xml" title="Newly Submitted Packages - Packagist" href="{{ url('feed_packages', {_format: 'rss'}) }}" />

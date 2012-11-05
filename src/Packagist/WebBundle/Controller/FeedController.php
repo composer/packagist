@@ -12,7 +12,6 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Doctrine\ORM\QueryBuilder;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Pagerfanta;

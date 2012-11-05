@@ -7,7 +7,7 @@
         {% block content_title %}<h1>Packages</h1>{% endblock %}
         {% block list %}
             {% if packages|length %}
-                {{ macros.listPackages(packages, paginate is not defined or paginate) }}
+                {{ macros.listPackages(packages, paginate is not defined or paginate, false, meta|default(null)) }}
             {% else %}
                 <p>No packages found.</p>
             {% endif %}

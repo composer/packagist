@@ -72,6 +72,17 @@ class FavoriteManager
         return $this->redis->zcard('pkg:'.$package->getId().':fav');
     }
 
+    public function getFaverCounts(array $packageIds)
+    {
+        $res = array();
+        // TODO should be done with scripting when available
+        foreach ($packageIds as $id) {
+            $res[$id] = $this->redis->zcard('pkg:'.$id.':fav');
+        }
+
+        return $res;
+    }
+
     public function isMarked(UserInterface $user, Package $package)
     {
         return null !== $this->redis->zrank('usr:'.$user->getId().':fav', $package->getId());

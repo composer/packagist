@@ -13,7 +13,6 @@
 namespace Packagist\WebBundle\Controller;
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
@@ -40,7 +39,13 @@ class UserController extends Controller
      */
     public function packagesAction(Request $req, User $user)
     {
-        return array('packages' => $this->getUserPackages($req, $user), 'user' => $user);
+        $packages = $this->getUserPackages($req, $user);
+
+        return array(
+            'packages' => $packages,
+            'meta' => $this->getPackagesMetadata($packages),
+            'user' => $user,
+        );
     }
 
     public function myProfileAction(Request $req)
@@ -50,9 +55,15 @@ class UserController extends Controller
             throw new AccessDeniedException('This user does not have access to this section.');
         }
 
+        $packages = $this->getUserPackages($req, $user);
+
         return $this->container->get('templating')->renderResponse(
             'FOSUserBundle:Profile:show.html.'.$this->container->getParameter('fos_user.template.engine'),
-            array('user' => $user, 'packages' => $this->getUserPackages($req, $user))
+            array(
+                'packages' => $packages,
+                'meta' => $this->getPackagesMetadata($packages),
+                'user' => $user,
+            )
         );
     }
 
@@ -64,7 +75,13 @@ class UserController extends Controller
      */
     public function profileAction(Request $req, User $user)
     {
-        return array('packages' => $this->getUserPackages($req, $user), 'user' => $user);
+        $packages = $this->getUserPackages($req, $user);
+
+        return array(
+            'packages' => $packages,
+            'meta' => $this->getPackagesMetadata($packages),
+            'user' => $user,
+        );
     }
 
     /**

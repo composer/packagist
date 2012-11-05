@@ -1,4 +1,4 @@
-{% macro listPackages(packages, paginate, showAutoUpdateWarning) %}
+{% macro listPackages(packages, paginate, showAutoUpdateWarning, meta) %}
     <ul class="packages">
         {% for package in packages %}
             <li data-url="{{ path('view_package', { 'name' : package.name }) }}">
@@ -6,6 +6,12 @@
                     <a href="{{ path('view_package', { 'name' : package.name }) }}">{{ package.name }}</a>
                     {% if showAutoUpdateWarning and not package.autoUpdated %}
                         [Not auto-updated]
+                    {% endif %}
+                    {% if meta %}
+                        <span class="metadata">
+                            <i class="icon-download"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', ' ') }}
+                            <i class="icon-star"></i> {{ meta.favers[package.id]|number_format(0, '.', ' ') }}
+                        </span>
                     {% endif %}
                 </h1>
                 {% if package.description is defined and package.description %}
