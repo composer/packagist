@@ -178,16 +178,24 @@ class ApiController extends Controller
                 set_time_limit(3600);
                 $updated = true;
 
-                $repository = new VcsRepository(array('url' => $package->getRepository()), new NullIO, $config);
+                $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE);
+                $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                 $repository->setLoader($loader);
                 $package->setAutoUpdated(true);
                 $em->flush();
                 try {
                     $updater->update($package, $repository);
+                    if ($repository->hadInvalidBranches()) {
+                        throw new \RuntimeException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
+                    }
                 } catch (\Exception $e) {
-                    // TODO send email to maintainer
+                    // TODO send email to maintainer(s)
 
-                    return new Response(json_encode(array('status' => 'error', 'message' => '['.get_class($e).'] '.$e->getMessage())), 400);
+                    return new Response(json_encode(array(
+                        'status' => 'error',
+                        'message' => '['.get_class($e).'] '.$e->getMessage(),
+                        'details' => '<pre>'.$io->getOutput().'</pre>'
+                    )), 400);
                 }
             }
         }
