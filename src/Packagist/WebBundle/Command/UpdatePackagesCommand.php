@@ -85,7 +85,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $input->setInteractive(false);
         $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new NullIO;
         $config = Factory::createConfig();
-        $loader = new ValidatingArrayLoader(new ArrayLoader(), false);
+        $loader = new ValidatingArrayLoader(new ArrayLoader());
 
         while ($ids) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($ids, 0, 50));

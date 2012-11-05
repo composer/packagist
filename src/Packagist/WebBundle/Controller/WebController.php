@@ -440,7 +440,7 @@ class WebController extends Controller
                 $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE);
                 $config = Factory::createConfig();
                 $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
-                $loader = new ValidatingArrayLoader(new ArrayLoader(), false);
+                $loader = new ValidatingArrayLoader(new ArrayLoader());
                 $repository->setLoader($loader);
 
                 try {

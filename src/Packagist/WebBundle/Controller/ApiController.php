@@ -169,7 +169,7 @@ class ApiController extends Controller
 
         $updated = false;
         $config = Factory::createConfig();
-        $loader = new ValidatingArrayLoader(new ArrayLoader(), false);
+        $loader = new ValidatingArrayLoader(new ArrayLoader());
         $updater = $this->get('packagist.package_updater');
         $em = $this->get('doctrine.orm.entity_manager');
 
