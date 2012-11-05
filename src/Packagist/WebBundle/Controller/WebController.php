@@ -445,6 +445,9 @@ class WebController extends Controller
 
                 try {
                     $updater->update($package, $repository, Updater::UPDATE_TAGS);
+                    if ($repository->hadInvalidBranches()) {
+                        throw new \RuntimeException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
+                    }
                 } catch (\Exception $e) {
                     return new Response(json_encode(array(
                         'status' => 'error',
