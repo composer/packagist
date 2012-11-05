@@ -491,6 +491,17 @@ class WebController extends Controller
             $em->remove($package);
             $em->flush();
 
+            // attempt solr cleanup
+            try {
+                $solarium = $this->get('solarium.client');
+
+                $update = $solarium->createUpdate();
+                $update->addDeleteById($package->getName());
+                $update->addCommit();
+
+                $solarium->update($update);
+            } catch (\Solarium_Client_HttpException $e) {}
+
             return new RedirectResponse($this->generateUrl('home'));
         }
 
