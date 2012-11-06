@@ -637,6 +637,10 @@ pre {
   margin: 10px 0;
 }
 
+.humane {
+  max-height: 90%;
+  overflow: auto;
+}
 .humane pre {
   text-align: left;
   background-color: #111;
