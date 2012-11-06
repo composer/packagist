@@ -6,6 +6,7 @@ app/config/parameters.yml
 app/bootstrap*
 app/cache/*
 app/logs/*
+bin/
 build/
 vendor/
 /.settings
