@@ -82,7 +82,7 @@ class ApiController extends Controller
      */
     public function githubPostReceive(Request $request)
     {
-        return $this->receivePost($request, '{(^|//)(?P<url>github\.com/[\w.-]+/[\w.-]+?)(\.git)?$}', '(\.git)?$');
+        return $this->receivePost($request, '{^(?:https?://|git://|git@)?(?P<domain>github\.com)[:/](?P<repo>[\w.-]+/[\w.-]+?)(?:\.git)?$}');
     }
 
     /**
@@ -91,7 +91,7 @@ class ApiController extends Controller
      */
     public function bitbucketPostReceive(Request $request)
     {
-        return $this->receivePost($request, '{(^|//)(?P<url>bitbucket\.org/[\w.-]+/[\w.-]+?)/?$}', '/?$');
+        return $this->receivePost($request, '{^(?:https?://)?(?P<domain>bitbucket\.org)/(?P<repo>[\w.-]+/[\w.-]+?)/?$}');
     }
 
     /**
@@ -138,7 +138,7 @@ class ApiController extends Controller
         return new Response('{"status": "success"}', 201);
     }
 
-    protected function receivePost(Request $request, $urlRegex, $optionalRepositorySuffix)
+    protected function receivePost(Request $request, $urlRegex)
     {
         $payload = json_decode($request->request->get('payload'), true);
         if (!$payload || !isset($payload['repository']['url'])) {
@@ -146,11 +146,9 @@ class ApiController extends Controller
         }
 
         // try to parse the URL first to avoid the DB lookup on malformed requests
-        if (!preg_match($urlRegex, $payload['repository']['url'], $match)) {
+        if (!preg_match($urlRegex, $payload['repository']['url'], $requestedRepo)) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL',)), 406);
         }
-
-        $payloadRepositoryChunk = $match['url'];
 
         $username = $request->request->has('username') ?
             $request->request->get('username') :
@@ -173,8 +171,12 @@ class ApiController extends Controller
         $updater = $this->get('packagist.package_updater');
         $em = $this->get('doctrine.orm.entity_manager');
 
+$candidate = array();
         foreach ($user->getPackages() as $package) {
-            if (preg_match('{'.preg_quote($payloadRepositoryChunk).$optionalRepositorySuffix.'}', $package->getRepository())) {
+            if (preg_match($urlRegex, $package->getRepository(), $candidate)
+                && $candidate['domain'] === $requestedRepo['domain']
+                && $candidate['repo'] === $requestedRepo['repo']
+            ) {
                 set_time_limit(3600);
                 $updated = true;
 

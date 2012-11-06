@@ -28,12 +28,15 @@ class ApiControllerTest extends WebTestCase
         $this->assertEquals(403, $client->getResponse()->getStatusCode(), 'POST method should return 403 "Forbidden" if invalid username and API Token are sent');
     }
 
-    public function testGithubApi()
+    /**
+     * @dataProvider githubApiProvider
+     */
+    public function testGithubApi($url)
     {
         $client = self::createClient();
 
         $package = new Package;
-        $package->setRepository('http://github.com/composer/composer.git');
+        $package->setRepository($url);
 
         $user = new User;
         $user->addPackages($package);
@@ -54,6 +57,16 @@ class ApiControllerTest extends WebTestCase
         $payload = json_encode(array('repository' => array('url' => 'git://github.com/composer/composer')));
         $client->request('POST', '/api/github?username=test&apiToken=token', array('payload' => $payload));
         $this->assertEquals(202, $client->getResponse()->getStatusCode());
+    }
+
+    public function githubApiProvider()
+    {
+        return array(
+            array('https://github.com/composer/composer.git'),
+            array('http://github.com/composer/composer.git'),
+            array('http://github.com/composer/composer'),
+            array('git@github.com:composer/composer.git'),
+        );
     }
 
     /**
@@ -82,23 +95,21 @@ class ApiControllerTest extends WebTestCase
             // valid github URLs
             array('github', 'github.com/user/repo', true),
             array('github', 'github.com/user/repo.git', true),
-            array('github', '//github.com/user/repo', true),
             array('github', 'http://github.com/user/repo', true),
             array('github', 'https://github.com/user/repo', true),
             array('github', 'https://github.com/user/repo.git', true),
             array('github', 'git://github.com/user/repo', true),
+            array('github', 'git@github.com:user/repo.git', true),
+            array('github', 'git@github.com:user/repo', true),
 
             // valid bitbucket URLs
             array('bitbucket', 'bitbucket.org/user/repo', true),
-            array('bitbucket', '//bitbucket.org/user/repo', true),
             array('bitbucket', 'http://bitbucket.org/user/repo', true),
             array('bitbucket', 'https://bitbucket.org/user/repo', true),
 
-            // protocol is ignored, so these are okay, too
-            array('github', 'php://github.com/user/repository', true),
-            array('github', 'javascript://github.com/user/repository', true),
-
             // invalid URLs
+            array('github', 'php://github.com/user/repository', false),
+            array('github', 'javascript://github.com/user/repository', false),
             array('github', 'http://', false),
             array('github', 'http://thisisnotgithub.com/user/repository', false),
             array('github', 'http://thisisnotbitbucket.org/user/repository', false),
