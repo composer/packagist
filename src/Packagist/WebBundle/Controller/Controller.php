@@ -28,6 +28,9 @@ class Controller extends BaseController
                 $id = $package instanceof \Solarium_Document_ReadOnly ? $package->id : $package->getId();
                 $dlKeys[$id] = 'dl:'.$id;
             }
+            if (!$dlKeys) {
+                return $metadata;
+            }
             $res = $this->get('snc_redis.default')->mget(array_values($dlKeys));
 
             $metadata = array(
