@@ -42,7 +42,7 @@
             dataType: 'json',
             cache: false,
             success: function (data) {
-                $(this).toggleClass('icon-star').toggleClass('icon-star-empty');
+                $(this).toggleClass('icon-star icon-star-empty');
             },
             context: this
         };
