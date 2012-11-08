@@ -1,0 +1,16 @@
+<form action="{{ path('fos_user_profile_edit') }}" {{ form_enctype(form) }} method="POST" class="fos_user_profile_edit">
+    {{ form_row(form.username) }}
+    {{ form_row(form.email) }}
+    {{ form_row(form.current_password) }}
+
+    <div class="notifications">
+        {{ form_errors(form.failureNotifications) }}
+        {{ form_widget(form.failureNotifications) }}
+        {{ form_label(form.failureNotifications) }}
+    </div>
+
+    <div>
+        {{ form_widget(form) }}
+        <input type="submit" value="{{ 'profile.edit.submit'|trans({}, 'FOSUserBundle') }}" />
+    </div>
+</form>

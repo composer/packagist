@@ -62,6 +62,12 @@ class User extends BaseUser
      */
     private $githubToken;
 
+    /**
+     * @ORM\Column(type="boolean", options={"default"=true})
+     * @var string
+     */
+    private $failureNotifications = true;
+
     public function __construct()
     {
         $this->packages = new ArrayCollection();
@@ -196,5 +202,35 @@ class User extends BaseUser
     public function setGithubToken($githubToken)
     {
         $this->githubToken = $githubToken;
+    }
+
+    /**
+     * Set failureNotifications
+     *
+     * @param Boolean $failureNotifications
+     */
+    public function setFailureNotifications($failureNotifications)
+    {
+        $this->failureNotifications = $failureNotifications;
+    }
+
+    /**
+     * Get failureNotifications
+     *
+     * @return Boolean
+     */
+    public function getFailureNotifications()
+    {
+        return $this->failureNotifications;
+    }
+
+    /**
+     * Get failureNotifications
+     *
+     * @return Boolean
+     */
+    public function isNotifiableForFailures()
+    {
+        return $this->failureNotifications;
     }
 }

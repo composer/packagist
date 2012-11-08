@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\Package;
 use Composer\Package\AliasPackage;
 use Composer\Package\PackageInterface;
 use Composer\Repository\RepositoryInterface;
+use Composer\Repository\InvalidRepositoryException;
 use Composer\Util\ErrorHandler;
 use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Entity\Package;
@@ -96,6 +97,10 @@ class Updater
 
         $versions = $repository->getPackages();
         $em = $this->doctrine->getEntityManager();
+
+        if ($repository->hadInvalidBranches()) {
+            throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
+        }
 
         usort($versions, function ($a, $b) {
             $aVersion = $a->getVersion();

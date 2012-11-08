@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\Controller;
 use Composer\IO\BufferIO;
 use Composer\Factory;
 use Composer\Repository\VcsRepository;
+use Composer\Repository\InvalidRepositoryException;
 use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Package\Loader\ArrayLoader;
 use Packagist\WebBundle\Package\Updater;
@@ -171,7 +172,6 @@ class ApiController extends Controller
         $updater = $this->get('packagist.package_updater');
         $em = $this->get('doctrine.orm.entity_manager');
 
-$candidate = array();
         foreach ($user->getPackages() as $package) {
             if (preg_match($urlRegex, $package->getRepository(), $candidate)
                 && $candidate['domain'] === $requestedRepo['domain']
@@ -187,11 +187,10 @@ $candidate = array();
                 $em->flush();
                 try {
                     $updater->update($package, $repository);
-                    if ($repository->hadInvalidBranches()) {
-                        throw new \RuntimeException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
-                    }
                 } catch (\Exception $e) {
-                    // TODO send email to maintainer(s)
+                    if ($e instanceof InvalidRepositoryException) {
+                        $this->get('packagist.package_manager')->notifyUpdateFailure($package, $e, $io->getOutput());
+                    }
 
                     return new Response(json_encode(array(
                         'status' => 'error',

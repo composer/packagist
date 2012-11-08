@@ -111,6 +111,11 @@ class Package
      */
     private $autoUpdated = false;
 
+    /**
+     * @ORM\Column(type="boolean", options={"default"=false})
+     */
+    private $updateFailureNotified = false;
+
     private $entityRepository;
 
     /**
@@ -371,6 +376,7 @@ class Package
     public function setUpdatedAt($updatedAt)
     {
         $this->updatedAt = $updatedAt;
+        $this->setUpdateFailureNotified(false);
     }
 
     /**
@@ -501,5 +507,25 @@ class Package
     public function isAutoUpdated()
     {
         return $this->autoUpdated;
+    }
+
+    /**
+     * Set updateFailureNotified
+     *
+     * @param Boolean $updateFailureNotified
+     */
+    public function setUpdateFailureNotified($updateFailureNotified)
+    {
+        $this->updateFailureNotified = $updateFailureNotified;
+    }
+
+    /**
+     * Get updateFailureNotified
+     *
+     * @return Boolean
+     */
+    public function isUpdateFailureNotified()
+    {
+        return $this->updateFailureNotified;
     }
 }

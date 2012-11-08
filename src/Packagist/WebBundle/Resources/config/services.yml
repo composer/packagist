@@ -61,3 +61,17 @@ services:
             - @snc_redis.default_client
             - @packagist.package_repository
             - @packagist.user_repository
+
+    packagist.package_manager:
+        class: Packagist\WebBundle\Model\PackageManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @mailer
+            - @twig
+            - { from: %mailer_from_email%, fromName: %mailer_from_name% }
+
+    packagist.profile.form.type:
+        class: Packagist\WebBundle\Form\Type\ProfileFormType
+        arguments: [%fos_user.model.user.class%]
+        tags:
+            - { name: form.type, alias: packagist_user_profile }

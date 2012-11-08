@@ -22,8 +22,9 @@ use Composer\Repository\VcsRepository;
 use Composer\Factory;
 use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Package\Loader\ArrayLoader;
-use Composer\IO\NullIO;
+use Composer\IO\BufferIO;
 use Composer\IO\ConsoleIO;
+use Composer\Repository\InvalidRepositoryException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -40,6 +41,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages'),
                 new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all versions before an update'),
+                new InputOption('notify-failures', null, InputOption::VALUE_NONE, 'Notify failures to maintainers by email'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
             ))
             ->setDescription('Updates packages')
@@ -82,8 +84,12 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $updater = $this->getContainer()->get('packagist.package_updater');
         $start = new \DateTime();
 
+        if ($verbose && $input->getOption('notify-failures')) {
+            throw new \LogicException('Failures can not be notified in verbose mode since the output is piped to the CLI');
+        }
+
         $input->setInteractive(false);
-        $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new NullIO;
+        $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : null;
         $config = Factory::createConfig();
         $loader = new ValidatingArrayLoader(new ArrayLoader());
 
@@ -95,9 +101,17 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                     $output->writeln('Importing '.$package->getRepository());
                 }
                 try {
+                    if (null === $io || $io instanceof BufferIO) {
+                        $io = new BufferIO('');
+                    }
                     $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                     $repository->setLoader($loader);
                     $updater->update($package, $repository, $flags, $start);
+                } catch (InvalidRepositoryException $e) {
+                    if ($input->getOption('notify-failures')) {
+                        $this->getContainer()->get('packagist.package_manager')->notifyUpdateFailure($package, $e, $io->getOutput());
+                    }
+                    $output->writeln('<error>Broken repository in '.$router->generate('view_package', array('name' => $package->getName()), true).': '.$e->getMessage().'</error>');
                 } catch (\Exception $e) {
                     $output->writeln('<error>Error updating '.$router->generate('view_package', array('name' => $package->getName()), true).' ['.get_class($e).']: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().'</error>');
                 }

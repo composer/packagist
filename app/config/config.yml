@@ -75,6 +75,9 @@ fos_user:
     registration:
         form:
             handler: packagist.form.handler.registration
+    profile:
+        form:
+            type:       packagist_user_profile
 
 hwi_oauth:
     firewall_name: main
