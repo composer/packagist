@@ -1,15 +1,6 @@
 {% extends 'PackagistWebBundle::layout.html.twig' %}
 
 {% block content %}
-
-    {% for type, flashMessages in app.session.flashbag.all() %}
-        {% for flashMessage in flashMessages %}
-            <div class="box clearfix {{ type }}" style="margin-bottom: 5px;">
-                <p>{{ flashMessage|trans({}, 'FOSUserBundle') }}</p>
-            </div>
-        {% endfor %}
-    {% endfor %}
-
     <div class="box clearfix">
         {% block fos_user_content %}{% endblock %}
     </div>

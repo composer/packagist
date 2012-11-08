@@ -61,9 +61,15 @@
             <div class="main" role="main">
                 {% for type, flashMessages in app.session.flashbag.all() %}
                     {% for flashMessage in flashMessages %}
-                        <div class="flash-message {{ type }}">
-                            <p>{{ flashMessage }}</p>
-                        </div>
+                        {% if 'fos_user_' in type %}
+                            <div class="flash-message {{ type|replace({'fos_user_': ''}) }}">
+                                <p>{{ flashMessage|trans({}, 'FOSUserBundle') }}</p>
+                            </div>
+                        {% else %}
+                            <div class="flash-message {{ type }}">
+                                <p>{{ flashMessage }}</p>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 {% endfor %}
 
