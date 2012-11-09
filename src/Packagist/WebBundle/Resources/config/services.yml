@@ -68,6 +68,7 @@ services:
             - @doctrine.orm.entity_manager
             - @mailer
             - @twig
+            - @logger
             - { from: %mailer_from_email%, fromName: %mailer_from_name% }
 
     packagist.profile.form.type:

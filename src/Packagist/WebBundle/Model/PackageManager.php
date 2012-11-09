@@ -16,6 +16,7 @@ use Swift_Mailer;
 use Twig_Environment;
 use Doctrine\ORM\EntityManager;
 use Packagist\WebBundle\Entity\Package;
+use Symfony\Component\HttpKernel\Log\LoggerInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -25,13 +26,15 @@ class PackageManager
     protected $em;
     protected $mailer;
     protected $twig;
+    protected $logger;
     protected $options;
 
-    public function __construct(EntityManager $em, Swift_Mailer $mailer, Twig_Environment $twig, array $options)
+    public function __construct(EntityManager $em, Swift_Mailer $mailer, Twig_Environment $twig, LoggerInterface $logger, array $options)
     {
         $this->em = $em;
         $this->mailer = $mailer;
         $this->twig = $twig;
+        $this->logger = $logger;
         $this->options = $options;
     }
 
@@ -60,11 +63,19 @@ class PackageManager
                     ->setBody($body)
                 ;
 
-                $this->mailer->send($message);
+                try {
+                    $this->mailer->send($message);
+                } catch (\Swift_TransportException $e) {
+                    $this->logger->err('['.get_class($e).'] '.$e->getMessage());
+
+                    return false;
+                }
             }
 
             $package->setUpdateFailureNotified(true);
             $this->em->flush();
         }
+
+        return true;
     }
 }

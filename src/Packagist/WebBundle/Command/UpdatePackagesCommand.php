@@ -108,10 +108,12 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                     $repository->setLoader($loader);
                     $updater->update($package, $repository, $flags, $start);
                 } catch (InvalidRepositoryException $e) {
-                    if ($input->getOption('notify-failures')) {
-                        $this->getContainer()->get('packagist.package_manager')->notifyUpdateFailure($package, $e, $io->getOutput());
-                    }
                     $output->writeln('<error>Broken repository in '.$router->generate('view_package', array('name' => $package->getName()), true).': '.$e->getMessage().'</error>');
+                    if ($input->getOption('notify-failures')) {
+                        if (!$this->getContainer()->get('packagist.package_manager')->notifyUpdateFailure($package, $e, $io->getOutput())) {
+                            $output->writeln('<error>Failed to notify maintainers</error>');
+                        }
+                    }
                 } catch (\Exception $e) {
                     $output->writeln('<error>Error updating '.$router->generate('view_package', array('name' => $package->getName()), true).' ['.get_class($e).']: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().'</error>');
                 }
