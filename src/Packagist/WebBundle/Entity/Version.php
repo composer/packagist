@@ -427,17 +427,17 @@ class Version
     /**
      * Set source
      *
-     * @param string $source
+     * @param array $source
      */
     public function setSource($source)
     {
-        $this->source = json_encode($source);
+        $this->source = null === $source ? $source : json_encode($source);
     }
 
     /**
      * Get source
      *
-     * @return array $source
+     * @return array|null
      */
     public function getSource()
     {
@@ -447,17 +447,17 @@ class Version
     /**
      * Set dist
      *
-     * @param string $dist
+     * @param array $dist
      */
     public function setDist($dist)
     {
-        $this->dist = json_encode($dist);
+        $this->dist = null === $dist ? $dist : json_encode($dist);
     }
 
     /**
      * Get dist
      *
-     * @return array
+     * @return array|null
      */
     public function getDist()
     {
@@ -467,7 +467,7 @@ class Version
     /**
      * Set autoload
      *
-     * @param string $autoload
+     * @param array $autoload
      */
     public function setAutoload($autoload)
     {
@@ -477,7 +477,7 @@ class Version
     /**
      * Get autoload
      *
-     * @return array
+     * @return array|null
      */
     public function getAutoload()
     {
@@ -487,17 +487,17 @@ class Version
     /**
      * Set binaries
      *
-     * @param string $binaries
+     * @param array $binaries
      */
     public function setBinaries($binaries)
     {
-        $this->binaries = json_encode($binaries);
+        $this->binaries = null === $binaries ? $binaries : json_encode($binaries);
     }
 
     /**
      * Get binaries
      *
-     * @return array
+     * @return array|null
      */
     public function getBinaries()
     {

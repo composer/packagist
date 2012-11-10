@@ -197,6 +197,8 @@ class Updater
             $source['url'] = $data->getSourceUrl();
             $source['reference'] = $data->getSourceReference();
             $version->setSource($source);
+        } else {
+            $version->setSource(null);
         }
 
         if ($data->getDistType()) {
@@ -205,6 +207,8 @@ class Updater
             $dist['reference'] = $data->getDistReference();
             $dist['shasum'] = $data->getDistSha1Checksum();
             $version->setDist($dist);
+        } else {
+            $version->setDist(null);
         }
 
         if ($data->getType()) {
