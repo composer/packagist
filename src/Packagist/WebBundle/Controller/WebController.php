@@ -508,7 +508,7 @@ class WebController extends Controller
                 $solarium = $this->get('solarium.client');
 
                 $update = $solarium->createUpdate();
-                $update->addDeleteById($package->getName());
+                $update->addDeleteById($package->getId());
                 $update->addCommit();
 
                 $solarium->update($update);
