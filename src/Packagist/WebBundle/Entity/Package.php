@@ -172,7 +172,12 @@ class Package
         try {
             $information = $driver->getComposerInformation($driver->getRootIdentifier());
 
-            if (!isset($information['name']) || !$information['name']) {
+            if (false === $information) {
+                $context->addViolationAtSubPath($property, 'No composer.json was found in the '.$driver->getRootIdentifier().' branch.', array(), null);
+                return;
+            }
+
+            if (empty($information['name'])) {
                 $context->addViolationAtSubPath($property, 'The package name was not found in the composer.json, make sure there is a name present.', array(), null);
                 return;
             }
