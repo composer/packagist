@@ -135,14 +135,20 @@ class ApiController extends Controller
             return new JsonResponse(array('status' => 'error', 'message' => 'Invalid request format, must be a json object containing a downloads key filled with an array of name/version objects'), 200);
         }
 
+        $failed = array();
         foreach ($contents['downloads'] as $package) {
             $result = $this->getPackageAndVersionId($package['name'], $package['version']);
 
             if (!$result) {
-                return new JsonResponse(array('status' => 'error', 'message' => 'Package '.json_encode($package).' not found'), 200);
+                $failed[] = $package;
+                continue;
             }
 
             $this->trackDownload($result['id'], $result['vid'], $request->getClientIp());
+        }
+
+        if ($failed) {
+            return new JsonResponse(array('status' => 'partial', 'message' => 'Packages '.json_encode($failed).' not found'), 200);
         }
 
         return new JsonResponse(array('status' => 'success'), 201);
