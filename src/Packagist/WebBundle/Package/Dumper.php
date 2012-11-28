@@ -237,6 +237,7 @@ class Dumper
         }
         $url = $this->router->generate('track_download', array('name' => 'VND/PKG'));
         $this->files['p/packages.json']['notify'] = str_replace('VND/PKG', '%package%', $url);
+        $this->files['p/packages.json']['notify_batch'] = $this->router->generate('track_download_batch');
 
         if ($verbose) {
             echo 'Dumping individual listings'.PHP_EOL;

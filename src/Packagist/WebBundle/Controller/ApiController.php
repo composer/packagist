@@ -21,6 +21,7 @@ use Composer\Package\Loader\ArrayLoader;
 use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Package;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Console\Output\OutputInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
@@ -101,25 +102,70 @@ class ApiController extends Controller
      */
     public function trackDownloadAction(Request $request, $name)
     {
-        $result = $this->get('doctrine.dbal.default_connection')->fetchAssoc(
+        $result = $this->getPackageAndVersionId($name, $request->request->get('version_normalized'));
+
+        if (!$result) {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 200);
+        }
+
+        $this->trackDownload($result['id'], $result['vid'], $request->getClientIp());
+
+        return new JsonResponse(array('status' => 'success'), 201);
+    }
+
+    /**
+     * Expects a json like:
+     *
+     * {
+     *     "downloads": [
+     *         {"name": "foo/bar", "version": "1.0.0.0"},
+     *         // ...
+     *     ]
+     * }
+     *
+     * The version must be the normalized one
+     *
+     * @Route("/downloads/", name="track_download_batch", defaults={"_format" = "json"})
+     * @Method({"POST"})
+     */
+    public function trackDownloadsAction(Request $request)
+    {
+        $contents = json_decode($request->getContent(), true);
+        if (empty($contents['downloads']) || !is_array($contents['downloads'])) {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Invalid request format, must be a json object containing a downloads key filled with an array of name/version objects'), 200);
+        }
+
+        foreach ($contents['downloads'] as $package) {
+            $result = $this->getPackageAndVersionId($package['name'], $package['version']);
+
+            if (!$result) {
+                return new JsonResponse(array('status' => 'error', 'message' => 'Package '.json_encode($package).' not found'), 200);
+            }
+
+            $this->trackDownload($result['id'], $result['vid'], $request->getClientIp());
+        }
+
+        return new JsonResponse(array('status' => 'success'), 201);
+    }
+
+    protected function getPackageAndVersionId($name, $version)
+    {
+        return $this->get('doctrine.dbal.default_connection')->fetchAssoc(
             'SELECT p.id, v.id vid
             FROM package p
             LEFT JOIN package_version v ON p.id = v.package_id
             WHERE p.name = ?
             AND v.normalizedVersion = ?
             LIMIT 1',
-            array($name, $request->request->get('version_normalized'))
+            array($name, $version)
         );
+    }
 
-        if (!$result) {
-            return new Response('{"status": "error", "message": "Package not found"}', 200);
-        }
-
+    protected function trackDownload($id, $vid, $ip)
+    {
         $redis = $this->get('snc_redis.default');
-        $id = $result['id'];
-        $version = $result['vid'];
 
-        $throttleKey = 'dl:'.$id.':'.$request->getClientIp().':'.date('Ymd');
+        $throttleKey = 'dl:'.$id.':'.$ip.':'.date('Ymd');
         $requests = $redis->incr($throttleKey);
         if (1 === $requests) {
             $redis->expire($throttleKey, 86400);
@@ -131,12 +177,10 @@ class ApiController extends Controller
             $redis->incr('dl:'.$id.':'.date('Ym'));
             $redis->incr('dl:'.$id.':'.date('Ymd'));
 
-            $redis->incr('dl:'.$id.'-'.$version);
-            $redis->incr('dl:'.$id.'-'.$version.':'.date('Ym'));
-            $redis->incr('dl:'.$id.'-'.$version.':'.date('Ymd'));
+            $redis->incr('dl:'.$id.'-'.$vid);
+            $redis->incr('dl:'.$id.'-'.$vid.':'.date('Ym'));
+            $redis->incr('dl:'.$id.'-'.$vid.':'.date('Ymd'));
         }
-
-        return new Response('{"status": "success"}', 201);
     }
 
     protected function receivePost(Request $request, $urlRegex)
