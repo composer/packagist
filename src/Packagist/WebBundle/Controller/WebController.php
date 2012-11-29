@@ -620,14 +620,40 @@ class WebController extends Controller
             $chart['packages'] += array_fill(0, count($chart['months']) - count($chart['packages']), max($chart['packages']));
         }
         if (count($chart['months']) > count($chart['versions'])) {
-           $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), max($chart['versions']));
+            $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), max($chart['versions']));
         }
+
+
+        $res = $this->getDoctrine()
+            ->getConnection()
+            ->fetchAssoc('SELECT DATE_FORMAT(createdAt, "%Y-%m-%d") createdAt FROM `package` ORDER BY id LIMIT 1');
+        $downloadsStartDate = $res['createdAt'] > '2012-04-13' ? $res['createdAt'] : '2012-04-13';
 
         try {
             $redis = $this->get('snc_redis.default');
             $downloads = $redis->get('downloads') ?: 0;
+
+            $date = new \DateTime($downloadsStartDate.' 00:00:00');
+            $yesterday = new \DateTime('-2days 00:00:00');
+
+            $dlChart = $dlChartMonthly = array();
+            while ($date <= $yesterday) {
+                $dlChart[$date->format('Y-m-d')] = 'downloads:'.$date->format('Ymd');
+                $dlChartMonthly[$date->format('Y-m')] = 'downloads:'.$date->format('Ym');
+                $date->modify('+1day');
+            }
+
+            $dlChart = array(
+                'labels' => array_keys($dlChartMonthly),
+                'values' => $redis->mget(array_values($dlChart))
+            );
+            $dlChartMonthly = array(
+                'labels' => array_keys($dlChartMonthly),
+                'values' => $redis->mget(array_values($dlChartMonthly))
+            );
         } catch (\Exception $e) {
             $downloads = 'N/A';
+            $dlChart = null;
         }
 
         return array(
@@ -635,6 +661,11 @@ class WebController extends Controller
             'packages' => max($chart['packages']),
             'versions' => max($chart['versions']),
             'downloads' => $downloads,
+            'downloadsChart' => $dlChart,
+            'maxDailyDownloads' => !empty($dlChart) ? max($dlChart['values']) : null,
+            'downloadsChartMonthly' => $dlChartMonthly,
+            'maxMonthlyDownloads' => !empty($dlChartMonthly) ? max($dlChartMonthly['values']) : null,
+            'downloadsStartDate' => $downloadsStartDate,
         );
     }
 
