@@ -510,6 +510,7 @@ form ul {
 }
 .package .version h1 {
   margin-bottom: 5px;
+  cursor: pointer;
 }
 .package .version .release-date {
   padding-left: 10px;

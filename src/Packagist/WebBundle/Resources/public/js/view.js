@@ -3,6 +3,9 @@
         $('#add-maintainer-form').toggleClass('hidden');
         e.preventDefault();
     });
+    $('.package .version h1').click(function (e) {
+        $(this).siblings('.details-toggler').click();
+    });
     $('.package .details-toggler').click(function (e) {
         var target = $(this);
         target.toggleClass('open')
