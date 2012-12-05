@@ -142,7 +142,7 @@ class WebController extends Controller
                 }
                 $dismax = $select->getDisMax();
                 $dismax->setQueryFields(array('name^2', 'description', 'tags', 'text', 'text_ngram', 'name_split^1.5'));
-                $dismax->setPhraseFields(array('description^30'));
+                $dismax->setPhraseFields(array('description'));
                 //this is very lenient, and may want to be refined
                 $dismax->setMinimumMatch(1);
                 $dismax->setQueryParser('edismax');
