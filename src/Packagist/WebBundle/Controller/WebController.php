@@ -400,14 +400,14 @@ class WebController extends Controller
         $version = $repo->getFullVersion($versionId);
         $package = $version->getPackage();
 
-        $is_maintainer    = $package->getMaintainers()->contains($this->getUser());
-        $may_edit_package = $this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES');
+        $isMaintainer   = $package->getMaintainers()->contains($this->getUser());
+        $mayEditPackage = $this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES');
 
         $html = $this->renderView(
             'PackagistWebBundle:Web:versionDetails.html.twig',
             array(
                 'version'    => $version,
-                'may_delete' => $is_maintainer || $may_edit_package,
+                'mayDelete' => $isMaintainer || $mayEditPackage,
             )
         );
 
@@ -432,10 +432,10 @@ class WebController extends Controller
         $version = $repo->getFullVersion($versionId);
         $package = $version->getPackage();
 
-        $is_maintainer    = $package->getMaintainers()->contains($this->getUser());
-        $may_edit_package = $this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES');
+        $isMaintainer   = $package->getMaintainers()->contains($this->getUser());
+        $mayEditPackage = $this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES');
 
-        if (!$is_maintainer || !$$may_edit_package) {
+        if (!$isMaintainer || !$mayEditPackage) {
             throw new AccessDeniedException;
         }
 

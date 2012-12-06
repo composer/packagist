@@ -1,6 +1,6 @@
 {% import "PackagistWebBundle::macros.html.twig" as packagist %}
 
-{% if may_delete is defined and may_delete %}
+{% if mayDelete is defined and mayDelete %}
 <form class="action" action="{{ path("delete_version", {"versionId": version.id}) }}" method="post">
     <input type="hidden" name="_method" value="DELETE" />
     <input type="submit" value="Delete">
