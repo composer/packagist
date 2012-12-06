@@ -393,12 +393,57 @@ class WebController extends Controller
      */
     public function viewPackageVersionAction(Request $req, $versionId)
     {
+        /** @var \Packagist\WebBundle\Entity\VersionRepository $repo  */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
-        $version = $repo->getFullVersion($versionId);
 
-        $html = $this->renderView('PackagistWebBundle:Web:versionDetails.html.twig', array('version' => $version));
+        /** @var Version $version  */
+        $version = $repo->getFullVersion($versionId);
+        $package = $version->getPackage();
+
+        $isMaintainer   = $package->getMaintainers()->contains($this->getUser());
+        $mayEditPackage = $this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES');
+
+        $html = $this->renderView(
+            'PackagistWebBundle:Web:versionDetails.html.twig',
+            array(
+                'version'    => $version,
+                'mayDelete' => $isMaintainer || $mayEditPackage,
+            )
+        );
 
         return new JsonResponse(array('content' => $html));
+    }
+
+    /**
+     * @Template()
+     * @Route(
+     *     "/versions/{versionId}/delete",
+     *     name="delete_version",
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "versionId"="[0-9]+"}
+     * )
+     * @Method({"DELETE"})
+     */
+    public function deletePackageVersionAction(Request $req, $versionId)
+    {
+        /** @var \Packagist\WebBundle\Entity\VersionRepository $repo  */
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+
+        /** @var Version $version  */
+        $version = $repo->getFullVersion($versionId);
+        $package = $version->getPackage();
+
+        $isMaintainer   = $package->getMaintainers()->contains($this->getUser());
+        $mayEditPackage = $this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES');
+
+        if (!$isMaintainer || !$mayEditPackage) {
+            throw new AccessDeniedException;
+        }
+
+        $repo->remove($version);
+        $this->getDoctrine()->getManager()->flush();
+        $this->getDoctrine()->getManager()->clear();
+
+        return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
     }
 
     /**
