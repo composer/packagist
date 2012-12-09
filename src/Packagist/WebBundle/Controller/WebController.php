@@ -499,6 +499,7 @@ class WebController extends Controller
                 $versionRepo->remove($version);
             }
 
+            $packageId = $package->getId();
             $em = $doctrine->getManager();
             $em->remove($package);
             $em->flush();
@@ -508,7 +509,7 @@ class WebController extends Controller
                 $solarium = $this->get('solarium.client');
 
                 $update = $solarium->createUpdate();
-                $update->addDeleteById($package->getId());
+                $update->addDeleteById($packageId);
                 $update->addCommit();
 
                 $solarium->update($update);
