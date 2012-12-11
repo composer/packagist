@@ -385,6 +385,14 @@ class Version
     }
 
     /**
+     * @return string
+     */
+    public function getRequireVersion()
+    {
+        return str_replace('.x-dev', '.*@dev', $this->getVersion());
+    }
+
+    /**
      * Set normalizedVersion
      *
      * @param string $normalizedVersion
@@ -894,6 +902,14 @@ class Version
         }
 
         return '';
+    }
+
+    /**
+     * @return string
+     */
+    public function getRequireVersionAlias()
+    {
+        return str_replace('.x-dev', '.*@dev', $this->getVersionAlias());
     }
 
     public function __toString()

@@ -1,6 +1,6 @@
 {% import "PackagistWebBundle::macros.html.twig" as packagist %}
 
-<p class="requireme">require: <input type="text" readonly="readonly" value="{{ "\"#{version.package.vendor}/#{version.package.packageName}\": \"#{version.hasVersionAlias() ? version.versionAlias : version.version}\"" }}" /></p>
+<p class="requireme">require: <input type="text" readonly="readonly" value="{{ "\"#{version.package.vendor}/#{version.package.packageName}\": \"#{version.hasVersionAlias() ? version.requireVersionAlias : version.requireVersion}\"" }}" /></p>
 
 <h2 class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}</h2>
 <ul>
