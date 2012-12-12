@@ -523,7 +523,6 @@ form ul {
 }
 .package .version .license {
   float: right;
-  width: 250px;
   font-size: 14px;
   clear: right;
   text-align: right;
