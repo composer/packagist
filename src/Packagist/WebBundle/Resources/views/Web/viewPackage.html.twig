@@ -124,6 +124,9 @@
                                     {% if version.hasVersionAlias() %}
                                         / {{ version.versionAlias }}
                                     {% endif %}
+                                    {% if version.isDevelopment %}
+                                    <span class="source-reference">reference: {{ version.source.reference|prettify_source_reference }}</span>
+                                    {% endif %}
                                     <span class="release-date">{{ version.releasedAt|date("Y-m-d H:i") }} UTC</span>
                                     <span class="license{% if not version.license %} unknown{% endif %}">{{ version.license ? version.license|join(', ') : 'Unknown License' }}</span>
                                 </h1>
