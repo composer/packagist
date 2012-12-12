@@ -78,7 +78,7 @@
                 {% if version and version.homepage %}
                     <span>Homepage:</span> <a href="{{ version.homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
                 {% endif %}
-                {% set repoUrl = package.repository|replace({'git://github.com/': 'https://github.com/'}) %}
+                {% set repoUrl = package.repository|replace({'git://github.com/': 'https://github.com/', 'git@github.com:', 'https://github.com/'}) %}
                 <span>Canonical:</span> <a href="{{ repoUrl }}">{{ repoUrl }}</a><br />
                 {% if version.support.source is defined %}
                     <span>Source:</span> <a href="{{ version.support.source }}">{{ version.support.source }}</a><br />
