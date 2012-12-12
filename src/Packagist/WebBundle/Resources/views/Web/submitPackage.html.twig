@@ -8,7 +8,7 @@
     <div class="box clearfix">
         <h1>Submit package</h1>
         <p>Please make sure you have read the package <a href="{{ path('about') }}">naming conventions</a> before submitting your package. The authoritative name of your package will be taken from the composer.json file inside the master branch or trunk of your repository, and it can not be changed after that.</p>
-        <p><strong>Please do not submit forks of existing packages.</strong> If you need to test changes to a package that you forked please use <a href="http://getcomposer.org/doc/05-repositories.md#vcs">VCS Repositories</a> instead. If you feel that your fork merits being included in Packagist and you intend to maintain your fork long-term please feel free to submit it.</p>
+        <p><strong>Do not submit forks of existing packages.</strong> If you need to test changes to a package that you forked to patch, use <a href="http://getcomposer.org/doc/05-repositories.md#vcs">VCS Repositories</a> instead. If however it is a real long-term fork you intend on maintaining feel free to submit it.</p>
         <p>If you need help or if you have any questions please get in touch with the Composer <a href="http://getcomposer.org/doc/06-community.md">community</a>.</p>
         <form id="submit-package-form" action="{{ path('submit') }}" data-check-url="{{ path('submit.fetch_info') }}" method="POST" {{ form_enctype(form) }}>
             <div>
