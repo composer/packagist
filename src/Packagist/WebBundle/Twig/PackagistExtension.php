@@ -23,6 +23,13 @@ class PackagistExtension extends \Twig_Extension
         );
     }
 
+    public function getFilters()
+    {
+        return array(
+            'prettify_source_reference' => new \Twig_Filter_Method($this, 'prettifySourceReference')
+        );
+    }
+
     public function getName()
     {
         return 'packagist';
@@ -36,5 +43,14 @@ class PackagistExtension extends \Twig_Extension
 
         return $this->doctrine->getRepository('PackagistWebBundle:Package')
             ->packageExists($package);
+    }
+
+    public function prettifySourceReference($sourceReference)
+    {
+        if (preg_match('/^[a-f0-9]{40}$/', $sourceReference)) {
+            return substr($sourceReference, 0, 7);
+        }
+
+        return $sourceReference;
     }
 }

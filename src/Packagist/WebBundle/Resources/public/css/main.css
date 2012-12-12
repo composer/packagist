@@ -512,6 +512,10 @@ form ul {
   margin-bottom: 5px;
   cursor: pointer;
 }
+.package .version .source-reference {
+  padding-left: 10px;
+  font-size: 12px;
+}
 .package .version .release-date {
   padding-left: 10px;
   font-size: 14px;
