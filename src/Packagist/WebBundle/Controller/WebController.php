@@ -261,7 +261,26 @@ class WebController extends Controller
         if ('POST' === $req->getMethod()) {
             $form->bind($req);
             if ($form->isValid()) {
-                $response = array('status' => 'success', 'name' => $package->getName());
+                list($vendor, $name) = explode('/', $package->getName(), 2);
+
+                $existingPackages = $this->getDoctrine()
+                    ->getRepository('PackagistWebBundle:Package')
+                    ->createQueryBuilder('p')
+                    ->where('p.name LIKE ?0')
+                    ->setParameters(array('%/'.$name))
+                    ->getQuery()
+                    ->getResult();
+
+                $similar = array();
+
+                foreach ($existingPackages as $existingPackage) {
+                    $similar[] = array(
+                        'name' => $existingPackage->getName(),
+                        'url' => $this->generateUrl('view_package', array('name' => $existingPackage->getName()), true),
+                    );
+                }
+
+                $response = array('status' => 'success', 'name' => $package->getName(), 'similar' => $similar);
             } else {
                 $errors = array();
                 if ($form->hasErrors()) {
