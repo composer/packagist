@@ -26,7 +26,7 @@ You should now be able to access the site, create a user, etc.
 Setting up search
 -----------------
 
-The search index uses [Solr](http://lucene.apache.org/solr/), so you will have to install that on your server.
+The search index uses [Solr](http://lucene.apache.org/solr/) 3.6, so you will have to install that on your server.
 If you are running it on a non-standard host or port, you will have to adjust the configuration. See the
 [NelmioSolariumBundle](https://github.com/nelmio/NelmioSolariumBundle) for more details.
 
