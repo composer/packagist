@@ -34,6 +34,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             ->setName('packagist:index')
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-indexing of all packages'),
+                new InputOption('all', null, InputOption::VALUE_NONE, 'Index all packages without clearing the index first'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to index'),
             ))
             ->setDescription('Indexes packages in Solr')
@@ -47,6 +48,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
     {
         $verbose = $input->getOption('verbose');
         $force = $input->getOption('force');
+        $indexAll = $input->getOption('all');
         $package = $input->getArgument('package');
 
         $deployLock = $this->getContainer()->getParameter('kernel.cache_dir').'/deploy.globallock';
@@ -59,6 +61,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
         $doctrine = $this->getContainer()->get('doctrine');
         $solarium = $this->getContainer()->get('solarium.client');
+        $redis = $this->getContainer()->get('snc_redis.default');
 
         $lock = $this->getContainer()->getParameter('kernel.cache_dir').'/composer-indexer.lock';
         $timeout = 600;
@@ -75,7 +78,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
         if ($package) {
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
-        } elseif ($force) {
+        } elseif ($force || $indexAll) {
             $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
             $doctrine->getEntityManager()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
         } else {
@@ -116,7 +119,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
                 try {
                     $document = $update->createDocument();
-                    $this->updateDocumentFromPackage($document, $package);
+                    $this->updateDocumentFromPackage($document, $package, $redis);
                     $update->addDocument($document);
 
                     $package->setIndexedAt(new \DateTime);
@@ -136,12 +139,13 @@ class IndexPackagesCommand extends ContainerAwareCommand
         unlink($lock);
     }
 
-    private function updateDocumentFromPackage(\Solarium_Document_ReadWrite $document, Package $package)
+    private function updateDocumentFromPackage(\Solarium_Document_ReadWrite $document, Package $package, $redis)
     {
         $document->setField('id', $package->getId());
         $document->setField('name', $package->getName());
         $document->setField('description', $package->getDescription());
         $document->setField('type', $package->getType());
+        $document->setField('trendiness', $redis->zscore('downloads:trending', $package->getId()));
 
         $tags = array();
         foreach ($package->getVersions() as $version) {

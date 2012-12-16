@@ -117,6 +117,43 @@ class CompileStatsCommand extends ContainerAwareCommand
 
             $date = $nextDay;
         }
+
+        // fetch existing ids
+        $doctrine = $this->getContainer()->get('doctrine');
+        $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+        $ids = array();
+        foreach ($packages as $row) {
+            $ids[] = $row['id'];
+        }
+
+        // add downloads from the last 5 days to the solr index
+        $solarium = $this->getContainer()->get('solarium.client');
+
+        if ($verbose) {
+            $output->writeln('Writing new trendiness data into redis');
+        }
+
+        while ($id = array_shift($ids)) {
+            $trendiness = $this->sumLastNDays(5, $id, $yesterday);
+
+            $redis->zadd('downloads:trending:new', $trendiness, $id);
+            $redis->zadd('downloads:absolute:new', $redis->get('dl:'.$id), $id);
+        }
+
+        $redis->rename('downloads:trending:new', 'downloads:trending');
+        $redis->rename('downloads:absolute:new', 'downloads:absolute');
+    }
+
+    protected function sumLastNDays($days, $id, \DateTime $yesterday)
+    {
+        $date = clone $yesterday;
+        $keys = array();
+        for ($i = 0; $i < $days; $i++) {
+            $keys[] = 'dl:'.$id.':'.$date->format('Ymd');
+            $date->modify('-1day');
+        }
+
+        return array_sum($this->redis->mget($keys));
     }
 
     protected function sum($date, array $ids)

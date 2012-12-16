@@ -141,8 +141,9 @@ class WebController extends Controller
                     $select->addFilterQuery($filterQuery);
                 }
                 $dismax = $select->getDisMax();
-                $dismax->setQueryFields(array('name^2', 'description', 'tags', 'text', 'text_ngram', 'name_split^1.5'));
+                $dismax->setQueryFields(array('name^4', 'description', 'tags', 'text', 'text_ngram', 'name_split^2'));
                 $dismax->setPhraseFields(array('description'));
+                $dismax->setBoostFunctions(array('log(trendiness)^10'));
                 //this is very lenient, and may want to be refined
                 $dismax->setMinimumMatch(1);
                 $dismax->setQueryParser('edismax');
