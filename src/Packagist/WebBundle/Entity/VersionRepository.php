@@ -96,4 +96,16 @@ class VersionRepository extends EntityRepository
 
         return $qb;
     }
+
+    public function getLatestReleases($count = 10)
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('v')
+            ->from('Packagist\WebBundle\Entity\Version', 'v')
+            ->where('v.development = false')
+            ->orderBy('v.releasedAt', 'DESC')
+            ->setMaxResults(10);
+
+        return $qb->getQuery()->getResult();
+    }
 }

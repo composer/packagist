@@ -404,6 +404,21 @@ form ul {
   margin: 10px 0;
 }
 
+/* Explore */
+.packages-short {
+  width: 50%;
+  float: left;
+  height: 415px;
+}
+.packages-short li a {
+  display: block;
+}
+.packages-short ul {
+  list-style: none;
+  margin: 0;
+}
+
+
 /* Search */
 #search_query_query {
   width: 890px;

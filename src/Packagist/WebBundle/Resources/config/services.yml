@@ -5,6 +5,11 @@ services:
         tags:
             - { name: twig.extension }
 
+    twig.extension.text:
+        class: Twig_Extensions_Extension_Text
+        tags:
+            - { name: twig.extension }
+
     packagist.package_dumper:
         class: Packagist\WebBundle\Package\Dumper
         arguments: [ @doctrine, @filesystem, @router, %kernel.root_dir%/../web/, %kernel.cache_dir% ]

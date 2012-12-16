@@ -26,6 +26,7 @@ use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
+use Packagist\WebBundle\Model\FixedAdapter;
 use Packagist\WebBundle\Form\Type\PackageType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -40,6 +41,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Pagerfanta\Pagerfanta;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Adapter\SolariumAdapter;
+use Predis\Network\ConnectionException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -56,10 +58,10 @@ class WebController extends Controller
     }
 
     /**
-     * @Template()
-     * @Route("/packages/", name="browse")
+     * @Template("PackagistWebBundle:Web:browse.html.twig")
+     * @Route("/packages/", name="allPackages")
      */
-    public function browseAction(Request $req)
+    public function allAction(Request $req)
     {
         $filters = array(
             'type' => $req->query->get('type'),
@@ -76,6 +78,71 @@ class WebController extends Controller
         $data['packages'] = $this->setupPager($packages, $page);
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['searchForm'] = $this->createSearchForm()->createView();
+
+        return $data;
+    }
+
+    /**
+     * @Template()
+     * @Route("/explore/", name="browse")
+     */
+    public function exploreAction(Request $req)
+    {
+        $pkgRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $verRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)->getQuery()->getResult();
+        $newReleases = $verRepo->getLatestReleases(10);
+        $randomIds = $this->getDoctrine()->getConnection()->fetchAll('SELECT id FROM package ORDER BY RAND() LIMIT 10');
+        $random = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $randomIds)->getQuery()->getResult();
+        try {
+            $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);
+            $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)->getQuery()->getResult();
+            usort($popular, function ($a, $b) use ($popularIds) {
+                return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
+            });
+        } catch (ConnectionException $e) {
+            $popular = array();
+        }
+
+        $data = array(
+            'newlySubmitted' => $newSubmitted,
+            'newlyReleased' => $newReleases,
+            'random' => $random,
+            'popular' => $popular,
+            'searchForm' => $this->createSearchForm()->createView(),
+        );
+
+        return $data;
+    }
+
+    /**
+     * @Template()
+     * @Route("/explore/popular", name="browse_popular")
+     */
+    public function popularAction(Request $req)
+    {
+        $redis = $this->get('snc_redis.default');
+        $popularIds = $redis->zrevrange(
+            'downloads:trending',
+            ($req->get('page', 1) - 1) * 15,
+            $req->get('page', 1) * 15 - 1
+        );
+        $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
+            ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
+            ->getQuery()->getResult();
+        usort($popular, function ($a, $b) use ($popularIds) {
+            return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
+        });
+
+        $packages = new Pagerfanta(new FixedAdapter($popular, $redis->zcard('downloads:trending')));
+        $packages->setMaxPerPage(15);
+        $packages->setCurrentPage($req->get('page', 1), false, true);
+
+        $data = array(
+            'packages' => $packages,
+            'searchForm' => $this->createSearchForm()->createView(),
+        );
+        $data['meta'] = $this->getPackagesMetadata($data['packages']);
 
         return $data;
     }
@@ -383,7 +450,7 @@ class WebController extends Controller
             if ($this->getUser()) {
                 $data['is_favorite'] = $this->get('packagist.favorite_manager')->isMarked($this->getUser(), $package);
             }
-        } catch (\Exception $e) {
+        } catch (ConnectionException $e) {
             $data['downloads'] = array(
                 'total' => 'N/A',
                 'monthly' => 'N/A',
@@ -672,9 +739,9 @@ class WebController extends Controller
                 'labels' => array_keys($dlChartMonthly),
                 'values' => $redis->mget(array_values($dlChartMonthly))
             );
-        } catch (\Exception $e) {
+        } catch (ConnectionException $e) {
             $downloads = 'N/A';
-            $dlChart = null;
+            $dlChart = $dlChartMonthly = null;
         }
 
         return array(
@@ -736,7 +803,7 @@ class WebController extends Controller
                 /** @var $redis \Snc\RedisBundle\Client\Phpredis\Client */
                 $redis = $this->get('snc_redis.default');
                 $downloads = $redis->get('dl:'.$package->getId());
-            } catch (\Exception $e) {
+            } catch (ConnectionException $e) {
                 return;
             }
 

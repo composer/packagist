@@ -15,8 +15,8 @@
         {% if downloadsChartMonthly %}
             <h2>Packages installed per month</h2>
             <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ maxMonthlyDownloads }}&amp;chxl=1:|{{ downloadsChartMonthly.labels|join('|') }}&amp;chxt=y,x&amp;chs=900x250&amp;chds=0,{{ maxMonthlyDownloads }},0,{{ maxMonthlyDownloads }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ downloadsChartMonthly.values|join(',') }}&amp;chdl=Installs&amp;chls=2|2" /></p>
+            <p>The last data point is for the current month and shows partial data.</p>
         {% endif %}
-        <p>The last data point is for the current month and shows partial data.</p>
 
         <h2>Totals</h2>
         <p>{{ packages|number_format(0, '.', " ") }} packages registered</p>
