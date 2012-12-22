@@ -1,6 +1,6 @@
 {% import "PackagistWebBundle::macros.html.twig" as packagist %}
 
-{% if mayDelete is defined and mayDelete %}
+{% if is_granted('ROLE_EDIT_PACKAGES') or version.package.maintainers.contains(app.user) %}
 <form class="action" action="{{ path("delete_version", {"versionId": version.id}) }}" method="post">
     <input type="hidden" name="_method" value="DELETE" />
     <input type="submit" value="Delete">

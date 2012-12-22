@@ -396,19 +396,9 @@ class WebController extends Controller
         /** @var \Packagist\WebBundle\Entity\VersionRepository $repo  */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
 
-        /** @var Version $version  */
-        $version = $repo->getFullVersion($versionId);
-        $package = $version->getPackage();
-
-        $isMaintainer   = $package->getMaintainers()->contains($this->getUser());
-        $mayEditPackage = $this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES');
-
         $html = $this->renderView(
             'PackagistWebBundle:Web:versionDetails.html.twig',
-            array(
-                'version'    => $version,
-                'mayDelete' => $isMaintainer || $mayEditPackage,
-            )
+            array('version' => $repo->getFullVersion($versionId))
         );
 
         return new JsonResponse(array('content' => $html));
@@ -432,10 +422,7 @@ class WebController extends Controller
         $version = $repo->getFullVersion($versionId);
         $package = $version->getPackage();
 
-        $isMaintainer   = $package->getMaintainers()->contains($this->getUser());
-        $mayEditPackage = $this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES');
-
-        if (!$isMaintainer || !$mayEditPackage) {
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
