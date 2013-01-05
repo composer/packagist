@@ -223,10 +223,12 @@ class WebController extends Controller
                 $select->addFilterQuery($filterQuery);
             }
 
-            $form->bind($req);
-            if ($form->isValid()) {
-                $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
-                $select->setQuery($escapedQuery);
+            if ($req->query->has('search_query')) {
+                $form->bind($req);
+                if ($form->isValid()) {
+                    $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
+                    $select->setQuery($escapedQuery);
+                }
             }
 
             $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
