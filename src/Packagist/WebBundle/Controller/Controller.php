@@ -31,7 +31,7 @@ class Controller extends BaseController
             if (!$dlKeys) {
                 return $metadata;
             }
-            $res = $this->get('snc_redis.default')->mget(array_values($dlKeys));
+            $res = array_map('intval', $this->get('snc_redis.default')->mget(array_values($dlKeys)));
 
             $metadata = array(
                 'downloads' => array_combine(array_keys($dlKeys), $res),

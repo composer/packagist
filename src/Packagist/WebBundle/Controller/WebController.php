@@ -187,96 +187,122 @@ class WebController extends Controller
         // transform q=search shortcut
         if ($req->query->has('q')) {
             $req->query->set('search_query', array('query' => $req->query->get('q')));
-        } elseif ($req->getRequestFormat() === 'json') {
-            return new JsonResponse(array('error' => 'Missing search query, example: ?q=example'), 400);
         }
 
-        if ($req->query->has('search_query')) {
+        $typeFilter = $req->query->get('type');
+        $tagsFilter = $req->query->get('tags');
+
+        if ($req->query->has('search_query') || $typeFilter || $tagsFilter) {
+            /** @var $solarium \Solarium_Client */
+            $solarium = $this->get('solarium.client');
+            $select = $solarium->createSelect();
+
+            // configure dismax
+            $dismax = $select->getDisMax();
+            $dismax->setQueryFields(array('name^4', 'description', 'tags', 'text', 'text_ngram', 'name_split^2'));
+            $dismax->setPhraseFields(array('description'));
+            $dismax->setBoostFunctions(array('log(trendiness)^10'));
+            $dismax->setMinimumMatch(1);
+            $dismax->setQueryParser('edismax');
+
+            // filter by type
+            if ($typeFilter) {
+                $filterQueryTerm = sprintf('type:%s', $select->getHelper()->escapeTerm($typeFilter));
+                $filterQuery = $select->createFilterQuery('type')->setQuery($filterQueryTerm);
+                $select->addFilterQuery($filterQuery);
+            }
+
+            // filter by tags
+            if ($tagsFilter) {
+                $tags = array();
+                foreach ((array) $tagsFilter as $tag) {
+                    $tags[] = $select->getHelper()->escapeTerm($tag);
+                }
+                $filterQueryTerm = sprintf('tags:(%s)', implode(' AND ', $tags));
+                $filterQuery = $select->createFilterQuery('tags')->setQuery($filterQueryTerm);
+                $select->addFilterQuery($filterQuery);
+            }
+
             $form->bind($req);
             if ($form->isValid()) {
-                /** @var $solarium \Solarium_Client */
-                $solarium = $this->get('solarium.client');
-
-                $select = $solarium->createSelect();
                 $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
-                $typeFilter = $req->query->get('type');
-
-                // filter by type
-                if ($typeFilter !== null) {
-                    $filterQueryTerm = sprintf('type:%s', $select->getHelper()->escapeTerm($typeFilter));
-                    $filterQuery = $select->createFilterQuery('type')->setQuery($filterQueryTerm);
-                    $select->addFilterQuery($filterQuery);
-                }
-                $dismax = $select->getDisMax();
-                $dismax->setQueryFields(array('name^4', 'description', 'tags', 'text', 'text_ngram', 'name_split^2'));
-                $dismax->setPhraseFields(array('description'));
-                $dismax->setBoostFunctions(array('log(trendiness)^10'));
-                //this is very lenient, and may want to be refined
-                $dismax->setMinimumMatch(1);
-                $dismax->setQueryParser('edismax');
                 $select->setQuery($escapedQuery);
-
-                $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
-                $paginator->setMaxPerPage(15);
-                $paginator->setCurrentPage($req->query->get('page', 1), false, true);
-
-                if ($req->getRequestFormat() === 'json') {
-                    try {
-                        $result = array(
-                            'results' => array(),
-                            'total' => $paginator->getNbResults(),
-                        );
-                    } catch (\Solarium_Client_HttpException $e) {
-                        return new JsonResponse(array(
-                            'status' => 'error',
-                            'message' => 'Could not connect to the search server',
-                        ), 500);
-                    }
-
-                    foreach ($paginator as $package) {
-                        $url = $this->generateUrl('view_package', array('name' => $package->name), true);
-
-                        $result['results'][] = array(
-                            'name' => $package->name,
-                            'description' => $package->description ?: '',
-                            'url' => $url
-                        );
-                    }
-                    if ($paginator->hasNextPage()) {
-                        $result['next'] = $this->generateUrl('search', array(
-                            '_format' => 'json',
-                            'q' => $form->getData()->getQuery(),
-                            'page' => $paginator->getNextPage()
-                        ), true);
-                    }
-
-                    return new JsonResponse($result);
-                }
-
-                if ($req->isXmlHttpRequest()) {
-                    try {
-                        return $this->render('PackagistWebBundle:Web:list.html.twig', array(
-                            'packages' => $paginator,
-                            'meta' => $this->getPackagesMetadata($paginator),
-                            'noLayout' => true,
-                        ));
-                    } catch (\Twig_Error_Runtime $e) {
-                        if (!$e->getPrevious() instanceof \Solarium_Client_HttpException) {
-                            throw $e;
-                        }
-                        return new JsonResponse(array(
-                            'status' => 'error',
-                            'message' => 'Could not connect to the search server',
-                        ), 500);
-                    }
-                }
-
-                return $this->render('PackagistWebBundle:Web:search.html.twig', array(
-                    'packages' => $paginator,
-                    'meta' => $this->getPackagesMetadata($paginator),
-                    'searchForm' => $form->createView(),
-                ));
             }
+
+            $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
+            $paginator->setMaxPerPage(15);
+            $paginator->setCurrentPage($req->query->get('page', 1), false, true);
+
+            $metadata = $this->getPackagesMetadata($paginator);
+
+            if ($req->getRequestFormat() === 'json') {
+                try {
+                    $result = array(
+                        'results' => array(),
+                        'total' => $paginator->getNbResults(),
+                    );
+                } catch (\Solarium_Client_HttpException $e) {
+                    return new JsonResponse(array(
+                        'status' => 'error',
+                        'message' => 'Could not connect to the search server',
+                    ), 500);
+                }
+
+                foreach ($paginator as $package) {
+                    $url = $this->generateUrl('view_package', array('name' => $package->name), true);
+
+                    $result['results'][] = array(
+                        'name' => $package->name,
+                        'description' => $package->description ?: '',
+                        'url' => $url,
+                        'downloads' => $metadata['downloads'][$package->id],
+                        'favers' => $metadata['favers'][$package->id],
+                    );
+                }
+
+                if ($paginator->hasNextPage()) {
+                    $params = array(
+                        '_format' => 'json',
+                        'q' => $form->getData()->getQuery(),
+                        'page' => $paginator->getNextPage()
+                    );
+                    if ($tagsFilter) {
+                        $params['tags'] = (array) $tagsFilter;
+                    }
+                    if ($typeFilter) {
+                        $params['type'] = (array) $typeFilter;
+                    }
+                    $result['next'] = $this->generateUrl('search', $params, true);
+                }
+
+                return new JsonResponse($result);
+            }
+
+            if ($req->isXmlHttpRequest()) {
+                try {
+                    return $this->render('PackagistWebBundle:Web:list.html.twig', array(
+                        'packages' => $paginator,
+                        'meta' => $metadata,
+                        'noLayout' => true,
+                    ));
+                } catch (\Twig_Error_Runtime $e) {
+                    if (!$e->getPrevious() instanceof \Solarium_Client_HttpException) {
+                        throw $e;
+                    }
+                    return new JsonResponse(array(
+                        'status' => 'error',
+                        'message' => 'Could not connect to the search server',
+                    ), 500);
+                }
+            }
+
+            return $this->render('PackagistWebBundle:Web:search.html.twig', array(
+                'packages' => $paginator,
+                'meta' => $metadata,
+                'searchForm' => $form->createView(),
+            ));
+        } elseif ($req->getRequestFormat() === 'json') {
+            return new JsonResponse(array('error' => 'Missing search query, example: ?q=example'), 400);
         }
 
         return $this->render('PackagistWebBundle:Web:search.html.twig', array('searchForm' => $form->createView()));

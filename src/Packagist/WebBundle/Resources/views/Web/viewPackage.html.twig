@@ -44,7 +44,7 @@
             {% if version and version.tags|length %}
                 <p class="tags">
                     {%- for tag in version.tags -%}
-                        <a href="{{ url("allPackages", {tag: tag.name}) }}">{{ tag.name }}</a>
+                        <a href="{{ url("search", {tags: tag.name}) }}">{{ tag.name }}</a>
                     {%- endfor -%}
                 </p>
             {% endif %}
