@@ -39,7 +39,7 @@
                     <i class="mark-favorite icon-star{% if not is_favorite %}-empty{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></i>
                 {% endif %}
                 <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
-                <a href="#copy" id="copy" data-clipboard-text="{{ package.name }}" title="copy to clipboard"><i class="icon-copy"></i></a>
+                <a id="copy" data-clipboard-text="{{ package.name }}" title="Copy to clipboard"><i class="icon-copy"></i></a>
             </h1>
             {% if version and version.tags|length %}
                 <p class="tags">

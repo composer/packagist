@@ -454,6 +454,9 @@ form ul {
   float: left;
   margin-right: 20px;
 }
+#copy {
+  cursor: pointer;
+}
 .package .warning {
   clear: both;
   border: 1px solid #800;

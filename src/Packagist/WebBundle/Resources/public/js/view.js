@@ -1,4 +1,4 @@
-(function ($, humane) {
+(function ($, humane, ZeroClipboard) {
     $('#add-maintainer').click(function (e) {
         $('#add-maintainer-form').toggleClass('hidden');
         e.preventDefault();
@@ -79,7 +79,7 @@
 
     ZeroClipboard.setMoviePath("/js/libs/ZeroClipboard.swf");
     var clip = new ZeroClipboard.Client("#copy");
-    clip.on("complete", function() {
+    clip.on("complete", function () {
         humane.log("Copied");
     });
-})(jQuery, humane);
+}(jQuery, humane, ZeroClipboard));
