@@ -1,4 +1,4 @@
-(function ($) {
+(function ($, humane) {
     $('#add-maintainer').click(function (e) {
         $('#add-maintainer-form').toggleClass('hidden');
         e.preventDefault();
@@ -76,4 +76,10 @@
     if ($('.package').data('force-crawl')) {
         $('.package .force-update').submit();
     }
-})(jQuery);
+
+    ZeroClipboard.setMoviePath("/js/libs/ZeroClipboard.swf");
+    var clip = new ZeroClipboard.Client("#copy");
+    clip.on("complete", function() {
+        humane.log("Copied");
+    });
+})(jQuery, humane);
