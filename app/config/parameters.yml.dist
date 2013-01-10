@@ -1,6 +1,7 @@
 parameters:
     database_driver: pdo_mysql
     database_host: localhost
+    database_port: 3306
     database_name: packagist
     database_user: root
     database_password:
