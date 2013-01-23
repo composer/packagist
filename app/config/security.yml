@@ -4,14 +4,23 @@ security:
             algorithm:        sha512
             encode_as_base64: false
             iterations:       1
+        AcmeBundle\Acme\User\LdapUser: plaintext
 
     providers:
+        chain_provider:
+            chain:
+                providers: [packagist, fr3d_ldapbundle]
+
+        fr3d_ldapbundle:
+            id: fr3d_ldap.security.user.provider
+
         packagist:
             id: packagist.user_provider
 
     firewalls:
         main:
             pattern:      .*
+            fr3d_ldap:  ~
             form_login:
                 provider:       packagist
                 login_path:     /login

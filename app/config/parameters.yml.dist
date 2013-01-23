@@ -31,3 +31,7 @@ parameters:
     github.client_secret:
 
     force_ssl: false
+
+    ldap_host: localhost
+    ldap_basedn: ou=users, dc=host, dc=foo
+    ldap_bindrequireddn: true
