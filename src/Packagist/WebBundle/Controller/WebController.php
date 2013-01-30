@@ -97,7 +97,7 @@ class WebController extends Controller
         try {
             $popular = array();
             $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);
-            if ($popularIds){
+            if ($popularIds) {
                 $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)->getQuery()->getResult();
                 usort($popular, function ($a, $b) use ($popularIds) {
                     return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
