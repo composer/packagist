@@ -117,6 +117,7 @@ class Package
     private $updateFailureNotified = false;
 
     private $entityRepository;
+    private $router;
 
     /**
      * @var \Composer\Repository\Vcs\VcsDriverInterface
@@ -204,11 +205,16 @@ class Package
         $this->entityRepository = $repository;
     }
 
+    public function setRouter($router)
+    {
+        $this->router = $router;
+    }
+
     public function isPackageUnique(ExecutionContext $context)
     {
         try {
             if ($this->entityRepository->findOneByName($this->name)) {
-                $context->addViolationAtSubPath('repository', 'A package with the name '.$this->name.' already exists.', array(), null);
+                $context->addViolationAtSubPath('repository', 'A package with the name <a href="'.$this->router->generate('view_package', array('name' => $this->name)).'">'.$this->name.'</a> already exists.', array(), null);
             }
         } catch (\Doctrine\ORM\NoResultException $e) {}
     }

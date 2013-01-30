@@ -318,6 +318,7 @@ class WebController extends Controller
     {
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setRouter($this->get('router'));
         $form = $this->createForm(new PackageType, $package);
 
         if ('POST' === $req->getMethod()) {
@@ -350,6 +351,7 @@ class WebController extends Controller
     {
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setRouter($this->get('router'));
         $form = $this->createForm(new PackageType, $package);
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
