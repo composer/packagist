@@ -497,6 +497,7 @@ class WebController extends Controller
         }
         if ($deleteForm = $this->createDeletePackageForm($package)) {
             $data['deleteForm'] = $deleteForm->createView();
+            $data['deleteVersionCsrfToken'] = $this->get('form.csrf_provider')->generateCsrfToken('delete_version');
         }
 
         return $data;
@@ -542,7 +543,11 @@ class WebController extends Controller
         $version = $repo->getFullVersion($versionId);
         $package = $version->getPackage();
 
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+            throw new AccessDeniedException;
+        }
+
+        if (!$this->get('form.csrf_provider')->isCsrfTokenValid('delete_version', $req->request->get('_token'))) {
             throw new AccessDeniedException;
         }
 
