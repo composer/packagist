@@ -37,7 +37,7 @@ class Controller extends BaseController
                 'downloads' => array_combine(array_keys($dlKeys), $res),
                 'favers' => $this->get('packagist.favorite_manager')->getFaverCounts(array_keys($dlKeys)),
             );
-        } catch (\Predis\Network\ConnectionException $e) {}
+        } catch (\Predis\Connection\ConnectionException $e) {}
 
         return $metadata;
     }

@@ -1,5 +1,4 @@
 {
-    "minimum-stability": "dev",
     "description": "Package Repository Website",
     "keywords": ["package", "composer"],
     "homepage": "http://packagist.org/",
@@ -39,15 +38,14 @@
         "jms/di-extra-bundle": "1.1.*",
 
         "composer/composer": "dev-master",
-        "friendsofsymfony/user-bundle": "2.0.*",
+        "friendsofsymfony/user-bundle": "1.*",
         "hwi/oauth-bundle": "dev-master",
         "nelmio/solarium-bundle": "dev-master",
         "nelmio/security-bundle": "dev-master",
-        "predis/predis": "0.7.*",
+        "predis/predis": "0.8.*",
         "snc/redis-bundle": "dev-master",
         "white-october/pagerfanta-bundle": "dev-master",
         "zendframework/zend-feed": "2.0.*",
-
         "zendframework/zend-servicemanager": "2.0.*",
         "zendframework/zend-uri": "2.0.*",
         "zendframework/zend-version": "2.0.*"
