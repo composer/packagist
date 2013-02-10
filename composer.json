@@ -27,7 +27,7 @@
         "symfony/symfony": "2.1.*",
         "doctrine/orm": ">=2.2.3,<2.4-dev",
         "doctrine/doctrine-bundle": "1.0.*",
-        "twig/extensions": "1.0.*",
+        "twig/extensions": "1.0.*@alpha",
         "symfony/assetic-bundle": "2.1.*",
         "symfony/swiftmailer-bundle": "2.1.*",
         "symfony/monolog-bundle": "2.1.*",
@@ -48,7 +48,10 @@
         "zendframework/zend-feed": "2.0.*",
         "zendframework/zend-servicemanager": "2.0.*",
         "zendframework/zend-uri": "2.0.*",
-        "zendframework/zend-version": "2.0.*"
+        "zendframework/zend-version": "2.0.*",
+
+        "kriswallsmith/assetic": "@dev",
+        "pagerfanta/pagerfanta": "@dev"
     },
     "scripts": {
         "post-install-cmd": [
