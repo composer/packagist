@@ -497,6 +497,11 @@ class WebController extends Controller
         }
         if ($deleteForm = $this->createDeletePackageForm($package)) {
             $data['deleteForm'] = $deleteForm->createView();
+        }
+        if ($this->getUser() && (
+            $this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')
+            || $package->getMaintainers()->contains($this->getUser())
+        )) {
             $data['deleteVersionCsrfToken'] = $this->get('form.csrf_provider')->generateCsrfToken('delete_version');
         }
 

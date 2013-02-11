@@ -129,7 +129,7 @@
                                     <span class="source-reference">reference: {{ version.source.reference|prettify_source_reference }}</span>
                                     {% endif %}
 
-                                    {% if deleteForm is defined %}
+                                    {% if deleteVersionCsrfToken is defined %}
                                     <form class="action delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="post">
                                         <input type="hidden" name="_method" value="DELETE" />
                                         <input type="hidden" name="_token" value="{{ deleteVersionCsrfToken }}" />
