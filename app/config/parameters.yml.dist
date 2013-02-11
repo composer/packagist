@@ -30,3 +30,6 @@ parameters:
     github.client_secret:
 
     force_ssl: false
+
+    # e.g. [127.0.0.1] if the app is running behind a reverse proxy on localhost
+    trusted_proxies: ~
