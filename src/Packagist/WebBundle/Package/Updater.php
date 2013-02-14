@@ -350,6 +350,12 @@ class Updater
                 $link->setVersion($version);
                 $em->persist($link);
             }
+        } elseif (count($version->getSuggest())) {
+            // clear existing suggests if present
+            foreach ($version->getSuggest() as $link) {
+                $em->remove($link);
+            }
+            $version->getSuggest()->clear();
         }
 
         if (!$package->getVersions()->contains($version)) {
