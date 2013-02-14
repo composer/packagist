@@ -7,12 +7,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer",
-                "reference": "432955e0ae0b83a3c213be62d1a8cd21e2e89c07"
+                "reference": "2b36f615962a504e583a4ad496253a527e791347"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/432955e0ae0b83a3c213be62d1a8cd21e2e89c07",
-                "reference": "432955e0ae0b83a3c213be62d1a8cd21e2e89c07",
+                "url": "https://api.github.com/repos/composer/composer/zipball/2b36f615962a504e583a4ad496253a527e791347",
+                "reference": "2b36f615962a504e583a4ad496253a527e791347",
                 "shasum": ""
             },
             "require": {
@@ -30,7 +30,7 @@
                 "ext-openssl": "Enabling the openssl extension allows you to access https URLs for repositories and packages",
                 "ext-zip": "Enabling the zip extension allows you to unzip archives, and allows gzip compression of all internet traffic"
             },
-            "time": "2013-02-11 08:34:50",
+            "time": "2013-02-13 13:32:50",
             "bin": [
                 "bin/composer"
             ],
@@ -803,12 +803,12 @@
             "source": {
                 "type": "git",
                 "url": "http://github.com/kriswallsmith/assetic.git",
-                "reference": "cebaadc9042be0c34a5bd89dcc456cba8d235538"
+                "reference": "504c9e8a6357583c20c9d9967ec2febea3157324"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kriswallsmith/assetic/zipball/cebaadc9042be0c34a5bd89dcc456cba8d235538",
-                "reference": "cebaadc9042be0c34a5bd89dcc456cba8d235538",
+                "url": "https://api.github.com/repos/kriswallsmith/assetic/zipball/504c9e8a6357583c20c9d9967ec2febea3157324",
+                "reference": "504c9e8a6357583c20c9d9967ec2febea3157324",
                 "shasum": ""
             },
             "require": {
@@ -823,6 +823,7 @@
                 "leafo/scssphp": "*",
                 "leafo/scssphp-compass": "*",
                 "mrclay/minify": "*",
+                "phpunit/phpunit": "3.7.*",
                 "ptachoire/cssembed": "*",
                 "twig/twig": ">=1.6.0,<2.0"
             },
@@ -833,7 +834,7 @@
                 "ptachoire/cssembed": "Assetic provides the integration with phpcssembed to embed data uris",
                 "twig/twig": "Assetic provides the integration with the Twig templating engine"
             },
-            "time": "2013-02-11 01:33:49",
+            "time": "2013-02-11 18:18:06",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -1163,22 +1164,22 @@
         },
         {
             "name": "seld/jsonlint",
-            "version": "1.1.0",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "http://github.com/Seldaek/jsonlint",
-                "reference": "1.1.0"
+                "reference": "1.1.1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/Seldaek/jsonlint/archive/1.1.0.zip",
-                "reference": "1.1.0",
+                "url": "https://api.github.com/repos/Seldaek/jsonlint/zipball/1.1.1",
+                "reference": "1.1.1",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2012-12-13 18:26:19",
+            "time": "2013-02-11 23:03:12",
             "bin": [
                 "bin/jsonlint"
             ],
@@ -1413,22 +1414,22 @@
         },
         {
             "name": "solarium/solarium",
-            "version": "2.4.0",
+            "version": "2.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/basdenooijer/solarium",
-                "reference": "2.4.0"
+                "reference": "2.4.1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/basdenooijer/solarium/archive/2.4.0.zip",
-                "reference": "2.4.0",
+                "url": "https://api.github.com/repos/basdenooijer/solarium/zipball/2.4.1",
+                "reference": "2.4.1",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.2.0"
             },
-            "time": "2012-04-16 11:31:52",
+            "time": "2013-02-11 13:12:43",
             "type": "library",
             "autoload": {
                 "psr-0": {
@@ -1504,37 +1505,37 @@
         },
         {
             "name": "symfony/assetic-bundle",
-            "version": "v2.1.0",
+            "version": "v2.1.1",
             "target-dir": "Symfony/Bundle/AsseticBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/AsseticBundle",
-                "reference": "v2.1.0-RC2"
+                "reference": "v2.1.1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/symfony/AsseticBundle/zipball/v2.1.0-RC2",
-                "reference": "v2.1.0-RC2",
+                "url": "https://api.github.com/repos/symfony/AsseticBundle/zipball/v2.1.1",
+                "reference": "v2.1.1",
                 "shasum": ""
             },
             "require": {
                 "kriswallsmith/assetic": "1.1.*",
                 "php": ">=5.3.0",
-                "symfony/framework-bundle": "2.1.*"
+                "symfony/framework-bundle": ">=2.1.0,<2.3-dev"
             },
             "require-dev": {
-                "symfony/class-loader": "2.1.*",
-                "symfony/console": "2.1.*",
-                "symfony/css-selector": "2.1.*",
-                "symfony/dom-crawler": "2.1.*",
-                "symfony/form": "2.1.*",
-                "symfony/twig-bundle": "2.1.*",
-                "symfony/yaml": "2.1.*"
+                "symfony/class-loader": ">=2.1.0,<2.3-dev",
+                "symfony/console": ">=2.1.0,<2.3-dev",
+                "symfony/css-selector": ">=2.1.0,<2.3-dev",
+                "symfony/dom-crawler": ">=2.1.0,<2.3-dev",
+                "symfony/form": ">=2.1.0,<2.3-dev",
+                "symfony/twig-bundle": ">=2.1.0,<2.3-dev",
+                "symfony/yaml": ">=2.1.0,<2.3-dev"
             },
             "suggest": {
-                "symfony/twig-bundle": "2.1.*"
+                "symfony/twig-bundle": ">=2.1.0,<2.3-dev"
             },
-            "time": "2012-08-28 03:22:44",
+            "time": "2013-01-31 17:56:17",
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
