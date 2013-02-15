@@ -205,6 +205,11 @@ class Dumper
                 // dump individual files to build dir
                 foreach ($this->individualFiles as $file => $dummy) {
                     $this->dumpIndividualFile($buildDir.'/'.$file, $file);
+
+                    // write the hashed provider file
+                    $hash = hash_file('sha256', $buildDir.'/'.$file);
+                    $hashedFile = substr($buildDir.'/'.$file, 0, -5) . '$' . $hash . '.json';
+                    copy($buildDir.'/'.$file, $hashedFile);
                 }
 
                 $this->individualFiles = array();
@@ -216,17 +221,29 @@ class Dumper
             echo 'Preparing individual files listings'.PHP_EOL;
         }
         $individualListings = array();
+        $individualHashedListings = array();
         $finder = Finder::create()->files()->ignoreVCS(true)->name('*.json')->in($buildDir.'/p/')->depth('1');
 
         foreach ($finder as $file) {
+            if (strpos($file, '$')) {
+                continue;
+            }
+
             $key = $this->getIndividualFileKey(strtr($file, '\\', '/'));
             if ($force && !isset($modifiedIndividualFiles[$key])) {
                 continue;
             }
 
             $listing = 'p/'.$this->getTargetListing($file);
-            $this->listings[$listing]['providers'][$key] = array('sha256' => hash_file('sha256', $file));
+            $hash = hash_file('sha256', $file);
+            $this->listings[$listing]['providers'][$key] = array('sha256' => $hash);
             $individualListings[$listing] = true;
+
+            // add hashed provider to listing
+            $listing = str_replace('providers', 'provider', $listing);
+            $key = substr($key, 2, -5);
+            $this->listings[$listing]['providers'][$key] = array('sha256' => $hash);
+            $individualHashedListings[$listing] = true;
         }
 
         // prepare root file
@@ -237,7 +254,11 @@ class Dumper
         }
         $url = $this->router->generate('track_download', array('name' => 'VND/PKG'));
         $this->files['p/packages.json']['notify'] = str_replace('VND/PKG', '%package%', $url);
-        $this->files['p/packages.json']['notify_batch'] = $this->router->generate('track_download_batch');
+        $this->files['p/packages.json']['notify-batch'] = $this->router->generate('track_download_batch');
+        $this->files['p/packages.json']['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
+
+        // TODO deprecated, remove eventually, together with includes & providers-includes
+        $this->files['p/packages.json']['notify_batch'] = $this->files['p/packages.json']['notify-batch'];
 
         if ($verbose) {
             echo 'Dumping individual listings'.PHP_EOL;
@@ -246,7 +267,14 @@ class Dumper
         // dump listings to build dir
         foreach ($individualListings as $listing => $dummy) {
             $this->dumpListing($buildDir.'/'.$listing);
-            $this->files['p/packages.json']['providers-includes'][$listing] = array('sha256' => hash_file('sha256', $buildDir.'/'.$listing));
+            $hash = hash_file('sha256', $buildDir.'/'.$listing);
+            $this->files['p/packages.json']['providers-includes'][$listing] = array('sha256' => $hash);
+        }
+
+        foreach ($individualHashedListings as $listing => $dummy) {
+            $this->dumpListing($buildDir.'/'.$listing);
+            $hash = hash_file('sha256', $buildDir.'/'.$listing);
+            $this->files['p/packages.json']['provider-includes'][$listing] = array('sha256' => $hash);
         }
 
         if ($verbose) {
@@ -296,29 +324,33 @@ class Dumper
             clearstatcache();
         } while (is_dir($webDir.'/p-old') && $retries--);
 
-        if ($force) {
-            if ($verbose) {
-                echo 'Cleaning up outdated files'.PHP_EOL;
-            }
+        if ($verbose) {
+            echo 'Cleaning up old files'.PHP_EOL;
+        }
 
-            // clear files that were not created in this build
-            foreach (glob($webDir.'/p/packages-*.json') as $file) {
-                if (!isset($modifiedFiles['p/'.basename($file)])) {
-                    unlink($file);
-                }
-            }
+        // run only once an hour
+        if (date('i') == 0) {
+            // clean up old files
+            $finder = Finder::create()->files()->depth('1')->ignoreVCS(true)
+                ->name('/\.files$/')
+                ->date('until 10minutes ago')
+                ->in($webDir.'/p/');
 
-            foreach (glob($webDir.'/p/providers-*.json') as $file) {
-                if (!isset($individualListings['p/'.basename($file)])) {
-                    unlink($file);
-                }
-            }
-
-            $finder = Finder::create()->files()->depth('1')->ignoreVCS(true)->name('/\.(json|files)$/')->in($webDir.'/p/');
             foreach ($finder as $file) {
-                $key = $this->getIndividualFileKey(strtr($file, '\\', '/'));
-                if (!isset($modifiedIndividualFiles[$key])) {
-                    unlink($file);
+                $package = basename($file, '.files');
+                $files = glob(dirname($file).'/'.$package.'$*');
+
+                // if multiple hashed files exist for one package, remove all but the newest one
+                if (count($files) > 1) {
+                    $orderedFiles = array();
+                    foreach ($files as $file) {
+                        $orderedFiles[$file] = filemtime($file);
+                    }
+                    asort($orderedFiles);
+                    array_pop($orderedFiles);
+                    foreach ($orderedFiles as $file => $mtime) {
+                        unlink($file);
+                    }
                 }
             }
         }
@@ -388,7 +420,7 @@ class Dumper
         $this->fs->mkdir(dirname($path));
 
         file_put_contents($path, json_encode($this->individualFiles[$key]));
-        touch($path, $this->individualFilesMtime[$key]);
+        touch(substr($path, 0, -5).'.files', $this->individualFilesMtime[$key]);
     }
 
     private function dumpVersion(Version $version, $file)
@@ -430,7 +462,7 @@ class Dumper
             $firstOfTheMonth = $date->format('U');
         }
 
-        $mtime = filemtime($file);
+        $mtime = filemtime(substr($file, 0, -5).'.files');
 
         if ($mtime < $firstOfTheMonth - 86400 * 180) {
             return 'providers-archived.json';
