@@ -422,16 +422,23 @@ class Dumper
 
     private function getTargetListing($file)
     {
-        $mtime = filemtime($file);
-        $now = time();
+        static $firstOfTheMonth;
+        if (!$firstOfTheMonth) {
+            $date = new \DateTime;
+            $date->setDate($date->format('Y'), $date->format('m'), 1);
+            $date->setTime(0, 0, 0);
+            $firstOfTheMonth = $date->format('U');
+        }
 
-        if ($mtime < $now - 86400 * 180) {
+        $mtime = filemtime($file);
+
+        if ($mtime < $firstOfTheMonth - 86400 * 180) {
             return 'providers-archived.json';
         }
-        if ($mtime < $now - 86400 * 60) {
+        if ($mtime < $firstOfTheMonth - 86400 * 60) {
             return 'providers-stale.json';
         }
-        if ($mtime < $now - 86400 * 10) {
+        if ($mtime < $firstOfTheMonth - 86400 * 10) {
             return 'providers-active.json';
         }
 
