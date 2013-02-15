@@ -60,6 +60,11 @@ services:
         arguments:
             - 'packagist_oauth_user_registration'
 
+    packagist.download_manager:
+        class: Packagist\WebBundle\Model\DownloadManager
+        arguments:
+            - @snc_redis.default_client
+
     packagist.favorite_manager:
         class: Packagist\WebBundle\Model\FavoriteManager
         arguments:
