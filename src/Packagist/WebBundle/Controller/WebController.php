@@ -458,7 +458,12 @@ class WebController extends Controller
         if ('json' === $req->getRequestFormat()) {
             $package = $repo->getFullPackageByName($name);
 
-            return new Response(json_encode(array('package' => $package->toArray())), 200);
+            $data = $package->toArray() + array(
+                'downloads' => $this->get('packagist.download_manager')->getDownloads($package),
+                'favers' => $this->get('packagist.favorite_manager')->getFaverCount($package)
+            );
+
+            return new Response(json_encode(array('package' => $data)), 200);
         }
 
         $version = null;
@@ -469,17 +474,9 @@ class WebController extends Controller
 
         $data = array('package' => $package, 'version' => $version);
 
-        $id = $package->getId();
-
         try {
-            /** @var $redis \Snc\RedisBundle\Client\Phpredis\Client */
-            $redis = $this->get('snc_redis.default');
-            $counts = $redis->mget('dl:'.$id, 'dl:'.$id.':'.date('Ym'), 'dl:'.$id.':'.date('Ymd'));
-            $data['downloads'] = array(
-                'total' => $counts[0] ?: 0,
-                'monthly' => $counts[1] ?: 0,
-                'daily' => $counts[2] ?: 0,
-            );
+            $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package);
+
             if ($this->getUser()) {
                 $data['is_favorite'] = $this->get('packagist.favorite_manager')->isMarked($this->getUser(), $package);
             }
@@ -875,15 +872,13 @@ class WebController extends Controller
             }
 
             try {
-                /** @var $redis \Snc\RedisBundle\Client\Phpredis\Client */
-                $redis = $this->get('snc_redis.default');
-                $downloads = $redis->get('dl:'.$package->getId());
+                $downloads = $this->get('packagist.download_manager')->getDownloads($package);
             } catch (ConnectionException $e) {
                 return;
             }
 
             // more than 50 downloads = established package, do not allow deletion by maintainers
-            if ($downloads > 50) {
+            if ($downloads['total'] > 50) {
                 return;
             }
         }
