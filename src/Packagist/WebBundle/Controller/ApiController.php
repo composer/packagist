@@ -170,6 +170,7 @@ class ApiController extends Controller
     protected function trackDownload($id, $vid, $ip)
     {
         $redis = $this->get('snc_redis.default');
+        $manager = $this->get('packagist.download_manager');
 
         $throttleKey = 'dl:'.$id.':'.$ip.':'.date('Ymd');
         $requests = $redis->incr($throttleKey);
@@ -177,15 +178,7 @@ class ApiController extends Controller
             $redis->expire($throttleKey, 86400);
         }
         if ($requests <= 10) {
-            $redis->incr('downloads');
-
-            $redis->incr('dl:'.$id);
-            $redis->incr('dl:'.$id.':'.date('Ym'));
-            $redis->incr('dl:'.$id.':'.date('Ymd'));
-
-            $redis->incr('dl:'.$id.'-'.$vid);
-            $redis->incr('dl:'.$id.'-'.$vid.':'.date('Ym'));
-            $redis->incr('dl:'.$id.'-'.$vid.':'.date('Ymd'));
+            $manager->addDownload($id, $vid);
         }
     }
 
