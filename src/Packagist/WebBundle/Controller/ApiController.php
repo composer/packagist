@@ -97,6 +97,32 @@ class ApiController extends Controller
     }
 
     /**
+     * @Route("/downloads/{name}", name="get_downloads", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
+     * @Method({"GET"})
+     */
+    public function getDownloadsAction(Request $request, $name)
+    {
+        $packages = $this->getPackageAndVersionIds($name);
+
+        if (!$packages) {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 404);
+        }
+
+        $overall = $this->getDownloads($packages[0]['id']);
+        $versions = array();
+
+        foreach ($packages as $package) {
+            $versions[$package['vnormalized']] = $this->getDownloads($package['id'], $package['vid']);
+        }
+
+        return new JsonResponse(array(
+            'status' => 'success',
+            'package' => $overall,
+            'versions' => $versions
+        ));
+    }
+
+    /**
      * @Route("/downloads/{name}", name="track_download", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
      * @Method({"POST"})
      */
@@ -154,6 +180,17 @@ class ApiController extends Controller
         return new JsonResponse(array('status' => 'success'), 201);
     }
 
+    protected function getPackageAndVersionIds($name)
+    {
+        return $this->get('doctrine.dbal.default_connection')->fetchAll(
+            'SELECT p.id, v.id vid, v.normalizedVersion vnormalized
+            FROM package p
+            LEFT JOIN package_version v ON p.id = v.package_id
+            WHERE p.name = ?',
+            array($name)
+        );
+    }
+
     protected function getPackageAndVersionId($name, $version)
     {
         return $this->get('doctrine.dbal.default_connection')->fetchAssoc(
@@ -164,6 +201,18 @@ class ApiController extends Controller
             AND v.normalizedVersion = ?
             LIMIT 1',
             array($name, $version)
+        );
+    }
+
+    protected function getDownloads($id, $vid = null)
+    {
+        $redis = $this->get('snc_redis.default');
+        $key = $vid ? "dl:$id-$vid" : "dl:$id" ;
+
+        return array(
+            'overall' => (int) $redis->get($key),
+            'month' => (int) $redis->get($key . ':' . date('Ym')),
+            'day' => (int) $redis->get($key . ':' . date('Ym'))
         );
     }
 
