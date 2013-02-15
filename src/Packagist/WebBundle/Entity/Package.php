@@ -163,7 +163,7 @@ class Package
         $property = 'repository';
         $driver = $this->vcsDriver;
         if (!is_object($driver)) {
-            if (preg_match('{//.+@}', $this->repository)) {
+            if (preg_match('{https?://.+@}', $this->repository)) {
                 $context->addViolationAtSubPath($property, 'URLs with user@host are not supported, use a read-only public URL', array(), null);
             } else {
                 $context->addViolationAtSubPath($property, 'No valid/supported repository was found at the given URL', array(), null);
@@ -326,7 +326,7 @@ class Package
         $this->repository = $repository;
 
         // avoid user@host URLs
-        if (preg_match('{//.+@}', $repository)) {
+        if (preg_match('{https?://.+@}', $repository)) {
             return;
         }
 
