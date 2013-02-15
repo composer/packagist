@@ -458,7 +458,12 @@ class WebController extends Controller
         if ('json' === $req->getRequestFormat()) {
             $package = $repo->getFullPackageByName($name);
 
-            return new Response(json_encode(array('package' => $package->toArray())), 200);
+            $data = $package->toArray() + array(
+                'downloads' => $this->get('packagist.download_manager')->getDownloads($package),
+                'favers' => $this->get('packagist.favorite_manager')->getFaverCount($package)
+            );
+
+            return new Response(json_encode(array('package' => $data)), 200);
         }
 
         $version = null;
