@@ -225,6 +225,7 @@ class Dumper
         $finder = Finder::create()->files()->ignoreVCS(true)->name('*.json')->in($buildDir.'/p/')->depth('1');
 
         foreach ($finder as $file) {
+            // skipped hashed files
             if (strpos($file, '$')) {
                 continue;
             }
@@ -319,7 +320,7 @@ class Dumper
         // clean up old dir
         $retries = 5;
         do {
-            exec(sprintf('rm -rf %s', escapeshellarg($webDir.'/p-old')));
+            exec(sprintf('rm -rf %s', escapeshellarg($webDir.'/p-old')), $output);
             usleep(200);
             clearstatcache();
         } while (is_dir($webDir.'/p-old') && $retries--);
@@ -331,25 +332,32 @@ class Dumper
         // run only once an hour
         if (date('i') == 0) {
             // clean up old files
-            $finder = Finder::create()->files()->depth('1')->ignoreVCS(true)
-                ->name('/\.files$/')
-                ->date('until 10minutes ago')
-                ->in($webDir.'/p/');
+            $finder = Finder::create()->directories()->ignoreVCS(true)->in($webDir.'/p/');
+            foreach ($finder as $vendorDir) {
+                $vendorFiles = Finder::create()->files()->ignoreVCS(true)
+                    ->name('/\$[a-f0-9]+\.json$/')
+                    ->date('until 10minutes ago')
+                    ->in((string) $vendorDir);
 
-            foreach ($finder as $file) {
-                $package = basename($file, '.files');
-                $files = glob(dirname($file).'/'.$package.'$*');
+                $hashedFiles = iterator_to_array($vendorFiles->getIterator());
+                $hashedByPackage = array();
+                foreach ($hashedFiles as $file) {
+                    $package = preg_replace('{.+/([^/$]+?)\$[a-f0-9]+\.json$}', '$1', strtr($file, '\\', '/'));
+                    $hashedByPackage[$package][] = (string) $file;
+                }
 
-                // if multiple hashed files exist for one package, remove all but the newest one
-                if (count($files) > 1) {
-                    $orderedFiles = array();
-                    foreach ($files as $file) {
-                        $orderedFiles[$file] = filemtime($file);
-                    }
-                    asort($orderedFiles);
-                    array_pop($orderedFiles);
-                    foreach ($orderedFiles as $file => $mtime) {
-                        unlink($file);
+                foreach ($hashedByPackage as $package => $files) {
+                    // if multiple hashed files exist for one package, remove all but the newest one
+                    if (count($files) > 1) {
+                        $orderedFiles = array();
+                        foreach ($files as $file) {
+                            $orderedFiles[$file] = filemtime($file);
+                        }
+                        asort($orderedFiles);
+                        array_pop($orderedFiles);
+                        foreach ($orderedFiles as $file => $mtime) {
+                            unlink($file);
+                        }
                     }
                 }
             }
@@ -420,7 +428,7 @@ class Dumper
         $this->fs->mkdir(dirname($path));
 
         file_put_contents($path, json_encode($this->individualFiles[$key]));
-        touch(substr($path, 0, -5).'.files', $this->individualFilesMtime[$key]);
+        touch($path, $this->individualFilesMtime[$key]);
     }
 
     private function dumpVersion(Version $version, $file)
@@ -462,7 +470,7 @@ class Dumper
             $firstOfTheMonth = $date->format('U');
         }
 
-        $mtime = filemtime(substr($file, 0, -5).'.files');
+        $mtime = filemtime($file);
 
         if ($mtime < $firstOfTheMonth - 86400 * 180) {
             return 'providers-archived.json';
