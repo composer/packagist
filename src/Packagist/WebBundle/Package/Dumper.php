@@ -125,6 +125,7 @@ class Dumper
         $current = 0;
         $step = 50;
         while ($packageIds) {
+            $dumpTime = new \DateTime;
             $packages = $this->doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($packageIds, 0, $step));
 
             if ($verbose) {
@@ -189,7 +190,7 @@ class Dumper
                     $this->dumpVersion($version, $file);
                 }
 
-                $package->setDumpedAt(new \DateTime);
+                $package->setDumpedAt($dumpTime);
             }
 
             // update dump dates
