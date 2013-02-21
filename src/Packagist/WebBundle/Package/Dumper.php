@@ -276,7 +276,9 @@ class Dumper
         foreach ($individualHashedListings as $listing => $dummy) {
             $this->dumpListing($buildDir.'/'.$listing);
             $hash = hash_file('sha256', $buildDir.'/'.$listing);
-            $this->files['p/packages.json']['provider-includes'][$listing] = array('sha256' => $hash);
+            $hashedListing = substr($listing, 0, -5) . '$' . $hash . '.json';
+            rename($buildDir.'/'.$listing, $buildDir.'/'.$hashedListing);
+            $this->files['p/packages.json']['provider-includes'][str_replace($hash, '%hash%', $hashedListing)] = array('sha256' => $hash);
         }
 
         if ($verbose) {
@@ -361,6 +363,12 @@ class Dumper
                         }
                     }
                 }
+            }
+
+            // clean up old provider listings
+            $finder = Finder::create()->depth(0)->files('provider-*.json')->ignoreVCS(true)->in($webDir.'/p/')->date('until 1hour ago');
+            foreach ($finder as $provider) {
+                unlink($provider);
             }
         }
     }
