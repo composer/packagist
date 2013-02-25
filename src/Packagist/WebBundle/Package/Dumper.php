@@ -367,7 +367,7 @@ class Dumper
             }
 
             // clean up old provider listings
-            $finder = Finder::create()->depth(0)->files('provider-*.json')->ignoreVCS(true)->in($webDir.'/p/')->date('until 1hour ago');
+            $finder = Finder::create()->depth(0)->files()->name('provider-*.json')->ignoreVCS(true)->in($webDir.'/p/')->date('until 1hour ago');
             foreach ($finder as $provider) {
                 unlink($provider);
             }
