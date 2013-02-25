@@ -30,7 +30,8 @@ class PackageRepository extends EntityRepository
     public function packageExists($name)
     {
         $packages = $this->getPackageNames();
-        return isset($packages[$name]);
+
+        return isset($packages[$name]) || in_array(strtolower($name), $packages, true);
     }
 
     public function getPackageNames()
@@ -54,7 +55,7 @@ class PackageRepository extends EntityRepository
                 ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p");
 
             foreach ($query->getScalarResult() as $package) {
-                $names[$package['name']] = true;
+                $names[$package['name']] = strtolower($package['name']);
             }
 
             if ($apc) {
