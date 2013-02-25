@@ -298,6 +298,7 @@ class Dumper
         // sort & dump root file
         ksort($this->files['p/packages.json']['packages']);
         ksort($this->files['p/packages.json']['providers-includes']);
+        ksort($this->files['p/packages.json']['provider-includes']);
         ksort($this->files['p/packages.json']['includes']);
         $this->dumpFile($rootFile);
 
