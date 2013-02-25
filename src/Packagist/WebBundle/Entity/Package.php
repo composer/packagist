@@ -145,6 +145,7 @@ class Package
         $data = array(
             'name' => $this->getName(),
             'description' => $this->getDescription(),
+            'time' => $this->getCreatedAt()->format('c'),
             'maintainers' => $maintainers,
             'versions' => $versions,
             'type' => $this->getType(),
