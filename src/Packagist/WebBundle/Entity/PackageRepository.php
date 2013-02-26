@@ -66,6 +66,26 @@ class PackageRepository extends EntityRepository
         return $this->packageNames = $names;
     }
 
+    public function getPackageNamesByType($type)
+    {
+        $query = $this->getEntityManager()
+            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.type = :type")
+            ->setParameters(array('type' => $type));
+
+        $names = array();
+        foreach ($query->getScalarResult() as $row) {
+            $names[] = $row['name'];
+        }
+
+        if (defined('SORT_FLAG_CASE')) {
+            sort($names, SORT_STRING | SORT_FLAG_CASE);
+        } else {
+            sort($names, SORT_STRING);
+        }
+
+        return $names;
+    }
+
     public function getStalePackages()
     {
         $conn = $this->getEntityManager()->getConnection();

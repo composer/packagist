@@ -156,11 +156,15 @@ class WebController extends Controller
      */
     public function listAction(Request $req)
     {
-        $packageNames = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
-            ->getPackageNames();
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
 
-        return new Response(json_encode(array('packageNames' => array_keys($packageNames))), 200);
+        if ($req->query->get('type')) {
+            $names = $repo->getPackageNamesByType($req->query->get('type'));
+        } else {
+            $names = array_keys($repo->getPackageNames());
+        }
+
+        return new JsonResponse(array('packageNames' => $names));
     }
 
     /**
