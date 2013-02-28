@@ -117,6 +117,7 @@ class Package
     private $updateFailureNotified = false;
 
     private $entityRepository;
+    private $router;
 
     /**
      * @var \Composer\Repository\Vcs\VcsDriverInterface
@@ -144,6 +145,7 @@ class Package
         $data = array(
             'name' => $this->getName(),
             'description' => $this->getDescription(),
+            'time' => $this->getCreatedAt()->format('c'),
             'maintainers' => $maintainers,
             'versions' => $versions,
             'type' => $this->getType(),
@@ -162,7 +164,7 @@ class Package
         $property = 'repository';
         $driver = $this->vcsDriver;
         if (!is_object($driver)) {
-            if (preg_match('{//.+@}', $this->repository)) {
+            if (preg_match('{https?://.+@}', $this->repository)) {
                 $context->addViolationAtSubPath($property, 'URLs with user@host are not supported, use a read-only public URL', array(), null);
             } else {
                 $context->addViolationAtSubPath($property, 'No valid/supported repository was found at the given URL', array(), null);
@@ -204,11 +206,16 @@ class Package
         $this->entityRepository = $repository;
     }
 
+    public function setRouter($router)
+    {
+        $this->router = $router;
+    }
+
     public function isPackageUnique(ExecutionContext $context)
     {
         try {
             if ($this->entityRepository->findOneByName($this->name)) {
-                $context->addViolationAtSubPath('repository', 'A package with the name '.$this->name.' already exists.', array(), null);
+                $context->addViolationAtSubPath('repository', 'A package with the name <a href="'.$this->router->generate('view_package', array('name' => $this->name)).'">'.$this->name.'</a> already exists.', array(), null);
             }
         } catch (\Doctrine\ORM\NoResultException $e) {}
     }
@@ -320,7 +327,7 @@ class Package
         $this->repository = $repository;
 
         // avoid user@host URLs
-        if (preg_match('{//.+@}', $repository)) {
+        if (preg_match('{https?://.+@}', $repository)) {
             return;
         }
 

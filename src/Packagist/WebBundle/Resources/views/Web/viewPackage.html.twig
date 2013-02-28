@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('bundles/packagistweb/js/view.js?v=10')}}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/view.js?v=11')}}"></script>
 {% endblock %}
 
 {% block content %}
@@ -28,7 +28,7 @@
                 </form>
             {% endif %}
             {% if deleteForm is defined %}
-                <form class="force-delete action" action="{{ path('delete_package', {name: package.name}) }}" method="POST">
+                <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="POST">
                     <input type="hidden" name="_method" value="DELETE" />
                     {{ form_widget(deleteForm._token) }}
                     <input type="submit" value="Delete" />
@@ -128,6 +128,15 @@
                                     {% if version.isDevelopment %}
                                     <span class="source-reference">reference: {{ version.source.reference|prettify_source_reference }}</span>
                                     {% endif %}
+
+                                    {% if deleteVersionCsrfToken is defined %}
+                                    <form class="action delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="post">
+                                        <input type="hidden" name="_method" value="DELETE" />
+                                        <input type="hidden" name="_token" value="{{ deleteVersionCsrfToken }}" />
+                                        <input type="submit" value="Delete">
+                                    </form>
+                                    {% endif %}
+
                                     <span class="release-date">{{ version.releasedAt|date("Y-m-d H:i") }} UTC</span>
                                     <span class="license{% if not version.license %} unknown{% endif %}">{{ version.license ? version.license|join(', ') : 'Unknown License' }}</span>
                                 </h1>

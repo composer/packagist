@@ -21,24 +21,21 @@ class Controller extends BaseController
 {
     protected function getPackagesMetadata($packages)
     {
-        $metadata = null;
         try {
-            $dlKeys = array();
+            $ids = array();
+
             foreach ($packages as $package) {
-                $id = $package instanceof \Solarium_Document_ReadOnly ? $package->id : $package->getId();
-                $dlKeys[$id] = 'dl:'.$id;
+                $ids[] = $package instanceof \Solarium_Document_ReadOnly ? $package->id : $package->getId();
             }
-            if (!$dlKeys) {
-                return $metadata;
-            }
-            $res = array_map('intval', $this->get('snc_redis.default')->mget(array_values($dlKeys)));
 
-            $metadata = array(
-                'downloads' => array_combine(array_keys($dlKeys), $res),
-                'favers' => $this->get('packagist.favorite_manager')->getFaverCounts(array_keys($dlKeys)),
+            if (!$ids) {
+                return;
+            }
+
+            return array(
+                'downloads' => $this->get('packagist.download_manager')->getPackagesDownloads($ids),
+                'favers' => $this->get('packagist.favorite_manager')->getFaverCounts($ids),
             );
-        } catch (\Predis\Network\ConnectionException $e) {}
-
-        return $metadata;
+        } catch (\Predis\Connection\ConnectionException $e) {}
     }
 }

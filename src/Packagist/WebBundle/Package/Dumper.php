@@ -125,6 +125,7 @@ class Dumper
         $current = 0;
         $step = 50;
         while ($packageIds) {
+            $dumpTime = new \DateTime;
             $packages = $this->doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($packageIds, 0, $step));
 
             if ($verbose) {
@@ -189,7 +190,7 @@ class Dumper
                     $this->dumpVersion($version, $file);
                 }
 
-                $package->setDumpedAt(new \DateTime);
+                $package->setDumpedAt($dumpTime);
             }
 
             // update dump dates
@@ -205,6 +206,11 @@ class Dumper
                 // dump individual files to build dir
                 foreach ($this->individualFiles as $file => $dummy) {
                     $this->dumpIndividualFile($buildDir.'/'.$file, $file);
+
+                    // write the hashed provider file
+                    $hash = hash_file('sha256', $buildDir.'/'.$file);
+                    $hashedFile = substr($buildDir.'/'.$file, 0, -5) . '$' . $hash . '.json';
+                    copy($buildDir.'/'.$file, $hashedFile);
                 }
 
                 $this->individualFiles = array();
@@ -216,17 +222,30 @@ class Dumper
             echo 'Preparing individual files listings'.PHP_EOL;
         }
         $individualListings = array();
+        $individualHashedListings = array();
         $finder = Finder::create()->files()->ignoreVCS(true)->name('*.json')->in($buildDir.'/p/')->depth('1');
 
         foreach ($finder as $file) {
+            // skipped hashed files
+            if (strpos($file, '$')) {
+                continue;
+            }
+
             $key = $this->getIndividualFileKey(strtr($file, '\\', '/'));
             if ($force && !isset($modifiedIndividualFiles[$key])) {
                 continue;
             }
 
             $listing = 'p/'.$this->getTargetListing($file);
-            $this->listings[$listing]['providers'][$key] = array('sha256' => hash_file('sha256', $file));
+            $hash = hash_file('sha256', $file);
+            $this->listings[$listing]['providers'][$key] = array('sha256' => $hash);
             $individualListings[$listing] = true;
+
+            // add hashed provider to listing
+            $listing = str_replace('providers', 'provider', $listing);
+            $key = substr($key, 2, -5);
+            $this->listings[$listing]['providers'][$key] = array('sha256' => $hash);
+            $individualHashedListings[$listing] = true;
         }
 
         // prepare root file
@@ -237,7 +256,11 @@ class Dumper
         }
         $url = $this->router->generate('track_download', array('name' => 'VND/PKG'));
         $this->files['p/packages.json']['notify'] = str_replace('VND/PKG', '%package%', $url);
-        $this->files['p/packages.json']['notify_batch'] = $this->router->generate('track_download_batch');
+        $this->files['p/packages.json']['notify-batch'] = $this->router->generate('track_download_batch');
+        $this->files['p/packages.json']['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
+
+        // TODO deprecated, remove eventually, together with includes & providers-includes
+        $this->files['p/packages.json']['notify_batch'] = $this->files['p/packages.json']['notify-batch'];
 
         if ($verbose) {
             echo 'Dumping individual listings'.PHP_EOL;
@@ -246,7 +269,16 @@ class Dumper
         // dump listings to build dir
         foreach ($individualListings as $listing => $dummy) {
             $this->dumpListing($buildDir.'/'.$listing);
-            $this->files['p/packages.json']['providers-includes'][$listing] = array('sha256' => hash_file('sha256', $buildDir.'/'.$listing));
+            $hash = hash_file('sha256', $buildDir.'/'.$listing);
+            $this->files['p/packages.json']['providers-includes'][$listing] = array('sha256' => $hash);
+        }
+
+        foreach ($individualHashedListings as $listing => $dummy) {
+            $this->dumpListing($buildDir.'/'.$listing);
+            $hash = hash_file('sha256', $buildDir.'/'.$listing);
+            $hashedListing = substr($listing, 0, -5) . '$' . $hash . '.json';
+            rename($buildDir.'/'.$listing, $buildDir.'/'.$hashedListing);
+            $this->files['p/packages.json']['provider-includes'][str_replace($hash, '%hash%', $hashedListing)] = array('sha256' => $hash);
         }
 
         if ($verbose) {
@@ -266,6 +298,7 @@ class Dumper
         // sort & dump root file
         ksort($this->files['p/packages.json']['packages']);
         ksort($this->files['p/packages.json']['providers-includes']);
+        ksort($this->files['p/packages.json']['provider-includes']);
         ksort($this->files['p/packages.json']['includes']);
         $this->dumpFile($rootFile);
 
@@ -291,35 +324,52 @@ class Dumper
         // clean up old dir
         $retries = 5;
         do {
-            exec(sprintf('rm -rf %s', escapeshellarg($webDir.'/p-old')));
+            exec(sprintf('rm -rf %s', escapeshellarg($webDir.'/p-old')), $output);
             usleep(200);
             clearstatcache();
         } while (is_dir($webDir.'/p-old') && $retries--);
 
-        if ($force) {
-            if ($verbose) {
-                echo 'Cleaning up outdated files'.PHP_EOL;
-            }
+        if ($verbose) {
+            echo 'Cleaning up old files'.PHP_EOL;
+        }
 
-            // clear files that were not created in this build
-            foreach (glob($webDir.'/p/packages-*.json') as $file) {
-                if (!isset($modifiedFiles['p/'.basename($file)])) {
-                    unlink($file);
+        // run only once an hour
+        if (date('i') == 0) {
+            // clean up old files
+            $finder = Finder::create()->directories()->ignoreVCS(true)->in($webDir.'/p/');
+            foreach ($finder as $vendorDir) {
+                $vendorFiles = Finder::create()->files()->ignoreVCS(true)
+                    ->name('/\$[a-f0-9]+\.json$/')
+                    ->date('until 10minutes ago')
+                    ->in((string) $vendorDir);
+
+                $hashedFiles = iterator_to_array($vendorFiles->getIterator());
+                $hashedByPackage = array();
+                foreach ($hashedFiles as $file) {
+                    $package = preg_replace('{.+/([^/$]+?)\$[a-f0-9]+\.json$}', '$1', strtr($file, '\\', '/'));
+                    $hashedByPackage[$package][] = (string) $file;
+                }
+
+                foreach ($hashedByPackage as $package => $files) {
+                    // if multiple hashed files exist for one package, remove all but the newest one
+                    if (count($files) > 1) {
+                        $orderedFiles = array();
+                        foreach ($files as $file) {
+                            $orderedFiles[$file] = filemtime($file);
+                        }
+                        asort($orderedFiles);
+                        array_pop($orderedFiles);
+                        foreach ($orderedFiles as $file => $mtime) {
+                            unlink($file);
+                        }
+                    }
                 }
             }
 
-            foreach (glob($webDir.'/p/providers-*.json') as $file) {
-                if (!isset($individualListings['p/'.basename($file)])) {
-                    unlink($file);
-                }
-            }
-
-            $finder = Finder::create()->files()->depth('1')->ignoreVCS(true)->name('/\.(json|files)$/')->in($webDir.'/p/');
-            foreach ($finder as $file) {
-                $key = $this->getIndividualFileKey(strtr($file, '\\', '/'));
-                if (!isset($modifiedIndividualFiles[$key])) {
-                    unlink($file);
-                }
+            // clean up old provider listings
+            $finder = Finder::create()->depth(0)->files()->name('provider-*.json')->ignoreVCS(true)->in($webDir.'/p/')->date('until 1hour ago');
+            foreach ($finder as $provider) {
+                unlink($provider);
             }
         }
     }
@@ -422,16 +472,23 @@ class Dumper
 
     private function getTargetListing($file)
     {
-        $mtime = filemtime($file);
-        $now = time();
+        static $firstOfTheMonth;
+        if (!$firstOfTheMonth) {
+            $date = new \DateTime;
+            $date->setDate($date->format('Y'), $date->format('m'), 1);
+            $date->setTime(0, 0, 0);
+            $firstOfTheMonth = $date->format('U');
+        }
 
-        if ($mtime < $now - 86400 * 180) {
+        $mtime = filemtime($file);
+
+        if ($mtime < $firstOfTheMonth - 86400 * 180) {
             return 'providers-archived.json';
         }
-        if ($mtime < $now - 86400 * 60) {
+        if ($mtime < $firstOfTheMonth - 86400 * 60) {
             return 'providers-stale.json';
         }
-        if ($mtime < $now - 86400 * 10) {
+        if ($mtime < $firstOfTheMonth - 86400 * 10) {
             return 'providers-active.json';
         }
 

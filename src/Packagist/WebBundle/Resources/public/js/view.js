@@ -64,8 +64,18 @@
         $.ajax(options).complete(function () { $(this).removeClass('loading'); });
         $(this).addClass('loading');
     });
-    $('.package .force-delete').submit(function (e) {
+    $('.package .delete').submit(function (e) {
         e.preventDefault();
+        if (confirm('Are you sure?')) {
+            e.target.submit();
+        }
+    });
+    $('.package .delete-version').click(function (e) {
+        e.stopImmediatePropagation();
+    });
+    $('.package .delete-version').submit(function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
         if (confirm('Are you sure?')) {
             e.target.submit();
         }

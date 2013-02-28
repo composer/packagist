@@ -35,3 +35,6 @@ parameters:
     ldap_host: localhost
     ldap_basedn: ou=users, dc=host, dc=foo
     ldap_bindrequireddn: true
+    
+    # e.g. [127.0.0.1] if the app is running behind a reverse proxy on localhost
+    trusted_proxies: ~

@@ -41,7 +41,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Pagerfanta\Pagerfanta;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Adapter\SolariumAdapter;
-use Predis\Network\ConnectionException;
+use Predis\Connection\ConnectionException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -95,11 +95,14 @@ class WebController extends Controller
         $randomIds = $this->getDoctrine()->getConnection()->fetchAll('SELECT id FROM package ORDER BY RAND() LIMIT 10');
         $random = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $randomIds)->getQuery()->getResult();
         try {
+            $popular = array();
             $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);
-            $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)->getQuery()->getResult();
-            usort($popular, function ($a, $b) use ($popularIds) {
-                return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
-            });
+            if ($popularIds) {
+                $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)->getQuery()->getResult();
+                usort($popular, function ($a, $b) use ($popularIds) {
+                    return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
+                });
+            }
         } catch (ConnectionException $e) {
             $popular = array();
         }
@@ -153,11 +156,15 @@ class WebController extends Controller
      */
     public function listAction(Request $req)
     {
-        $packageNames = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
-            ->getPackageNames();
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
 
-        return new Response(json_encode(array('packageNames' => array_keys($packageNames))), 200);
+        if ($req->query->get('type')) {
+            $names = $repo->getPackageNamesByType($req->query->get('type'));
+        } else {
+            $names = array_keys($repo->getPackageNames());
+        }
+
+        return new JsonResponse(array('packageNames' => $names));
     }
 
     /**
@@ -318,6 +325,7 @@ class WebController extends Controller
     {
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setRouter($this->get('router'));
         $form = $this->createForm(new PackageType, $package);
 
         if ('POST' === $req->getMethod()) {
@@ -350,6 +358,7 @@ class WebController extends Controller
     {
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setRouter($this->get('router'));
         $form = $this->createForm(new PackageType, $package);
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
@@ -453,7 +462,17 @@ class WebController extends Controller
         if ('json' === $req->getRequestFormat()) {
             $package = $repo->getFullPackageByName($name);
 
-            return new Response(json_encode(array('package' => $package->toArray())), 200);
+            $data = $package->toArray();
+
+            try {
+                $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package);
+                $data['favers'] = $this->get('packagist.favorite_manager')->getFaverCount($package);
+            } catch (ConnectionException $e) {
+                $data['downloads'] = null;
+                $data['favers'] = null;
+            }
+
+            return new Response(json_encode(array('package' => $data)), 200);
         }
 
         $version = null;
@@ -464,17 +483,9 @@ class WebController extends Controller
 
         $data = array('package' => $package, 'version' => $version);
 
-        $id = $package->getId();
-
         try {
-            /** @var $redis \Snc\RedisBundle\Client\Phpredis\Client */
-            $redis = $this->get('snc_redis.default');
-            $counts = $redis->mget('dl:'.$id, 'dl:'.$id.':'.date('Ym'), 'dl:'.$id.':'.date('Ymd'));
-            $data['downloads'] = array(
-                'total' => $counts[0] ?: 0,
-                'monthly' => $counts[1] ?: 0,
-                'daily' => $counts[2] ?: 0,
-            );
+            $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package);
+
             if ($this->getUser()) {
                 $data['is_favorite'] = $this->get('packagist.favorite_manager')->isMarked($this->getUser(), $package);
             }
@@ -493,6 +504,12 @@ class WebController extends Controller
         if ($deleteForm = $this->createDeletePackageForm($package)) {
             $data['deleteForm'] = $deleteForm->createView();
         }
+        if ($this->getUser() && (
+            $this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')
+            || $package->getMaintainers()->contains($this->getUser())
+        )) {
+            $data['deleteVersionCsrfToken'] = $this->get('form.csrf_provider')->generateCsrfToken('delete_version');
+        }
 
         return $data;
     }
@@ -508,12 +525,48 @@ class WebController extends Controller
      */
     public function viewPackageVersionAction(Request $req, $versionId)
     {
+        /** @var \Packagist\WebBundle\Entity\VersionRepository $repo  */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
-        $version = $repo->getFullVersion($versionId);
 
-        $html = $this->renderView('PackagistWebBundle:Web:versionDetails.html.twig', array('version' => $version));
+        $html = $this->renderView(
+            'PackagistWebBundle:Web:versionDetails.html.twig',
+            array('version' => $repo->getFullVersion($versionId))
+        );
 
         return new JsonResponse(array('content' => $html));
+    }
+
+    /**
+     * @Template()
+     * @Route(
+     *     "/versions/{versionId}/delete",
+     *     name="delete_version",
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "versionId"="[0-9]+"}
+     * )
+     * @Method({"DELETE"})
+     */
+    public function deletePackageVersionAction(Request $req, $versionId)
+    {
+        /** @var \Packagist\WebBundle\Entity\VersionRepository $repo  */
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+
+        /** @var Version $version  */
+        $version = $repo->getFullVersion($versionId);
+        $package = $version->getPackage();
+
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+            throw new AccessDeniedException;
+        }
+
+        if (!$this->get('form.csrf_provider')->isCsrfTokenValid('delete_version', $req->request->get('_token'))) {
+            throw new AccessDeniedException;
+        }
+
+        $repo->remove($version);
+        $this->getDoctrine()->getManager()->flush();
+        $this->getDoctrine()->getManager()->clear();
+
+        return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
     }
 
     /**
@@ -828,15 +881,13 @@ class WebController extends Controller
             }
 
             try {
-                /** @var $redis \Snc\RedisBundle\Client\Phpredis\Client */
-                $redis = $this->get('snc_redis.default');
-                $downloads = $redis->get('dl:'.$package->getId());
+                $downloads = $this->get('packagist.download_manager')->getDownloads($package);
             } catch (ConnectionException $e) {
                 return;
             }
 
             // more than 50 downloads = established package, do not allow deletion by maintainers
-            if ($downloads > 50) {
+            if ($downloads['total'] > 50) {
                 return;
             }
         }
