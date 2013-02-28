@@ -97,21 +97,3 @@ nelmio_solarium: ~
 parameters:
     session.flashbag.class: Symfony\Component\HttpFoundation\Session\Flash\FlashBag
 
-fr3d_ldap:
-    driver:
-        host:                %ldap_host%
-#       port:                389    # Optional
-#       username:            foo    # Optional
-#       password:            bar    # Optional
-        bindRequiresDn:      %ldap_bindrequireddn%
-#       baseDn:              ou=users, dc=host, dc=foo   # Optional
-#       accountFilterFormat: (&(uid=%s)) # Optional. sprintf format %s will be the username
-#       optReferrals:        false  # Optional
-#       useSsl:              true   # Enable SSL negotiation. Optional
-#       useStartTls:         true   # Enable TLS negotiation. Optional
-    user:
-        baseDn: %ldap_basedn%
-#       filter: (&(ObjectClass=person)) # Optional
-        attributes:          # Specify ldap attributes mapping [ldap attribute, user object method]
-           - { ldap_attr: uid,  user_method: setUsername } # Required
-           - { ldap_attr: mail,   user_method: setEmail }  # Required
