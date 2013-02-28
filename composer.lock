@@ -1,5 +1,5 @@
 {
-    "hash": "b8eb218fd26f2fd59bd387b5982224f7",
+    "hash": "710ff804099b19eca03c65151e81bcc1",
     "packages": [
         {
             "name": "composer/composer",
@@ -341,6 +341,61 @@
             "time": "2013-01-07 20:05:04"
         },
         {
+            "name": "fr3d/ldap-bundle",
+            "version": "2.0.x-dev",
+            "target-dir": "FR3D/LdapBundle",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Maks3w/FR3DLdapBundle.git",
+                "reference": "c017b9e89feb89914b7212144d2434185d36e955"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Maks3w/FR3DLdapBundle/zipball/c017b9e89feb89914b7212144d2434185d36e955",
+                "reference": "c017b9e89feb89914b7212144d2434185d36e955",
+                "shasum": ""
+            },
+            "require": {
+                "ext-ldap": "*",
+                "php": ">=5.3.2",
+                "symfony/config": ">=2.1",
+                "symfony/dependency-injection": ">=2.1",
+                "symfony/security": ">=2.1",
+                "symfony/security-bundle": ">=2.1",
+                "zendframework/zend-ldap": ">=2.0"
+            },
+            "require-dev": {
+                "symfony/class-loader": ">=2.1",
+                "symfony/validator": ">=2.1"
+            },
+            "suggest": {
+                "friendsofsymfony/user-bundle": "Integrate authentication and management for DB users, useful for unmanaged LDAP servers",
+                "symfony/validator": "Allow pre-validate for existing users before register new ones"
+            },
+            "type": "symfony-bundle",
+            "autoload": {
+                "psr-0": {
+                    "FR3D\\LdapBundle": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Maks3w"
+                }
+            ],
+            "description": "This package provide users and authentication services based on LDAP directories for Symfony2 framework",
+            "homepage": "https://github.com/Maks3w/FR3DLdapBundle",
+            "keywords": [
+                "Authentication",
+                "ldap"
+            ],
+            "time": "2012-09-15 18:38:24"
+        },
+        {
             "name": "friendsofsymfony/user-bundle",
             "version": "v1.3.1",
             "target-dir": "FOS/UserBundle",
@@ -411,7 +466,7 @@
             "target-dir": "HWI/Bundle/OAuthBundle",
             "source": {
                 "type": "git",
-                "url": "https://github.com/hwi/HWIOAuthBundle",
+                "url": "https://github.com/hwi/HWIOAuthBundle.git",
                 "reference": "461cdae22f81836a0722f4f3c596b598827bd9cd"
             },
             "dist": {
@@ -512,7 +567,6 @@
                     "JMS\\AopBundle": ""
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "Apache"
             ],
@@ -529,7 +583,7 @@
                 "annotations",
                 "aop"
             ],
-            "time": "2012-01-02 12:50:26"
+            "time": "2012-01-02 15:50:26"
         },
         {
             "name": "jms/cg",
@@ -554,7 +608,6 @@
                     "CG\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "Apache"
             ],
@@ -570,7 +623,7 @@
             "keywords": [
                 "code generation"
             ],
-            "time": "2012-01-02 12:40:52"
+            "time": "2012-01-02 15:40:52"
         },
         {
             "name": "jms/di-extra-bundle",
@@ -656,7 +709,6 @@
                     "Metadata\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "Apache"
             ],
@@ -675,7 +727,7 @@
                 "xml",
                 "yaml"
             ],
-            "time": "2012-01-02 13:32:49"
+            "time": "2012-01-02 16:32:49"
         },
         {
             "name": "jms/security-extra-bundle",
@@ -752,7 +804,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/justinrainbow/json-schema/archive/v1.1.0.zip",
+                "url": "https://github.com/justinrainbow/json-schema/zipball/v1.1.0",
                 "reference": "v1.1.0",
                 "shasum": ""
             },
@@ -765,7 +817,6 @@
                     "JsonSchema": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "NewBSD"
             ],
@@ -773,20 +824,26 @@
                 {
                     "name": "Igor Wiedler",
                     "email": "igor@wiedler.ch",
-                    "homepage": "http://wiedler.ch/igor/"
+                    "homepage": "http://wiedler.ch/igor/",
+                    "role": null
                 },
                 {
                     "name": "Bruno Prieto Reis",
-                    "email": "bruno.p.reis@gmail.com"
+                    "email": "bruno.p.reis@gmail.com",
+                    "homepage": null,
+                    "role": null
                 },
                 {
                     "name": "Justin Rainbow",
-                    "email": "justin.rainbow@gmail.com"
+                    "email": "justin.rainbow@gmail.com",
+                    "homepage": null,
+                    "role": null
                 },
                 {
                     "name": "Robert Schönthal",
                     "email": "seroscho@googlemail.com",
-                    "homepage": "http://digitalkaoz.net"
+                    "homepage": "http://digitalkaoz.net",
+                    "role": null
                 }
             ],
             "description": "A library to validate a json schema.",
@@ -795,7 +852,7 @@
                 "json",
                 "schema"
             ],
-            "time": "2012-01-03 00:33:17"
+            "time": "2012-01-01 09:33:17"
         },
         {
             "name": "kriswallsmith/assetic",
@@ -894,7 +951,6 @@
                     "Buzz": "lib/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -911,7 +967,7 @@
                 "curl",
                 "http client"
             ],
-            "time": "2012-06-25 12:01:38"
+            "time": "2012-06-25 19:01:38"
         },
         {
             "name": "monolog/monolog",
@@ -1020,7 +1076,7 @@
             "target-dir": "Nelmio/SolariumBundle",
             "source": {
                 "type": "git",
-                "url": "https://github.com/nelmio/NelmioSolariumBundle",
+                "url": "https://github.com/nelmio/NelmioSolariumBundle.git",
                 "reference": "v1.1.0"
             },
             "dist": {
@@ -2087,6 +2143,42 @@
             }
         },
         {
+            "name": "zendframework/zend-ldap",
+            "version": "2.0.7",
+            "target-dir": "Zend/Ldap",
+            "dist": {
+                "type": "zip",
+                "url": "http://packages.zendframework.com/composer/Zend_Ldap-2.0.7.zip",
+                "reference": null,
+                "shasum": null
+            },
+            "require": {
+                "php": ">=5.3.3",
+                "zendframework/zend-stdlib": "self.version"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "Zend\\Ldap\\": ""
+                }
+            },
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": "provides support for LDAP operations including but not limited to binding, searching and modifying entries in an LDAP directory",
+            "homepage": "http://packages.zendframework.com/",
+            "keywords": [
+                "ldap",
+                "zf2"
+            ],
+            "support": {
+                "email": "fw-general-subscribe@lists.zend.com",
+                "irc": "irc://irc.freenode.net/zftalk",
+                "issues": "https://github.com/zendframework/zf2/issues",
+                "source": "https://github.com/zendframework/zf2"
+            }
+        },
+        {
             "name": "zendframework/zend-servicemanager",
             "version": "2.0.7",
             "target-dir": "Zend/ServiceManager",
@@ -2280,9 +2372,7 @@
             }
         }
     ],
-    "packages-dev": [
-
-    ],
+    "packages-dev": null,
     "aliases": [
 
     ],
@@ -2295,6 +2385,7 @@
         "nelmio/security-bundle": 20,
         "snc/redis-bundle": 20,
         "white-october/pagerfanta-bundle": 20,
+        "fr3d/ldap-bundle": 20,
         "kriswallsmith/assetic": 20,
         "pagerfanta/pagerfanta": 20
     }
