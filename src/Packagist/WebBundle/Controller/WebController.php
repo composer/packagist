@@ -460,8 +460,6 @@ class WebController extends Controller
         }
 
         if ('json' === $req->getRequestFormat()) {
-            $package = $repo->getFullPackageByName($name);
-
             $data = $package->toArray();
 
             try {
