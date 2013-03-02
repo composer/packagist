@@ -472,7 +472,11 @@ class WebController extends Controller
                 $data['favers'] = null;
             }
 
-            return new Response(json_encode(array('package' => $data)), 200);
+            // TODO invalidate cache on update and make the ttl longer
+            $response = new Response(json_encode(array('package' => $data)), 200);
+            $response->setSharedMaxAge(3600);
+
+            return $response;
         }
 
         $version = null;
