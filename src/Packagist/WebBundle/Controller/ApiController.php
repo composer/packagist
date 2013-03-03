@@ -232,25 +232,31 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)')), 404);
         }
 
-        // prepare updating the package
-        $config = Factory::createConfig();
-        $loader = new ValidatingArrayLoader(new ArrayLoader());
-        $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE);
-        $em = $this->get('doctrine.orm.entity_manager');
-
+        // don't die if this takes a while
         set_time_limit(3600);
 
-        // update the package entity
-        $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
-        $repository->setLoader($loader);
-        $package->setAutoUpdated(true);
-        $em->flush();
-
-        // perform the actual update (fetch and re-scan the repository's source)
+        // put both updating the database and scanning the repository in a transaction
+        $em = $this->get('doctrine.orm.entity_manager');
         $updater = $this->get('packagist.package_updater');
+        $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE);
 
         try {
-            $updater->update($package, $repository);
+            $em->transactional(function($em) use ($package, $updater, $io) {
+                // prepare dependencies
+                $config = Factory::createConfig();
+                $loader = new ValidatingArrayLoader(new ArrayLoader());
+
+                // prepare repository
+                $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
+                $repository->setLoader($loader);
+
+                // perform the actual update (fetch and re-scan the repository's source)
+                $updater->update($package, $repository);
+
+                // update the package entity
+                $package->setAutoUpdated(true);
+                $em->flush();
+            });
         } catch (\Exception $e) {
             if ($e instanceof InvalidRepositoryException) {
                 $this->get('packagist.package_manager')->notifyUpdateFailure($package, $e, $io->getOutput());
