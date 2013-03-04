@@ -258,6 +258,7 @@ class Dumper
         $this->files['p/packages.json']['notify'] = str_replace('VND/PKG', '%package%', $url);
         $this->files['p/packages.json']['notify-batch'] = $this->router->generate('track_download_batch');
         $this->files['p/packages.json']['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
+        $this->files['p/packages.json']['search'] = $this->router->generate('search', array('_format' => 'json')) . '?q=%query%';
 
         // TODO deprecated, remove eventually, together with includes & providers-includes
         $this->files['p/packages.json']['notify_batch'] = $this->files['p/packages.json']['notify-batch'];
