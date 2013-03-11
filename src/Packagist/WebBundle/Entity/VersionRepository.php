@@ -32,6 +32,8 @@ class VersionRepository extends EntityRepository
     {
         $em = $this->getEntityManager();
         $version->getPackage()->getVersions()->removeElement($version);
+        $version->getPackage()->setCrawledAt(new \DateTime);
+        $version->getPackage()->setUpdatedAt(new \DateTime);
 
         foreach ($version->getAuthors() as $author) {
             /** @var $author Author */
