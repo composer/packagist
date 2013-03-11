@@ -1,5 +1,5 @@
 {
-    "hash": "b8eb218fd26f2fd59bd387b5982224f7",
+    "hash": "4977ae2264d06aa439e997939b05b22a",
     "packages": [
         {
             "name": "composer/composer",
@@ -7,12 +7,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "f69418427f693e5be5ddf6b1830eb36bbf18eeed"
+                "reference": "c54de4b72fccf355dd3788bb19bf4e623ab5f81d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/f69418427f693e5be5ddf6b1830eb36bbf18eeed",
-                "reference": "f69418427f693e5be5ddf6b1830eb36bbf18eeed",
+                "url": "https://api.github.com/repos/composer/composer/zipball/c54de4b72fccf355dd3788bb19bf4e623ab5f81d",
+                "reference": "c54de4b72fccf355dd3788bb19bf4e623ab5f81d",
                 "shasum": ""
             },
             "require": {
@@ -44,7 +44,7 @@
                     "Composer": "src/"
                 }
             },
-            "notification-url": "http://packagist.org/downloads/",
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -68,7 +68,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2013-02-27 12:11:35"
+            "time": "2013-03-07 10:46:02"
         },
         {
             "name": "doctrine/common",
@@ -803,12 +803,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/kriswallsmith/assetic.git",
-                "reference": "df03baa337ae1c87803a7b1a76a393f8a59813f3"
+                "reference": "fcee205a5a3a859c009d976ba3acfe67958e912c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kriswallsmith/assetic/zipball/df03baa337ae1c87803a7b1a76a393f8a59813f3",
-                "reference": "df03baa337ae1c87803a7b1a76a393f8a59813f3",
+                "url": "https://api.github.com/repos/kriswallsmith/assetic/zipball/fcee205a5a3a859c009d976ba3acfe67958e912c",
+                "reference": "fcee205a5a3a859c009d976ba3acfe67958e912c",
                 "shasum": ""
             },
             "require": {
@@ -866,7 +866,7 @@
                 "compression",
                 "minification"
             ],
-            "time": "2013-02-24 17:22:20"
+            "time": "2013-03-05 17:56:54"
         },
         {
             "name": "kriswallsmith/buzz",
@@ -971,7 +971,7 @@
         },
         {
             "name": "nelmio/security-bundle",
-            "version": "dev-master",
+            "version": "1.0.0",
             "target-dir": "Nelmio/SecurityBundle",
             "source": {
                 "type": "git",
@@ -980,7 +980,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nelmio/NelmioSecurityBundle/zipball/1.0.0",
+                "url": "https://github.com/nelmio/NelmioSecurityBundle/archive/1.0.0.zip",
                 "reference": "1.0.0",
                 "shasum": ""
             },
@@ -1016,7 +1016,7 @@
         },
         {
             "name": "nelmio/solarium-bundle",
-            "version": "dev-master",
+            "version": "v1.1.0",
             "target-dir": "Nelmio/SolariumBundle",
             "source": {
                 "type": "git",
@@ -1025,7 +1025,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nelmio/NelmioSolariumBundle/zipball/v1.1.0",
+                "url": "https://github.com/nelmio/NelmioSolariumBundle/archive/v1.1.0.zip",
                 "reference": "v1.1.0",
                 "shasum": ""
             },
@@ -1784,16 +1784,16 @@
         },
         {
             "name": "twig/extensions",
-            "version": "v1.0.0-alpha",
+            "version": "v1.0.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/fabpot/Twig-extensions",
-                "reference": "v1.0.0-alpha"
+                "url": "https://github.com/fabpot/Twig-extensions.git",
+                "reference": "v1.0.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/fabpot/Twig-extensions/zipball/v1.0.0-alpha",
-                "reference": "v1.0.0-alpha",
+                "url": "https://api.github.com/repos/fabpot/Twig-extensions/zipball/v1.0.0",
+                "reference": "v1.0.0",
                 "shasum": ""
             },
             "require": {
@@ -1827,7 +1827,7 @@
                 "i18n",
                 "text"
             ],
-            "time": "2012-08-28 08:04:23"
+            "time": "2013-02-28 14:21:30"
         },
         {
             "name": "twig/twig",
@@ -2291,11 +2291,15 @@
         "twig/extensions": 15,
         "composer/composer": 20,
         "hwi/oauth-bundle": 20,
-        "nelmio/solarium-bundle": 20,
-        "nelmio/security-bundle": 20,
         "snc/redis-bundle": 20,
         "white-october/pagerfanta-bundle": 20,
         "kriswallsmith/assetic": 20,
         "pagerfanta/pagerfanta": 20
-    }
+    },
+    "platform": {
+        "php": ">=5.3.3"
+    },
+    "platform-dev": [
+
+    ]
 }
