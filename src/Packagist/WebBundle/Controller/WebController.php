@@ -160,6 +160,8 @@ class WebController extends Controller
 
         if ($req->query->get('type')) {
             $names = $repo->getPackageNamesByType($req->query->get('type'));
+        } elseif ($req->query->get('vendor')) {
+            $names = $repo->getPackageNamesByVendor($req->query->get('vendor'));
         } else {
             $names = array_keys($repo->getPackageNames());
         }
