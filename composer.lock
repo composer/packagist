@@ -7,12 +7,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "c54de4b72fccf355dd3788bb19bf4e623ab5f81d"
+                "reference": "f744ec16f5b0dcc5350ab628ed0a27f12227403b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/c54de4b72fccf355dd3788bb19bf4e623ab5f81d",
-                "reference": "c54de4b72fccf355dd3788bb19bf4e623ab5f81d",
+                "url": "https://api.github.com/repos/composer/composer/zipball/f744ec16f5b0dcc5350ab628ed0a27f12227403b",
+                "reference": "f744ec16f5b0dcc5350ab628ed0a27f12227403b",
                 "shasum": ""
             },
             "require": {
@@ -68,7 +68,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2013-03-07 10:46:02"
+            "time": "2013-04-03 17:30:36"
         },
         {
             "name": "doctrine/common",
@@ -141,20 +141,20 @@
         },
         {
             "name": "doctrine/dbal",
-            "version": "2.3.2",
+            "version": "2.3.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/doctrine/dbal",
-                "reference": "2.3.2"
+                "url": "https://github.com/doctrine/dbal.git",
+                "reference": "2.3.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/doctrine/dbal/archive/2.3.2.zip",
-                "reference": "2.3.2",
+                "url": "https://api.github.com/repos/doctrine/dbal/zipball/2.3.3",
+                "reference": "2.3.3",
                 "shasum": ""
             },
             "require": {
-                "doctrine/common": "2.3.*",
+                "doctrine/common": ">=2.3.0,<2.5-dev",
                 "php": ">=5.3.2"
             },
             "type": "library",
@@ -200,7 +200,7 @@
                 "persistence",
                 "queryobject"
             ],
-            "time": "2013-01-07 20:03:43"
+            "time": "2013-03-24 19:16:29"
         },
         {
             "name": "doctrine/doctrine-bundle",
@@ -272,16 +272,16 @@
         },
         {
             "name": "doctrine/orm",
-            "version": "2.3.2",
+            "version": "2.3.3",
             "source": {
                 "type": "git",
-                "url": "git://github.com/doctrine/doctrine2.git",
-                "reference": "2.3.2"
+                "url": "https://github.com/doctrine/doctrine2.git",
+                "reference": "2.3.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/doctrine/doctrine2/archive/2.3.2.zip",
-                "reference": "2.3.2",
+                "url": "https://api.github.com/repos/doctrine/doctrine2/zipball/2.3.3",
+                "reference": "2.3.3",
                 "shasum": ""
             },
             "require": {
@@ -338,7 +338,7 @@
                 "database",
                 "orm"
             ],
-            "time": "2013-01-07 20:05:04"
+            "time": "2013-03-24 20:43:58"
         },
         {
             "name": "friendsofsymfony/user-bundle",
@@ -411,24 +411,24 @@
             "target-dir": "HWI/Bundle/OAuthBundle",
             "source": {
                 "type": "git",
-                "url": "https://github.com/hwi/HWIOAuthBundle",
-                "reference": "461cdae22f81836a0722f4f3c596b598827bd9cd"
+                "url": "https://github.com/hwi/HWIOAuthBundle.git",
+                "reference": "7ca8d3d3165289f33fd809c5a0e0a19e7ac6cfe1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/461cdae22f81836a0722f4f3c596b598827bd9cd",
-                "reference": "461cdae22f81836a0722f4f3c596b598827bd9cd",
+                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/7ca8d3d3165289f33fd809c5a0e0a19e7ac6cfe1",
+                "reference": "7ca8d3d3165289f33fd809c5a0e0a19e7ac6cfe1",
                 "shasum": ""
             },
             "require": {
-                "kriswallsmith/buzz": "0.7",
+                "kriswallsmith/buzz": ">=0.7,<1.0",
                 "php": ">=5.3.2",
                 "symfony/framework-bundle": ">=2.0,<2.3-dev",
                 "symfony/security-bundle": ">=2.0,<2.3-dev"
             },
             "require-dev": {
                 "doctrine/orm": ">=2.1,<2.4-dev",
-                "friendsofsymfony/user-bundle": ">=1.2,<2.0-dev",
+                "friendsofsymfony/user-bundle": ">=1.2,<2.0",
                 "symfony/twig-bundle": ">=2.0,<2.3-dev",
                 "symfony/validator": ">=2.0,<2.3-dev"
             },
@@ -440,7 +440,7 @@
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "0.2-dev"
+                    "dev-master": "0.3-dev"
                 }
             },
             "autoload": {
@@ -459,12 +459,16 @@
                     "homepage": "https://github.com/ubermuda"
                 },
                 {
-                    "name": "Alexander",
-                    "email": "alexander@hardware.info"
-                },
-                {
                     "name": "Contributors",
                     "homepage": "https://github.com/hwi/HWIOAuthBundle/contributors"
+                },
+                {
+                    "name": "Alexander",
+                    "email": "iam.asm89@gmail.com"
+                },
+                {
+                    "name": "Joseph Bielawski",
+                    "email": "stloyd+gh@gmail.com"
                 }
             ],
             "description": "Support for authenticating users via oauth in Symfony2.",
@@ -485,7 +489,7 @@
                 "windows live",
                 "yahoo"
             ],
-            "time": "2013-02-09 21:51:17"
+            "time": "2013-03-27 14:29:17"
         },
         {
             "name": "jms/aop-bundle",
@@ -803,17 +807,17 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/kriswallsmith/assetic.git",
-                "reference": "fcee205a5a3a859c009d976ba3acfe67958e912c"
+                "reference": "0a55a9ba70bd9250899ad77deceaf8cb9e145371"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kriswallsmith/assetic/zipball/fcee205a5a3a859c009d976ba3acfe67958e912c",
-                "reference": "fcee205a5a3a859c009d976ba3acfe67958e912c",
+                "url": "https://api.github.com/repos/kriswallsmith/assetic/zipball/0a55a9ba70bd9250899ad77deceaf8cb9e145371",
+                "reference": "0a55a9ba70bd9250899ad77deceaf8cb9e145371",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.1",
-                "symfony/process": ">=2.1.0,<2.3-dev"
+                "symfony/process": ">=2.1,<3.0"
             },
             "require-dev": {
                 "cssmin/cssmin": "*",
@@ -866,24 +870,27 @@
                 "compression",
                 "minification"
             ],
-            "time": "2013-03-05 17:56:54"
+            "time": "2013-04-02 21:36:28"
         },
         {
             "name": "kriswallsmith/buzz",
-            "version": "v0.7",
+            "version": "v0.9",
             "source": {
                 "type": "git",
-                "url": "http://github.com/kriswallsmith/Buzz.git",
-                "reference": "v0.7"
+                "url": "https://github.com/kriswallsmith/Buzz.git",
+                "reference": "v0.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/kriswallsmith/Buzz/zipball/v0.7",
-                "reference": "v0.7",
+                "url": "https://api.github.com/repos/kriswallsmith/Buzz/zipball/v0.9",
+                "reference": "v0.9",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "3.7.*"
             },
             "suggest": {
                 "ext-curl": "*"
@@ -911,7 +918,7 @@
                 "curl",
                 "http client"
             ],
-            "time": "2012-06-25 12:01:38"
+            "time": "2013-02-19 00:26:38"
         },
         {
             "name": "monolog/monolog",
@@ -971,24 +978,29 @@
         },
         {
             "name": "nelmio/security-bundle",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "target-dir": "Nelmio/SecurityBundle",
             "source": {
                 "type": "git",
-                "url": "https://github.com/nelmio/NelmioSecurityBundle",
-                "reference": "1.0.0"
+                "url": "https://github.com/nelmio/NelmioSecurityBundle.git",
+                "reference": "1.1.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/nelmio/NelmioSecurityBundle/archive/1.0.0.zip",
-                "reference": "1.0.0",
+                "url": "https://api.github.com/repos/nelmio/NelmioSecurityBundle/zipball/1.1.0",
+                "reference": "1.1.0",
                 "shasum": ""
             },
             "require": {
-                "symfony/framework-bundle": "2.*",
-                "symfony/security": "2.*"
+                "symfony/framework-bundle": ">=2.1,<3.0",
+                "symfony/security": ">=2.1,<3.0"
             },
             "type": "symfony-bundle",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.1.x-dev"
+                }
+            },
             "autoload": {
                 "psr-0": {
                     "Nelmio\\SecurityBundle": ""
@@ -1008,11 +1020,11 @@
                     "homepage": "https://github.com/nelmio/NelmioSecurityBundle/contributors"
                 }
             ],
-            "description": "Extra security-related features for Symfony2",
+            "description": "Extra security-related features for Symfony2: signed/encrypted cookies, HTTPS/SSL/HSTS handling, cookie session storage, ...",
             "keywords": [
                 "security"
             ],
-            "time": "2013-01-08 13:27:55"
+            "time": "2013-03-27 13:57:52"
         },
         {
             "name": "nelmio/solarium-bundle",
@@ -1075,12 +1087,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/whiteoctober/Pagerfanta.git",
-                "reference": "878aee5e274ca75fbdf74262efd05d1207c31669"
+                "reference": "92921b9bb155cecc68695fb273729a08586ceaf4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/whiteoctober/Pagerfanta/zipball/878aee5e274ca75fbdf74262efd05d1207c31669",
-                "reference": "878aee5e274ca75fbdf74262efd05d1207c31669",
+                "url": "https://api.github.com/repos/whiteoctober/Pagerfanta/zipball/92921b9bb155cecc68695fb273729a08586ceaf4",
+                "reference": "92921b9bb155cecc68695fb273729a08586ceaf4",
                 "shasum": ""
             },
             "require": {
@@ -1091,7 +1103,7 @@
                 "doctrine/orm": "2.*",
                 "mandango/mandango": "*",
                 "propel/propel1": ">=1.6,<2.0",
-                "solarium/solarium": "3.*"
+                "solarium/solarium": "dev-develop"
             },
             "suggest": {
                 "doctrine/mongodb-odm": "To use the DoctrineODMMongoDBAdapter.",
@@ -1127,7 +1139,7 @@
                 "page",
                 "paging"
             ],
-            "time": "2013-02-19 13:51:25"
+            "time": "2013-04-02 11:00:09"
         },
         {
             "name": "predis/predis",
@@ -1225,17 +1237,17 @@
         },
         {
             "name": "sensio/distribution-bundle",
-            "version": "v2.1.8",
+            "version": "v2.1.9",
             "target-dir": "Sensio/Bundle/DistributionBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sensio/SensioDistributionBundle.git",
-                "reference": "v2.1.8"
+                "reference": "v2.1.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensio/SensioDistributionBundle/zipball/v2.1.8",
-                "reference": "v2.1.8",
+                "url": "https://api.github.com/repos/sensio/SensioDistributionBundle/zipball/v2.1.9",
+                "reference": "v2.1.9",
                 "shasum": ""
             },
             "require": {
@@ -1271,17 +1283,17 @@
         },
         {
             "name": "sensio/framework-extra-bundle",
-            "version": "v2.1.8",
+            "version": "v2.1.9",
             "target-dir": "Sensio/Bundle/FrameworkExtraBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sensio/SensioFrameworkExtraBundle.git",
-                "reference": "v2.1.8"
+                "reference": "v2.1.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensio/SensioFrameworkExtraBundle/zipball/v2.1.8",
-                "reference": "v2.1.8",
+                "url": "https://api.github.com/repos/sensio/SensioFrameworkExtraBundle/zipball/v2.1.9",
+                "reference": "v2.1.9",
                 "shasum": ""
             },
             "require": {
@@ -1318,17 +1330,17 @@
         },
         {
             "name": "sensio/generator-bundle",
-            "version": "v2.1.8",
+            "version": "v2.1.9",
             "target-dir": "Sensio/Bundle/GeneratorBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sensio/SensioGeneratorBundle.git",
-                "reference": "v2.1.8"
+                "reference": "v2.1.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensio/SensioGeneratorBundle/zipball/v2.1.8",
-                "reference": "v2.1.8",
+                "url": "https://api.github.com/repos/sensio/SensioGeneratorBundle/zipball/v2.1.9",
+                "reference": "v2.1.9",
                 "shasum": ""
             },
             "require": {
@@ -1371,12 +1383,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/snc/SncRedisBundle.git",
-                "reference": "1.1.3"
+                "reference": "5d7bbed5a2e47aca35da272522b75d2a0a5fbba7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/1.1.3",
-                "reference": "1.1.3",
+                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/5d7bbed5a2e47aca35da272522b75d2a0a5fbba7",
+                "reference": "5d7bbed5a2e47aca35da272522b75d2a0a5fbba7",
                 "shasum": ""
             },
             "require": {
@@ -1386,11 +1398,13 @@
             },
             "require-dev": {
                 "doctrine/common": ">=2.2",
-                "predis/predis": "0.8.*"
+                "predis/predis": "0.8.*",
+                "symfony/console": ">=2.1.0,<2.3-dev"
             },
             "suggest": {
                 "monolog/monolog": "If you want to use the monolog redis handler.",
-                "predis/predis": "If you want to use predis (currently only v0.8.x is supported)."
+                "predis/predis": "If you want to use predis (currently only v0.8.x is supported).",
+                "symfony/console": "If you want to use commands to interact with the redis database"
             },
             "type": "symfony-bundle",
             "extra": {
@@ -1424,7 +1438,7 @@
                 "redis",
                 "symfony"
             ],
-            "time": "2013-02-16 09:07:25"
+            "time": "2013-03-30 09:44:30"
         },
         {
             "name": "solarium/solarium",
@@ -1582,17 +1596,17 @@
         },
         {
             "name": "symfony/monolog-bundle",
-            "version": "v2.1.8",
+            "version": "v2.1.9",
             "target-dir": "Symfony/Bundle/MonologBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/MonologBundle.git",
-                "reference": "v2.1.8"
+                "reference": "v2.1.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/MonologBundle/zipball/v2.1.8",
-                "reference": "v2.1.8",
+                "url": "https://api.github.com/repos/symfony/MonologBundle/zipball/v2.1.9",
+                "reference": "v2.1.9",
                 "shasum": ""
             },
             "require": {
@@ -1641,17 +1655,17 @@
         },
         {
             "name": "symfony/swiftmailer-bundle",
-            "version": "v2.1.8",
+            "version": "v2.1.9",
             "target-dir": "Symfony/Bundle/SwiftmailerBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/SwiftmailerBundle.git",
-                "reference": "v2.1.8"
+                "reference": "v2.1.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/SwiftmailerBundle/zipball/v2.1.8",
-                "reference": "v2.1.8",
+                "url": "https://api.github.com/repos/symfony/SwiftmailerBundle/zipball/v2.1.9",
+                "reference": "v2.1.9",
                 "shasum": ""
             },
             "require": {
@@ -1696,16 +1710,16 @@
         },
         {
             "name": "symfony/symfony",
-            "version": "v2.1.8",
+            "version": "v2.1.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/symfony.git",
-                "reference": "v2.1.8"
+                "reference": "v2.1.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/symfony/zipball/v2.1.8",
-                "reference": "v2.1.8",
+                "url": "https://api.github.com/repos/symfony/symfony/zipball/v2.1.9",
+                "reference": "v2.1.9",
                 "shasum": ""
             },
             "require": {
@@ -1780,7 +1794,7 @@
             "keywords": [
                 "framework"
             ],
-            "time": "2013-02-23 21:28:36"
+            "time": "2013-03-26 10:44:36"
         },
         {
             "name": "twig/extensions",
@@ -1885,12 +1899,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/whiteoctober/WhiteOctoberPagerfantaBundle.git",
-                "reference": "f664b66bc9351c6dd24026b3cf4c897705e51b26"
+                "reference": "5d1b9eb262055019a280a0ec48bc0b11fba5bb23"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/whiteoctober/WhiteOctoberPagerfantaBundle/zipball/f664b66bc9351c6dd24026b3cf4c897705e51b26",
-                "reference": "f664b66bc9351c6dd24026b3cf4c897705e51b26",
+                "url": "https://api.github.com/repos/whiteoctober/WhiteOctoberPagerfantaBundle/zipball/5d1b9eb262055019a280a0ec48bc0b11fba5bb23",
+                "reference": "5d1b9eb262055019a280a0ec48bc0b11fba5bb23",
                 "shasum": ""
             },
             "require": {
@@ -1924,15 +1938,20 @@
                 "page",
                 "paging"
             ],
-            "time": "2013-02-18 10:43:20"
+            "time": "2013-03-30 22:08:55"
         },
         {
             "name": "zendframework/zend-escaper",
-            "version": "2.0.7",
+            "version": "2.0.8",
             "target-dir": "Zend/Escaper",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/zendframework/Component_ZendEscaper.git",
+                "reference": "release-2.0.8"
+            },
             "dist": {
                 "type": "zip",
-                "url": "http://packages.zendframework.com/composer/Zend_Escaper-2.0.7.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Escaper-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -1963,11 +1982,16 @@
         },
         {
             "name": "zendframework/zend-feed",
-            "version": "2.0.7",
+            "version": "2.0.8",
             "target-dir": "Zend/Feed",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/zendframework/Component_ZendFeed.git",
+                "reference": "release-2.0.8"
+            },
             "dist": {
                 "type": "zip",
-                "url": "http://packages.zendframework.com/composer/Zend_Feed-2.0.7.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Feed-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2006,11 +2030,16 @@
         },
         {
             "name": "zendframework/zend-filter",
-            "version": "2.0.7",
+            "version": "2.0.8",
             "target-dir": "Zend/Filter",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/zendframework/Component_ZendFilter.git",
+                "reference": "release-2.0.8"
+            },
             "dist": {
                 "type": "zip",
-                "url": "http://packages.zendframework.com/composer/Zend_Filter-2.0.7.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Filter-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2050,11 +2079,16 @@
         },
         {
             "name": "zendframework/zend-i18n",
-            "version": "2.0.7",
+            "version": "2.0.8",
             "target-dir": "Zend/I18n",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/zendframework/Component_ZendI18n.git",
+                "reference": "release-2.0.8"
+            },
             "dist": {
                 "type": "zip",
-                "url": "http://packages.zendframework.com/composer/Zend_I18n-2.0.7.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_I18n-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2088,11 +2122,16 @@
         },
         {
             "name": "zendframework/zend-servicemanager",
-            "version": "2.0.7",
+            "version": "2.0.8",
             "target-dir": "Zend/ServiceManager",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/zendframework/Component_ZendServiceManager.git",
+                "reference": "release-2.0.8"
+            },
             "dist": {
                 "type": "zip",
-                "url": "http://packages.zendframework.com/composer/Zend_ServiceManager-2.0.7.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_ServiceManager-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2126,11 +2165,16 @@
         },
         {
             "name": "zendframework/zend-stdlib",
-            "version": "2.0.7",
+            "version": "2.0.8",
             "target-dir": "Zend/Stdlib",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/zendframework/Component_ZendStdlib.git",
+                "reference": "release-2.0.8"
+            },
             "dist": {
                 "type": "zip",
-                "url": "http://packages.zendframework.com/composer/Zend_Stdlib-2.0.7.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Stdlib-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2164,11 +2208,16 @@
         },
         {
             "name": "zendframework/zend-uri",
-            "version": "2.0.7",
+            "version": "2.0.8",
             "target-dir": "Zend/Uri",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/zendframework/Component_ZendUri.git",
+                "reference": "release-2.0.8"
+            },
             "dist": {
                 "type": "zip",
-                "url": "http://packages.zendframework.com/composer/Zend_Uri-2.0.7.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Uri-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2201,11 +2250,16 @@
         },
         {
             "name": "zendframework/zend-validator",
-            "version": "2.0.7",
+            "version": "2.0.8",
             "target-dir": "Zend/Validator",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/zendframework/Component_ZendValidator.git",
+                "reference": "release-2.0.8"
+            },
             "dist": {
                 "type": "zip",
-                "url": "http://packages.zendframework.com/composer/Zend_Validator-2.0.7.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Validator-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2246,11 +2300,16 @@
         },
         {
             "name": "zendframework/zend-version",
-            "version": "2.0.7",
+            "version": "2.0.8",
             "target-dir": "Zend/Version",
+            "source": {
+                "type": "git",
+                "url": "git://github.com/zendframework/Component_ZendVersion.git",
+                "reference": "release-2.0.8"
+            },
             "dist": {
                 "type": "zip",
-                "url": "http://packages.zendframework.com/composer/Zend_Version-2.0.7.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Version-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
