@@ -1,5 +1,5 @@
 {
-    "hash": "4977ae2264d06aa439e997939b05b22a",
+    "hash": "457b02677ddbb625736c1fed46eeec24",
     "packages": [
         {
             "name": "composer/composer",
@@ -7,12 +7,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "f744ec16f5b0dcc5350ab628ed0a27f12227403b"
+                "reference": "2b385cbe5825e03d58a1a531faf0c96bf3717e07"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/f744ec16f5b0dcc5350ab628ed0a27f12227403b",
-                "reference": "f744ec16f5b0dcc5350ab628ed0a27f12227403b",
+                "url": "https://api.github.com/repos/composer/composer/zipball/2b385cbe5825e03d58a1a531faf0c96bf3717e07",
+                "reference": "2b385cbe5825e03d58a1a531faf0c96bf3717e07",
                 "shasum": ""
             },
             "require": {
@@ -68,7 +68,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2013-04-03 17:30:36"
+            "time": "2013-04-04 15:41:01"
         },
         {
             "name": "doctrine/common",
@@ -1087,12 +1087,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/whiteoctober/Pagerfanta.git",
-                "reference": "92921b9bb155cecc68695fb273729a08586ceaf4"
+                "reference": "ae0ff215b3be2c3bd0b131a8b8daa9b15568c6db"
             },
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/whiteoctober/Pagerfanta/zipball/92921b9bb155cecc68695fb273729a08586ceaf4",
-                "reference": "92921b9bb155cecc68695fb273729a08586ceaf4",
+                "reference": "ae0ff215b3be2c3bd0b131a8b8daa9b15568c6db",
                 "shasum": ""
             },
             "require": {
@@ -1139,7 +1139,7 @@
                 "page",
                 "paging"
             ],
-            "time": "2013-04-02 11:00:09"
+            "time": "2013-03-12 22:52:44"
         },
         {
             "name": "predis/predis",

@@ -44,14 +44,14 @@
         "nelmio/security-bundle": "1.*",
         "predis/predis": "0.8.*",
         "snc/redis-bundle": "dev-master",
-        "white-october/pagerfanta-bundle": "dev-master",
+        "white-october/pagerfanta-bundle": "1.0.*@dev",
         "zendframework/zend-feed": "2.0.*",
         "zendframework/zend-servicemanager": "2.0.*",
         "zendframework/zend-uri": "2.0.*",
         "zendframework/zend-version": "2.0.*",
 
         "kriswallsmith/assetic": "@dev",
-        "pagerfanta/pagerfanta": "@dev"
+        "pagerfanta/pagerfanta": "1.0.x-dev#ae0ff215b3be2c3bd0b131a8b8daa9b15568c6db"
     },
     "scripts": {
         "post-install-cmd": [
