@@ -8,9 +8,9 @@
 
         <h1>How to submit packages?</h1>
         <h2>Naming your package</h2>
-        <p>First of all, you must pick a package name. This is a very important step since it can not change, and it should be unique enough to avoid problems in the future.</p>
-        <p>The most important part is that the first bit of the package name must be the vendor name, suffixed by a forward slash (/). This follows the <a href="https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md">PSR-0 standard</a> for namespaces naming.</p>
-        <p>For libraries and applications, the vendor is in most cases the library name itself, and you can use any name, although it's best to avoid using common names like DB, Logger, MySQL, etc. Try to be imaginative when naming your project.</p>
+        <p>First of all, you must pick a package name. This is a very important step since it can not change and it should be unique enough to avoid conflicts in the future.</p>
+        <p>The package name consists of a vendor name and a project name joined by a <code>/</code>. The vendor name exists to prevent naming conflicts. For example, by including a vendor name both <code>igorw</code> and <code>seldaek</code> can have a library named <code>json</code> by naming their packages <code>igorw/json</code> and <code>seldaek/json</code>.</p>
+        <p>In some cases the vendor name and the package name may be identical. An example of this would be `monolog/monolog`. For projects with a unique name this is recommended. It also allows adding more related projects under the same vendor later on. If you are maintaining a library, this would make it really easy to split it up into smaller decoupled parts.</p>
         <p>Here is a list of typical package names for reference:
 <pre>
 // Monolog is a library, so the vendor name and package name are the same.
