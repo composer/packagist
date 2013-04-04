@@ -51,7 +51,7 @@
         "zendframework/zend-version": "2.0.*",
 
         "kriswallsmith/assetic": "@dev",
-        "pagerfanta/pagerfanta": "1.0.x-dev#ae0ff215b3be2c3bd0b131a8b8daa9b15568c6db"
+        "pagerfanta/pagerfanta": "@dev"
     },
     "scripts": {
         "post-install-cmd": [

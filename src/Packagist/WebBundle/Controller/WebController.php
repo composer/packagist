@@ -26,7 +26,7 @@ use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
-use Packagist\WebBundle\Model\FixedAdapter;
+use Pagerfanta\Adapter\FixedAdapter;
 use Packagist\WebBundle\Form\Type\PackageType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -137,7 +137,7 @@ class WebController extends Controller
             return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
         });
 
-        $packages = new Pagerfanta(new FixedAdapter($popular, $redis->zcard('downloads:trending')));
+        $packages = new Pagerfanta(new FixedAdapter($redis->zcard('downloads:trending'), $popular));
         $packages->setMaxPerPage(15);
         $packages->setCurrentPage($req->get('page', 1), false, true);
 

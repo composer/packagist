@@ -1,5 +1,5 @@
 {
-    "hash": "457b02677ddbb625736c1fed46eeec24",
+    "hash": "af3068657b3b1e2673fb640a6ef8aad2",
     "packages": [
         {
             "name": "composer/composer",
@@ -1087,12 +1087,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/whiteoctober/Pagerfanta.git",
-                "reference": "ae0ff215b3be2c3bd0b131a8b8daa9b15568c6db"
+                "reference": "92921b9bb155cecc68695fb273729a08586ceaf4"
             },
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/whiteoctober/Pagerfanta/zipball/92921b9bb155cecc68695fb273729a08586ceaf4",
-                "reference": "ae0ff215b3be2c3bd0b131a8b8daa9b15568c6db",
+                "reference": "92921b9bb155cecc68695fb273729a08586ceaf4",
                 "shasum": ""
             },
             "require": {
@@ -1139,7 +1139,7 @@
                 "page",
                 "paging"
             ],
-            "time": "2013-03-12 22:52:44"
+            "time": "2013-04-02 11:00:09"
         },
         {
             "name": "predis/predis",
