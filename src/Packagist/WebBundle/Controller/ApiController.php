@@ -111,7 +111,7 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
         }
 
-        $urlRegex = '{^(?:https?://)?(?P<host>bitbucket\.org)/(?P<path>[\w.-]+/[\w.-]+?)/?$}';
+        $urlRegex = '{^(?:https?://)?(?P<host>bitbucket\.org)/(?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}';
         $repoUrl = $payload['canon_url'].$payload['repository']['absolute_url'];
 
         return $this->receivePost($request, $repoUrl, $urlRegex);
