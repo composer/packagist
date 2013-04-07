@@ -156,7 +156,7 @@ class Dumper
                 // (re)write versions in individual files
                 foreach ($package->getVersions() as $version) {
                     foreach (array_slice($version->getNames(), 0, 150) as $versionName) {
-                        if (!preg_match('{^[A-Za-z0-9_-][A-Za-z0-9_.-]+/[A-Za-z0-9_-][A-Za-z0-9_.-]+?$}', $versionName) || strpos($versionName, '..')) {
+                        if (!preg_match('{^[A-Za-z0-9_-][A-Za-z0-9_.-]*/[A-Za-z0-9_-][A-Za-z0-9_.-]*$}', $versionName) || strpos($versionName, '..')) {
                             continue;
                         }
 
