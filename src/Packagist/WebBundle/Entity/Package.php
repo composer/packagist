@@ -123,6 +123,7 @@ class Package
      * @var \Composer\Repository\Vcs\VcsDriverInterface
      */
     private $vcsDriver = true;
+    private $vcsDriverError;
 
     public function __construct()
     {
@@ -166,6 +167,8 @@ class Package
         if (!is_object($driver)) {
             if (preg_match('{https?://.+@}', $this->repository)) {
                 $context->addViolationAtSubPath($property, 'URLs with user@host are not supported, use a read-only public URL', array(), null);
+            } elseif (is_string($this->vcsDriverError)) {
+                $context->addViolationAtSubPath($property, 'Uncaught Exception: '.$this->vcsDriverError, array(), null);
             } else {
                 $context->addViolationAtSubPath($property, 'No valid/supported repository was found at the given URL', array(), null);
             }
@@ -341,12 +344,13 @@ class Package
             }
             $information = $driver->getComposerInformation($driver->getRootIdentifier());
             if (!isset($information['name'])) {
-                throw new \RuntimeException('No name found in composer.json');
+                return;
             }
             if (null === $this->getName()) {
                 $this->setName($information['name']);
             }
         } catch (\Exception $e) {
+            $this->vcsDriverError = '['.get_class($e).'] '.$e->getMessage();
         }
     }
 
