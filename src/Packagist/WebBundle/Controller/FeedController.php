@@ -231,6 +231,7 @@ class FeedController extends Controller
                 true
             )
         );
+        $entry->setId($package->getName());
 
         $entry->setDateModified($package->getCreatedAt());
         $entry->setDateCreated($package->getCreatedAt());
@@ -246,6 +247,7 @@ class FeedController extends Controller
     protected function populateVersionData(Entry $entry, Version $version)
     {
         $entry->setTitle($entry->getTitle()." ({$version->getVersion()})");
+        $entry->setId($entry->getId().' '.$version->getVersion());
 
         $entry->setDateModified($version->getReleasedAt());
         $entry->setDateCreated($version->getReleasedAt());
