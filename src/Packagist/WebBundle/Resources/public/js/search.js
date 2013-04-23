@@ -32,6 +32,11 @@
             return;
         }
 
+        if (form.find('input').val() === "") {
+            list.addClass('hidden');
+            return;
+        }
+
         if (history.pushState) {
             if (typeof previousQuery === 'undefined') {
                 history.pushState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
