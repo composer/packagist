@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('bundles/packagistweb/js/view.js?v=9')}}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/view.js?v=11')}}"></script>
 {% endblock %}
 
 {% block content %}
@@ -28,7 +28,7 @@
                 </form>
             {% endif %}
             {% if deleteForm is defined %}
-                <form class="force-delete action" action="{{ path('delete_package', {name: package.name}) }}" method="POST">
+                <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="POST">
                     <input type="hidden" name="_method" value="DELETE" />
                     {{ form_widget(deleteForm._token) }}
                     <input type="submit" value="Delete" />
@@ -39,11 +39,12 @@
                     <i class="mark-favorite icon-star{% if not is_favorite %}-empty{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></i>
                 {% endif %}
                 <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
+                <a id="copy" data-clipboard-text="{{ package.name }}" title="Copy to clipboard"><i class="icon-copy"></i></a>
             </h1>
             {% if version and version.tags|length %}
                 <p class="tags">
                     {%- for tag in version.tags -%}
-                        <a href="{{ url("browse", { "tag" : tag.name }) }}">{{ tag.name }}</a>
+                        <a href="{{ url("search", {tags: tag.name}) }}">{{ tag.name }}</a>
                     {%- endfor -%}
                 </p>
             {% endif %}
@@ -127,6 +128,15 @@
                                     {% if version.isDevelopment %}
                                     <span class="source-reference">reference: {{ version.source.reference|prettify_source_reference }}</span>
                                     {% endif %}
+
+                                    {% if deleteVersionCsrfToken is defined %}
+                                    <form class="action delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="post">
+                                        <input type="hidden" name="_method" value="DELETE" />
+                                        <input type="hidden" name="_token" value="{{ deleteVersionCsrfToken }}" />
+                                        <input type="submit" value="Delete">
+                                    </form>
+                                    {% endif %}
+
                                     <span class="release-date">{{ version.releasedAt|date("Y-m-d H:i") }} UTC</span>
                                     <span class="license{% if not version.license %} unknown{% endif %}">{{ version.license ? version.license|join(', ') : 'Unknown License' }}</span>
                                 </h1>

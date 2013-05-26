@@ -32,6 +32,11 @@
             return;
         }
 
+        if ($('#search_query_query').val().match(/^\s*$/) !== null) {
+            list.addClass('hidden');
+            return;
+        }
+
         if (history.pushState) {
             if (typeof previousQuery === 'undefined') {
                 history.pushState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
@@ -72,6 +77,11 @@
         };
 
         if (keymap.up !== event.which && keymap.down !== event.which && keymap.enter !== event.which) {
+            return;
+        }
+
+        if ($('#search_query_query').val().match(/^\s*$/) !== null) {
+            document.activeElement.blur();
             return;
         }
 

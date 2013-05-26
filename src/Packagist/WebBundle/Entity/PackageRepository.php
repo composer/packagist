@@ -30,7 +30,8 @@ class PackageRepository extends EntityRepository
     public function packageExists($name)
     {
         $packages = $this->getPackageNames();
-        return isset($packages[$name]);
+
+        return isset($packages[$name]) || in_array(strtolower($name), $packages, true);
     }
 
     public function getPackageNames()
@@ -48,21 +49,51 @@ class PackageRepository extends EntityRepository
         }
 
         if (!is_array($names)) {
-            $names = array();
-
             $query = $this->getEntityManager()
                 ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p");
 
-            foreach ($query->getScalarResult() as $package) {
-                $names[$package['name']] = true;
-            }
-
+            $names = $this->getPackageNamesForQuery($query);
+            $names = array_combine($names, array_map('strtolower', $names));
             if ($apc) {
                 apc_store('packagist_package_names', $names, 3600);
             }
         }
 
         return $this->packageNames = $names;
+    }
+
+    public function getPackageNamesByType($type)
+    {
+        $query = $this->getEntityManager()
+            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.type = :type")
+            ->setParameters(array('type' => $type));
+
+        return $this->getPackageNamesForQuery($query);
+    }
+
+    public function getPackageNamesByVendor($vendor)
+    {
+        $query = $this->getEntityManager()
+            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.name LIKE :vendor")
+            ->setParameters(array('vendor' => $vendor.'/%'));
+
+        return $this->getPackageNamesForQuery($query);
+    }
+
+    private function getPackageNamesForQuery($query)
+    {
+        $names = array();
+        foreach ($query->getScalarResult() as $row) {
+            $names[] = $row['name'];
+        }
+
+        if (defined('SORT_FLAG_CASE')) {
+            sort($names, SORT_STRING | SORT_FLAG_CASE);
+        } else {
+            sort($names, SORT_STRING);
+        }
+
+        return $names;
     }
 
     public function getStalePackages()

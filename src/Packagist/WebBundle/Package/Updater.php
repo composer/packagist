@@ -227,7 +227,11 @@ class Updater
 
         $version->getTags()->clear();
         if ($data->getKeywords()) {
-            foreach (array_unique($data->getKeywords()) as $keyword) {
+            $keywords = array();
+            foreach ($data->getKeywords() as $keyword) {
+                $keywords[mb_strtolower($keyword, 'UTF-8')] = $keyword;
+            }
+            foreach ($keywords as $keyword) {
                 $tag = Tag::getByName($em, $keyword, true);
                 if (!$version->getTags()->contains($tag)) {
                     $version->addTag($tag);
@@ -350,6 +354,12 @@ class Updater
                 $link->setVersion($version);
                 $em->persist($link);
             }
+        } elseif (count($version->getSuggest())) {
+            // clear existing suggests if present
+            foreach ($version->getSuggest() as $link) {
+                $em->remove($link);
+            }
+            $version->getSuggest()->clear();
         }
 
         if (!$package->getVersions()->contains($version)) {

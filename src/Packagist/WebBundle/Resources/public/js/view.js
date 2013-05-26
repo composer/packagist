@@ -1,4 +1,4 @@
-(function ($) {
+(function ($, humane, ZeroClipboard) {
     $('#add-maintainer').click(function (e) {
         $('#add-maintainer-form').toggleClass('hidden');
         e.preventDefault();
@@ -64,8 +64,18 @@
         $.ajax(options).complete(function () { $(this).removeClass('loading'); });
         $(this).addClass('loading');
     });
-    $('.package .force-delete').submit(function (e) {
+    $('.package .delete').submit(function (e) {
         e.preventDefault();
+        if (confirm('Are you sure?')) {
+            e.target.submit();
+        }
+    });
+    $('.package .delete-version').click(function (e) {
+        e.stopImmediatePropagation();
+    });
+    $('.package .delete-version').submit(function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
         if (confirm('Are you sure?')) {
             e.target.submit();
         }
@@ -76,4 +86,10 @@
     if ($('.package').data('force-crawl')) {
         $('.package .force-update').submit();
     }
-})(jQuery);
+
+    ZeroClipboard.setMoviePath("/js/libs/ZeroClipboard.swf");
+    var clip = new ZeroClipboard.Client("#copy");
+    clip.on("complete", function () {
+        humane.log("Copied");
+    });
+}(jQuery, humane, ZeroClipboard));

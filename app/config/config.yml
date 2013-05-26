@@ -16,7 +16,7 @@ framework:
     session:
         name:           packagist
         lifetime:       3600
-
+    trusted_proxies: %trusted_proxies%
 
 # Twig Configuration
 twig:

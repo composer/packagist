@@ -454,6 +454,9 @@ form ul {
   float: left;
   margin-right: 20px;
 }
+#copy {
+  cursor: pointer;
+}
 .package .warning {
   clear: both;
   border: 1px solid #800;
@@ -637,6 +640,23 @@ form ul {
   margin: 0;
   padding: 8px;
   background-image: none;
+}
+.package .action.delete input, .package .action.delete-version input {
+  background: #a61c1c;
+  background: -moz-linear-gradient(top, #a61c1c 0%, #b84949 100%);
+  background: -webkit-linear-gradient(top, #a61c1c 0%, #b84949 100%);
+  background: -o-linear-gradient(top, #a61c1c 0%, #b84949 100%);
+  background: -ms-linear-gradient(top, #a61c1c 0%, #b84949 100%);
+  background: linear-gradient(top, #a61c1c 0%, #b84949 100%);
+}
+.package .action.delete-version {
+  float: none;
+  display: inline-block;
+  height: 20px;
+}
+.package .action.delete-version input {
+  font-size: 10px;
+  padding: 3px;
 }
 .package .action input.loading {
   background-position: 10px center;
