@@ -1951,7 +1951,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-escaper-2.0.8-release-2.0.8-c2ca20.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Escaper-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -1991,7 +1991,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-feed-2.0.8-release-2.0.8-c2ca20.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Feed-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2039,7 +2039,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-filter-2.0.8-release-2.0.8-c2ca20.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Filter-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2088,7 +2088,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-i18n-2.0.8-release-2.0.8-c2ca20.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_I18n-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2131,7 +2131,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-servicemanager-2.0.8-release-2.0.8-c2ca20.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_ServiceManager-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2174,7 +2174,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-stdlib-2.0.8-release-2.0.8-c2ca20.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Stdlib-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2217,7 +2217,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-uri-2.0.8-release-2.0.8-c2ca20.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Uri-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2259,7 +2259,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-validator-2.0.8-release-2.0.8-c2ca20.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Validator-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
@@ -2309,7 +2309,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-version-2.0.8-release-2.0.8-c2ca20.zip",
+                "url": "https://packages.zendframework.com/composer/Zend_Version-2.0.8.zip",
                 "reference": null,
                 "shasum": null
             },
