@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('bundles/packagistweb/js/view.js?v=11')}}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/view.js?v=12')}}"></script>
 {% endblock %}
 
 {% block content %}
@@ -118,13 +118,15 @@
             {% if package.versions|length %}
                 <ul class="versions">
                     {% for version in package.versions %}
-                        <li class="version{% if loop.last %} last{% endif %}">
+                        <li class="version{% if loop.last %} last{% endif %}" id="{{ version.version }}">
                             <section>
                                 <h1>
-                                    {{ version.version }}
-                                    {% if version.hasVersionAlias() %}
-                                        / {{ version.versionAlias }}
-                                    {% endif %}
+                                    <a href="#{{ version.version }}">
+                                        {{- version.version -}}
+                                        {% if version.hasVersionAlias() %}
+                                            / {{ version.versionAlias }}
+                                        {% endif -%}
+                                    </a>
                                     {% if version.isDevelopment %}
                                     <span class="source-reference">reference: {{ version.source.reference|prettify_source_reference }}</span>
                                     {% endif %}

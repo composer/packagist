@@ -4,6 +4,7 @@
         e.preventDefault();
     });
     $('.package .version h1').click(function (e) {
+        e.preventDefault();
         $(this).siblings('.details-toggler').click();
     });
     $('.package .details-toggler').click(function (e) {
