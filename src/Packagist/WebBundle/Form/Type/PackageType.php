@@ -23,7 +23,9 @@ class PackageType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('repository');
+        $builder->add('repository', 'text', array(
+            'label' => 'Repository URL (Git/Svn/Hg)'
+        ));
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)

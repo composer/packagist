@@ -13,37 +13,38 @@
 namespace Packagist\WebBundle\Controller;
 
 use Composer\Console\HtmlOutputFormatter;
-use Composer\IO\BufferIO;
 use Composer\Factory;
-use Composer\Repository\VcsRepository;
-use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\IO\BufferIO;
 use Composer\Package\Loader\ArrayLoader;
+use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\Repository\VcsRepository;
 use Doctrine\ORM\NoResultException;
-use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
-use Packagist\WebBundle\Form\Model\MaintainerRequest;
-use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
-use Packagist\WebBundle\Form\Type\SearchQueryType;
-use Packagist\WebBundle\Form\Model\SearchQuery;
-use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
-use Pagerfanta\Adapter\FixedAdapter;
+use Packagist\WebBundle\Form\Model\MaintainerRequest;
+use Packagist\WebBundle\Form\Model\SearchQuery;
+use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Type\PackageType;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
+use Packagist\WebBundle\Form\Type\SearchQueryType;
+use Packagist\WebBundle\Package\Updater;
+use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Adapter\FixedAdapter;
+use Pagerfanta\Adapter\SolariumAdapter;
+use Pagerfanta\Pagerfanta;
+use Predis\Connection\ConnectionException;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Pagerfanta\Pagerfanta;
-use Pagerfanta\Adapter\DoctrineORMAdapter;
-use Pagerfanta\Adapter\SolariumAdapter;
-use Predis\Connection\ConnectionException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -235,7 +236,7 @@ class WebController extends Controller
      * Initializes the pager for a query.
      *
      * @param \Doctrine\ORM\QueryBuilder $query Query for packages
-     * @param int                        $page  Pagenumber to retrieve.
+     * @param int                        $page  Page number to retrieve.
      * @return \Pagerfanta\Pagerfanta
      */
     protected function setupPager($query, $page)
@@ -461,7 +462,7 @@ class WebController extends Controller
         if ('POST' === $req->getMethod()) {
             $form->bind($req);
             if ($form->isValid()) {
-                list($vendor, $name) = explode('/', $package->getName(), 2);
+                list(, $name) = explode('/', $package->getName(), 2);
 
                 $existingPackages = $this->getDoctrine()
                     ->getRepository('PackagistWebBundle:Package')

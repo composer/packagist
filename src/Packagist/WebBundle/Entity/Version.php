@@ -12,10 +12,10 @@
 
 namespace Packagist\WebBundle\Entity;
 
+use Composer\Package\Version\VersionParser;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use Doctrine\Common\Collections\ArrayCollection;
-use Composer\Package\Version\VersionParser;
 
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\VersionRepository")
@@ -569,7 +569,7 @@ class Version
     /**
      * Get createdAt
      *
-     * @return \DateTime $createdAt
+     * @return \DateTime
      */
     public function getCreatedAt()
     {
@@ -589,7 +589,7 @@ class Version
     /**
      * Get releasedAt
      *
-     * @return \DateTime $releasedAt
+     * @return \DateTime
      */
     public function getReleasedAt()
     {
@@ -599,7 +599,7 @@ class Version
     /**
      * Set package
      *
-     * @param \Packagist\WebBundle\Entity\Package $package
+     * @param Package $package
      */
     public function setPackage(Package $package)
     {
@@ -609,7 +609,7 @@ class Version
     /**
      * Get package
      *
-     * @return \Packagist\WebBundle\Entity\Package $package
+     * @return Package
      */
     public function getPackage()
     {
@@ -619,7 +619,7 @@ class Version
     /**
      * Get tags
      *
-     * @return \Doctrine\Common\Collections\Collection $tags
+     * @return Tag[]
      */
     public function getTags()
     {
@@ -649,7 +649,7 @@ class Version
     /**
      * Get authors
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return Author[]
      */
     public function getAuthors()
     {
@@ -747,7 +747,7 @@ class Version
     /**
      * Add tag
      *
-     * @param \Packagist\WebBundle\Entity\Tag $tag
+     * @param Tag $tag
      */
     public function addTag(Tag $tag)
     {
@@ -757,7 +757,7 @@ class Version
     /**
      * Add authors
      *
-     * @param \Packagist\WebBundle\Entity\Author $author
+     * @param Author $author
      */
     public function addAuthor(Author $author)
     {
@@ -767,7 +767,7 @@ class Version
     /**
      * Add require
      *
-     * @param \Packagist\WebBundle\Entity\RequireLink $require
+     * @param RequireLink $require
      */
     public function addRequireLink(RequireLink $require)
     {
@@ -777,7 +777,7 @@ class Version
     /**
      * Get require
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return RequireLink[]
      */
     public function getRequire()
     {
@@ -787,7 +787,7 @@ class Version
     /**
      * Add replace
      *
-     * @param \Packagist\WebBundle\Entity\ReplaceLink $replace
+     * @param ReplaceLink $replace
      */
     public function addReplaceLink(ReplaceLink $replace)
     {
@@ -797,7 +797,7 @@ class Version
     /**
      * Get replace
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return ReplaceLink[]
      */
     public function getReplace()
     {
@@ -807,7 +807,7 @@ class Version
     /**
      * Add conflict
      *
-     * @param \Packagist\WebBundle\Entity\ConflictLink $conflict
+     * @param ConflictLink $conflict
      */
     public function addConflictLink(ConflictLink $conflict)
     {
@@ -817,7 +817,7 @@ class Version
     /**
      * Get conflict
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return ConflictLink[]
      */
     public function getConflict()
     {
@@ -827,7 +827,7 @@ class Version
     /**
      * Add provide
      *
-     * @param \Packagist\WebBundle\Entity\ProvideLink $provide
+     * @param ProvideLink $provide
      */
     public function addProvideLink(ProvideLink $provide)
     {
@@ -837,7 +837,7 @@ class Version
     /**
      * Get provide
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return ProvideLink[]
      */
     public function getProvide()
     {
@@ -847,7 +847,7 @@ class Version
     /**
      * Add devRequire
      *
-     * @param \Packagist\WebBundle\Entity\DevRequireLink $devRequire
+     * @param DevRequireLink $devRequire
      */
     public function addDevRequireLink(DevRequireLink $devRequire)
     {
@@ -857,7 +857,7 @@ class Version
     /**
      * Get devRequire
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return DevRequireLink[]
      */
     public function getDevRequire()
     {
@@ -867,7 +867,7 @@ class Version
     /**
      * Add suggest
      *
-     * @param \Packagist\WebBundle\Entity\SuggestLink $suggest
+     * @param SuggestLink $suggest
      */
     public function addSuggestLink(SuggestLink $suggest)
     {
@@ -877,7 +877,7 @@ class Version
     /**
      * Get suggest
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return SuggestLink[]
      */
     public function getSuggest()
     {

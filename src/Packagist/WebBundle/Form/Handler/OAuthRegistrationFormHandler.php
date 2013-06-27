@@ -15,8 +15,8 @@ namespace Packagist\WebBundle\Form\Handler;
 use FOS\UserBundle\Model\UserManagerInterface;
 use FOS\UserBundle\Util\TokenGeneratorInterface;
 use HWI\Bundle\OAuthBundle\Form\RegistrationFormHandlerInterface;
-use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use HWI\Bundle\OAuthBundle\OAuth\Response\AdvancedUserResponseInterface;
+use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -61,7 +61,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
         $form->setData($user);
 
         if ('POST' === $request->getMethod()) {
-            $form->bind($request);
+            $form->handleRequest($request);
 
             if ($form->isValid()) {
                 $randomPassword = $this->tokenGenerator->generateToken();

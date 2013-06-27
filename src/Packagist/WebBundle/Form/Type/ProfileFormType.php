@@ -24,7 +24,9 @@ class ProfileFormType extends BaseType
     {
         parent::buildForm($builder, $options);
 
-        $builder->add('failureNotifications', null, array('required' => false, 'label' => 'Notify me of package update failures'));
+        $builder->add('failureNotifications', null, array(
+            'required' => false,
+        ));
     }
 
     public function getName()
