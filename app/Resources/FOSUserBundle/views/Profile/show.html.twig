@@ -3,31 +3,37 @@
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
 {% block content %}
-    <div class="box clearfix">
-        <h1>{{ user.username }} (that's you!)</h1>
-        <p><a href="{{ path('fos_user_profile_edit') }}">Edit your information</a></p>
-        <p><a href="{{ path('fos_user_change_password') }}">Change your password</a></p>
-        {% if not user.githubId %}
-        <p><a href="{{ hwi_oauth_login_url('github') }}">Connect your github account</a></p>
-        {% endif %}
-        <p><a href="{{ path('user_favorites', {name: app.user.username}) }}">View your favorites</a></p>
-        <p><a href="{{ path('user_profile', {name: app.user.username}) }}">View your public profile</a></p>
+<h2 class="title">
+    {{ user.username }} <small>(that's you!)</small>
+</h2>
 
-        {% if app.user.apiToken %}
-            <h1>Your API Token</h1>
-            <p><a href="#" onclick="this.parentNode.innerHTML = '<pre><code>{{ app.user.apiToken }}</code></pre>'; return false;">Show API Token</a></p>
+<section class="row">
+    <div class="span3">
+        {{ knp_menu_render('profile_menu', {'currentClass': 'active', 'allow_safe_labels': true}) }}
+    </div>
+
+    <section class="span9">
+        {%- if app.user.apiToken %}
+            <h3 class="font-normal">Your API Token</h3>
+            <p>
+                <a id="show-api-token" href="#">Show API Token</a>
+            </p>
+            <pre id="api-token" class="hidden"><code>{{ app.user.apiToken }}</code></pre>
             <p>You can use your API token to interact with the Packagist API.</p>
-            <h1>GitHub Service Hook</h1>
-            <p>Enabling the Packagist service hook ensures that your package will always be updated instantly when you push to GitHub. To do so you can go to your GitHub repository, click the "Settings" button, then "Webhooks &amp; Services". Add a "Packagist" service, and configure it with your API token (see above), plus your Packagist username. Check the "Active" box and submit the form. You can then hit the "Test Service" button to trigger it and check if Packagist removes the warning about the package not being auto-updated.</p>
-            <h1>Bitbucket POST Service</h1>
-            <p>To enable the Bitbucket service hook, go to your BitBucket repository, open the "Admin" tab and select "Services" in the menu. Pick "POST" in the list and add it to your repository. Afterwards, you have to enter the Packagist endpoint, containing both your username and API token (see above). Enter <code>https://packagist.org/api/bitbucket?username={{ app.user.username }}&amp;apiToken=&hellip;</code> for the service's URL. Save your changes and you're done.</p>
-        {% endif %}
 
-        <h1>Your packages</h1>
+            <h3 class="font-normal">GitHub Service Hook</h3>
+            <p>Enabling the Packagist service hook ensures that your package will always be updated instantly when you push to GitHub. To do so you can go to your GitHub repository, click the "Settings" button, then "Webhooks &amp; Services". Add a "Packagist" service, and configure it with your API token (see above), plus your Packagist username. Check the "Active" box and submit the form. You can then hit the "Test Service" button to trigger it and check if Packagist removes the warning about the package not being auto-updated.</p>
+
+            <h3 class="font-normal">Bitbucket POST Service</h3>
+            <p>To enable the Bitbucket service hook, go to your BitBucket repository, open the "Admin" tab and select "Services" in the menu. Pick "POST" in the list and add it to your repository. Afterwards, you have to enter the Packagist endpoint, containing both your username and API token (see above). Enter <code>https://packagist.org/api/bitbucket?username={{ app.user.username }}&amp;apiToken=&hellip;</code> for the service's URL. Save your changes and you're done.</p>
+        {%- endif %}
+
+        <h3 class="font-normal">Your packages</h3>
         {% if packages|length %}
             {{ macros.listPackages(packages, true, true, meta) }}
         {% else %}
             <p>No packages found.</p>
         {% endif %}
-    </div>
+    </section>
+</section>
 {% endblock %}

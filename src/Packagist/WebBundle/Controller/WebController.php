@@ -1075,12 +1075,11 @@ class WebController extends Controller
 
         // fill gaps at the end of the chart
         if (count($chart['months']) > count($chart['packages'])) {
-            $chart['packages'] += array_fill(0, count($chart['months']) - count($chart['packages']), max($chart['packages']));
+            $chart['packages'] += array_fill(0, count($chart['months']) - count($chart['packages']), !empty($chart['packages']) ? max($chart['packages']) : 0);
         }
         if (count($chart['months']) > count($chart['versions'])) {
-            $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), max($chart['versions']));
+            $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), !empty($chart['versions']) ? max($chart['versions']) : 0);
         }
-
 
         $res = $this->getDoctrine()
             ->getConnection()
@@ -1119,8 +1118,8 @@ class WebController extends Controller
 
         return array(
             'chart' => $chart,
-            'packages' => max($chart['packages']),
-            'versions' => max($chart['versions']),
+            'packages' => !empty($chart['packages']) ? max($chart['packages']) : 0,
+            'versions' => !empty($chart['versions']) ? max($chart['versions']) : 0,
             'downloads' => $downloads,
             'downloadsChart' => $dlChart,
             'maxDailyDownloads' => !empty($dlChart) ? max($dlChart['values']) : null,

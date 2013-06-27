@@ -1,20 +1,39 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
+{% set showSearchDesc = 'hide' %}
+
 {% block content %}
     {% set packageCount = 0 %}
-    <div class="box clearfix">
-        <h1>Statistics</h1>
-        <h2>Packages/versions over time</h2>
+
+    <h2 class="title">Statistics</h2>
+
+    <section class="row-fluid">
+        <div class="span3 pull-right">
+            <h2 class="font-slim">Totals</h2>
+            <p>{{ packages|number_format(0, '.', " ") }} packages registered</p>
+            <p>{{ versions|number_format(0, '.', " ") }} versions available</p>
+            <p>{{ downloads == 'N/A' ? downloads : downloads|number_format(0, '.', " ") }} packages installed<br><small>(since {{ downloadsStartDate }})</small></p>
+        </div>
+
+        <h2 class="font-normal">Packages/versions over time</h2>
+
+        <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ versions }}&amp;chxl=1:|{{ chart.months|join('|') }}&amp;chxt=y,x&amp;chs=850x250&amp;chds=0,{{ versions }},0,{{ versions }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ chart.versions|join(',') }}|{{ chart.packages|join(',') }}&amp;chdl=Versions|Packages&amp;chls=2|2" /></p>
         <p>
             <canvas width="900" height="250" data-labels="{{ chart.months|join(',') }}" data-values="{{ chart.versions|join(',') }}|{{ chart.packages|join(',') }}">
                 Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
             </canvas>
         </p>
-        <ul class="legend">
-            <li class="legend-first"><span>&#9632;</span> Versions</li>
-            <li class="legend-second"><span>&#9632;</span> Packages</li>
-        </ul>
         <p>The last data point is for the current month and shows partial data.</p>
+
+        {% if downloadsChart %}
+            <h2>Packages installed per day</h2>
+            <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ maxDailyDownloads }}&amp;chxl=1:|{{ downloadsChart.labels|join('|') }}&amp;chxt=y,x&amp;chs=850x250&amp;chds=0,{{ maxDailyDownloads }},0,{{ maxDailyDownloads }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ downloadsChart.values|join(',') }}&amp;chdl=Installs&amp;chls=2|2" /></p>
+        {% endif %}
+        {% if downloadsChartMonthly %}
+            <h2>Packages installed per month</h2>
+            <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ maxMonthlyDownloads }}&amp;chxl=1:|{{ downloadsChartMonthly.labels|join('|') }}&amp;chxt=y,x&amp;chs=850x250&amp;chds=0,{{ maxMonthlyDownloads }},0,{{ maxMonthlyDownloads }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ downloadsChartMonthly.values|join(',') }}&amp;chdl=Installs&amp;chls=2|2" /></p>
+            <p>The last data point is for the current month and shows partial data.</p>
+        {% endif %}
 
         {% if downloadsChart %}
             <h2>Packages installed in the last 30 days</h2>
@@ -39,15 +58,10 @@
             </ul>
             <p>The last data point is for the current month and shows partial data.</p>
         {% endif %}
-
-        <h2>Totals</h2>
-        <p>{{ packages|number_format(0, '.', " ") }} packages registered</p>
-        <p>{{ versions|number_format(0, '.', " ") }} versions available</p>
-        <p>{{ downloads == 'N/A' ? downloads : downloads|number_format(0, '.', " ") }} packages installed (since {{ downloadsStartDate }})</p>
-    </div>
+    </section>
 {% endblock %}
 
-{% block scripts %}
-    <script src="{{ asset('js/libs/Chart.js/Chart.min.js') }}"></script>
-    <script src="{{ asset('bundles/packagistweb/js/charts.js') }}"></script>
-{% endblock %}
+{#{% block scripts %}#}
+    {#<script src="{{ asset('js/libs/Chart.js/Chart.min.js') }}"></script>#}
+    {#<script src="{{ asset('bundles/packagistweb/js/charts.js') }}"></script>#}
+{#{% endblock %}#}

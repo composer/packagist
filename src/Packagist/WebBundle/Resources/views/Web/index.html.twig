@@ -1,21 +1,13 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
-{% block search %}
-    <div class="box">
-        <p>Packagist is the main <a href="http://getcomposer.org/">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.<br /><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a>.</p>
-    </div>
-
-    {{ parent() }}
-{% endblock %}
-
 {% block content %}
-    <div class="box clearfix">
-        <section class="getting-started">
-            <h1>Getting Started</h1>
-            <div>
-                <h2>Define Your Dependencies</h2>
-                <p>Put a file named <em>composer.json</em> at the root of your project, containing your project dependencies:</p>
-                <pre>
+<section class="row">
+    <section class="span6 getting-started">
+        <h2 class="font-normal">Getting Started</h2>
+        <div>
+            <h3 class="font-normal">Define Your Dependencies</h3>
+            <p>Put a file named <em>composer.json</em> at the root of your project, containing your project dependencies:</p>
+            <pre>
 {
     "require": {
         "vendor/package": "1.3.2",
@@ -24,33 +16,34 @@
     }
 }
 </pre>
-                <h2>Install Composer In Your Project</h2>
-                <p>Run this in your command line:</p>
-                <pre>
-curl -s http://getcomposer.org/installer | php
+
+            <h3 class="font-normal">Install Composer In Your Project</h3>
+            <p>Run this in your command line:</p>
+            <pre>
+curl -sS http://getcomposer.org/installer | php
 </pre>
-                <p>Or <a href="http://getcomposer.org/composer.phar">download composer.phar</a> into your project root.</p>
-                <h2>Install Dependencies</h2>
-                <p>Execute this in your project root.</p>
-                <pre>
+            <p>Or <a href="http://getcomposer.org/composer.phar">download composer.phar</a> into your project root.</p>
+
+            <h3 class="font-normal">Install Dependencies</h3>
+            <p>Execute this in your project root.</p>
+            <pre>
 php composer.phar install
 </pre>
-                <h2>Autoload Dependencies</h2>
-                <p>If your packages specify <a href="https://getcomposer.org/doc/01-basic-usage.md#autoloading">autoloading information</a>, you can autoload all the dependencies by adding this to your code:</p>
-                <pre>
+            <h3 class="font-normal">Autoload Dependencies</h3>
+            <p>If your packages specify <a href="https://getcomposer.org/doc/01-basic-usage.md#autoloading">autoloading information</a>, you can autoload all the dependencies by adding this to your code:</p>
+            <pre>
 require 'vendor/autoload.php';
 </pre>
+            <p><a href="{{ path('browse') }}">Browse</a> the packages we have to find more great libraries you can use in your project.</p>
+        </div>
+    </section>
 
-                <p><a href="{{ path('browse') }}">Browse</a> the packages we have to find more great libraries you can use in your project.</p>
-            </div>
-        </section>
-
-        <section class="publishing-packages">
-            <h1>Publishing Packages</h1>
-            <div>
-                <h2>Define Your Package</h2>
-                <p>Put a file named <em>composer.json</em> at the root of your package, containing this information:</p>
-                <pre>
+    <section class="span6 publishing-packages">
+        <h2 class="font-normal">Publishing Packages</h2>
+        <div>
+            <h3 class="font-normal">Define Your Package</h3>
+            <p>Put a file named <em>composer.json</em> at the root of your package, containing this information:</p>
+            <pre>
 {
     "name": "your-vendor-name/package-name",
     "description": "A short description of what your package does",
@@ -60,14 +53,16 @@ require 'vendor/autoload.php';
     }
 }
 </pre>
-                <p>This is the strictly minimal information you have to give.</p>
-                <p>For more details about package naming and the fields you can use to document your package better, see the <a href="{{ path('about') }}">about</a> page.</p>
-                <h2>Commit The File</h2>
-                <p>You surely don't need help with that.</p>
-                <h2>Publish It</h2>
-                <p><a href="{{ path('hwi_oauth_connect') }}">Login</a> or <a href="{{ path('fos_user_registration_register') }}">register</a> on this site, then hit the big fat green button above that says <a href="{{ path('submit') }}">submit</a>.</p>
-                <p>Once you entered your public repository URL in there, your package will be automatically crawled periodically. You just have to make sure you keep the composer.json file up to date.</p>
-            </div>
-        </section>
-    </div>
+            <p>This is the strictly minimal information you have to give.</p>
+            <p>For more details about package naming and the fields you can use to document your package better, see the <a href="{{ path('about') }}">about</a> page.</p>
+
+            <h3 class="font-normal">Commit The File</h3>
+            <p>You surely don't need help with that.</p>
+
+            <h3 class="font-normal">Publish It</h3>
+            <p><a href="{{ path('hwi_oauth_connect') }}">Login</a> or <a href="{{ path('fos_user_registration_register') }}">register</a> on this site, then hit the big fat green button above that says <a href="{{ path('submit') }}">submit</a>.</p>
+            <p>Once you entered your public repository URL in there, your package will be automatically crawled periodically. You just have to make sure you keep the composer.json file up to date.</p>
+        </div>
+    </section>
+</section>
 {% endblock %}
