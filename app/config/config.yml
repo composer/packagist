@@ -14,7 +14,7 @@ framework:
     templating:      { engines: ['twig'] } #assets_version: SomeVersionScheme
     default_locale: %locale%
     session:
-        name: packagist
+        name:            packagist
         cookie_lifetime: 3600
     trusted_proxies: %trusted_proxies%
     trusted_hosts: %trusted_hosts%

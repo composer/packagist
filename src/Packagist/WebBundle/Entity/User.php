@@ -12,9 +12,9 @@
 
 namespace Packagist\WebBundle\Entity;
 
-use FOS\UserBundle\Entity\User as BaseUser;
-use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping as ORM;
+use FOS\UserBundle\Entity\User as BaseUser;
 
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\UserRepository")
@@ -87,7 +87,7 @@ class User extends BaseUser
     /**
      * Add packages
      *
-     * @param \Packagist\WebBundle\Entity\Package $packages
+     * @param Package $packages
      */
     public function addPackages(Package $packages)
     {
@@ -97,7 +97,7 @@ class User extends BaseUser
     /**
      * Get packages
      *
-     * @return \Doctrine\Common\Collections\Collection $packages
+     * @return Package[]
      */
     public function getPackages()
     {
@@ -107,9 +107,9 @@ class User extends BaseUser
     /**
      * Add authors
      *
-     * @param \Packagist\WebBundle\Entity\Author $authors
+     * @param Author $authors
      */
-    public function addAuthors(\Packagist\WebBundle\Entity\Author $authors)
+    public function addAuthors(Author $authors)
     {
         $this->authors[] = $authors;
     }
@@ -117,7 +117,7 @@ class User extends BaseUser
     /**
      * Get authors
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return Author[]
      */
     public function getAuthors()
     {

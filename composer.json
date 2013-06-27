@@ -39,7 +39,7 @@
 
         "composer/composer": "1.0.x-dev",
         "friendsofsymfony/user-bundle": "1.*",
-        "hwi/oauth-bundle": "dev-master",
+        "hwi/oauth-bundle": "0.3.*@dev",
         "nelmio/solarium-bundle": "1.*",
         "nelmio/security-bundle": "1.*",
         "predis/predis": "0.8.*",
@@ -67,7 +67,8 @@
     },
     "extra": {
         "symfony-app-dir": "app",
-        "symfony-web-dir": "web"
+        "symfony-web-dir": "web",
+        "symfony-assets-install": "symlink"
     },
     "repositories": [
         {

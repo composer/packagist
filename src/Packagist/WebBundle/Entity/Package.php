@@ -12,14 +12,13 @@
 
 namespace Packagist\WebBundle\Entity;
 
+use Composer\Factory;
+use Composer\IO\NullIO;
+use Composer\Repository\VcsRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ExecutionContext;
-use Doctrine\Common\Collections\ArrayCollection;
-use Composer\IO\NullIO;
-use Composer\Factory;
-use Composer\Repository\VcsRepository;
-use Composer\Repository\RepositoryManager;
 
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\PackageRepository")
@@ -140,7 +139,7 @@ class Package
         }
         $maintainers = array();
         foreach ($this->getMaintainers() as $maintainer) {
-            /** @var $maintainer Maintainer */
+            /** @var $maintainer User */
             $maintainers[] = $maintainer->toArray();
         }
         $data = array(
@@ -372,7 +371,7 @@ class Package
     /**
      * Add versions
      *
-     * @param \Packagist\WebBundle\Entity\Version $versions
+     * @param Version $versions
      */
     public function addVersions(Version $versions)
     {
@@ -473,7 +472,7 @@ class Package
     /**
      * Add maintainers
      *
-     * @param \Packagist\WebBundle\Entity\User $maintainer
+     * @param User $maintainer
      */
     public function addMaintainer(User $maintainer)
     {

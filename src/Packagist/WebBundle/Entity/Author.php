@@ -12,10 +12,9 @@
 
 namespace Packagist\WebBundle\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\ExecutionContext;
-use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\AuthorRepository")
@@ -152,7 +151,7 @@ class Author
     /**
      * Add versions
      *
-     * @param \Packagist\WebBundle\Entity\Version $version
+     * @param Version $version
      */
     public function addVersion(Version $version)
     {
@@ -162,7 +161,7 @@ class Author
     /**
      * Get versions
      *
-     * @return string $versions
+     * @return Version[]
      */
     public function getVersions()
     {
@@ -252,7 +251,7 @@ class Author
     /**
      * Set owner
      *
-     * @param \Packagist\WebBundle\Entity\User $owner
+     * @param User $owner
      */
     public function setOwner(User $owner)
     {
@@ -262,7 +261,7 @@ class Author
     /**
      * Get owner
      *
-     * @return \Packagist\WebBundle\Entity\User
+     * @return User
      */
     public function getOwner()
     {
