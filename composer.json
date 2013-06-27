@@ -51,7 +51,9 @@
         "zendframework/zend-version": "2.0.*",
 
         "kriswallsmith/assetic": "@dev",
-        "pagerfanta/pagerfanta": "@dev"
+        "pagerfanta/pagerfanta": "@dev",
+        "knplabs/knp-menu-bundle": "*@dev",
+        "knplabs/knp-menu": "*@dev"
     },
     "scripts": {
         "post-install-cmd": [
