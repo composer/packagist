@@ -2,15 +2,16 @@
 
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
+{% set showSearchDesc = 'hide' %}
+
 {% block content %}
-    <div class="box clearfix package-list">
-        {% block content_title %}<h1>Packages</h1>{% endblock %}
-        {% block list %}
-            {% if packages|length %}
-                {{ macros.listPackages(packages, paginate is not defined or paginate, false, meta|default(null)) }}
-            {% else %}
-                <p>No packages found.</p>
-            {% endif %}
-        {% endblock %}
-    </div>
+    <h3 class="title">{% block content_title %}Packages{% endblock %}</h3>
+
+    {% block list %}
+        {% if packages|length %}
+            {{ macros.listPackages(packages, paginate is not defined or paginate, false, meta|default(null)) }}
+        {% else %}
+            <p>No packages found.</p>
+        {% endif %}
+    {% endblock %}
 {% endblock %}

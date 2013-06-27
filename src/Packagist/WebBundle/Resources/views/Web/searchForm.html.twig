@@ -1,9 +1,6 @@
 <form id="search-form" action="{{ path('search.ajax') }}" method="GET" {{ form_enctype(searchForm) }} autocomplete="off">
-    <p class="submit-wrapper"><input class="submit" type="submit" value="Search" /></p>
-    <p>
-        {{ form_errors(searchForm.query) }}
-        {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'autofocus': 'autofocus', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
-        {{ form_rest(searchForm) }}
-    </p>
+    {{ form_errors(searchForm.query) }}
+    {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'autofocus': 'autofocus', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
+    {{ form_rest(searchForm) }}
 </form>
 

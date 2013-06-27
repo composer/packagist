@@ -25,4 +25,10 @@
             humane.log(details ? [message, details] : message, {timeout: 0, clickToClose: true});
         }
     });
+
+    $('#show-api-token').click(function (e) {
+        $(this).parent().hide();
+        $('#api-token').toggleClass('hidden');
+        e.preventDefault();
+    });
 })(jQuery, humane);

@@ -25,7 +25,6 @@ use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
 use Packagist\WebBundle\Form\Model\MaintainerRequest;
 use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
-use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
 use Packagist\WebBundle\Form\Type\PackageType;
 use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
