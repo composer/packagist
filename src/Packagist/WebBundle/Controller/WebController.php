@@ -367,6 +367,7 @@ class WebController extends Controller
         $req = $this->getRequest();
         if ('POST' === $req->getMethod()) {
             $form->bind($req);
+
             if ($form->isValid()) {
                 list($vendor, $name) = explode('/', $package->getName(), 2);
 
@@ -390,7 +391,7 @@ class WebController extends Controller
                 $response = array('status' => 'success', 'name' => $package->getName(), 'similar' => $similar);
             } else {
                 $errors = array();
-                if ($form->hasErrors()) {
+                if (count($form->getErrors()) > 0) {
                     foreach ($form->getErrors() as $error) {
                         $errors[] = $error->getMessageTemplate();
                     }
