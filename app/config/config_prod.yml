@@ -1,6 +1,10 @@
 imports:
     - { resource: config.yml }
 
+framework:
+    validation:
+        cache: apc
+
 doctrine:
     metadata_cache_driver: apc
     result_cache_driver: apc
