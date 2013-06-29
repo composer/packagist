@@ -33,13 +33,17 @@
                 submitButton.before(
                     '<div class="confirmation">The package name found for your repository is: <strong>'+data.name+'</strong>, press Submit to confirm.</div>'
                 );
-                var warningMessage = '<div class="flash-message"><div class="icon-warning-sign replace-warning error"> Proceed? Package is replaced with custom version.<input type="checkbox" class="accept-warning"/></div></div>';
-                submitButton.before(warningMessage);
-                if ($('.accept-warning').checked()) {
-                    // enable
-                } else {
-                    // disable
+                if (data.replace) {
+                    var warningMessage = '<div class="flash-message"><div class="icon-warning-sign replace-warning error"> Proceed? Package is replaced with custom version.<input type="checkbox" class="accept-warning"/></div></div>';
+                    submitButton.before(warningMessage);
+
+                    if ($('.accept-warning').checked()) {
+                        // enable
+                    } else {
+                        // disable
+                    }
                 }
+                
                 $('#submit').val('Submit');
                 $('#submit-package-form').unbind('submit');
             }

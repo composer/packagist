@@ -388,7 +388,12 @@ class WebController extends Controller
                     );
                 }
 
-                $response = array('status' => 'success', 'name' => $package->getName(), 'similar' => $similar);
+                $response = array(
+                    'status' => 'success',
+                    'name' => $package->getName(),
+                    'similar' => $similar,
+                    'replace' => $package->hasReplaceKeyword(),
+                );
             } else {
                 $errors = array();
                 if (count($form->getErrors()) > 0) {
