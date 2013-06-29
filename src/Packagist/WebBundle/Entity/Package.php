@@ -155,6 +155,18 @@ class Package
         return $data;
     }
 
+    public function hasReplaceKeyword()
+    {
+        $driver = $this->vcsDriver;
+        try {
+            $information = $driver->getComposerInformation($driver->getRootIdentifier());
+            return array_key_exists('replace', $information);
+        } catch (\Exception $e) {
+            // some other problem picked up by other checks
+            return false;
+        }
+    }
+
     public function isRepositoryValid(ExecutionContext $context)
     {
         // vcs driver was not nulled which means the repository was not set/modified and is still valid

@@ -1,4 +1,8 @@
 {
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
+    ],
     "hash": "af3068657b3b1e2673fb640a6ef8aad2",
     "packages": [
         {
@@ -1237,17 +1241,17 @@
         },
         {
             "name": "sensio/distribution-bundle",
-            "version": "v2.1.9",
+            "version": "v2.1.11",
             "target-dir": "Sensio/Bundle/DistributionBundle",
             "source": {
                 "type": "git",
-                "url": "https://github.com/sensio/SensioDistributionBundle.git",
-                "reference": "v2.1.9"
+                "url": "https://github.com/sensiolabs/SensioDistributionBundle.git",
+                "reference": "v2.1.11"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensio/SensioDistributionBundle/zipball/v2.1.9",
-                "reference": "v2.1.9",
+                "url": "https://api.github.com/repos/sensiolabs/SensioDistributionBundle/zipball/v2.1.11",
+                "reference": "v2.1.11",
                 "shasum": ""
             },
             "require": {
@@ -1279,7 +1283,7 @@
                 "configuration",
                 "distribution"
             ],
-            "time": "2013-02-04 19:54:42"
+            "time": "2013-04-09 09:20:26"
         },
         {
             "name": "sensio/framework-extra-bundle",
@@ -1287,12 +1291,12 @@
             "target-dir": "Sensio/Bundle/FrameworkExtraBundle",
             "source": {
                 "type": "git",
-                "url": "https://github.com/sensio/SensioFrameworkExtraBundle.git",
+                "url": "https://github.com/sensiolabs/SensioFrameworkExtraBundle.git",
                 "reference": "v2.1.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensio/SensioFrameworkExtraBundle/zipball/v2.1.9",
+                "url": "https://api.github.com/repos/sensiolabs/SensioFrameworkExtraBundle/zipball/v2.1.9",
                 "reference": "v2.1.9",
                 "shasum": ""
             },
@@ -1334,12 +1338,12 @@
             "target-dir": "Sensio/Bundle/GeneratorBundle",
             "source": {
                 "type": "git",
-                "url": "https://github.com/sensio/SensioGeneratorBundle.git",
+                "url": "https://github.com/sensiolabs/SensioGeneratorBundle.git",
                 "reference": "v2.1.9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensio/SensioGeneratorBundle/zipball/v2.1.9",
+                "url": "https://api.github.com/repos/sensiolabs/SensioGeneratorBundle/zipball/v2.1.9",
                 "reference": "v2.1.9",
                 "shasum": ""
             },
@@ -1383,23 +1387,23 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/snc/SncRedisBundle.git",
-                "reference": "5d7bbed5a2e47aca35da272522b75d2a0a5fbba7"
+                "reference": "1.1.4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/5d7bbed5a2e47aca35da272522b75d2a0a5fbba7",
-                "reference": "5d7bbed5a2e47aca35da272522b75d2a0a5fbba7",
+                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/1.1.4",
+                "reference": "1.1.4",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.3",
-                "symfony/framework-bundle": ">=2.1.0,<2.3-dev",
-                "symfony/yaml": ">=2.1.0,<2.3-dev"
+                "symfony/framework-bundle": ">=2.1.0,<2.4-dev",
+                "symfony/yaml": ">=2.1.0,<2.4-dev"
             },
             "require-dev": {
                 "doctrine/common": ">=2.2",
                 "predis/predis": "0.8.*",
-                "symfony/console": ">=2.1.0,<2.3-dev"
+                "symfony/console": ">=2.1.0,<2.4-dev"
             },
             "suggest": {
                 "monolog/monolog": "If you want to use the monolog redis handler.",
@@ -1438,7 +1442,7 @@
                 "redis",
                 "symfony"
             ],
-            "time": "2013-03-30 09:44:30"
+            "time": "2013-04-27 15:40:03"
         },
         {
             "name": "solarium/solarium",
@@ -1652,6 +1656,64 @@
                 "logging"
             ],
             "time": "2013-01-28 10:06:42"
+        },
+        {
+            "name": "symfony/property-access",
+            "version": "v2.3.1",
+            "target-dir": "Symfony/Component/PropertyAccess",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/PropertyAccess.git",
+                "reference": "v2.3.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/PropertyAccess/zipball/v2.3.1",
+                "reference": "v2.3.1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.3-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Symfony\\Component\\PropertyAccess\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "http://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony PropertyAccess Component",
+            "homepage": "http://symfony.com",
+            "keywords": [
+                "access",
+                "array",
+                "extraction",
+                "index",
+                "injection",
+                "object",
+                "property",
+                "property path",
+                "reflection"
+            ],
+            "time": "2013-04-30 16:43:32"
         },
         {
             "name": "symfony/swiftmailer-bundle",
@@ -1899,17 +1961,18 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/whiteoctober/WhiteOctoberPagerfantaBundle.git",
-                "reference": "5d1b9eb262055019a280a0ec48bc0b11fba5bb23"
+                "reference": "v1.0.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/whiteoctober/WhiteOctoberPagerfantaBundle/zipball/5d1b9eb262055019a280a0ec48bc0b11fba5bb23",
-                "reference": "5d1b9eb262055019a280a0ec48bc0b11fba5bb23",
+                "url": "https://api.github.com/repos/whiteoctober/WhiteOctoberPagerfantaBundle/zipball/v1.0.0",
+                "reference": "v1.0.0",
                 "shasum": ""
             },
             "require": {
                 "pagerfanta/pagerfanta": "1.0.*",
-                "symfony/framework-bundle": ">=2.1,<3.0"
+                "symfony/framework-bundle": ">=2.1,<3.0",
+                "symfony/property-access": ">=2.2,<3.0"
             },
             "type": "symfony-bundle",
             "extra": {
@@ -1938,7 +2001,7 @@
                 "page",
                 "paging"
             ],
-            "time": "2013-03-30 22:08:55"
+            "time": "2013-06-06 08:08:38"
         },
         {
             "name": "zendframework/zend-escaper",
@@ -1946,14 +2009,14 @@
             "target-dir": "Zend/Escaper",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendEscaper.git",
+                "url": "https://github.com/zendframework/Component_ZendEscaper.git",
                 "reference": "release-2.0.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Escaper-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zend-escaper-2.0.8-release-2.0.8-c2ca20.zip",
+                "reference": "2.0.8",
+                "shasum": "62f4ace8c0f5e464a665f8545071ee9460b5f881"
             },
             "require": {
                 "php": ">=5.3.3"
@@ -1968,17 +2031,14 @@
                 "BSD-3-Clause"
             ],
             "description": " ",
-            "homepage": "http://packages.zendframework.com/",
             "keywords": [
                 "escaper",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+                "source": "https://github.com/zendframework/Component_ZendEscaper/tree/release-2.0.7"
+            },
+            "time": "2013-01-01 15:44:13"
         },
         {
             "name": "zendframework/zend-feed",
@@ -1986,14 +2046,14 @@
             "target-dir": "Zend/Feed",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendFeed.git",
+                "url": "https://github.com/zendframework/Component_ZendFeed.git",
                 "reference": "release-2.0.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Feed-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zend-feed-2.0.8-release-2.0.8-c2ca20.zip",
+                "reference": "2.0.8",
+                "shasum": "5a132cb5be9668c75a80804b9a9459b65302e477"
             },
             "require": {
                 "php": ">=5.3.3",
@@ -2016,17 +2076,14 @@
                 "BSD-3-Clause"
             ],
             "description": "provides functionality for consuming RSS and Atom feeds",
-            "homepage": "http://packages.zendframework.com/",
             "keywords": [
                 "feed",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+                "source": "https://github.com/zendframework/Component_ZendFeed/tree/release-2.0.7"
+            },
+            "time": "2013-01-22 20:50:52"
         },
         {
             "name": "zendframework/zend-filter",
@@ -2034,14 +2091,14 @@
             "target-dir": "Zend/Filter",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendFilter.git",
+                "url": "https://github.com/zendframework/Component_ZendFilter.git",
                 "reference": "release-2.0.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Filter-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zend-filter-2.0.8-release-2.0.8-c2ca20.zip",
+                "reference": "2.0.8",
+                "shasum": "1ea0002693bc4f53fca9ae4c5e0dc7e6b6c0e39d"
             },
             "require": {
                 "php": ">=5.3.3",
@@ -2065,17 +2122,14 @@
                 "BSD-3-Clause"
             ],
             "description": "provides a set of commonly needed data filters",
-            "homepage": "http://packages.zendframework.com/",
             "keywords": [
                 "filter",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+                "source": "https://github.com/zendframework/Component_ZendFilter/tree/release-2.0.7"
+            },
+            "time": "2013-01-25 16:31:35"
         },
         {
             "name": "zendframework/zend-i18n",
@@ -2083,14 +2137,14 @@
             "target-dir": "Zend/I18n",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendI18n.git",
+                "url": "https://github.com/zendframework/Component_ZendI18n.git",
                 "reference": "release-2.0.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_I18n-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zend-i18n-2.0.8-release-2.0.8-c2ca20.zip",
+                "reference": "2.0.8",
+                "shasum": "e3b7fa5d8ea7f58ca987cec3e923c3187b5355fe"
             },
             "require": {
                 "ext-intl": "*",
@@ -2108,17 +2162,14 @@
                 "BSD-3-Clause"
             ],
             "description": " ",
-            "homepage": "http://packages.zendframework.com/",
             "keywords": [
                 "i18n",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+                "source": "https://github.com/zendframework/Component_ZendI18n/tree/release-2.0.7"
+            },
+            "time": "2013-01-22 20:50:52"
         },
         {
             "name": "zendframework/zend-servicemanager",
@@ -2126,14 +2177,14 @@
             "target-dir": "Zend/ServiceManager",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendServiceManager.git",
+                "url": "https://github.com/zendframework/Component_ZendServiceManager.git",
                 "reference": "release-2.0.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_ServiceManager-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zend-servicemanager-2.0.8-release-2.0.8-c2ca20.zip",
+                "reference": "2.0.8",
+                "shasum": "80848aedcf86b34a540fbb33220bd670c00a1e2c"
             },
             "require": {
                 "php": ">=5.3.3"
@@ -2151,17 +2202,14 @@
                 "BSD-3-Clause"
             ],
             "description": " ",
-            "homepage": "http://packages.zendframework.com/",
             "keywords": [
                 "servicemanager",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+                "source": "https://github.com/zendframework/Component_ZendServiceManager/tree/release-2.0.7"
+            },
+            "time": "2013-01-29 20:11:45"
         },
         {
             "name": "zendframework/zend-stdlib",
@@ -2169,14 +2217,14 @@
             "target-dir": "Zend/Stdlib",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendStdlib.git",
+                "url": "https://github.com/zendframework/Component_ZendStdlib.git",
                 "reference": "release-2.0.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Stdlib-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zend-stdlib-2.0.8-release-2.0.8-c2ca20.zip",
+                "reference": "2.0.8",
+                "shasum": "d736fef90f2c324a4abb8bee6fd5370c7cecc8b8"
             },
             "require": {
                 "php": ">=5.3.3"
@@ -2194,17 +2242,14 @@
                 "BSD-3-Clause"
             ],
             "description": " ",
-            "homepage": "http://packages.zendframework.com/",
             "keywords": [
                 "stdlib",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+                "source": "https://github.com/zendframework/Component_ZendStdlib/tree/release-2.0.7"
+            },
+            "time": "2013-01-22 20:50:52"
         },
         {
             "name": "zendframework/zend-uri",
@@ -2212,14 +2257,14 @@
             "target-dir": "Zend/Uri",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendUri.git",
+                "url": "https://github.com/zendframework/Component_ZendUri.git",
                 "reference": "release-2.0.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Uri-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zend-uri-2.0.8-release-2.0.8-c2ca20.zip",
+                "reference": "2.0.8",
+                "shasum": "3558b36b943f6b25e4bddfd0fdb388256ab1c196"
             },
             "require": {
                 "php": ">=5.3.3",
@@ -2236,17 +2281,14 @@
                 "BSD-3-Clause"
             ],
             "description": "a component that aids in manipulating and validating » Uniform Resource Identifiers (URIs)",
-            "homepage": "http://packages.zendframework.com/",
             "keywords": [
                 "uri",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+                "source": "https://github.com/zendframework/Component_ZendUri/tree/release-2.0.7"
+            },
+            "time": "2013-01-07 17:45:37"
         },
         {
             "name": "zendframework/zend-validator",
@@ -2254,14 +2296,14 @@
             "target-dir": "Zend/Validator",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendValidator.git",
+                "url": "https://github.com/zendframework/Component_ZendValidator.git",
                 "reference": "release-2.0.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Validator-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zend-validator-2.0.8-release-2.0.8-c2ca20.zip",
+                "reference": "2.0.8",
+                "shasum": "1648d44f05ba7c0f094851f41e995e3f5769253e"
             },
             "require": {
                 "php": ">=5.3.3",
@@ -2286,17 +2328,14 @@
                 "BSD-3-Clause"
             ],
             "description": "provides a set of commonly needed validators",
-            "homepage": "http://packages.zendframework.com/",
             "keywords": [
                 "validator",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+                "source": "https://github.com/zendframework/Component_ZendValidator/tree/release-2.0.7"
+            },
+            "time": "2013-01-25 16:14:33"
         },
         {
             "name": "zendframework/zend-version",
@@ -2304,14 +2343,14 @@
             "target-dir": "Zend/Version",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendVersion.git",
+                "url": "https://github.com/zendframework/Component_ZendVersion.git",
                 "reference": "release-2.0.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Version-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zend-version-2.0.8-release-2.0.8-c2ca20.zip",
+                "reference": "2.0.8",
+                "shasum": "6eb5dea4e39f52a329dd50a44c659efa1ad57bd7"
             },
             "require": {
                 "php": ">=5.3.3"
@@ -2326,17 +2365,14 @@
                 "BSD-3-Clause"
             ],
             "description": " ",
-            "homepage": "http://packages.zendframework.com/",
             "keywords": [
                 "version",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+                "source": "https://github.com/zendframework/Component_ZendVersion/tree/release-2.0.8"
+            },
+            "time": "2013-03-13 22:06:59"
         }
     ],
     "packages-dev": [
