@@ -437,6 +437,20 @@ class WebController extends Controller
     }
 
     /**
+     * @Route(
+     *     "/p/{name}.{_format}",
+     *     name="view_package_alias",
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(html|json)"},
+     *     defaults={"_format"="html"}
+     * )
+     * @Method({"GET"})
+     */
+    public function viewPackageAliasAction(Request $req, $name)
+    {
+        return $this->redirect($this->generateUrl('view_package', array('name' => $name, '_format' => $req->getRequestFormat())));
+    }
+
+    /**
      * @Template()
      * @Route(
      *     "/packages/{name}.{_format}",
