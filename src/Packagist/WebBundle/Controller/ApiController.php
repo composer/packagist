@@ -50,7 +50,7 @@ class ApiController extends Controller
             return new Response(file_get_contents($rootJson));
         }
 
-        $em = $this->get('doctrine')->getEntityManager();
+        $em = $this->get('doctrine')->getManager();
 
         gc_enable();
 

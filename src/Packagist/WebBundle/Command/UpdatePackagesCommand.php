@@ -66,7 +66,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
             $flags = Updater::UPDATE_TAGS;
         } elseif ($force) {
-            $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
             $flags = Updater::UPDATE_TAGS;
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
@@ -119,7 +119,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                 }
             }
 
-            $doctrine->getEntityManager()->clear();
+            $doctrine->getManager()->clear();
             unset($packages);
         }
     }

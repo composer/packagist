@@ -96,7 +96,7 @@ class Updater
         $pruneDate->modify('-8days');
 
         $versions = $repository->getPackages();
-        $em = $this->doctrine->getEntityManager();
+        $em = $this->doctrine->getManager();
 
         if ($repository->hadInvalidBranches()) {
             throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
@@ -157,7 +157,7 @@ class Updater
 
     private function updateInformation(Package $package, PackageInterface $data, $flags)
     {
-        $em = $this->doctrine->getEntityManager();
+        $em = $this->doctrine->getManager();
         $version = new Version();
 
         $version->setNormalizedVersion($data->getVersion());

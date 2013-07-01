@@ -55,7 +55,7 @@ EOF
 
         $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
 
-        $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+        $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
         $ids = array();
         foreach ($packages as $package) {
             $ids[] = $package['id'];
@@ -82,8 +82,8 @@ EOF
                 }
             }
 
-            $doctrine->getEntityManager()->flush();
-            $doctrine->getEntityManager()->clear();
+            $doctrine->getManager()->flush();
+            $doctrine->getManager()->clear();
             unset($versions);
         }
 
@@ -95,7 +95,7 @@ EOF
                 $package->setCrawledAt(new \DateTime);
             }
 
-            $doctrine->getEntityManager()->flush();
+            $doctrine->getManager()->flush();
         }
     }
 }

@@ -194,8 +194,8 @@ class Dumper
             }
 
             // update dump dates
-            $this->doctrine->getEntityManager()->flush();
-            $this->doctrine->getEntityManager()->clear();
+            $this->doctrine->getManager()->flush();
+            $this->doctrine->getManager()->clear();
             unset($packages);
 
             if ($current % 250 === 0 || !$packageIds) {

@@ -58,13 +58,13 @@ class CompileStatsCommand extends ContainerAwareCommand
         $doctrine = $this->getContainer()->get('doctrine');
         $this->redis = $redis = $this->getContainer()->get('snc_redis.default');
 
-        $minMax = $doctrine->getEntityManager()->getConnection()->fetchAssoc('SELECT MAX(id) maxId, MIN(id) minId FROM package');
+        $minMax = $doctrine->getManager()->getConnection()->fetchAssoc('SELECT MAX(id) maxId, MIN(id) minId FROM package');
         if (!isset($minMax['minId'])) {
             return 0;
         }
 
         $ids = range($minMax['minId'], $minMax['maxId']);
-        $res = $doctrine->getEntityManager()->getConnection()->fetchAssoc('SELECT MIN(createdAt) minDate FROM package');
+        $res = $doctrine->getManager()->getConnection()->fetchAssoc('SELECT MIN(createdAt) minDate FROM package');
         $date = new \DateTime($res['minDate']);
         $date->modify('00:00:00');
         $yesterday = new \DateTime('yesterday 00:00:00');
@@ -120,7 +120,7 @@ class CompileStatsCommand extends ContainerAwareCommand
 
         // fetch existing ids
         $doctrine = $this->getContainer()->get('doctrine');
-        $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+        $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
         $ids = array();
         foreach ($packages as $row) {
             $ids[] = $row['id'];
