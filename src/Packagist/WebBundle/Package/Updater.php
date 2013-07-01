@@ -291,13 +291,6 @@ class Updater
             $links = array();
             foreach ($data->{$opts['method']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
-                if (false !== strpos($constraint, '~')) {
-                    $constraint = str_replace(array('[', ']'), '', $link->getConstraint());
-                    $constraint = preg_replace('{(\d\.\d)(\.0)+(?=$|,|-)}', '$1', $constraint);
-                    $constraint = preg_replace('{([><=,]) }', '$1', $constraint);
-                    $constraint = preg_replace('{(<[0-9.]+)-dev}', '$1', $constraint);
-                }
-
                 if (false !== strpos($constraint, ',') && false !== strpos($constraint, '@')) {
                     $constraint = preg_replace_callback('{([><]=?\s*[^@]+?)@([a-z]+)}i', function ($matches) {
                         if ($matches[2] === 'stable') {
