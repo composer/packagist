@@ -19,7 +19,7 @@ monolog:
 
 framework:
     session:
-        secure:         %force_ssl%
+        cookie_secure: %force_ssl%
 
 nelmio_security:
     clickjacking:
