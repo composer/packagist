@@ -390,13 +390,13 @@ class WebController extends Controller
                 $response = array('status' => 'success', 'name' => $package->getName(), 'similar' => $similar);
             } else {
                 $errors = array();
-                if ($form->hasErrors()) {
+                if (count($form->getErrors())) {
                     foreach ($form->getErrors() as $error) {
                         $errors[] = $error->getMessageTemplate();
                     }
                 }
                 foreach ($form->all() as $child) {
-                    if ($child->hasErrors()) {
+                    if (count($child->getErrors())) {
                         foreach ($child->getErrors() as $error) {
                             $errors[] = $error->getMessageTemplate();
                         }
