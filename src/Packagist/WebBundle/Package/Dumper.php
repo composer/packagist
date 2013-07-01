@@ -173,16 +173,6 @@ class Dumper
                 file_put_contents($buildDir.'/p/'.$name.'.files', json_encode(array_keys($affectedFiles)));
                 $modifiedIndividualFiles['p/'.$name.'.files'] = true;
 
-                // clean up all versions of that package
-                foreach (glob($buildDir.'/p/packages*.json') as $file) {
-                    $key = 'p/'.basename($file);
-                    $this->loadFile($file);
-                    if (isset($this->files[$key]['packages'][$name])) {
-                        unset($this->files[$key]['packages'][$name]);
-                        $modifiedFiles[$key] = true;
-                    }
-                }
-
                 // (re)write versions
                 foreach ($package->getVersions() as $version) {
                     $file = $buildDir.'/p/'.$this->getTargetFile($version);
@@ -221,7 +211,6 @@ class Dumper
         if ($verbose) {
             echo 'Preparing individual files listings'.PHP_EOL;
         }
-        $individualListings = array();
         $individualHashedListings = array();
         $finder = Finder::create()->files()->ignoreVCS(true)->name('*.json')->in($buildDir.'/p/')->depth('1');
 
@@ -236,14 +225,11 @@ class Dumper
                 continue;
             }
 
-            $listing = 'p/'.$this->getTargetListing($file);
-            $hash = hash_file('sha256', $file);
-            $this->listings[$listing]['providers'][$key] = array('sha256' => $hash);
-            $individualListings[$listing] = true;
-
             // add hashed provider to listing
+            $listing = 'p/'.$this->getTargetListing($file);
             $listing = str_replace('providers', 'provider', $listing);
             $key = substr($key, 2, -5);
+            $hash = hash_file('sha256', $file);
             $this->listings[$listing]['providers'][$key] = array('sha256' => $hash);
             $individualHashedListings[$listing] = true;
         }
@@ -260,20 +246,11 @@ class Dumper
         $this->files['p/packages.json']['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
         $this->files['p/packages.json']['search'] = $this->router->generate('search', array('_format' => 'json')) . '?q=%query%';
 
-        // TODO deprecated, remove eventually, together with includes & providers-includes
-        $this->files['p/packages.json']['notify_batch'] = $this->files['p/packages.json']['notify-batch'];
-
         if ($verbose) {
             echo 'Dumping individual listings'.PHP_EOL;
         }
 
         // dump listings to build dir
-        foreach ($individualListings as $listing => $dummy) {
-            $this->dumpListing($buildDir.'/'.$listing);
-            $hash = hash_file('sha256', $buildDir.'/'.$listing);
-            $this->files['p/packages.json']['providers-includes'][$listing] = array('sha256' => $hash);
-        }
-
         foreach ($individualHashedListings as $listing => $dummy) {
             $this->dumpListing($buildDir.'/'.$listing);
             $hash = hash_file('sha256', $buildDir.'/'.$listing);
@@ -283,24 +260,12 @@ class Dumper
         }
 
         if ($verbose) {
-            echo 'Dumping package metadata'.PHP_EOL;
-        }
-
-        // dump files to build dir
-        foreach ($modifiedFiles as $file => $dummy) {
-            $this->dumpFile($buildDir.'/'.$file);
-            $this->files['p/packages.json']['includes'][$file] = array('sha1' => sha1_file($buildDir.'/'.$file));
-        }
-
-        if ($verbose) {
             echo 'Dumping root'.PHP_EOL;
         }
 
         // sort & dump root file
         ksort($this->files['p/packages.json']['packages']);
-        ksort($this->files['p/packages.json']['providers-includes']);
         ksort($this->files['p/packages.json']['provider-includes']);
-        ksort($this->files['p/packages.json']['includes']);
         $this->dumpFile($rootFile);
 
         if ($verbose) {
