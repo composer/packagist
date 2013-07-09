@@ -2,8 +2,6 @@
 
 ini_set('date.timezone', 'UTC');
 
-
-
 use Symfony\Component\ClassLoader\ApcClassLoader;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -13,6 +11,7 @@ $loader = require_once __DIR__.'/../app/bootstrap.php.cache';
 // Change 'sf2' to a unique prefix in order to prevent cache key conflicts
 // with other applications also using APC.
 if (function_exists('apc_store')) {
+    $loader->unregister();
     $loader = new ApcClassLoader('packagist', $loader);
     $loader->register(true);
 }

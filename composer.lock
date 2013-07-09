@@ -3,7 +3,7 @@
         "This file locks the dependencies of your project to a known state",
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
     ],
-    "hash": "1f1cafe3874fa6f970351f7b7ff2fd3a",
+    "hash": "9c040c5a6cc7f5a73f6e88e3b93beccd",
     "packages": [
         {
             "name": "composer/composer",
@@ -11,24 +11,24 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "424407af720a7a3022091d928c65e3fc7873455b"
+                "reference": "ab731b1197d76ce1e13fbf67a7e8f17a2be8b3e9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/424407af720a7a3022091d928c65e3fc7873455b",
-                "reference": "424407af720a7a3022091d928c65e3fc7873455b",
+                "url": "https://api.github.com/repos/composer/composer/zipball/ab731b1197d76ce1e13fbf67a7e8f17a2be8b3e9",
+                "reference": "ab731b1197d76ce1e13fbf67a7e8f17a2be8b3e9",
                 "shasum": ""
             },
             "require": {
                 "justinrainbow/json-schema": "1.1.*",
                 "php": ">=5.3.2",
                 "seld/jsonlint": "1.*",
-                "symfony/console": ">=2.3,<3.0",
-                "symfony/finder": ">=2.1,<3.0",
-                "symfony/process": ">=2.1,<3.0"
+                "symfony/console": "~2.3@dev",
+                "symfony/finder": "~2.1",
+                "symfony/process": "~2.1@dev"
             },
             "require-dev": {
-                "phpunit/phpunit": ">=3.7.10.0,<3.8"
+                "phpunit/phpunit": "~3.7.10"
             },
             "suggest": {
                 "ext-openssl": "Enabling the openssl extension allows you to access https URLs for repositories and packages",
@@ -72,7 +72,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2013-06-30 22:16:08"
+            "time": "2013-07-04 22:47:18"
         },
         {
             "name": "doctrine/common",
@@ -421,24 +421,24 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hwi/HWIOAuthBundle.git",
-                "reference": "f3706051c781c3e833731eb3cb216eab3e4b21a9"
+                "reference": "0.3.0-alpha1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/f3706051c781c3e833731eb3cb216eab3e4b21a9",
-                "reference": "f3706051c781c3e833731eb3cb216eab3e4b21a9",
+                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/0.3.0-alpha1",
+                "reference": "0.3.0-alpha1",
                 "shasum": ""
             },
             "require": {
-                "kriswallsmith/buzz": ">=0.7,<1.0",
+                "kriswallsmith/buzz": "~0.7",
                 "php": ">=5.3.3",
-                "symfony/framework-bundle": ">=2.1,<3.0",
-                "symfony/security-bundle": ">=2.1,<3.0"
+                "symfony/framework-bundle": "~2.1",
+                "symfony/security-bundle": "~2.1"
             },
             "require-dev": {
-                "doctrine/orm": ">=2.2,<3.0",
-                "symfony/twig-bundle": ">=2.1,<3.0",
-                "symfony/validator": ">=2.1,<3.0"
+                "doctrine/orm": "~2.2",
+                "symfony/twig-bundle": "~2.1",
+                "symfony/validator": "~2.1"
             },
             "suggest": {
                 "doctrine/doctrine-bundle": "to use Doctrine user provider",
@@ -510,7 +510,7 @@
                 "yahoo",
                 "yandex"
             ],
-            "time": "2013-06-25 08:56:35"
+            "time": "2013-07-03 18:42:26"
         },
         {
             "name": "jdorn/sql-formatter",
@@ -943,7 +943,7 @@
             },
             "require": {
                 "php": ">=5.3.1",
-                "symfony/process": ">=2.1,<3.0"
+                "symfony/process": "~2.1"
             },
             "require-dev": {
                 "cssmin/cssmin": "*",
@@ -1604,23 +1604,23 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/snc/SncRedisBundle.git",
-                "reference": "1.1.4"
+                "reference": "0721ef3fe809c39061328357025fd6dd0c792b35"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/1.1.4",
-                "reference": "1.1.4",
+                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/0721ef3fe809c39061328357025fd6dd0c792b35",
+                "reference": "0721ef3fe809c39061328357025fd6dd0c792b35",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.3",
-                "symfony/framework-bundle": ">=2.1.0,<2.4-dev",
-                "symfony/yaml": ">=2.1.0,<2.4-dev"
+                "symfony/framework-bundle": ">=2.1,<3.0",
+                "symfony/yaml": ">=2.1,<3.0"
             },
             "require-dev": {
-                "doctrine/common": ">=2.2",
+                "doctrine/common": ">=2.2,<3.0",
                 "predis/predis": "0.8.*",
-                "symfony/console": ">=2.1.0,<2.4-dev"
+                "symfony/console": ">=2.1,<3.0"
             },
             "suggest": {
                 "monolog/monolog": "If you want to use the monolog redis handler.",
@@ -1630,7 +1630,8 @@
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.1-dev"
+                    "dev-master": "1.1.x-dev",
+                    "dev-2.0": "1.0.x-dev"
                 }
             },
             "autoload": {
@@ -1659,7 +1660,7 @@
                 "redis",
                 "symfony"
             ],
-            "time": "2013-04-27 15:40:03"
+            "time": "2013-07-04 09:14:00"
         },
         {
             "name": "solarium/solarium",
@@ -1754,21 +1755,21 @@
         },
         {
             "name": "symfony/assetic-bundle",
-            "version": "v2.1.3",
+            "version": "v2.3.0",
             "target-dir": "Symfony/Bundle/AsseticBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/AsseticBundle.git",
-                "reference": "v2.1.3"
+                "reference": "v2.3.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/AsseticBundle/zipball/v2.1.3",
-                "reference": "v2.1.3",
+                "url": "https://api.github.com/repos/symfony/AsseticBundle/zipball/v2.3.0",
+                "reference": "v2.3.0",
                 "shasum": ""
             },
             "require": {
-                "kriswallsmith/assetic": ">=1.1.0-alpha4,<1.2-dev",
+                "kriswallsmith/assetic": ">=1.1,<2.0",
                 "php": ">=5.3.0",
                 "symfony/framework-bundle": ">=2.1,<3.0"
             },
@@ -1813,7 +1814,7 @@
                 "compression",
                 "minification"
             ],
-            "time": "2013-03-25 20:16:21"
+            "time": "2013-05-16 05:32:23"
         },
         {
             "name": "symfony/icu",
@@ -2197,8 +2198,8 @@
             },
             "require": {
                 "pagerfanta/pagerfanta": "1.0.*",
-                "symfony/framework-bundle": ">=2.1,<3.0",
-                "symfony/property-access": ">=2.2,<3.0"
+                "symfony/framework-bundle": "~2.1",
+                "symfony/property-access": "~2.2"
             },
             "type": "symfony-bundle",
             "extra": {
