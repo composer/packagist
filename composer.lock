@@ -11,12 +11,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "ab731b1197d76ce1e13fbf67a7e8f17a2be8b3e9"
+                "reference": "6a1262e675b5c1c2c7b1cc58a14028f67885b880"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/ab731b1197d76ce1e13fbf67a7e8f17a2be8b3e9",
-                "reference": "ab731b1197d76ce1e13fbf67a7e8f17a2be8b3e9",
+                "url": "https://api.github.com/repos/composer/composer/zipball/6a1262e675b5c1c2c7b1cc58a14028f67885b880",
+                "reference": "6a1262e675b5c1c2c7b1cc58a14028f67885b880",
                 "shasum": ""
             },
             "require": {
@@ -72,7 +72,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2013-07-04 22:47:18"
+            "time": "2013-07-10 12:20:08"
         },
         {
             "name": "doctrine/common",
@@ -421,12 +421,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hwi/HWIOAuthBundle.git",
-                "reference": "0.3.0-alpha1"
+                "reference": "6b63b55c219933ba7a921bea479780d9f2d94ff9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/0.3.0-alpha1",
-                "reference": "0.3.0-alpha1",
+                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/6b63b55c219933ba7a921bea479780d9f2d94ff9",
+                "reference": "6b63b55c219933ba7a921bea479780d9f2d94ff9",
                 "shasum": ""
             },
             "require": {
@@ -510,7 +510,7 @@
                 "yahoo",
                 "yandex"
             ],
-            "time": "2013-07-03 18:42:26"
+            "time": "2013-07-10 07:29:43"
         },
         {
             "name": "jdorn/sql-formatter",
@@ -1604,12 +1604,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/snc/SncRedisBundle.git",
-                "reference": "0721ef3fe809c39061328357025fd6dd0c792b35"
+                "reference": "83a221f69e47a5f03c4efbfa5fa0a919354f5be8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/0721ef3fe809c39061328357025fd6dd0c792b35",
-                "reference": "0721ef3fe809c39061328357025fd6dd0c792b35",
+                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/83a221f69e47a5f03c4efbfa5fa0a919354f5be8",
+                "reference": "83a221f69e47a5f03c4efbfa5fa0a919354f5be8",
                 "shasum": ""
             },
             "require": {
@@ -1630,8 +1630,7 @@
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.1.x-dev",
-                    "dev-2.0": "1.0.x-dev"
+                    "dev-master": "1.1.x-dev"
                 }
             },
             "autoload": {
@@ -1660,7 +1659,7 @@
                 "redis",
                 "symfony"
             ],
-            "time": "2013-07-04 09:14:00"
+            "time": "2013-07-10 11:14:16"
         },
         {
             "name": "solarium/solarium",
