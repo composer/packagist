@@ -202,6 +202,9 @@ class Package
         } catch (\Exception $e) {
             $context->addViolationAt($property, 'We had problems parsing your composer.json file, the parser reports: '.$e->getMessage(), array(), null);
         }
+        if (null === $this->getName()) {
+            $context->addViolationAt($property, 'An unexpected error has made our parser fail to find a package name in your repository, if you think this is incorrect please try again', array(), null);
+        }
     }
 
     public function setEntityRepository($repository)
@@ -318,25 +321,25 @@ class Package
      *
      * @param string $repository
      */
-    public function setRepository($repository)
+    public function setRepository($repoUrl)
     {
         $this->vcsDriver = null;
 
         // prevent local filesystem URLs
-        if (preg_match('{^(\.|[a-z]:|/)}i', $repository)) {
+        if (preg_match('{^(\.|[a-z]:|/)}i', $repoUrl)) {
             return;
         }
 
-        $this->repository = $repository;
+        $this->repository = $repoUrl;
 
         // avoid user@host URLs
-        if (preg_match('{https?://.+@}', $repository)) {
+        if (preg_match('{https?://.+@}', $repoUrl)) {
             return;
         }
 
         try {
             $config = Factory::createConfig();
-            $repository = new VcsRepository(array('url' => $repository), new NullIO(), $config);
+            $repository = new VcsRepository(array('url' => $this->repository), new NullIO(), $config);
 
             $driver = $this->vcsDriver = $repository->getDriver();
             if (!$driver) {
