@@ -443,11 +443,17 @@ class WebController extends Controller
      *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(html|json)"},
      *     defaults={"_format"="html"}
      * )
+     * @Route(
+     *     "/packages/{name}",
+     *     name="view_package_alias2",
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?/", "_format"="(html|json)"},
+     *     defaults={"_format"="html"}
+     * )
      * @Method({"GET"})
      */
     public function viewPackageAliasAction(Request $req, $name)
     {
-        return $this->redirect($this->generateUrl('view_package', array('name' => $name, '_format' => $req->getRequestFormat())));
+        return $this->redirect($this->generateUrl('view_package', array('name' => trim($name, '/'), '_format' => $req->getRequestFormat())));
     }
 
     /**
