@@ -281,7 +281,7 @@ class WebController extends Controller
                         $params['tags'] = (array) $tagsFilter;
                     }
                     if ($typeFilter) {
-                        $params['type'] = (array) $typeFilter;
+                        $params['type'] = $typeFilter;
                     }
                     $result['next'] = $this->generateUrl('search', $params, true);
                 }
