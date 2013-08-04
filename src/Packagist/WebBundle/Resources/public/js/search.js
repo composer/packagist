@@ -1,6 +1,8 @@
-"use strict";
-
+/*jslint browser: true */
+/*global jQuery: true */
 (function ($) {
+    "use strict";
+
     var list = $('.search-list'),
         form = $('form#search-form'),
         showResults,
@@ -37,11 +39,11 @@
             return;
         }
 
-        if (history.pushState) {
-            if (typeof previousQuery === 'undefined') {
-                history.pushState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
+        if (window.history.pushState) {
+            if (previousQuery === undefined) {
+                window.history.pushState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
             } else {
-                history.replaceState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
+                window.history.replaceState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
             }
         }
 
@@ -111,4 +113,4 @@
             }
         }
     });
-})(jQuery);
+}(jQuery));
