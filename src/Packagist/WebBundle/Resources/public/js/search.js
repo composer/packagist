@@ -35,7 +35,9 @@
         }
 
         if ($('#search_query_query').val().match(/^\s*$/) !== null) {
-            list.addClass('hidden');
+            if (previousQuery !== undefined) {
+                list.addClass('hidden');
+            }
             return;
         }
 
