@@ -63,9 +63,9 @@
             {% endif %}
 
             <p class="downloads">
-                <span>Overall:</span> {{ downloads.total }} installs<br />
-                <span>This month:</span> {{ downloads.monthly }} installs<br />
-                <span>Today:</span> {{ downloads.daily }} installs<br />
+                <span>Overall:</span> {{ downloads.total }} install{{ downloads.total|length == 1 ? '' : 's' }}<br />
+                <span>This month:</span> {{ downloads.monthly }} install{{ downloads.monthly|length == 1 ? '' : 's' }}<br />
+                <span>Today:</span> {{ downloads.daily }} install{{ downloads.daily|length == 1 ? '' : 's' }}<br />
             </p>
 
             <p class="description">{{ package.description }}</p>
