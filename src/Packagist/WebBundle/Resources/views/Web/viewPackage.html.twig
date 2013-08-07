@@ -63,9 +63,9 @@
             {% endif %}
 
             <p class="downloads">
-                <span>Overall:</span> {{ downloads.total }} {% if downlodas.total != 'N/A' %}install{{ downloads.total == 1 ? '' : 's' }}{% endif %}<br />
-                <span>This month:</span> {{ downloads.monthly }} {% if downlodas.monthly != 'N/A' %}install{{ downloads.monthly == 1 ? '' : 's' }}{% endif %}<br />
-                <span>Today:</span> {{ downloads.daily }} {% if downlodas.daily != 'N/A' %}install{{ downloads.daily == 1 ? '' : 's' }}{% endif %}<br />
+                <span>Overall:</span> {{ downloads.total }} {% if downloads.total != 'N/A' %}install{{ downloads.total == 1 ? '' : 's' }}{% endif %}<br />
+                <span>This month:</span> {{ downloads.monthly }} {% if downloads.monthly != 'N/A' %}install{{ downloads.monthly == 1 ? '' : 's' }}{% endif %}<br />
+                <span>Today:</span> {{ downloads.daily }} {% if downloads.daily != 'N/A' %}install{{ downloads.daily == 1 ? '' : 's' }}{% endif %}<br />
             </p>
 
             <p class="description">{{ package.description }}</p>
