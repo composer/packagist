@@ -11,12 +11,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "12d63b0a3558b71fc418e196e78614a42ab34eb9"
+                "reference": "30fb3d48fee4b3b53d7b140525c230a49ad08f05"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/12d63b0a3558b71fc418e196e78614a42ab34eb9",
-                "reference": "12d63b0a3558b71fc418e196e78614a42ab34eb9",
+                "url": "https://api.github.com/repos/composer/composer/zipball/30fb3d48fee4b3b53d7b140525c230a49ad08f05",
+                "reference": "30fb3d48fee4b3b53d7b140525c230a49ad08f05",
                 "shasum": ""
             },
             "require": {
@@ -72,7 +72,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2013-07-31 12:40:53"
+            "time": "2013-08-07 13:47:19"
         },
         {
             "name": "doctrine/common",
@@ -421,12 +421,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hwi/HWIOAuthBundle.git",
-                "reference": "0.3.0-alpha2"
+                "reference": "71b44c6a95443b6a9a13defa2e63ccc7a05d5f99"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/0.3.0-alpha2",
-                "reference": "0.3.0-alpha2",
+                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/71b44c6a95443b6a9a13defa2e63ccc7a05d5f99",
+                "reference": "71b44c6a95443b6a9a13defa2e63ccc7a05d5f99",
                 "shasum": ""
             },
             "require": {
@@ -486,6 +486,10 @@
                 "Authentication",
                 "amazon",
                 "bitbucket",
+                "bitly",
+                "box",
+                "dailymotion",
+                "deviantart",
                 "disqus",
                 "dropbox",
                 "facebook",
@@ -504,13 +508,15 @@
                 "security",
                 "sensio connect",
                 "stack exchange",
+                "stereomood",
                 "twitter",
                 "vkontakte",
                 "windows live",
+                "wordpress",
                 "yahoo",
                 "yandex"
             ],
-            "time": "2013-07-29 19:55:49"
+            "time": "2013-08-06 08:16:39"
         },
         {
             "name": "jdorn/sql-formatter",
@@ -1458,17 +1464,17 @@
         },
         {
             "name": "sensio/distribution-bundle",
-            "version": "v2.3.2",
+            "version": "v2.3.3",
             "target-dir": "Sensio/Bundle/DistributionBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sensiolabs/SensioDistributionBundle.git",
-                "reference": "v2.3.2"
+                "reference": "v2.3.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensiolabs/SensioDistributionBundle/zipball/v2.3.2",
-                "reference": "v2.3.2",
+                "url": "https://api.github.com/repos/sensiolabs/SensioDistributionBundle/zipball/v2.3.3",
+                "reference": "v2.3.3",
                 "shasum": ""
             },
             "require": {
@@ -1500,21 +1506,21 @@
                 "configuration",
                 "distribution"
             ],
-            "time": "2013-07-17 06:24:17"
+            "time": "2013-07-24 08:45:20"
         },
         {
             "name": "sensio/framework-extra-bundle",
-            "version": "v2.3.2",
+            "version": "v2.3.3",
             "target-dir": "Sensio/Bundle/FrameworkExtraBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sensiolabs/SensioFrameworkExtraBundle.git",
-                "reference": "v2.3.2"
+                "reference": "v2.3.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensiolabs/SensioFrameworkExtraBundle/zipball/v2.3.2",
-                "reference": "v2.3.2",
+                "url": "https://api.github.com/repos/sensiolabs/SensioFrameworkExtraBundle/zipball/v2.3.3",
+                "reference": "v2.3.3",
                 "shasum": ""
             },
             "require": {
@@ -1547,21 +1553,21 @@
                 "annotations",
                 "controllers"
             ],
-            "time": "2013-07-09 09:29:53"
+            "time": "2013-07-24 08:49:53"
         },
         {
             "name": "sensio/generator-bundle",
-            "version": "v2.3.2",
+            "version": "v2.3.3",
             "target-dir": "Sensio/Bundle/GeneratorBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sensiolabs/SensioGeneratorBundle.git",
-                "reference": "v2.3.2"
+                "reference": "v2.3.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sensiolabs/SensioGeneratorBundle/zipball/v2.3.2",
-                "reference": "v2.3.2",
+                "url": "https://api.github.com/repos/sensiolabs/SensioGeneratorBundle/zipball/v2.3.3",
+                "reference": "v2.3.3",
                 "shasum": ""
             },
             "require": {
@@ -1595,7 +1601,7 @@
                 }
             ],
             "description": "This bundle generates code for you",
-            "time": "2013-07-04 12:20:59"
+            "time": "2013-07-24 09:19:19"
         },
         {
             "name": "snc/redis-bundle",
@@ -1925,17 +1931,17 @@
         },
         {
             "name": "symfony/swiftmailer-bundle",
-            "version": "v2.3.2",
+            "version": "v2.3.3",
             "target-dir": "Symfony/Bundle/SwiftmailerBundle",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/SwiftmailerBundle.git",
-                "reference": "v2.3.2"
+                "reference": "v2.3.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/SwiftmailerBundle/zipball/v2.3.2",
-                "reference": "v2.3.2",
+                "url": "https://api.github.com/repos/symfony/SwiftmailerBundle/zipball/v2.3.3",
+                "reference": "v2.3.3",
                 "shasum": ""
             },
             "require": {
@@ -1976,20 +1982,20 @@
             ],
             "description": "Symfony SwiftmailerBundle",
             "homepage": "http://symfony.com",
-            "time": "2013-05-15 08:38:58"
+            "time": "2013-08-05 08:18:16"
         },
         {
             "name": "symfony/symfony",
-            "version": "v2.3.2",
+            "version": "v2.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/symfony.git",
-                "reference": "v2.3.2"
+                "reference": "v2.3.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/symfony/zipball/v2.3.2",
-                "reference": "v2.3.2",
+                "url": "https://api.github.com/repos/symfony/symfony/zipball/v2.3.3",
+                "reference": "v2.3.3",
                 "shasum": ""
             },
             "require": {
@@ -2084,7 +2090,7 @@
             "keywords": [
                 "framework"
             ],
-            "time": "2013-07-17 06:22:21"
+            "time": "2013-08-07 17:11:16"
         },
         {
             "name": "twig/extensions",
@@ -2135,16 +2141,16 @@
         },
         {
             "name": "twig/twig",
-            "version": "v1.13.1",
+            "version": "v1.13.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/fabpot/Twig.git",
-                "reference": "v1.13.1"
+                "reference": "v1.13.2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fabpot/Twig/zipball/v1.13.1",
-                "reference": "v1.13.1",
+                "url": "https://api.github.com/repos/fabpot/Twig/zipball/v1.13.2",
+                "reference": "v1.13.2",
                 "shasum": ""
             },
             "require": {
@@ -2163,7 +2169,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "BSD-3"
+                "BSD-3-Clause"
             ],
             "authors": [
                 {
@@ -2180,7 +2186,7 @@
             "keywords": [
                 "templating"
             ],
-            "time": "2013-06-06 06:06:01"
+            "time": "2013-08-03 15:35:31"
         },
         {
             "name": "white-october/pagerfanta-bundle",

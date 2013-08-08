@@ -17,6 +17,7 @@ framework:
         name: packagist
         cookie_lifetime: 3600
     trusted_proxies: %trusted_proxies%
+    trusted_hosts: %trusted_hosts%
     http_method_override: true
     fragments: ~
 
