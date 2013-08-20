@@ -64,8 +64,10 @@ class UpdatePackagesCommand extends ContainerAwareCommand
 
         if ($package) {
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
+            $flags = Updater::UPDATE_EQUAL_REFS;
         } elseif ($force) {
             $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $flags = Updater::UPDATE_EQUAL_REFS;
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
         }

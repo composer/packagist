@@ -29,6 +29,7 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
  */
 class Updater
 {
+    const UPDATE_EQUAL_REFS = 1;
     const DELETE_BEFORE = 2;
 
     /**
@@ -164,8 +165,17 @@ class Updater
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
             if (strtolower($existingVersion->getNormalizedVersion()) === strtolower($normVersion)) {
-                $version = $existingVersion;
-                break;
+                $source = $existingVersion->getSource();
+                // update if the right flag is set, or it's a dev version, or the source reference has changed in a tagged release (re-tag)
+                if ($existingVersion->getDevelopment() || $source['reference'] !== $data->getSourceReference() || ($flags & self::UPDATE_EQUAL_REFS)) {
+                    $version = $existingVersion;
+                    break;
+                }
+
+                // mark it updated to avoid it being pruned
+                $existingVersion->setUpdatedAt(new \DateTime);
+
+                return;
             }
         }
 

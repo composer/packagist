@@ -649,7 +649,7 @@ class WebController extends Controller
                 $repository->setLoader($loader);
 
                 try {
-                    $updater->update($package, $repository);
+                    $updater->update($package, $repository, Updater::UPDATE_EQUAL_REFS);
                 } catch (\Exception $e) {
                     return new Response(json_encode(array(
                         'status' => 'error',
