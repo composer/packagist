@@ -244,6 +244,7 @@ class ApiController extends Controller
             $em->transactional(function($em) use ($package, $updater, $io) {
                 // prepare dependencies
                 $config = Factory::createConfig();
+                $io->loadConfiguration($config);
                 $loader = new ValidatingArrayLoader(new ArrayLoader());
 
                 // prepare repository

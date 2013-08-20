@@ -29,7 +29,6 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
  */
 class Updater
 {
-    const UPDATE_TAGS = 1;
     const DELETE_BEFORE = 2;
 
     /**
@@ -165,15 +164,8 @@ class Updater
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
             if (strtolower($existingVersion->getNormalizedVersion()) === strtolower($normVersion)) {
-                if ($existingVersion->getDevelopment() || ($flags & self::UPDATE_TAGS)) {
-                    $version = $existingVersion;
-                    break;
-                }
-
-                // mark it updated to avoid it being pruned
-                $existingVersion->setUpdatedAt(new \DateTime);
-
-                return;
+                $version = $existingVersion;
+                break;
             }
         }
 

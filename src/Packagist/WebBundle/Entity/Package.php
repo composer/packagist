@@ -338,8 +338,10 @@ class Package
         }
 
         try {
+            $io = new NullIO();
             $config = Factory::createConfig();
-            $repository = new VcsRepository(array('url' => $this->repository), new NullIO(), $config);
+            $io->loadConfiguration($config);
+            $repository = new VcsRepository(array('url' => $this->repository), $io, $config);
 
             $driver = $this->vcsDriver = $repository->getDriver();
             if (!$driver) {

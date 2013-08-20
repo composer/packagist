@@ -64,10 +64,8 @@ class UpdatePackagesCommand extends ContainerAwareCommand
 
         if ($package) {
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
-            $flags = Updater::UPDATE_TAGS;
         } elseif ($force) {
             $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
-            $flags = Updater::UPDATE_TAGS;
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
         }
@@ -89,8 +87,9 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         }
 
         $input->setInteractive(false);
-        $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : null;
         $config = Factory::createConfig();
+        $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new BufferIO('');
+        $io->loadConfiguration($config);
         $loader = new ValidatingArrayLoader(new ArrayLoader());
 
         while ($ids) {
@@ -103,6 +102,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                 try {
                     if (null === $io || $io instanceof BufferIO) {
                         $io = new BufferIO('');
+                        $io->loadConfiguration($config);
                     }
                     $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                     $repository->setLoader($loader);

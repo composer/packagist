@@ -11,21 +11,21 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "30fb3d48fee4b3b53d7b140525c230a49ad08f05"
+                "reference": "d017e3f2096dda7194600a76bc7328808811c8da"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/30fb3d48fee4b3b53d7b140525c230a49ad08f05",
-                "reference": "30fb3d48fee4b3b53d7b140525c230a49ad08f05",
+                "url": "https://api.github.com/repos/composer/composer/zipball/d017e3f2096dda7194600a76bc7328808811c8da",
+                "reference": "d017e3f2096dda7194600a76bc7328808811c8da",
                 "shasum": ""
             },
             "require": {
                 "justinrainbow/json-schema": "1.1.*",
                 "php": ">=5.3.2",
                 "seld/jsonlint": "1.*",
-                "symfony/console": "~2.3@dev",
-                "symfony/finder": "~2.1",
-                "symfony/process": "~2.1@dev"
+                "symfony/console": "~2.3",
+                "symfony/finder": "~2.2",
+                "symfony/process": "~2.1"
             },
             "require-dev": {
                 "phpunit/phpunit": "~3.7.10"
@@ -72,7 +72,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2013-08-07 13:47:19"
+            "time": "2013-08-18 23:21:45"
         },
         {
             "name": "doctrine/common",
@@ -421,12 +421,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hwi/HWIOAuthBundle.git",
-                "reference": "71b44c6a95443b6a9a13defa2e63ccc7a05d5f99"
+                "reference": "156372aa3451d51bacdd0e9b1f380577b8075ad8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/71b44c6a95443b6a9a13defa2e63ccc7a05d5f99",
-                "reference": "71b44c6a95443b6a9a13defa2e63ccc7a05d5f99",
+                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/156372aa3451d51bacdd0e9b1f380577b8075ad8",
+                "reference": "156372aa3451d51bacdd0e9b1f380577b8075ad8",
                 "shasum": ""
             },
             "require": {
@@ -471,7 +471,7 @@
                     "homepage": "https://github.com/hwi/HWIOAuthBundle/contributors"
                 },
                 {
-                    "name": "Alexander",
+                    "name": "Alexander Mols",
                     "email": "iam.asm89@gmail.com"
                 },
                 {
@@ -505,8 +505,10 @@
                 "oauth1",
                 "oauth2",
                 "odnoklassniki",
+                "qq",
                 "security",
                 "sensio connect",
+                "sina weibo",
                 "stack exchange",
                 "stereomood",
                 "twitter",
@@ -516,7 +518,7 @@
                 "yahoo",
                 "yandex"
             ],
-            "time": "2013-08-06 08:16:39"
+            "time": "2013-08-10 07:38:51"
         },
         {
             "name": "jdorn/sql-formatter",
@@ -1225,12 +1227,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/whiteoctober/Pagerfanta.git",
-                "reference": "1a3cb8addb92df6396e59a2c44c3b7f216b4218a"
+                "reference": "deb6401540518b11f5547b4f962e9e5b6e762341"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/whiteoctober/Pagerfanta/zipball/1a3cb8addb92df6396e59a2c44c3b7f216b4218a",
-                "reference": "1a3cb8addb92df6396e59a2c44c3b7f216b4218a",
+                "url": "https://api.github.com/repos/whiteoctober/Pagerfanta/zipball/deb6401540518b11f5547b4f962e9e5b6e762341",
+                "reference": "deb6401540518b11f5547b4f962e9e5b6e762341",
                 "shasum": ""
             },
             "require": {
@@ -1240,7 +1242,7 @@
                 "doctrine/mongodb-odm": "*",
                 "doctrine/orm": "2.*",
                 "mandango/mandango": "*",
-                "propel/propel1": ">=1.6,<2.0",
+                "propel/propel1": "~1.6",
                 "solarium/solarium": "dev-develop"
             },
             "suggest": {
@@ -1279,7 +1281,7 @@
                 "paginator",
                 "paging"
             ],
-            "time": "2013-06-13 22:25:28"
+            "time": "2013-08-14 07:27:55"
         },
         {
             "name": "phpoption/phpoption",
@@ -1610,12 +1612,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/snc/SncRedisBundle.git",
-                "reference": "1f99523092c1129b27f3dd6747cee364b53fab44"
+                "reference": "2f044633499fc86c33bf6ec5d4b0968617fe4a75"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/1f99523092c1129b27f3dd6747cee364b53fab44",
-                "reference": "1f99523092c1129b27f3dd6747cee364b53fab44",
+                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/2f044633499fc86c33bf6ec5d4b0968617fe4a75",
+                "reference": "2f044633499fc86c33bf6ec5d4b0968617fe4a75",
                 "shasum": ""
             },
             "require": {
@@ -1665,7 +1667,7 @@
                 "redis",
                 "symfony"
             ],
-            "time": "2013-07-29 08:20:39"
+            "time": "2013-08-17 06:49:38"
         },
         {
             "name": "solarium/solarium",

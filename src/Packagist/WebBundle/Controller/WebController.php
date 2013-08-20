@@ -643,12 +643,13 @@ class WebController extends Controller
 
                 $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
                 $config = Factory::createConfig();
+                $io->loadConfiguration($config);
                 $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                 $loader = new ValidatingArrayLoader(new ArrayLoader());
                 $repository->setLoader($loader);
 
                 try {
-                    $updater->update($package, $repository, Updater::UPDATE_TAGS);
+                    $updater->update($package, $repository);
                 } catch (\Exception $e) {
                     return new Response(json_encode(array(
                         'status' => 'error',
