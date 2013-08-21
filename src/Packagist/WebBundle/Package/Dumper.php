@@ -100,6 +100,8 @@ class Dumper
      */
     public function dump(array $packageIds, $force = false, $verbose = false)
     {
+        $cleanUpOldFiles = date('i') == 0;
+
         // prepare build dir
         $webDir = $this->webDir;
         $buildDir = $this->buildDir;
@@ -300,7 +302,7 @@ class Dumper
         }
 
         // run only once an hour
-        if (date('i') == 0) {
+        if ($cleanUpOldFiles) {
             // clean up old files
             $finder = Finder::create()->directories()->ignoreVCS(true)->in($webDir.'/p/');
             foreach ($finder as $vendorDir) {
@@ -316,27 +318,42 @@ class Dumper
                     $hashedByPackage[$package][] = (string) $file;
                 }
 
-                foreach ($hashedByPackage as $package => $files) {
-                    // if multiple hashed files exist for one package, remove all but the newest one
-                    if (count($files) > 1) {
-                        $orderedFiles = array();
-                        foreach ($files as $file) {
-                            $orderedFiles[$file] = filemtime($file);
-                        }
-                        asort($orderedFiles);
-                        array_pop($orderedFiles);
-                        foreach ($orderedFiles as $file => $mtime) {
-                            unlink($file);
-                        }
-                    }
+                foreach ($hashedByPackage as $files) {
+                    $this->pruneToLatestFile($files);
                 }
             }
 
             // clean up old provider listings
             $finder = Finder::create()->depth(0)->files()->name('provider-*.json')->ignoreVCS(true)->in($webDir.'/p/')->date('until 1hour ago');
+            $providerFiles = array();
             foreach ($finder as $provider) {
-                unlink($provider);
+                $list = preg_replace('{.+/([^/$]+?)\$[a-f0-9]+\.json$}', '$1', strtr($provider, '\\', '/'));
+                $providerFiles[$list][] = (string) $provider;
             }
+
+            foreach ($providerFiles as $files) {
+                $this->pruneToLatestFile($files);
+            }
+        }
+    }
+
+    /**
+     * If multiple files exist, remove all but the newest one.
+     */
+    private function pruneToLatestFile($files)
+    {
+        if (count($files) <= 1) {
+            return;
+        }
+
+        $orderedFiles = array();
+        foreach ($files as $file) {
+            $orderedFiles[$file] = filemtime($file);
+        }
+        asort($orderedFiles);
+        array_pop($orderedFiles);
+        foreach ($orderedFiles as $file => $mtime) {
+            unlink($file);
         }
     }
 
