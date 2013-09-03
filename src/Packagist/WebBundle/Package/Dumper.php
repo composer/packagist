@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Package;
 
 use Symfony\Component\Filesystem\Filesystem;
+use Composer\Util\Filesystem as ComposerFilesystem;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Finder\Finder;
@@ -35,6 +36,11 @@ class Dumper
     protected $fs;
 
     /**
+     * @var ComposerFilesystem
+     */
+    protected $cfs;
+
+    /**
      * @var string
      */
     protected $webDir;
@@ -53,7 +59,7 @@ class Dumper
      * Data cache
      * @var array
      */
-    private $files = array();
+    private $rootFile;
 
     /**
      * Data cache
@@ -86,6 +92,7 @@ class Dumper
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
+        $this->cfs = new ComposerFilesystem;
         $this->router = $router;
         $this->webDir = realpath($webDir);
         $this->buildDir = $cacheDir . '/composer-packages-build';
@@ -105,7 +112,17 @@ class Dumper
         // prepare build dir
         $webDir = $this->webDir;
         $buildDir = $this->buildDir;
-        $this->fs->remove($buildDir);
+        $retries = 5;
+        do {
+            if (!$this->cfs->removeDirectory($buildDir)) {
+                usleep(200);
+            }
+            clearstatcache();
+        } while (is_dir($buildDir) && $retries--);
+        if (is_dir($buildDir)) {
+            echo 'Could not remove the build dir entirely, aborting';
+            return false;
+        }
         $this->fs->mkdir($buildDir);
         $this->fs->mkdir($webDir.'/p/');
 
@@ -120,7 +137,6 @@ class Dumper
             }
         }
 
-        $modifiedFiles = array();
         $modifiedIndividualFiles = array();
 
         $total = count($packageIds);
@@ -175,13 +191,6 @@ class Dumper
                 file_put_contents($buildDir.'/p/'.$name.'.files', json_encode(array_keys($affectedFiles)));
                 $modifiedIndividualFiles['p/'.$name.'.files'] = true;
 
-                // (re)write versions
-                foreach ($package->getVersions() as $version) {
-                    $file = $buildDir.'/p/'.$this->getTargetFile($version);
-                    $modifiedFiles['p/'.basename($file)] = true;
-                    $this->dumpVersion($version, $file);
-                }
-
                 $package->setDumpedAt($dumpTime);
             }
 
@@ -213,6 +222,7 @@ class Dumper
         if ($verbose) {
             echo 'Preparing individual files listings'.PHP_EOL;
         }
+        $safeFiles = array();
         $individualHashedListings = array();
         $finder = Finder::create()->files()->ignoreVCS(true)->name('*.json')->in($buildDir.'/p/')->depth('1');
 
@@ -229,24 +239,21 @@ class Dumper
 
             // add hashed provider to listing
             $listing = 'p/'.$this->getTargetListing($file);
-            $listing = str_replace('providers', 'provider', $listing);
             $key = substr($key, 2, -5);
             $hash = hash_file('sha256', $file);
+            $safeFiles[] = 'p/'.$key.'$'.$hash.'.json';
             $this->listings[$listing]['providers'][$key] = array('sha256' => $hash);
             $individualHashedListings[$listing] = true;
         }
 
         // prepare root file
         $rootFile = $buildDir.'/p/packages.json';
-        $this->loadFile($rootFile);
-        if (!isset($this->files['p/packages.json']['packages'])) {
-            $this->files['p/packages.json']['packages'] = array();
-        }
+        $this->rootFile = array('packages' => array());
         $url = $this->router->generate('track_download', array('name' => 'VND/PKG'));
-        $this->files['p/packages.json']['notify'] = str_replace('VND/PKG', '%package%', $url);
-        $this->files['p/packages.json']['notify-batch'] = $this->router->generate('track_download_batch');
-        $this->files['p/packages.json']['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
-        $this->files['p/packages.json']['search'] = $this->router->generate('search', array('_format' => 'json')) . '?q=%query%';
+        $this->rootFile['notify'] = str_replace('VND/PKG', '%package%', $url);
+        $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch');
+        $this->rootFile['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
+        $this->rootFile['search'] = $this->router->generate('search', array('_format' => 'json')) . '?q=%query%';
 
         if ($verbose) {
             echo 'Dumping individual listings'.PHP_EOL;
@@ -258,7 +265,8 @@ class Dumper
             $hash = hash_file('sha256', $buildDir.'/'.$listing);
             $hashedListing = substr($listing, 0, -5) . '$' . $hash . '.json';
             rename($buildDir.'/'.$listing, $buildDir.'/'.$hashedListing);
-            $this->files['p/packages.json']['provider-includes'][str_replace($hash, '%hash%', $hashedListing)] = array('sha256' => $hash);
+            $this->rootFile['provider-includes'][str_replace($hash, '%hash%', $hashedListing)] = array('sha256' => $hash);
+            $safeFiles[] = $hashedListing;
         }
 
         if ($verbose) {
@@ -266,9 +274,9 @@ class Dumper
         }
 
         // sort & dump root file
-        ksort($this->files['p/packages.json']['packages']);
-        ksort($this->files['p/packages.json']['provider-includes']);
-        $this->dumpFile($rootFile);
+        ksort($this->rootFile['packages']);
+        ksort($this->rootFile['provider-includes']);
+        $this->dumpRootFile($rootFile);
 
         if ($verbose) {
             echo 'Putting new files in production'.PHP_EOL;
@@ -292,17 +300,18 @@ class Dumper
         // clean up old dir
         $retries = 5;
         do {
-            exec(sprintf('rm -rf %s', escapeshellarg($webDir.'/p-old')), $output);
-            usleep(200);
+            if (!$this->cfs->removeDirectory($webDir.'/p-old')) {
+                usleep(200);
+            }
             clearstatcache();
         } while (is_dir($webDir.'/p-old') && $retries--);
 
-        if ($verbose) {
-            echo 'Cleaning up old files'.PHP_EOL;
-        }
-
         // run only once an hour
         if ($cleanUpOldFiles) {
+            if ($verbose) {
+                echo 'Cleaning up old files'.PHP_EOL;
+            }
+
             // clean up old files
             $finder = Finder::create()->directories()->ignoreVCS(true)->in($webDir.'/p/');
             foreach ($finder as $vendorDir) {
@@ -312,77 +321,37 @@ class Dumper
                     ->in((string) $vendorDir);
 
                 $hashedFiles = iterator_to_array($vendorFiles->getIterator());
-                $hashedByPackage = array();
                 foreach ($hashedFiles as $file) {
-                    $package = preg_replace('{.+/([^/$]+?)\$[a-f0-9]+\.json$}', '$1', strtr($file, '\\', '/'));
-                    $hashedByPackage[$package][] = (string) $file;
-                }
-
-                foreach ($hashedByPackage as $files) {
-                    $this->pruneToLatestFile($files);
+                    $key = preg_replace('{(?:.*/|^)(p/[^/]+/[^/$]+\$[a-f0-9]+\.json)$}', '$1', strtr($file, '\\', '/'));
+                    if (!in_array($key, $safeFiles, true)) {
+                        unlink((string) $file);
+                    }
                 }
             }
 
             // clean up old provider listings
-            $finder = Finder::create()->depth(0)->files()->name('provider-*.json')->ignoreVCS(true)->in($webDir.'/p/')->date('until 1hour ago');
+            $finder = Finder::create()->depth(0)->files()->name('provider-*.json')->ignoreVCS(true)->in($webDir.'/p/')->date('until 10minutes ago');
             $providerFiles = array();
             foreach ($finder as $provider) {
-                $list = preg_replace('{.+/([^/$]+?)\$[a-f0-9]+\.json$}', '$1', strtr($provider, '\\', '/'));
-                $providerFiles[$list][] = (string) $provider;
-            }
-
-            foreach ($providerFiles as $files) {
-                $this->pruneToLatestFile($files);
+                $key = preg_replace('{(?:.*/|^)(p/[^/$]+\$[a-f0-9]+\.json)$}', '$1', strtr($provider, '\\', '/'));
+                if (!in_array($key, $safeFiles, true)) {
+                    unlink((string) $provider);
+                }
             }
         }
+
+        return true;
     }
 
-    /**
-     * If multiple files exist, remove all but the newest one.
-     */
-    private function pruneToLatestFile($files)
+    private function dumpRootFile($file)
     {
-        if (count($files) <= 1) {
-            return;
-        }
-
-        $orderedFiles = array();
-        foreach ($files as $file) {
-            $orderedFiles[$file] = filemtime($file);
-        }
-        asort($orderedFiles);
-        array_pop($orderedFiles);
-        foreach ($orderedFiles as $file => $mtime) {
-            unlink($file);
-        }
-    }
-
-    private function loadFile($file)
-    {
-        $key = 'p/'.basename($file);
-
-        if (isset($this->files[$key])) {
-            return;
-        }
-
-        if (file_exists($file)) {
-            $this->files[$key] = json_decode(file_get_contents($file), true);
-        } else {
-            $this->files[$key] = array();
-        }
-    }
-
-    private function dumpFile($file)
-    {
-        $key = 'p/'.basename($file);
-
         // sort all versions and packages to make sha1 consistent
-        ksort($this->files[$key]['packages']);
-        foreach ($this->files[$key]['packages'] as $package => $versions) {
-            ksort($this->files[$key]['packages'][$package]);
+        ksort($this->rootFile['packages']);
+        foreach ($this->rootFile['packages'] as $package => $versions) {
+            ksort($this->rootFile['packages'][$package]);
         }
 
-        file_put_contents($file, json_encode($this->files[$key]));
+        file_put_contents($file, json_encode($this->rootFile));
     }
 
     private function dumpListing($listing)
@@ -424,12 +393,6 @@ class Dumper
         touch($path, $this->individualFilesMtime[$key]);
     }
 
-    private function dumpVersion(Version $version, $file)
-    {
-        $this->loadFile($file);
-        $this->files['p/'.basename($file)]['packages'][$version->getName()][$version->getVersion()] = $version->toArray();
-    }
-
     private function dumpVersionToIndividualFile(Version $version, $file, $key)
     {
         $this->loadIndividualFile($file, $key);
@@ -466,16 +429,16 @@ class Dumper
         $mtime = filemtime($file);
 
         if ($mtime < $firstOfTheMonth - 86400 * 180) {
-            return 'providers-archived.json';
+            return 'provider-archived.json';
         }
         if ($mtime < $firstOfTheMonth - 86400 * 60) {
-            return 'providers-stale.json';
+            return 'provider-stale.json';
         }
         if ($mtime < $firstOfTheMonth - 86400 * 10) {
-            return 'providers-active.json';
+            return 'provider-active.json';
         }
 
-        return 'providers-latest.json';
+        return 'provider-latest.json';
     }
 
     private function getIndividualFileKey($path)
