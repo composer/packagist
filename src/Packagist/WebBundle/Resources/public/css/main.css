@@ -470,6 +470,7 @@ form ul {
 }
 .package .tags {
   line-height: 34px;
+  word-wrap: break-word;
 }
 .package .tags a {
   background: #c67700;
