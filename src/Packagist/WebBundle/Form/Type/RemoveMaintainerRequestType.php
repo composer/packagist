@@ -12,6 +12,9 @@
 
 namespace Packagist\WebBundle\Form\Type;
 
+use Doctrine\ORM\EntityRepository;
+use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\User;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
@@ -19,22 +22,29 @@ use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class AddMaintainerRequestType extends AbstractType
+class RemoveMaintainerRequestType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('user', 'fos_user_username');
+        $builder->add('user', 'entity', array(
+            'class' => 'PackagistWebBundle:User',
+            'query_builder' => function(EntityRepository $er) use ($options) {
+                return $er->getPackageMaintainersQueryBuilder($options['package'], $options['excludeUser']);
+            },
+        ));
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
+        $resolver->setRequired(array('package'));
         $resolver->setDefaults(array(
-            'data_class' => 'Packagist\WebBundle\Form\Model\MaintainerRequest',
+            'excludeUser' => null,
+            'data_class' => 'Packagist\WebBundle\Form\Model\MaintainerRequest'
         ));
     }
 
     public function getName()
     {
-        return 'add_maintainer_form';
+        return 'remove_maintainer_form';
     }
 }

@@ -3,6 +3,10 @@
         $('#add-maintainer-form').toggleClass('hidden');
         e.preventDefault();
     });
+    $('#remove-maintainer').click(function (e) {
+        $('#remove-maintainer-form').toggleClass('hidden');
+        e.preventDefault();
+    });
     $('.package .version h1').click(function (e) {
         e.preventDefault();
         $(this).siblings('.details-toggler').click();
