@@ -14,7 +14,7 @@ namespace Packagist\WebBundle\Form\Model;
 
 use FOS\UserBundle\Model\UserInterface;
 
-class AddMaintainerRequest
+class MaintainerRequest
 {
     protected $user;
 

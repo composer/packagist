@@ -20,7 +20,8 @@ use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Package\Loader\ArrayLoader;
 use Doctrine\ORM\NoResultException;
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
-use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
+use Packagist\WebBundle\Form\Model\MaintainerRequest;
+use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
 use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Package\Updater;
@@ -525,6 +526,9 @@ class WebController extends Controller
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
             $data['form'] = $maintainerForm->createView();
         }
+        if ($removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
+            $data['removeMaintainerForm'] = $removeMaintainerForm->createView();
+        }
         if ($deleteForm = $this->createDeletePackageForm($package)) {
             $data['deleteForm'] = $deleteForm->createView();
         }
@@ -771,6 +775,61 @@ class WebController extends Controller
     }
 
     /**
+     * @Template("PackagistWebBundle:Web:viewPackage.html.twig")
+     * @Route("/packages/{name}/remove_maintainers/", name="remove_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
+     */
+    public function removeMaintainerAction(Request $req, $name)
+    {
+        /** @var $package Package */
+        $package = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Package')
+            ->findOneByName($name);
+
+        if (!$package) {
+            throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
+        }
+        if (!$removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
+            throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
+        }
+
+        $data = array(
+            'package' => $package,
+            'removeMaintainerForm' => $removeMaintainerForm->createView(),
+            'show_remove_maintainer_form' => true,
+        );
+
+        if ('POST' === $req->getMethod()) {
+            $removeMaintainerForm->bind($req);
+            if ($removeMaintainerForm->isValid()) {
+                try {
+                    $em = $this->getDoctrine()->getManager();
+                    $user = $removeMaintainerForm->getData()->getUser();
+
+                    if (!empty($user)) {
+                        if ($package->getMaintainers()->contains($user)) {
+                            $package->getMaintainers()->removeElement($user);
+                        }
+
+                        $em->persist($package);
+                        $em->flush();
+
+                        $this->get('session')->getFlashBag()->set('success', $user->getUsername().' is no longer a '.$package->getName().' maintainer.');
+
+                        return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
+                    }
+                    $this->get('session')->getFlashBag()->set('error', 'The user could not be found.');
+                } catch (\Exception $e) {
+                    $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+                    $this->get('session')->getFlashBag()->set('error', 'The maintainer could not be removed.');
+                }
+            }
+        }
+
+        $data['searchForm'] = $this->createSearchForm()->createView();
+        return $data;
+    }
+
+    /**
      * @Route("/statistics", name="stats")
      * @Template
      */
@@ -887,8 +946,20 @@ class WebController extends Controller
         }
 
         if ($this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
-            $addMaintainerRequest = new AddMaintainerRequest;
-            return $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
+            $maintainerRequest = new MaintainerRequest;
+            return $this->createForm(new AddMaintainerRequestType, $maintainerRequest);
+        }
+    }
+
+    private function createRemoveMaintainerForm(Package $package)
+    {
+        if (!($user = $this->getUser()) || 1 == $package->getMaintainers()->count()) {
+            return;
+        }
+
+        if ($this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
+            $maintainerRequest = new MaintainerRequest;
+            return $this->createForm(new RemoveMaintainerRequestType(), $maintainerRequest, array('package'=>$package, 'excludeUser'=>$user));
         }
     }
 
