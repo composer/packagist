@@ -26,6 +26,9 @@ parameters:
     github.client_id:
     github.client_secret:
 
+	preauthenticated_provider.enabled: false
+    preauthenticated_provider.default_email_domain: example.com
+
     # -- performance features --
     # set both to apc to optimize things if it is available
     validation_cache_backend: ~

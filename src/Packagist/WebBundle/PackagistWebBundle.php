@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle;
 
+use Packagist\WebBundle\DependencyInjection\Security\Factory\HttpBasicPreAuthenticatedFactory;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Packagist\WebBundle\DependencyInjection\Compiler\RepositoryPass;
@@ -24,6 +25,9 @@ class PackagistWebBundle extends Bundle
     public function build(ContainerBuilder $container)
     {
         parent::build($container);
+
+	    $extension = $container->getExtension('security');
+        $extension->addSecurityListenerFactory(new HttpBasicPreAuthenticatedFactory());
 
         $container->addCompilerPass(new RepositoryPass());
     }

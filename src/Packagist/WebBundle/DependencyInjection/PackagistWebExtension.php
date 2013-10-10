@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\DependencyInjection;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 /**
@@ -31,5 +32,20 @@ class PackagistWebExtension extends Extension
         $loader->load('services.yml');
 
         $container->setParameter('packagist_web.rss_max_items', $config['rss_max_items']);
+
+	    if (!empty($config['preauthenticated_provider']['enabled'])) {
+		    $this->loadPreAuthenticatedProvider($container);
+	    }
     }
+
+	private function loadPreAuthenticatedProvider(ContainerBuilder $container)
+	{
+		$baseUserProvider    = $container->getDefinition('packagist.user_provider');
+		$preAuthUserProvider = $container->getDefinition('packagist.http_basic_preauthenticated_user_provider');
+
+		$container->setDefinition('packagist.base_user_provider', $baseUserProvider);
+		$preAuthUserProvider->replaceArgument(0, new Reference('packagist.base_user_provider'));
+
+		$container->setDefinition('packagist.user_provider', $preAuthUserProvider);
+	}
 }
