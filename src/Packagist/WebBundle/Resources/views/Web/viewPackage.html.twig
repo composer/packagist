@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('bundles/packagistweb/js/view.js?v=12')}}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/view.js?v=13')}}"></script>
 {% endblock %}
 
 {% block content %}
@@ -63,9 +63,9 @@
             {% endif %}
 
             <p class="downloads">
-                <span>Overall:</span> {{ downloads.total }} {% if downloads.total != 'N/A' %}install{{ downloads.total == 1 ? '' : 's' }}{% endif %}<br />
-                <span>This month:</span> {{ downloads.monthly }} {% if downloads.monthly != 'N/A' %}install{{ downloads.monthly == 1 ? '' : 's' }}{% endif %}<br />
-                <span>Today:</span> {{ downloads.daily }} {% if downloads.daily != 'N/A' %}install{{ downloads.daily == 1 ? '' : 's' }}{% endif %}<br />
+                <span>Overall:</span> {% if downloads.total is defined %}{{ downloads.total }} install{{ downloads.total == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
+                <span>This month:</span> {% if downloads.monthly is defined %}{{ downloads.monthly }} install{{ downloads.monthly == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
+                <span>Today:</span> {% if downloads.daily is defined %}{{ downloads.daily }} install{{ downloads.daily == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
             </p>
 
             <p class="description">{{ package.description }}</p>
@@ -74,7 +74,7 @@
                 {% for maintainer in package.maintainers %}
                     <a href="{{ path('user_profile', {'name': maintainer.username}) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
                 {% endfor %}
-                {% if form is defined or removeMaintainerForm is defined %}({% if form is defined %}<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}">add maintainer</a>{% endif %}{% if form is defined and removeMaintainerForm is defined %} / {% endif %}{% if removeMaintainerForm is defined %}<a id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}">remove maintainer</a>{% endif %}){% endif %}
+                {% if addMaintainerForm is defined or removeMaintainerForm is defined %}({% if addMaintainerForm is defined %}<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}">add maintainer</a>{% endif %}{% if addMaintainerForm is defined and removeMaintainerForm is defined %} / {% endif %}{% if removeMaintainerForm is defined %}<a id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}">remove maintainer</a>{% endif %}){% endif %}
                 <br />
                 {% if version and version.homepage %}
                     <span>Homepage:</span> <a href="{{ version.homepage }}">{{ version.homepage|replace({'http://': ''}) }}</a><br />
@@ -98,18 +98,18 @@
                 {% endif %}
             </p>
 
-            {% if form is defined or removeMaintainerForm is defined %}
+            {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
                 <div>
-                    {% if form is defined %}
-                        <form id="add-maintainer-form" class="{{ show_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('add_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(form) }}>
+                    {% if addMaintainerForm is defined %}
+                        <form id="add-maintainer-form" class="{{ show_add_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('add_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(addMaintainerForm) }}>
                             <div>
                                 <h2>Add Maintainer</h2>
                                 <p>
-                                    {{ form_label(form.user, "Username") }}
-                                    {{ form_errors(form.user) }}
-                                    {{ form_widget(form.user) }}
+                                    {{ form_label(addMaintainerForm.user, "Username") }}
+                                    {{ form_errors(addMaintainerForm.user) }}
+                                    {{ form_widget(addMaintainerForm.user) }}
                                 </p>
-                                {{ form_rest(form) }}
+                                {{ form_rest(addMaintainerForm) }}
                                 <input id="submit" type="submit" value="Submit" />
                             </div>
                         </form>

@@ -506,7 +506,10 @@ class WebController extends Controller
             $version = $versionRepo->getFullVersion($package->getVersions()->first()->getId());
         }
 
-        $data = array('package' => $package, 'version' => $version);
+        $data = array(
+            'package' => $package,
+            'version' => $version
+        );
 
         try {
             $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package);
@@ -515,16 +518,11 @@ class WebController extends Controller
                 $data['is_favorite'] = $this->get('packagist.favorite_manager')->isMarked($this->getUser(), $package);
             }
         } catch (ConnectionException $e) {
-            $data['downloads'] = array(
-                'total' => 'N/A',
-                'monthly' => 'N/A',
-                'daily' => 'N/A',
-            );
         }
 
         $data['searchForm'] = $this->createSearchForm()->createView();
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
-            $data['form'] = $maintainerForm->createView();
+            $data['addMaintainerForm'] = $maintainerForm->createView();
         }
         if ($removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
             $data['removeMaintainerForm'] = $removeMaintainerForm->createView();
@@ -739,8 +737,8 @@ class WebController extends Controller
 
         $data = array(
             'package' => $package,
-            'form' => $form->createView(),
-            'show_maintainer_form' => true,
+            'addMaintainerForm' => $form->createView(),
+            'show_add_maintainer_form' => true,
         );
 
         if ('POST' === $req->getMethod()) {
@@ -776,7 +774,7 @@ class WebController extends Controller
 
     /**
      * @Template("PackagistWebBundle:Web:viewPackage.html.twig")
-     * @Route("/packages/{name}/remove_maintainers/", name="remove_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
+     * @Route("/packages/{name}/maintainers/delete", name="remove_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
     public function removeMaintainerAction(Request $req, $name)
     {
@@ -794,6 +792,7 @@ class WebController extends Controller
 
         $data = array(
             'package' => $package,
+            'version' => null,
             'removeMaintainerForm' => $removeMaintainerForm->createView(),
             'show_remove_maintainer_form' => true,
         );
