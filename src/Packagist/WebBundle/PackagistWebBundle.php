@@ -26,7 +26,7 @@ class PackagistWebBundle extends Bundle
     {
         parent::build($container);
 
-	    $extension = $container->getExtension('security');
+        $extension = $container->getExtension('security');
         $extension->addSecurityListenerFactory(new HttpBasicPreAuthenticatedFactory());
 
         $container->addCompilerPass(new RepositoryPass());

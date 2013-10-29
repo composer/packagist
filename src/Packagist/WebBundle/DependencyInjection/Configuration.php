@@ -23,10 +23,10 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->children()
                 ->scalarNode('rss_max_items')->defaultValue(40)->end()
-	            ->arrayNode('preauthenticated_provider')
+                ->arrayNode('preauthenticated_provider')
                     ->addDefaultsIfNotSet()
                     ->children()
-	                    ->booleanNode('enabled')->defaultFalse()->end()
+                        ->booleanNode('enabled')->defaultFalse()->end()
                         ->scalarNode('default_email_domain')->defaultValue('example.com')->end()
                     ->end()
                 ->end()

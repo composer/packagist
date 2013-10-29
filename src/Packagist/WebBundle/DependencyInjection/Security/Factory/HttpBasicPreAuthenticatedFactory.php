@@ -17,15 +17,14 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 class HttpBasicPreAuthenticatedFactory implements SecurityFactoryInterface
 {
-	public function create(ContainerBuilder $container, $id, $config, $userProvider, $defaultEntryPoint)
+    public function create(ContainerBuilder $container, $id, $config, $userProvider, $defaultEntryPoint)
     {
-        $provider = 'security.authentication.provider.pre_authenticated.'.$id;
+        $provider = 'security.authentication.provider.pre_authenticated.' . $id;
         $container
             ->setDefinition($provider, new DefinitionDecorator('security.authentication.provider.pre_authenticated'))
             ->replaceArgument(0, new Reference($userProvider))
             ->addArgument($id)
-            ->addTag('security.authentication_provider')
-        ;
+            ->addTag('security.authentication_provider');
 
         $listener = new Definition(
             'Packagist\WebBundle\Security\Listener\HttpPreAuthenticatedListener',
@@ -38,12 +37,13 @@ class HttpBasicPreAuthenticatedFactory implements SecurityFactoryInterface
         );
         $listener->addTag('monolog.logger', array('channel' => 'security'));
 
-        $listenerId = 'packagist_web.authentication.listener.basic_pre_auth.'.$id;
+        $listenerId = 'packagist_web.authentication.listener.basic_pre_auth.' . $id;
         $container->setDefinition($listenerId, $listener);
 
         return array($provider, $listenerId, $defaultEntryPoint);
     }
-	/**
+
+    /**
      * @see Symfony\Bundle\FrameworkBundle\DependencyInjection\Security\Factory\SecurityFactoryInterface::getPosition()
      * @codeCoverageIgnore
      */
@@ -61,8 +61,7 @@ class HttpBasicPreAuthenticatedFactory implements SecurityFactoryInterface
         return 'packagist-http-pre-auth';
     }
 
-	public function addConfiguration(NodeDefinition $builder)
-	{
-
-	}
+    public function addConfiguration(NodeDefinition $builder)
+    {
+    }
 }

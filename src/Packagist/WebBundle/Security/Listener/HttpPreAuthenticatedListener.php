@@ -14,13 +14,13 @@ use Symfony\Component\Security\Http\Firewall\AbstractPreAuthenticatedListener;
  */
 class HttpPreAuthenticatedListener extends AbstractPreAuthenticatedListener
 {
-	/**
+    /**
      * Gets the user and credentials from the Request.
      *
      * @param Request $request
      *
      * @return array
-	 * @throws BadCredentialsException
+     * @throws BadCredentialsException
      */
     protected function getPreAuthenticatedData(Request $request)
     {

@@ -33,19 +33,19 @@ class PackagistWebExtension extends Extension
 
         $container->setParameter('packagist_web.rss_max_items', $config['rss_max_items']);
 
-	    if (!empty($config['preauthenticated_provider']['enabled'])) {
-		    $this->loadPreAuthenticatedProvider($container);
-	    }
+        if (!empty($config['preauthenticated_provider']['enabled'])) {
+            $this->loadPreAuthenticatedProvider($container);
+        }
     }
 
-	private function loadPreAuthenticatedProvider(ContainerBuilder $container)
-	{
-		$baseUserProvider    = $container->getDefinition('packagist.user_provider');
-		$preAuthUserProvider = $container->getDefinition('packagist.http_basic_preauthenticated_user_provider');
+    private function loadPreAuthenticatedProvider(ContainerBuilder $container)
+    {
+        $baseUserProvider    = $container->getDefinition('packagist.user_provider');
+        $preAuthUserProvider = $container->getDefinition('packagist.http_basic_preauthenticated_user_provider');
 
-		$container->setDefinition('packagist.base_user_provider', $baseUserProvider);
-		$preAuthUserProvider->replaceArgument(0, new Reference('packagist.base_user_provider'));
+        $container->setDefinition('packagist.base_user_provider', $baseUserProvider);
+        $preAuthUserProvider->replaceArgument(0, new Reference('packagist.base_user_provider'));
 
-		$container->setDefinition('packagist.user_provider', $preAuthUserProvider);
-	}
+        $container->setDefinition('packagist.user_provider', $preAuthUserProvider);
+    }
 }
