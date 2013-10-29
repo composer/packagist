@@ -25,26 +25,16 @@ use Symfony\Component\Security\Core\Validator\Constraints\UserPassword;
  */
 class ProfileFormType extends BaseType
 {
-    private $securityContext;
-
-    public function __construct($class, SecurityContext $securityContext)
-    {
-        parent::__construct($class);
-
-        $this->securityContext = $securityContext;
-    }
-
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->add('username', null, array('label' => 'form.username', 'translation_domain' => 'FOSUserBundle'))
                 ->add('email', 'email', array('label' => 'form.email', 'translation_domain' => 'FOSUserBundle'));
 
-        $user = $this->securityContext->getToken()->getUser();
-
-        $builder->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event) use ($user)
+        $builder->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event)
         {
-            if ( ! $user->getGithubId())
-            {
+            if ( ! ($user = $event->getData())) return;
+
+            if ( ! $user->getGithubId()) {
                 $this->addPasswordField($event);
             }
         });
