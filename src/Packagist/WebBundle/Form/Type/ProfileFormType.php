@@ -52,20 +52,13 @@ class ProfileFormType extends BaseType
         $builder->add('failureNotifications', null, array('required' => false, 'label' => 'Notify me of package update failures'));
     }
 
-    private function addPasswordField(&$event)
+    private function addPasswordField($event)
     {
-        if (class_exists('Symfony\Component\Security\Core\Validator\Constraints\UserPassword')) {
-            $constraint = new UserPassword();
-        } else {
-            // Symfony 2.1 support with the old constraint class
-            $constraint = new OldUserPassword();
-        }
-
         $event->getForm()->add('current_password', 'password', array(
             'label' => 'form.current_password',
             'translation_domain' => 'FOSUserBundle',
             'mapped' => false,
-            'constraints' => $constraint,
+            'constraints' => new UserPassword(),
         ));
     }
 
