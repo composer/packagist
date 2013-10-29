@@ -1,7 +1,9 @@
 <form action="{{ path('fos_user_profile_edit') }}" {{ form_enctype(form) }} method="POST" class="fos_user_profile_edit">
     {{ form_row(form.username) }}
     {{ form_row(form.email) }}
+    {% if not user.githubId %}
     {{ form_row(form.current_password) }}
+    {% endif %}
 
     <div class="notifications">
         {{ form_errors(form.failureNotifications) }}
