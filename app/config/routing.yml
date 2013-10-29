@@ -11,6 +11,10 @@ fos_user_profile_show:
     defaults: { _controller: PackagistWebBundle:User:myProfile }
     methods: [GET]
 
+fos_user_profile_edit:
+    pattern: /profile/edit/
+    defaults: { _controller: PackagistWebBundle:Profile:edit }
+
 fos_user_register:
     resource: '@FOSUserBundle/Resources/config/routing/registration.xml'
     prefix: /register

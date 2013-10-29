@@ -19,6 +19,7 @@
         </div>
     </div>
 
+    {% if not user.githubId %}
     <div class="form-group clearfix">
         {{ form_label(form.current_password) }}
         <div class="input-group">
@@ -27,6 +28,7 @@
             <span class="input-group-addon"><span class="icon-lock"></span></span>
         </div>
     </div>
+    {% endif %}
 
     <div class="notifications form-group">
         {{ form_errors(form.failureNotifications) }}
