@@ -28,12 +28,14 @@ class ProfileFormType extends BaseType
         $builder->add('username', null, array('label' => 'form.username', 'translation_domain' => 'FOSUserBundle'))
                 ->add('email', 'email', array('label' => 'form.email', 'translation_domain' => 'FOSUserBundle'));
 
-        $builder->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event)
+        // Horrible hack for people stuck in the past on PHP5.3
+        $self = $this;
+        $builder->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event) use ($self)
         {
             if ( ! ($user = $event->getData())) return;
 
             if ( ! $user->getGithubId()) {
-                $this->addPasswordField($event);
+                $self->addPasswordField($event);
             }
         });
 
