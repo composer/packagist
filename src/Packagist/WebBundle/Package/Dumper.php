@@ -82,11 +82,11 @@ class Dumper
     /**
      * Constructor
      *
-     * @param RegistryInterface $doctrine
-     * @param Filesystem $filesystem
+     * @param RegistryInterface     $doctrine
+     * @param Filesystem            $filesystem
      * @param UrlGeneratorInterface $router
-     * @param string $webDir web root
-     * @param string $cacheDir cache dir
+     * @param string                $webDir     web root
+     * @param string                $cacheDir   cache dir
      */
     public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, $webDir, $cacheDir)
     {
@@ -101,7 +101,7 @@ class Dumper
     /**
      * Dump a set of packages to the web root
      *
-     * @param array $packageIds
+     * @param array   $packageIds
      * @param Boolean $force
      * @param Boolean $verbose
      */
@@ -121,6 +121,7 @@ class Dumper
         } while (is_dir($buildDir) && $retries--);
         if (is_dir($buildDir)) {
             echo 'Could not remove the build dir entirely, aborting';
+
             return false;
         }
         $this->fs->mkdir($buildDir);
@@ -291,8 +292,11 @@ class Dumper
         if (defined('PHP_WINDOWS_VERSION_BUILD')) {
             rename($webDir.'/p/packages.json', $webDir.'/packages.json');
         } else {
-            if (!is_link($webDir.'/packages.json')) {
-                unlink($webDir.'/packages.json');
+            $packagesJsonPath = $webDir.'/packages.json';
+            if (!is_link($packagesJsonPath)) {
+                if (file_exists($packagesJsonPath)) {
+                    unlink($packagesJsonPath);
+                }
                 symlink($webDir.'/p/packages.json', $webDir.'/packages.json');
             }
         }
@@ -408,6 +412,7 @@ class Dumper
     {
         if ($version->isDevelopment()) {
             $distribution = 16;
+
             return 'packages-dev-' . chr(abs(crc32($version->getName())) % $distribution + 97) . '.json';
         }
 
