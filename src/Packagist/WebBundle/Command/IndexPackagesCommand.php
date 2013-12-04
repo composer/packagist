@@ -79,8 +79,8 @@ class IndexPackagesCommand extends ContainerAwareCommand
         if ($package) {
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
         } elseif ($force || $indexAll) {
-            $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
-            $doctrine->getEntityManager()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
+            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $doctrine->getManager()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForIndexing();
         }
@@ -128,8 +128,8 @@ class IndexPackagesCommand extends ContainerAwareCommand
                 }
             }
 
-            $doctrine->getEntityManager()->flush();
-            $doctrine->getEntityManager()->clear();
+            $doctrine->getManager()->flush();
+            $doctrine->getManager()->clear();
             unset($packages);
 
             $update->addCommit();

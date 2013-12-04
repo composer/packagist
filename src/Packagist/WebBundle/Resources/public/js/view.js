@@ -1,12 +1,21 @@
+/*jslint nomen: true, browser: true*/
 (function ($, humane, ZeroClipboard) {
+    "use strict";
     $('#add-maintainer').click(function (e) {
+        $('#remove-maintainer-form').addClass('hidden');
         $('#add-maintainer-form').toggleClass('hidden');
         e.preventDefault();
     });
+    $('#remove-maintainer').click(function (e) {
+        $('#add-maintainer-form').addClass('hidden');
+        $('#remove-maintainer-form').toggleClass('hidden');
+        e.preventDefault();
+    });
     $('.package .version h1').click(function (e) {
+        e.preventDefault();
         $(this).siblings('.details-toggler').click();
     });
-    $('.package .details-toggler').click(function (e) {
+    $('.package .details-toggler').click(function () {
         var target = $(this);
         target.toggleClass('open')
             .prev().toggleClass('open');
@@ -33,7 +42,7 @@
             cache: false,
             data: $(this).serializeArray(),
             type: 'PUT',
-            success: function (data) {
+            success: function () {
                 window.location.href = window.location.href;
             },
             context: this
@@ -44,7 +53,7 @@
         var options = {
             dataType: 'json',
             cache: false,
-            success: function (data) {
+            success: function () {
                 $(this).toggleClass('icon-star icon-star-empty');
             },
             context: this
@@ -66,7 +75,7 @@
     });
     $('.package .delete').submit(function (e) {
         e.preventDefault();
-        if (confirm('Are you sure?')) {
+        if (window.confirm('Are you sure?')) {
             e.target.submit();
         }
     });
@@ -76,11 +85,11 @@
     $('.package .delete-version').submit(function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        if (confirm('Are you sure?')) {
+        if (window.confirm('Are you sure?')) {
             e.target.submit();
         }
     });
-    $('.package').on('click', '.requireme input', function (e) {
+    $('.package').on('click', '.requireme input', function () {
         this.select();
     });
     if ($('.package').data('force-crawl')) {

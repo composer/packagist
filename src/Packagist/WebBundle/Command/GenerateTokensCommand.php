@@ -46,6 +46,6 @@ class GenerateTokensCommand extends ContainerAwareCommand
             $apiToken = substr($tokenGenerator->generateToken(), 0, 20);
             $user->setApiToken($apiToken);
         }
-        $doctrine->getEntityManager()->flush();
+        $doctrine->getManager()->flush();
     }
 }

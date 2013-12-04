@@ -56,7 +56,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
         $doctrine = $this->getContainer()->get('doctrine');
 
         if ($force) {
-            $packages = $doctrine->getEntityManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForDumping();
         }
@@ -80,7 +80,9 @@ class DumpPackagesCommand extends ContainerAwareCommand
         }
 
         touch($lock);
-        $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
+        $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
         unlink($lock);
+
+        return $result ? 0 : 1;
     }
 }

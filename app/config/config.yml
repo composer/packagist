@@ -14,9 +14,12 @@ framework:
     templating:      { engines: ['twig'] } #assets_version: SomeVersionScheme
     default_locale: %locale%
     session:
-        name:           packagist
-        lifetime:       3600
+        name: packagist
+        cookie_lifetime: 3600
     trusted_proxies: %trusted_proxies%
+    trusted_hosts: %trusted_hosts%
+    http_method_override: true
+    fragments: ~
 
 # Twig Configuration
 twig:
@@ -64,6 +67,7 @@ swiftmailer:
     host:      %mailer_host%
     username:  %mailer_user%
     password:  %mailer_password%
+    spool:     { type: memory }
 
 fos_user:
     db_driver:     orm
@@ -93,7 +97,3 @@ hwi_oauth:
             client_secret: %github.client_secret%
 
 nelmio_solarium: ~
-
-parameters:
-    session.flashbag.class: Symfony\Component\HttpFoundation\Session\Flash\FlashBag
-

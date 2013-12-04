@@ -25,4 +25,20 @@ class UserRepository extends EntityRepository
             ->where('u.apiToken IS NULL');
         return $qb->getQuery()->getResult();
     }
+
+    public function getPackageMaintainersQueryBuilder(Package $package, User $excludeUser=null)
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->select('u')
+            ->innerJoin('u.packages', 'p', 'WITH', 'p.id = :packageId')
+            ->setParameter(':packageId', $package->getId())
+            ->orderBy('u.username', 'ASC');
+
+        if ($excludeUser) {
+            $qb->andWhere('u.id <> :userId')
+                ->setParameter(':userId', $excludeUser->getId());
+        }
+
+        return $qb;
+    }
 }

@@ -76,7 +76,14 @@ class ApiControllerTest extends WebTestCase
     public function testUrlDetection($endpoint, $url, $expectedOK)
     {
         $client = self::createClient();
-        $payload = json_encode(array('repository' => array('url' => $url)));
+
+        if ($endpoint == 'bitbucket') {
+            $canonUrl = substr($url, 0, 1);
+            $absUrl = substr($url, 1);
+            $payload = json_encode(array('canon_url' => $canonUrl, 'repository' => array('absolute_url' => $absUrl)));
+        } else {
+            $payload = json_encode(array('repository' => array('url' => $url)));
+        }
 
         $client->request('POST', '/api/'.$endpoint.'?username=INVALID_USER&apiToken=INVALID_TOKEN', array('payload' => $payload));
 

@@ -29,7 +29,7 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
  */
 class Updater
 {
-    const UPDATE_TAGS = 1;
+    const UPDATE_EQUAL_REFS = 1;
     const DELETE_BEFORE = 2;
 
     /**
@@ -96,7 +96,7 @@ class Updater
         $pruneDate->modify('-8days');
 
         $versions = $repository->getPackages();
-        $em = $this->doctrine->getEntityManager();
+        $em = $this->doctrine->getManager();
 
         if ($repository->hadInvalidBranches()) {
             throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
@@ -157,15 +157,17 @@ class Updater
 
     private function updateInformation(Package $package, PackageInterface $data, $flags)
     {
-        $em = $this->doctrine->getEntityManager();
+        $em = $this->doctrine->getManager();
         $version = new Version();
 
-        $version->setNormalizedVersion($data->getVersion());
+        $normVersion = $data->getVersion();
 
         // check if we have that version yet
         foreach ($package->getVersions() as $existingVersion) {
-            if ($existingVersion->getNormalizedVersion() === $version->getNormalizedVersion()) {
-                if ($existingVersion->getDevelopment() || ($flags & self::UPDATE_TAGS)) {
+            if (strtolower($existingVersion->getNormalizedVersion()) === strtolower($normVersion)) {
+                $source = $existingVersion->getSource();
+                // update if the right flag is set, or it's a dev version, or the source reference has changed in a tagged release (re-tag)
+                if ($existingVersion->getDevelopment() || $source['reference'] !== $data->getSourceReference() || ($flags & self::UPDATE_EQUAL_REFS)) {
                     $version = $existingVersion;
                     break;
                 }
@@ -179,6 +181,7 @@ class Updater
 
         $version->setName($package->getName());
         $version->setVersion($data->getPrettyVersion());
+        $version->setNormalizedVersion($normVersion);
         $version->setDevelopment($data->isDev());
 
         $em->persist($version);
@@ -227,7 +230,11 @@ class Updater
 
         $version->getTags()->clear();
         if ($data->getKeywords()) {
-            foreach (array_unique($data->getKeywords()) as $keyword) {
+            $keywords = array();
+            foreach ($data->getKeywords() as $keyword) {
+                $keywords[mb_strtolower($keyword, 'UTF-8')] = $keyword;
+            }
+            foreach ($keywords as $keyword) {
                 $tag = Tag::getByName($em, $keyword, true);
                 if (!$version->getTags()->contains($tag)) {
                     $version->addTag($tag);
@@ -287,13 +294,6 @@ class Updater
             $links = array();
             foreach ($data->{$opts['method']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
-                if (false !== strpos($constraint, '~')) {
-                    $constraint = str_replace(array('[', ']'), '', $link->getConstraint());
-                    $constraint = preg_replace('{(\d\.\d)(\.0)+(?=$|,|-)}', '$1', $constraint);
-                    $constraint = preg_replace('{([><=,]) }', '$1', $constraint);
-                    $constraint = preg_replace('{(<[0-9.]+)-dev}', '$1', $constraint);
-                }
-
                 if (false !== strpos($constraint, ',') && false !== strpos($constraint, '@')) {
                     $constraint = preg_replace_callback('{([><]=?\s*[^@]+?)@([a-z]+)}i', function ($matches) {
                         if ($matches[2] === 'stable') {

@@ -20,7 +20,7 @@
             </li>
         {% endfor %}
 
-        {% if paginate is defined and paginate and packages.nbPages > 1 %}
+        {% if paginate is defined and paginate and packages.haveToPaginate() %}
             {{ pagerfanta(packages, 'default', {'proximity': 2}) }}
         {% endif %}
     </ul>

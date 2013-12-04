@@ -20,13 +20,14 @@ use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Package\Loader\ArrayLoader;
 use Doctrine\ORM\NoResultException;
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
-use Packagist\WebBundle\Form\Model\AddMaintainerRequest;
+use Packagist\WebBundle\Form\Model\MaintainerRequest;
+use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
 use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
-use Packagist\WebBundle\Model\FixedAdapter;
+use Pagerfanta\Adapter\FixedAdapter;
 use Packagist\WebBundle\Form\Type\PackageType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -137,7 +138,7 @@ class WebController extends Controller
             return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
         });
 
-        $packages = new Pagerfanta(new FixedAdapter($popular, $redis->zcard('downloads:trending')));
+        $packages = new Pagerfanta(new FixedAdapter($redis->zcard('downloads:trending'), $popular));
         $packages->setMaxPerPage(15);
         $packages->setCurrentPage($req->get('page', 1), false, true);
 
@@ -160,6 +161,8 @@ class WebController extends Controller
 
         if ($req->query->get('type')) {
             $names = $repo->getPackageNamesByType($req->query->get('type'));
+        } elseif ($req->query->get('vendor')) {
+            $names = $repo->getPackageNamesByVendor($req->query->get('vendor'));
         } else {
             $names = array_keys($repo->getPackageNames());
         }
@@ -279,7 +282,7 @@ class WebController extends Controller
                         $params['tags'] = (array) $tagsFilter;
                     }
                     if ($typeFilter) {
-                        $params['type'] = (array) $typeFilter;
+                        $params['type'] = $typeFilter;
                     }
                     $result['next'] = $this->generateUrl('search', $params, true);
                 }
@@ -388,13 +391,13 @@ class WebController extends Controller
                 $response = array('status' => 'success', 'name' => $package->getName(), 'similar' => $similar);
             } else {
                 $errors = array();
-                if ($form->hasErrors()) {
+                if (count($form->getErrors())) {
                     foreach ($form->getErrors() as $error) {
                         $errors[] = $error->getMessageTemplate();
                     }
                 }
                 foreach ($form->all() as $child) {
-                    if ($child->hasErrors()) {
+                    if (count($child->getErrors())) {
                         foreach ($child->getErrors() as $error) {
                             $errors[] = $error->getMessageTemplate();
                         }
@@ -435,6 +438,26 @@ class WebController extends Controller
     }
 
     /**
+     * @Route(
+     *     "/p/{name}.{_format}",
+     *     name="view_package_alias",
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(html|json)"},
+     *     defaults={"_format"="html"}
+     * )
+     * @Route(
+     *     "/packages/{name}",
+     *     name="view_package_alias2",
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?/", "_format"="(html|json)"},
+     *     defaults={"_format"="html"}
+     * )
+     * @Method({"GET"})
+     */
+    public function viewPackageAliasAction(Request $req, $name)
+    {
+        return $this->redirect($this->generateUrl('view_package', array('name' => trim($name, '/'), '_format' => $req->getRequestFormat())));
+    }
+
+    /**
      * @Template()
      * @Route(
      *     "/packages/{name}.{_format}",
@@ -460,8 +483,6 @@ class WebController extends Controller
         }
 
         if ('json' === $req->getRequestFormat()) {
-            $package = $repo->getFullPackageByName($name);
-
             $data = $package->toArray();
 
             try {
@@ -472,7 +493,11 @@ class WebController extends Controller
                 $data['favers'] = null;
             }
 
-            return new Response(json_encode(array('package' => $data)), 200);
+            // TODO invalidate cache on update and make the ttl longer
+            $response = new Response(json_encode(array('package' => $data)), 200);
+            $response->setSharedMaxAge(3600);
+
+            return $response;
         }
 
         $version = null;
@@ -481,7 +506,10 @@ class WebController extends Controller
             $version = $versionRepo->getFullVersion($package->getVersions()->first()->getId());
         }
 
-        $data = array('package' => $package, 'version' => $version);
+        $data = array(
+            'package' => $package,
+            'version' => $version
+        );
 
         try {
             $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package);
@@ -490,16 +518,14 @@ class WebController extends Controller
                 $data['is_favorite'] = $this->get('packagist.favorite_manager')->isMarked($this->getUser(), $package);
             }
         } catch (ConnectionException $e) {
-            $data['downloads'] = array(
-                'total' => 'N/A',
-                'monthly' => 'N/A',
-                'daily' => 'N/A',
-            );
         }
 
         $data['searchForm'] = $this->createSearchForm()->createView();
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
-            $data['form'] = $maintainerForm->createView();
+            $data['addMaintainerForm'] = $maintainerForm->createView();
+        }
+        if ($removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
+            $data['removeMaintainerForm'] = $removeMaintainerForm->createView();
         }
         if ($deleteForm = $this->createDeletePackageForm($package)) {
             $data['deleteForm'] = $deleteForm->createView();
@@ -619,12 +645,13 @@ class WebController extends Controller
 
                 $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
                 $config = Factory::createConfig();
+                $io->loadConfiguration($config);
                 $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                 $loader = new ValidatingArrayLoader(new ArrayLoader());
                 $repository->setLoader($loader);
 
                 try {
-                    $updater->update($package, $repository, Updater::UPDATE_TAGS);
+                    $updater->update($package, $repository, Updater::UPDATE_EQUAL_REFS);
                 } catch (\Exception $e) {
                     return new Response(json_encode(array(
                         'status' => 'error',
@@ -710,8 +737,8 @@ class WebController extends Controller
 
         $data = array(
             'package' => $package,
-            'form' => $form->createView(),
-            'show_maintainer_form' => true,
+            'addMaintainerForm' => $form->createView(),
+            'show_add_maintainer_form' => true,
         );
 
         if ('POST' === $req->getMethod()) {
@@ -737,6 +764,62 @@ class WebController extends Controller
                 } catch (\Exception $e) {
                     $this->get('logger')->crit($e->getMessage(), array('exception', $e));
                     $this->get('session')->getFlashBag()->set('error', 'The maintainer could not be added.');
+                }
+            }
+        }
+
+        $data['searchForm'] = $this->createSearchForm()->createView();
+        return $data;
+    }
+
+    /**
+     * @Template("PackagistWebBundle:Web:viewPackage.html.twig")
+     * @Route("/packages/{name}/maintainers/delete", name="remove_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
+     */
+    public function removeMaintainerAction(Request $req, $name)
+    {
+        /** @var $package Package */
+        $package = $this->getDoctrine()
+            ->getRepository('PackagistWebBundle:Package')
+            ->findOneByName($name);
+
+        if (!$package) {
+            throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
+        }
+        if (!$removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
+            throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
+        }
+
+        $data = array(
+            'package' => $package,
+            'version' => null,
+            'removeMaintainerForm' => $removeMaintainerForm->createView(),
+            'show_remove_maintainer_form' => true,
+        );
+
+        if ('POST' === $req->getMethod()) {
+            $removeMaintainerForm->bind($req);
+            if ($removeMaintainerForm->isValid()) {
+                try {
+                    $em = $this->getDoctrine()->getManager();
+                    $user = $removeMaintainerForm->getData()->getUser();
+
+                    if (!empty($user)) {
+                        if ($package->getMaintainers()->contains($user)) {
+                            $package->getMaintainers()->removeElement($user);
+                        }
+
+                        $em->persist($package);
+                        $em->flush();
+
+                        $this->get('session')->getFlashBag()->set('success', $user->getUsername().' is no longer a '.$package->getName().' maintainer.');
+
+                        return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
+                    }
+                    $this->get('session')->getFlashBag()->set('error', 'The user could not be found.');
+                } catch (\Exception $e) {
+                    $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+                    $this->get('session')->getFlashBag()->set('error', 'The maintainer could not be removed.');
                 }
             }
         }
@@ -862,8 +945,20 @@ class WebController extends Controller
         }
 
         if ($this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
-            $addMaintainerRequest = new AddMaintainerRequest;
-            return $this->createForm(new AddMaintainerRequestType, $addMaintainerRequest);
+            $maintainerRequest = new MaintainerRequest;
+            return $this->createForm(new AddMaintainerRequestType, $maintainerRequest);
+        }
+    }
+
+    private function createRemoveMaintainerForm(Package $package)
+    {
+        if (!($user = $this->getUser()) || 1 == $package->getMaintainers()->count()) {
+            return;
+        }
+
+        if ($this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
+            $maintainerRequest = new MaintainerRequest;
+            return $this->createForm(new RemoveMaintainerRequestType(), $maintainerRequest, array('package'=>$package, 'excludeUser'=>$user));
         }
     }
 

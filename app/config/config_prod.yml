@@ -1,10 +1,11 @@
 imports:
     - { resource: config.yml }
 
-#doctrine:
-#    metadata_cache_driver: apc
-#    result_cache_driver: apc
-#    query_cache_driver: apc
+doctrine:
+    orm:
+        metadata_cache_driver: %doctrine_cache_backend%
+        result_cache_driver: %doctrine_cache_backend%
+        query_cache_driver: %doctrine_cache_backend%
 
 monolog:
     handlers:
@@ -12,6 +13,9 @@ monolog:
             type:         fingers_crossed
             action_level: error
             handler:      nested
+            excluded_404s:
+                - ^/[^/]+\.php$
+                - ^/(favicon\.png|sitemap\.xml|apple-touch-icon-precomposed\.png)$
         nested:
             type:  stream
             path:  %kernel.logs_dir%/%kernel.environment%.log
@@ -19,7 +23,9 @@ monolog:
 
 framework:
     session:
-        secure:         %force_ssl%
+        cookie_secure: %force_ssl%
+    validation:
+        cache: %validation_cache_backend%
 
 nelmio_security:
     clickjacking:

@@ -469,7 +469,8 @@ form ul {
   border-radius: 3px;
 }
 .package .tags {
-  line-height: 34px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .package .tags a {
   background: #c67700;
@@ -477,8 +478,9 @@ form ul {
   -moz-border-radius: 3px;
   border-radius: 3px;
   color: #fff;
-  padding: 3px;
-  margin-right: 5px;
+  display: inline-block;
+  padding: 1px 3px;
+  margin: 4px 5px 0 0;
 }
 .package .description {
   clear: left;

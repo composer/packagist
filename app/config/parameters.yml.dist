@@ -21,9 +21,6 @@ parameters:
 
     locale: en
 
-    secret: CHANGE_ME_IN_PROD
-    remember_me.secret: CHANGE_ME_IN_PROD
-
     google_analytics:
         ga_key:
 
@@ -53,3 +50,19 @@ fr3d_ldap:
         attributes:          # Specify ldap attributes mapping [ldap attribute, user object method]
            - { ldap_attr: uid,  user_method: setUsername } # Required
            - { ldap_attr: mail,   user_method: setEmail }  # Required
+
+    # -- performance features --
+    # set both to apc to optimize things if it is available
+    validation_cache_backend: ~
+    doctrine_cache_backend: array
+
+    # -- security features --
+    secret: CHANGE_ME_IN_PROD
+    remember_me.secret: CHANGE_ME_IN_PROD
+
+    # set to true to enforce ssl, make sure you have a proper certificate in place
+    force_ssl: false
+    # e.g. [127.0.0.1] if the app is running behind a reverse proxy on localhost
+    trusted_proxies: ~
+    # e.g. ['.*\.?packagist\.org$'] to allow packagist.org and all subdomains as valid hosts
+    trusted_hosts: ~
