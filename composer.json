@@ -37,6 +37,8 @@
         "jms/security-extra-bundle": "1.5.*",
         "jms/di-extra-bundle": "1.4.*",
 
+        "symfony/icu": "<1.2.0",
+
         "composer/composer": "1.0.x-dev",
         "friendsofsymfony/user-bundle": "1.*",
         "hwi/oauth-bundle": "dev-master",
