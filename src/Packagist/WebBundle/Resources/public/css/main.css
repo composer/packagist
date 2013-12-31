@@ -271,6 +271,10 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0 0 135px;
 }
 
+body > section:first-child {
+    padding-top: 59px;
+}
+
 .wrapper .container {
     padding: 26px 20px;
     color: #1a1d24;
