@@ -2,56 +2,47 @@
 
 {% block content %}
 <section class="row">
-    <section class="span6 getting-started">
+    <section class="col-lg-6 getting-started">
         <h2 class="font-normal">Getting Started</h2>
         <div>
             <h3 class="font-normal">Define Your Dependencies</h3>
             <p>Put a file named <em>composer.json</em> at the root of your project, containing your project dependencies:</p>
-            <pre>
-{
+            <pre><code>{
     "require": {
         "vendor/package": "1.3.2",
         "vendor/package2": "1.*",
         "vendor/package3": ">=2.0.3"
     }
-}
-</pre>
+}</code></pre>
 
             <h3 class="font-normal">Install Composer In Your Project</h3>
             <p>Run this in your command line:</p>
-            <pre>
-curl -sS http://getcomposer.org/installer | php
-</pre>
+            <pre><code>curl -sS http://getcomposer.org/installer | php</code></pre>
             <p>Or <a href="http://getcomposer.org/composer.phar">download composer.phar</a> into your project root.</p>
 
             <h3 class="font-normal">Install Dependencies</h3>
             <p>Execute this in your project root.</p>
-            <pre>
-php composer.phar install
-</pre>
+            <pre><code>php composer.phar install</code></pre>
+
             <h3 class="font-normal">Autoload Dependencies</h3>
             <p>If all your packages follow the <a href="https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md">PSR-0</a> standard, you can autoload all the dependencies by adding this to your code:</p>
-            <pre>
-require 'vendor/autoload.php';
-</pre>
+            <pre><code>require 'vendor/autoload.php';</code></pre>
             <p><a href="{{ path('browse') }}">Browse</a> the packages we have to find more great libraries you can use in your project.</p>
         </div>
     </section>
 
-    <section class="span6 publishing-packages">
+    <section class="col-lg-6 publishing-packages">
         <h2 class="font-normal">Publishing Packages</h2>
         <div>
             <h3 class="font-normal">Define Your Package</h3>
             <p>Put a file named <em>composer.json</em> at the root of your package, containing this information:</p>
-            <pre>
-{
+            <pre><code>{
     "name": "your-vendor-name/package-name",
     "require": {
         "php": ">=5.3.0",
         "another-vendor/package": "1.*"
     }
-}
-</pre>
+}</code></pre>
             <p>This is the strictly minimal information you have to give.</p>
             <p>For more details about package naming and the fields you can use to document your package better, see the <a href="{{ path('about') }}">about</a> page.</p>
 

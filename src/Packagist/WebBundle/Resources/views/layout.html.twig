@@ -12,8 +12,8 @@
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
         <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
 
-        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/bootstrap.min.css') }}" />
-        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" />
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" type="text/css" />
+        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" type="text/css" />
 
         {% block head_feeds %}
         <link rel="alternate" type="application/rss+xml" title="Newly Submitted Packages - Packagist" href="{{ url('feed_packages', {_format: 'rss'}) }}" />
@@ -22,23 +22,35 @@
 
         <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist" />
 
-
         {% block head_additions %}{% endblock %}
     </head>
 
     <body>
-        <header class="navbar-wrapper">
+    <section class="wrap">
+        <header class="navbar-wrapper navbar-fixed-top">
             <nav class="container">
-                <div class="navbar navbar-inner">
-                    <div class="pull-right">
-                        <ul class="nav">
+                <div class="navbar" role="navigation">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <h1 class="navbar-brand"><a href="{{ path('home') }}">Packagist</a> <em class="hidden-sm">The PHP package archivist.</em></h1>
+                    </div>
+
+                    <div class="collapse navbar-collapse">
+                        <ul class="nav navbar-nav">
                         {%- if app.user %}
                             <li class="nav-user">
                                 <section>
                                     <img width="57" height="57" alt="" src="https://secure.gravatar.com/avatar/b494363ed38b483b240180920c0d38c2?d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-user-420.png">
-                                    <a href="{{ path('fos_user_profile_show') }}"><span>{{ app.user.username }}</span></a>
+                                    <a href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a>
 
-                                    {{ knp_menu_render('user_menu', {'allow_safe_labels': true}) }}
+                                    <section class="nav-user-menu">
+                                        {{ knp_menu_render('user_menu', {'allow_safe_labels': true}) }}
+                                    </section>
                                 </section>
                             </li>
                         {%- else %}
@@ -49,49 +61,49 @@
                                 <section class="nav-user-signin">
                                     <a href="{{ path('hwi_oauth_connect') }}">Sign in</a>
 
-                                    <form action="" method="POST" class="nav-user-signin-menu">
-                                        <div class="input-prepend">
-                                            <input type="text" id="username" name="_username" placeholder="{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}">
-                                            <span class="add-on"><span class="icon-user"></span></span>
-                                        </div>
-                                        <div class="input-prepend">
-                                            <input type="password" id="password" name="_password" placeholder="{{ 'security.login.password'|trans({}, 'FOSUserBundle') }}">
-                                            <span class="add-on"><span class="icon-lock"></span></span>
-                                        </div>
+                                    <section class="signin-box">
+                                        <form action="{{ path('login_check') }}" method="POST">
+                                            <div class="input-group">
+                                                <input class="form-control" type="text" id="_username" name="_username" placeholder="{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}">
+                                                <span class="input-group-addon"><span class="icon-user"></span></span>
+                                            </div>
+                                            <div class="input-group">
+                                                <input class="form-control" type="password" id="_password" name="_password" placeholder="{{ 'security.login.password'|trans({}, 'FOSUserBundle') }}">
+                                                <span class="input-group-addon"><span class="icon-lock"></span></span>
+                                            </div>
 
-                                        <label for="remember_me" class="checkbox pull-left">
-                                            <input type="checkbox" id="remember_me" name="_remember_me" value="on" checked="checked" />
-                                            {{- 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}
-                                        </label>
+                                            <div class="checkbox">
+                                                <label for="_remember_me">
+                                                    <input type="checkbox" id="_remember_me" name="_remember_me" value="on" checked="checked" />
+                                                    {{- 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}
+                                                </label>
+                                            </div>
 
-                                        {%- if packagist_host and packagist_host in app.request.headers.get('Referer') %}
-                                            <input type="hidden" name="_target_path" value="{{ app.request.headers.get('Referer') }}" />
-                                        {%- endif %}
+                                            {%- if packagist_host and packagist_host in app.request.headers.get('Referer') %}
+                                                <input type="hidden" name="_target_path" value="{{ app.request.headers.get('Referer') }}" />
+                                            {%- endif %}
 
-                                        <div style="width: 95%;float: left">
-                                            <a href="{{ hwi_oauth_login_url('github') }}" class="pull-right btn btn-github"><span class="icon-github"></span>Use Github</a>
-                                            <button type="submit" class="btn btn-success" id="_submit" name="_submit">{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}</button>
-                                        </div>
+                                            <div class="signin-box-buttons">
+                                                <a href="{{ hwi_oauth_login_url('github') }}" class="pull-right btn btn-github"><span class="icon-github"></span>Use Github</a>
+                                                <button type="submit" class="btn btn-success" id="_submit" name="_submit">{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}</button>
+                                            </div>
+                                        </form>
 
-                                        <div style="background: #ddd; float: left; font-size: 14px; margin: 11px -20px -12px; padding: 7px 21px; width: 100%; text-align: center;">
+                                        <div class="signin-box-register">
                                             <a href="{{ path('fos_user_registration_register') }}">No account yet? Create one now!</a>
                                         </div>
-                                    </form>
+                                    </section>
                                 </section>
                             </li>
                         {%- endif %}
-                        {%- if page is not defined or page != 'submit' %}
                             <li>
                                 <a style="background: #83c129;" href="{{ path('submit') }}">Submit Package</a>
                             </li>
-                        {%- endif %}
                         </ul>
                     </div>
-
-                    <h1><a class="brand" href="{{ path('home') }}">Packagist</a> <em>The PHP package archivist.</em></h1>
                 </div>
             </nav>
-
+{#
             {%- if app.session.flashbag.all()|length > 0 %}
             <section class="wrapper wrapper-white">
                 <div class="container">
@@ -111,6 +123,7 @@
                 </div>
             </section>
             {%- endif %}
+#}
         </header>
 
         {%- if searchForm is defined %}
@@ -119,31 +132,32 @@
 
         {% block content_header %}{% endblock %}
 
-        <section class="wrapper">
+        <section class="wrapper"{% if searchForm is not defined %} style="padding-top: 59px"{% endif %}>
             <section class="container content" role="main">
                 {% block content %}{% endblock %}
 
                 <div class="row hidden">
-                    <div class="search-list span12"></div>
+                    <div class="search-list col-md-12"></div>
                 </div>
             </section>
         </section>
+    </section>
 
         <footer class="wrapper-footer">
             <nav class="container">
-                <ul class="social span2 pull-right">
+                <ul class="social col-xs-3 col-md-2 pull-right">
                     <li><a href="http://github.com/composer/packagist" title="{{ 'menu.github'|trans }}"><span class="icon-github"></span></a></li>
                     <li><a href="https://twitter.com/packagist" title="{{ 'menu.twitter'|trans }}"><span class="icon-twitter"></span></a></li>
                     <li><a href="mailto:contact@packagist.org" title="{{ 'menu.contact'|trans }}"><span class="icon-mail"></span></a></li>
                 </ul>
 
-                <ul class="span2">
+                <ul class="col-xs-3 col-md-2">
                     <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
                     <li><a href="{{ path('feeds') }}">{{ 'menu.rss_feeds'|trans }}</a></li>
                     <li><a href="{{ path('home') }}">{{ 'menu.home'|trans }}</a></li>
                 </ul>
 
-                <ul class="span2">
+                <ul class="col-xs-3 col-md-2">
                 {%- if app.user %}
                     <li><a href="{{ path('fos_user_profile_show') }}">{{ 'menu.profile'|trans }}</a></li>
                     <li><a href="{{ path('logout') }}">{{ 'menu.logout'|trans }}</a></li>
@@ -153,7 +167,7 @@
                 {%- endif %}
                 </ul>
 
-                <ul class="span2">
+                <ul class="col-xs-3 col-md-2">
                     <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
                     <li><a href="{{ path('stats') }}">{{ 'menu.stats'|trans }}</a></li>
                 </ul>
@@ -166,7 +180,8 @@
         <script src="{{ asset('js/libs/ZeroClipboard.min.js') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/search.js?v=4')}}"></script>
-
+        <script src="//getbootstrap.com/dist/js/bootstrap.js"></script>
+{#
         {%- if not app.debug and google_analytics.ga_key %}
         <script>
             var _gaq=[['_setAccount','{{ google_analytics.ga_key }}'],['_trackPageview']];
@@ -175,7 +190,7 @@
             s.parentNode.insertBefore(g,s)}(document,'script'));
         </script>
         {%- endif %}
-
+#}
         {% block scripts %}{% endblock %}
     </body>
 </html>

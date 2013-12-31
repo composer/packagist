@@ -2,18 +2,18 @@
     var showSimilarMax = 5;
     var onSubmit = function(e) {
         var success;
-        $('div > ul, div.confirmation', this).remove();
+        $('ul.package-errors, ul.similar-packages, div.confirmation', this).remove();
         success = function (data) {
             var html = '';
             $('#submit').removeClass('loading');
             if (data.status === 'error') {
                 $.each(data.reason, function (k, v) {
-                    html += '<li>'+v+'</li>';
+                    html += '<li><div class="alert alert-warning">'+v+'</div></li>';
                 });
-                $('#submit-package-form div').prepend('<ul>'+html+'</ul>');
+                $('#submit-package-form').prepend('<ul class="list-unstyled package-errors">'+html+'</ul>');
             } else {
                 if (data.similar.length) {
-                    var $similar = $('<ul>');
+                    var $similar = $('<ul class="list-unstyled similar-packages">');
                     var limit = data.similar.length > showSimilarMax ? showSimilarMax : data.similar.length;
                     for ( var i = 0; i < limit; i++ ) {
                         var similar = data.similar[i];

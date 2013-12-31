@@ -1,11 +1,13 @@
-{% extends "PackagistWebBundle:Web:list.html.twig" %}
+{% set showSearchDesc = packages is empty ? 'show' : 'hide' %}
 
-{% set showSearchDesc = 'hide' %}
+{% embed "PackagistWebBundle:Web:list.html.twig" %}
+    {% block content_title %}
+        <h3 class="title">Packages</h3>
+    {% endblock %}
 
-{% block content %}
-    <div class="search-list {% if packages is not defined %}hidden{% endif %}">
-        {% if packages is defined %}
+    {% block content %}
+        <div class="search-list">
             {{ block('list') }}
-        {% endif %}
-    </div>
-{% endblock %}
+        </div>
+    {% endblock %}
+{% endembed %}

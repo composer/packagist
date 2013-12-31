@@ -5,16 +5,15 @@
     <p>Packagist is a Composer package repository. It lets you find packages and lets Composer know where to get the code from. You can use Composer to manage your project or libraries' dependencies - read more about it on the <a href="http://getcomposer.org/">Composer website</a>.</p>
     <p>You can find the packagist.org source on <a href="https://github.com/composer/packagist">GitHub</a>.</p>
 
-    <h2 class="font-normal">How to submit packages?</h2>
+    <h2 class="font-normal" id="how-to-submit-packages">How to submit packages?</h2>
     <section class="row">
-        <section class="span6">
-            <h3 class="font-slim">Naming your package</h3>
+        <section class="col-md-6">
+            <h3 class="font-slim" id="naming-your-package">Naming your package</h3>
             <p>First of all, you must pick a package name. This is a very important step since it can not change and it should be unique enough to avoid conflicts in the future.</p>
             <p>The package name consists of a vendor name and a project name joined by a <code>/</code>. The vendor name exists to prevent naming conflicts. For example, by including a vendor name both <code>igorw</code> and <code>seldaek</code> can have a library named <code>json</code> by naming their packages <code>igorw/json</code> and <code>seldaek/json</code>.</p>
             <p>In some cases the vendor name and the package name may be identical. An example of this would be `monolog/monolog`. For projects with a unique name this is recommended. It also allows adding more related projects under the same vendor later on. If you are maintaining a library, this would make it really easy to split it up into smaller decoupled parts.</p>
             <p>Here is a list of typical package names for reference:</p>
-            <pre>
-// Monolog is a library, so the vendor name and package name are the same.
+            <pre><code>// Monolog is a library, so the vendor name and package name are the same.
 monolog/monolog
 
 // That could be the name of a drupal module (maintained/provided by monolog,
@@ -23,17 +22,15 @@ monolog/monolog-drupal-module
 
 // Acme is a company or person here, they can name their package with a common name (Email).
 // As long as it's in their own vendor namespace it does not conflict with anyone else.
-acme/email
-</pre>
+acme/email</code></pre>
             <p>Note that package names are case-insensitive, but it's encouraged to use a dash (-) as separator instead of CamelCased names.</p>
         </section>
 
-        <section class="span6">
-            <h3 class="font-slim">Creating a composer.json file</h3>
+        <section class="col-md-6">
+            <h3 class="font-slim" id="creating-a-composerjson-file">Creating a composer.json file</h3>
             <p>The composer.json file should reside at the top of your package's git/svn/.. repository, and is the way you describe your package to both packagist and composer.</p>
             <p>A typical composer.json file looks like this:</p>
-            <pre>
-{
+            <pre><code>{
     "name": "monolog/monolog",
     "type": "library",
     "description": "Logging for PHP 5.3",
@@ -56,40 +53,37 @@ acme/email
             "Monolog": "src"
         }
     }
-}
-</pre>
+}</code></pre>
             <p>Most of this information is obvious, keywords are tags, require are list of dependencies that your package has. This can of course be packages, not only a php version. You can use ext-foo to require php extensions (e.g. ext-apc). Note that most extensions don't expose version information, so unless you know for sure it does, it's safer to use <code>"ext-apc": "*"</code> to allow any version of it. Finally the type field is in this case indicating that this is a library. If you do plugins for frameworks etc, and if they integrate composer, they may have a custom package type for their plugins that you can use to install the package with their own installer. In the absence of custom type, you can omit it or use "library".</p>
             <p>Known package types include: symfony-bundle</p>
             <p>Once you have this file committed in your repository root, you can <a href="{{ path('submit') }}">submit the package</a> to Packagist by entering the public repository URL.</p>
         </section>
 
-        <section class="span6">
-            <h3 class="font-slim">Managing package versions</h3>
+        <section class="col-md-6">
+            <h3 class="font-slim" id="managing-package-versions">Managing package versions</h3>
             <p>New versions of your package are automatically fetched from tags you create in your VCS repository.</p>
             <p>There are two ways to manage version numbering. The easiest is to just omit the version field from the composer.json file. If it is missing, the version name will be parsed from the tag and branch names. The other way which offers you a bit more flexibility is to define it yourself, but that means you should update the version field in the composer.json file before creating a tag, otherwise the tag will be considered broken and not imported. If you think you're likely to forget, you probably should use the first method.</p>
             <p>Tag/version names should match 'X.Y.Z', or 'vX.Y.Z', with an optional suffix for RC, beta, alpha or patch versions. Here are a few examples of valid tag names:</p>
-<pre>
-1.0.0
+            <pre><code>1.0.0
 v1.0.0
 1.10.5-RC1
 v4.4.4beta2
 v2.0.0-alpha
-v2.0.4-p1
-</pre>
+v2.0.4-p1</code></pre>
             <p>Branches will automatically appear as "dev" versions that are easily installable by anyone that wants to try your library's latest and greatest, but that does not mean you should not tag releases. The use of <a href="http://semver.org/">Semantic Versioning</a> is strongly encouraged.</p>
             <p>If you specify the version manually, it will be ignored by Packagist for branches, and tags will have to contain the same version number as the tag name to be valid, so there is really no benefit to doing this.</p>
         </section>
 
-        <section class="span6">
-            <h3 class="font-slim">Update Schedule</h3>
+        <section class="col-md-6">
+            <h3 class="font-slim" id="update-schedule">Update Schedule</h3>
             <p>New packages will be crawled <strong>immediately</strong> after submission if you have JS enabled.</p>
             <p>Existing packages without auto-updating (GitHub hook) will be crawled <strong>once a day</strong> for updates. When the GitHub hook is enabled packages are crawled whenever you push, or at least once a week in case the crawl failed. You can also trigger a manual update on your package page if you are logged-in as a maintainer.</p>
             <p>It is highly recommended to set up the <strong>GitHub service hook</strong> for all your packages. This reduces the load on our side, and ensures your package is updated almost instantly. To do so you can go to your GitHub repository, click the "Admin" button, then "Service Hooks". Pick "Packagist" in the list, and add the API key you will find on your <a href="{{ path('fos_user_profile_show') }}">profile</a>, plus your Packagist username if it is not the same as on GitHub. Check the "Active" box and submit the form.</p>
             <p>The search index is updated <strong>every five minutes</strong>. It will index (or reindex) any package that has been crawled since the last time the search indexer ran.</p>
         </section>
 
-        <section class="span12">
-            <h3 class="font-slim">Community</h3>
+        <section class="col-md-12">
+            <h3 class="font-slim" id="community">Community</h3>
             <p>If you have questions about composer or want to help out, come and join us in the <em><a href="irc://irc.freenode.net/#composer-dev">#composer-dev</a></em> channel on irc.freenode.net.</p>
             <p>Also join the <em><a href="http://groups.google.com/group/composer-dev">composer-dev mailing list</a></em>.</p>
         </section>

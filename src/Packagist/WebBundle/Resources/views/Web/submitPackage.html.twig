@@ -7,27 +7,25 @@
 {% set showSearchDesc = 'hide' %}
 
 {% block content %}
-    <h2 class="title">Submit package</h2>
+<h2 class="title">Submit package</h2>
 
-    <section class="row-fluid">
-        <div class="span7 pull-right">
-            <p>Please make sure you have read the package <a href="{{ path('about') }}">naming conventions</a> before submitting your package. The authoritative name of your package will be taken from the composer.json file inside the master branch or trunk of your repository, and it can not be changed after that.</p>
-            <p><strong>Do not submit forks of existing packages.</strong> If you need to test changes to a package that you forked to patch, use <a href="http://getcomposer.org/doc/05-repositories.md#vcs">VCS Repositories</a> instead. If however it is a real long-term fork you intend on maintaining feel free to submit it.</p>
-            <p>If you need help or if you have any questions please get in touch with the Composer <a href="http://getcomposer.org/doc/06-community.md">community</a>.</p>
-        </div>
+<section class="row">
+    <form class="col-md-6" id="submit-package-form" action="{{ path('submit') }}" data-check-url="{{ path('submit.fetch_info') }}" method="POST" {{ form_enctype(form) }}>
+        {{ form_label(form.repository) }}
+        {{ form_errors(form.repository) }}
+        {{ form_widget(form.repository) }}
 
-        <form class="span5" id="submit-package-form" action="{{ path('submit') }}" data-check-url="{{ path('submit.fetch_info') }}" method="POST" {{ form_enctype(form) }}>
-            <fieldset class="row">
-                <div class="span11">
-                    {{ form_label(form.repository) }}
-                    {{ form_errors(form.repository) }}
-                    {{ form_widget(form.repository, {'attr': {'class': 'span12'}}) }}
-                </div>
+        {{ form_rest(form) }}
 
-                {{ form_rest(form) }}
+        <hr>
 
-                <input class="btn btn-success span11" id="submit" type="submit" value="Submit" />
-            </fieldset>
-        </form>
-    </section>
+        <input class="btn btn-block btn-success btn-lg" id="submit" type="submit" value="Submit" />
+    </form>
+
+    <div class="col-md-6">
+        <p>Please make sure you have read the package <a href="{{ path('about') }}#naming-your-package">naming conventions</a> before submitting your package. The authoritative name of your package will be taken from the composer.json file inside the master branch or trunk of your repository, and it can not be changed after that.</p>
+        <p><strong>Do not submit forks of existing packages.</strong> If you need to test changes to a package that you forked to patch, use <a href="http://getcomposer.org/doc/05-repositories.md#vcs">VCS Repositories</a> instead. If however it is a real long-term fork you intend on maintaining feel free to submit it.</p>
+        <p>If you need help or if you have any questions please get in touch with the Composer <a href="http://getcomposer.org/doc/06-community.md">community</a>.</p>
+    </div>
+</section>
 {% endblock %}

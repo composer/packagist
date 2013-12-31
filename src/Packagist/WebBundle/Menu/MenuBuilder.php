@@ -20,7 +20,7 @@ class MenuBuilder
     public function createUserMenu()
     {
         $menu = $this->factory->createItem('root');
-        $menu->setChildrenAttribute('class', 'nav-user-menu');
+        $menu->setChildrenAttribute('class', 'list-unstyled');
 
         $menu->addChild('Profile', array('label' => '<span class="icon-vcard"></span>Profile', 'route' => 'fos_user_profile_show', 'extras' => array('safe_label' => true)));
         $menu->addChild('Settings', array('label' => '<span class="icon-tools"></span>Settings', 'route' => 'fos_user_profile_edit', 'extras' => array('safe_label' => true)));

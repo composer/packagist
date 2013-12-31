@@ -1,22 +1,28 @@
-<form action="{{ path('fos_user_profile_edit') }}" {{ form_enctype(form) }} method="POST" class="fos_user_profile_edit span4">
+<form action="{{ path('fos_user_profile_edit') }}" {{ form_enctype(form) }} method="POST" class="fos_user_profile_edit col-md-6">
     {{ form_errors(form) }}
 
-    {{ form_label(form.username) }}
-    <div class="input-prepend">
-        {{ form_widget(form.username) }}
-        <span class="add-on"><span class="icon-user"></span></span>
+    <div class="form-group">
+        {{ form_label(form.username) }}
+        <div class="input-group">
+            {{ form_widget(form.username, {'attr': {'class': 'input-lg'}}) }}
+            <span class="input-group-addon"><span class="icon-user"></span></span>
+        </div>
     </div>
 
-    {{ form_label(form.email) }}
-    <div class="input-prepend">
-        {{ form_widget(form.email) }}
-        <span class="add-on"><span class="icon-mail"></span></span>
+    <div class="form-group">
+        {{ form_label(form.email) }}
+        <div class="input-group clearfix">
+            {{ form_widget(form.email, {'attr': {'class': 'input-lg'}}) }}
+            <span class="input-group-addon"><span class="icon-mail"></span></span>
+        </div>
     </div>
 
-    {{ form_label(form.current_password) }}
-    <div class="input-prepend">
-        {{ form_widget(form.current_password) }}
-        <span class="add-on"><span class="icon-lock"></span></span>
+    <div class="form-group">
+        {{ form_label(form.current_password) }}
+        <div class="input-group">
+            {{ form_widget(form.current_password, {'attr': {'class': 'input-lg'}}) }}
+            <span class="input-group-addon"><span class="icon-lock"></span></span>
+        </div>
     </div>
 
     <div class="notifications">
@@ -26,17 +32,19 @@
         </label>
     </div>
 
-    <div>
-        {{ form_widget(form) }}
-        <input type="submit" class="btn btn-success" value="{{ 'profile.edit.submit'|trans({}, 'FOSUserBundle') }}" />
-    </div>
-</form>
+    {{ form_widget(form) }}
 
-<div class="span4">
+    <input type="submit" class="btn btn-block btn-success btn-lg" value="{{ 'profile.edit.submit'|trans({}, 'FOSUserBundle') }}" />
+
+    <hr>
+
     <h5>Using GitHub:</h5>
 
-    <a href="{{ app.user.githubId ? '#' : hwi_oauth_login_url('github') }}" class="btn btn-github {{ app.user.githubId ? 'disabled' : '' }}">
-        <span class="icon-github" style="margin: 0 30px 0 50px"></span>
+    <a href="{{ app.user.githubId ? '#' : hwi_oauth_login_url('github') }}" class="btn btn-block btn-github btn-lg {{ app.user.githubId ? 'disabled' : '' }}">
+        <span class="icon-github"></span>
         {{ app.user.githubId ? 'Accounts connected' : 'Connect accounts' }}
     </a>
+</form>
+
+<div class="col-md-2">
 </div>

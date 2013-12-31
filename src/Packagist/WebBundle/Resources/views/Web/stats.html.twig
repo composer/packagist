@@ -3,17 +3,11 @@
 {% set showSearchDesc = 'hide' %}
 
 {% block content %}
-    <h2 class="title">Statistics</h2>
+<h2 class="title">Statistics</h2>
 
-    <section class="row-fluid">
-        <div class="span3 pull-right">
-            <h2 class="font-slim">Totals</h2>
-            <p>{{ packages|number_format(0, '.', " ") }} packages registered</p>
-            <p>{{ versions|number_format(0, '.', " ") }} versions available</p>
-            <p>{{ downloads == 'N/A' ? downloads : downloads|number_format(0, '.', " ") }} packages installed<br><small>(since {{ downloadsStartDate }})</small></p>
-        </div>
-
-        <h2 class="font-normal">Packages/versions over time</h2>
+<section class="row">
+    <div class="col-lg-9">
+        <h2>Packages/versions over time</h2>
 
         <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ versions }}&amp;chxl=1:|{{ chart.months|join('|') }}&amp;chxt=y,x&amp;chs=850x250&amp;chds=0,{{ versions }},0,{{ versions }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ chart.versions|join(',') }}|{{ chart.packages|join(',') }}&amp;chdl=Versions|Packages&amp;chls=2|2" /></p>
         <p>The last data point is for the current month and shows partial data.</p>
@@ -27,5 +21,21 @@
             <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ maxMonthlyDownloads }}&amp;chxl=1:|{{ downloadsChartMonthly.labels|join('|') }}&amp;chxt=y,x&amp;chs=850x250&amp;chds=0,{{ maxMonthlyDownloads }},0,{{ maxMonthlyDownloads }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ downloadsChartMonthly.values|join(',') }}&amp;chdl=Installs&amp;chls=2|2" /></p>
             <p>The last data point is for the current month and shows partial data.</p>
         {% endif %}
-    </section>
+    </div>
+
+    <div class="col-lg-3">
+        <h2>Totals</h2>
+
+        <dl class="dl-horizontal">
+            <dt class="font-bold">Packages registered</dt>
+            <dd class="font-slim">{{ packages|number_format(0, '.', " ") }}</dd>
+
+            <dt class="font-bold">Versions available</dt>
+            <dd class="font-slim">{{ versions|number_format(0, '.', " ") }}</dd>
+
+            <dt class="font-bold">Packages installed<br><small>(since {{ downloadsStartDate }})</small></dt>
+            <dd class="font-slim">{{ downloads == 'N/A' ? downloads : downloads|number_format(0, '.', " ") }}</dd>
+        </dl>
+    </div>
+</section>
 {% endblock %}

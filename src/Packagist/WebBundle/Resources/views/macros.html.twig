@@ -1,29 +1,43 @@
 {% macro listPackages(packages, paginate, showAutoUpdateWarning, meta) %}
-    <ul class="packages">
-        {% for package in packages %}
-            <li data-url="{{ path('view_package', { 'name' : package.name }) }}">
-                <h1>
-                    <a href="{{ path('view_package', { 'name' : package.name }) }}">{{ package.name }}</a>
-                    {% if showAutoUpdateWarning and not package.autoUpdated %}
-                        [Not auto-updated]
-                    {% endif %}
-                    {% if meta %}
-                        <span class="metadata">
-                            <i class="icon-download"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', ' ') }}
-                            <i class="icon-star"></i> {{ meta.favers[package.id]|number_format(0, '.', ' ') }}
-                        </span>
-                    {% endif %}
-                </h1>
-                {% if package.description is defined and package.description %}
-                    <p class="package-description">{{ package.description }}</p>
+<ul class="packages list-unstyled">
+    {% for package in packages %}
+        <li data-url="{{ path('view_package', {'name' : package.name }) }}">
+            <h4 class="font-bold">
+                {% if meta %}
+                    <span class="metadata pull-right">
+                        <span class="icon-box"></span> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', ' ') }}
+                        <span class="glyphicon glyphicon-star"></span> {{ meta.favers[package.id]|number_format(0, '.', ' ') }}
+                    </span>
                 {% endif %}
-            </li>
-        {% endfor %}
+                <a href="{{ path('view_package', {'name' : package.name }) }}">{{ package.name }}</a>
+                {% if showAutoUpdateWarning and not package.autoUpdated %}
+                    <small>[Not auto-updated]</small>
+                {% endif %}
+            </h4>
+            {% if package.description is defined and package.description %}
+                <p>{{ package.description }}</p>
+            {% endif %}
+        </li>
+    {% endfor %}
 
-        {% if paginate is defined and paginate and packages.haveToPaginate() %}
-            {{ pagerfanta(packages, 'default', {'proximity': 2}) }}
-        {% endif %}
-    </ul>
+    {% if paginate is defined and paginate and packages.haveToPaginate() %}
+        {{ pagerfanta(packages, 'default', {'proximity': 2}) }}
+    {% endif %}
+</ul>
+{% endmacro %}
+
+{% macro listPackagesShort(packages, showVersion, showMoreUrl) %}
+<ul class="list-unstyled">
+    {% for package in packages %}
+        <li>
+            <a href="{{ path('view_package', {'name' : package.name }) }}">{{ package.name }}{% if showVersion is defined %} <strong>{{ package.version }}</strong>{% endif %}</a>
+            {{ package.description|truncate(60) }}
+        </li>
+    {% endfor %}
+    {% if showMoreUrl is defined %}
+        <li><a href="{{ path('browse_popular') }}"><strong>See more...</strong></a></li>
+    {% endif %}
+</ul>
 {% endmacro %}
 
 {% macro packageLink(packageName) %}

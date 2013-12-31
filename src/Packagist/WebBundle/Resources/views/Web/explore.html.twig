@@ -2,43 +2,87 @@
 
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
+{% set showSearchDesc = 'none' %}
+
+{% macro list() %}
+<ul class="list-unstyled">
+    <li>
+        <a>vespakoen/menu <strong>2.0.4</strong></a>
+        Managing menu's the easy way.
+    </li>
+    <li>
+        <a>vnenkpet/nette-box <strong>1.2.2</strong></a>
+        This sandbox is a pre-packaged Nette Fra...
+    </li>
+    <li>
+        <a>pklink/hahns <strong>0.3.0</strong></a>
+        micro framework for PHP 5.4+
+    </li>
+    <li>
+        <a>vnenkpet/nette-box <strong>1.2.0</strong></a>
+        This sandbox is a pre-packaged Nette Fra...
+    </li>
+    <li>
+        <a>endroid/google-analytics-bundle <strong>1.0.2</strong></a>
+        Endroid Google Analytics for Symfony
+    </li>
+    <li>
+        <a>pklink/hahns <strong>0.2.3</strong></a>
+        micro framework for PHP 5.4+
+    </li>
+    <li>
+        <a>guimdev/bdd</a>
+        BdD is php class for easy use PDO with o...
+    </li>
+    <li>
+        <a>pklink/hahns</a>
+        micro framework for PHP 5.4+
+    </li>
+    <li>
+        <a>ginger/ginger <strong>v1.0.3</strong></a>
+    </li>
+    <li>
+        <a>asper/cakephp-enum-behavior <strong>1.0</strong></a>
+        Introduces an alternative way to support...
+    </li>
+</ul>
+{% endmacro %}
+
 {% block content %}
-    <div class="box clearfix">
-        {% block content_title %}<h1>Packages</h1>{% endblock %}
-        {% block lists %}
-            <div class="packages-short">
-                <h2>New Releases <a href="{{ url('feed_releases', {_format: 'rss'}) }}">RSS</a></h2>
-                <ul>
-                    {% for version in newlyReleased %}
-                        <li><a href="{{ path('view_package', {name: version.name}) }}">{{ version.name }} {{ version.version }}</a> {{ version.description|truncate(40) }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="packages-short">
-                <h2>New Packages <a href="{{ url('feed_packages', {_format: 'rss'}) }}">RSS</a></h2>
-                <ul>
-                    {% for pkg in newlySubmitted %}
-                        <li><a href="{{ path('view_package', {name: pkg.name}) }}">{{ pkg.name }}</a> {{ pkg.description|truncate(40) }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="packages-short">
-                <h2>Popular Packages</h2>
-                <ul>
-                    {% for pkg in popular %}
-                        <li><a href="{{ path('view_package', {name: pkg.name}) }}">{{ pkg.name }}</a> {{ pkg.description|truncate(40) }}</li>
-                    {% endfor %}
-                    <li><a href="{{ path('browse_popular') }}">See more...</a></li>
-                </ul>
-            </div>
-            <div class="packages-short">
-                <h2>Random Packages</h2>
-                <ul>
-                    {% for pkg in random %}
-                        <li><a href="{{ path('view_package', {name: pkg.name}) }}">{{ pkg.name }}</a> {{ pkg.description|truncate(40) }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endblock %}
-    </div>
+    {% block content_title %}<h2 class="title">Packages</h2>{% endblock %}
+    {% block lists %}
+    <section class="row">
+        <section class="packages-short col-lg-6">
+            <h3>New Releases <a href="{{ url('feed_releases', {_format: 'rss'}) }}">RSS</a></h3>
+
+            {{ _self.list() }}
+
+            {{ macros.listPackagesShort(newlyReleased, true) }}
+        </section>
+
+        <section class="packages-short col-lg-6">
+            <h3>New Packages <a href="{{ url('feed_packages', {_format: 'rss'}) }}">RSS</a></h3>
+
+            {{ _self.list() }}
+
+            {{ macros.listPackagesShort(newlySubmitted) }}
+        </section>
+
+        <section class="packages-short col-lg-6">
+            <h3>Popular Packages</h3>
+
+            {{ _self.list() }}
+
+            {{ macros.listPackagesShort(popular, false, true) }}
+        </section>
+
+        <section class="packages-short col-lg-6">
+            <h3>Random Packages</h3>
+
+            {{ _self.list() }}
+
+            {{ macros.listPackagesShort(random) }}
+        </section>
+    </section>
+    {% endblock %}
 {% endblock %}

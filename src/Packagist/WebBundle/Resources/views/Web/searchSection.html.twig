@@ -1,16 +1,14 @@
-<section class="wrapper wrapper-blue">
+<section class="wrapper wrapper-blue" style="padding-top: 59px">
     <div class="container">
-        <div class="row">
-            <div class="span12">
-                {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
-            </div>
+        {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
 
-            {%- if showSearchDesc == 'show' %}
-            <div class="span12">
+        {%- if showSearchDesc == 'show' %}
+        <div class="row">
+            <div class="col-lg-12 hidden-xs">
                 <p>Packagist is the main <a href="http://getcomposer.org/">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.</p>
                 <p><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a>.</p>
             </div>
-            {%- endif %}
         </div>
+        {%- endif %}
     </div>
 </section>

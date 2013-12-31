@@ -3,20 +3,23 @@
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
 {% block content %}
-    <h2 class="title">
-        {{ user.username }}
-        <small>
-            member since: {{ user.createdAt|date('M d, Y') }}
-            {%- if is_granted('ROLE_ADMIN') %}
-                <strong>email: <a href="mailto:{{ user.email }}">{{ user.email }}</a></strong>
-            {%- endif %}
-        </small>
-    </h2>
+<h2 class="title">
+    {{ user.username }}
+    <small>
+        member since: {{ user.createdAt|date('M d, Y') }}
+        {%- if is_granted('ROLE_ADMIN') %}
+            <strong>email: <a href="mailto:{{ user.email }}">{{ user.email }}</a></strong>
+        {%- endif %}
+    </small>
+</h2>
 
-    <h3>Packages</h3>
-    {% if packages|length %}
-        {{ macros.listPackages(packages, true, false, meta) }}
-    {% else %}
-        <p>No packages found.</p>
-    {% endif %}
+<section class="row">
+    <section class="col-md-12">
+        {% embed "PackagistWebBundle:Web:list.html.twig" with {'noLayout': 'true'} %}
+            {% block content_title %}
+                <h3 class="font-normal">{{ user.username }}'s packages</h3>
+            {% endblock %}
+        {% endembed %}
+    </section>
+</section>
 {% endblock %}

@@ -126,22 +126,26 @@ class WebController extends Controller
      */
     public function popularAction(Request $req)
     {
-        $redis = $this->get('snc_redis.default');
-        $popularIds = $redis->zrevrange(
-            'downloads:trending',
-            ($req->get('page', 1) - 1) * 15,
-            $req->get('page', 1) * 15 - 1
-        );
-        $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
-            ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
-            ->getQuery()->getResult();
-        usort($popular, function ($a, $b) use ($popularIds) {
-            return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
-        });
+        try {
+            $redis = $this->get('snc_redis.default');
+            $popularIds = $redis->zrevrange(
+                'downloads:trending',
+                ($req->get('page', 1) - 1) * 15,
+                $req->get('page', 1) * 15 - 1
+            );
+            $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
+                ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
+                ->getQuery()->getResult();
+            usort($popular, function ($a, $b) use ($popularIds) {
+                return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
+            });
 
-        $packages = new Pagerfanta(new FixedAdapter($redis->zcard('downloads:trending'), $popular));
-        $packages->setMaxPerPage(15);
-        $packages->setCurrentPage($req->get('page', 1), false, true);
+            $packages = new Pagerfanta(new FixedAdapter($redis->zcard('downloads:trending'), $popular));
+            $packages->setMaxPerPage(15);
+            $packages->setCurrentPage($req->get('page', 1), false, true);
+        } catch (ConnectionException $e) {
+            $packages = array();
+        }
 
         $data = array(
             'packages' => $packages,
@@ -246,7 +250,14 @@ class WebController extends Controller
             $paginator->setMaxPerPage(15);
             $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
-            $metadata = $this->getPackagesMetadata($paginator);
+            try {
+                $metadata = $this->getPackagesMetadata($paginator);
+            } catch (\Solarium_Client_HttpException $e) {
+                return new JsonResponse(array(
+                    'status' => 'error',
+                    'message' => 'Could not connect to the search server',
+                ), 500);
+            }
 
             if ($req->getRequestFormat() === 'json') {
                 try {
@@ -314,11 +325,13 @@ class WebController extends Controller
                 'meta' => $metadata,
                 'searchForm' => $form->createView(),
             ));
-        } elseif ($req->getRequestFormat() === 'json') {
+        }
+
+        if ($req->getRequestFormat() === 'json') {
             return new JsonResponse(array('error' => 'Missing search query, example: ?q=example'), 400);
         }
 
-        return $this->render('PackagistWebBundle:Web:search.html.twig', array('searchForm' => $form->createView()));
+        return $this->render('PackagistWebBundle:Web:search.html.twig', array('searchForm' => $form->createView(), 'packages' => array()));
     }
 
     /**
@@ -358,7 +371,7 @@ class WebController extends Controller
     /**
      * @Route("/packages/fetch-info", name="submit.fetch_info", defaults={"_format"="json"})
      */
-    public function fetchInfoAction()
+    public function fetchInfoAction(Request $req)
     {
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
@@ -366,7 +379,6 @@ class WebController extends Controller
         $form = $this->createForm(new PackageType, $package);
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
-        $req = $this->getRequest();
         if ('POST' === $req->getMethod()) {
             $form->bind($req);
             if ($form->isValid()) {
@@ -408,7 +420,7 @@ class WebController extends Controller
             }
         }
 
-        return new Response(json_encode($response));
+        return new JsonResponse($response);
     }
 
     /**
@@ -495,7 +507,7 @@ class WebController extends Controller
             }
 
             // TODO invalidate cache on update and make the ttl longer
-            $response = new Response(json_encode(array('package' => $data)), 200);
+            $response = new JsonResponse(array('package' => $data));
             $response->setSharedMaxAge(3600);
 
             return $response;
@@ -665,7 +677,7 @@ class WebController extends Controller
             return new Response('{"status": "success"}', 202);
         }
 
-        return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
+        return new JsonResponse(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',), 404);
     }
 
     /**
@@ -876,7 +888,6 @@ class WebController extends Controller
             $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), max($chart['versions']));
         }
 
-
         $res = $this->getDoctrine()
             ->getConnection()
             ->fetchAssoc('SELECT DATE_FORMAT(createdAt, "%Y-%m-%d") createdAt FROM `package` ORDER BY id LIMIT 1');
@@ -911,8 +922,8 @@ class WebController extends Controller
 
         return array(
             'chart' => $chart,
-            'packages' => max($chart['packages']),
-            'versions' => max($chart['versions']),
+            'packages' => empty($chart['packages']) ? 0 : max($chart['packages']),
+            'versions' => empty($chart['versions']) ? 0 : max($chart['versions']),
             'downloads' => $downloads,
             'downloadsChart' => $dlChart,
             'maxDailyDownloads' => !empty($dlChart) ? max($dlChart['values']) : null,
