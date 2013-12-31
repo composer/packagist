@@ -26,6 +26,9 @@ framework:
 
 # Twig Configuration
 twig:
+    form:
+        resources:
+           - 'PackagistWebBundle::forms.html.twig'
     debug:            %kernel.debug%
     strict_variables: %kernel.debug%
     globals:

@@ -2,10 +2,10 @@
 
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
-{% set showSearchDesc = 'hide' %}
+{% set showSearchDesc = showSearchDesc is defined ? showSearchDesc : 'hide' %}
 
 {% block content %}
-    <h3 class="title">{% block content_title %}Packages{% endblock %}</h3>
+    {% block content_title %}<h3 class="title">Packages</h3>{% endblock %}
 
     {% block list %}
         {% if packages|length %}

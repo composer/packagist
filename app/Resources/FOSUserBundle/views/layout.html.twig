@@ -2,6 +2,8 @@
 
 {% block content %}
 {% if app.user is null %}
+    {{ block('fos_user_header') }}
+
     <section class="row">
         {{ block('fos_user_content') }}
     </section>
@@ -11,7 +13,7 @@
     </h2>
 
     <section class="row">
-        <div class="span3">
+        <div class="col-md-3">
             {{ knp_menu_render('profile_menu', {'currentClass': 'active', 'allow_safe_labels': true}) }}
         </div>
 

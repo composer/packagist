@@ -11,8 +11,16 @@
     font-style: normal;
 }
 
+html, body {
+    height: 100%;
+}
+
 body {
     background: #fff;
+    font-family: 'Open Sans', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
     font-family: 'Open Sans', sans-serif;
 }
 
@@ -28,34 +36,38 @@ body {
     margin: 0;
 }
 
-.navbar-inner {
-    padding-right: 0;
-    background: none;
-    box-shadow: none;
-    border: 0;
-}
-
-.navbar-fixed-top {
-    height: 57px;
-}
-
-.navbar h1 {
+.navbar .navbar-brand {
+    padding: 12px 15px;
     line-height: 32px;
     margin: 0;
 }
 
-.navbar h1 .brand {
-    padding-left: 0;
+.navbar .navbar-brand a {
+    float: left;
     font-size: 24px;
     font-weight: 600;
     color: #fff;
+    text-decoration: none;
 }
 
-.navbar h1 em {
-    display: block;
-    padding-top: 18px;
+.navbar .navbar-brand em {
+    float: left;
+    padding-left: 15px;
+    padding-top: 8px;
     font: italic 14px 'Times New Roman';
     color: #BDC3C7;
+}
+
+.navbar-collapse {
+    border: 0;
+}
+
+.navbar-toggle {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.navbar-toggle span {
+    background: #fff;
 }
 
 .navbar .nav > li > a, .navbar .nav > .active > a {
@@ -88,6 +100,7 @@ body {
 }
 
 .navbar .nav {
+    float: right;
     margin: 0;
     color: #fff;
     font-family: 'Open Sans', sans-serif;
@@ -110,39 +123,26 @@ body {
 }
 
 .navbar .nav > .nav-user > .nav-user-signin {
-    padding: 18px 20px 19px;
+    padding: 17px 20px;
     border-left: 1px solid rgba(69, 78, 92, 0.5);
     color: #454e5c;
 }
 
 .navbar .nav > .nav-user > section a {
     color: #fff;
+    text-decoration: none;
 }
 
 .navbar .nav > .nav-user > section:hover {
-    background: #f6f3ef;
-    color: #454e5c;
+    background: rgba(0, 0, 0, 0.3);
 }
 
-.navbar .nav > .nav-user > section:hover a {
-    color: #454e5c;
-}
-
-.navbar .nav > .nav-user > .nav-user-signin:hover a.btn {
-    color: #fff;
-}
-
-.navbar .nav > .nav-user > section > .nav-user-menu, .navbar .nav > .nav-user > section > .nav-user-signin-menu {
+.navbar .nav > .nav-user > section > .nav-user-menu, .navbar .nav > .nav-user > section > .signin-box {
     display: none;
 }
 
-.navbar .nav > .nav-user > section:hover > .nav-user-menu, .navbar .nav > .nav-user > section:hover > .nav-user-signin-menu {
+.navbar .nav > .nav-user > section:hover > .nav-user-menu, .navbar .nav > .nav-user > section:hover > .signin-box {
     display: block;
-}
-
-.navbar .nav > .nav-user > section:hover > .nav-user-menu a {
-    color: #454e5c;
-    text-decoration: none;
 }
 
 .navbar .nav > .nav-user > section:hover > .nav-user-menu a:hover {
@@ -152,7 +152,7 @@ body {
 .nav-user section img {
     width: 57px;
     height: 57px;
-    padding-right: 15px;
+    margin-right: 15px;
     margin-top: -5px;
 }
 
@@ -160,17 +160,22 @@ body {
     top: 57px;
     position: absolute;
     z-index: 110;
-    width: 174px;
+    width: 220px;
+    background: #2C3E50;
+    box-shadow: 2px 3px 3px #454e5c;
+}
+
+.nav-user .nav-user-menu ul {
     padding: 12px 15px 12px 20px;
-    margin: 0;
-    list-style: none;
-    background: #f6f3ef;
-    box-shadow: 3px 2px 4px #ddd;
-    color: #454e5c;
+    background: rgba(0, 0, 0, 0.3);
 }
 
 .nav-user .nav-user-menu li {
     line-height: 31px;
+}
+
+.nav-user .nav-user-menu a {
+    color: #fff;
 }
 
 .nav-user .nav-user-menu span {
@@ -186,51 +191,85 @@ body {
     margin: 7px 0 5px;
 }
 
-.nav-user .nav-user-signin-menu {
+.nav-user .signin-box {
     top: 57px;
-    left: -228px;
+    left: -209px;
+    width: 300px;
     position: absolute;
     z-index: 110;
-    padding: 12px 20px;
-    margin: 0;
-    list-style: none;
-    background: #f6f3ef;
-    box-shadow: 0 3px 3px #ccc;
-    color: #454e5c;
+    background: #1f2b38;
+    box-shadow: 0 3px 3px rgba(0, 0, 0, 0.3);
+    color: #fff;
 }
 
-.nav-user .nav-user-signin-menu .input-prepend input {
-    width: 83%;
+.nav-user .signin-box form {
+    padding: 15px 20px 12px;
 }
 
-.nav-user .nav-user-signin-menu .input-prepend .add-on {
+.nav-user .signin-box .input-group-addon {
     background: #fff;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
 }
 
-.nav-user .nav-user-signin-menu div {
-    font-size: 12px;
+.nav-user .signin-box .form-control {
+    border-left: 0;
+    box-shadow: none;
+    border-radius: 3px;
 }
 
-.nav-user .nav-user-signin-menu label {
-    width: 99%;
+.nav-user .signin-box div {
+    font-size: 13px;
+}
+
+.nav-user .signin-box .checkbox {
+    float: left;
+    margin-top: 4px;
+}
+
+.nav-user .signin-box .signin-box-buttons {
+    float: left;
+    width: 100%;
+}
+
+.nav-user .signin-box .signin-box-register {
+    background: #7f8c8d;
+    float: left;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 11px 0 0;
+    padding: 7px 21px;
+    width: 100%;
+    text-align: center;
+}
+
+.nav-user .signin-box label {
+    vertical-align: middle;
+}
+
+.nav-user .btn-success {
+    width: 42%;
 }
 
 .nav-user .btn-github {
     font-weight: 600;
-    text-align: left;
-    line-height: inherit;
-    width: 37%;
+    padding: 7px 12px 5px;
+    width: 56%;
 }
 
 .nav-user .btn-github span {
-    font-size: 18px;
-    margin: 0 6px 0 0;
+    font-size: 20px;
+    margin: 0 4px 0 0;
+    vertical-align: bottom;
 }
 
-.nav-user .btn-success {
-    width: 47%;
-}
 
+.wrap {
+    min-height: 100%;
+    height: auto;
+    margin: 0 auto -135px;
+    padding: 0 0 135px;
+}
 
 .wrapper .container {
     padding: 26px 20px;
@@ -312,19 +351,25 @@ footer p {
 
 
 #search-form {
-    margin-top: 19px;
+    margin-top: 5px;
 }
 
 #search-form input[type="search"] {
-    width: 98%;
     padding: 0 0 0 15px;
     font: 20px 'Open Sans', sans-serif;
     border: 0;
     height: 58px;
     color: #555;
     outline: none;
-    float: left;
-    box-sizing: border-box;
+}
+
+#search-form input[type="search"]:focus {
+    border-radius: 2px;
+    color: #2c3e50;
+}
+
+#search-form .form-control:focus::-moz-placeholder {
+    color: #2c3e50;
 }
 
 
@@ -332,12 +377,11 @@ button {
     font-family: 'Open Sans';
 }
 
-input[type="email"], input[type="text"], input[type="password"], textarea, select {
+.form-control {
     min-height: 20px;
     padding: 7px 11px 6px 9px;
     box-shadow: none;
     border-radius: 2px;
-    font-size: 13px;
     font-family: 'Open Sans', sans-serif;
 
     transition: none;
@@ -346,36 +390,57 @@ input[type="email"], input[type="text"], input[type="password"], textarea, selec
     -webkit-transition: none;
 }
 
-input[disabled], select[disabled], textarea[disabled] {
+.form-control[disabled] {
     background: #fff;
 }
 
-input[type="email"]:focus, input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
+.form-control:focus {
     padding: 6px 9px 5px;
     box-shadow: none;
     border-width: 2px;
     border-radius: 0 2px 2px 0;
 }
 
+.form-control[readonly] {
+    cursor: pointer;
+}
+
+.form-control[readonly]:focus {
+    padding: 7px 11px 6px 9px;
+    border-radius: 2px;
+    box-shadow: none;
+}
+
+.form-control[data-api-token] {
+    font-size: 16px;
+    height: 42px;
+    padding: 5px 11px 7px 9px;
+}
+
 input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:focus {
     box-shadow: none;
 }
 
-.input-append, .input-prepend {
+.input-group {
     display: inline;
 }
 
-.input-prepend input {
+.input-group .form-control {
+    width: 90%;
     float: right;
     margin: 0 0 6px;
-    width: 85%;
 }
 
-.input-prepend .add-on {
+.input-group #api-token {
+    width: 81%;
+}
+
+.input-group .input-group-addon {
     float: left;
     min-height: 22px;
     width: 10%;
-    padding: 5px 0 6px;
+    line-height: 20px;
+    padding: 6px 0;
     margin: 0 -4px 6px 0;
     border-right: 0;
     background: none;
@@ -383,24 +448,29 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     font-size: 16px;
 }
 
-.input-append .add-on-button {
+.input-group input.input-lg ~ .input-group-addon {
+    line-height: 32px;
+    font-size: 20px;
+}
+
+.input-group .input-group-addon-button {
     padding: 0;
 }
 
-.input-append .add-on .btn {
+.input-group .input-group-addon .btn {
     padding: 6px 20px;
     border-width: 0 0 2px;
 }
 
-.input-prepend input:focus ~ .add-on {
-    padding-top: 4px;
+.input-group input:focus ~ .input-group-addon {
+    padding-top: 5px;
     padding-bottom: 5px;
-    border-width: 2px;
-    border-color: rgba(82, 168, 236, 0.8);
+    border: 2px solid rgba(82, 168, 236, 0.8);
+    border-right: 0;
     border-radius: 2px 0 0 2px;
 }
 
-.input-prepend input:focus ~ .add-on span {
+.input-group input:focus ~ .input-group-addon span {
     margin-left: -1px;
     color: rgb(82, 168, 236);
 }
@@ -434,27 +504,38 @@ ul.packages .abandoned {
   margin-top: 5px;
 }
 
-.input-prepend input:focus:invalid:focus ~ .add-on {
+.input-group input:focus:invalid:focus {
     border-color: #fa3a15;
 }
 
-.input-prepend input:focus:invalid:focus ~ .add-on span {
+.input-group input:focus:invalid:focus ~ .input-group-addon {
+    border-color: #fa3a15;
+}
+
+.input-group input:focus:invalid:focus ~ .input-group-addon span {
     color: #fa3a15;
 }
 
-.input-prepend input, .input-prepend select {
+.input-group input, .input-group select {
     border-left: 0;
 }
 
-.input-prepend .add-on:first-child, .input-prepend .btn:first-child {
+.input-group-addon:last-child, .input-group .btn:last-child {
     border-radius: 2px 0 0 2px;
+}
+
+.input-group .form-control:first-child, .input-group-addon:first-child {
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+}
+
+.input-group-addon:last-child {
+    border-left: 1px solid;
+    border-right: 0;
 }
 
 .nav-tabs {
     border: 0;
-}
-
-.nav-tabs li {
 }
 
 .nav-tabs li a {
@@ -463,6 +544,15 @@ ul.packages .abandoned {
     color: #515966;
     font-size: 15px;
     font-weight: 600;
+    border-radius: 0;
+}
+
+.nav-tabs li:first-child a {
+    border-radius: 4px 4px 0 0;
+}
+
+.nav-tabs li:last-child a {
+    border-radius: 0 0 4px 4px;
 }
 
 .nav-tabs li.active a, .nav-tabs.nav-stacked > li > a:hover {
@@ -481,6 +571,7 @@ ul.packages .abandoned {
 .nav-tabs.nav-stacked [class^="icon-"], .nav-tabs.nav-stacked [class*=" icon-"] {
     float: right;
     font-size: 20px;
+    margin-top: -2px;
 }
 
 
@@ -488,13 +579,23 @@ ul.packages .abandoned {
     padding: 9px 20px;
     box-shadow: none;
     border: 0;
-    border-bottom: 4px solid #a5aab0;
+    border-bottom: 4px solid;
     border-radius: 3px;
-    background: #bbbfc4;
     text-shadow: none;
-    font-size: 14px;
     font-weight: 600;
+}
+
+.btn.loading {
+    background-image: url("../img/loader.gif");
+    background-position: 95% 50%;
+    background-repeat: no-repeat;
+}
+
+.btn-default {
+    background: #bbbfc4;
+    border-bottom-color: #a5aab0;
     color: #fff;
+    font-size: 14px;
 }
 
 .btn.disabled {
@@ -511,11 +612,6 @@ ul.packages .abandoned {
     color: #333;
 }
 
-.btn:focus, .btn:active {
-    padding-bottom: 11px;
-    border-bottom: 2px solid;
-}
-
 .btn-danger, .btn-danger:hover {
     background: #ff4533;
     border-bottom-color: #cd3729;
@@ -526,6 +622,7 @@ ul.packages .abandoned {
 }
 
 .btn-inverse, .btn-inverse:hover {
+    color: #fff;
     background: #454e5c;
     border-bottom-color: #303339;
 }
@@ -534,9 +631,14 @@ ul.packages .abandoned {
     border-bottom-color: #303339;
 }
 
-.btn-primary, .btn-primary:hover {
+.btn-primary {
     background: #36b7e6;
     border-bottom-color: #2fa1ca;
+}
+
+.btn-primary:hover, .btn-github:hover {
+    background: #2fa1ca;
+    border-bottom-color: #2980b9;
 }
 
 .btn-primary:focus, .btn-primary:active {
@@ -553,17 +655,20 @@ ul.packages .abandoned {
 }
 
 .btn-github {
-    width: 88%;
     line-height: 26px;
-    text-align: left;
-    font-weight: 400;
+    font-weight: 600;
+    color: #fff;
+    background: #36b7e6;
+    border-bottom-color: #2fa1ca;
+    text-align: center;
 }
 
 .btn-github span {
-    margin: 0 25px;
+    margin: 0 15px 0 0;
     vertical-align: text-top;
     font-size: 22px;
 }
+
 
 .package .action.abandon input, .package .action.un-abandon input {
   background: #ec400b;
@@ -587,6 +692,16 @@ ul.packages .abandoned {
   background-image: url("../img/loader.gif");
   padding-left: 30px;
 }
+
+.btn-github.disabled {
+    background: #ecf0f1;
+    color: #bdc3c7;
+}
+
+.btn-show-api-token {
+    width: 19%;
+}
+
 
 .pagination {
     margin: 6px 0;
@@ -658,7 +773,7 @@ pre {
     margin: -15px 0 15px;
     padding: 0 0 15px;
     border-bottom: 1px solid #DDDFE1;
-    color: #191D23;
+    color: #2c3e50;
     font-size: 55px;
     font-weight: 600;
     line-height: 60px;
@@ -717,19 +832,17 @@ pre {
 }
 
 
-.span6 .input-prepend input {
+.col-lg-6 .input-group input {
     width: 89%;
 }
 
-.span6 .input-prepend .add-on {
+.col-lg-6 .input-group .input-group-addon {
     margin-right: -5px;
     width: 8%;
 }
 
 
-#submit-package-form input[type="text"] {
-    font-size: 14px;
-    height: 40px;
+#submit-package-form .form-control {
     border-radius: 4px;
 }
 
@@ -739,6 +852,53 @@ pre {
     width: 99%;
     margin-bottom: 10px;
 }
+
+
+.packages-short ul {
+    list-style: none;
+    margin: 0;
+}
+
+.packages-short li {
+    margin-bottom: 6px;
+}
+
+.packages-short li a {
+    font-size: 20px;
+    display: block;
+}
+
+.packages-short li a strong {
+    margin-left: 5px;
+    font-size: 14px;
+}
+
+.packages li {
+    padding: 5px 15px;
+    margin-bottom: 10px;
+    background: #f0f5f3;
+    border-radius: 4px;
+}
+
+.packages li.selected {
+    padding: 3px 13px;
+    border: 2px solid #2980b9;
+}
+
+.packages li h4 {
+    color: #2c3e50;
+    font-size: 20px;
+    margin-bottom: 0;
+}
+
+.packages li h4 small {
+    margin-left: 5px;
+}
+
+.packages li .metadata span {
+    margin-left: 8px;
+}
+
 
 
 [class^="icon-"]:before,
