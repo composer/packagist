@@ -436,25 +436,25 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/DoctrineBundle.git",
-                "reference": "v1.2.0"
+                "reference": "765b0d87fcc3e839c74817b7211258cbef3a4fb9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/DoctrineBundle/zipball/v1.2.0",
-                "reference": "v1.2.0",
+                "url": "https://api.github.com/repos/doctrine/DoctrineBundle/zipball/765b0d87fcc3e839c74817b7211258cbef3a4fb9",
+                "reference": "765b0d87fcc3e839c74817b7211258cbef3a4fb9",
                 "shasum": ""
             },
             "require": {
                 "doctrine/dbal": ">=2.2,<2.5-dev",
-                "jdorn/sql-formatter": ">=1.1,<2.0",
+                "jdorn/sql-formatter": "~1.1",
                 "php": ">=5.3.2",
-                "symfony/doctrine-bridge": ">=2.2,<3.0",
-                "symfony/framework-bundle": ">=2.2,<3.0"
+                "symfony/doctrine-bridge": "~2.2",
+                "symfony/framework-bundle": "~2.2"
             },
             "require-dev": {
                 "doctrine/orm": ">=2.2,<2.5-dev",
-                "symfony/validator": ">=2.2,<3.0",
-                "symfony/yaml": ">=2.2,<3.0"
+                "symfony/validator": "~2.2",
+                "symfony/yaml": "~2.2"
             },
             "suggest": {
                 "doctrine/orm": "The Doctrine ORM integration is optional in the bundle.",
@@ -976,13 +976,13 @@
             "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "git://github.com/schmittjoh/cg-library.git",
-                "reference": "1.0.0"
+                "url": "https://github.com/schmittjoh/cg-library.git",
+                "reference": "ce8ef43dd6bfe6ce54e5e9844ab71be2343bf2fc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/schmittjoh/cg-library/zipball/1.0.0",
-                "reference": "1.0.0",
+                "url": "https://api.github.com/repos/schmittjoh/cg-library/zipball/ce8ef43dd6bfe6ce54e5e9844ab71be2343bf2fc",
+                "reference": "ce8ef43dd6bfe6ce54e5e9844ab71be2343bf2fc",
                 "shasum": ""
             },
             "require": {
@@ -1002,7 +1002,7 @@
                 {
                     "name": "Johannes M. Schmitt",
                     "email": "schmittjoh@gmail.com",
-                    "homepage": "https://github.com/schmittjoh",
+                    "homepage": "http://jmsyst.com",
                     "role": "Developer of wrapped JMSSerializerBundle"
                 }
             ],
@@ -1010,7 +1010,7 @@
             "keywords": [
                 "code generation"
             ],
-            "time": "2012-01-02 12:40:52"
+            "time": "2012-01-02 20:40:52"
         },
         {
             "name": "jms/di-extra-bundle",
@@ -1019,20 +1019,20 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/schmittjoh/JMSDiExtraBundle.git",
-                "reference": "1.4.0"
+                "reference": "7fffdb6c96fb922a131af06d773e1e6c5301d070"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/schmittjoh/JMSDiExtraBundle/zipball/1.4.0",
-                "reference": "1.4.0",
+                "url": "https://api.github.com/repos/schmittjoh/JMSDiExtraBundle/zipball/7fffdb6c96fb922a131af06d773e1e6c5301d070",
+                "reference": "7fffdb6c96fb922a131af06d773e1e6c5301d070",
                 "shasum": ""
             },
             "require": {
                 "jms/aop-bundle": ">=1.0.0,<1.2-dev",
                 "jms/metadata": "1.*",
-                "symfony/finder": ">=2.1,<3.0",
-                "symfony/framework-bundle": ">=2.1,<3.0",
-                "symfony/process": ">=2.1,<3.0"
+                "symfony/finder": "~2.1",
+                "symfony/framework-bundle": "~2.1",
+                "symfony/process": "~2.1"
             },
             "require-dev": {
                 "doctrine/doctrine-bundle": "*",
@@ -1067,7 +1067,7 @@
                 {
                     "name": "Johannes M. Schmitt",
                     "email": "schmittjoh@gmail.com",
-                    "homepage": "https://github.com/schmittjoh",
+                    "homepage": "http://jmsyst.com",
                     "role": "Developer of wrapped JMSSerializerBundle"
                 }
             ],
@@ -1136,13 +1136,13 @@
             "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "git://github.com/schmittjoh/parser-lib",
-                "reference": "1.0.0"
+                "url": "https://github.com/schmittjoh/parser-lib.git",
+                "reference": "c509473bc1b4866415627af0e1c6cc8ac97fa51d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/schmittjoh/parser-lib/archive/1.0.0.zip",
-                "reference": "1.0.0",
+                "url": "https://api.github.com/repos/schmittjoh/parser-lib/zipball/c509473bc1b4866415627af0e1c6cc8ac97fa51d",
+                "reference": "c509473bc1b4866415627af0e1c6cc8ac97fa51d",
                 "shasum": ""
             },
             "require": {
@@ -1173,20 +1173,20 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/schmittjoh/JMSSecurityExtraBundle.git",
-                "reference": "1.5.1"
+                "reference": "f5f6c6df69ceae8b709e57b49fcc2a42d9280bcc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/schmittjoh/JMSSecurityExtraBundle/zipball/1.5.1",
-                "reference": "1.5.1",
+                "url": "https://api.github.com/repos/schmittjoh/JMSSecurityExtraBundle/zipball/f5f6c6df69ceae8b709e57b49fcc2a42d9280bcc",
+                "reference": "f5f6c6df69ceae8b709e57b49fcc2a42d9280bcc",
                 "shasum": ""
             },
             "require": {
-                "jms/aop-bundle": ">=1.0,<2.0",
-                "jms/di-extra-bundle": ">=1.3,<2.0",
-                "jms/metadata": ">=1.0,<2.0",
-                "jms/parser-lib": ">=1.0,<2.0",
-                "symfony/framework-bundle": ">=2.1,<3.0",
+                "jms/aop-bundle": "~1.0",
+                "jms/di-extra-bundle": "~1.3",
+                "jms/metadata": "~1.0",
+                "jms/parser-lib": "~1.0",
+                "symfony/framework-bundle": "~2.1",
                 "symfony/security-bundle": "*"
             },
             "require-dev": {
@@ -1242,13 +1242,13 @@
             "version": "1.1.0",
             "source": {
                 "type": "git",
-                "url": "git://github.com/justinrainbow/json-schema.git",
-                "reference": "v1.1.0"
+                "url": "https://github.com/justinrainbow/json-schema.git",
+                "reference": "05ff6d8d79fe3ad190b0663d80d3f9deee79416c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/justinrainbow/json-schema/archive/v1.1.0.zip",
-                "reference": "v1.1.0",
+                "url": "https://api.github.com/repos/justinrainbow/json-schema/zipball/05ff6d8d79fe3ad190b0663d80d3f9deee79416c",
+                "reference": "05ff6d8d79fe3ad190b0663d80d3f9deee79416c",
                 "shasum": ""
             },
             "require": {
@@ -1279,7 +1279,7 @@
                     "email": "justin.rainbow@gmail.com"
                 },
                 {
-                    "name": "Robert Schönthal",
+                    "name": "Robert Sch\u00f6nthal",
                     "email": "seroscho@googlemail.com",
                     "homepage": "http://digitalkaoz.net"
                 }
@@ -1369,12 +1369,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/kriswallsmith/Buzz.git",
-                "reference": "v0.10"
+                "reference": "759432d66387e3433d3b06cb6f773b97225b9b17"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kriswallsmith/Buzz/zipball/v0.10",
-                "reference": "v0.10",
+                "url": "https://api.github.com/repos/kriswallsmith/Buzz/zipball/759432d66387e3433d3b06cb6f773b97225b9b17",
+                "reference": "759432d66387e3433d3b06cb6f773b97225b9b17",
                 "shasum": ""
             },
             "require": {
@@ -1485,12 +1485,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/nelmio/NelmioSecurityBundle.git",
-                "reference": "1.2.0"
+                "reference": "c83f7ab3b9bc5367f39918fcc9542ba01d2eccea"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nelmio/NelmioSecurityBundle/zipball/1.2.0",
-                "reference": "1.2.0",
+                "url": "https://api.github.com/repos/nelmio/NelmioSecurityBundle/zipball/c83f7ab3b9bc5367f39918fcc9542ba01d2eccea",
+                "reference": "c83f7ab3b9bc5367f39918fcc9542ba01d2eccea",
                 "shasum": ""
             },
             "require": {
@@ -1534,17 +1534,17 @@
             "target-dir": "Nelmio/SolariumBundle",
             "source": {
                 "type": "git",
-                "url": "https://github.com/nelmio/NelmioSolariumBundle",
-                "reference": "v1.1.0"
+                "url": "https://github.com/nelmio/NelmioSolariumBundle.git",
+                "reference": "693700c4deeb04997b90aca659dd881409f33eb9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/nelmio/NelmioSolariumBundle/archive/v1.1.0.zip",
-                "reference": "v1.1.0",
+                "url": "https://api.github.com/repos/nelmio/NelmioSolariumBundle/zipball/693700c4deeb04997b90aca659dd881409f33eb9",
+                "reference": "693700c4deeb04997b90aca659dd881409f33eb9",
                 "shasum": ""
             },
             "require": {
-                "solarium/solarium": ">=2.4,<2.5",
+                "solarium/solarium": "~2.4.0",
                 "symfony/framework-bundle": "2.*"
             },
             "require-dev": {
@@ -1633,7 +1633,7 @@
             ],
             "authors": [
                 {
-                    "name": "Pablo Díez",
+                    "name": "Pablo D\u00edez",
                     "email": "pablodip@gmail.com",
                     "homepage": "http://github.com/pablodip"
                 }
@@ -1702,12 +1702,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/nrk/predis.git",
-                "reference": "v0.8.4"
+                "reference": "cb18d67b6ab6b8e567c1ab50fe999d1d624f9884"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nrk/predis/zipball/v0.8.4",
-                "reference": "v0.8.4",
+                "url": "https://api.github.com/repos/nrk/predis/zipball/cb18d67b6ab6b8e567c1ab50fe999d1d624f9884",
+                "reference": "cb18d67b6ab6b8e567c1ab50fe999d1d624f9884",
                 "shasum": ""
             },
             "require": {
@@ -1748,13 +1748,13 @@
             "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/php-fig/log",
-                "reference": "1.0.0"
+                "url": "https://github.com/php-fig/log.git",
+                "reference": "fe0936ee26643249e916849d48e3a51d5f5e278b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/php-fig/log/archive/1.0.0.zip",
-                "reference": "1.0.0",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/fe0936ee26643249e916849d48e3a51d5f5e278b",
+                "reference": "fe0936ee26643249e916849d48e3a51d5f5e278b",
                 "shasum": ""
             },
             "type": "library",
@@ -2038,13 +2038,13 @@
             "version": "2.4.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/basdenooijer/solarium",
-                "reference": "2.4.1"
+                "url": "https://github.com/basdenooijer/solarium.git",
+                "reference": "f7c55cf42d14bb70f534128da3e343bb98fcb504"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/basdenooijer/solarium/zipball/2.4.1",
-                "reference": "2.4.1",
+                "url": "https://api.github.com/repos/basdenooijer/solarium/zipball/f7c55cf42d14bb70f534128da3e343bb98fcb504",
+                "reference": "f7c55cf42d14bb70f534128da3e343bb98fcb504",
                 "shasum": ""
             },
             "require": {
@@ -2131,27 +2131,27 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/AsseticBundle.git",
-                "reference": "v2.3.0"
+                "reference": "146dd3cb46b302bd471560471c6aaa930483dac1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/AsseticBundle/zipball/v2.3.0",
-                "reference": "v2.3.0",
+                "url": "https://api.github.com/repos/symfony/AsseticBundle/zipball/146dd3cb46b302bd471560471c6aaa930483dac1",
+                "reference": "146dd3cb46b302bd471560471c6aaa930483dac1",
                 "shasum": ""
             },
             "require": {
-                "kriswallsmith/assetic": ">=1.1,<2.0",
+                "kriswallsmith/assetic": "~1.1",
                 "php": ">=5.3.0",
-                "symfony/framework-bundle": ">=2.1,<3.0"
+                "symfony/framework-bundle": "~2.1"
             },
             "require-dev": {
-                "symfony/class-loader": ">=2.1,<3.0",
-                "symfony/console": ">=2.1,<3.0",
-                "symfony/css-selector": ">=2.1,<3.0",
-                "symfony/dom-crawler": ">=2.1,<3.0",
-                "symfony/form": ">=2.1,<3.0",
-                "symfony/twig-bundle": ">=2.1,<3.0",
-                "symfony/yaml": ">=2.1,<3.0"
+                "symfony/class-loader": "~2.1",
+                "symfony/console": "~2.1",
+                "symfony/css-selector": "~2.1",
+                "symfony/dom-crawler": "~2.1",
+                "symfony/form": "~2.1",
+                "symfony/twig-bundle": "~2.1",
+                "symfony/yaml": "~2.1"
             },
             "suggest": {
                 "symfony/twig-bundle": "~2.1"
@@ -2189,23 +2189,22 @@
         },
         {
             "name": "symfony/icu",
-            "version": "v1.2.0",
+            "version": "v1.0.0",
             "target-dir": "Symfony/Component/Icu",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/Icu.git",
-                "reference": "v1.2.0"
+                "reference": "cac3fdfb111adbe590155f491594636d45129783"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Icu/zipball/v1.2.0",
-                "reference": "v1.2.0",
+                "url": "https://api.github.com/repos/symfony/Icu/zipball/cac3fdfb111adbe590155f491594636d45129783",
+                "reference": "cac3fdfb111adbe590155f491594636d45129783",
                 "shasum": ""
             },
             "require": {
-                "lib-icu": ">=4.4",
                 "php": ">=5.3.3",
-                "symfony/intl": ">=2.3,<3.0"
+                "symfony/intl": "~2.3"
             },
             "type": "library",
             "autoload": {
@@ -2233,7 +2232,7 @@
                 "icu",
                 "intl"
             ],
-            "time": "2013-06-03 18:32:58"
+            "time": "2013-06-03 18:32:07"
         },
         {
             "name": "symfony/monolog-bundle",
@@ -2596,7 +2595,7 @@
             ],
             "authors": [
                 {
-                    "name": "Pablo Díez",
+                    "name": "Pablo D\u00edez",
                     "email": "pablodip@gmail.com",
                     "homepage": "http://github.com/pablodip"
                 }
@@ -2609,402 +2608,116 @@
             "time": "2014-01-04 10:05:34"
         },
         {
-            "name": "zendframework/zend-escaper",
+            "name": "zendframework/zendframework",
             "version": "2.0.8",
-            "target-dir": "Zend/Escaper",
             "source": {
                 "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendEscaper.git",
-                "reference": "release-2.0.8"
+                "url": "https://github.com/zendframework/zf2.git",
+                "reference": "57de1d9e3fe0564d2572e0a961e905ae2279c003"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Escaper-2.0.8.zip",
-                "reference": null,
-                "shasum": null
+                "url": "https://packages.zendframework.com/composer/zendframework-zendframework-57de1d9e3fe0564d2572e0a961e905ae2279c003-zip-992dda.zip",
+                "reference": "2.0.8",
+                "shasum": "0b8790b1e9f5cbb5b50c0443851b26e1ed36e80c"
             },
             "require": {
                 "php": ">=5.3.3"
             },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Zend\\Escaper\\": ""
-                }
-            },
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": " ",
-            "homepage": "http://packages.zendframework.com/",
-            "keywords": [
-                "escaper",
-                "zf2"
-            ],
-            "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
-        },
-        {
-            "name": "zendframework/zend-feed",
-            "version": "2.0.8",
-            "target-dir": "Zend/Feed",
-            "source": {
-                "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendFeed.git",
-                "reference": "release-2.0.8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Feed-2.0.8.zip",
-                "reference": null,
-                "shasum": null
-            },
-            "require": {
-                "php": ">=5.3.3",
+            "replace": {
+                "zendframework/zend-authentication": "self.version",
+                "zendframework/zend-barcode": "self.version",
+                "zendframework/zend-cache": "self.version",
+                "zendframework/zend-captcha": "self.version",
+                "zendframework/zend-code": "self.version",
+                "zendframework/zend-config": "self.version",
+                "zendframework/zend-console": "self.version",
+                "zendframework/zend-crypt": "self.version",
+                "zendframework/zend-db": "self.version",
+                "zendframework/zend-debug": "self.version",
+                "zendframework/zend-di": "self.version",
+                "zendframework/zend-dom": "self.version",
                 "zendframework/zend-escaper": "self.version",
-                "zendframework/zend-servicemanager": "self.version",
-                "zendframework/zend-stdlib": "self.version",
-                "zendframework/zend-uri": "self.version",
-                "zendframework/zend-version": "self.version"
-            },
-            "suggest": {
-                "zendframework/zend-validator": "Zend\\Validator component"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Zend\\Feed\\": ""
-                }
-            },
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": "provides functionality for consuming RSS and Atom feeds",
-            "homepage": "http://packages.zendframework.com/",
-            "keywords": [
-                "feed",
-                "zf2"
-            ],
-            "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
-        },
-        {
-            "name": "zendframework/zend-filter",
-            "version": "2.0.8",
-            "target-dir": "Zend/Filter",
-            "source": {
-                "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendFilter.git",
-                "reference": "release-2.0.8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Filter-2.0.8.zip",
-                "reference": null,
-                "shasum": null
-            },
-            "require": {
-                "php": ">=5.3.3",
-                "zendframework/zend-stdlib": "self.version"
-            },
-            "require-dev": {
-                "zendframework/zend-crypt": "self.version"
-            },
-            "suggest": {
-                "zendframework/zend-crypt": "Zend\\Crypt component",
-                "zendframework/zend-i18n": "Zend\\I18n component",
-                "zendframework/zend-validator": "Zend\\Validator component"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Zend\\Filter\\": ""
-                }
-            },
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": "provides a set of commonly needed data filters",
-            "homepage": "http://packages.zendframework.com/",
-            "keywords": [
-                "filter",
-                "zf2"
-            ],
-            "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
-        },
-        {
-            "name": "zendframework/zend-i18n",
-            "version": "2.0.8",
-            "target-dir": "Zend/I18n",
-            "source": {
-                "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendI18n.git",
-                "reference": "release-2.0.8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_I18n-2.0.8.zip",
-                "reference": null,
-                "shasum": null
-            },
-            "require": {
-                "ext-intl": "*",
-                "php": ">=5.3.3",
+                "zendframework/zend-eventmanager": "self.version",
+                "zendframework/zend-feed": "self.version",
+                "zendframework/zend-file": "self.version",
                 "zendframework/zend-filter": "self.version",
-                "zendframework/zend-stdlib": "self.version"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Zend\\I18n\\": ""
-                }
-            },
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": " ",
-            "homepage": "http://packages.zendframework.com/",
-            "keywords": [
-                "i18n",
-                "zf2"
-            ],
-            "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
-        },
-        {
-            "name": "zendframework/zend-servicemanager",
-            "version": "2.0.8",
-            "target-dir": "Zend/ServiceManager",
-            "source": {
-                "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendServiceManager.git",
-                "reference": "release-2.0.8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_ServiceManager-2.0.8.zip",
-                "reference": null,
-                "shasum": null
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "suggest": {
-                "zendframework/zend-di": "Zend\\Di component"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Zend\\ServiceManager\\": ""
-                }
-            },
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": " ",
-            "homepage": "http://packages.zendframework.com/",
-            "keywords": [
-                "servicemanager",
-                "zf2"
-            ],
-            "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
-        },
-        {
-            "name": "zendframework/zend-stdlib",
-            "version": "2.0.8",
-            "target-dir": "Zend/Stdlib",
-            "source": {
-                "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendStdlib.git",
-                "reference": "release-2.0.8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Stdlib-2.0.8.zip",
-                "reference": null,
-                "shasum": null
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "suggest": {
-                "pecl-weakref": "Implementation of weak references for Stdlib\\CallbackHandler"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Zend\\Stdlib\\": ""
-                }
-            },
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": " ",
-            "homepage": "http://packages.zendframework.com/",
-            "keywords": [
-                "stdlib",
-                "zf2"
-            ],
-            "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
-        },
-        {
-            "name": "zendframework/zend-uri",
-            "version": "2.0.8",
-            "target-dir": "Zend/Uri",
-            "source": {
-                "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendUri.git",
-                "reference": "release-2.0.8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Uri-2.0.8.zip",
-                "reference": null,
-                "shasum": null
-            },
-            "require": {
-                "php": ">=5.3.3",
-                "zendframework/zend-escaper": "self.version",
-                "zendframework/zend-validator": "self.version"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Zend\\Uri\\": ""
-                }
-            },
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": "a component that aids in manipulating and validating » Uniform Resource Identifiers (URIs)",
-            "homepage": "http://packages.zendframework.com/",
-            "keywords": [
-                "uri",
-                "zf2"
-            ],
-            "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
-        },
-        {
-            "name": "zendframework/zend-validator",
-            "version": "2.0.8",
-            "target-dir": "Zend/Validator",
-            "source": {
-                "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendValidator.git",
-                "reference": "release-2.0.8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Validator-2.0.8.zip",
-                "reference": null,
-                "shasum": null
-            },
-            "require": {
-                "php": ">=5.3.3",
+                "zendframework/zend-form": "self.version",
+                "zendframework/zend-http": "self.version",
                 "zendframework/zend-i18n": "self.version",
+                "zendframework/zend-inputfilter": "self.version",
+                "zendframework/zend-json": "self.version",
+                "zendframework/zend-ldap": "self.version",
+                "zendframework/zend-loader": "self.version",
+                "zendframework/zend-log": "self.version",
+                "zendframework/zend-mail": "self.version",
+                "zendframework/zend-math": "self.version",
+                "zendframework/zend-memory": "self.version",
+                "zendframework/zend-mime": "self.version",
+                "zendframework/zend-modulemanager": "self.version",
+                "zendframework/zend-mvc": "self.version",
+                "zendframework/zend-navigation": "self.version",
+                "zendframework/zend-paginator": "self.version",
+                "zendframework/zend-permissions-acl": "self.version",
+                "zendframework/zend-progressbar": "self.version",
+                "zendframework/zend-serializer": "self.version",
+                "zendframework/zend-server": "self.version",
                 "zendframework/zend-servicemanager": "self.version",
-                "zendframework/zend-stdlib": "self.version"
+                "zendframework/zend-session": "self.version",
+                "zendframework/zend-soap": "self.version",
+                "zendframework/zend-stdlib": "self.version",
+                "zendframework/zend-tag": "self.version",
+                "zendframework/zend-text": "self.version",
+                "zendframework/zend-uri": "self.version",
+                "zendframework/zend-validator": "self.version",
+                "zendframework/zend-version": "self.version",
+                "zendframework/zend-view": "self.version",
+                "zendframework/zend-xmlrpc": "self.version"
             },
             "require-dev": {
-                "zendframework/zend-math": "self.version"
+                "doctrine/common": ">=2.1",
+                "ircmaxell/random-lib": "dev-master@dev",
+                "ircmaxell/security-lib": "dev-master@dev",
+                "phpunit/phpunit": "3.7.*"
             },
             "suggest": {
-                "zendframework/zend-db": "Zend\\Db component",
-                "zendframework/zend-math": "Zend\\Math component"
+                "doctrine/common": "Doctrine\\Common >=2.1 for annotation features",
+                "ext-intl": "ext/intl for i18n features",
+                "ircmaxell/random-lib": "Fallback random byte generator for Zend\\Math\\Rand if OpenSSL/Mcrypt extensions are unavailable",
+                "pecl-weakref": "Implementation of weak references for Zend\\Stdlib\\CallbackHandler",
+                "zendframework/zendpdf": "ZendPdf for creating PDF representations of barcodes",
+                "zendframework/zendservice-recaptcha": "ZendService\\ReCaptcha for rendering ReCaptchas in Zend\\Captcha and/or Zend\\Form"
             },
+            "bin": [
+                "bin/classmap_generator.php"
+            ],
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.0-dev",
+                    "dev-develop": "2.1-dev"
+                }
+            },
             "autoload": {
                 "psr-0": {
-                    "Zend\\Validator\\": ""
+                    "Zend\\": "library/",
+                    "ZendTest\\": "tests/"
                 }
             },
             "license": [
                 "BSD-3-Clause"
             ],
-            "description": "provides a set of commonly needed validators",
-            "homepage": "http://packages.zendframework.com/",
+            "description": "Zend Framework 2",
+            "homepage": "http://framework.zend.com/",
             "keywords": [
-                "validator",
+                "framework",
                 "zf2"
             ],
             "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
-        },
-        {
-            "name": "zendframework/zend-version",
-            "version": "2.0.8",
-            "target-dir": "Zend/Version",
-            "source": {
-                "type": "git",
-                "url": "git://github.com/zendframework/Component_ZendVersion.git",
-                "reference": "release-2.0.8"
+                "source": "https://github.com/zendframework/zf2/tree/release-2.0.8",
+                "issues": "https://github.com/zendframework/zf2/issues"
             },
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.zendframework.com/composer/Zend_Version-2.0.8.zip",
-                "reference": null,
-                "shasum": null
-            },
-            "require": {
-                "php": ">=5.3.3"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Zend\\Version\\": ""
-                }
-            },
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "description": " ",
-            "homepage": "http://packages.zendframework.com/",
-            "keywords": [
-                "version",
-                "zf2"
-            ],
-            "support": {
-                "email": "fw-general-subscribe@lists.zend.com",
-                "irc": "irc://irc.freenode.net/zftalk",
-                "issues": "https://github.com/zendframework/zf2/issues",
-                "source": "https://github.com/zendframework/zf2"
-            }
+            "time": "2013-03-13 22:11:24"
         }
     ],
     "packages-dev": [
