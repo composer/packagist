@@ -2,8 +2,8 @@
 
 namespace Packagist\WebBundle\Tests\Controller;
 
-use Packagist\WebBundle\Entity\User;
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class ApiControllerTest extends WebTestCase

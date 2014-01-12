@@ -12,12 +12,12 @@
 
 namespace Packagist\WebBundle\Package;
 
-use Symfony\Component\Filesystem\Filesystem;
 use Composer\Util\Filesystem as ComposerFilesystem;
-use Symfony\Bridge\Doctrine\RegistryInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Finder\Finder;
 use Packagist\WebBundle\Entity\Version;
+use Symfony\Bridge\Doctrine\RegistryInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>

@@ -25,4 +25,21 @@
             humane.log(details ? [message, details] : message, {timeout: 0, clickToClose: true});
         }
     });
+
+    /**
+     * API Token visibility toggling
+     */
+    var token = $('#api-token');
+    token.val('');
+
+    $('.btn-show-api-token,#api-token').each(function() {
+        $(this).click(function (e) {
+            token.val(token.data('api-token'));
+            token.select();
+
+            $('.btn-show-api-token').text('Your API token');
+
+            e.preventDefault();
+        });
+    });
 })(jQuery, humane);

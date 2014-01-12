@@ -1,17 +1,36 @@
 {% extends 'PackagistWebBundle::layout.html.twig' %}
 
-{% block content %}
-    <div class="box">
-         <form id="search-form" action="/search/" method="GET"  autocomplete="off">
-            <p class="submit-wrapper"><input class="submit" type="submit" value="Search" /></p>
-            <p><input type="search" id="search_query_query" name="search_query[query]" required="required"    autocomplete="off" placeholder="Search packages..." tabindex="1" /></p>
+{% block content_header %}
+<section class="wrapper wrapper-blue">
+    <div class="container">
+        <form autocomplete="off" method="GET" action="{{ path('search') }}" id="search-form">
+
+            <input type="search" class=" form-control" tabindex="1" placeholder="Search packages..." autofocus="autofocus" autocomplete="off" required="required" name="search_query[query]" id="search_query_query">
+
         </form>
-        <div class="search-list hidden">
+
+        <div class="row">
+            <div class="col-lg-12 hidden-xs">
+                <p>Packagist is the main <a href="http://getcomposer.org/">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.</p>
+                <p><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a>.</p>
+            </div>
         </div>
     </div>
+</section>
+{% endblock %}
 
-    <div class="box clearfix">
-        <h1>Oh noes, 404!</h1>
-        <p>It looks like you requested a page that was not found. Go back to the <a href="{{ path('home') }}">homepage</a> or use the search above to find the package you want.</p>
-    </div>
+{% block content %}
+<section class="wrapper">
+    <section class="container error">
+        <div class="row">
+            <h2 class="title">Oh noes, 404!</h2>
+            <h3 class="font-normal">It looks like you requested a page that was not found.</h3>
+            <h4>Go back to the <a href="{{ path('home') }}">homepage</a> or use the search above to find the package you want.</h4>
+        </div>
+
+        <div class="row hidden">
+            <div class="search-list col-md-12"></div>
+        </div>
+    </section>
+</section>
 {% endblock %}

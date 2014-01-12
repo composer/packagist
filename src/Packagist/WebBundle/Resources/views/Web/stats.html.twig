@@ -1,26 +1,41 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
+{% set showSearchDesc = 'hide' %}
+
 {% block content %}
-    {% set packageCount = 0 %}
-    <div class="box clearfix">
-        <h1>Statistics</h1>
+<h2 class="title">Statistics</h2>
+
+<section class="row">
+    <div class="col-lg-9">
         <h2>Packages/versions over time</h2>
-        <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ versions }}&amp;chxl=1:|{{ chart.months|join('|') }}&amp;chxt=y,x&amp;chs=900x250&amp;chds=0,{{ versions }},0,{{ versions }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ chart.versions|join(',') }}|{{ chart.packages|join(',') }}&amp;chdl=Versions|Packages&amp;chls=2|2" /></p>
+
+        <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ versions }}&amp;chxl=1:|{{ chart.months|join('|') }}&amp;chxt=y,x&amp;chs=850x250&amp;chds=0,{{ versions }},0,{{ versions }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ chart.versions|join(',') }}|{{ chart.packages|join(',') }}&amp;chdl=Versions|Packages&amp;chls=2|2" /></p>
         <p>The last data point is for the current month and shows partial data.</p>
 
         {% if downloadsChart %}
             <h2>Packages installed per day</h2>
-            <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ maxDailyDownloads }}&amp;chxl=1:|{{ downloadsChart.labels|join('|') }}&amp;chxt=y,x&amp;chs=900x250&amp;chds=0,{{ maxDailyDownloads }},0,{{ maxDailyDownloads }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ downloadsChart.values|join(',') }}&amp;chdl=Installs&amp;chls=2|2" /></p>
+            <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ maxDailyDownloads }}&amp;chxl=1:|{{ downloadsChart.labels|join('|') }}&amp;chxt=y,x&amp;chs=850x250&amp;chds=0,{{ maxDailyDownloads }},0,{{ maxDailyDownloads }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ downloadsChart.values|join(',') }}&amp;chdl=Installs&amp;chls=2|2" /></p>
         {% endif %}
         {% if downloadsChartMonthly %}
             <h2>Packages installed per month</h2>
-            <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ maxMonthlyDownloads }}&amp;chxl=1:|{{ downloadsChartMonthly.labels|join('|') }}&amp;chxt=y,x&amp;chs=900x250&amp;chds=0,{{ maxMonthlyDownloads }},0,{{ maxMonthlyDownloads }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ downloadsChartMonthly.values|join(',') }}&amp;chdl=Installs&amp;chls=2|2" /></p>
+            <p><img src="http://chart.apis.google.com/chart?chxr=0,0,{{ maxMonthlyDownloads }}&amp;chxl=1:|{{ downloadsChartMonthly.labels|join('|') }}&amp;chxt=y,x&amp;chs=850x250&amp;chds=0,{{ maxMonthlyDownloads }},0,{{ maxMonthlyDownloads }}&amp;cht=lc&amp;chco=0000FF,FF9900&amp;chd=t:{{ downloadsChartMonthly.values|join(',') }}&amp;chdl=Installs&amp;chls=2|2" /></p>
             <p>The last data point is for the current month and shows partial data.</p>
         {% endif %}
-
-        <h2>Totals</h2>
-        <p>{{ packages|number_format(0, '.', " ") }} packages registered</p>
-        <p>{{ versions|number_format(0, '.', " ") }} versions available</p>
-        <p>{{ downloads == 'N/A' ? downloads : downloads|number_format(0, '.', " ") }} packages installed (since {{ downloadsStartDate }})</p>
     </div>
+
+    <div class="col-lg-3">
+        <h2>Totals</h2>
+
+        <dl class="dl-horizontal">
+            <dt class="font-bold">Packages registered</dt>
+            <dd class="font-slim">{{ packages|number_format(0, '.', " ") }}</dd>
+
+            <dt class="font-bold">Versions available</dt>
+            <dd class="font-slim">{{ versions|number_format(0, '.', " ") }}</dd>
+
+            <dt class="font-bold">Packages installed<br><small>(since {{ downloadsStartDate }})</small></dt>
+            <dd class="font-slim">{{ downloads == 'N/A' ? downloads : downloads|number_format(0, '.', " ") }}</dd>
+        </dl>
+    </div>
+</section>
 {% endblock %}

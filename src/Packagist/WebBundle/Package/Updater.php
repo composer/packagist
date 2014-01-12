@@ -14,14 +14,14 @@ namespace Packagist\WebBundle\Package;
 
 use Composer\Package\AliasPackage;
 use Composer\Package\PackageInterface;
-use Composer\Repository\RepositoryInterface;
 use Composer\Repository\InvalidRepositoryException;
+use Composer\Repository\RepositoryInterface;
 use Composer\Util\ErrorHandler;
 use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\SuggestLink;
 use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Version;
-use Packagist\WebBundle\Entity\SuggestLink;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
@@ -80,14 +80,18 @@ class Updater
     /**
      * Update a project
      *
-     * @param \Packagist\WebBundle\Entity\Package $package
+     * @param Package             $package
      * @param RepositoryInterface $repository the repository instance used to update from
-     * @param int $flags a few of the constants of this class
-     * @param \DateTime $start
+     * @param integer             $flags a few of the constants of this class
+     * @param null|\DateTime      $start
+     *
+     * @throws InvalidRepositoryException
      */
     public function update(Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null)
     {
-        $blacklist = '{^symfony/symfony (2.0.[456]|dev-charset|dev-console)}i';
+        if ($repository->hadInvalidBranches()) {
+            throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
+        }
 
         if (null === $start) {
             $start = new \DateTime();
@@ -97,10 +101,6 @@ class Updater
 
         $versions = $repository->getPackages();
         $em = $this->doctrine->getManager();
-
-        if ($repository->hadInvalidBranches()) {
-            throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
-        }
 
         usort($versions, function ($a, $b) {
             $aVersion = $a->getVersion();
@@ -121,6 +121,7 @@ class Updater
 
         $versionRepository = $this->doctrine->getRepository('PackagistWebBundle:Version');
 
+        $em = $this->doctrine->getEntityManager();
         if ($flags & self::DELETE_BEFORE) {
             foreach ($package->getVersions() as $version) {
                 $versionRepository->remove($version);
@@ -130,6 +131,7 @@ class Updater
             $em->refresh($package);
         }
 
+        $blacklist = '{^symfony/symfony (2.0.[456]|dev-charset|dev-console)}i';
         foreach ($versions as $version) {
             if ($version instanceof AliasPackage) {
                 continue;

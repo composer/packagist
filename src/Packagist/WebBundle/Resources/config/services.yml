@@ -86,3 +86,25 @@ services:
         arguments: [%fos_user.model.user.class%]
         tags:
             - { name: form.type, alias: packagist_user_profile }
+
+    packagist.menu_builder:
+        class: Packagist\WebBundle\Menu\MenuBuilder
+        arguments: ["@knp_menu.factory"]
+
+    packagist.menu.user:
+        class: Knp\Menu\MenuItem
+        factory_service: packagist.menu_builder
+        factory_method: createUserMenu
+        arguments: ["@request"]
+        scope: request
+        tags:
+            - { name: knp_menu.menu, alias: user_menu }
+
+    packagist.menu.profile:
+        class: Knp\Menu\MenuItem
+        factory_service: packagist.menu_builder
+        factory_method: createProfileMenu
+        arguments: ["@request"]
+        scope: request
+        tags:
+            - { name: knp_menu.menu, alias: profile_menu }
