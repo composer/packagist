@@ -33,4 +33,4 @@ nelmio_security:
             '^/.*': DENY
     forced_ssl:
         enabled: %force_ssl%
-        hsts_max_age: 2592000 # 30 days
+        hsts_max_age: 31104000 # 1y
