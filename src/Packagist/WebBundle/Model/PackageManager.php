@@ -76,6 +76,32 @@ class PackageManager
             $this->em->flush();
         }
 
+
         return true;
     }
+
+    public function notifyNewMaintainer($user, $package)
+    {
+        $body = $this->twig->render('PackagistWebBundle:Email:maintainer_added.txt.twig', array(
+            'package_name' => $package->getName()
+        ));
+echo $user->getEmail();
+        $message = \Swift_Message::newInstance()
+            ->setSubject('You\'ve been added to ' . $package->getName() . ' as a maintainer')
+            ->setFrom($this->options['from'], $this->options['fromName'])
+            ->setTo($user->getEmail())
+            ->setBody($body)
+        ;
+
+        try {
+            $this->mailer->send($message);
+        } catch (\Swift_TransportException $e) {
+            $this->logger->err('['.get_class($e).'] '.$e->getMessage());
+
+            return FALSE;
+        }
+
+        return TRUE;
+    }
+
 }
