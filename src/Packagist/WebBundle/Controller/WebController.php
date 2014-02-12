@@ -36,6 +36,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Console\Output\OutputInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -61,6 +62,7 @@ class WebController extends Controller
     /**
      * @Template("PackagistWebBundle:Web:browse.html.twig")
      * @Route("/packages/", name="allPackages")
+     * @Cache(smaxage=900)
      */
     public function allAction(Request $req)
     {
@@ -124,6 +126,7 @@ class WebController extends Controller
     /**
      * @Template()
      * @Route("/explore/popular", name="browse_popular")
+     * @Cache(smaxage=900)
      */
     public function popularAction(Request $req)
     {
@@ -156,6 +159,7 @@ class WebController extends Controller
     /**
      * @Route("/packages/list.json", name="list", defaults={"_format"="json"})
      * @Method({"GET"})
+     * @Cache(smaxage=60)
      */
     public function listAction(Request $req)
     {

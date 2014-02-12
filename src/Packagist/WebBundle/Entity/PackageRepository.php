@@ -199,8 +199,16 @@ class PackageRepository extends EntityRepository
 
     public function getFilteredQueryBuilder(array $filters = array())
     {
-        $qb = $this->getBaseQueryBuilder()
-            ->select('p', 'v');
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p')
+            ->from('Packagist\WebBundle\Entity\Package', 'p');
+
+        if (isset($filters['tag'])) {
+            $qb->leftJoin('p.versions', 'v');
+            $qb->leftJoin('v.tags', 't');
+        }
+
+        $qb->orderBy('p.id', 'DESC');
 
         $this->addFilters($qb, $filters);
 
@@ -220,6 +228,7 @@ class PackageRepository extends EntityRepository
                     break;
 
                 case 'maintainer':
+                    $qb->leftJoin('p.maintainers', 'm');
                     $qb->andWhere($qb->expr()->in('m.id', ':'.$name));
                     break;
 
