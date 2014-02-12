@@ -91,7 +91,8 @@ class WebController extends Controller
     {
         $pkgRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
         $verRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
-        $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)->getQuery()->getResult();
+        $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
+            ->getQuery()->useResultCache(true, 900, 'new_submitted_packages')->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
         $randomIds = $this->getDoctrine()->getConnection()->fetchAll('SELECT id FROM package ORDER BY RAND() LIMIT 10');
         $random = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $randomIds)->getQuery()->getResult();
@@ -99,7 +100,8 @@ class WebController extends Controller
             $popular = array();
             $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);
             if ($popularIds) {
-                $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)->getQuery()->getResult();
+                $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
+                    ->getQuery()->useResultCache(true, 900, 'popular_packages')->getResult();
                 usort($popular, function ($a, $b) use ($popularIds) {
                     return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
                 });
@@ -133,7 +135,7 @@ class WebController extends Controller
         );
         $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
             ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
-            ->getQuery()->getResult();
+            ->getQuery()->useResultCache(true, 900, 'popular_packages')->getResult();
         usort($popular, function ($a, $b) use ($popularIds) {
             return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
         });

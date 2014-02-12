@@ -106,8 +106,8 @@ class VersionRepository extends EntityRepository
             ->from('Packagist\WebBundle\Entity\Version', 'v')
             ->where('v.development = false')
             ->orderBy('v.releasedAt', 'DESC')
-            ->setMaxResults(10);
+            ->setMaxResults($count);
 
-        return $qb->getQuery()->getResult();
+        return $qb->getQuery()->useResultCache(true, 900, 'new_releases')->getResult();
     }
 }
