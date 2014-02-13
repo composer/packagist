@@ -757,6 +757,7 @@ class WebController extends Controller
                     if (!empty($user)) {
                         if (!$package->getMaintainers()->contains($user)) {
                             $package->addMaintainer($user);
+                            $this->get('packagist.package_manager')->notifyNewMaintainer($user, $package);
                         }
 
                         $em->persist($package);
