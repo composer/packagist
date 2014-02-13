@@ -80,13 +80,15 @@ class VersionRepository extends EntityRepository
     public function getQueryBuilderForLatestVersionWithPackage($vendor = null, $package = null)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('v', 't', 'a', 'p')
+        $qb->select('v')
             ->from('Packagist\WebBundle\Entity\Version', 'v')
-            ->innerJoin('v.tags', 't')
-            ->innerJoin('v.authors', 'a')
-            ->innerJoin('v.package', 'p')
             ->where('v.development = false')
             ->orderBy('v.releasedAt', 'DESC');
+
+        if ($vendor || $package) {
+            $qb->innerJoin('v.package', 'p')
+                ->addSelect('p');
+        }
 
         if ($vendor) {
             $qb->andWhere('p.name LIKE ?0');
