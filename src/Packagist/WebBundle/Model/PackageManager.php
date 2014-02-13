@@ -86,7 +86,7 @@ class PackageManager
         ));
 
         $message = \Swift_Message::newInstance()
-            ->setSubject('You\'ve been added to ' . $package->getName() . ' as a maintainer')
+            ->setSubject('You have been added to ' . $package->getName() . ' as a maintainer')
             ->setFrom($this->options['from'], $this->options['fromName'])
             ->setTo($user->getEmail())
             ->setBody($body)
@@ -97,10 +97,9 @@ class PackageManager
         } catch (\Swift_TransportException $e) {
             $this->logger->err('['.get_class($e).'] '.$e->getMessage());
 
-            return FALSE;
+            return false;
         }
 
-        return TRUE;
+        return true;
     }
-
 }

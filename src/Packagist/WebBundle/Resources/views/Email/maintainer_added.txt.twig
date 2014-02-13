@@ -1,5 +1,7 @@
 {% autoescape false -%}
 
-You've been added to package <a href="{{ path('view_package', { 'name': package_name }) }}">{{ package_name }}</a> as a maintainer.
+You have been added to package {{ package_name }} as a maintainer.
+
+{{ path('view_package', { 'name': package_name }) }}
 
 {%- endautoescape %}
