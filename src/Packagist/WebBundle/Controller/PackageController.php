@@ -32,6 +32,8 @@ class PackageController extends Controller
         $packageRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
         /** @var $package Package */
         $package = $packageRepo->findOneByName($name);
+        $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setRouter($this->get('router'));
 
         if (!$package) {
             throw $this->createNotFoundException("The requested package, $name, could not be found.");
@@ -42,6 +44,7 @@ class PackageController extends Controller
         }
 
         $form = $this->createFormBuilder($package, array("validation_groups" => array("Update")))
+            ->add("name", "text")
             ->add("repository", "text")
             ->getForm();
 

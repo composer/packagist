@@ -32,7 +32,7 @@ use Composer\Repository\RepositoryManager;
  *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"})
  *     }
  * )
- * @Assert\Callback(methods={"isPackageUnique"})
+ * @Assert\Callback(methods={"isPackageUnique"}, groups={"Update", "Default"})
  * @Assert\Callback(methods={"isRepositoryValid"}, groups={"Update", "Default"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
@@ -219,9 +219,28 @@ class Package
 
     public function isPackageUnique(ExecutionContext $context)
     {
+        $group = $context->getGroup();
+
+        $qb = $this->entityRepository->getBaseQueryBuilder();
+
+        if ($group === 'Update') {
+            $qb->where('p.name = :name AND p.id != :id')
+                ->setParameters(array('name' => $this->name, 'id' => $this->id));
+        } else {
+            $qb->where('p.name = :name')
+               ->setParameter('name', $this->name);
+        }
+
+        $query = $qb->getQuery();
+
         try {
-            if ($this->entityRepository->findOneByName($this->name)) {
-                $context->addViolationAt('repository', 'A package with the name <a href="'.$this->router->generate('view_package', array('name' => $this->name)).'">'.$this->name.'</a> already exists.', array(), null);
+            if ($query->getSingleResult()) {
+                if ($group === 'Update') {
+                    $message = sprintf('A package named %s already exists', $this->name);
+                } else {
+                    $message = 'A package with the name <a href="'.$this->router->generate('view_package', array('name' => $this->name)).'">'.$this->name.'</a> already exists.';
+                }
+                $context->addViolationAt('repository', $message, array(), null);
             }
         } catch (\Doctrine\ORM\NoResultException $e) {}
     }
