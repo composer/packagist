@@ -253,7 +253,7 @@ class Dumper
         $url = $this->router->generate('track_download', array('name' => 'VND/PKG'));
         $this->rootFile['notify'] = str_replace('VND/PKG', '%package%', $url);
         $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch');
-        $this->rootFile['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
+        $this->rootFile['providers-url'] = $this->router->generate('home') . 'packagist/p/%package%$%hash%.json';
         $this->rootFile['search'] = $this->router->generate('search', array('_format' => 'json')) . '?q=%query%';
 
         if ($verbose) {

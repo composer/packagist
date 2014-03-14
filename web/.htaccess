@@ -177,6 +177,9 @@ FileETag None
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+     <IfModule mod_vhost_alias.c>
+     	RewriteBase /packagist
+     </IfModule>
 </IfModule>
 
 # ----------------------------------------------------------------------
