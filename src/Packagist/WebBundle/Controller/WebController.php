@@ -613,7 +613,7 @@ class WebController extends Controller
         try {
             $package = $doctrine
                 ->getRepository('PackagistWebBundle:Package')
-                ->getFullPackageByName($name);
+                ->getPackageByName($name);
         } catch (NoResultException $e) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Package not found',)), 404);
         }

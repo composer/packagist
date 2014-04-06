@@ -135,19 +135,15 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getSingleResult();
     }
 
-    public function getFullPackageByName($name)
+    public function getPackageByName($name)
     {
-        $qb = $this->getBaseQueryBuilder()
-            ->addSelect('a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
-            ->leftJoin('v.authors', 'a')
-            ->leftJoin('v.require', 'req')
-            ->leftJoin('v.devRequire', 'devReq')
-            ->leftJoin('v.suggest', 'sug')
-            ->leftJoin('v.replace', 'rep')
-            ->leftJoin('v.conflict', 'con')
-            ->leftJoin('v.provide', 'pro')
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p', 'm')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->leftJoin('p.maintainers', 'm')
             ->where('p.name = ?0')
             ->setParameters(array($name));
+
         return $qb->getQuery()->getSingleResult();
     }
 
