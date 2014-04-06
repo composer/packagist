@@ -38,7 +38,7 @@ class ApiController extends Controller
      * @Template()
      * @Route("/packages.json", name="packages", defaults={"_format" = "json"})
      */
-    public function packagesAction()
+    public function packagesAction(Request $req)
     {
         // fallback if any of the dumped files exist
         $rootJson = $this->container->getParameter('kernel.root_dir').'/../web/packages_root.json';
@@ -48,6 +48,12 @@ class ApiController extends Controller
         $rootJson = $this->container->getParameter('kernel.root_dir').'/../web/packages.json';
         if (file_exists($rootJson)) {
             return new Response(file_get_contents($rootJson));
+        }
+
+        if ($req->getHost() === 'packagist.org') {
+            $this->get('logger')->alert('packages.json is missing and the fallback controller is being hit');
+
+            return new Response('Horrible misconfiguration or the dumper script messed up', 404);
         }
 
         $em = $this->get('doctrine')->getManager();
