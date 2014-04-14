@@ -6,15 +6,25 @@
         <h1>Statistics</h1>
         <h2>Packages/versions over time</h2>
         <p><canvas width="900" height="250" data-labels="{{ chart.months|join(',') }}" data-values="{{ chart.versions|join(',') }}|{{ chart.packages|join(',') }}"></canvas></p>
+        <ul class="legend">
+            <li class="legend-first"><span>&#9632;</span> Versions</li>
+            <li class="legend-second"><span>&#9632;</span> Packages</li>
+        </ul>
         <p>The last data point is for the current month and shows partial data.</p>
 
         {% if downloadsChart %}
             <h2>Packages installed per day</h2>
             <p><canvas width="900" height="250" data-labels="{{ downloadsChart.labels|join(',') }}" data-values="{{ downloadsChart.values|join(',') }}"></canvas></p>
+            <ul class="legend">
+                <li class="legend-first"><span>&#9632;</span> Installs</li>
+            </ul>
         {% endif %}
         {% if downloadsChartMonthly %}
             <h2>Packages installed per month</h2>
             <p><canvas width="900" height="250" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-values="{{ downloadsChartMonthly.values|join(',') }}"></canvas></p>
+            <ul class="legend">
+                <li class="legend-first"><span>&#9632;</span> Installs</li>
+            </ul>
             <p>The last data point is for the current month and shows partial data.</p>
         {% endif %}
 

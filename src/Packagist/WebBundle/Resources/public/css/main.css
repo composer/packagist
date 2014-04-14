@@ -666,6 +666,24 @@ form ul {
   padding-left: 30px;
 }
 
+.legend {
+  font-size: .8em;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.legend li {
+  display: inline;
+  padding: 0 10px;
+}
+.legend span {
+  font-size: 1.5em;
+}
+.legend-first {
+  color: rgb(0,0,255);
+}
+.legend-second {
+  color: rgb(255,153,0);
+}
 
 pre {
   background: #fff;
