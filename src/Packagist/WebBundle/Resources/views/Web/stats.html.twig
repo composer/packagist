@@ -13,7 +13,7 @@
         <p>The last data point is for the current month and shows partial data.</p>
 
         {% if downloadsChart %}
-            <h2>Packages installed per day</h2>
+            <h2>Packages installed in the last 30 days</h2>
             <p><canvas width="900" height="250" data-labels="{{ downloadsChart.labels|join(',') }}" data-values="{{ downloadsChart.values|join(',') }}"></canvas></p>
             <ul class="legend">
                 <li class="legend-first"><span>&#9632;</span> Installs</li>

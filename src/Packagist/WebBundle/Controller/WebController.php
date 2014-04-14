@@ -894,16 +894,19 @@ class WebController extends Controller
 
             $date = new \DateTime($downloadsStartDate.' 00:00:00');
             $yesterday = new \DateTime('-2days 00:00:00');
+            $oneMonthAgo = new \DateTime('-32days 00:00:00'); // 30 days before yesterday
 
             $dlChart = $dlChartMonthly = array();
             while ($date <= $yesterday) {
-                $dlChart[$date->format('Y-m-d')] = 'downloads:'.$date->format('Ymd');
+                if ($date > $oneMonthAgo) {
+                    $dlChart[$date->format('Y-m-d')] = 'downloads:'.$date->format('Ymd');
+                }
                 $dlChartMonthly[$date->format('Y-m')] = 'downloads:'.$date->format('Ym');
                 $date->modify('+1day');
             }
 
             $dlChart = array(
-                'labels' => array_keys($dlChartMonthly),
+                'labels' => array_keys($dlChart),
                 'values' => $redis->mget(array_values($dlChart))
             );
             $dlChartMonthly = array(
