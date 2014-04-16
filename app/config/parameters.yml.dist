@@ -41,3 +41,22 @@ parameters:
     trusted_proxies: ~
     # e.g. ['.*\.?packagist\.org$'] to allow packagist.org and all subdomains as valid hosts
     trusted_hosts: ~
+
+fr3d_ldap:
+    driver:
+        host:                localhost
+#       port:                389    # Optional
+#       username:            foo    # Optional
+#       password:            bar    # Optional
+        bindRequiresDn:      true
+#       baseDn:              ou=users, dc=host, dc=foo   # Optional
+#       accountFilterFormat: (&(uid=%s)) # Optional. sprintf format %s will be the username
+#       optReferrals:        false  # Optional
+#       useSsl:              true   # Enable SSL negotiation. Optional
+#       useStartTls:         true   # Enable TLS negotiation. Optional
+    user:
+        baseDn: ou=users, dc=host, dc=foo
+#       filter: (&(ObjectClass=person)) # Optional
+        attributes:          # Specify ldap attributes mapping [ldap attribute, user object method]
+           - { ldap_attr: uid,  user_method: setUsername } # Required
+           - { ldap_attr: mail,   user_method: setEmail }  # Required

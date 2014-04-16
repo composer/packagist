@@ -1,4 +1,5 @@
 {
+    "name": "composer/packagist",
     "description": "Package Repository Website",
     "keywords": ["package", "composer"],
     "homepage": "http://packagist.org/",
@@ -24,8 +25,8 @@
     },
     "require": {
         "php": ">=5.3.3",
-        "symfony/symfony": "2.3.*",
-        "doctrine/orm": "~2.3",
+        "symfony/symfony": "2.4.*",
+        "doctrine/orm": "~2.4",
         "doctrine/doctrine-bundle": "1.2.*",
         "twig/extensions": "~1.0",
         "symfony/assetic-bundle": "2.3.*",
@@ -36,6 +37,8 @@
         "sensio/generator-bundle": "2.3.*",
         "jms/security-extra-bundle": "1.5.*",
         "jms/di-extra-bundle": "1.4.*",
+
+        "symfony/icu": "<1.2.0",
 
         "composer/composer": "1.0.x-dev",
         "friendsofsymfony/user-bundle": "1.*",
@@ -50,6 +53,7 @@
         "zendframework/zend-uri": "2.0.*",
         "zendframework/zend-version": "2.0.*",
 
+        "fr3d/ldap-bundle": "2.0.*@dev",
         "kriswallsmith/assetic": "@dev",
         "pagerfanta/pagerfanta": "@dev"
     },
