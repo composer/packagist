@@ -11,21 +11,21 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "7c1042eef56f54df957f89487534db8b080c1c84"
+                "reference": "eebffacd9f54c4527448434329765f845e8ee3ed"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/7c1042eef56f54df957f89487534db8b080c1c84",
-                "reference": "7c1042eef56f54df957f89487534db8b080c1c84",
+                "url": "https://api.github.com/repos/composer/composer/zipball/eebffacd9f54c4527448434329765f845e8ee3ed",
+                "reference": "eebffacd9f54c4527448434329765f845e8ee3ed",
                 "shasum": ""
             },
             "require": {
-                "justinrainbow/json-schema": "1.1.*",
+                "justinrainbow/json-schema": "~1.1",
                 "php": ">=5.3.2",
                 "seld/jsonlint": "1.*",
                 "symfony/console": "~2.3",
                 "symfony/finder": "~2.2",
-                "symfony/process": "~2.1@dev"
+                "symfony/process": "~2.1"
             },
             "require-dev": {
                 "phpunit/phpunit": "~3.7.10"
@@ -62,17 +62,18 @@
                 {
                     "name": "Nils Adermann",
                     "email": "naderman@naderman.de",
-                    "homepage": "http://www.naderman.de"
+                    "homepage": "http://www.naderman.de",
+                    "role": "Developer"
                 }
             ],
-            "description": "Dependency Manager",
+            "description": "Composer helps you declare, manage and install dependencies of PHP projects, ensuring you have the right stack everywhere.",
             "homepage": "http://getcomposer.org/",
             "keywords": [
                 "autoload",
                 "dependency",
                 "package"
             ],
-            "time": "2014-01-03 17:22:05"
+            "time": "2014-04-24 14:41:42"
         },
         {
             "name": "doctrine/annotations",
@@ -1279,7 +1280,7 @@
                     "email": "justin.rainbow@gmail.com"
                 },
                 {
-                    "name": "Robert Sch\u00f6nthal",
+                    "name": "Robert Schönthal",
                     "email": "seroscho@googlemail.com",
                     "homepage": "http://digitalkaoz.net"
                 }
@@ -1633,7 +1634,7 @@
             ],
             "authors": [
                 {
-                    "name": "Pablo D\u00edez",
+                    "name": "Pablo Díez",
                     "email": "pablodip@gmail.com",
                     "homepage": "http://github.com/pablodip"
                 }
@@ -2595,7 +2596,7 @@
             ],
             "authors": [
                 {
-                    "name": "Pablo D\u00edez",
+                    "name": "Pablo Díez",
                     "email": "pablodip@gmail.com",
                     "homepage": "http://github.com/pablodip"
                 }

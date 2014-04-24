@@ -15,6 +15,9 @@
             labels: labels,
             datasets: []
         };
+        var opts = {
+            bezierCurve: false
+        };
 
         for (var i = 0; i < values.length; i++) {
             data.datasets.push(
@@ -31,6 +34,6 @@
             );
         }
 
-        new Chart(ctx).Line(data, {});
+        new Chart(ctx).Line(data, opts);
     });
 })(jQuery);
