@@ -23,6 +23,7 @@ parameters:
     google_analytics:
         ga_key:
 
+    # set those to values obtained by creating an application at https://github.com/settings/applications
     github.client_id:
     github.client_secret:
 
