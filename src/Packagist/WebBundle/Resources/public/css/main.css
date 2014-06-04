@@ -471,6 +471,8 @@ form ul {
 .package .tags {
   overflow: hidden;
   white-space: nowrap;
+  clear: left;
+  margin-bottom: 14px;
 }
 .package .tags a {
   background: #c67700;
