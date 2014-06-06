@@ -56,6 +56,16 @@
                 <p class="warning">This package is not auto-updated. Go and set up the <a href="{{ path('fos_user_profile_show') }}">GitHub Service Hook</a> for Packagist so that it gets updated whenever you push!</p>
             {% endif %}
 
+            {% if package.abandoned %}
+                <p class="warning">
+                    This package is <strong>abandoned</strong> and no longer maintained.
+                    {% if package.replacementPackage is not empty %}
+                        The author suggests using the <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
+                    {% else %}
+                        No replacement package was suggested.
+                    {% endif %}
+                </p>
+            {% endif %}
             {% if package.updateFailureNotified
                 and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES'))
             %}

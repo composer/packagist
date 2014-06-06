@@ -333,6 +333,13 @@ ul.packages h1 .metadata {
   margin-right: 10px;
 }
 
+ul.packages .abandoned {
+  float: right;
+  color: #800;
+  font-size: 12px;
+  margin-right: 10px;
+}
+
 ul.packages li {
     background: none repeat scroll 0 0 #EEEEEE;
     border: 1px solid #BBBBBB;

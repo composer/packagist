@@ -112,6 +112,18 @@ class Package
     private $autoUpdated = false;
 
     /**
+     * @var bool
+     * @ORM\Column(type="boolean")
+     */
+    private $abandoned = false;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $replacementPackage;
+
+    /**
      * @ORM\Column(type="boolean", options={"default"=false})
      */
     private $updateFailureNotified = false;
@@ -548,5 +560,37 @@ class Package
     public function isUpdateFailureNotified()
     {
         return $this->updateFailureNotified;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isAbandoned()
+    {
+        return $this->abandoned;
+    }
+
+    /**
+     * @param boolean $abandoned
+     */
+    public function setAbandoned($abandoned)
+    {
+        $this->abandoned = $abandoned;
+    }
+
+    /**
+     * @return string
+     */
+    public function getReplacementPackage()
+    {
+        return $this->replacementPackage;
+    }
+
+    /**
+     * @param string $replacementPackage
+     */
+    public function setReplacementPackage($replacementPackage)
+    {
+        $this->replacementPackage = $replacementPackage;
     }
 }
