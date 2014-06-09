@@ -15,6 +15,7 @@
 {% block content %}
     <div class="box">
         <div class="package"{% if app.user and package.crawledAt is null and (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %} data-force-crawl="true"{% endif %}>
+
             {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
                 <form class="action" action="{{ path("edit_package", {name: package.name}) }}">
                     <input type="submit" value="Edit" />
@@ -32,6 +33,16 @@
                     <input type="hidden" name="_method" value="DELETE" />
                     {{ form_widget(deleteForm._token) }}
                     <input type="submit" value="Delete" />
+                </form>
+            {% endif %}
+            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) and not package.abandoned %}
+                <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
+                    <input type="submit" value="Abandon" />
+                </form>
+            {% endif %}
+            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) and package.abandoned %}
+                <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
+                    <input type="submit" value="Un-abandon" />
                 </form>
             {% endif %}
             <h1>

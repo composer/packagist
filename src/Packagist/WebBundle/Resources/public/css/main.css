@@ -658,6 +658,14 @@ form ul {
   background: -ms-linear-gradient(top, #a61c1c 0%, #b84949 100%);
   background: linear-gradient(top, #a61c1c 0%, #b84949 100%);
 }
+.package .action.abandon input, .package .action.un-abandon input {
+  background: #ec400b;
+  background: -moz-linear-gradient(top, #ec400b 0%, #f5813f 100%);
+  background: -webkit-linear-gradient(top, #ec400b 0%, #f5813f 100%);
+  background: -o-linear-gradient(top, #ec400b 0%, #f5813f 100%);
+  background: -ms-linear-gradient(top, #ec400b 0%, #f5813f 100%);
+  background: linear-gradient(top, #ec400b 0%, #f5813f 100%);
+}
 .package .action.delete-version {
   float: none;
   display: inline-block;
