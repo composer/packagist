@@ -248,7 +248,16 @@ class WebController extends Controller
             }
 
             $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
-            $paginator->setMaxPerPage(15);
+
+            $perPage = $req->query->getInt('per_page', 15);
+            if($perPage <= 0 || $perPage > 100) {
+                return new JsonResponse(array(
+                    'status' => 'error',
+                    'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
+                ), 400);
+            }
+            $paginator->setMaxPerPage($perPage);
+
             $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
             $metadata = $this->getPackagesMetadata($paginator);
@@ -289,6 +298,9 @@ class WebController extends Controller
                     }
                     if ($typeFilter) {
                         $params['type'] = $typeFilter;
+                    }
+                    if($perPage !== 15) {
+                        $params['per_page'] = $perPage;
                     }
                     $result['next'] = $this->generateUrl('search', $params, true);
                 }
