@@ -86,6 +86,53 @@ class ApiController extends Controller
     }
 
     /**
+     * @Route("/api/package/import", name="package_import_postreceive", defaults={"_format" = "json"})
+     * @Method({"POST"})
+     */
+    public function packageImportPostReceive(Request $request)
+    {
+        // parse the PackageImport payload
+        $payload = json_decode($request->request->get('payload'), true);
+
+        if (!$payload || !isset($payload['repository']['url'])) {
+            return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
+        }
+        
+        $urlRegex = $this->container->getParameter('import_custom_url_regex') ;
+        $repoUrl = $payload['repository']['url'];
+
+        // try to parse the URL first to avoid the DB lookup on malformed requests
+        if (!preg_match($urlRegex, $repoUrl)) {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Could not parse payload repository URL:'), 406);
+        }
+
+        $user = $this->findUser($request);
+        if (!$user) {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Invalid credentials'), 403);
+        }
+
+        $em = $this->get('doctrine')->getManager();
+
+        $package = new Package;
+        
+        try {
+            $package->setRepository( $repoUrl ) ;
+            $package->addMaintainer($user);
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($package);
+            $em->flush();
+
+           return new JsonResponse(array('status' => 'success','name' => $package->getName()), 201);
+           
+        } catch (\Exception $e) {
+           return new JsonResponse(array('status' => 'error', 'message' => 'Package process error, not imported'.$e->getMessage() ), 406);
+        }            
+
+        return new JsonResponse(array('status' => 'error', 'message' => 'Package not imported'), 406);
+        
+    }
+
+    /**
      * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"})
      * @Method({"POST"})
      */

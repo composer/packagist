@@ -40,7 +40,7 @@
         "composer/composer": "1.0.x-dev",
         "friendsofsymfony/user-bundle": "1.*",
         "hwi/oauth-bundle": "dev-master",
-        "nelmio/solarium-bundle": "1.*",
+        "nelmio/solarium-bundle": "1.1.*",
         "nelmio/security-bundle": "1.*",
         "predis/predis": "0.8.*",
         "snc/redis-bundle": "dev-master",
