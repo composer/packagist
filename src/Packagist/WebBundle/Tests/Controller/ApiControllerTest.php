@@ -16,6 +16,9 @@ class ApiControllerTest extends WebTestCase
         $this->assertTrue(count(json_decode($client->getResponse()->getContent())) > 0);
     }
 
+    /**
+     * @group api
+     */
     public function testGithubFailsCorrectly()
     {
         $client = self::createClient();
@@ -30,6 +33,7 @@ class ApiControllerTest extends WebTestCase
 
     /**
      * @dataProvider githubApiProvider
+     * @group api
      */
     public function testGithubApi($url)
     {
@@ -70,8 +74,65 @@ class ApiControllerTest extends WebTestCase
     }
 
     /**
+     * @group api
+     */
+    public function testGitlabFailsCorrectly()
+    {
+        $client = self::createClient();
+
+        $client->request('GET', '/api/gitlab');
+        $this->assertEquals(405, $client->getResponse()->getStatusCode(), 'GET method should not be allowed for GitHub Post-Receive URL');
+
+        $payload = json_encode(array('repository' => array('url' => 'git://gitlab.com/composer/composer.git',)));
+        $client->request('POST', '/api/gitlab?username=INVALID_USER&apiToken=INVALID_TOKEN', array(), array(), array(), $payload);
+        $this->assertEquals(403, $client->getResponse()->getStatusCode(), 'POST method should return 403 "Forbidden" if invalid username and API Token are sent');
+    }
+
+    /**
+     * @dataProvider gitlabApiProvider
+     * @group api
+     */
+    public function testGitlabApi($url)
+    {
+        $client = self::createClient();
+
+        $package = new Package;
+        $package->setRepository($url);
+
+        $user = new User;
+        $user->addPackages($package);
+
+        $repo = $this->getMockBuilder('Packagist\WebBundle\Entity\UserRepository')->disableOriginalConstructor()->getMock();
+        $em = $this->getMockBuilder('Doctrine\ORM\EntityManager')->disableOriginalConstructor()->getMock();
+        $updater = $this->getMockBuilder('Packagist\WebBundle\Package\Updater')->disableOriginalConstructor()->getMock();
+
+        $repo->expects($this->once())
+            ->method('findOneBy')
+            ->with($this->equalTo(array('username' => 'test', 'apiToken' => 'token')))
+            ->will($this->returnValue($user));
+
+        static::$kernel->getContainer()->set('packagist.user_repository', $repo);
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', $em);
+        static::$kernel->getContainer()->set('packagist.package_updater', $updater);
+
+        $payload = json_encode(array('repository' => array('url' => 'git://gitlab.com/composer/composer.git')));
+        $client->request('POST', '/api/gitlab?username=test&apiToken=token', array(), array(), array(), $payload);
+        $this->assertEquals(202, $client->getResponse()->getStatusCode());
+    }
+
+    public function gitlabApiProvider()
+    {
+        return array(
+            array('https://gitlab.com/composer/composer.git'),
+            array('http://gitlab.com/composer/composer.git'),
+            array('git@gitlab.com:composer/composer.git'),
+        );
+    }
+
+    /**
      * @depends      testGithubFailsCorrectly
      * @dataProvider urlProvider
+     * @group api
      */
     public function testUrlDetection($endpoint, $url, $expectedOK)
     {
@@ -85,7 +146,11 @@ class ApiControllerTest extends WebTestCase
             $payload = json_encode(array('repository' => array('url' => $url)));
         }
 
-        $client->request('POST', '/api/'.$endpoint.'?username=INVALID_USER&apiToken=INVALID_TOKEN', array('payload' => $payload));
+        if ($endpoint == 'gitlab') {
+            $client->request('POST', '/api/gitlab?username=INVALID_USER&apiToken=INVALID_TOKEN', array(), array(), array(), $payload);
+        } else {
+            $client->request('POST', '/api/'.$endpoint.'?username=INVALID_USER&apiToken=INVALID_TOKEN', array('payload' => $payload));
+        }
 
         $status = $client->getResponse()->getStatusCode();
 
@@ -114,7 +179,14 @@ class ApiControllerTest extends WebTestCase
             array('bitbucket', 'http://bitbucket.org/user/repo', true),
             array('bitbucket', 'https://bitbucket.org/user/repo', true),
 
-            // invalid URLs
+            // valid gitlab URLs
+            array('gitlab', 'https://gitlab.com/user/repo.git', true),
+            array('gitlab', 'git://gitlab.com/user/repo.git', true),
+            array('gitlab', 'git@gitlab.com/user/repo.git', true),
+            array('gitlab', 'https://self-hosted-gitlab.com/user/repo.git', true),
+            array('gitlab', 'https://gitlab.company.be/user/repo.git', true),
+
+            // invalid github URLs
             array('github', 'php://github.com/user/repository', false),
             array('github', 'javascript://github.com/user/repository', false),
             array('github', 'http://', false),
@@ -126,8 +198,16 @@ class ApiControllerTest extends WebTestCase
             array('github', 'https://github.com/user', false),
             array('github', 'https://github.com/', false),
             array('github', 'https://github.com', false),
+
+            // invalid bitbucket URLs
             array('bitbucket', 'bitbucketorg/user/repository', false),
             array('bitbucket', 'bitbucketXorg/user/repository', false),
+
+            // invalid gitlab URLs
+            array('gitlab', 'gitlab.com/user/repo.git', false),
+            array('gitlab', 'https://gitlab.com/user/repo', false),
+            array('gitlab', 'git@gitlab.com/user/repo', false),
+            array('gitlab', 'git://gitlab.com/user/repo', false),
         );
     }
 }
