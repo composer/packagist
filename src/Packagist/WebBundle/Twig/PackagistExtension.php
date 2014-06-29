@@ -41,8 +41,9 @@ class PackagistExtension extends \Twig_Extension
             return false;
         }
 
-        return $this->doctrine->getRepository('PackagistWebBundle:Package')
-            ->packageExists($package);
+        $repo = $this->doctrine->getRepository('PackagistWebBundle:Package');
+
+        return $repo->packageExists($package) || $repo->packageIsProvided($package);
     }
 
     public function prettifySourceReference($sourceReference)

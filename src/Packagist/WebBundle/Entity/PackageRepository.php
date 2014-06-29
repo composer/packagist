@@ -27,9 +27,23 @@ class PackageRepository extends EntityRepository
      */
     private $packageNames;
 
+    /**
+     * Lists all provided names array(name => true)
+     *
+     * @var array
+     */
+    private $providedNames;
+
     public function packageExists($name)
     {
         $packages = $this->getPackageNames();
+
+        return isset($packages[$name]) || in_array(strtolower($name), $packages, true);
+    }
+
+    public function packageIsProvided($name)
+    {
+        $packages = $this->getProvidedNames();
 
         return isset($packages[$name]) || in_array(strtolower($name), $packages, true);
     }
@@ -60,6 +74,49 @@ class PackageRepository extends EntityRepository
         }
 
         return $this->packageNames = $names;
+    }
+
+    public function getProvidedNames()
+    {
+        if (null !== $this->providedNames) {
+            return $this->providedNames;
+        }
+
+        $names = null;
+        $apc = extension_loaded('apc');
+
+        // TODO use container to set caching key and ttl
+        if ($apc) {
+            $names = apc_fetch('packagist_provided_names');
+        }
+
+        if (!is_array($names)) {
+            $query = $this->getEntityManager()
+                ->createQuery("SELECT p.packageName AS name FROM Packagist\WebBundle\Entity\ProvideLink p GROUP BY p.packageName");
+
+            $names = $this->getPackageNamesForQuery($query);
+            $names = array_combine($names, array_map('strtolower', $names));
+            if ($apc) {
+                apc_store('packagist_provided_names', $names, 3600);
+            }
+        }
+
+        return $this->providedNames = $names;
+    }
+
+    public function findProviders($name)
+    {
+        $query = $this->createQueryBuilder('p')
+            ->select('p')
+            ->leftJoin('p.versions', 'pv')
+            ->leftJoin('pv.provide', 'pr')
+            ->where('pv.development = true')
+            ->andWhere('pr.packageName = :name')
+            ->groupBy('p.name')
+            ->getQuery()
+            ->setParameters(array('name' => $name));
+
+        return $query->getResult();
     }
 
     public function getPackageNamesByType($type)

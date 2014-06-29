@@ -501,6 +501,16 @@ class WebController extends Controller
                 return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 404);
             }
 
+            if ($providers = $repo->findProviders($name)) {
+                return $this->render('PackagistWebBundle:Web:providers.html.twig', array(
+                    'name' => $name,
+                    'packages' => $providers,
+                    'meta' => $this->getPackagesMetadata($providers),
+                    'paginate' => false,
+                    'searchForm' => $this->createSearchForm()->createView()
+                ));
+            }
+
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
