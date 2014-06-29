@@ -83,6 +83,8 @@ v2.0.4-p1
 
         <p>It is highly recommended to set up the <strong>GitHub service hook</strong> for all your packages. This reduces the load on our side, and ensures your package is updated almost instantly. To do so you can go to your GitHub repository, click the "Admin" button, then "Service Hooks". Pick "Packagist" in the list, and add the API key you will find on your <a href="{{ path('fos_user_profile_show') }}">profile</a>, plus your Packagist username if it is not the same as on GitHub. Check the "Active" box and submit the form.</p>
 
+        <p>If you use <strong>BitBucket</strong> or <strong>GitLab</strong> you can add a "POST" hook or Push Event and then enter 'https://packagist.org/api/update-package?username=XXX&amp;apiToken=YYY' as the URL. To manually send update notices from other services you can build up a POST request to the previous URL and send the following JSON request body: <code>{"repository": { "url": "...the VCS url Packagist should update..."}}</code>. Do not forget to send a Content-Type header set to application/json too.</p>
+
         <p>The search index is updated <strong>every five minutes</strong>. It will index (or reindex) any package that has been crawled since the last time the search indexer ran.</p>
 
         <h1>Community</h1>

@@ -86,41 +86,34 @@ class ApiController extends Controller
     }
 
     /**
+     * @Route("/api/update-package", name="generic_postreceive", defaults={"_format" = "json"})
      * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"})
-     * @Method({"POST"})
-     */
-    public function githubPostReceive(Request $request)
-    {
-        // parse the GitHub payload
-        $payload = json_decode($request->request->get('payload'), true);
-
-        if (!$payload || !isset($payload['repository']['url'])) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
-        }
-
-        $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>github\.com)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}';
-        $repoUrl = $payload['repository']['url'];
-
-        return $this->receivePost($request, $repoUrl, $urlRegex);
-    }
-
-    /**
      * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"})
      * @Method({"POST"})
      */
-    public function bitbucketPostReceive(Request $request)
+    public function updatePackageAction(Request $request)
     {
-        // decode Bitbucket's POST payload
+        // parse the payload
         $payload = json_decode($request->request->get('payload'), true);
-
-        if (!$payload || !isset($payload['canon_url']) || !isset($payload['repository']['absolute_url'])) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Missing or invalid payload',)), 406);
+        if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
+            $payload = json_decode($request->getContent(), true);
         }
 
-        $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}';
-        $repoUrl = $payload['canon_url'].$payload['repository']['absolute_url'];
+        if (!$payload) {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Missing payload parameter'), 406);
+        }
 
-        return $this->receivePost($request, $repoUrl, $urlRegex);
+        if (isset($payload['repository']['url'])) { // github/gitlab/anything hook
+            $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>[a-z0-9.-]+)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}';
+            $url = $payload['repository']['url'];
+        } elseif (isset($payload['canon_url']) && isset($payload['repository']['absolute_url'])) { // bitbucket hook
+            $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}';
+            $url = $payload['canon_url'].$payload['repository']['absolute_url'];
+        } else {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Missing or invalid payload'), 406);
+        }
+
+        return $this->receivePost($request, $url, $urlRegex);
     }
 
     /**

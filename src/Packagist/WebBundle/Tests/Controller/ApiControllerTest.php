@@ -114,20 +114,18 @@ class ApiControllerTest extends WebTestCase
             array('bitbucket', 'http://bitbucket.org/user/repo', true),
             array('bitbucket', 'https://bitbucket.org/user/repo', true),
 
+            // valid others
+            array('update-package', 'https://ghe.example.org/user/repository', true),
+            array('update-package', 'https://gitlab.org/user/repository', true),
+
             // invalid URLs
             array('github', 'php://github.com/user/repository', false),
             array('github', 'javascript://github.com/user/repository', false),
             array('github', 'http://', false),
-            array('github', 'http://thisisnotgithub.com/user/repository', false),
-            array('github', 'http://thisisnotbitbucket.org/user/repository', false),
-            array('github', 'githubcom/user/repository', false),
-            array('github', 'githubXcom/user/repository', false),
             array('github', 'https://github.com/user/', false),
             array('github', 'https://github.com/user', false),
             array('github', 'https://github.com/', false),
             array('github', 'https://github.com', false),
-            array('bitbucket', 'bitbucketorg/user/repository', false),
-            array('bitbucket', 'bitbucketXorg/user/repository', false),
         );
     }
 }
