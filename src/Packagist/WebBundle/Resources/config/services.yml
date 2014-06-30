@@ -19,6 +19,15 @@ services:
         public: false
         arguments: ["@fos_user.user_manager"]
 
+    packagist.http_basic_preauthenticated_user_provider:
+        class: Packagist\WebBundle\Security\Provider\PreAuthenticatedUserProviderProxy
+        public: false
+        arguments:
+            - @packagist.user_provider
+            - @fos_user.util.token_generator
+            - @fos_user.user_manager
+            - %preauthenticated_provider.default_email_domain%
+
     packagist.user_repository:
         class: Packagist\WebBundle\Entity\UserRepository
         factory_service: doctrine

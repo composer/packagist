@@ -8,10 +8,14 @@ security:
     providers:
         packagist:
             id: packagist.user_provider
+        packagist_preauth:
+            id: packagist.http_basic_preauthenticated_user_provider
 
     firewalls:
         main:
-            pattern:      .*
+            pattern:   .*
+            stateless: %preauthenticated_provider.enabled%
+            packagist_http_pre_auth: %preauthenticated_provider.enabled%
             form_login:
                 provider:       packagist
                 login_path:     /login
