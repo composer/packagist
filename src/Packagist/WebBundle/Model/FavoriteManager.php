@@ -77,7 +77,9 @@ class FavoriteManager
         $res = array();
         // TODO should be done with scripting when available
         foreach ($packageIds as $id) {
-            $res[$id] = $this->redis->zcard('pkg:'.$id.':fav');
+            if (ctype_digit((string) $id)) {
+                $res[$id] = $this->redis->zcard('pkg:'.$id.':fav');
+            }
         }
 
         return $res;

@@ -1,17 +1,25 @@
 {% macro listPackages(packages, paginate, showAutoUpdateWarning, meta) %}
     <ul class="packages">
         {% for package in packages %}
-            <li data-url="{{ path('view_package', { 'name' : package.name }) }}">
+            {% if package.id is numeric %}
+                {% set packageUrl = path('view_package', { 'name' : package.name }) %}
+            {% else %}
+                {% set packageUrl = path('view_providers', { 'name' : package.name }) %}
+            {% endif %}
+            <li data-url="{{ packageUrl }}">
+                {% if meta and package.id is numeric %}
+                    <span class="metadata">
+                        <i class="icon-download"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', ' ') }}
+                        <i class="icon-star"></i> {{ meta.favers[package.id]|number_format(0, '.', ' ') }}
+                    </span>
+                {% endif %}
                 <h1>
-                    <a href="{{ path('view_package', { 'name' : package.name }) }}">{{ package.name }}</a>
+                    <a href="{{ packageUrl }}">{{ package.name }}</a>
+                    {% if package.id is not numeric %}
+                        (virtual package)
+                    {% endif %}
                     {% if showAutoUpdateWarning and not package.autoUpdated %}
                         [Not auto-updated]
-                    {% endif %}
-                    {% if meta %}
-                        <span class="metadata">
-                            <i class="icon-download"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', ' ') }}
-                            <i class="icon-star"></i> {{ meta.favers[package.id]|number_format(0, '.', ' ') }}
-                        </span>
                     {% endif %}
                 </h1>
                 {% if package.description is defined and package.description %}
@@ -26,8 +34,10 @@
     </ul>
 {% endmacro %}
 
-{% macro packageLink(packageName) %}
-    {%- if packageName is existing_package -%}
+{% macro packageLink(packageName, type) %}
+    {%- if type == 'provide' and (packageName is existing_provider or packageName is existing_package) -%}
+        <a href="{{ path('view_providers', { 'name': packageName }) }}">{{ packageName }}</a>
+    {%- elseif packageName is existing_package -%}
         <a href="{{ path('view_package', { 'name': packageName }) }}">{{ packageName }}</a>
     {%- else -%}
         {{ packageName }}

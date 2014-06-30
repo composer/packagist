@@ -324,7 +324,11 @@ class WebController extends Controller
                 }
 
                 foreach ($paginator as $package) {
-                    $url = $this->generateUrl('view_package', array('name' => $package->name), true);
+                    if (ctype_digit((string) $package->id)) {
+                        $url = $this->generateUrl('view_package', array('name' => $package->name), true);
+                    } else {
+                        $url = $this->generateUrl('view_providers', array('name' => $package->name), true);
+                    }
 
                     $result['results'][] = array(
                         'name' => $package->name,
@@ -526,6 +530,33 @@ class WebController extends Controller
     /**
      * @Template()
      * @Route(
+     *     "/providers/{name}",
+     *     name="view_providers",
+     *     requirements={"name"="[A-Za-z0-9/_.-]+?"},
+     *     defaults={"_format"="html"}
+     * )
+     * @Method({"GET"})
+     */
+    public function viewProvidersAction(Request $req, $name)
+    {
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $providers = $repo->findProviders($name);
+        if (!$providers) {
+            return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
+        }
+
+        return $this->render('PackagistWebBundle:Web:providers.html.twig', array(
+            'name' => $name,
+            'packages' => $providers,
+            'meta' => $this->getPackagesMetadata($providers),
+            'paginate' => false,
+            'searchForm' => $this->createSearchForm()->createView()
+        ));
+    }
+
+    /**
+     * @Template()
+     * @Route(
      *     "/packages/{name}.{_format}",
      *     name="view_package",
      *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"},
@@ -546,13 +577,7 @@ class WebController extends Controller
             }
 
             if ($providers = $repo->findProviders($name)) {
-                return $this->render('PackagistWebBundle:Web:providers.html.twig', array(
-                    'name' => $name,
-                    'packages' => $providers,
-                    'meta' => $this->getPackagesMetadata($providers),
-                    'paginate' => false,
-                    'searchForm' => $this->createSearchForm()->createView()
-                ));
+                return $this->redirect($this->generateUrl('view_providers', array('name' => $name)));
             }
 
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));

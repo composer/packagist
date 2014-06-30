@@ -324,13 +324,17 @@ ul.packages h1 {
   margin: 0;
   padding: 8px 4px 0 0;
   height: 32px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-ul.packages h1 .metadata {
+ul.packages .metadata {
   float: right;
   color: #555;
   font-size: 18px;
   margin-right: 10px;
+  padding-top: 8px;
 }
 
 ul.packages li {

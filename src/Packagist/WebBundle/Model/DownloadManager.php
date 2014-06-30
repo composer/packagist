@@ -65,7 +65,13 @@ class DownloadManager
         $keys = array();
 
         foreach ($packageIds as $id) {
-            $keys[$id] = 'dl:'.$id;
+            if (ctype_digit((string) $id)) {
+                $keys[$id] = 'dl:'.$id;
+            }
+        }
+
+        if (!$keys) {
+            return array();
         }
 
         $res = array_map('intval', $this->redis->mget(array_values($keys)));
