@@ -125,16 +125,28 @@ class WebController extends Controller
 
     /**
      * @Template()
-     * @Route("/explore/popular", name="browse_popular")
+     * @Route("/explore/popular.{_format}", name="browse_popular", defaults={"_format"="html"})
      * @Cache(smaxage=900)
      */
     public function popularAction(Request $req)
     {
         $redis = $this->get('snc_redis.default');
+        $perPage = $req->query->getInt('per_page', 15);
+        if ($perPage <= 0 || $perPage > 100) {
+            if ($req->getRequestFormat() === 'json') {
+                return new JsonResponse(array(
+                    'status' => 'error',
+                    'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
+                ), 400);
+            }
+
+            $perPage = max(0, min(100, $perPage));
+        }
+
         $popularIds = $redis->zrevrange(
             'downloads:trending',
-            ($req->get('page', 1) - 1) * 15,
-            $req->get('page', 1) * 15 - 1
+            ($req->get('page', 1) - 1) * $perPage,
+            $req->get('page', 1) * $perPage - 1
         );
         $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
             ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
@@ -144,7 +156,7 @@ class WebController extends Controller
         });
 
         $packages = new Pagerfanta(new FixedAdapter($redis->zcard('downloads:trending'), $popular));
-        $packages->setMaxPerPage(15);
+        $packages->setMaxPerPage($perPage);
         $packages->setCurrentPage($req->get('page', 1), false, true);
 
         $data = array(
@@ -152,6 +164,38 @@ class WebController extends Controller
             'searchForm' => $this->createSearchForm()->createView(),
         );
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
+
+        if ($req->getRequestFormat() === 'json') {
+            $result = array(
+                'packages' => array(),
+                'total' => $packages->getNbResults(),
+            );
+
+            foreach ($packages as $package) {
+                $url = $this->generateUrl('view_package', array('name' => $package->getName()), true);
+
+                $result['packages'][] = array(
+                    'name' => $package->getName(),
+                    'description' => $package->getDescription() ?: '',
+                    'url' => $url,
+                    'downloads' => $data['meta']['downloads'][$package->getId()],
+                    'favers' => $data['meta']['favers'][$package->getId()],
+                );
+            }
+
+            if ($packages->hasNextPage()) {
+                $params = array(
+                    '_format' => 'json',
+                    'page' => $packages->getNextPage()
+                );
+                if ($perPage !== 15) {
+                    $params['per_page'] = $perPage;
+                }
+                $result['next'] = $this->generateUrl('browse_popular', $params, true);
+            }
+
+            return new JsonResponse($result);
+        }
 
         return $data;
     }
