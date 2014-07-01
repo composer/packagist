@@ -41,17 +41,36 @@ class DownloadManager
             $package = $package->getId();
         }
 
-        $counts = $this->redis->mget(
-            'dl:' . $package,
-            'dl:' . $package.':'.date('Ym'),
-            'dl:' . $package.':'.date('Ymd')
+        $date = new \DateTime();
+        $keys = array('dl:'.$package);
+        for ($i = 0; $i < 30; $i++) {
+            $keys[] = 'dl:' . $package . ':' . $date->format('Ymd');
+            $date->modify('-1 day');
+        }
+
+        $vals = $this->redis->mget($keys);
+        $result = array(
+            'total' => (int) array_shift($vals) ?: 0,
+            'monthly' => (int) array_sum($vals) ?: 0,
+            'daily' => (int) $vals[0] ?: 0,
         );
 
-        return array(
-            'total' => (int) $counts[0] ?: 0,
-            'monthly' => (int) $counts[1] ?: 0,
-            'daily' => (int)$counts[2] ?: 0,
-        );
+        return $result;
+    }
+
+    /**
+     * Gets the total download count for a package.
+     *
+     * @param \Packagist\WebBundle\Entity\Package|int $package
+     * @return int
+     */
+    public function getTotalDownloads($package)
+    {
+        if ($package instanceof Package) {
+            $package = $package->getId();
+        }
+
+        return (int) $this->redis->get('dl:' . $package) ?: 0;
     }
 
     /**

@@ -1082,13 +1082,13 @@ class WebController extends Controller
             }
 
             try {
-                $downloads = $this->get('packagist.download_manager')->getDownloads($package);
+                $downloads = $this->get('packagist.download_manager')->getTotalDownloads($package);
             } catch (ConnectionException $e) {
                 return;
             }
 
             // more than 50 downloads = established package, do not allow deletion by maintainers
-            if ($downloads['total'] > 50) {
+            if ($downloads > 50) {
                 return;
             }
         }
