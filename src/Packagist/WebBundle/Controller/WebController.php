@@ -287,6 +287,11 @@ class WebController extends Controller
                 $form->bind($req);
                 if ($form->isValid()) {
                     $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
+                    $escapedQuery = preg_replace('/(^| )\\\\-/', '$1-', $escapedQuery);
+                    if ((substr_count($escapedQuery, '"') % 2) == 0) {
+                        $escapedQuery = str_replace('\\"', '"', $escapedQuery);
+                    }
+                    $escapedQuery = str_replace('\\+', '+', $escapedQuery);
                     $select->setQuery($escapedQuery);
                 }
             }

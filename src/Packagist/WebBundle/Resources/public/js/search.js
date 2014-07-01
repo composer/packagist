@@ -49,9 +49,9 @@
 
         if (window.history.pushState) {
             if (previousQuery === undefined) {
-                window.history.pushState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
+                window.history.pushState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
             } else {
-                window.history.replaceState(null, "Search", "/search/?q=" + $('input[type="search"]', form).val());
+                window.history.replaceState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
             }
         }
 
