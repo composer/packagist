@@ -141,6 +141,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                                 $document->setField('description', '');
                                 $document->setField('type', 'virtual-package');
                                 $document->setField('trendiness', 100);
+                                $document->setField('repository', '');
                                 $update->addDocument($document);
                             } catch (\Exception $e) {
                                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().':provide:'.$provide->getPackageName().'</error>');
@@ -168,6 +169,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $document->setField('description', $package->getDescription());
         $document->setField('type', $package->getType());
         $document->setField('trendiness', $redis->zscore('downloads:trending', $package->getId()));
+        $document->setField('repository', $package->getRepository());
 
         $tags = array();
         foreach ($package->getVersions() as $version) {

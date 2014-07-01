@@ -336,6 +336,7 @@ class WebController extends Controller
                         'url' => $url,
                         'downloads' => $metadata['downloads'][$package->id],
                         'favers' => $metadata['favers'][$package->id],
+                        'repository' => $package->repository,
                     );
                 }
 
