@@ -267,7 +267,7 @@ class WebController extends Controller
 
             // filter by type
             if ($typeFilter) {
-                $filterQueryTerm = sprintf('type:%s', $select->getHelper()->escapeTerm($typeFilter));
+                $filterQueryTerm = sprintf('type:"%s"', $select->getHelper()->escapeTerm($typeFilter));
                 $filterQuery = $select->createFilterQuery('type')->setQuery($filterQueryTerm);
                 $select->addFilterQuery($filterQuery);
             }
