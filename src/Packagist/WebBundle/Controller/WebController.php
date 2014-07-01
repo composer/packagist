@@ -278,7 +278,7 @@ class WebController extends Controller
                 foreach ((array) $tagsFilter as $tag) {
                     $tags[] = $select->getHelper()->escapeTerm($tag);
                 }
-                $filterQueryTerm = sprintf('tags:(%s)', implode(' AND ', $tags));
+                $filterQueryTerm = sprintf('tags:("%s")', implode('" AND "', $tags));
                 $filterQuery = $select->createFilterQuery('tags')->setQuery($filterQueryTerm);
                 $select->addFilterQuery($filterQuery);
             }
