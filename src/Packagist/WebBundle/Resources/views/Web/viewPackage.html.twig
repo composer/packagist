@@ -132,9 +132,9 @@
                 </div>
             {% endif %}
 
-            {% if package.versions|length %}
+            {% if versions|length %}
                 <ul class="versions">
-                    {% for version in package.versions %}
+                    {% for version in versions %}
                         <li class="version{% if loop.last %} last{% endif %}" id="{{ version.version }}">
                             <section>
                                 <h1>

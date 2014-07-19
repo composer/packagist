@@ -125,7 +125,7 @@ class Updater
             }
 
             // the rest is sorted by version
-            return version_compare($a->getVersion(), $b->getVersion());
+            return version_compare($aVersion, $bVersion);
         });
 
         $versionRepository = $this->doctrine->getRepository('PackagistWebBundle:Version');

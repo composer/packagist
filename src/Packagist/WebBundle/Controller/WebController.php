@@ -608,14 +608,35 @@ class WebController extends Controller
         }
 
         $version = null;
-        if (count($package->getVersions())) {
+        $versions = $package->getVersions();
+        if (is_object($versions)) {
+            $versions = $versions->toArray();
+        }
+
+        usort($versions, function ($a, $b) {
+            $aVersion = $a->getNormalizedVersion();
+            $bVersion = $b->getNormalizedVersion();
+            $aVersion = preg_replace('{^dev-.*}', '0.0.0-alpha', $aVersion);
+            $bVersion = preg_replace('{^dev-.*}', '0.0.0-alpha', $bVersion);
+
+            // equal versions are sorted by date
+            if ($aVersion === $bVersion) {
+                return $b->getReleasedAt() > $a->getReleasedAt() ? 1 : -1;
+            }
+
+            // the rest is sorted by version
+            return version_compare($bVersion, $aVersion);
+        });
+
+        if (count($versions)) {
             $versionRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
-            $version = $versionRepo->getFullVersion($package->getVersions()->first()->getId());
+            $version = $versionRepo->getFullVersion(reset($versions)->getId());
         }
 
         $data = array(
             'package' => $package,
-            'version' => $version
+            'version' => $version,
+            'versions' => $versions,
         );
 
         try {
