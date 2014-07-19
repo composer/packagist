@@ -181,8 +181,8 @@ class Updater
         $existingVersion = $package->getVersion($normVersion);
         if ($existingVersion) {
             $source = $existingVersion->getSource();
-            // update if the right flag is set, or it's a dev version, or the source reference has changed in a tagged release (re-tag)
-            if ($existingVersion->getDevelopment() || $source['reference'] !== $data->getSourceReference() || ($flags & self::UPDATE_EQUAL_REFS)) {
+            // update if the right flag is set, or the source reference has changed (re-tag or new commit on branch)
+            if ($source['reference'] !== $data->getSourceReference() || ($flags & self::UPDATE_EQUAL_REFS)) {
                 $version = $existingVersion;
             } else {
                 // mark it updated to avoid it being pruned
