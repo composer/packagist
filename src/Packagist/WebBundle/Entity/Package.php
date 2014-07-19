@@ -125,6 +125,11 @@ class Package
     private $vcsDriver = true;
     private $vcsDriverError;
 
+    /**
+     * @var array lookup table for versions
+     */
+    private $cachedVersions;
+
     public function __construct()
     {
         $this->versions = new ArrayCollection();
@@ -387,6 +392,20 @@ class Package
     public function getVersions()
     {
         return $this->versions;
+    }
+
+    public function getVersion($normalizedVersion)
+    {
+        if (null === $this->cachedVersions) {
+            $this->cachedVersions = array();
+            foreach ($this->getVersions() as $version) {
+                $this->cachedVersions[strtolower($version->getNormalizedVersion())] = $version;
+            }
+        }
+
+        if (isset($this->cachedVersions[strtolower($normalizedVersion)])) {
+            return $this->cachedVersions[strtolower($normalizedVersion)];
+        }
     }
 
     /**

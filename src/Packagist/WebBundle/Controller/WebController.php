@@ -731,6 +731,7 @@ class WebController extends Controller
 
         $update = $req->request->get('update', $req->query->get('update'));
         $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
+        $updateEqualRefs = $req->request->get('updateAll', $req->query->get('updateAll'));
 
         $user = $this->getUser() ?: $doctrine
             ->getRepository('PackagistWebBundle:User')
@@ -758,7 +759,7 @@ class WebController extends Controller
                 $repository->setLoader($loader);
 
                 try {
-                    $updater->update($package, $repository, Updater::UPDATE_EQUAL_REFS);
+                    $updater->update($package, $repository, $updateEqualRefs ? Updater::UPDATE_EQUAL_REFS : 0);
                 } catch (\Exception $e) {
                     return new Response(json_encode(array(
                         'status' => 'error',

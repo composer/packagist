@@ -39,7 +39,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $this
             ->setName('packagist:update')
             ->setDefinition(array(
-                new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages'),
+                new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages, or if a package name is given forces an update of all versions'),
                 new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all versions before an update'),
                 new InputOption('notify-failures', null, InputOption::VALUE_NONE, 'Notify failures to maintainers by email'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
@@ -64,7 +64,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
 
         if ($package) {
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
-            $flags = Updater::UPDATE_EQUAL_REFS;
+            $flags = $force ? Updater::UPDATE_EQUAL_REFS : 0;
         } elseif ($force) {
             $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
             $flags = Updater::UPDATE_EQUAL_REFS;
