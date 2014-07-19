@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "02984abf23d3bc7ed12b6ea79cef7fc1f306bb71"
+                "reference": "d5294ef91b061064785f077db0fd88717495ef16"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/02984abf23d3bc7ed12b6ea79cef7fc1f306bb71",
-                "reference": "02984abf23d3bc7ed12b6ea79cef7fc1f306bb71",
+                "url": "https://api.github.com/repos/composer/composer/zipball/d5294ef91b061064785f077db0fd88717495ef16",
+                "reference": "d5294ef91b061064785f077db0fd88717495ef16",
                 "shasum": ""
             },
             "require": {
@@ -55,16 +55,14 @@
             ],
             "authors": [
                 {
-                    "name": "Jordi Boggiano",
-                    "email": "j.boggiano@seld.be",
-                    "homepage": "http://seld.be",
-                    "role": "Developer"
-                },
-                {
                     "name": "Nils Adermann",
                     "email": "naderman@naderman.de",
-                    "homepage": "http://www.naderman.de",
-                    "role": "Developer"
+                    "homepage": "http://www.naderman.de"
+                },
+                {
+                    "name": "Jordi Boggiano",
+                    "email": "j.boggiano@seld.be",
+                    "homepage": "http://seld.be"
                 }
             ],
             "description": "Composer helps you declare, manage and install dependencies of PHP projects, ensuring you have the right stack everywhere.",
@@ -74,7 +72,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2014-06-29 14:00:03"
+            "time": "2014-07-19 16:40:01"
         },
         {
             "name": "doctrine/annotations",

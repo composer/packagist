@@ -20,6 +20,7 @@ use Composer\IO\NullIO;
 use Composer\Factory;
 use Composer\Repository\VcsRepository;
 use Composer\Repository\RepositoryManager;
+use Composer\Repository\Vcs\GitHubDriver;
 
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\PackageRepository")
@@ -358,6 +359,9 @@ class Package
             }
             if (null === $this->getName()) {
                 $this->setName($information['name']);
+            }
+            if ($driver instanceof GitHubDriver) {
+                $this->repository = $driver->getRepositoryUrl();
             }
         } catch (\Exception $e) {
             $this->vcsDriverError = '['.get_class($e).'] '.$e->getMessage();
