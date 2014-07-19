@@ -261,25 +261,29 @@ class Updater
         if ($data->getAuthors()) {
             foreach ($data->getAuthors() as $authorData) {
                 $author = null;
+
+                foreach (array('email', 'name', 'homepage', 'role') as $field) {
+                    if (isset($authorData[$field])) {
+                        $authorData[$field] = trim($authorData[$field]);
+                        if ('' === $authorData[$field]) {
+                            $authorData[$field] = null;
+                        }
+                    } else {
+                        $authorData[$field] = null;
+                    }
+                }
+
                 // skip authors with no information
-                if (empty($authorData['email']) && empty($authorData['name'])) {
+                if (!isset($authorData['email']) && !isset($authorData['name'])) {
                     continue;
                 }
 
-                if (!empty($authorData['email'])) {
-                    $author = $authorRepository->findOneByEmail($authorData['email']);
-                }
-
-                if (!$author && !empty($authorData['homepage'])) {
-                    $author = $authorRepository->findOneBy(array(
-                        'name' => $authorData['name'],
-                        'homepage' => $authorData['homepage']
-                    ));
-                }
-
-                if (!$author && !empty($authorData['name'])) {
-                    $author = $authorRepository->findOneByNameAndPackage($authorData['name'], $package);
-                }
+                $author = $authorRepository->findOneBy(array(
+                    'email' => $authorData['email'],
+                    'name' => $authorData['name'],
+                    'homepage' => $authorData['homepage'],
+                    'role' => $authorData['role'],
+                ));
 
                 if (!$author) {
                     $author = new Author();
