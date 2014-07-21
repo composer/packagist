@@ -14,7 +14,7 @@ namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\ExecutionContext;
+use Symfony\Component\Validator\ExecutionContextInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Composer\IO\NullIO;
 use Composer\Factory;
@@ -155,7 +155,7 @@ class Package
         return $data;
     }
 
-    public function isRepositoryValid(ExecutionContext $context)
+    public function isRepositoryValid(ExecutionContextInterface $context)
     {
         // vcs driver was not nulled which means the repository was not set/modified and is still valid
         if (true === $this->vcsDriver && null !== $this->getName()) {
@@ -217,7 +217,7 @@ class Package
         $this->router = $router;
     }
 
-    public function isPackageUnique(ExecutionContext $context)
+    public function isPackageUnique(ExecutionContextInterface $context)
     {
         try {
             if ($this->entityRepository->findOneByName($this->name)) {
