@@ -95,18 +95,18 @@ class PackageController extends Controller
         }
 
         $form = $this->createForm(new AbandonedType());
-        $form->handleRequest($request);
+        if ($request->getMethod() === 'POST') {
+            $form->bind($request->request->get('package'));
+            if ($form->isValid()) {
+                $package->setAbandoned(true);
+                $package->setReplacementPackage($form->get('replacement')->getData());
+                $package->setIndexedAt(null);
 
-        if ($form->isValid()) {
-            $package->setAbandoned(true);
-            $package->setReplacementPackage($form->get('replacement')->getData());
-            $package->setIndexedAt(null);
+                $em = $this->getDoctrine()->getManager();
+                $em->flush();
 
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($package);
-            $em->flush();
-
-            return $this->redirect($this->generateUrl('view_package', array('name' => $package->getName())));
+                return $this->redirect($this->generateUrl('view_package', array('name' => $package->getName())));
+            }
         }
 
         return array(
@@ -143,7 +143,6 @@ class PackageController extends Controller
         $package->setIndexedAt(null);
 
         $em = $this->getDoctrine()->getManager();
-        $em->persist($package);
         $em->flush();
 
         return $this->redirect($this->generateUrl('view_package', array('name' => $package->getName())));
