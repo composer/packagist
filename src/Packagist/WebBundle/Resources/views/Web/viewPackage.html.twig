@@ -35,12 +35,12 @@
                     <input type="submit" value="Delete" />
                 </form>
             {% endif %}
-            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) and not package.abandoned %}
+            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and (not package.abandoned or package.replacementPackage is empty)%}
                 <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
                     <input type="submit" value="Abandon" />
                 </form>
             {% endif %}
-            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) and package.abandoned %}
+            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and package.abandoned %}
                 <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
                     <input type="submit" value="Un-abandon" />
                 </form>

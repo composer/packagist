@@ -4,25 +4,19 @@
 
 {% block content %}
     <div class="box">
-        <div class="package">
-            <h1>
-                {% if is_favorite is defined %}
-                    <i class="mark-favorite icon-star{% if not is_favorite %}-empty{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></i>
-                {% endif %}
-                <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
-                <a id="copy" data-clipboard-text="{{ package.name }}" title="Copy to clipboard"><i class="icon-copy"></i></a>
-            </h1>
+        <h1>
+            <a href="{{ path("view_vendor", {vendor: package.vendor}) }}">{{ package.vendor }}/</a><a href="{{ path("view_package", {name: package.name}) }}">{{ package.packageName }}</a>
+        </h1>
 
-            <p>You are about to mark this package as abandoned. This will alert users that this package will no longer be maintained.</p>
-            <p>If you are handing this project over to a new maintainer or know of a package that replaces it, please use
-                the field below to point users to the new package. In case you cannot point them to a new package, this one
-                will be tagged as abandoned and a replacement can be added later.</p>
+        <p>You are about to mark this package as abandoned. This will alert users that this package will no longer be maintained.</p>
+        <p>If you are handing this project over to a new maintainer or know of a package that replaces it, please use
+            the field below to point users to the new package. In case you cannot point them to a new package, this one
+            will be tagged as abandoned and a replacement can be added later.</p>
 
-            <form method="post" {{ form_enctype(form) }}>
-                {{ form_widget(form) }}
+        <form method="post" {{ form_enctype(form) }}>
+            {{ form_widget(form) }}
 
-                <input type="submit" value="Abandon Package" />
-            </form>
-        </div>
+            <input type="submit" value="Abandon Package" />
+        </form>
     </div>
 {% endblock %}

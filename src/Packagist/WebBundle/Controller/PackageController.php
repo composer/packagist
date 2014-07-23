@@ -71,10 +71,6 @@ class PackageController extends Controller
     }
 
     /**
-     * @param Request $request
-     * @param string $name
-     * @return array|\Symfony\Component\HttpFoundation\RedirectResponse
-     *
      * @Route(
      *      "/packages/{name}/abandon",
      *      name="abandon_package",
@@ -102,9 +98,9 @@ class PackageController extends Controller
         $form->handleRequest($request);
 
         if ($form->isValid()) {
-
             $package->setAbandoned(true);
             $package->setReplacementPackage($form->get('replacement')->getData());
+            $package->setIndexedAt(null);
 
             $em = $this->getDoctrine()->getManager();
             $em->persist($package);
@@ -120,11 +116,8 @@ class PackageController extends Controller
     }
 
     /**
-     * @param string $name
-     * @return array|\Symfony\Component\HttpFoundation\RedirectResponse
-     *
      * @Route(
-     *      "/packages/{name}/un-abandon",
+     *      "/packages/{name}/unabandon",
      *      name="unabandon_package",
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
      * )
@@ -147,6 +140,7 @@ class PackageController extends Controller
 
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
+        $package->setIndexedAt(null);
 
         $em = $this->getDoctrine()->getManager();
         $em->persist($package);
