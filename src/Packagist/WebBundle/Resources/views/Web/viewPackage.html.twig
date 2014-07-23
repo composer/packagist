@@ -15,6 +15,7 @@
 {% block content %}
     <div class="box">
         <div class="package"{% if app.user and package.crawledAt is null and (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %} data-force-crawl="true"{% endif %}>
+
             {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
                 <form class="action" action="{{ path("edit_package", {name: package.name}) }}">
                     <input type="submit" value="Edit" />
@@ -32,6 +33,16 @@
                     <input type="hidden" name="_method" value="DELETE" />
                     {{ form_widget(deleteForm._token) }}
                     <input type="submit" value="Delete" />
+                </form>
+            {% endif %}
+            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) and not package.abandoned %}
+                <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
+                    <input type="submit" value="Abandon" />
+                </form>
+            {% endif %}
+            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) and package.abandoned %}
+                <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
+                    <input type="submit" value="Un-abandon" />
                 </form>
             {% endif %}
             <h1>
@@ -56,6 +67,16 @@
                 <p class="warning">This package is not auto-updated. Go and set up the <a href="{{ path('fos_user_profile_show') }}">GitHub Service Hook</a> for Packagist so that it gets updated whenever you push!</p>
             {% endif %}
 
+            {% if package.abandoned %}
+                <p class="warning">
+                    This package is <strong>abandoned</strong> and no longer maintained.
+                    {% if package.replacementPackage is not empty %}
+                        The author suggests using the <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
+                    {% else %}
+                        No replacement package was suggested.
+                    {% endif %}
+                </p>
+            {% endif %}
             {% if package.updateFailureNotified
                 and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES'))
             %}
