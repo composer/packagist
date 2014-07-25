@@ -238,7 +238,7 @@
    <field name="type" type="text_general_rev" indexed="true" stored="true"/>
    <field name="trendiness" type="float" indexed="true" stored="true" />
    <field name="repository" type="string" indexed="false" stored="true" />
-   <field name="abandoned" type="integer" indexed="false" stored="true" />
+   <field name="abandoned" type="int" indexed="false" stored="true" />
    <field name="replacementPackage" type="string" indexed="false" stored="true" />
 
    <!-- catchall field, containing all other searchable text fields (implemented
