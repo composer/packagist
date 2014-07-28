@@ -35,7 +35,7 @@
                     <input type="submit" value="Delete" />
                 </form>
             {% endif %}
-            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and (not package.abandoned or package.replacementPackage is empty)%}
+            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and not package.abandoned %}
                 <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
                     <input type="submit" value="Abandon" />
                 </form>
@@ -74,6 +74,9 @@
                         The author suggests using the <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
                     {% else %}
                         No replacement package was suggested.
+                        {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %}
+                            <a href="{{ path('abandon_package', {name: package.name}) }}">Suggest a replacement.</a>
+                        {% endif %}
                     {% endif %}
                 </p>
             {% endif %}
