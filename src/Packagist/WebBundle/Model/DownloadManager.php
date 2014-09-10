@@ -59,6 +59,40 @@ class DownloadManager
     }
 
     /**
+     * Gets the total, monthly, and daily download counts for a package's version
+     *
+     * @param \Packagist\WebBundle\Entity\Package|int $package
+     * @param \Packagist\WebBundle\Entity\Version|int $version
+     * @return array
+     */
+    public function getVersionDownloads($package, $version)
+    {
+        if ($package instanceof Package) {
+            $package = $package->getId();
+        }
+
+        if ($version instanceof Version) {
+            $version = $version->getId();
+        }
+
+        $date = new \DateTime();
+        $keys = array('dl:'.$package.':'.$version);
+        for ($i = 0; $i < 30; $i++) {
+            $keys[] = 'dl:' . $package . ':' . $version . ':' . $date->format('Ymd');
+            $date->modify('-1 day');
+        }
+
+        $vals = $this->redis->mget($keys);
+        $result = array(
+            'total' => (int) array_shift($vals) ?: 0,
+            'monthly' => (int) array_sum($vals) ?: 0,
+            'daily' => (int) $vals[0] ?: 0,
+        );
+
+        return $result;
+    }
+
+    /**
      * Gets the total download count for a package.
      *
      * @param \Packagist\WebBundle\Entity\Package|int $package

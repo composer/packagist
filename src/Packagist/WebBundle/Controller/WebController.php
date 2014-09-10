@@ -671,6 +671,62 @@ class WebController extends Controller
     /**
      * @Template()
      * @Route(
+     *     "/packages/downloads/{name}.{_format}",
+     *     name="package_downloads_full",
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"}
+     * )
+     * @Method({"GET"})
+     */
+    public function viewPackageDownloadsAction(Request $req, $name)
+    {
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+
+        try {
+            /** @var $package Package */
+            $package = $repo->findOneByName($name);
+        } catch (NoResultException $e) {
+            if ('json' === $req->getRequestFormat()) {
+                return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 404);
+            }
+
+            if ($providers = $repo->findProviders($name)) {
+                return $this->redirect($this->generateUrl('view_providers', array('name' => $name)));
+            }
+
+            return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
+        }
+
+        $versions = $package->getVersions();
+        $data = array(
+            'name' => $package->getName(),
+        );
+
+        try {
+            $data['downloads']['global'] = $this->get('packagist.download_manager')->getDownloads($package);
+            $data['favers'] = $this->get('packagist.favorite_manager')->getFaverCount($package);
+        } catch (ConnectionException $e) {
+            $data['downloads']['global'] = null;
+            $data['favers'] = null;
+        }
+
+        foreach ($versions as $version) {
+            try {
+                $data['downloads']['versions'][$version->getVersion()]['downloads'] = $this->get('packagist.download_manager')->getVersionDownloads($package, $version);
+            } catch (ConnectionException $e) {
+                $data['downloads']['versions'][$version->getVersion()]['downloads'] = null;
+            }
+
+        }
+
+        $response = new Response(json_encode(array('package' => $data)), 200);
+        $response->setSharedMaxAge(3600);
+
+        return $response;
+    }
+
+    /**
+     * @Template()
+     * @Route(
      *     "/versions/{versionId}.{_format}",
      *     name="view_version",
      *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "versionId"="[0-9]+", "_format"="(json)"}
