@@ -39,19 +39,19 @@
 
         "composer/composer": "1.0.x-dev",
         "friendsofsymfony/user-bundle": "1.*",
-        "hwi/oauth-bundle": "dev-master",
-        "nelmio/solarium-bundle": "1.*",
-        "nelmio/security-bundle": "1.*",
+        "hwi/oauth-bundle": "~0.4@dev",
+        "nelmio/solarium-bundle": "~1.0",
+        "nelmio/security-bundle": "~1.0",
         "predis/predis": "0.8.*",
-        "snc/redis-bundle": "dev-master",
-        "white-october/pagerfanta-bundle": "1.0.*@dev",
+        "snc/redis-bundle": "~1.1@dev",
+        "white-october/pagerfanta-bundle": "~1.0",
         "zendframework/zend-feed": "2.0.*",
         "zendframework/zend-servicemanager": "2.0.*",
         "zendframework/zend-uri": "2.0.*",
         "zendframework/zend-version": "2.0.*",
 
-        "kriswallsmith/assetic": "@dev",
-        "pagerfanta/pagerfanta": "@dev"
+        "kriswallsmith/assetic": "~1.2@alpha",
+        "pagerfanta/pagerfanta": "~1.0"
     },
     "scripts": {
         "post-install-cmd": [
