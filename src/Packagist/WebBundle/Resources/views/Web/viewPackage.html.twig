@@ -60,11 +60,12 @@
                 </p>
             {% endif %}
 
-            {% if not package.autoUpdated
-                and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES'))
-                and "//github.com/" in package.repository
-            %}
-                <p class="warning">This package is not auto-updated. Go and set up the <a href="{{ path('fos_user_profile_show') }}">GitHub Service Hook</a> for Packagist so that it gets updated whenever you push!</p>
+            {% if not package.autoUpdated and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
+                {% if "github.com" in package.repository %}
+                    <p class="warning">This package is not auto-updated. Please set up the <a href="{{ path('fos_user_profile_show') }}">GitHub Service Hook</a> for Packagist so that it gets updated whenever you push!</p>
+                {% elseif "bitbucket.org" in package.repository %}
+                    <p class="warning">This package is not auto-updated. Please set up the <a href="{{ path('fos_user_profile_show') }}">BitBucket POST Service</a> for Packagist so that it gets updated whenever you push!</p>
+                {% endif %}
             {% endif %}
 
             {% if package.abandoned %}

@@ -178,14 +178,19 @@ footer li {
   margin: 0;
   padding: 2px;
 }
-footer a, footer a:visited {
+footer ul a, footer ul a:visited {
   color: #ddd;
   padding-left: 11px;
   background: url("../img/footer_arrows.png") 0 2px no-repeat;
 }
-footer a:hover {
+footer ul a:hover {
   color: #fff;
   background-position: 0 -18px;
+}
+footer p {
+  float: left;
+  margin-left: 90px;
+  color: #ccc;
 }
 
 .flash-message {
