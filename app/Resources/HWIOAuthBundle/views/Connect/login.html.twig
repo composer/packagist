@@ -20,11 +20,6 @@
                     <input type="password" id="password" name="_password" />
                 </div>
 
-                <div>
-                    <input type="checkbox" id="remember_me" name="_remember_me" value="on" checked="checked" />
-                    <label for="remember_me">{{ 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}</label>
-                </div>
-
                 {% if packagist_host and packagist_host in app.request.headers.get('Referer') %}
                     <input type="hidden" name="_target_path" value="{{ app.request.headers.get('Referer') }}" />
                 {% endif %}

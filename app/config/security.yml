@@ -22,7 +22,7 @@ security:
                 key: %remember_me.secret%
                 user_providers: packagist
                 name: pauth
-                remember_me_parameter: _remember_me
+                always_remember_me: true
                 lifetime: 31104000 # 1y
             logout:       true
             anonymous:    true

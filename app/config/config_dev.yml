@@ -19,5 +19,9 @@ monolog:
             type:  firephp
             level: info
 
+hwi_oauth:
+    http_client:
+        verify_peer: false
+
 #assetic:
 #    use_controller: true
