@@ -671,7 +671,7 @@ class WebController extends Controller
     /**
      * @Template()
      * @Route(
-     *     "/packages/downloads/{name}.{_format}",
+     *     "/packages/{name}/downloads.{_format}",
      *     name="package_downloads_full",
      *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"}
      * )
@@ -711,9 +711,9 @@ class WebController extends Controller
 
         foreach ($versions as $version) {
             try {
-                $data['downloads']['versions'][$version->getVersion()]['downloads'] = $this->get('packagist.download_manager')->getVersionDownloads($package, $version);
+                $data['downloads']['versions'][$version->getVersion()] = $this->get('packagist.download_manager')->getVersionDownloads($package, $version);
             } catch (ConnectionException $e) {
-                $data['downloads']['versions'][$version->getVersion()]['downloads'] = null;
+                $data['downloads']['versions'][$version->getVersion()] = null;
             }
 
         }
