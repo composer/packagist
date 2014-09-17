@@ -11,8 +11,8 @@ services:
             - { name: twig.extension }
 
     packagist.package_dumper:
-        class: Packagist\WebBundle\Package\Dumper
-        arguments: [ @doctrine, @filesystem, @router, %kernel.root_dir%/../web/, %kernel.cache_dir% ]
+        class: Packagist\WebBundle\Package\SymlinkDumper
+        arguments: [ @doctrine, @filesystem, @router, "%kernel.root_dir%/../web/", "%packagist_metadata_dir%" ]
 
     packagist.user_provider:
         class: Packagist\WebBundle\Security\Provider\UserProvider
