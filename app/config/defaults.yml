@@ -1,2 +1,3 @@
 parameters:
     packagist_host: ~
+    session_save_path: %kernel.cache_dir%/sessions

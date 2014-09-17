@@ -18,6 +18,7 @@ framework:
         name: packagist
         cookie_lifetime: 3600
         cookie_httponly: true
+        save_path: %session_save_path%
     trusted_proxies: %trusted_proxies%
     trusted_hosts: %trusted_hosts%
     http_method_override: true
