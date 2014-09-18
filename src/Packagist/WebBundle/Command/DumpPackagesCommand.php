@@ -70,6 +70,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
         $timeout = 30*60;
 
         ini_set('memory_limit', -1);
+        gc_enable();
 
         // another dumper is still active
         if (file_exists($lock) && filemtime($lock) > time() - $timeout) {

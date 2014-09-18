@@ -230,15 +230,14 @@ class SymlinkDumper
                     // store affected files to clean up properly in the next update
                     $this->fs->mkdir(dirname($buildDir.'/'.$name));
                     $this->writeFile($buildDir.'/'.$name.'.files', json_encode(array_keys($affectedFiles)));
-                    $modifiedIndividualFiles[$name.'.files'] = true;
 
                     $package->setDumpedAt($dumpTime);
                 }
 
                 // update dump dates
                 $this->doctrine->getManager()->flush();
+                unset($packages, $package, $version);
                 $this->doctrine->getManager()->clear();
-                unset($packages);
 
                 if ($current % 250 === 0 || !$packageIds) {
                     if ($verbose) {
@@ -494,6 +493,7 @@ class SymlinkDumper
         }
 
         $this->individualFiles = array();
+        $this->individualFilesMtime = array();
     }
 
     private function dumpIndividualFile($path, $key)
