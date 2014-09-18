@@ -312,7 +312,7 @@ class SymlinkDumper
             }
 
             // move away old files for BC update
-            if ($initialRun && file_exists($webDir.'/p')) {
+            if ($initialRun && file_exists($webDir.'/p') && !is_link($webDir.'/p')) {
                 rename($webDir.'/p', $webDir.'/p-old');
             }
 
