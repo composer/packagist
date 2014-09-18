@@ -203,18 +203,29 @@ class WebController extends Controller
     /**
      * @Route("/packages/list.json", name="list", defaults={"_format"="json"})
      * @Method({"GET"})
-     * @Cache(smaxage=60)
+     * @Cache(smaxage=300)
      */
     public function listAction(Request $req)
     {
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $fields = (array) $req->query->get('fields', array());
+        $fields = array_intersect($fields, array('repository', 'type'));
+
+        if ($fields) {
+            $filters = array_filter(array(
+                'type' => $req->query->get('type'),
+                'vendor' => $req->query->get('vendor'),
+            ));
+
+            return new JsonResponse(array('packages' => $repo->getPackagesWithFields($filters, $fields)));
+        }
 
         if ($req->query->get('type')) {
             $names = $repo->getPackageNamesByType($req->query->get('type'));
         } elseif ($req->query->get('vendor')) {
             $names = $repo->getPackageNamesByVendor($req->query->get('vendor'));
         } else {
-            $names = array_keys($repo->getPackageNames());
+            $names = $repo->getPackageNames();
         }
 
         return new JsonResponse(array('packageNames' => $names));
