@@ -80,7 +80,6 @@ class User extends BaseUser
     {
         return array(
             'name' => $this->getUsername(),
-            'email' => $this->getEmail(),
         );
     }
 
