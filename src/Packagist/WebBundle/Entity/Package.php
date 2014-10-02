@@ -169,8 +169,12 @@ class Package
             'versions' => $versions,
             'type' => $this->getType(),
             'repository' => $this->getRepository(),
-            'abandoned' => $this->isAbandoned()
         );
+
+        if ($this->isAbandoned()) {
+            $data['abandoned'] = $this->getReplacementPackage() ?: true;
+        }
+
         return $data;
     }
 

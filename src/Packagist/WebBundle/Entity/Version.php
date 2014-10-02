@@ -268,6 +268,10 @@ class Version
             }
         }
 
+        if ($this->getPackage()->isAbandoned()) {
+            $data['abandoned'] = $this->getPackage()->getReplacementPackage() ?: true;
+        }
+
         return $data;
     }
 
