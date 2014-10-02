@@ -30,42 +30,13 @@ class DownloadManager
     }
 
     /**
-     * Gets the total, monthly, and daily download counts for a package.
+     * Gets the total, monthly, and daily download counts for an entire package or optionally a version.
      *
-     * @param \Packagist\WebBundle\Entity\Package|int $package
+     * @param \Packagist\WebBundle\Entity\Package|int      $package
+     * @param \Packagist\WebBundle\Entity\Version|int|null $version
      * @return array
      */
-    public function getDownloads($package)
-    {
-        if ($package instanceof Package) {
-            $package = $package->getId();
-        }
-
-        $date = new \DateTime();
-        $keys = array('dl:'.$package);
-        for ($i = 0; $i < 30; $i++) {
-            $keys[] = 'dl:' . $package . ':' . $date->format('Ymd');
-            $date->modify('-1 day');
-        }
-
-        $vals = $this->redis->mget($keys);
-        $result = array(
-            'total' => (int) array_shift($vals) ?: 0,
-            'monthly' => (int) array_sum($vals) ?: 0,
-            'daily' => (int) $vals[0] ?: 0,
-        );
-
-        return $result;
-    }
-
-    /**
-     * Gets the total, monthly, and daily download counts for a package's version
-     *
-     * @param \Packagist\WebBundle\Entity\Package|int $package
-     * @param \Packagist\WebBundle\Entity\Version|int $version
-     * @return array
-     */
-    public function getVersionDownloads($package, $version)
+    public function getDownloads($package, $version = null)
     {
         if ($package instanceof Package) {
             $package = $package->getId();
@@ -75,10 +46,14 @@ class DownloadManager
             $version = $version->getId();
         }
 
+        if ($version !== null) {
+            $version = '-'.$version;
+        }
+
         $date = new \DateTime();
-        $keys = array('dl:'.$package.':'.$version);
+        $keys = array('dl:'.$package . $version);
         for ($i = 0; $i < 30; $i++) {
-            $keys[] = 'dl:' . $package . ':' . $version . ':' . $date->format('Ymd');
+            $keys[] = 'dl:' . $package . $version . ':' . $date->format('Ymd');
             $date->modify('-1 day');
         }
 

@@ -713,20 +713,19 @@ class WebController extends Controller
         );
 
         try {
-            $data['downloads']['global'] = $this->get('packagist.download_manager')->getDownloads($package);
+            $data['downloads']['total'] = $this->get('packagist.download_manager')->getDownloads($package);
             $data['favers'] = $this->get('packagist.favorite_manager')->getFaverCount($package);
         } catch (ConnectionException $e) {
-            $data['downloads']['global'] = null;
+            $data['downloads']['total'] = null;
             $data['favers'] = null;
         }
 
         foreach ($versions as $version) {
             try {
-                $data['downloads']['versions'][$version->getVersion()] = $this->get('packagist.download_manager')->getVersionDownloads($package, $version);
+                $data['downloads']['versions'][$version->getVersion()] = $this->get('packagist.download_manager')->getDownloads($package, $version);
             } catch (ConnectionException $e) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
-
         }
 
         $response = new Response(json_encode(array('package' => $data)), 200);
