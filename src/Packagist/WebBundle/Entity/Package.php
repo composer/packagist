@@ -168,7 +168,8 @@ class Package
             'maintainers' => $maintainers,
             'versions' => $versions,
             'type' => $this->getType(),
-            'repository' => $this->getRepository()
+            'repository' => $this->getRepository(),
+            'abandoned' => $this->isAbandoned()
         );
         return $data;
     }
