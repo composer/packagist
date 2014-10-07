@@ -3,13 +3,13 @@
 (function ($) {
     "use strict";
 
-    var list = $('.search-list'),
-        form = $('form#search-form'),
-        showResults,
-        doSearch,
-        searching = false,
-        searchQueued = false,
-        previousQuery;
+    var list = $('.search-list')
+        , form = $('form#search-form')
+        , showResults
+        , doSearch
+        , searching = false
+        , searchQueued = false
+        , previousQuery;
 
     showResults = function (page) {
         var newList = $(page);
@@ -23,7 +23,7 @@
         if (searchQueued) {
             doSearch();
             searchQueued = false;
-        }
+        };
     };
 
     doSearch = function () {
@@ -32,28 +32,28 @@
         if (searching) {
             searchQueued = true;
             return;
-        }
+        };
 
         if ($('#search_query_query').val().match(/^\s*$/) !== null) {
-            if (previousQuery !== undefined) {
-                list.addClass('hidden');
-            }
+            if (previousQuery !== undefined) list.addClass('hidden');
             return;
-        }
+        };
 
         currentQuery = form.serialize();
 
-        if (previousQuery === currentQuery) {
-            return;
-        }
+        if (previousQuery === currentQuery) return;
 
         if (window.history.pushState) {
-            if (previousQuery === undefined) {
-                window.history.pushState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
-            } else {
-                window.history.replaceState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
-            }
-        }
+            var states = [
+                null,
+                "Search",
+                "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val())
+            ];
+            
+            undefined === previousQuery ? 
+                window.history.pushState.apply(window, states) : 
+                window.history.replaceState.apply(window, states);
+        };
 
         $.ajax({
             url: form.attr('action'),
@@ -68,9 +68,11 @@
     form.bind('keyup search', doSearch);
 
     form.bind('keydown', function (event) {
-        var keymap,
-            currentSelected,
-            nextSelected;
+        event.preventDefault();
+        
+        var keymap
+            , currentSelected
+            , nextSelected;
 
         keymap = {
             enter: 13,
@@ -80,16 +82,12 @@
             down: 40
         };
 
-        if (keymap.up !== event.which && keymap.down !== event.which && keymap.enter !== event.which) {
-            return;
-        }
+        if (~[keymap.up, keymap.down, keymap.enter].indexOf(event.which)) return;
 
         if ($('#search_query_query').val().match(/^\s*$/) !== null) {
             document.activeElement.blur();
             return;
-        }
-
-        event.preventDefault();
+        };
 
         currentSelected = list.find('ul.packages li.selected');
         nextSelected = (keymap.down === event.which) ? currentSelected.next('li') : currentSelected.prev('li');
@@ -97,22 +95,22 @@
         if (keymap.enter === event.which && currentSelected.data('url')) {
             window.location = currentSelected.data('url');
             return;
-        }
+        };
 
         if (nextSelected.length > 0) {
             currentSelected.removeClass('selected');
             nextSelected.addClass('selected');
 
-            var elTop = nextSelected.position().top,
-                elHeight = nextSelected.height(),
-                windowTop = $(window).scrollTop(),
-                windowHeight = $(window).height();
+            var elTop = nextSelected.position().top
+                , elHeight = nextSelected.height()
+                , windowTop = $(window).scrollTop()
+                , windowHeight = $(window).height();
 
             if (elTop < windowTop) {
                 $(window).scrollTop(elTop);
             } else if (elTop + elHeight > windowTop + windowHeight) {
                 $(window).scrollTop(elTop + elHeight + 20 - windowHeight);
-            }
-        }
+            };
+        };
     });
 }(jQuery));
