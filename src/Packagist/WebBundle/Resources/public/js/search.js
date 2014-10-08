@@ -3,13 +3,13 @@
 (function ($) {
     "use strict";
 
-    var list = $('.search-list')
-        , form = $('form#search-form')
-        , showResults
-        , doSearch
-        , searching = false
-        , searchQueued = false
-        , previousQuery;
+    var list = $('.search-list'),
+        form = $('form#search-form'),
+        showResults,
+        doSearch,
+        searching = false,
+        searchQueued = false,
+        previousQuery;
 
     showResults = function (page) {
         var newList = $(page);
@@ -23,7 +23,7 @@
         if (searchQueued) {
             doSearch();
             searchQueued = false;
-        };
+        }
     };
 
     doSearch = function () {
@@ -32,28 +32,31 @@
         if (searching) {
             searchQueued = true;
             return;
-        };
+        }
 
         if ($('#search_query_query').val().match(/^\s*$/) !== null) {
-            if (previousQuery !== undefined) list.addClass('hidden');
+            if (previousQuery !== undefined) {
+                list.addClass('hidden');
+            }
             return;
-        };
+        }
 
         currentQuery = form.serialize();
 
-        if (previousQuery === currentQuery) return;
+        if (previousQuery === currentQuery) {
+            return;
+        }
+        ke
+         if (window.history.pushState) {
+            var title = "Search",
+                url = "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val());
 
-        if (window.history.pushState) {
-            var states = [
-                null,
-                "Search",
-                "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val())
-            ];
-            
-            undefined === previousQuery ? 
-                window.history.pushState.apply(window, states) : 
-                window.history.replaceState.apply(window, states);
-        };
+            if (undefined === previousQuery) {
+                window.history.pushState(null, title, url);
+            } else {
+                window.history.replaceState(null, title, url);
+            }
+        }
 
         $.ajax({
             url: form.attr('action'),
@@ -68,11 +71,9 @@
     form.bind('keyup search', doSearch);
 
     form.bind('keydown', function (event) {
-        event.preventDefault();
-        
-        var keymap
-            , currentSelected
-            , nextSelected;
+        var keymap,
+            currentSelected,
+            nextSelected;
 
         keymap = {
             enter: 13,
@@ -82,12 +83,16 @@
             down: 40
         };
 
-        if (~[keymap.up, keymap.down, keymap.enter].indexOf(event.which)) return;
+        if (-1 === [keymap.up, keymap.down, keymap.enter].indexOf(event.which)) {
+            return;
+        }
 
         if ($('#search_query_query').val().match(/^\s*$/) !== null) {
             document.activeElement.blur();
             return;
-        };
+        }
+
+        event.preventDefault();
 
         currentSelected = list.find('ul.packages li.selected');
         nextSelected = (keymap.down === event.which) ? currentSelected.next('li') : currentSelected.prev('li');
@@ -95,22 +100,22 @@
         if (keymap.enter === event.which && currentSelected.data('url')) {
             window.location = currentSelected.data('url');
             return;
-        };
+        }
 
         if (nextSelected.length > 0) {
             currentSelected.removeClass('selected');
             nextSelected.addClass('selected');
 
-            var elTop = nextSelected.position().top
-                , elHeight = nextSelected.height()
-                , windowTop = $(window).scrollTop()
-                , windowHeight = $(window).height();
+            var elTop = nextSelected.position().top,
+                elHeight = nextSelected.height(),
+                windowTop = $(window).scrollTop(),
+                windowHeight = $(window).height();
 
             if (elTop < windowTop) {
                 $(window).scrollTop(elTop);
             } else if (elTop + elHeight > windowTop + windowHeight) {
                 $(window).scrollTop(elTop + elHeight + 20 - windowHeight);
-            };
-        };
+            }
+        }
     });
 }(jQuery));
