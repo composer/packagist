@@ -46,12 +46,15 @@
         if (previousQuery === currentQuery) {
             return;
         }
+        ke
+         if (window.history.pushState) {
+            var title = "Search",
+                url = "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val());
 
-        if (window.history.pushState) {
-            if (previousQuery === undefined) {
-                window.history.pushState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
+            if (undefined === previousQuery) {
+                window.history.pushState(null, title, url);
             } else {
-                window.history.replaceState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
+                window.history.replaceState(null, title, url);
             }
         }
 
@@ -80,7 +83,7 @@
             down: 40
         };
 
-        if (keymap.up !== event.which && keymap.down !== event.which && keymap.enter !== event.which) {
+        if (-1 === [keymap.up, keymap.down, keymap.enter].indexOf(event.which)) {
             return;
         }
 
