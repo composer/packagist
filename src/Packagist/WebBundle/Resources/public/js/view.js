@@ -30,25 +30,33 @@
             });
         }
     });
-    $('.package .force-update').submit(function (e) {
-        var submit = $('input[type=submit]', this);
-        e.preventDefault();
+
+    function forceUpdatePackage(e, updateAll) {
+        var submit = $('input[type=submit]', '.package .force-update'), data;
+        if (e) {
+            e.preventDefault();
+        }
         if (submit.is('.loading')) {
             return;
         }
+        data = $('.package .force-update').serializeArray();
+        if (updateAll) {
+            data.push({name: 'updateAll', value: '1'});
+        }
         $.ajax({
-            url: $(this).attr('action'),
+            url: $('.package .force-update').attr('action'),
             dataType: 'json',
             cache: false,
-            data: $(this).serializeArray(),
+            data: data,
             type: 'PUT',
             success: function () {
                 window.location.href = window.location.href;
             },
-            context: this
+            context: $('.package .force-update')[0]
         }).complete(function () { submit.removeClass('loading'); });
         submit.addClass('loading');
-    });
+    }
+    $('.package .force-update').submit(forceUpdatePackage);
     $('.package .mark-favorite').click(function (e) {
         var options = {
             dataType: 'json',
@@ -93,7 +101,7 @@
         this.select();
     });
     if ($('.package').data('force-crawl')) {
-        $('.package .force-update').submit();
+        forceUpdatePackage(null, true);
     }
 
     ZeroClipboard.setMoviePath("/js/libs/ZeroClipboard.swf");
