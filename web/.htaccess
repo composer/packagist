@@ -58,40 +58,6 @@ AddType application/x-chrome-extension crx
 AddType application/x-xpinstall        xpi
 AddType application/octet-stream       safariextz
 
-# ----------------------------------------------------------------------
-# gzip compression
-# ----------------------------------------------------------------------
-
-<IfModule mod_deflate.c>
-
-# force deflate for mangled headers developer.yahoo.com/blogs/ydn/posts/2010/12/pushing-beyond-gzipping/
-<IfModule mod_setenvif.c>
-  <IfModule mod_headers.c>
-    SetEnvIfNoCase ^(Accept-EncodXng|X-cept-Encoding|X{15}|~{15}|-{15})$ ^((gzip|deflate)\s,?\s(gzip|deflate)?|X{4,13}|~{4,13}|-{4,13})$ HAVE_Accept-Encoding
-    RequestHeader append Accept-Encoding "gzip,deflate" env=HAVE_Accept-Encoding
-  </IfModule>
-</IfModule>
-# html, txt, css, js, json, xml, htc:
-<IfModule filter_module>
-  FilterDeclare   COMPRESS
-  FilterProvider  COMPRESS  DEFLATE resp=Content-Type /text/(html|css|javascript|plain|x(ml|-component))/
-  FilterProvider  COMPRESS  DEFLATE resp=Content-Type /application/(javascript|json|xml|x-javascript)/
-  FilterChain     COMPRESS
-  FilterProtocol  COMPRESS  change=yes;byteranges=no
-</IfModule>
-
-<IfModule !mod_filter.c>
-  # Legacy versions of Apache
-  AddOutputFilterByType DEFLATE text/html text/plain text/css application/json
-  AddOutputFilterByType DEFLATE text/javascript application/javascript application/x-javascript
-  AddOutputFilterByType DEFLATE text/xml application/xml text/x-component
-</IfModule>
-
-# webfonts and svg:
-  <FilesMatch "\.(ttf|otf|eot|svg)$" >
-    SetOutputFilter DEFLATE
-  </FilesMatch>
-</IfModule>
 
 ##   # ----------------------------------------------------------------------
 ##   # Expires headers (for better cache control)
