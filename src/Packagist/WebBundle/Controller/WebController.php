@@ -829,6 +829,8 @@ class WebController extends Controller
         }
 
         if ($package->getMaintainers()->contains($user) || $this->get('security.context')->isGranted('ROLE_UPDATE_PACKAGES')) {
+            $req->getSession()->save();
+
             if (null !== $autoUpdated) {
                 $package->setAutoUpdated((Boolean) $autoUpdated);
                 $doctrine->getManager()->flush();
