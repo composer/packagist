@@ -4,18 +4,13 @@ namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Form\Type\AbandonedType;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 
 use Packagist\WebBundle\Entity\Package;
-use Packagist\WebBundle\Package\Updater;
 
-use Composer\IO\NullIO;
-use Composer\Factory;
-use Composer\Repository\VcsRepository;
 
 class PackageController extends Controller
 {

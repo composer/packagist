@@ -19,7 +19,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Composer\IO\NullIO;
 use Composer\Factory;
 use Composer\Repository\VcsRepository;
-use Composer\Repository\RepositoryManager;
 use Composer\Repository\Vcs\GitHubDriver;
 
 /**
