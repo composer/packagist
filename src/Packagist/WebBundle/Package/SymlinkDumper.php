@@ -520,8 +520,9 @@ class SymlinkDumper
         $data = $version->toArray();
         $data['uid'] = $version->getId();
         $this->individualFiles[$key]['packages'][strtolower($version->getName())][$version->getVersion()] = $data;
-        if (!isset($this->individualFilesMtime[$key]) || $this->individualFilesMtime[$key] < $version->getReleasedAt()->getTimestamp()) {
-            $this->individualFilesMtime[$key] = $version->getReleasedAt()->getTimestamp();
+        $timestamp = $version->getReleasedAt() ? $version->getReleasedAt()->getTimestamp() : time();
+        if (!isset($this->individualFilesMtime[$key]) || $this->individualFilesMtime[$key] < $timestamp) {
+            $this->individualFilesMtime[$key] = $timestamp;
         }
     }
 
