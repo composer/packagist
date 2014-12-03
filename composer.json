@@ -68,11 +68,5 @@
     "extra": {
         "symfony-app-dir": "app",
         "symfony-web-dir": "web"
-    },
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "http://packages.zendframework.com/"
-        }
-    ]
+    }
 }
