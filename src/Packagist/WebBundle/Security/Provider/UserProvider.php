@@ -13,7 +13,6 @@
 namespace Packagist\WebBundle\Security\Provider;
 
 use FOS\UserBundle\Model\UserManagerInterface;
-use HWI\Bundle\OAuthBundle\Connect\AccountConnectorInterface;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
 use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
