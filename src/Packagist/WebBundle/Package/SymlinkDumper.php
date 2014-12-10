@@ -552,27 +552,35 @@ class SymlinkDumper
 
     private function getTargetListing($file)
     {
-        static $firstOfTheMonth;
-        if (!$firstOfTheMonth) {
-            $date = new \DateTime;
-            $date->setDate($date->format('Y'), $date->format('m'), 1);
-            $date->setTime(0, 0, 0);
-            $firstOfTheMonth = $date->format('U');
+        static $limitLatest, $thisYear, $limitArchived;
+
+        if (!$limitLatest) {
+            $limitLatest   = new \DateTime('monday last week');
+            $thisYear      = new \DateTime(date('Y') . '-01-01');
+            $limitArchived = new \DateTime('2012-01-01');
         }
 
-        $mtime = filemtime($file);
+        $mtime = new \DateTime();
+        $mtime->setTimestamp(filemtime($file));
 
-        if ($mtime < $firstOfTheMonth - 86400 * 180) {
-            return 'provider-archived.json';
-        }
-        if ($mtime < $firstOfTheMonth - 86400 * 60) {
-            return 'provider-stale.json';
-        }
-        if ($mtime < $firstOfTheMonth - 86400 * 10) {
-            return 'provider-active.json';
+        if ($mtime >= $limitLatest) {
+            $label = 'latest';
+        } elseif ($mtime >= $thisYear) {
+            // split current by chunks of 3 months, current month included
+            // past chunks will never be updated this year
+            $month = $mtime->format('n');
+            $month = ceil($month / 3) * 3;
+            $month = str_pad($month, 2, '0', STR_PAD_LEFT);
+
+            $label = $mtime->format('Y') . '-' . $month;
+        } elseif ($mtime >= $limitArchived) {
+            // split by years, limit at 2012 so we never update 'archived' again
+            $label = $mtime->format('Y');
+        } else {
+            $label = 'archived';
         }
 
-        return 'provider-latest.json';
+        return "provider-${label}.json";
     }
 
     private function writeFile($path, $contents, $mtime = null)
