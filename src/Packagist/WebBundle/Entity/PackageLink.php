@@ -33,7 +33,7 @@ abstract class PackageLink
     private $packageName;
 
     /**
-     * @ORM\Column()
+     * @ORM\Column(type="text")
      */
     private $packageVersion;
 
