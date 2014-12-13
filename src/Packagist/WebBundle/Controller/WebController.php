@@ -886,6 +886,8 @@ class WebController extends Controller
         }
         $form->bind($req->request->get('form'));
         if ($form->isValid()) {
+            $req->getSession()->save();
+
             $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
             foreach ($package->getVersions() as $version) {
                 $versionRepo->remove($version);
