@@ -1,0 +1,44 @@
+parameters:
+    database_driver: <%= node[:packagist][:db][:driver] %>
+    database_host: <%= node[:packagist][:db][:host] %>
+    database_name: <%= node[:packagist][:db][:name] %>
+    database_user: <%= node[:packagist][:db][:user] %>
+    database_password: <%= node[:packagist][:db][:password] %>
+
+    mailer_transport:
+    mailer_host: localhost
+    mailer_user:
+    mailer_password:
+    mailer_from_email: admin@example.org
+    mailer_from_name: Admin Team
+
+    # packagist_host: example.org
+    # router.request_context.host: %packagist_host%
+    # router.request_context.scheme: https
+
+    redis_dsn: <%= node[:packagist][:redis][:dsn] %>
+
+    locale: en
+
+    google_analytics:
+        ga_key:
+
+    # set those to values obtained by creating an application at https://github.com/settings/applications
+    github.client_id:
+    github.client_secret:
+
+    # -- performance features --
+    # set both to apc to optimize things if it is available
+    validation_cache_backend: ~
+    doctrine_cache_backend: array
+
+    # -- security features --
+    secret: CHANGE_ME_IN_PROD
+    remember_me.secret: CHANGE_ME_IN_PROD
+
+    # set to true to enforce ssl, make sure you have a proper certificate in place
+    force_ssl: false
+    # e.g. [127.0.0.1] if the app is running behind a reverse proxy on localhost
+    trusted_proxies: ~
+    # e.g. ['.*\.?packagist\.org$'] to allow packagist.org and all subdomains as valid hosts
+    trusted_hosts: ~

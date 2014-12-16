@@ -1,5 +1,7 @@
-Packagist
-=========
+OpsWork Packagist 
+=================
+
+Packagist with an added directory to allow easy deployment with AWS - OpsWorks
 
 Package Repository Website for Composer, see the [about page](http://packagist.org/about) on [packagist.org](http://packagist.org/) for more.
 
