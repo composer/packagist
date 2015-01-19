@@ -1,5 +1,5 @@
-template "#{release_path}/app/config/parameters.yml.erb" do
-  source "#{release_path}/deploy/parameters.yml"
+template "#{release_path}/app/config/parameters.yml" do
+  source "#{release_path}/deploy/parameters.yml.erb"
   owner "apache"
   group "apache"
   mode "0644"
