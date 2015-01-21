@@ -346,14 +346,19 @@ class WebController extends Controller
                         $url = $this->generateUrl('view_providers', array('name' => $package->name), true);
                     }
 
-                    $result['results'][] = array(
+                    $row = array(
                         'name' => $package->name,
                         'description' => $package->description ?: '',
                         'url' => $url,
-                        'downloads' => $metadata['downloads'][$package->id],
-                        'favers' => $metadata['favers'][$package->id],
                         'repository' => $package->repository,
                     );
+                    if (is_numeric($package->id)) {
+                        $row['downloads'] = $metadata['downloads'][$package->id];
+                        $row['favers'] = $metadata['favers'][$package->id];
+                    } else {
+                        $row['virtual'] = true;
+                    }
+                    $result['results'][] = $row;
                 }
 
                 if ($paginator->hasNextPage()) {
@@ -1184,8 +1189,8 @@ class WebController extends Controller
                 return;
             }
 
-            // more than 50 downloads = established package, do not allow deletion by maintainers
-            if ($downloads > 50) {
+            // more than 100 downloads = established package, do not allow deletion by maintainers
+            if ($downloads > 100) {
                 return;
             }
         }

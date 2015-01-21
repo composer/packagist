@@ -9,7 +9,8 @@
         doSearch,
         searching = false,
         searchQueued = false,
-        previousQuery;
+        previousQuery = form.serialize(),
+        firstQuery = true;
 
     showResults = function (page) {
         var newList = $(page);
@@ -35,7 +36,7 @@
         }
 
         if ($('#search_query_query').val().match(/^\s*$/) !== null) {
-            if (previousQuery !== undefined) {
+            if (!firstQuery) {
                 list.addClass('hidden');
             }
             return;
@@ -48,8 +49,9 @@
         }
 
         if (window.history.pushState) {
-            if (previousQuery === undefined) {
+            if (firstQuery) {
                 window.history.pushState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
+                firstQuery = false;
             } else {
                 window.history.replaceState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
             }
