@@ -35,24 +35,14 @@ class VersionRepository extends EntityRepository
         $version->getPackage()->setCrawledAt(new \DateTime);
         $version->getPackage()->setUpdatedAt(new \DateTime);
 
-        foreach ($version->getAuthors() as $author) {
-            /** @var $author Author */
-            $author->getVersions()->removeElement($version);
-        }
-        $version->getAuthors()->clear();
-
-        foreach ($version->getTags() as $tag) {
-            /** @var $tag Tag */
-            $tag->getVersions()->removeElement($version);
-        }
-        $version->getTags()->clear();
-
-        foreach ($this->supportedLinkTypes as $linkType) {
-            foreach ($version->{'get'.$linkType}() as $link) {
-                $em->remove($link);
-            }
-            $version->{'get'.$linkType}()->clear();
-        }
+        $em->getConnection()->executeQuery('DELETE FROM version_author WHERE version_id=:id', array('id' => $version->getId()));
+        $em->getConnection()->executeQuery('DELETE FROM version_tag WHERE version_id=:id', array('id' => $version->getId()));
+        $em->getConnection()->executeQuery('DELETE FROM link_suggest WHERE version_id=:id', array('id' => $version->getId()));
+        $em->getConnection()->executeQuery('DELETE FROM link_conflict WHERE version_id=:id', array('id' => $version->getId()));
+        $em->getConnection()->executeQuery('DELETE FROM link_replace WHERE version_id=:id', array('id' => $version->getId()));
+        $em->getConnection()->executeQuery('DELETE FROM link_provide WHERE version_id=:id', array('id' => $version->getId()));
+        $em->getConnection()->executeQuery('DELETE FROM link_require_dev WHERE version_id=:id', array('id' => $version->getId()));
+        $em->getConnection()->executeQuery('DELETE FROM link_require WHERE version_id=:id', array('id' => $version->getId()));
 
         $em->remove($version);
     }
