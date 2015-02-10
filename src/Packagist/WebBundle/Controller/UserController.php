@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Doctrine\ORM\NoResultException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
