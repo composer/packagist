@@ -50,7 +50,7 @@
                         {%- if app.user %}
                             <li class="nav-user">
                                 <section>
-                                    <img width="57" height="57" alt="" src="https://secure.gravatar.com/avatar/b494363ed38b483b240180920c0d38c2?d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-user-420.png">
+                                    <img width="57" height="57" alt="" src="http://www.gravatar.com/avatar/{{ app.user.email|gravatar_hash }}">
                                     <a href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a>
 
                                     <section class="nav-user-menu">
