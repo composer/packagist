@@ -569,7 +569,7 @@ class SymlinkDumper
 
         $year = (int) $block->format('Y');
 
-        while ($year >= 2012) {
+        while ($year >= 2013) {
             $blocks[''.$year] = strtotime($year.'-01-01');
             $year--;
         }

@@ -43,7 +43,6 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
                     '2014-04' => '2014-04-01',
                     '2014-01' => '2014-01-01',
                     '2013'    => '2013-01-01',
-                    '2012'    => '2012-01-01',
                 ),
             ),
             array(
@@ -56,7 +55,6 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
                     '2014-04' => '2014-04-01',
                     '2014'    => '2014-01-01',
                     '2013'    => '2013-01-01',
-                    '2012'    => '2012-01-01',
                 ),
             ),
             array(
@@ -69,7 +67,6 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
                     '2014-07' => '2014-07-01',
                     '2014'    => '2014-01-01',
                     '2013'    => '2013-01-01',
-                    '2012'    => '2012-01-01',
                 ),
             ),
         );
