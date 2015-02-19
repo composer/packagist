@@ -24,6 +24,7 @@ use Packagist\WebBundle\Form\Model\MaintainerRequest;
 use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
 use Packagist\WebBundle\Form\Model\SearchQuery;
+use Packagist\WebBundle\Http\JsonLikeResponder;
 use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
@@ -249,7 +250,12 @@ class WebController extends Controller
 
     /**
      * @Route("/search/", name="search.ajax")
-     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"})
+     * @Route(
+     *      "/search.{_format}",
+     *      requirements={"_format"="(html|json|jsonp)"},
+     *      name="search",
+     *      defaults={"_format"="html"}
+     * )
      */
     public function searchAction(Request $req)
     {
@@ -311,8 +317,8 @@ class WebController extends Controller
 
             $perPage = $req->query->getInt('per_page', 15);
             if ($perPage <= 0 || $perPage > 100) {
-                if ($req->getRequestFormat() === 'json') {
-                    return new JsonResponse(array(
+                if (JsonLikeResponder::isJsonLikeRequest($req)) {
+                    return JsonLikeResponder::createResponse(array(
                         'status' => 'error',
                         'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
                     ), 400);
@@ -326,14 +332,14 @@ class WebController extends Controller
 
             $metadata = $this->getPackagesMetadata($paginator);
 
-            if ($req->getRequestFormat() === 'json') {
+            if (JsonLikeResponder::isJsonLikeRequest($req)) {
                 try {
                     $result = array(
                         'results' => array(),
                         'total' => $paginator->getNbResults(),
                     );
                 } catch (\Solarium_Client_HttpException $e) {
-                    return new JsonResponse(array(
+                    return JsonLikeResponder::createResponse($req, array(
                         'status' => 'error',
                         'message' => 'Could not connect to the search server',
                     ), 500);
@@ -363,7 +369,7 @@ class WebController extends Controller
 
                 if ($paginator->hasNextPage()) {
                     $params = array(
-                        '_format' => 'json',
+                        '_format' => $req->getRequestFormat(),
                         'q' => $form->getData()->getQuery(),
                         'page' => $paginator->getNextPage()
                     );
@@ -379,7 +385,7 @@ class WebController extends Controller
                     $result['next'] = $this->generateUrl('search', $params, true);
                 }
 
-                return new JsonResponse($result);
+                return JsonLikeResponder::createResponse($req, $result);
             }
 
             if ($req->isXmlHttpRequest()) {
@@ -393,7 +399,7 @@ class WebController extends Controller
                     if (!$e->getPrevious() instanceof \Solarium_Client_HttpException) {
                         throw $e;
                     }
-                    return new JsonResponse(array(
+                    return JsonLikeResponder::createResponse($req, array(
                         'status' => 'error',
                         'message' => 'Could not connect to the search server',
                     ), 500);
@@ -405,8 +411,12 @@ class WebController extends Controller
                 'meta' => $metadata,
                 'searchForm' => $form->createView(),
             ));
-        } elseif ($req->getRequestFormat() === 'json') {
-            return new JsonResponse(array('error' => 'Missing search query, example: ?q=example'), 400);
+        } elseif (JsonLikeResponder::isJsonLikeRequest($req)) {
+            return JsonLikeResponder::createResponse(
+                $req,
+                array('error' => 'Missing search query, example: ?q=example'),
+                400
+            );
         }
 
         return $this->render('PackagistWebBundle:Web:search.html.twig', array('searchForm' => $form->createView()));
