@@ -312,10 +312,10 @@ class WebController extends Controller
             $perPage = $req->query->getInt('per_page', 15);
             if ($perPage <= 0 || $perPage > 100) {
                 if ($req->getRequestFormat() === 'json') {
-                    return new JsonResponse(array(
+                    return JsonResponse::create(array(
                         'status' => 'error',
                         'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-                    ), 400);
+                    ), 400)->setCallback($req->query->get('callback'));
                 }
 
                 $perPage = max(0, min(100, $perPage));
@@ -333,10 +333,10 @@ class WebController extends Controller
                         'total' => $paginator->getNbResults(),
                     );
                 } catch (\Solarium_Client_HttpException $e) {
-                    return new JsonResponse(array(
+                    return JsonResponse::create(array(
                         'status' => 'error',
                         'message' => 'Could not connect to the search server',
-                    ), 500);
+                    ), 500)->setCallback($req->query->get('callback'));
                 }
 
                 foreach ($paginator as $package) {
@@ -379,7 +379,7 @@ class WebController extends Controller
                     $result['next'] = $this->generateUrl('search', $params, true);
                 }
 
-                return new JsonResponse($result);
+                return JsonResponse::create($result)->setCallback($req->query->get('callback'));
             }
 
             if ($req->isXmlHttpRequest()) {
@@ -393,10 +393,10 @@ class WebController extends Controller
                     if (!$e->getPrevious() instanceof \Solarium_Client_HttpException) {
                         throw $e;
                     }
-                    return new JsonResponse(array(
+                    return JsonResponse::create(array(
                         'status' => 'error',
                         'message' => 'Could not connect to the search server',
-                    ), 500);
+                    ), 500)->setCallback($req->query->get('callback'));
                 }
             }
 
@@ -406,7 +406,9 @@ class WebController extends Controller
                 'searchForm' => $form->createView(),
             ));
         } elseif ($req->getRequestFormat() === 'json') {
-            return new JsonResponse(array('error' => 'Missing search query, example: ?q=example'), 400);
+            return JsonResponse::create(array(
+                'error' => 'Missing search query, example: ?q=example'
+            ), 400)->setCallback($req->query->get('callback'));
         }
 
         return $this->render('PackagistWebBundle:Web:search.html.twig', array('searchForm' => $form->createView()));
