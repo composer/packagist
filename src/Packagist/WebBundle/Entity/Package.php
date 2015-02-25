@@ -157,7 +157,7 @@ class Package
         }
         $maintainers = array();
         foreach ($this->getMaintainers() as $maintainer) {
-            /** @var $maintainer Maintainer */
+            /** @var $maintainer User */
             $maintainers[] = $maintainer->toArray();
         }
         $data = array(
