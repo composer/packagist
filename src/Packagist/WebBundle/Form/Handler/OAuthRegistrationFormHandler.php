@@ -51,6 +51,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
         // Try to get some properties for the initial form when coming from github
         if ('GET' === $request->getMethod()) {
             $user->setUsername($this->getUniqueUsername($userInformation->getNickname()));
+            $user->setEmail($userInformation->getEmail());
         }
 
         $form->setData($user);
