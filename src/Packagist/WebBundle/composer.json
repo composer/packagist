@@ -1,5 +1,6 @@
 {
-    "description": "Package Repository Website",
+    "name": "composer/packagist-webbundle",
+    "description": "WebBundle for the Package Repository Website",
     "keywords": ["package", "composer"],
     "homepage": "http://packagist.org/",
     "type": "library",
@@ -20,10 +21,7 @@
           "email": "contact@packagist.org"
     },
     "autoload": {
-        "psr-0": { "Packagist": "src/" }
-    },
-    "replace": {
-      "composer/packagist-webbundle": "*"
+        "psr-4": { "Packagist\\WebBundle": "." }
     },
     "require": {
         "php": ">=5.3.3",
@@ -55,21 +53,5 @@
 
         "kriswallsmith/assetic": "~1.2@alpha",
         "pagerfanta/pagerfanta": "~1.0"
-    },
-    "scripts": {
-        "post-install-cmd": [
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets"
-        ],
-        "post-update-cmd": [
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets"
-        ]
-    },
-    "extra": {
-        "symfony-app-dir": "app",
-        "symfony-web-dir": "web"
     }
 }
