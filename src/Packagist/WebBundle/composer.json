@@ -21,7 +21,7 @@
           "email": "contact@packagist.org"
     },
     "autoload": {
-        "psr-4": { "Packagist\\WebBundle": "." }
+        "psr-4": { "Packagist\\WebBundle\\": "." }
     },
     "require": {
         "php": ">=5.3.3",
