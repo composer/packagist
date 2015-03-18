@@ -239,17 +239,9 @@ class PackageRepository extends EntityRepository
     public function getFullPackages(array $ids = null, $filters = array())
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
+        $qb->select('p', 'v')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
-            ->leftJoin('v.tags', 't')
-            ->leftJoin('v.authors', 'a')
-            ->leftJoin('v.require', 'req')
-            ->leftJoin('v.devRequire', 'devReq')
-            ->leftJoin('v.suggest', 'sug')
-            ->leftJoin('v.replace', 'rep')
-            ->leftJoin('v.conflict', 'con')
-            ->leftJoin('v.provide', 'pro')
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC');
 
