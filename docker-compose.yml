@@ -1,0 +1,30 @@
+web:
+    build: docker
+    volumes:
+        - .:/app
+    ports:
+        - "80:80"
+    links:
+        - database
+        - redis
+        - solr
+
+database:
+    image: mysql
+    ports:
+        - "3306:3306"
+    environment:
+        MYSQL_ROOT_PASSWORD: roots3cr3t
+        MYSQL_DATABASE: packagist
+
+redis:
+    image: redis
+    ports:
+        - "6379:6379"
+
+solr:
+    image: apopelo/solr-3.6.2
+    volumes:
+        - ./doc/schema.xml:/opt/solr/example/solr/conf/schema.xml
+    ports:
+        - "8983:8983"
