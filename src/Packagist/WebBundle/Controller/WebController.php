@@ -256,8 +256,8 @@ class WebController extends Controller
         $form = $this->createSearchForm();
 
         // transform q=search shortcut
-        if ($req->query->has('q')) {
-            $req->query->set('search_query', array('query' => $req->query->get('q')));
+        if ($req->query->has('q') || $req->query->has('s')) {
+            $req->query->set('search_query', array('query' => $req->query->get('q'), 'sort_by' => $req->query->get('s')));
         }
 
         $typeFilter = $req->query->get('type');
@@ -304,17 +304,14 @@ class WebController extends Controller
                         $escapedQuery = str_replace('\\"', '"', $escapedQuery);
                     }
                     $select->setQuery($escapedQuery);
-                }
-            }
-
-            if ($req->query->has('sort_by')) {
-                $sortField = $req->query->get('sort_by');
-                switch($sortField) {
-                    case 'downloads':
-                    case 'favorites':
-                        $select->addSort($sortField, 'desc');
-                        break;
-                    default:
+                    $sortField = $form->getData()->getSortBy();
+                    switch($sortField) {
+                        case 'downloads':
+                        case 'favorites':
+                            $select->addSort($sortField, 'desc');
+                            break;
+                        default:
+                    }
                 }
             }
 

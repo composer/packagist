@@ -24,6 +24,10 @@ class SearchQueryType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->add('query', 'search');
+        $builder->add('sort_by', 'choice', array(
+            'empty_value' => '-Sort By-',
+            'choices' => array('downloads' => 'Downloads', 'favorites' => 'Favorites'),
+          ));
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)

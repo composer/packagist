@@ -3,6 +3,7 @@
     <p>
         {{ form_errors(searchForm.query) }}
         {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'autofocus': 'autofocus', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
+        {{ form_widget(searchForm.sort_by, {'attr': {'tabindex': 2}}) }}
         {{ form_rest(searchForm) }}
     </p>
 </form>
