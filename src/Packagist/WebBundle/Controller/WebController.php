@@ -307,6 +307,17 @@ class WebController extends Controller
                 }
             }
 
+            if ($req->query->has('sort_by')) {
+                $sortField = $req->query->get('sort_by');
+                switch($sortField) {
+                    case 'downloads':
+                    case 'favorites':
+                        $select->addSort($sortField, 'desc');
+                        break;
+                    default:
+                }
+            }
+
             $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
 
             $perPage = $req->query->getInt('per_page', 15);
