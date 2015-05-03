@@ -146,7 +146,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                                 $document->setField('replacementPackage', '');
                                 $update->addDocument($document);
                             } catch (\Exception $e) {
-                                $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().':provide:'.$provide->getPackageName().'</error>');
+                                $output->writeln('<error>'.get_class($e).': '.$e->getMessage().', skipping package '.$package->getName().':provide:'.$provide->getPackageName().'</error>');
                             }
                         }
                     }
