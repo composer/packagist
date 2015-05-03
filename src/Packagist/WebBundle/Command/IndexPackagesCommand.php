@@ -12,12 +12,16 @@
 
 namespace Packagist\WebBundle\Command;
 
+use DateTime;
+use Exception;
 use Packagist\WebBundle\Entity\Package;
-
+use Packagist\WebBundle\Model\DownloadManager;
+use Packagist\WebBundle\Model\FavoriteManager;
+use Solarium_Document_ReadWrite;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -62,6 +66,8 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $doctrine = $this->getContainer()->get('doctrine');
         $solarium = $this->getContainer()->get('solarium.client');
         $redis = $this->getContainer()->get('snc_redis.default');
+        $downloadManager = $this->getContainer()->get('packagist.download_manager');
+        $favoriteManager = $this->getContainer()->get('packagist.favorite_manager');
 
         $lock = $this->getContainer()->getParameter('kernel.cache_dir').'/composer-indexer.lock';
         $timeout = 600;
@@ -119,11 +125,11 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
                 try {
                     $document = $update->createDocument();
-                    $this->updateDocumentFromPackage($document, $package, $redis);
+                    $this->updateDocumentFromPackage($document, $package, $redis, $downloadManager, $favoriteManager);
                     $update->addDocument($document);
 
-                    $package->setIndexedAt(new \DateTime);
-                } catch (\Exception $e) {
+                    $package->setIndexedAt(new DateTime);
+                } catch (Exception $e) {
                     $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
                 }
 
@@ -145,7 +151,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                                 $document->setField('abandoned', 0);
                                 $document->setField('replacementPackage', '');
                                 $update->addDocument($document);
-                            } catch (\Exception $e) {
+                            } catch (Exception $e) {
                                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().':provide:'.$provide->getPackageName().'</error>');
                             }
                         }
@@ -164,13 +170,20 @@ class IndexPackagesCommand extends ContainerAwareCommand
         unlink($lock);
     }
 
-    private function updateDocumentFromPackage(\Solarium_Document_ReadWrite $document, Package $package, $redis)
-    {
+    private function updateDocumentFromPackage(
+        Solarium_Document_ReadWrite $document,
+        Package $package,
+        $redis,
+        DownloadManager $downloadManager,
+        FavoriteManager $favoriteManager
+    ) {
         $document->setField('id', $package->getId());
         $document->setField('name', $package->getName());
         $document->setField('description', $package->getDescription());
         $document->setField('type', $package->getType());
         $document->setField('trendiness', $redis->zscore('downloads:trending', $package->getId()));
+        $document->setField('downloads', $downloadManager->getTotalDownloads($package));
+        $document->setField('favers', $favoriteManager->getFaverCount($package));
         $document->setField('repository', $package->getRepository());
         if ($package->isAbandoned()) {
             $document->setField('abandoned', 1);

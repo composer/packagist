@@ -262,6 +262,7 @@ class WebController extends Controller
 
         $typeFilter = $req->query->get('type');
         $tagsFilter = $req->query->get('tags');
+        $orderBys = $req->query->get('orderBys');
 
         if ($req->query->has('search_query') || $typeFilter || $tagsFilter) {
             /** @var $solarium \Solarium_Client */
@@ -294,6 +295,33 @@ class WebController extends Controller
                 $select->addFilterQuery($filterQuery);
             }
 
+            if ($orderBys) {
+                $allowedSorts = array(
+                    'downloads' => 1,
+                    'orders' => 1
+                );
+
+                $allowedOrders = array(
+                    'asc' => 1,
+                    'desc' => 1,
+                    'ASC' => 1,
+                    'DESC' => 1
+                );
+
+                $filteredSorts = array();
+
+                foreach ($orderBys as $orderBy) {
+                    if (isset($orderBy['sort'])
+                        && isset($allowedSorts[$orderBy['sort']])
+                        && isset($orderBy['order'])
+                        && isset($allowedOrders[$orderBy['order']])) {
+                        $filteredSorts[$orderBy['sort']] = $orderBy['order'];
+                    }
+                }
+
+                $select->addSorts($filteredSorts);
+            }
+
             if ($req->query->has('search_query')) {
                 $form->bind($req);
                 if ($form->isValid()) {
@@ -324,7 +352,14 @@ class WebController extends Controller
 
             $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
-            $metadata = $this->getPackagesMetadata($paginator);
+            $metadata = array();
+
+            foreach ($paginator as $package) {
+                if (is_numeric($package->id)) {
+                    $metadata['downloads'][$package->id] = $package->downloads;
+                    $metadata['favers'][$package->id] = $package->favers;
+                }
+            }
 
             if ($req->getRequestFormat() === 'json') {
                 try {
