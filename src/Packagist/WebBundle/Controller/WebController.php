@@ -248,15 +248,12 @@ class WebController extends Controller
     }
 
     /**
-     * @Route("/search/", name="search.ajax")
-     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"})
+     * @param mixed $orderBys
+     *
+     * @return array
      */
-    public function searchAction(Request $req)
+    protected function getFilteredOrderedBys($orderBys)
     {
-        $form = $this->createSearchForm();
-
-        $orderBys = $req->query->get('orderBys', array());
-
         if ($orderBys) {
             $allowedSorts = array(
                 'downloads' => 1,
@@ -280,37 +277,31 @@ class WebController extends Controller
                     $filteredOrderBys[] = $orderBy;
                 }
             }
-
-            $normalizedOrderBys = array();
-
-            foreach ($filteredOrderBys as $filteredSort) {
-                $normalizedOrderBys[$filteredSort['sort']] = $filteredSort['order'];
-            }
         } else {
             $filteredOrderBys = array();
-            $normalizedOrderBys = array();
         }
 
-        // transform q=search shortcut
-        if ($req->query->has('q') || $req->query->has('orderBys')) {
-            $searchQuery = array();
+        return $filteredOrderBys;
+    }
 
-            $q = $req->query->get('q');
+    /**
+     * @param array $orderBys
+     *
+     * @return array
+     */
+    protected function getNormalizedOrderBys(array $orderBys)
+    {
+        $normalizedOrderBys = array();
 
-            if ($q !== null) {
-                $searchQuery['query'] = $q;
-            }
-
-            if (!empty($filteredOrderBys)) {
-                $searchQuery['orderBys'] = $filteredOrderBys;
-            }
-
-            $req->query->set(
-                'search_query',
-                $searchQuery
-            );
+        foreach ($orderBys as $sort) {
+            $normalizedOrderBys[$sort['sort']] = $sort['order'];
         }
 
+        return $normalizedOrderBys;
+    }
+
+    protected function getOrderBysViewModel(Request $req, $normalizedOrderBys)
+    {
         $makeDefaultArrow = function ($sort) use ($normalizedOrderBys) {
             if (isset($normalizedOrderBys[$sort])) {
                 if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
@@ -347,7 +338,7 @@ class WebController extends Controller
             ));
         };
 
-        $orderBysViewModel = array(
+        return array(
             'downloads' => array(
                 'title' => 'Clic to sort by downloads desc',
                 'class' => 'icon-download',
@@ -361,6 +352,41 @@ class WebController extends Controller
                 'href' => $makeDefaultHref('favers')
             ),
         );
+    }
+
+    /**
+     * @Route("/search/", name="search.ajax")
+     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"})
+     */
+    public function searchAction(Request $req)
+    {
+        $form = $this->createSearchForm();
+
+        $orderBys = $req->query->get('orderBys', array());
+
+        $filteredOrderBys = $this->getFilteredOrderedBys($orderBys);
+        $normalizedOrderBys = $this->getNormalizedOrderBys($filteredOrderBys);
+        $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
+
+        // transform q=search shortcut
+        if ($req->query->has('q') || $req->query->has('orderBys')) {
+            $searchQuery = array();
+
+            $q = $req->query->get('q');
+
+            if ($q !== null) {
+                $searchQuery['query'] = $q;
+            }
+
+            if (!empty($filteredOrderBys)) {
+                $searchQuery['orderBys'] = $filteredOrderBys;
+            }
+
+            $req->query->set(
+                'search_query',
+                $searchQuery
+            );
+        }
 
         $typeFilter = $req->query->get('type');
         $tagsFilter = $req->query->get('tags');

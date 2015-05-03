@@ -437,11 +437,19 @@ form ul {
 
 
 /* Search */
+
 #search_query_query {
+  width: 890px;
+}
+.no-js #search_query_query {
+  width: 780px;
+}
+
+.sortable #search_query_query {
   width: 737px;
   display: inline;
 }
-.no-js #search_query_query {
+.sortable .no-js #search_query_query {
   width: 600px;
 }
 
@@ -449,7 +457,7 @@ form ul {
     display: none;
 }
 
-#order-bys-wrapper {
+.sortable #order-bys-wrapper {
     margin-left: 0.7em;
     display: inline;
     font-size: 24px;
@@ -457,13 +465,13 @@ form ul {
     top: 4px;
 }
 
-#order-bys-wrapper a {
+.sortable #order-bys-wrapper a {
     width: 46px;
     margin-right: 7px;
     display: inline-block;
 }
 
-#order-bys-wrapper a.clear {
+.sortable #order-bys-wrapper a.clear {
     width: auto;
     margin-right: 0px;
 }

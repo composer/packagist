@@ -1,19 +1,21 @@
 <form id="search-form" action="{{ path('search.ajax') }}" method="GET" {{ form_enctype(searchForm) }} autocomplete="off">
     <p class="submit-wrapper"><input class="submit" type="submit" value="Search" /></p>
-    <div>
+    <div class="{% if orderBys is defined %}sortable{% endif %}">
         {{ form_errors(searchForm.query) }}
         {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'autofocus': 'autofocus', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
-        <div id="order-bys-wrapper">
-            {% for sort,param in orderBys %}
-                <a title="{{ param.title }}" href="{{ param.href }}">
-                    <i class="icon {{ param.class }}"></i>
-                    <i class="icon {{ param.arrowClass }}"></i>
+        {% if orderBys is defined %}
+            <div id="order-bys-wrapper">
+                {% for sort,param in orderBys %}
+                    <a title="{{ param.title }}" href="{{ param.href }}">
+                        <i class="icon {{ param.class }}"></i>
+                        <i class="icon {{ param.arrowClass }}"></i>
+                    </a>
+                {% endfor %}
+                <a title="Clear order bys" href="?q={{ searchForm.vars.value.query }}" class="clear">
+                    <i class="icon icon-remove-circle"></i>
                 </a>
-            {% endfor %}
-            <a title="Clear order bys" href="?q={{ searchForm.vars.value.query }}" class="clear">
-                <i class="icon icon-remove-circle"></i>
-            </a>
-        </div>
+            </div>
+        {% endif  %}
         <div
             class="hidden">
             {{ form_widget(searchForm.orderBys) }}
