@@ -5,6 +5,7 @@ namespace Packagist\WebBundle\Tests\Controller;
 use Exception;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Model\DownloadManager;
+use Packagist\WebBundle\Model\FavoriteManager;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -109,6 +110,58 @@ class WebControllerTest extends WebTestCase
     }
 
     /**
+     * @covers ::nothing
+     */
+    public function testSearchOrderByFaversAscAction()
+    {
+        $json = $this->commonTestSearchActionOrderBysFavers(
+            array(
+                array(
+                    'sort' => 'favers',
+                    'order' => 'asc',
+                ),
+            )
+        );
+
+        $this->assertSame(
+            $this->getJsonResults(
+                array(
+                    $this->getJsonResult('composer/packagist', 0, 1),
+                    $this->getJsonResult('twig/twig', 0, 2),
+                    $this->getJsonResult('symfony/symfony', 0, 3),
+                )
+            ),
+            $json
+        );
+    }
+
+    /**
+     * @covers ::nothing
+     */
+    public function testSearchOrderByFaversDescAction()
+    {
+        $json = $this->commonTestSearchActionOrderBysFavers(
+            array(
+                array(
+                    'sort' => 'favers',
+                    'order' => 'desc',
+                ),
+            )
+        );
+
+        $this->assertSame(
+            $this->getJsonResults(
+                array(
+                    $this->getJsonResult('symfony/symfony', 0, 3),
+                    $this->getJsonResult('twig/twig', 0, 2),
+                    $this->getJsonResult('composer/packagist', 0, 1),
+                )
+            ),
+            $json
+        );
+    }
+
+    /**
      * @param callable $onBeforeIndex TODO Add typehint when migrating to 5.4+
      * @param array $orderBys
      *
@@ -153,28 +206,28 @@ class WebControllerTest extends WebTestCase
 
         $this->assertSame(200, $response->getStatusCode(), $content);
 
-        $package = new Package();
+        $twigPackage = new Package();
 
-        $package->setName('twig/twig');
-        $package->setRepository('https://github.com/twig/twig');
+        $twigPackage->setName('twig/twig');
+        $twigPackage->setRepository('https://github.com/twig/twig');
 
-        $package1 = new Package();
+        $packagistPackage = new Package();
 
-        $package1->setName('composer/packagist');
-        $package1->setRepository('https://github.com/composer/packagist');
+        $packagistPackage->setName('composer/packagist');
+        $packagistPackage->setRepository('https://github.com/composer/packagist');
 
-        $package2 = new Package();
+        $symfonyPackage = new Package();
 
-        $package2->setName('symfony/symfony');
-        $package2->setRepository('https://github.com/symfony/symfony');
+        $symfonyPackage->setName('symfony/symfony');
+        $symfonyPackage->setRepository('https://github.com/symfony/symfony');
 
-        $em->persist($package);
-        $em->persist($package1);
-        $em->persist($package2);
+        $em->persist($twigPackage);
+        $em->persist($packagistPackage);
+        $em->persist($symfonyPackage);
 
         $em->flush();
 
-        $onBeforeIndex($container, $package, $package1, $package2);
+        $onBeforeIndex($container, $twigPackage, $packagistPackage, $symfonyPackage);
 
         $this->executeCommand($kernelRootDir . '/console packagist:index --env=test --force');
 
@@ -192,23 +245,67 @@ class WebControllerTest extends WebTestCase
         return $this->commonTestSearchActionOrderBysAction(
             function (
                 ContainerInterface $container,
-                Package $package,
-                Package $package1,
-                Package $package2
+                Package $twigPackage,
+                Package $packagistPackage,
+                Package $symfonyPackage
             ) {
                 $downloadManager = $container->get('packagist.download_manager');
 
                 /* @var $downloadManager DownloadManager */
 
                 for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownload($package->getId(), 25);
+                    $downloadManager->addDownload($twigPackage->getId(), 25);
                 }
                 for ($i = 0; $i < 12; $i += 1) {
-                    $downloadManager->addDownload($package1->getId(), 12);
+                    $downloadManager->addDownload($packagistPackage->getId(), 12);
                 }
                 for ($i = 0; $i < 42; $i += 1) {
-                    $downloadManager->addDownload($package2->getId(), 42);
+                    $downloadManager->addDownload($symfonyPackage->getId(), 42);
                 }
+            },
+            $orderBys
+        );
+    }
+
+    /**
+     * @param array $orderBys
+     *
+     * @return array
+     */
+    protected function commonTestSearchActionOrderBysFavers(
+        array $orderBys = array()
+    ) {
+        $userMock = $this->getMock('Packagist\WebBundle\Entity\User');
+        $userMock1 = $this->getMock('Packagist\WebBundle\Entity\User');
+        $userMock2 = $this->getMock('Packagist\WebBundle\Entity\User');
+
+        $userMock->method('getId')->will($this->returnValue(1));
+        $userMock1->method('getId')->will($this->returnValue(2));
+        $userMock2->method('getId')->will($this->returnValue(3));
+
+        return $this->commonTestSearchActionOrderBysAction(
+            function (
+                ContainerInterface $container,
+                Package $twigPackage,
+                Package $packagistPackage,
+                Package $symfonyPackage
+            ) use (
+                $userMock,
+                $userMock1,
+                $userMock2
+            ) {
+                $favoriteManager = $container->get('packagist.favorite_manager');
+
+                /* @var $favoriteManager FavoriteManager */
+
+                $favoriteManager->markFavorite($userMock, $twigPackage);
+                $favoriteManager->markFavorite($userMock1, $twigPackage);
+
+                $favoriteManager->markFavorite($userMock, $packagistPackage);
+
+                $favoriteManager->markFavorite($userMock, $symfonyPackage);
+                $favoriteManager->markFavorite($userMock1, $symfonyPackage);
+                $favoriteManager->markFavorite($userMock2, $symfonyPackage);
             },
             $orderBys
         );

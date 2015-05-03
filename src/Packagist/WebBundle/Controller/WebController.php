@@ -298,7 +298,7 @@ class WebController extends Controller
             if ($orderBys) {
                 $allowedSorts = array(
                     'downloads' => 1,
-                    'orders' => 1
+                    'favers' => 1
                 );
 
                 $allowedOrders = array(
