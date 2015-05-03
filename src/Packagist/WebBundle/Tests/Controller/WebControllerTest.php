@@ -162,6 +162,78 @@ class WebControllerTest extends WebTestCase
     }
 
     /**
+     * @covers ::nothing
+     */
+    public function testSearchOrderBysCombinationAction()
+    {
+        $userMock = $this->getMock('Packagist\WebBundle\Entity\User');
+        $userMock1 = $this->getMock('Packagist\WebBundle\Entity\User');
+        $userMock2 = $this->getMock('Packagist\WebBundle\Entity\User');
+
+        $userMock->method('getId')->will($this->returnValue(1));
+        $userMock1->method('getId')->will($this->returnValue(2));
+        $userMock2->method('getId')->will($this->returnValue(3));
+
+        $json = $this->commonTestSearchActionOrderBysAction(
+            function (
+                ContainerInterface $container,
+                Package $twigPackage,
+                Package $packagistPackage,
+                Package $symfonyPackage
+            ) use (
+                $userMock,
+                $userMock1,
+                $userMock2
+            ) {
+                $downloadManager = $container->get('packagist.download_manager');
+
+                /* @var $downloadManager DownloadManager */
+
+                for ($i = 0; $i < 25; $i += 1) {
+                    $downloadManager->addDownload($twigPackage->getId(), 25);
+                }
+                for ($i = 0; $i < 12; $i += 1) {
+                    $downloadManager->addDownload($packagistPackage->getId(), 12);
+                }
+                for ($i = 0; $i < 25; $i += 1) {
+                    $downloadManager->addDownload($symfonyPackage->getId(), 42);
+                }
+
+                $favoriteManager = $container->get('packagist.favorite_manager');
+
+                /* @var $favoriteManager FavoriteManager */
+
+                $favoriteManager->markFavorite($userMock, $packagistPackage);
+
+                $favoriteManager->markFavorite($userMock, $symfonyPackage);
+                $favoriteManager->markFavorite($userMock1, $symfonyPackage);
+                $favoriteManager->markFavorite($userMock2, $symfonyPackage);
+            },
+            array(
+                array(
+                    'sort' => 'downloads',
+                    'order' => 'desc',
+                ),
+                array(
+                    'sort' => 'favers',
+                    'order' => 'desc',
+                ),
+            )
+        );
+
+        $this->assertSame(
+            $this->getJsonResults(
+                array(
+                    $this->getJsonResult('symfony/symfony', 25, 3),
+                    $this->getJsonResult('twig/twig', 25, 0),
+                    $this->getJsonResult('composer/packagist', 12, 1),
+                )
+            ),
+            $json
+        );
+    }
+
+    /**
      * @param callable $onBeforeIndex TODO Add typehint when migrating to 5.4+
      * @param array $orderBys
      *
