@@ -3,6 +3,27 @@
     <p>
         {{ form_errors(searchForm.query) }}
         {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'autofocus': 'autofocus', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
+        <div
+            id="order-bys-wrapper">
+            {% for sort,param in orderBys %}
+                <a
+                    title="{{ param.title }}"
+                    href="{{ param.href }}">
+                    <i class="icon {{ param.class }}"></i>
+                    <i class="icon {{ param.arrowClass }}"></i>
+                </a>
+            {% endfor %}
+            <a
+                title="Clear order bys"
+                href="?q={{ searchForm.vars.value.query }}"
+                class="clear">
+                <i class="icon icon-remove-circle"></i>
+            </a>
+        </div>
+        <div
+            class="hidden">
+            {{ form_widget(searchForm.orderBys) }}
+        </div>
         {{ form_rest(searchForm) }}
     </p>
 </form>

@@ -255,14 +255,115 @@ class WebController extends Controller
     {
         $form = $this->createSearchForm();
 
-        // transform q=search shortcut
-        if ($req->query->has('q')) {
-            $req->query->set('search_query', array('query' => $req->query->get('q')));
+        $orderBys = $req->query->get('orderBys', array());
+
+        if ($orderBys) {
+            $allowedSorts = array(
+                'downloads' => 1,
+                'favers' => 1
+            );
+
+            $allowedOrders = array(
+                'asc' => 1,
+                'desc' => 1,
+                'ASC' => 1,
+                'DESC' => 1
+            );
+
+            $filteredOrderBys = array();
+
+            foreach ($orderBys as $orderBy) {
+                if (isset($orderBy['sort'])
+                    && isset($allowedSorts[$orderBy['sort']])
+                    && isset($orderBy['order'])
+                    && isset($allowedOrders[$orderBy['order']])) {
+                    $filteredOrderBys[] = $orderBy;
+                }
+            }
+
+            $normalizedOrderBys = array();
+
+            foreach ($filteredOrderBys as $filteredSort) {
+                $normalizedOrderBys[$filteredSort['sort']] = $filteredSort['order'];
+            }
+        } else {
+            $filteredOrderBys = array();
+            $normalizedOrderBys = array();
         }
+
+        // transform q=search shortcut
+        if ($req->query->has('q') || $req->query->has('orderBys')) {
+            $searchQuery = array();
+
+            $q = $req->query->get('q');
+
+            if ($q !== null) {
+                $searchQuery['query'] = $q;
+            }
+
+            if (!empty($filteredOrderBys)) {
+                $searchQuery['orderBys'] = $filteredOrderBys;
+            }
+
+            $req->query->set(
+                'search_query',
+                $searchQuery
+            );
+        }
+
+        $makeDefaultArrow = function ($sort) use ($normalizedOrderBys) {
+            if (isset($normalizedOrderBys[$sort])) {
+                if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
+                    $val = 'icon-arrow-up';
+                } else {
+                    $val = 'icon-arrow-down';
+                }
+            } else {
+                $val = '';
+            }
+
+            return $val;
+        };
+
+        $makeDefaultHref = function ($sort) use ($req, $normalizedOrderBys) {
+            if (isset($normalizedOrderBys[$sort])) {
+                if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
+                    $order = 'desc';
+                } else {
+                    $order = 'asc';
+                }
+            } else {
+                $order = 'desc';
+            }
+
+            return '?' . http_build_query(array(
+                'q' => $req->query->get('q') === null ? '' : $req->query->get('q'),
+                'orderBys' => array(
+                    array(
+                        'sort' => $sort,
+                        'order' => $order
+                    )
+                )
+            ));
+        };
+
+        $orderBysViewModel = array(
+            'downloads' => array(
+                'title' => 'Clic to sort by downloads desc',
+                'class' => 'icon-download',
+                'arrowClass' => $makeDefaultArrow('downloads'),
+                'href' => $makeDefaultHref('downloads')
+            ),
+            'favers' => array(
+                'title' => 'Clic to sort by favorites desc',
+                'class' => 'icon-star',
+                'arrowClass' => $makeDefaultArrow('favers'),
+                'href' => $makeDefaultHref('favers')
+            ),
+        );
 
         $typeFilter = $req->query->get('type');
         $tagsFilter = $req->query->get('tags');
-        $orderBys = $req->query->get('orderBys');
 
         if ($req->query->has('search_query') || $typeFilter || $tagsFilter) {
             /** @var $solarium \Solarium_Client */
@@ -295,35 +396,13 @@ class WebController extends Controller
                 $select->addFilterQuery($filterQuery);
             }
 
-            if ($orderBys) {
-                $allowedSorts = array(
-                    'downloads' => 1,
-                    'favers' => 1
-                );
-
-                $allowedOrders = array(
-                    'asc' => 1,
-                    'desc' => 1,
-                    'ASC' => 1,
-                    'DESC' => 1
-                );
-
-                $filteredSorts = array();
-
-                foreach ($orderBys as $orderBy) {
-                    if (isset($orderBy['sort'])
-                        && isset($allowedSorts[$orderBy['sort']])
-                        && isset($orderBy['order'])
-                        && isset($allowedOrders[$orderBy['order']])) {
-                        $filteredSorts[$orderBy['sort']] = $orderBy['order'];
-                    }
-                }
-
-                $select->addSorts($filteredSorts);
+            if (!empty($filteredOrderBys)) {
+                $select->addSorts($normalizedOrderBys);
             }
 
             if ($req->query->has('search_query')) {
                 $form->bind($req);
+
                 if ($form->isValid()) {
                     $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
                     $escapedQuery = preg_replace('/(^| )\\\\-(\S)/', '$1-$2', $escapedQuery);
@@ -439,6 +518,7 @@ class WebController extends Controller
                 'packages' => $paginator,
                 'meta' => $metadata,
                 'searchForm' => $form->createView(),
+                'orderBys' => $orderBysViewModel
             ));
         } elseif ($req->getRequestFormat() === 'json') {
             return JsonResponse::create(array(
@@ -446,7 +526,10 @@ class WebController extends Controller
             ), 400)->setCallback($req->query->get('callback'));
         }
 
-        return $this->render('PackagistWebBundle:Web:search.html.twig', array('searchForm' => $form->createView()));
+        return $this->render('PackagistWebBundle:Web:search.html.twig', array(
+            'searchForm' => $form->createView(),
+            'orderBys' => $orderBysViewModel
+        ));
     }
 
     /**

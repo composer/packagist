@@ -17,30 +17,32 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
 /**
- * @author Igor Wiedler <igor@wiedler.ch>
+ * @author Benjamin Michalski <benjamin.michalski@gmail.com>
  */
-class SearchQueryType extends AbstractType
+class OrderByType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('query', 'search');
-        $builder->add('orderBys', 'collection', array(
-            'type' => new OrderByType(),
-            'allow_add' => true,
-            'allow_delete' => true
+        $builder->add('sort');
+        $builder->add('order', 'choice', array(
+            'choices' => array(
+                'asc' => 'asc',
+                'desc' => 'desc'
+            )
         ));
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
         $resolver->setDefaults(array(
-            'data_class' => 'Packagist\WebBundle\Form\Model\SearchQuery',
+            'data_class' => 'Packagist\WebBundle\Form\Model\OrderBy',
             'csrf_protection' => false,
         ));
     }
 
+
     public function getName()
     {
-        return 'search_query';
+        return 'order_by';
     }
 }
