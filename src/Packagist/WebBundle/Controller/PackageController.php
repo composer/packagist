@@ -94,7 +94,7 @@ class PackageController extends Controller
             $form->bind($request->request->get('package'));
             if ($form->isValid()) {
                 $package->setAbandoned(true);
-                $package->setReplacementPackage($form->get('replacement')->getData());
+                $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', $form->get('replacement')->getData()));
                 $package->setIndexedAt(null);
 
                 $em = $this->getDoctrine()->getManager();
