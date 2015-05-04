@@ -28,7 +28,15 @@
     };
 
     doSearch = function () {
-        var currentQuery;
+        var currentQuery,
+            pushStateArguments,
+            orderBys,
+            orderBysStrParts,
+            joinedOrderBys,
+            joinedOrderBysQryStrPart,
+            q,
+            pathname,
+            urlPrefix;
 
         if (searching) {
             searchQueued = true;
@@ -49,11 +57,57 @@
         }
 
         if (window.history.pushState) {
+            orderBys = [];
+
+            $('#search_query_orderBys > div').each(function (i, e) {
+                var sort,
+                    order;
+                sort = $(e).find('input').val();
+                order = $(e).find('select').val();
+
+                orderBys.push({
+                    sort: sort,
+                    order: order
+                });
+            });
+
+            orderBysStrParts = [];
+
+            orderBys.forEach(function (e, i) {
+                orderBysStrParts.push('orderBys[' + i + '][sort]=' + e.sort + '&orderBys[' + i + '][order]=' + e.order);
+            });
+
+            joinedOrderBys = orderBysStrParts.join('&');
+
+            q = encodeURIComponent($('input[type="search"]', form).val());
+
+            pathname = window.location.pathname;
+
+            if (pathname.indexOf('/app_dev.php') === 0) {
+                urlPrefix = '/app_dev.php';
+            } else if (pathname.indexOf('/app.php') === 0) {
+                urlPrefix = '/app.php';
+            } else {
+                urlPrefix = '';
+            }
+
+            if (joinedOrderBys === '') {
+                joinedOrderBysQryStrPart = '';
+            } else {
+                joinedOrderBysQryStrPart = '&' + joinedOrderBys;
+            }
+
+            pushStateArguments = [
+                null,
+                'Search',
+                urlPrefix + '/search/?q=' + q + joinedOrderBysQryStrPart
+            ];
+
             if (firstQuery) {
-                window.history.pushState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
+                window.history.pushState.apply(window.history, pushStateArguments);
                 firstQuery = false;
             } else {
-                window.history.replaceState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
+                window.history.replaceState.apply(window.history, pushStateArguments);
             }
         }
 
