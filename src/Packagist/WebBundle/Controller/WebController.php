@@ -366,7 +366,10 @@ class WebController extends Controller
 
         $filteredOrderBys = $this->getFilteredOrderedBys($orderBys);
         $normalizedOrderBys = $this->getNormalizedOrderBys($filteredOrderBys);
-        $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
+
+        if ($req->getRequestFormat() !== 'json' && !$req->isXmlHttpRequest()) {
+            $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
+        }
 
         // transform q=search shortcut
         if ($req->query->has('q') || $req->query->has('orderBys')) {
