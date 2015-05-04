@@ -263,8 +263,6 @@ class WebController extends Controller
             $allowedOrders = array(
                 'asc' => 1,
                 'desc' => 1,
-                'ASC' => 1,
-                'DESC' => 1
             );
 
             $filteredOrderBys = array();
