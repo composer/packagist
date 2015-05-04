@@ -249,7 +249,7 @@ class WebControllerTest extends WebTestCase
 
         $kernelRootDir = $container->getParameter('kernel.root_dir');
 
-        $this->executeCommand($kernelRootDir . '/console doctrine:database:drop --env=test --force');
+        $this->executeCommand($kernelRootDir . '/console doctrine:database:drop --env=test --force', false);
         $this->executeCommand($kernelRootDir . '/console doctrine:database:create --env=test');
         $this->executeCommand($kernelRootDir . '/console doctrine:schema:create --env=test');
         $this->executeCommand($kernelRootDir . '/console redis:flushall --env=test -n');
@@ -269,14 +269,6 @@ class WebControllerTest extends WebTestCase
         } else {
             $orderBysQryStrPart = '';
         }
-
-        $client->request('GET', '/search.json?q=' . $orderBysQryStrPart);
-
-        $response = $client->getResponse();
-
-        $content = $client->getResponse()->getContent();
-
-        $this->assertSame(200, $response->getStatusCode(), $content);
 
         $twigPackage = new Package();
 
@@ -302,6 +294,14 @@ class WebControllerTest extends WebTestCase
         $onBeforeIndex($container, $twigPackage, $packagistPackage, $symfonyPackage);
 
         $this->executeCommand($kernelRootDir . '/console packagist:index --env=test --force');
+
+        $client->request('GET', '/search.json?q=' . $orderBysQryStrPart);
+
+        $response = $client->getResponse();
+
+        $content = $client->getResponse()->getContent();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
 
         return json_decode($content, true);
     }
@@ -387,11 +387,13 @@ class WebControllerTest extends WebTestCase
      * Executes a given command.
      *
      * @param string $command a command to execute
+     * @param bool $errorHandling
      *
      * @throws Exception when the return code is not 0.
      */
     protected function executeCommand(
-        $command
+        $command,
+        $errorHandling = true
     ) {
         $output = array();
 
@@ -399,7 +401,7 @@ class WebControllerTest extends WebTestCase
 
         exec($command, $output, $returnCode);
 
-        if ($returnCode !== 0) {
+        if ($errorHandling && $returnCode !== 0) {
             throw new Exception(
                 sprintf(
                     'Error executing command "%s", return code was "%s".',
