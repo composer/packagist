@@ -12,8 +12,6 @@
 
 namespace Packagist\WebBundle\Command;
 
-use DateTime;
-use Exception;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Model\DownloadManager;
 use Packagist\WebBundle\Model\FavoriteManager;
@@ -128,8 +126,8 @@ class IndexPackagesCommand extends ContainerAwareCommand
                     $this->updateDocumentFromPackage($document, $package, $redis, $downloadManager, $favoriteManager);
                     $update->addDocument($document);
 
-                    $package->setIndexedAt(new DateTime);
-                } catch (Exception $e) {
+                    $package->setIndexedAt(new \DateTime);
+                } catch (\Exception $e) {
                     $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
                 }
 
@@ -151,7 +149,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                                 $document->setField('abandoned', 0);
                                 $document->setField('replacementPackage', '');
                                 $update->addDocument($document);
-                            } catch (Exception $e) {
+                            } catch (\Exception $e) {
                                 $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().':provide:'.$provide->getPackageName().'</error>');
                             }
                         }
