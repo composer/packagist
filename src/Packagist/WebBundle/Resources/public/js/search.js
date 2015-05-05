@@ -29,14 +29,15 @@
 
     doSearch = function () {
         var currentQuery,
-            pushStateArguments,
             orderBys,
             orderBysStrParts,
             joinedOrderBys,
             joinedOrderBysQryStrPart,
             q,
             pathname,
-            urlPrefix;
+            urlPrefix,
+            url,
+            title;
 
         if (searching) {
             searchQueued = true;
@@ -97,17 +98,14 @@
                 joinedOrderBysQryStrPart = '&' + joinedOrderBys;
             }
 
-            pushStateArguments = [
-                null,
-                'Search',
-                urlPrefix + '/search/?q=' + q + joinedOrderBysQryStrPart
-            ];
+            url = urlPrefix + '/search/?q=' + q + joinedOrderBysQryStrPart;
+            title = 'Search';
 
             if (firstQuery) {
-                window.history.pushState.apply(window.history, pushStateArguments);
+                window.history.pushState(null, title, url);
                 firstQuery = false;
             } else {
-                window.history.replaceState.apply(window.history, pushStateArguments);
+                window.history.replaceState(null, title, url);
             }
         }
 
