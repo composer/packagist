@@ -248,11 +248,11 @@ class WebController extends Controller
     }
 
     /**
-     * @param mixed $orderBys
+     * @param array $orderBys
      *
      * @return array
      */
-    protected function getFilteredOrderedBys($orderBys)
+    protected function getFilteredOrderedBys(array $orderBys)
     {
         if ($orderBys) {
             $allowedSorts = array(
