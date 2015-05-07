@@ -424,13 +424,13 @@ class WebController extends Controller
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $package->setRouter($this->get('router'));
         $form = $this->createForm(new PackageType, $package);
+        $user = $this->getUser();
+        $package->addMaintainer($user);
 
         if ('POST' === $req->getMethod()) {
             $form->bind($req);
             if ($form->isValid()) {
                 try {
-                    $user = $this->getUser();
-                    $package->addMaintainer($user);
                     $em = $this->getDoctrine()->getManager();
                     $em->persist($package);
                     $em->flush();
@@ -457,6 +457,8 @@ class WebController extends Controller
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $package->setRouter($this->get('router'));
         $form = $this->createForm(new PackageType, $package);
+        $user = $this->getUser();
+        $package->addMaintainer($user);
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
         $req = $this->getRequest();

@@ -300,6 +300,31 @@ class PackageRepository extends EntityRepository
         return $qb;
     }
 
+    public function isVendorTaken($vendor, User $user)
+    {
+        $query = $this->getEntityManager()
+            ->createQuery(
+                "SELECT p.name, m.id user_id
+                FROM Packagist\WebBundle\Entity\Package p
+                JOIN p.maintainers m
+                WHERE p.name LIKE :vendor")
+            ->setParameters(array('vendor' => $vendor.'/%'));
+
+        $rows = $query->getArrayResult();
+        if (!$rows) {
+            return false;
+        }
+
+        foreach ($rows as $row) {
+            if ($row['user_id'] === $user->getId()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
     private function addFilters(QueryBuilder $qb, array $filters)
     {
         foreach ($filters as $name => $value) {
