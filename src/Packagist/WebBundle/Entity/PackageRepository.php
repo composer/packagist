@@ -196,8 +196,8 @@ class PackageRepository extends EntityRepository
             OR (p.crawledAt < :autocrawled)
             ORDER BY p.id ASC',
             array(
-                'crawled' => date('Y-m-d H:i:s', strtotime('-4hours')),
-                'autocrawled' => date('Y-m-d H:i:s', strtotime('-1week')),
+                'crawled' => date('Y-m-d H:i:s', strtotime('-1week')),
+                'autocrawled' => date('Y-m-d H:i:s', strtotime('-1month')),
             )
         );
     }

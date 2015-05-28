@@ -93,7 +93,7 @@ class Updater
             $start = new \DateTime();
         }
         $pruneDate = clone $start;
-        $pruneDate->modify('-8days');
+        $pruneDate->modify('-1min');
 
         $versions = $repository->getPackages();
         $em = $this->doctrine->getManager();
