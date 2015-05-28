@@ -121,6 +121,9 @@
                 {% if version and version.support.wiki is defined %}
                     <span>Wiki:</span> <a href="{{ version.support.wiki }}">{{ version.support.wiki }}</a><br />
                 {% endif %}
+                {% if version and version.support.docs is defined %}
+                    <span>Documentation:</span> <a href="{{ version.support.docs }}">{{ version.support.docs }}</a><br />
+                {% endif %}
             </p>
 
             {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
