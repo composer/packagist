@@ -191,9 +191,12 @@ class PackageRepository extends EntityRepository
 
         return $conn->fetchAll(
             'SELECT p.id FROM package p
-            WHERE p.crawledAt IS NULL
-            OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
-            OR (p.crawledAt < :autocrawled)
+            WHERE p.abandoned = false
+            AND (
+                p.crawledAt IS NULL
+                OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
+                OR (p.crawledAt < :autocrawled)
+            )
             ORDER BY p.id ASC',
             array(
                 'crawled' => date('Y-m-d H:i:s', strtotime('-1week')),
