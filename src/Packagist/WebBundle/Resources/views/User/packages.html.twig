@@ -27,9 +27,9 @@
     {% endif %}
 
     <section class="{{ isActualUser ? 'col-md-9' : 'col-md-12' }}">
-        {% embed "PackagistWebBundle:Web:list.html.twig" with {'noLayout': 'true'} %}
+        {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
             {% block content_title %}
-                <h3 class="font-normal">Packages maintained by {{ isActualUser ? 'you' : user.username }}</h3>
+                <h3 class="font-normal profile-title">Packages maintained by {{ isActualUser ? 'you' : user.username }}</h3>
             {% endblock %}
         {% endembed %}
     </section>

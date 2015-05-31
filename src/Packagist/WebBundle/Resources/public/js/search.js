@@ -33,10 +33,6 @@
 
     doSearch = function () {
         var currentQuery,
-            orderBys,
-            orderBysStrParts,
-            joinedOrderBys,
-            joinedOrderBysQryStrPart,
             q,
             pathname,
             urlPrefix,
@@ -62,29 +58,9 @@
             return;
         }
 
+        $('.order-by-group .active').removeClass('active');
+
         if (window.history.pushState) {
-            orderBys = [];
-
-            $('#search_query_orderBys > div').each(function (i, e) {
-                var sort,
-                    order;
-                sort = $(e).find('input').val();
-                order = $(e).find('select').val();
-
-                orderBys.push({
-                    sort: sort,
-                    order: order
-                });
-            });
-
-            orderBysStrParts = [];
-
-            orderBys.forEach(function (e, i) {
-                orderBysStrParts.push('orderBys[' + i + '][sort]=' + e.sort + '&orderBys[' + i + '][order]=' + e.order);
-            });
-
-            joinedOrderBys = orderBysStrParts.join('&');
-
             q = encodeURIComponent($('input[type="search"]', form).val());
 
             pathname = window.location.pathname;
@@ -97,13 +73,7 @@
                 urlPrefix = '';
             }
 
-            if (joinedOrderBys === '') {
-                joinedOrderBysQryStrPart = '';
-            } else {
-                joinedOrderBysQryStrPart = '&' + joinedOrderBys;
-            }
-
-            url = urlPrefix + '/search/?q=' + q + joinedOrderBysQryStrPart;
+            url = urlPrefix + '/search/?q=' + q;
             title = 'Search';
 
             if (firstQuery) {
@@ -152,6 +122,10 @@
 
         currentSelected = list.find('ul.packages li.selected');
         nextSelected = (keymap.down === event.which) ? currentSelected.next('li') : currentSelected.prev('li');
+
+        if (currentSelected.length === 0 && keymap.down === event.which) {
+            currentSelected = list.find('ul.packages li:first').addClass('selected');
+        }
 
         if (keymap.enter === event.which && currentSelected.data('url')) {
             window.location = currentSelected.data('url');

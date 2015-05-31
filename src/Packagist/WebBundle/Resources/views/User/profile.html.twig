@@ -2,6 +2,8 @@
 
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
+{% set isActualUser = app.user and app.user.username is sameas(user.username) %}
+
 {% block content %}
 <h2 class="title">
     {{ user.username }}
@@ -15,9 +17,9 @@
 
 <section class="row">
     <section class="col-md-12">
-        {% embed "PackagistWebBundle:Web:list.html.twig" with {'noLayout': 'true'} %}
+        {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
             {% block content_title %}
-                <h3 class="font-normal">{{ user.username }}'s packages</h3>
+                <h3 class="font-normal profile-title">{{ user.username }}'s packages</h3>
             {% endblock %}
         {% endembed %}
     </section>

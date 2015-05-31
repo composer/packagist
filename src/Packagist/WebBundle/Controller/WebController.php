@@ -1329,7 +1329,7 @@ class WebController extends Controller
         return array(
             'downloads' => array(
                 'title' => 'Sort by downloads',
-                'class' => 'glyphicon-download',
+                'class' => 'glyphicon-arrow-down',
                 'arrowClass' => $makeDefaultArrow('downloads'),
                 'href' => $makeDefaultHref('downloads')
             ),

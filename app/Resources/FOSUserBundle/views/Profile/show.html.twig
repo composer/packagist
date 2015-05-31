@@ -5,7 +5,7 @@
 {% block fos_user_content %}
 <section class="col-md-9">
     {%- if app.user.apiToken %}
-        <h3 class="font-normal">Your API Token</h3>
+        <h3 class="font-normal profile-title">Your API Token</h3>
 
         <div class="input-group clearfix">
             <input id="api-token" type="text" class="form-control" value="" data-api-token="{{ app.user.apiToken }}" readonly="readonly">
@@ -29,7 +29,7 @@
         <hr>
     {%- endif %}
 
-    {% embed "PackagistWebBundle:Web:list.html.twig" with {'noLayout': 'true'} %}
+    {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: true} %}
         {% block content_title %}
             <h3 class="font-normal">Your packages</h3>
         {% endblock %}

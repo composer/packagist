@@ -493,19 +493,25 @@ ul.packages h1 {
 }
 
 ul.packages .metadata {
-  float: right;
   color: #555;
+  font-size: 15px;
+}
+ul.packages .metadata .glyphicon {
+  top: 3px;
+  margin: 0 1px;
   font-size: 18px;
-  margin-right: 10px;
-  padding-top: 8px;
+}
+ul.packages .metadata-block {
+  display: block;
+  margin-bottom: 10px;
+}
+ul.packages .metadata-block:last-child {
+  margin-bottom: 0;
 }
 
 ul.packages .abandoned {
-  float: right;
-  color: #800;
-  font-size: 12px;
-  margin-right: 10px;
-  margin-top: 5px;
+  color: #ff4533;
+  font-size: 18px;
 }
 
 .input-group input:focus:invalid:focus {
@@ -675,21 +681,11 @@ ul.packages .abandoned {
 
 /* Search */
 #search_query_query {
-  width: 890px;
-}
-.no-js #search_query_query {
-  width: 780px;
+  display: inline;
 }
 
 .wrapper-blue .sortable a {
   border: 0;
-}
-.sortable #search_query_query {
-  width: 777px;
-  display: inline;
-}
-.sortable .no-js #search_query_query {
-  width: 600px;
 }
 
 #search_query_orderBys {
@@ -697,15 +693,14 @@ ul.packages .abandoned {
 }
 
 .sortable .glyphicon.active {
-  color: #0013ff;
+  color: #00335D;
 }
 
 .sortable #order-bys-wrapper {
-  margin-left: 0.7em;
-  display: inline;
   font-size: 24px;
   position: relative;
-  top: 6px;
+  top: 15px;
+  margin-left: -12px;
 }
 
 .sortable .order-by-group .icon:first-child {
@@ -720,6 +715,7 @@ ul.packages .abandoned {
 .sortable #order-bys-wrapper a.clear {
   width: auto;
   margin-right: 0px;
+  margin-left: 5px;
 }
 
 #search-form .submit-wrapper {
@@ -743,14 +739,6 @@ ul.packages .abandoned {
 }
 
 
-.package .action.abandon input, .package .action.un-abandon input {
-  background: #ec400b;
-  background: -moz-linear-gradient(top, #ec400b 0%, #f5813f 100%);
-  background: -webkit-linear-gradient(top, #ec400b 0%, #f5813f 100%);
-  background: -o-linear-gradient(top, #ec400b 0%, #f5813f 100%);
-  background: -ms-linear-gradient(top, #ec400b 0%, #f5813f 100%);
-  background: linear-gradient(top, #ec400b 0%, #f5813f 100%);
-}
 .package .action.delete-version {
   float: none;
   display: inline-block;
@@ -763,7 +751,12 @@ ul.packages .abandoned {
 .package .action input.loading {
   background-position: 10px center;
   background-image: url("../img/loader.gif");
-  padding-left: 30px;
+  background-repeat: no-repeat;
+  padding-left: 35px;
+}
+.package .action {
+  margin-left: 5px;
+  margin-bottom: 5px;
 }
 
 .btn-github.disabled {
@@ -792,28 +785,12 @@ ul.packages .abandoned {
 }
 
 .pagination ul > li > a, .pagination ul > li > span {
-    background-color: #E8E2D8;
-    border-radius: 40px 40px 40px 40px;
-    color: #55606E;
-    float: left;
     font-size: 12px;
     font-weight: bold;
     height: 40px;
     text-align: center;
     text-decoration: none;
-    width: 40px;
-}
-
-.pagination ul > li:first-child > a, .pagination ul > li:first-child > span {
-    border-bottom-left-radius: 40px;
-    border-left-width: inherit;
-    border-top-left-radius: 40px;
-}
-
-.pagination ul > li:last-child > a, .pagination ul > li:last-child > span {
-    border-bottom-left-radius: 40px;
-    border-left-width: inherit;
-    border-top-left-radius: 40px;
+    min-width: 20px;
 }
 
 .legend {
@@ -843,19 +820,20 @@ pre {
 
 
 .wrapper .content h2.title, .wrapper .content h3.title {
-    margin: -15px 0 15px;
+    margin: -5px 0 15px;
     padding: 0 0 15px;
     border-bottom: 1px solid #DDDFE1;
     color: #2c3e50;
-    font-size: 55px;
-    font-weight: 600;
-    line-height: 60px;
 }
 
 .wrapper .content h3.title {
     padding: 0 0 15px;
     font-size: 40px;
     line-height: 45px;
+}
+.content h3.profile-title {
+    margin-top: 0;
+    margin-bottom: 20px;
 }
 
 .wrapper .content h2 {
@@ -877,7 +855,7 @@ pre {
 }
 
 .wrapper .content p {
-    line-height: 20px;
+    line-height: 150%;
     margin: 0;
     padding: 10px 0;
     vertical-align: baseline;
@@ -920,10 +898,9 @@ pre {
 }
 
 
-.notifications {
+.fos_user_profile_edit .notifications {
+    margin: 10px 0;
     float: left;
-    width: 99%;
-    margin-bottom: 10px;
 }
 
 
@@ -946,10 +923,10 @@ pre {
     font-size: 14px;
 }
 
-.packages li {
+.packages > li {
     padding: 5px 15px;
     margin-bottom: 10px;
-    background: #f0f5f3;
+    background: #F3F4F5;
     border-radius: 4px;
 }
 
@@ -959,17 +936,14 @@ pre {
 }
 
 .packages li h4 {
-    color: #2c3e50;
     font-size: 20px;
     margin-bottom: 0;
 }
 
 .packages li h4 small {
     margin-left: 5px;
-}
-
-.packages li .metadata span {
-    margin-left: 8px;
+    color: #83C129;
+    font-size: 16px;
 }
 
 [class^="icon-"]:before,
