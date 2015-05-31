@@ -46,7 +46,11 @@
                 {% else %}
                     <a href="{{ path('fos_user_registration_register') }}">Create a new account</a>
                     |
-                    <a href="{{ path('hwi_oauth_connect') }}">Login</a>
+                    <a href="{{ path('hwi_oauth_connect') }}">Login</a> (with
+                    {% for owner in hwi_oauth_resource_owners() %}
+                        <a href="{{ hwi_oauth_login_url(owner) }}">{{ owner | trans({}, 'HWIOAuthBundle') }}</a> 
+                    {% endfor %}
+		    )
                 {% endif %}
             </div>
 
