@@ -163,6 +163,7 @@
             {% if versions|length %}
                 <ul class="versions">
                     {% for version in versions %}
+                        {% set expanded = version.id == expandedVersion.id %}
                         <li class="version{% if loop.last %} last{% endif %}" id="{{ version.version }}">
                             <section>
                                 <h1>
@@ -186,12 +187,12 @@
                                     <span class="license{% if not version.license %} unknown{% endif %}">{{ version.license ? version.license|join(', ') : 'Unknown License' }}</span>
                                 </h1>
 
-                                <div class="details{% if loop.index0 == 0 %} open{% endif %}">
-                                    {% if loop.index0 == 0 %}
+                                <div class="details{% if expanded %} open{% endif %}">
+                                    {% if expanded %}
                                         {% include 'PackagistWebBundle:Web:versionDetails.html.twig' with {version: version} %}
                                     {% endif %}
                                 </div>
-                                <div class="details-toggler{% if loop.index0 == 0 %} open{% endif %}"{% if loop.index0 %} data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}"{% endif %}></div>
+                                <div class="details-toggler{% if expanded %} open{% endif %}"{% if not expanded %} data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}"{% endif %}></div>
                             </section>
                         </li>
                     {% endfor %}

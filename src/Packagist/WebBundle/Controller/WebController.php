@@ -653,10 +653,19 @@ class WebController extends Controller
             $version = $versionRepo->getFullVersion(reset($versions)->getId());
         }
 
+        $expandedVersion = reset($versions);
+        foreach ($versions as $v) {
+            if (!$v->isDevelopment()) {
+                $expandedVersion = $v;
+                break;
+            }
+        }
+
         $data = array(
             'package' => $package,
             'version' => $version,
             'versions' => $versions,
+            'expandedVersion' => $expandedVersion,
         );
 
         try {
