@@ -249,10 +249,10 @@ class WebControllerTest extends WebTestCase
 
         $kernelRootDir = $container->getParameter('kernel.root_dir');
 
-        $this->executeCommand($kernelRootDir . '/console doctrine:database:drop --env=test --force', false);
-        $this->executeCommand($kernelRootDir . '/console doctrine:database:create --env=test');
-        $this->executeCommand($kernelRootDir . '/console doctrine:schema:create --env=test');
-        $this->executeCommand($kernelRootDir . '/console redis:flushall --env=test -n');
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:drop --env=test --force', false);
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:create --env=test');
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:schema:create --env=test');
+        $this->executeCommand('php '.$kernelRootDir . '/console redis:flushall --env=test -n');
 
         $lock = $container->getParameter('kernel.cache_dir').'/composer-indexer.lock';
 
@@ -293,7 +293,7 @@ class WebControllerTest extends WebTestCase
 
         $onBeforeIndex($container, $twigPackage, $packagistPackage, $symfonyPackage);
 
-        $this->executeCommand($kernelRootDir . '/console packagist:index --env=test --force');
+        $this->executeCommand('php '.$kernelRootDir . '/console packagist:index --env=test --force');
 
         $client->request('GET', '/search.json?q=' . $orderBysQryStrPart);
 

@@ -3,19 +3,25 @@
     <div class="{% if orderBys is defined %}sortable{% endif %}">
         {{ form_errors(searchForm.query) }}
         {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'autofocus': 'autofocus', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
-        {% if orderBys is defined %}
-            <div id="order-bys-wrapper">
-                {% for sort,param in orderBys %}
-                    <a title="{{ param.title }}" href="{{ param.href }}">
-                        <i class="icon {{ param.class }}"></i>
+        {% set hasActiveOrderBy = false %}
+        {% spaceless %}
+        <div id="order-bys-wrapper">
+            {% for sort, param in orderBys %}
+                <a title="{{ param.title }}" href="{{ param.href }}" class="order-by-group">
+                    <i class="icon {{ param.class }}{% if param.arrowClass is empty %} inactive{% endif %}"></i>
+                    {% if param.arrowClass is not empty %}
                         <i class="icon {{ param.arrowClass }}"></i>
-                    </a>
-                {% endfor %}
+                        {% set hasActiveOrderBy = true %}
+                    {% endif %}
+                </a>
+            {% endfor %}
+            {% if hasActiveOrderBy %}
                 <a title="Clear order bys" href="?q={{ searchForm.vars.value.query }}" class="clear">
                     <i class="icon icon-remove-circle"></i>
                 </a>
-            </div>
-        {% endif  %}
+            {% endif %}
+        </div>
+        {% endspaceless %}
         <div
             class="hidden">
             {{ form_widget(searchForm.orderBys) }}

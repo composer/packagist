@@ -56,7 +56,7 @@ class WebController extends Controller
      */
     public function indexAction()
     {
-        return array('page' => 'home', 'searchForm' => $this->createSearchForm()->createView());
+        return array('page' => 'home');
     }
 
     /**
@@ -80,7 +80,6 @@ class WebController extends Controller
 
         $data['packages'] = $this->setupPager($packages, $page);
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
-        $data['searchForm'] = $this->createSearchForm()->createView();
 
         return $data;
     }
@@ -117,7 +116,6 @@ class WebController extends Controller
             'newlyReleased' => $newReleases,
             'random' => $random,
             'popular' => $popular,
-            'searchForm' => $this->createSearchForm()->createView(),
         );
 
         return $data;
@@ -161,7 +159,6 @@ class WebController extends Controller
 
         $data = array(
             'packages' => $packages,
-            'searchForm' => $this->createSearchForm()->createView(),
         );
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
 
@@ -231,125 +228,24 @@ class WebController extends Controller
         return new JsonResponse(array('packageNames' => $names));
     }
 
-    /**
-     * Initializes the pager for a query.
-     *
-     * @param \Doctrine\ORM\QueryBuilder $query Query for packages
-     * @param int                        $page  Pagenumber to retrieve.
-     * @return \Pagerfanta\Pagerfanta
-     */
-    protected function setupPager($query, $page)
+    public function searchFormAction(Request $req)
     {
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($query, true));
-        $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage($page, false, true);
+        $form = $this->createForm(new SearchQueryType, new SearchQuery);
 
-        return $paginator;
-    }
+        $filteredOrderBys = $this->getFilteredOrderedBys($req);
+        $normalizedOrderBys = $this->getNormalizedOrderBys($filteredOrderBys);
 
-    /**
-     * @param array $orderBys
-     *
-     * @return array
-     */
-    protected function getFilteredOrderedBys(array $orderBys)
-    {
-        if ($orderBys) {
-            $allowedSorts = array(
-                'downloads' => 1,
-                'favers' => 1
-            );
+        $this->computeSearchQuery($req, $filteredOrderBys);
 
-            $allowedOrders = array(
-                'asc' => 1,
-                'desc' => 1,
-            );
-
-            $filteredOrderBys = array();
-
-            foreach ($orderBys as $orderBy) {
-                if (isset($orderBy['sort'])
-                    && isset($allowedSorts[$orderBy['sort']])
-                    && isset($orderBy['order'])
-                    && isset($allowedOrders[$orderBy['order']])) {
-                    $filteredOrderBys[] = $orderBy;
-                }
-            }
-        } else {
-            $filteredOrderBys = array();
+        if ($req->query->has('search_query')) {
+            $form->bind($req);
         }
 
-        return $filteredOrderBys;
-    }
-
-    /**
-     * @param array $orderBys
-     *
-     * @return array
-     */
-    protected function getNormalizedOrderBys(array $orderBys)
-    {
-        $normalizedOrderBys = array();
-
-        foreach ($orderBys as $sort) {
-            $normalizedOrderBys[$sort['sort']] = $sort['order'];
-        }
-
-        return $normalizedOrderBys;
-    }
-
-    protected function getOrderBysViewModel(Request $req, $normalizedOrderBys)
-    {
-        $makeDefaultArrow = function ($sort) use ($normalizedOrderBys) {
-            if (isset($normalizedOrderBys[$sort])) {
-                if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
-                    $val = 'icon-arrow-up';
-                } else {
-                    $val = 'icon-arrow-down';
-                }
-            } else {
-                $val = '';
-            }
-
-            return $val;
-        };
-
-        $makeDefaultHref = function ($sort) use ($req, $normalizedOrderBys) {
-            if (isset($normalizedOrderBys[$sort])) {
-                if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
-                    $order = 'desc';
-                } else {
-                    $order = 'asc';
-                }
-            } else {
-                $order = 'desc';
-            }
-
-            return '?' . http_build_query(array(
-                'q' => $req->query->get('q') === null ? '' : $req->query->get('q'),
-                'orderBys' => array(
-                    array(
-                        'sort' => $sort,
-                        'order' => $order
-                    )
-                )
-            ));
-        };
-
-        return array(
-            'downloads' => array(
-                'title' => 'Clic to sort by downloads desc',
-                'class' => 'icon-download',
-                'arrowClass' => $makeDefaultArrow('downloads'),
-                'href' => $makeDefaultHref('downloads')
-            ),
-            'favers' => array(
-                'title' => 'Clic to sort by favorites desc',
-                'class' => 'icon-star',
-                'arrowClass' => $makeDefaultArrow('favers'),
-                'href' => $makeDefaultHref('favers')
-            ),
-        );
+        $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
+        return $this->render('PackagistWebBundle:Web:searchForm.html.twig', array(
+            'searchForm' => $form->createView(),
+            'orderBys' => $orderBysViewModel
+        ));
     }
 
     /**
@@ -358,36 +254,12 @@ class WebController extends Controller
      */
     public function searchAction(Request $req)
     {
-        $form = $this->createSearchForm();
+        $form = $this->createForm(new SearchQueryType, new SearchQuery);
 
-        $orderBys = $req->query->get('orderBys', array());
-
-        $filteredOrderBys = $this->getFilteredOrderedBys($orderBys);
+        $filteredOrderBys = $this->getFilteredOrderedBys($req);
         $normalizedOrderBys = $this->getNormalizedOrderBys($filteredOrderBys);
 
-        if ($req->getRequestFormat() !== 'json' && !$req->isXmlHttpRequest()) {
-            $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
-        }
-
-        // transform q=search shortcut
-        if ($req->query->has('q') || $req->query->has('orderBys')) {
-            $searchQuery = array();
-
-            $q = $req->query->get('q');
-
-            if ($q !== null) {
-                $searchQuery['query'] = $q;
-            }
-
-            if (!empty($filteredOrderBys)) {
-                $searchQuery['orderBys'] = $filteredOrderBys;
-            }
-
-            $req->query->set(
-                'search_query',
-                $searchQuery
-            );
-        }
+        $this->computeSearchQuery($req, $filteredOrderBys);
 
         $typeFilter = $req->query->get('type');
         $tagsFilter = $req->query->get('tags');
@@ -544,8 +416,6 @@ class WebController extends Controller
             return $this->render('PackagistWebBundle:Web:search.html.twig', array(
                 'packages' => $paginator,
                 'meta' => $metadata,
-                'searchForm' => $form->createView(),
-                'orderBys' => $orderBysViewModel
             ));
         } elseif ($req->getRequestFormat() === 'json') {
             return JsonResponse::create(array(
@@ -553,10 +423,7 @@ class WebController extends Controller
             ), 400)->setCallback($req->query->get('callback'));
         }
 
-        return $this->render('PackagistWebBundle:Web:search.html.twig', array(
-            'searchForm' => $form->createView(),
-            'orderBys' => $orderBysViewModel
-        ));
+        return $this->render('PackagistWebBundle:Web:search.html.twig');
     }
 
     /**
@@ -590,7 +457,7 @@ class WebController extends Controller
             }
         }
 
-        return array('form' => $form->createView(), 'page' => 'submit', 'searchForm' => $this->createSearchForm()->createView());
+        return array('form' => $form->createView(), 'page' => 'submit');
     }
 
     /**
@@ -673,8 +540,7 @@ class WebController extends Controller
             'packages' => $packages,
             'meta' => $this->getPackagesMetadata($packages),
             'vendor' => $vendor,
-            'paginate' => false,
-            'searchForm' => $this->createSearchForm()->createView()
+            'paginate' => false
         );
     }
 
@@ -720,8 +586,7 @@ class WebController extends Controller
             'name' => $name,
             'packages' => $providers,
             'meta' => $this->getPackagesMetadata($providers),
-            'paginate' => false,
-            'searchForm' => $this->createSearchForm()->createView()
+            'paginate' => false
         ));
     }
 
@@ -822,7 +687,6 @@ class WebController extends Controller
         } catch (ConnectionException $e) {
         }
 
-        $data['searchForm'] = $this->createSearchForm()->createView();
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
             $data['addMaintainerForm'] = $maintainerForm->createView();
         }
@@ -1131,7 +995,6 @@ class WebController extends Controller
             }
         }
 
-        $data['searchForm'] = $this->createSearchForm()->createView();
         return $data;
     }
 
@@ -1187,7 +1050,6 @@ class WebController extends Controller
             }
         }
 
-        $data['searchForm'] = $this->createSearchForm()->createView();
         return $data;
     }
 
@@ -1295,15 +1157,6 @@ class WebController extends Controller
         return new RedirectResponse('http://getcomposer.org/', 301);
     }
 
-    public function render($view, array $parameters = array(), Response $response = null)
-    {
-        if (!isset($parameters['searchForm'])) {
-            $parameters['searchForm'] = $this->createSearchForm()->createView();
-        }
-
-        return parent::render($view, $parameters, $response);
-    }
-
     private function createAddMaintainerForm($package)
     {
         if (!$user = $this->getUser()) {
@@ -1356,8 +1209,156 @@ class WebController extends Controller
         return $this->createFormBuilder(array())->getForm();
     }
 
-    private function createSearchForm()
+    /**
+     * Initializes the pager for a query.
+     *
+     * @param \Doctrine\ORM\QueryBuilder $query Query for packages
+     * @param int                        $page  Pagenumber to retrieve.
+     * @return \Pagerfanta\Pagerfanta
+     */
+    protected function setupPager($query, $page)
     {
-        return $this->createForm(new SearchQueryType, new SearchQuery);
+        $paginator = new Pagerfanta(new DoctrineORMAdapter($query, true));
+        $paginator->setMaxPerPage(15);
+        $paginator->setCurrentPage($page, false, true);
+
+        return $paginator;
+    }
+
+    /**
+     * @param array $orderBys
+     *
+     * @return array
+     */
+    protected function getFilteredOrderedBys(Request $req)
+    {
+        $orderBys = $req->query->get('orderBys', array());
+        if (!$orderBys) {
+            $orderBys = $req->query->get('search_query');
+            $orderBys = isset($orderBys['orderBys']) ? $orderBys['orderBys'] : array();
+        }
+
+        if ($orderBys) {
+            $allowedSorts = array(
+                'downloads' => 1,
+                'favers' => 1
+            );
+
+            $allowedOrders = array(
+                'asc' => 1,
+                'desc' => 1,
+            );
+
+            $filteredOrderBys = array();
+
+            foreach ($orderBys as $orderBy) {
+                if (isset($orderBy['sort'])
+                    && isset($allowedSorts[$orderBy['sort']])
+                    && isset($orderBy['order'])
+                    && isset($allowedOrders[$orderBy['order']])) {
+                    $filteredOrderBys[] = $orderBy;
+                }
+            }
+        } else {
+            $filteredOrderBys = array();
+        }
+
+        return $filteredOrderBys;
+    }
+
+    /**
+     * @param array $orderBys
+     *
+     * @return array
+     */
+    protected function getNormalizedOrderBys(array $orderBys)
+    {
+        $normalizedOrderBys = array();
+
+        foreach ($orderBys as $sort) {
+            $normalizedOrderBys[$sort['sort']] = $sort['order'];
+        }
+
+        return $normalizedOrderBys;
+    }
+
+    protected function getOrderBysViewModel(Request $req, $normalizedOrderBys)
+    {
+        $makeDefaultArrow = function ($sort) use ($normalizedOrderBys) {
+            if (isset($normalizedOrderBys[$sort])) {
+                if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
+                    $val = 'icon-arrow-up';
+                } else {
+                    $val = 'icon-arrow-down';
+                }
+            } else {
+                $val = '';
+            }
+
+            return $val;
+        };
+
+        $makeDefaultHref = function ($sort) use ($req, $normalizedOrderBys) {
+            if (isset($normalizedOrderBys[$sort])) {
+                if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
+                    $order = 'desc';
+                } else {
+                    $order = 'asc';
+                }
+            } else {
+                $order = 'desc';
+            }
+
+            $query = $req->query->get('search_query');
+            $query = isset($query['query']) ? $query['query'] : '';
+
+            return '?' . http_build_query(array(
+                'q' => $query,
+                'orderBys' => array(
+                    array(
+                        'sort' => $sort,
+                        'order' => $order
+                    )
+                )
+            ));
+        };
+
+        return array(
+            'downloads' => array(
+                'title' => 'Sort by downloads',
+                'class' => 'icon-download',
+                'arrowClass' => $makeDefaultArrow('downloads'),
+                'href' => $makeDefaultHref('downloads')
+            ),
+            'favers' => array(
+                'title' => 'Sort by favorites',
+                'class' => 'icon-star',
+                'arrowClass' => $makeDefaultArrow('favers'),
+                'href' => $makeDefaultHref('favers')
+            ),
+        );
+    }
+
+    private function computeSearchQuery(Request $req, array $filteredOrderBys)
+    {
+        // transform q=search shortcut
+        if ($req->query->has('q') || $req->query->has('orderBys')) {
+            $searchQuery = array();
+
+            $q = $req->query->get('q');
+
+            if ($q !== null) {
+                $searchQuery['query'] = $q;
+            }
+
+            if (!empty($filteredOrderBys)) {
+                $searchQuery['orderBys'] = $filteredOrderBys;
+            }
+
+            $req->query->set(
+                'search_query',
+                $searchQuery
+            );
+        }
     }
 }

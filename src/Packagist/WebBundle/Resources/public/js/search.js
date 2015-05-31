@@ -18,6 +18,9 @@
         list.html(newList.html());
         list.removeClass('hidden');
         list.find('ul.packages li:first').addClass('selected');
+        $('.order-by-group').attr('href', function (index, current) {
+            return current.replace(/q=.*?&/, 'q=' + encodeURIComponent($('input[type="search"]', form).val()) + '&')
+        });
 
         searching = false;
 

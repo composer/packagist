@@ -1,6 +1,10 @@
 imports:
     - { resource: config_dev.yml }
 
+parameters:
+    database_name: %database_name_test%
+    redis_dsn: %redis_dsn_test%
+
 framework:
     test: ~
     session:
