@@ -437,12 +437,45 @@ form ul {
 
 
 /* Search */
+
 #search_query_query {
   width: 890px;
 }
 .no-js #search_query_query {
   width: 780px;
 }
+
+.sortable #search_query_query {
+  width: 737px;
+  display: inline;
+}
+.sortable .no-js #search_query_query {
+  width: 600px;
+}
+
+#search_query_orderBys {
+  display: none;
+}
+
+.sortable #order-bys-wrapper {
+  margin-left: 0.7em;
+  display: inline;
+  font-size: 24px;
+  position: relative;
+  top: 4px;
+}
+
+.sortable #order-bys-wrapper a {
+  width: 46px;
+  margin-right: 7px;
+  display: inline-block;
+}
+
+.sortable #order-bys-wrapper a.clear {
+  width: auto;
+  margin-right: 0px;
+}
+
 #search-form .submit-wrapper {
   width: 100px;
   float: right;
