@@ -166,10 +166,15 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
     private function updateDocumentFromPackage(\Solarium_Document_ReadWrite $document, Package $package, $redis)
     {
+        $downloads = $this->getContainer()->get('packagist.download_manager')->getTotalDownloads($package);
+        $favorites = $this->getContainer()->get('packagist.favorite_manager')->getFaverCount($package);
+
         $document->setField('id', $package->getId());
         $document->setField('name', $package->getName());
         $document->setField('description', $package->getDescription());
         $document->setField('type', $package->getType());
+        $document->setField('downloads', $downloads);
+        $document->setField('favorites', $favorites);
         $document->setField('trendiness', $redis->zscore('downloads:trending', $package->getId()));
         $document->setField('repository', $package->getRepository());
         if ($package->isAbandoned()) {

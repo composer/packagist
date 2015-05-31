@@ -50,10 +50,12 @@
 
         if (window.history.pushState) {
             if (firstQuery) {
-                window.history.pushState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
+                window.history.pushState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()) +
+                  '&s=' + encodeURIComponent($('#search_query_sort_by').val()));
                 firstQuery = false;
             } else {
-                window.history.replaceState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
+                window.history.replaceState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()) +
+                  '&s=' + encodeURIComponent($('#search_query_sort_by').val()));
             }
         }
 
@@ -68,6 +70,8 @@
     };
 
     form.bind('keyup search', doSearch);
+
+    form.bind('change sort_by', doSearch);
 
     form.bind('keydown', function (event) {
         var keymap,

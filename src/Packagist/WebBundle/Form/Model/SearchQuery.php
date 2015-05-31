@@ -21,6 +21,11 @@ class SearchQuery
      */
     protected $query;
 
+    /**
+     * @var string
+     */
+    protected $sortBy;
+
     public function setQuery($query)
     {
         $this->query = $query;
@@ -29,5 +34,15 @@ class SearchQuery
     public function getQuery()
     {
         return $this->query;
+    }
+
+    public function setSortBy($sortBy)
+    {
+        $this->sortBy = $sortBy;
+    }
+
+    public function getSortBy()
+    {
+        return $this->sortBy;
     }
 }

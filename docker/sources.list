@@ -1,0 +1,10 @@
+# From http://debgen.simplylinux.ch/ :  Testing, 64 bits, Main, Security, Updates from USA
+
+deb http://ftp.us.debian.org/debian testing main
+
+deb http://ftp.debian.org/debian/ jessie-updates main
+
+deb http://security.debian.org/ jessie/updates main
+
+	
+
