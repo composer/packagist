@@ -12,13 +12,10 @@
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
         <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
 
-        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" type="text/css" />
-        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=15') }}" />
-        <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css?v=3') }}" />
-        <link rel="stylesheet" href="{{ asset('css/fontawesome/font-awesome.css') }}" />
-        <!--[if lt IE 8]>
-        <link rel="stylesheet" href="{{ asset('css/fontawesome/font-awesome-ie7.css') }}" />
-        <![endif]-->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" type="text/css" />
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=16') }}" />
+        <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css?v=4') }}" />
 
         {% block head_feeds %}
         <link rel="alternate" type="application/rss+xml" title="Newly Submitted Packages - Packagist" href="{{ url('feed_packages', {_format: 'rss'}) }}" />
@@ -137,57 +134,48 @@
 
         <section class="wrapper">
             <section class="container content" role="main">
-                {% block content %}{% endblock %}
+                {% block search_results %}
+                    <div class="row hidden">
+                        <div class="search-list col-md-12"></div>
+                    </div>
+                {% endblock %}
 
-                <div class="row hidden">
-                    <div class="search-list col-md-12"></div>
-                </div>
+                {% block content %}{% endblock %}
             </section>
         </section>
     </section>
 
         <footer class="wrapper-footer">
             <nav class="container">
-                <ul class="social col-xs-3 col-md-2 pull-right">
-                    <li><a href="http://github.com/composer/packagist" title="{{ 'menu.github'|trans }}"><span class="icon-github"></span></a></li>
-                    <li><a href="https://twitter.com/packagist" title="{{ 'menu.twitter'|trans }}"><span class="icon-twitter"></span></a></li>
-                    <li><a href="mailto:contact@packagist.org" title="{{ 'menu.contact'|trans }}"><span class="icon-mail"></span></a></li>
-                </ul>
+                <div class="row">
+                    <ul class="social col-xs-3 col-md-2 pull-right">
+                        <li><a href="http://github.com/composer/packagist" title="{{ 'menu.github'|trans }}"><span class="icon-github"></span></a></li>
+                        <li><a href="https://twitter.com/packagist" title="{{ 'menu.twitter'|trans }}"><span class="icon-twitter"></span></a></li>
+                        <li><a href="mailto:contact@packagist.org" title="{{ 'menu.contact'|trans }}"><span class="icon-mail"></span></a></li>
+                    </ul>
 
-                <ul class="col-xs-3 col-md-2">
-                    <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
-                    <li><a href="{{ path('feeds') }}">{{ 'menu.rss_feeds'|trans }}</a></li>
-                    <li><a href="{{ path('home') }}">{{ 'menu.home'|trans }}</a></li>
-                </ul>
+                    <ul class="col-xs-3 col-md-2">
+                        <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
+                        <li><a href="{{ path('feeds') }}">{{ 'menu.rss_feeds'|trans }}</a></li>
+                    </ul>
 
-                <ul class="col-xs-3 col-md-2">
-                {%- if app.user %}
-                    <li><a href="{{ path('fos_user_profile_show') }}">{{ 'menu.profile'|trans }}</a></li>
-                    <li><a href="{{ path('logout') }}">{{ 'menu.logout'|trans }}</a></li>
-                {%- else %}
-                    <li><a href="{{ path('fos_user_registration_register') }}">{{ 'menu.register'|trans }}</a></li>
-                    <li><a href="{{ path('hwi_oauth_connect') }}">{{ 'menu.login'|trans }}</a></li>
-                {%- endif %}
-                </ul>
+                    <ul class="col-xs-3 col-md-2">
+                        <li><a href="{{ path('stats') }}">{{ 'menu.stats'|trans }}</a></li>
+                        <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
+                    </ul>
+                </div>
 
-                <ul class="col-xs-3 col-md-2">
-                    <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
-                    <li><a href="{{ path('stats') }}">{{ 'menu.stats'|trans }}</a></li>
-                </ul>
-                <!--<ul>
-                    <li><a href="https://twitter.com/packagist">{{ 'menu.twitter'|trans }}</a></li>
-                    <li><a href="mailto:contact@packagist.org">{{ 'menu.contact'|trans }}</a></li>
-                </ul>
-                <p>Packagist maintenance and hosting is supported by <a href="https://toranproxy.com/">Toran Proxy</a></p>-->
+                <div class="row">
+                    <p class="toran col-xs-8 pull-right text-right">Packagist maintenance and hosting is supported by <a href="https://toranproxy.com/">Toran Proxy</a></p>
+                </div>
             </nav>
         </footer>
 
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-        <script>!window.jQuery && document.write(unescape('%3Cscript src="{{ asset('js/libs/jquery-1.8.2.min.js') }}"%3E%3C/script%3E'))</script>
+        <script src="//code.jquery.com/jquery-2.1.0.min.js"></script>
         <script src="{{ asset('js/libs/humane.min.js?v=2') }}"></script>
         <script src="{{ asset('js/libs/ZeroClipboard.min.js') }}"></script>
-        <script src="{{ asset('bundles/packagistweb/js/layout.js?v=2') }}"></script>
-        <script src="{{ asset('bundles/packagistweb/js/search.js?v=6')}}"></script>
+        <script src="{{ asset('bundles/packagistweb/js/layout.js?v=3') }}"></script>
+        <script src="{{ asset('bundles/packagistweb/js/search.js?v=7')}}"></script>
         <script src="//getbootstrap.com/dist/js/bootstrap.js"></script>
 
         {%- if not app.debug and google_analytics.ga_key %}

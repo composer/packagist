@@ -6,6 +6,10 @@
         'rgba(255,153,0,1)'
     ];
 
+    Chart.defaults.global.responsive = true;
+    Chart.defaults.global.animationSteps = 10;
+    Chart.defaults.global.tooltipYPadding = 10;
+
     $('canvas[data-labels]').each(function () {
         var element = $(this);
         var labels = element.attr('data-labels').split(',');
@@ -15,8 +19,20 @@
             labels: labels,
             datasets: []
         };
+        var scale = parseInt(element.attr('data-scale'), 10);
+        var scaleUnit = '';
+        switch (scale) {
+            case 1000:
+                scaleUnit = 'K';
+                break;
+            case 1000000:
+                scaleUnit = 'mio';
+                break;
+        }
+
         var opts = {
-            bezierCurve: false
+            bezierCurve: false,
+            scaleLabel: " <%=value%>" + scaleUnit
         };
 
         for (var i = 0; i < values.length; i++) {
@@ -28,7 +44,7 @@
                     pointStrokeColor: "#fff",
                     data: values[i].split(',')
                         .map(function (value) {
-                            return parseInt(value, 10);
+                            return Math.round(parseInt(value, 10) / scale, 2);
                         })
                 }
             );

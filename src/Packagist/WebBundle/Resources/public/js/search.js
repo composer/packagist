@@ -16,11 +16,12 @@
         var newList = $(page);
 
         list.html(newList.html());
-        list.removeClass('hidden');
+        list.parent().removeClass('hidden');
         list.find('ul.packages li:first').addClass('selected');
         $('.order-by-group').attr('href', function (index, current) {
             return current.replace(/q=.*?&/, 'q=' + encodeURIComponent($('input[type="search"]', form).val()) + '&')
         });
+        $('#order-bys-wrapper').removeClass('hidden');
 
         searching = false;
 
@@ -49,7 +50,8 @@
 
         if ($('#search_query_query').val().match(/^\s*$/) !== null) {
             if (!firstQuery) {
-                list.addClass('hidden');
+                list.parent().addClass('hidden');
+                $('#order-bys-wrapper').addClass('hidden');
             }
             return;
         }

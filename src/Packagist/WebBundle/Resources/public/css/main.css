@@ -349,7 +349,7 @@ footer p {
 }
 
 .wrapper-footer .social li {
-    float: left;
+    float: right;
     margin-left: 15px;
 }
 
@@ -681,6 +681,9 @@ ul.packages .abandoned {
   width: 780px;
 }
 
+.wrapper-blue .sortable a {
+  border: 0;
+}
 .sortable #search_query_query {
   width: 777px;
   display: inline;
@@ -693,8 +696,8 @@ ul.packages .abandoned {
   display: none;
 }
 
-.sortable .icon.inactive {
-  color: #555;
+.sortable .glyphicon.active {
+  color: #0013ff;
 }
 
 .sortable #order-bys-wrapper {
@@ -968,8 +971,6 @@ pre {
 .packages li .metadata span {
     margin-left: 8px;
 }
-
-
 
 [class^="icon-"]:before,
 [class*=" icon-"]:before {

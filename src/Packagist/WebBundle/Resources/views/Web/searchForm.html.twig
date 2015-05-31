@@ -5,19 +5,19 @@
 
         {% set hasActiveOrderBy = false %}
         {% spaceless %}
-        <div id="order-bys-wrapper">
+        <div id="order-bys-wrapper"{% if searchForm.vars.value.query is empty %} class="hidden"{% endif %}>
             {% for sort, param in orderBys %}
                 <a title="{{ param.title }}" href="{{ param.href }}" class="order-by-group">
-                    <i class="icon {{ param.class }}{% if param.arrowClass is empty %} inactive{% endif %}"></i>
+                    <i class="glyphicon {{ param.class }}{% if param.arrowClass is not empty %} active{% endif %}"></i>
                     {% if param.arrowClass is not empty %}
-                        <i class="icon {{ param.arrowClass }}"></i>
+                        <i class="glyphicon {{ param.arrowClass }} active"></i>
                         {% set hasActiveOrderBy = true %}
                     {% endif %}
                 </a>
             {% endfor %}
             {% if hasActiveOrderBy %}
-                <a title="Clear order bys" href="?q={{ searchForm.vars.value.query }}" class="clear">
-                    <i class="icon icon-remove-circle"></i>
+                <a title="Clear order bys" href="?q={{ searchForm.vars.value.query }} active" class="clear">
+                    <i class="glyphicon glyphicon-remove-circle"></i>
                 </a>
             {% endif %}
         </div>

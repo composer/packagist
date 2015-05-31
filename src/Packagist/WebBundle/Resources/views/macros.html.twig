@@ -10,8 +10,8 @@
                 <h4 class="font-bold">
                     {% if meta %}
                         <span class="metadata pull-right">
-                            <span class="icon-box"></span> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', ' ') }}
-                            <span class="glyphicon glyphicon-star"></span> {{ meta.favers[package.id]|number_format(0, '.', ' ') }}
+                            <i class="icon-box"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', ' ') }}
+                            <i class="glyphicon glyphicon-star"></i> {{ meta.favers[package.id]|number_format(0, '.', ' ') }}
                         </span>
                     {% endif %}
                     <a href="{{ packageUrl }}">{{ package.name }}</a>
@@ -24,7 +24,7 @@
                 </h4>
                 {% if package.abandoned is defined and package.abandoned %}
                     <span class="abandoned">
-                        <i class="icon-warning-sign"></i> Abandoned! {% if package.replacementPackage %}Use: <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a>{% endif %}
+                        <i class="glyphicon glyphicon-warning-sign"></i> Abandoned! {% if package.replacementPackage %}Use: <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a>{% endif %}
                     </span>
                 {% endif %}
                 {% if package.description is defined and package.description %}

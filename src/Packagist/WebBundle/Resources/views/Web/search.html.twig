@@ -1,14 +1,11 @@
 {% set showSearchDesc = packages is empty ? 'show' : 'hide' %}
 
 {% embed "PackagistWebBundle:Web:list.html.twig" %}
-    {% block content_title %}
-        <h3 class="title">Packages</h3>
+    {% block search_results %}
     {% endblock %}
 
     {% block content %}
-        {{ render(controller('PackagistWebBundle:Web:searchForm', { req: app.request })) }}
-
-        <div class="search-list">
+        <div class="search-results">
             {{ block('list') }}
         </div>
     {% endblock %}

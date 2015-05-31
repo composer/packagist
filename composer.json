@@ -37,7 +37,7 @@
         "jms/security-extra-bundle": "1.5.*",
         "jms/di-extra-bundle": "1.4.*",
 
-        "composer/composer": "1.0.x-dev",
+        "composer/composer": "~1.0@dev",
         "friendsofsymfony/user-bundle": "1.*",
         "hwi/oauth-bundle": "~0.4@dev",
         "nelmio/solarium-bundle": "~1.0",
@@ -50,10 +50,9 @@
         "zendframework/zend-uri": "2.0.*",
         "zendframework/zend-version": "2.0.*",
 
-        "kriswallsmith/assetic": "~1.2@alpha",
+        "kriswallsmith/assetic": "~1.2",
         "pagerfanta/pagerfanta": "~1.0",
-        "knplabs/knp-menu-bundle": "*@dev",
-        "knplabs/knp-menu": "*@dev"
+        "knplabs/knp-menu-bundle": "^2.0"
     },
     "scripts": {
         "post-install-cmd": [

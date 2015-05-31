@@ -402,7 +402,7 @@ class WebController extends Controller
 
             if ($req->isXmlHttpRequest()) {
                 try {
-                    return $this->render('PackagistWebBundle:Web:list.html.twig', array(
+                    return $this->render('PackagistWebBundle:Web:search.html.twig', array(
                         'packages' => $paginator,
                         'meta' => $metadata,
                         'noLayout' => true,
@@ -1290,9 +1290,9 @@ class WebController extends Controller
         $makeDefaultArrow = function ($sort) use ($normalizedOrderBys) {
             if (isset($normalizedOrderBys[$sort])) {
                 if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
-                    $val = 'icon-arrow-up';
+                    $val = 'glyphicon-arrow-up';
                 } else {
-                    $val = 'icon-arrow-down';
+                    $val = 'glyphicon-arrow-down';
                 }
             } else {
                 $val = '';
@@ -1329,13 +1329,13 @@ class WebController extends Controller
         return array(
             'downloads' => array(
                 'title' => 'Sort by downloads',
-                'class' => 'icon-download',
+                'class' => 'glyphicon-download',
                 'arrowClass' => $makeDefaultArrow('downloads'),
                 'href' => $makeDefaultHref('downloads')
             ),
             'favers' => array(
                 'title' => 'Sort by favorites',
-                'class' => 'icon-star',
+                'class' => 'glyphicon-star',
                 'arrowClass' => $makeDefaultArrow('favers'),
                 'href' => $makeDefaultHref('favers')
             ),
