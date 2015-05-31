@@ -4,6 +4,7 @@ parameters:
     database_name: packagist
     database_user: root
     database_password:
+    database_name_test: packagist_test
 
     mailer_transport:
     mailer_host: localhost
@@ -17,6 +18,7 @@ parameters:
     # router.request_context.scheme: https
 
     redis_dsn: redis://localhost/1
+    redis_dsn_test: redis://127.0.0.1/14
 
     locale: en
 

@@ -12,19 +12,13 @@
 
 namespace Packagist\WebBundle;
 
-use Packagist\WebBundle\DependencyInjection\Compiler\RepositoryPass;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class PackagistWebBundle extends Bundle
 {
-    public function build(ContainerBuilder $container)
-    {
-        parent::build($container);
 
-        $container->addCompilerPass(new RepositoryPass());
-    }
 }

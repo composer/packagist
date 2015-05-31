@@ -550,37 +550,50 @@ class SymlinkDumper
         return !is_dir($path);
     }
 
+    private function getTargetListingBlocks($now)
+    {
+        $blocks = array();
+
+        // monday last week
+        $blocks['latest'] = strtotime('monday last week', $now);
+
+        $month = date('n', $now);
+        $month = ceil($month / 3) * 3 - 2; // 1 for months 1-3, 10 for months 10-12
+        $block = new \DateTime(date('Y', $now).'-'.$month.'-01'); // 1st day of current trimester
+
+        // split last 12 months in 4 trimesters
+        for ($i=0; $i < 4; $i++) {
+            $blocks[$block->format('Y-m')] = $block->getTimestamp();
+            $block->sub(new \DateInterval('P3M'));
+        }
+
+        $year = (int) $block->format('Y');
+
+        while ($year >= 2013) {
+            $blocks[''.$year] = strtotime($year.'-01-01');
+            $year--;
+        }
+
+        return $blocks;
+    }
+
     private function getTargetListing($file)
     {
-        static $limitLatest, $thisYear, $limitArchived;
+        static $blocks;
 
-        if (!$limitLatest) {
-            $limitLatest   = new \DateTime('monday last week');
-            $thisYear      = new \DateTime(date('Y') . '-01-01');
-            $limitArchived = new \DateTime('2012-01-01');
+        if (!$blocks) {
+            $blocks = $this->getTargetListingBlocks(time());
         }
 
-        $mtime = new \DateTime();
-        $mtime->setTimestamp(filemtime($file));
+        $mtime = filemtime($file);
 
-        if ($mtime >= $limitLatest) {
-            $label = 'latest';
-        } elseif ($mtime >= $thisYear) {
-            // split current by chunks of 3 months, current month included
-            // past chunks will never be updated this year
-            $month = $mtime->format('n');
-            $month = ceil($month / 3) * 3;
-            $month = str_pad($month, 2, '0', STR_PAD_LEFT);
-
-            $label = $mtime->format('Y') . '-' . $month;
-        } elseif ($mtime >= $limitArchived) {
-            // split by years, limit at 2012 so we never update 'archived' again
-            $label = $mtime->format('Y');
-        } else {
-            $label = 'archived';
+        foreach ($blocks as $label => $block) {
+            if ($mtime >= $block) {
+                return "provider-${label}.json";
+            }
         }
 
-        return "provider-${label}.json";
+        return "provider-archived.json";
     }
 
     private function writeFile($path, $contents, $mtime = null)

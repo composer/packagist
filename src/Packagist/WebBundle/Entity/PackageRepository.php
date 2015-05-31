@@ -191,13 +191,16 @@ class PackageRepository extends EntityRepository
 
         return $conn->fetchAll(
             'SELECT p.id FROM package p
-            WHERE p.crawledAt IS NULL
-            OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
-            OR (p.crawledAt < :autocrawled)
+            WHERE p.abandoned = false
+            AND (
+                p.crawledAt IS NULL
+                OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
+                OR (p.crawledAt < :autocrawled)
+            )
             ORDER BY p.id ASC',
             array(
-                'crawled' => date('Y-m-d H:i:s', strtotime('-4hours')),
-                'autocrawled' => date('Y-m-d H:i:s', strtotime('-1week')),
+                'crawled' => date('Y-m-d H:i:s', strtotime('-1week')),
+                'autocrawled' => date('Y-m-d H:i:s', strtotime('-1month')),
             )
         );
     }
@@ -236,33 +239,6 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getSingleResult();
     }
 
-    public function getFullPackages(array $ids = null, $filters = array())
-    {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p', 'v', 't', 'a', 'req', 'devReq', 'sug', 'rep', 'con', 'pro')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->leftJoin('v.tags', 't')
-            ->leftJoin('v.authors', 'a')
-            ->leftJoin('v.require', 'req')
-            ->leftJoin('v.devRequire', 'devReq')
-            ->leftJoin('v.suggest', 'sug')
-            ->leftJoin('v.replace', 'rep')
-            ->leftJoin('v.conflict', 'con')
-            ->leftJoin('v.provide', 'pro')
-            ->orderBy('v.development', 'DESC')
-            ->addOrderBy('v.releasedAt', 'DESC');
-
-        if (null !== $ids) {
-            $qb->where($qb->expr()->in('p.id', ':ids'))
-                ->setParameter('ids', $ids);
-        }
-
-        $this->addFilters($qb, $filters);
-
-        return $qb->getQuery()->getResult();
-    }
-
     public function getPackagesWithVersions(array $ids = null, $filters = array())
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
@@ -299,6 +275,31 @@ class PackageRepository extends EntityRepository
 
         return $qb;
     }
+
+    public function isVendorTaken($vendor, User $user)
+    {
+        $query = $this->getEntityManager()
+            ->createQuery(
+                "SELECT p.name, m.id user_id
+                FROM Packagist\WebBundle\Entity\Package p
+                JOIN p.maintainers m
+                WHERE p.name LIKE :vendor")
+            ->setParameters(array('vendor' => $vendor.'/%'));
+
+        $rows = $query->getArrayResult();
+        if (!$rows) {
+            return false;
+        }
+
+        foreach ($rows as $row) {
+            if ($row['user_id'] === $user->getId()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 
     private function addFilters(QueryBuilder $qb, array $filters)
     {

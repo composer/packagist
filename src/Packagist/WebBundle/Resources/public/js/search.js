@@ -18,6 +18,9 @@
         list.html(newList.html());
         list.removeClass('hidden');
         list.find('ul.packages li:first').addClass('selected');
+        $('.order-by-group').attr('href', function (index, current) {
+            return current.replace(/q=.*?&/, 'q=' + encodeURIComponent($('input[type="search"]', form).val()) + '&')
+        });
 
         searching = false;
 
@@ -28,7 +31,16 @@
     };
 
     doSearch = function () {
-        var currentQuery;
+        var currentQuery,
+            orderBys,
+            orderBysStrParts,
+            joinedOrderBys,
+            joinedOrderBysQryStrPart,
+            q,
+            pathname,
+            urlPrefix,
+            url,
+            title;
 
         if (searching) {
             searchQueued = true;
@@ -49,11 +61,54 @@
         }
 
         if (window.history.pushState) {
+            orderBys = [];
+
+            $('#search_query_orderBys > div').each(function (i, e) {
+                var sort,
+                    order;
+                sort = $(e).find('input').val();
+                order = $(e).find('select').val();
+
+                orderBys.push({
+                    sort: sort,
+                    order: order
+                });
+            });
+
+            orderBysStrParts = [];
+
+            orderBys.forEach(function (e, i) {
+                orderBysStrParts.push('orderBys[' + i + '][sort]=' + e.sort + '&orderBys[' + i + '][order]=' + e.order);
+            });
+
+            joinedOrderBys = orderBysStrParts.join('&');
+
+            q = encodeURIComponent($('input[type="search"]', form).val());
+
+            pathname = window.location.pathname;
+
+            if (pathname.indexOf('/app_dev.php') === 0) {
+                urlPrefix = '/app_dev.php';
+            } else if (pathname.indexOf('/app.php') === 0) {
+                urlPrefix = '/app.php';
+            } else {
+                urlPrefix = '';
+            }
+
+            if (joinedOrderBys === '') {
+                joinedOrderBysQryStrPart = '';
+            } else {
+                joinedOrderBysQryStrPart = '&' + joinedOrderBys;
+            }
+
+            url = urlPrefix + '/search/?q=' + q + joinedOrderBysQryStrPart;
+            title = 'Search';
+
             if (firstQuery) {
-                window.history.pushState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
+                window.history.pushState(null, title, url);
                 firstQuery = false;
             } else {
-                window.history.replaceState(null, "Search", "/search/?q=" + encodeURIComponent($('input[type="search"]', form).val()));
+                window.history.replaceState(null, title, url);
             }
         }
 

@@ -673,6 +673,72 @@ ul.packages .abandoned {
     font-size: 22px;
 }
 
+/* Search */
+#search_query_query {
+  width: 890px;
+}
+.no-js #search_query_query {
+  width: 780px;
+}
+
+.sortable #search_query_query {
+  width: 777px;
+  display: inline;
+}
+.sortable .no-js #search_query_query {
+  width: 600px;
+}
+
+#search_query_orderBys {
+  display: none;
+}
+
+.sortable .icon.inactive {
+  color: #555;
+}
+
+.sortable #order-bys-wrapper {
+  margin-left: 0.7em;
+  display: inline;
+  font-size: 24px;
+  position: relative;
+  top: 6px;
+}
+
+.sortable .order-by-group .icon:first-child {
+  margin-right: 5px;
+}
+
+.sortable #order-bys-wrapper a {
+  margin-right: 7px;
+  display: inline-block;
+}
+
+.sortable #order-bys-wrapper a.clear {
+  width: auto;
+  margin-right: 0px;
+}
+
+#search-form .submit-wrapper {
+  width: 100px;
+  float: right;
+  display: none;
+}
+.no-js #search-form .submit-wrapper {
+  display: block;
+}
+#search-form .submit {
+  margin: 0;
+  padding: 6px 20px;
+  width: 100px;
+}
+#search-form p {
+  margin: 0;
+}
+.search-list {
+  margin-top: 10px;
+}
+
 
 .package .action.abandon input, .package .action.un-abandon input {
   background: #ec400b;

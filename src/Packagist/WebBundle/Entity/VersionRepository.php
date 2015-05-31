@@ -97,8 +97,10 @@ class VersionRepository extends EntityRepository
         $qb->select('v')
             ->from('Packagist\WebBundle\Entity\Version', 'v')
             ->where('v.development = false')
+            ->andWhere('v.releasedAt < :now')
             ->orderBy('v.releasedAt', 'DESC')
-            ->setMaxResults($count);
+            ->setMaxResults($count)
+            ->setParameter('now', date('Y-m-d H:i:s'));
 
         return $qb->getQuery()->useResultCache(true, 900, 'new_releases')->getResult();
     }

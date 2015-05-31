@@ -10,6 +10,11 @@ services:
         tags:
             - { name: twig.extension }
 
+    packagist.cache_listener:
+        class: Packagist\WebBundle\EventListener\CacheListener
+        tags:
+            - { name: kernel.event_listener, event: kernel.response, method: onResponse }
+
     packagist.package_dumper:
         class: Packagist\WebBundle\Package\SymlinkDumper
         arguments: [ @doctrine, @filesystem, @router, "%kernel.root_dir%/../web/", "%packagist_metadata_dir%" ]

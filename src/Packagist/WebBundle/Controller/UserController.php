@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Doctrine\ORM\NoResultException;
 use FOS\UserBundle\Model\UserInterface;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;

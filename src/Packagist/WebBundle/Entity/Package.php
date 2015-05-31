@@ -32,6 +32,7 @@ use Symfony\Component\Validator\ExecutionContextInterface;
  *     }
  * )
  * @Assert\Callback(methods={"isPackageUnique"})
+ * @Assert\Callback(methods={"isVendorWritable"})
  * @Assert\Callback(methods={"isRepositoryValid"}, groups={"Update", "Default"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
@@ -243,6 +244,24 @@ class Package
         try {
             if ($this->entityRepository->findOneByName($this->name)) {
                 $context->addViolationAt('repository', 'A package with the name <a href="'.$this->router->generate('view_package', array('name' => $this->name)).'">'.$this->name.'</a> already exists.', array(), null);
+            }
+        } catch (\Doctrine\ORM\NoResultException $e) {}
+    }
+
+    public function isVendorWritable(ExecutionContextInterface $context)
+    {
+        try {
+            $vendor = $this->getVendor();
+            if ($vendor && $this->entityRepository->isVendorTaken($vendor, reset($this->maintainers))) {
+                $context->addViolationAt(
+                    'repository',
+                    'The vendor is already taken by someone else. '
+                        . 'You may ask them to add your package and give you maintainership access. '
+                        . 'The packages already in that vendor namespace can be found at '
+                        . '<a href="'.$this->router->generate('view_vendor', array('vendor' => $vendor)).'">'.$vendor.'</a>',
+                    array(),
+                    null
+                );
             }
         } catch (\Doctrine\ORM\NoResultException $e) {}
     }

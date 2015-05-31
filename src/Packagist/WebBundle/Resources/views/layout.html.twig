@@ -131,9 +131,7 @@
 #}
         </header>
 
-        {%- if searchForm is defined %}
-            {{ include("PackagistWebBundle:Web:searchSection.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
-        {%- endif %}
+        {{ include("PackagistWebBundle:Web:searchSection.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
 
         {% block content_header %}{% endblock %}
 
@@ -191,7 +189,7 @@
         <script src="{{ asset('bundles/packagistweb/js/layout.js?v=2') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/search.js?v=6')}}"></script>
         <script src="//getbootstrap.com/dist/js/bootstrap.js"></script>
-{#
+
         {%- if not app.debug and google_analytics.ga_key %}
         <script>
             var _gaq=[['_setAccount','{{ google_analytics.ga_key }}'],['_trackPageview']];
@@ -200,7 +198,7 @@
             s.parentNode.insertBefore(g,s)}(document,'script'));
         </script>
         {%- endif %}
-#}
+
         {% block scripts %}{% endblock %}
     </body>
 </html>

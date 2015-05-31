@@ -6,6 +6,8 @@
     {% endblock %}
 
     {% block content %}
+        {{ render(controller('PackagistWebBundle:Web:searchForm', { req: app.request })) }}
+
         <div class="search-list">
             {{ block('list') }}
         </div>
