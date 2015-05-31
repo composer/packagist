@@ -214,10 +214,6 @@ div.box > p:last-child {
   margin-bottom: 0;
 }
 
-.package p {
-  margin-bottom: 0;
-}
-
 .user {
   text-align: right;
   padding: 4px 8px 5px;
@@ -506,10 +502,6 @@ form ul {
 /* Package */
 .package form h2 {
   margin: 10px 0;
-}
-.package > h1 {
-  float: left;
-  margin-right: 20px;
 }
 #copy {
   cursor: pointer;
