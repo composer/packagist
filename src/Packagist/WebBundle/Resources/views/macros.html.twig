@@ -43,11 +43,11 @@
     <ul class="list-unstyled">
         {% for package in packages %}
             <li>
-                <a href="{{ path('view_package', {'name' : package.name }) }}">{{ package.name }}{% if showVersion is defined %} <strong>{{ package.version }}</strong>{% endif %}</a>
+                <a href="{{ path('view_package', {'name' : package.name }) }}">{{ package.name }}{% if showVersion is defined and showVersion %}<strong>{{ package.version }}</strong>{% endif %}</a>
                 {{ package.description|truncate(60) }}
             </li>
         {% endfor %}
-        {% if showMoreUrl is defined %}
+        {% if showMoreUrl is defined and showMoreUrl %}
             <li><a href="{{ path('browse_popular') }}"><strong>See more...</strong></a></li>
         {% endif %}
     </ul>

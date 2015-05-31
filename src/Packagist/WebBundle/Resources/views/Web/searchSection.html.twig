@@ -1,6 +1,6 @@
 <section class="wrapper wrapper-blue">
     <div class="container">
-        {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
+        {{ render(controller('PackagistWebBundle:Web:searchForm', { req: app.request })) }}
 
         {%- if showSearchDesc == 'show' %}
         <div class="row">
