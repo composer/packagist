@@ -50,39 +50,9 @@ class ApiController extends Controller
             return new Response(file_get_contents($rootJson));
         }
 
-        if ($req->getHost() === 'packagist.org') {
-            $this->get('logger')->alert('packages.json is missing and the fallback controller is being hit');
+        $this->get('logger')->alert('packages.json is missing and the fallback controller is being hit, you need to use app/console packagist:dump');
 
-            return new Response('Horrible misconfiguration or the dumper script messed up', 404);
-        }
-
-        $em = $this->get('doctrine')->getManager();
-
-        gc_enable();
-
-        $packages = $em->getRepository('Packagist\WebBundle\Entity\Package')
-            ->getFullPackages();
-
-        $notifyUrl = $this->generateUrl('track_download', array('name' => 'VND/PKG'));
-
-        $data = array(
-            'notify' => str_replace('VND/PKG', '%package%', $notifyUrl),
-            'packages' => array(),
-        );
-        foreach ($packages as $package) {
-            $versions = array();
-            foreach ($package->getVersions() as $version) {
-                $versions[$version->getVersion()] = $version->toArray();
-                $em->detach($version);
-            }
-            $data['packages'][$package->getName()] = $versions;
-            $em->detach($package);
-        }
-        unset($versions, $package, $packages);
-
-        $response = new Response(json_encode($data), 200);
-        $response->setSharedMaxAge(120);
-        return $response;
+        return new Response('Horrible misconfiguration or the dumper script messed up, you need to use app/console packagist:dump', 404);
     }
 
     /**
