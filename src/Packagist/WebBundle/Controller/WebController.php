@@ -674,6 +674,7 @@ class WebController extends Controller
                 break;
             }
         }
+        $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
 
         $data = array(
             'package' => $package,

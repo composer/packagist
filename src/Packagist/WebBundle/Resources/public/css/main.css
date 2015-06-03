@@ -739,14 +739,11 @@ ul.packages .abandoned {
 }
 
 
-.package .action.delete-version {
-  float: none;
+.package .delete-version {
   display: inline-block;
-  height: 20px;
 }
-.package .action.delete-version input {
-  font-size: 10px;
-  padding: 3px;
+.package .delete-version .submit {
+  cursor: pointer;
 }
 .package .action input.loading {
   background-position: 10px center;
@@ -759,6 +756,18 @@ ul.packages .abandoned {
   margin-bottom: 5px;
 }
 
+.package .details {
+    line-height: 200%;
+}
+
+.package .tags a:before {
+  content: "#";
+}
+.package .tags a {
+  margin-right: 10px;
+  display: inline-block;
+}
+
 .btn-github.disabled {
     background: #ecf0f1;
     color: #bdc3c7;
@@ -767,6 +776,133 @@ ul.packages .abandoned {
 .btn-show-api-token {
     width: 19%;
 }
+
+
+
+
+
+
+
+
+.package .versions, .package .version-details{
+  margin-top: 20px;
+}
+.package .versions {
+  list-style: none;
+  line-height: 170%;
+}
+.package .versions .version {
+  padding: 2px 0 2px 5px;
+}
+.package .versions .version-number {
+  display: inline;
+  font-size: 12px;
+}
+.package .versions .open {
+  background: #F3F4F5;
+}
+
+.package .version-details .version-number {
+  font-size: 20px;
+  font-weight: bold;
+  color: #2C3E50;
+}
+.package .version-details .release-date {
+    float: right;
+}
+.package i {
+    color: #2C3E50;
+}
+.package .version {
+}
+.package .version.last {
+}
+.package .version h1 {
+}
+.package .version .source-reference {
+}
+.package .version .license .unknown {
+  color: #c00;
+}
+.package .version .details {
+  display: none;
+}
+.package .version .details.open {
+  display: block;
+}
+.package .package-links {
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.package .authors {
+  list-style: none;
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+.package .authors li {
+  display: inline;
+  margin-right: 5px;
+}
+.package .authors li:after {
+  content: ", ";
+}
+.package .authors li:last-child:after {
+  content: "";
+}
+.package .package-links ul {
+    padding-left: 18px;
+}
+.package .package-links .no-links {
+    color: #999;
+}
+.package .package-links li,
+.package .package-links .no-links,
+.package .version-details .license,
+.package .version-details .source-reference,
+.package .version-details .authors,
+.package .version-details .tags {
+    font-size: 12px;
+}
+.package .requireme {
+  padding: 3px 0 3px 0;
+}
+.package .requireme input {
+  border: 0 !important;
+  border-radius: 0;
+  background-color: transparent;
+  font-family: Courier;
+  min-width: 500px;
+  width: auto;
+}
+.package .details-toggler {
+}
+.package .details-toggler.open {
+}
+.package .details-toggler:hover {
+}
+
+/* TODO !!! */
+.package .mark-favorite {
+  font-size: 20px;
+  cursor: pointer;
+  color: #c4b90c;
+}
+.package .mark-favorite.icon-star {
+  color: #eadc00;
+}
+
+
+
+
+
+
+
+
+
+
 
 
 .pagination {
@@ -813,11 +949,9 @@ ul.packages .abandoned {
 }
 
 pre {
-    background: #f9f9f9;
-    margin: 3px 3px 10px;
-    padding: 7px 10px;
+    background: #F3F4F5;
+    border: none;
 }
-
 
 .wrapper .content h2.title, .wrapper .content h3.title {
     margin: -5px 0 15px;
@@ -849,15 +983,13 @@ pre {
 }
 
 .wrapper .content h2 a {
-    color: #30353E;
+    color: #2C3E50;
     font-weight: bold;
     text-decoration: none;
 }
 
 .wrapper .content p {
     line-height: 150%;
-    margin: 0;
-    padding: 10px 0;
     vertical-align: baseline;
 }
 
@@ -945,6 +1077,27 @@ pre {
     color: #83C129;
     font-size: 16px;
 }
+
+.alert {
+    background: none;
+    border: none;
+    border-left: 10px solid #000;
+    box-shadow: none;
+    border-radius: 2px;
+}
+.alert-warning {
+    border-left-color: #D58512;
+    color: #D58512;
+}
+.alert-danger {
+    border-left-color: #CD3729;
+    color: #CD3729;
+}
+.alert-success {
+    border-left-color: #69AD21;
+    color: #69AD21;
+}
+
 
 [class^="icon-"]:before,
 [class*=" icon-"]:before {

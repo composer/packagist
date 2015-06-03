@@ -1,33 +1,61 @@
 {% import "PackagistWebBundle::macros.html.twig" as packagist %}
+<div>
+    <span class="version-number">
+        {{- version.version -}}
+        {% if version.hasVersionAlias() %}
+            / {{ version.versionAlias }}
+        {%- endif -%}
+    </span>
 
-<p class="requireme"><input type="text" readonly="readonly" value="composer require {{ "'#{version.package.vendor}/#{version.package.packageName}:#{version.hasVersionAlias() ? version.requireVersionAlias : version.requireVersion}'" }}" /></p>
+    <span class="release-date">{{ version.releasedAt|date("Y-m-d H:i") }} UTC</span>
+</div class="version-number">
 
-<h2 class="authors">Author{{ version.authors|length > 1 ? 's' : '' }}</h2>
-<ul>
-    {% for author in version.authors %}
-        <li>
-            {%- if author.homepage -%}
-                <a href="{{ author.homepage }}">{{ author.name }}</a>
-            {%- else -%}
-                {{ author.name }}
-            {%- endif -%}
-            {% if author.email %} &lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif -%}
-        </li>
-    {% endfor %}
-</ul>
 <div class="clearfix package-links">
-    {% for type in ["require", "devRequire", "suggest", "provide", "conflict", "replace"] %}
-        <div class="{{ type }}s">
-            <h2>{{ ('link_type.' ~ type)|trans }}</h2>
-            {% if attribute(version, type)|length %}
-                <ul>
-                    {%- for link in attribute(version, type) -%}
-                        <li>{{ packagist.packageLink(link.packageName, type) }}: {{ link.packageVersion == 'self.version' ? version.version : link.packageVersion }}</li>
-                    {%- endfor -%}
-                </ul>
-            {% else %}
-                None
-            {% endif %}
+    {% for types in [["require", "devRequire", "suggest"], ["provide", "conflict", "replace"]] %}
+        <div class="row">
+            {% for type in types %}
+                <div class="{{ type }}s col-md-4 col-sm-6">
+                    <p class="link-type">{{ ('link_type.' ~ type)|trans }}</p>
+                    {% if attribute(version, type)|length %}
+                        <ul>
+                            {%- for link in attribute(version, type) -%}
+                                <li>{{ packagist.packageLink(link.packageName, type) }}: {{ link.packageVersion == 'self.version' ? version.version : link.packageVersion }}</li>
+                            {%- endfor -%}
+                        </ul>
+                    {% else %}
+                        <p class="no-links">None</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
         </div>
     {% endfor %}
 </div>
+
+<p class="license"><i class="glyphicon glyphicon-copyright-mark" title="License"></i> {% if not version.license %}<span class="unknown">{% endif %}{{ version.license ? version.license|join(', ') : 'Unknown License' }}{% if not version.license %}</span>{% endif %}</p>
+
+<p class="source-reference"><i class="glyphicon glyphicon-bookmark" title="Source Reference"></i> {{ version.source.reference }}</p>
+
+{% if version.authors|length %}
+    <i class="glyphicon glyphicon-user" title="Authors"></i>
+    <ul class="authors">
+        {% for author in version.authors %}
+            <li>
+                {%- if author.homepage -%}
+                    <a href="{{ author.homepage }}">{{ author.name }}</a>
+                {%- else -%}
+                    {{ author.name }}
+                {%- endif -%}
+                {% if author.email %} &lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif -%}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% if version.tags|length %}
+    <p class="tags">
+        <i class="glyphicon glyphicon-tag" title="Authors"></i>
+        {% for tag in version.tags -%}
+            <a href="{{ url("search", {tags: tag.name}) }}">{{ tag.name }}</a>
+        {%- endfor -%}
+    </p>
+{% endif %}
