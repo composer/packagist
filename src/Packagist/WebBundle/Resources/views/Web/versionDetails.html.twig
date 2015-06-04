@@ -1,5 +1,5 @@
 {% import "PackagistWebBundle::macros.html.twig" as packagist %}
-<div>
+<div class="title">
     <span class="version-number">
         {{- version.version -}}
         {% if version.hasVersionAlias() %}
@@ -11,10 +11,12 @@
 </div class="version-number">
 
 <div class="clearfix package-links">
-    {% for types in [["require", "devRequire", "suggest"], ["provide", "conflict", "replace"]] %}
+    {% for types in [["require", "devRequire", "suggest", "provide", "conflict", "replace"]] %}
         <div class="row">
             {% for type in types %}
-                <div class="{{ type }}s col-md-4 col-sm-6">
+                {% if loop.index0 is even %}<div class="clearfix visible-sm-block"></div>{% endif %}
+                {% if loop.index0 % 3 == 0 %}<div class="clearfix visible-md-block visible-lg-block"></div>{% endif %}
+                <div class="{{ type }}s col-sm-6 col-md-4 {% if not attribute(version, type)|length %}hidden-xs{% endif %}">
                     <p class="link-type">{{ ('link_type.' ~ type)|trans }}</p>
                     {% if attribute(version, type)|length %}
                         <ul>
@@ -31,31 +33,31 @@
     {% endfor %}
 </div>
 
-<p class="license"><i class="glyphicon glyphicon-copyright-mark" title="License"></i> {% if not version.license %}<span class="unknown">{% endif %}{{ version.license ? version.license|join(', ') : 'Unknown License' }}{% if not version.license %}</span>{% endif %}</p>
+<div class="metadata">
+    <p class="license"><i class="glyphicon glyphicon-copyright-mark" title="License"></i> {% if not version.license %}<span class="unknown">{% endif %}{{ version.license ? version.license|join(', ') : 'Unknown License' }}{% if not version.license %}</span>{% endif %} <span class="source-reference"><i class="glyphicon glyphicon-bookmark" title="Source Reference"></i> {{ version.source.reference }}</span></p>
 
-<p class="source-reference"><i class="glyphicon glyphicon-bookmark" title="Source Reference"></i> {{ version.source.reference }}</p>
+    {% if version.authors|length %}
+        <i class="glyphicon glyphicon-user" title="Authors"></i>
+        <ul class="authors">
+            {% for author in version.authors %}
+                <li>
+                    {%- if author.homepage -%}
+                        <a href="{{ author.homepage }}">{{ author.name }}</a>
+                    {%- else -%}
+                        {{ author.name }}
+                    {%- endif -%}
+                    {% if author.email %} &lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif -%}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 
-{% if version.authors|length %}
-    <i class="glyphicon glyphicon-user" title="Authors"></i>
-    <ul class="authors">
-        {% for author in version.authors %}
-            <li>
-                {%- if author.homepage -%}
-                    <a href="{{ author.homepage }}">{{ author.name }}</a>
-                {%- else -%}
-                    {{ author.name }}
-                {%- endif -%}
-                {% if author.email %} &lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif -%}
-            </li>
-        {% endfor %}
-    </ul>
-{% endif %}
-
-{% if version.tags|length %}
-    <p class="tags">
-        <i class="glyphicon glyphicon-tag" title="Authors"></i>
-        {% for tag in version.tags -%}
-            <a href="{{ url("search", {tags: tag.name}) }}">{{ tag.name }}</a>
-        {%- endfor -%}
-    </p>
-{% endif %}
+    {% if version.tags|length %}
+        <p class="tags">
+            <i class="glyphicon glyphicon-tag" title="Authors"></i>
+            {% for tag in version.tags -%}
+                <a href="{{ url("search", {tags: tag.name}) }}">{{ tag.name }}</a>
+            {%- endfor -%}
+        </p>
+    {% endif %}
+</div>

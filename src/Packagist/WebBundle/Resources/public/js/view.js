@@ -62,7 +62,7 @@
             dataType: 'json',
             cache: false,
             success: function () {
-                $(this).toggleClass('icon-star icon-star-empty');
+                $(this).toggleClass('is-starred');
             },
             context: this
         };
@@ -70,7 +70,7 @@
         if ($(this).is('.loading')) {
             return;
         }
-        if ($(this).is('.icon-star')) {
+        if ($(this).is('.is-starred')) {
             options.type = 'DELETE';
             options.url = $(this).data('remove-url');
         } else {
@@ -83,12 +83,14 @@
     });
     $('.package .delete').submit(function (e) {
         e.preventDefault();
-        if (window.confirm('Are you sure?')) {
-            e.target.submit();
-        }
+        e.target.submit();
     });
-    $('.package .delete-version').click(function (e) {
+    $('.package .delete-version .submit').click(function (e) {
+        e.preventDefault();
         e.stopImmediatePropagation();
+        if (window.confirm('Are you sure?')) {
+            $(e.target).closest('.delete-version').submit();
+        }
     });
     $('.package .delete-version').submit(function (e) {
         e.preventDefault();
@@ -102,6 +104,15 @@
     });
     if ($('.package').data('force-crawl')) {
         forceUpdatePackage(null, true);
+    }
+
+    var versionsList = $('.package .versions')[0];
+    if (versionsList.offsetHeight < versionsList.scrollHeight) {
+        $('.package .versions-expander').removeClass('hidden').on('click', function () {
+            $(this).addClass('hidden')
+            $(versionsList).css('overflow-y', 'visible')
+                .css('max-height', 'auto');
+        });
     }
 
     ZeroClipboard.setMoviePath("/js/libs/ZeroClipboard.swf");

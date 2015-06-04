@@ -2,8 +2,8 @@
     "use strict";
 
     var colors = [
-        'rgba(0,0,255,1)',
-        'rgba(255,153,0,1)'
+        'rgba(6,143,213,1)',
+        'rgba(44,62,80,1)'
     ];
 
     Chart.defaults.global.responsive = true;

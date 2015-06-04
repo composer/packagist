@@ -5,10 +5,10 @@
     <p>Packagist is a Composer package repository. It lets you find packages and lets Composer know where to get the code from. You can use Composer to manage your project or libraries' dependencies - read more about it on the <a href="http://getcomposer.org/">Composer website</a>.</p>
     <p>You can find the packagist.org source on <a href="https://github.com/composer/packagist">GitHub</a>.</p>
 
-    <h2 class="font-normal" id="how-to-submit-packages">How to submit packages?</h2>
+    <h2 class="title" id="how-to-submit-packages">How to submit packages?</h2>
     <section class="row">
         <section class="col-md-6">
-            <h3 class="font-slim" id="naming-your-package">Naming your package</h3>
+            <h3 id="naming-your-package">Naming your package</h3>
             <p>First of all, you must pick a package name. This is a very important step since it can not change and it should be unique enough to avoid conflicts in the future.</p>
             <p>The package name consists of a vendor name and a project name joined by a <code>/</code>. The vendor name exists to prevent naming conflicts. For example, by including a vendor name both <code>igorw</code> and <code>seldaek</code> can have a library named <code>json</code> by naming their packages <code>igorw/json</code> and <code>seldaek/json</code>.</p>
             <p>In some cases the vendor name and the package name may be identical. An example of this would be `monolog/monolog`. For projects with a unique name this is recommended. It also allows adding more related projects under the same vendor later on. If you are maintaining a library, this would make it really easy to split it up into smaller decoupled parts.</p>
@@ -27,7 +27,7 @@ acme/email</code></pre>
         </section>
 
         <section class="col-md-6">
-            <h3 class="font-slim" id="creating-a-composerjson-file">Creating a composer.json file</h3>
+            <h3 id="creating-a-composerjson-file">Creating a composer.json file</h3>
             <p>The composer.json file should reside at the top of your package's git/svn/.. repository, and is the way you describe your package to both packagist and composer.</p>
             <p>A typical composer.json file looks like this:</p>
             <pre><code>{
@@ -59,7 +59,7 @@ acme/email</code></pre>
         </section>
 
         <section class="col-md-6">
-            <h3 class="font-slim" id="managing-package-versions">Managing package versions</h3>
+            <h3 id="managing-package-versions">Managing package versions</h3>
             <p>New versions of your package are automatically fetched from tags you create in your VCS repository.</p>
             <p>The easiest way to manage versioning is to just omit the version field from the composer.json file. The version numbers will then be parsed from the tag and branch names.</p>
             <p>Tag/version names should match 'X.Y.Z', or 'vX.Y.Z', with an optional suffix for RC, beta, alpha or patch versions. Here are a few examples of valid tag names:</p>
@@ -73,20 +73,22 @@ v2.0.4-p1</code></pre>
         </section>
 
         <section class="col-md-6">
-            <h3 class="font-slim" id="update-schedule">Update Schedule</h3>
+            <h3 id="update-schedule">Update Schedule</h3>
             <p>New packages will be crawled <strong>immediately</strong> after submission if you have JS enabled.</p>
             <p>Existing packages without auto-updating (GitHub/BitBucket hook) will be crawled <strong>once a day</strong> for updates. When a hook is enabled packages are crawled whenever you push, or at least once a week in case the crawl failed. You can also trigger a manual update on your package page if you are logged-in as a maintainer.</p>
             <p>It is highly recommended to set up the <strong>GitHub/BitBucket service hook</strong> for all your packages. This reduces the load on our side, and ensures your package is updated almost instantly. Check the how-to in your <a href="{{ path('fos_user_profile_show') }}">profile</a> page.</p>
             <p>The search index is updated <strong>every five minutes</strong>. It will index (or reindex) any package that has been crawled since the last time the search indexer ran.</p>
         </section>
 
-        <section class="col-md-12">
-            <h3 class="font-slim" id="community">Community</h3>
+        <div class="clearfix"></div>
+
+        <section class="col-md-6">
+            <h3 id="community">Community</h3>
             <p>If you have questions about composer or want to help out, come and join us in the <em><a href="irc://irc.freenode.net/#composer">#composer</a></em> channel on irc.freenode.net. You can find more community resources in the <a href="https://getcomposer.org/doc/06-community.md">Composer documentation</a>.</p>
         </section>
 
-        <section class="col-md-12">
-            <h3 class="font-slim" id="community">Contributing</h3>
+        <section class="col-md-6">
+            <h3 id="community">Contributing</h3>
             <p>To report issues or contribute code you can find the source repository on <a href="https://github.com/composer/packagist">GitHub</a>.</p>
         </section>
     </section>

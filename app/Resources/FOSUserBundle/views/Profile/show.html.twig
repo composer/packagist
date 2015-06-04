@@ -7,7 +7,7 @@
     {%- if app.user.apiToken %}
         <h3 class="font-normal profile-title">Your API Token</h3>
 
-        <div class="input-group clearfix">
+        <div class="input-group api-token-group clearfix">
             <input id="api-token" type="text" class="form-control" value="" data-api-token="{{ app.user.apiToken }}" readonly="readonly">
             <span class="input-group">
                 <button class="btn btn-success btn-show-api-token" type="button">Show API Token</button>

@@ -1,7 +1,7 @@
 <form id="search-form" action="{{ path('search.ajax') }}" method="GET" {{ form_enctype(searchForm) }} autocomplete="off">
     <div class="{% if orderBys is defined %}sortable{% endif %} row">
         <div class="hidden">{{ form_errors(searchForm.query) }}</div>
-        <div class="col-xs-8 col-lg-10">
+        <div class="col-xs-9">
             {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'autofocus': 'autofocus', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
         </div>
 

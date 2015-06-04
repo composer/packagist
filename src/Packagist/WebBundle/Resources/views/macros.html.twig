@@ -7,32 +7,36 @@
                 {% set packageUrl = path('view_providers', { 'name' : package.name }) %}
             {% endif %}
             <li data-url="{{ packageUrl }}" class="row">
-                <div class="col-sm-9 col-lg-10">
-                    <h4 class="font-bold">
-                        <a href="{{ packageUrl }}">{{ package.name }}</a>
-                        {% if package.id is not numeric or package.name == 'nelmio/alice' %}
-                            <small>(Virtual Package)</small>
-                        {% endif %}
-                        {% if showAutoUpdateWarning and not package.autoUpdated %}
-                            <small>(Not Auto-Updated)</small>
-                        {% endif %}
-                    </h4>
-                    {% if package.description is defined and package.description %}
-                        <p>{{ package.description }}</p>
-                    {% endif %}
-                    {% if package.abandoned is defined and package.abandoned %}
-                        <p class="abandoned">
-                            <i class="glyphicon glyphicon-exclamation-sign"></i> Abandoned! {% if package.replacementPackage %}See <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a>{% endif %}
-                        </p>
-                    {% endif %}
-                </div>
-                <div class="col-sm-3 col-lg-2">
-                    {% if meta %}
-                        <p class="metadata">
-                            <span class="metadata-block"><i class="glyphicon glyphicon-arrow-down"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', '&#8201;')|raw }}</span>
-                            <span class="metadata-block"><i class="glyphicon glyphicon-star"></i> {{ meta.favers[package.id]|number_format(0, '.', '&#8201;')|raw }}</span>
-                        </p>
-                    {% endif %}
+                <div class="col-xs-12 package-item">
+                    <div class="row">
+                        <div class="col-sm-9 col-lg-10">
+                            <h4 class="font-bold">
+                                <a href="{{ packageUrl }}">{{ package.name }}</a>
+                                {% if package.id is not numeric or package.name == 'nelmio/alice' %}
+                                    <small>(Virtual Package)</small>
+                                {% endif %}
+                                {% if showAutoUpdateWarning and not package.autoUpdated %}
+                                    <small>(Not Auto-Updated)</small>
+                                {% endif %}
+                            </h4>
+                            {% if package.description is defined and package.description %}
+                                <p>{{ package.description }}</p>
+                            {% endif %}
+                            {% if package.abandoned is defined and package.abandoned %}
+                                <p class="abandoned">
+                                    <i class="glyphicon glyphicon-exclamation-sign"></i> Abandoned! {% if package.replacementPackage %}See <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a>{% endif %}
+                                </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-3 col-lg-2">
+                            {% if meta %}
+                                <p class="metadata">
+                                    <span class="metadata-block"><i class="glyphicon glyphicon-arrow-down"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', '&#8201;')|raw }}</span>
+                                    <span class="metadata-block"><i class="glyphicon glyphicon-star"></i> {{ meta.favers[package.id]|number_format(0, '.', '&#8201;')|raw }}</span>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </li>
         {% endfor %}
@@ -52,7 +56,7 @@
             </li>
         {% endfor %}
         {% if showMoreUrl is defined and showMoreUrl %}
-            <li><a href="{{ path('browse_popular') }}"><strong>See more...</strong></a></li>
+            <li><a href="{{ path('browse_popular') }}">See more...</a></li>
         {% endif %}
     </ul>
 {% endmacro %}

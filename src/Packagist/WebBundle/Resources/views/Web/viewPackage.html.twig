@@ -11,162 +11,180 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('bundles/packagistweb/js/view.js?v=13')}}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/view.js?v=14')}}"></script>
 {% endblock %}
 
+{% block description -%}
+    {{ package.description }}
+{%- endblock %}
+
+{% set hasActions = is_granted('ROLE_EDIT_PACKAGES') or is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
+
 {% block content %}
-    <div class="box">
-        <div class="package"{% if app.user and package.crawledAt is null and (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %} data-force-crawl="true"{% endif %}>
-            <section class="row">
-                {% set hasActions = is_granted('ROLE_EDIT_PACKAGES') or is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
+    <div class="row">
+        <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %} data-force-crawl="true"{% endif %}>
+            <div class="package-header">
 
-                <div class="{% if hasActions %}col-sm-6 col-md-8{% else %}col-xs-12{% endif %}">
-                    <h2 class="title">
-                        {% if is_favorite is defined %}
-                            <i class="mark-favorite icon-star{% if not is_favorite %}-empty{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></i>
-                        {% endif %}
-                        <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
-                        <a id="copy" data-clipboard-text="{{ package.name }}" title="Copy to clipboard"><i class="icon-copy"></i></a>
-                    </h2>
-                    <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="composer require {{ "#{version.package.vendor}/#{version.package.packageName}" }}" /></p>
-                </div>
-
-                {% if hasActions %}
-                    <div class="col-sm-6 col-md-4 btn-group btn-group-xs">
-                        {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
-                            <form class="pull-right action" action="{{ path("edit_package", {name: package.name}) }}">
-                                <input class="btn btn-default" type="submit" value="Edit" />
-                            </form>
-                        {% endif %}
-                        {% if is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
-                            <form class="force-update pull-right action" action="{{ path('update_package', {name: package.name}) }}" method="POST">
-                                <input type="hidden" name="_method" value="PUT" />
-                                <input type="hidden" name="update" value="1" />
-                                <input class="btn btn-success" type="submit" value="Update" />
-                            </form>
-                        {% endif %}
-                        {% if deleteForm is defined %}
-                            <form class="delete pull-right action" action="{{ path('delete_package', {name: package.name}) }}" method="POST">
-                                <input type="hidden" name="_method" value="DELETE" />
-                                {{ form_widget(deleteForm._token) }}
-                                <input class="btn btn-danger" type="submit" value="Delete" />
-                            </form>
-                        {% endif %}
-                        {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and not package.abandoned %}
-                            <form class="pull-right action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
-                                <input class="btn btn-warning" type="submit" value="Abandon" />
-                            </form>
-                        {% endif %}
-                        {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and package.abandoned %}
-                            <form class="pull-right action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
-                                <input class="btn btn-default" type="submit" value="Un-abandon" />
-                            </form>
-                        {% endif %}
+                <div class="row">
+                    <div class="col-md-9">
+                        <h2 class="title">
+                            {% if is_favorite is defined %}
+                                <i class="mark-favorite glyphicon glyphicon-star {% if is_favorite %}is-starred{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></i>
+                            {% endif %}
+                            <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
+                        </h2>
                     </div>
-                {% endif %}
-            </section>
-
-            {% if not package.autoUpdated and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
-                {% if "github.com" in package.repository %}
-                    <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('fos_user_profile_show') }}">GitHub Service Hook</a> for Packagist so that it gets updated whenever you push!</div>
-                {% elseif "bitbucket.org" in package.repository %}
-                    <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('fos_user_profile_show') }}">BitBucket POST Service</a> for Packagist so that it gets updated whenever you push!</div>
-                {% endif %}
-            {% endif %}
-
-            {% if package.abandoned %}
-                <div class="alert alert-warning">
-                    This package is <strong>abandoned</strong> and no longer maintained.
-                    {% if package.replacementPackage is not empty %}
-                        The author suggests using the <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
-                    {% else %}
-                        No replacement package was suggested.
-                        {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %}
-                            <a href="{{ path('abandon_package', {name: package.name}) }}">Suggest a replacement.</a>
-                        {% endif %}
-                    {% endif %}
                 </div>
-            {% endif %}
-            {% if package.updateFailureNotified
-                and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES'))
-            %}
-                <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Force Update" above to see details.</div>
-            {% endif %}
-
-            <p class="description">{{ package.description }}</p>
+            </div>
 
             <div class="row">
-                <p class="details col-md-6">
-                    {% set repoUrl = package.repository|replace({'git://github.com/': 'https://github.com/', 'git@github.com:': 'https://github.com/'}) %}
-                    <span class="canonical"><i class="icon-box"></i> <a href="{{ repoUrl }}">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a></span><br />
-                    <span class="maintainers"><i class="glyphicon glyphicon-user"></i>
-                    {% for maintainer in package.maintainers -%}
-                        <a href="{{ path('user_profile', {'name': maintainer.username}) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
-                    {% endfor %}
-                    {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
-                        {% if addMaintainerForm is defined %}<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
-                        {% if addMaintainerForm is defined and removeMaintainerForm is defined %} / {% endif %}
-                        {% if removeMaintainerForm is defined %}<a id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
-                    {% endif %}
-                    <br />
-                    {% if version and version.homepage %}
-                        <i class="glyphicon glyphicon-home"></i> <a href="{{ version.homepage }}">Homepage</a><br />
-                    {% endif %}
-                    {% if version.support.source is defined %}
-                        <i class="glyphicon glyphicon-home"></i> <a href="{{ version.support.source }}">Source</a><br />
-                    {% endif %}
-                    {% if version and version.support.issues is defined %}
-                        <i class="glyphicon glyphicon-home"></i> <a href="{{ version.support.issues }}">Issues</a><br />
-                    {% endif %}
-                    {% if version and version.support.irc is defined %}
-                        <i class="glyphicon glyphicon-home"></i> <a href="{{ version.support.irc }}">IRC</a><br />
-                    {% endif %}
-                    {% if version and version.support.forum is defined %}
-                        <i class="glyphicon glyphicon-home"></i> <a href="{{ version.support.forum }}">Forum</a><br />
-                    {% endif %}
-                    {% if version and version.support.wiki is defined %}
-                        <i class="glyphicon glyphicon-home"></i> <a href="{{ version.support.wiki }}">Wiki</a><br />
-                    {% endif %}
-                    {% if version and version.support.docs is defined %}
-                        <i class="glyphicon glyphicon-home"></i> <a href="{{ version.support.docs }}">Documentation</a><br />
-                    {% endif %}
-                </p>
+                <div class="col-md-8">
+                    <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="composer require {{ "#{version.package.vendor}/#{version.package.packageName}" }}" /></p>
 
-                <p class="downloads col-md-6">
-                    <span>Overall:</span> {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', ' ') }} install{{ downloads.total == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
-                    <span>30 days:</span> {% if downloads.monthly is defined %}{{ downloads.monthly|number_format(0, '.', ' ') }} install{{ downloads.monthly == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
-                    <span>Today:</span> {% if downloads.daily is defined %}{{ downloads.daily|number_format(0, '.', ' ') }} install{{ downloads.daily == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
-                </p>
+                    {% if not package.autoUpdated and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
+                        {% if "github.com" in package.repository %}
+                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('fos_user_profile_show') }}">GitHub Service Hook</a> for Packagist so that it gets updated whenever you push!</div>
+                        {% elseif "bitbucket.org" in package.repository %}
+                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('fos_user_profile_show') }}">BitBucket POST Service</a> for Packagist so that it gets updated whenever you push!</div>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if package.abandoned %}
+                        <div class="alert alert-warning">
+                            This package is <strong>abandoned</strong> and no longer maintained.
+                            {% if package.replacementPackage is not empty %}
+                                The author suggests using the <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
+                            {% else %}
+                                No replacement package was suggested.
+                                {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %}
+                                    <a href="{{ path('abandon_package', {name: package.name}) }}">Suggest a replacement.</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% if package.updateFailureNotified
+                        and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES'))
+                    %}
+                        <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Force Update" above to see details.</div>
+                    {% endif %}
+
+                    <p class="description">{{ package.description }}</p>
+
+                    {% if hasActions %}
+                        <div class="btn-group btn-group-xs">
+                            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and not package.abandoned %}
+                                <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
+                                    <input class="btn btn-warning" type="submit" value="Abandon" />
+                                </form>
+                            {% endif %}
+                            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and package.abandoned %}
+                                <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
+                                    <input class="btn btn-default" type="submit" value="Un-abandon" />
+                                </form>
+                            {% endif %}
+                            {% if deleteForm is defined %}
+                                <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="POST">
+                                    <input type="hidden" name="_method" value="DELETE" />
+                                    {{ form_widget(deleteForm._token) }}
+                                    <input class="btn btn-danger" type="submit" value="Delete" />
+                                </form>
+                            {% endif %}
+                            {% if is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
+                                <form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="POST">
+                                    <input type="hidden" name="_method" value="PUT" />
+                                    <input type="hidden" name="update" value="1" />
+                                    <input class="btn btn-success" type="submit" value="Update" />
+                                </form>
+                            {% endif %}
+                            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
+                                <form class="action" action="{{ path("edit_package", {name: package.name}) }}">
+                                    <input class="btn btn-primary" type="submit" value="Edit" />
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-offset-1 col-md-3">
+                    <div class="row package-aside">
+                        <div class="details col-xs-12 col-sm-6 col-md-12">
+                            {% set repoUrl = package.repository|replace({'git://github.com/': 'https://github.com/', 'git@github.com:': 'https://github.com/'}) %}
+                            <p class="canonical">
+                                <i class="icon-box" title="Canonical Repository URL"></i>
+                                <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
+                            </p>
+                            <p class="maintainers">
+                                <i class="glyphicon glyphicon-user"></i>
+                                {% for maintainer in package.maintainers -%}
+                                    <a href="{{ path('user_profile', {'name': maintainer.username}) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
+                                {% endfor %}
+                                {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
+                                    {% if addMaintainerForm is defined %}<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
+                                    {% if addMaintainerForm is defined and removeMaintainerForm is defined %} / {% endif %}
+                                    {% if removeMaintainerForm is defined %}<a id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
+                                {% endif %}
+                            </p>
+
+                            {% if version and version.homepage %}
+                                <p><i class="glyphicon glyphicon-home"></i> <a href="{{ version.homepage }}">Homepage</a></p>
+                            {% endif %}
+                            {% if version.support.source is defined %}
+                                <p><i class="glyphicon glyphicon-align-left"></i> <a href="{{ version.support.source }}">Source</a></p>
+                            {% endif %}
+                            {% if version and version.support.issues is defined %}
+                                <p><i class="glyphicon glyphicon-exclamation-sign"></i> <a href="{{ version.support.issues }}">Issues</a></p>
+                            {% endif %}
+                            {% if version and version.support.irc is defined %}
+                                <p><i class="glyphicon glyphicon-comment"></i> <a href="{{ version.support.irc }}">IRC</a></p>
+                            {% endif %}
+                            {% if version and version.support.forum is defined %}
+                                <p><i class="glyphicon glyphicon-comment"></i> <a href="{{ version.support.forum }}">Forum</a></p>
+                            {% endif %}
+                            {% if version and version.support.wiki is defined %}
+                                <p><i class="glyphicon glyphicon-book"></i> <a href="{{ version.support.wiki }}">Wiki</a></p>
+                            {% endif %}
+                            {% if version and version.support.docs is defined %}
+                                <p><i class="glyphicon glyphicon-book"></i> <a href="{{ version.support.docs }}">Documentation</a></p>
+                            {% endif %}
+                        </div>
+
+                        <p class="downloads col-xs-12 col-sm-6 col-md-12">
+                            <span>Overall:</span> {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }} install{{ downloads.total == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
+                            <span>30 days:</span> {% if downloads.monthly is defined %}{{ downloads.monthly|number_format(0, '.', '&#8201;')|raw }} install{{ downloads.monthly == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
+                            <span>Today:</span> {% if downloads.daily is defined %}{{ downloads.daily|number_format(0, '.', '&#8201;')|raw }} install{{ downloads.daily == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
-                <div>
+                <div class="row">
                     {% if addMaintainerForm is defined %}
-                        <form id="add-maintainer-form" class="{{ show_add_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('add_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(addMaintainerForm) }}>
+                        <form id="add-maintainer-form" class="col-sm-6 col-sm-offset-6 {{ show_add_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('add_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(addMaintainerForm) }}>
                             <div>
-                                <h2>Add Maintainer</h2>
+                                <h4>Add Maintainer</h4>
                                 <p>
                                     {{ form_label(addMaintainerForm.user, "Username") }}
                                     {{ form_errors(addMaintainerForm.user) }}
                                     {{ form_widget(addMaintainerForm.user) }}
                                 </p>
                                 {{ form_rest(addMaintainerForm) }}
-                                <input id="submit-new-maintainer" type="submit" value="Submit" />
+                                <input class="btn btn-block btn-success btn-lg" type="submit" value="Add Maintainer" />
                             </div>
                         </form>
                     {% endif %}
 
                     {% if removeMaintainerForm is defined %}
-                        <form id="remove-maintainer-form" class="{{ show_remove_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('remove_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(removeMaintainerForm) }}>
+                        <form id="remove-maintainer-form" class="col-sm-6 col-sm-offset-6 {{ show_remove_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('remove_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(removeMaintainerForm) }}>
                             <div>
-                                <h2>Remove Maintainer</h2>
+                                <h4>Remove Maintainer</h4>
                                 <p>
                                     {{ form_label(removeMaintainerForm.user, "Username") }}
                                     {{ form_errors(removeMaintainerForm.user) }}
                                     {{ form_widget(removeMaintainerForm.user) }}
                                 </p>
                                 {{ form_rest(removeMaintainerForm) }}
-                                <input id="submit-del-maintainer" type="submit" value="Submit" />
+                                <input class="btn btn-block btn-danger btn-lg" type="submit" value="Remove Maintainer" />
                             </div>
                         </form>
                     {% endif %}
@@ -174,12 +192,17 @@
             {% endif %}
 
             {% if versions|length %}
-            <div class="row">
-                <ul class="versions col-md-3 col-lg-2">
-                    {% for version in versions %}
-                        {% set expanded = version.id == expandedVersion.id %}
-                        <li class="version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="{{ version.version }}">
-                            <span class="details-toggler" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
+            <div class="row versions-section">
+                <div class="version-details col-md-9">
+                    {% if version %}
+                        {% include 'PackagistWebBundle:Web:versionDetails.html.twig' with {version: expandedVersion} %}
+                    {% endif %}
+                </div>
+                <div class="col-md-3 package-aside versions-wrapper">
+                    <ul class="versions">
+                        {% for version in versions %}
+                            {% set expanded = version.id == expandedVersion.id %}
+                            <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
                                 <a href="#{{ version.version }}" class="version-number">
                                     {{- version.version -}}
                                     {% if version.hasVersionAlias() %}
@@ -194,19 +217,17 @@
                                     <i class="submit glyphicon glyphicon-remove"></i>
                                 </form>
                                 {% endif %}
-                            </span>
-                        </li>
-                    {% endfor %}
-                </ul>
-                <div class="version-details col-md-9 col-lg-10">
-                    {% if version %}
-                        {% include 'PackagistWebBundle:Web:versionDetails.html.twig' with {version: expandedVersion} %}
-                    {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="hidden versions-expander">
+                        <i class="glyphicon glyphicon-chevron-down"></i>
+                    </div>
                 </div>
             {% elseif package.crawledAt is null %}
-                <p>This package has not been crawled yet, some information is missing.</p>
+                <p class="col-xs-12">This package has not been crawled yet, some information is missing.</p>
             {% else %}
-                <p>This package has no released version yet, and little information is available.</p>
+                <p class="col-xs-12">This package has no released version yet, and little information is available.</p>
             {% endif %}
         </div>
     </div>

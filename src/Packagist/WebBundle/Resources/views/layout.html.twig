@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
 
         <title>{% block title %}Packagist{% endblock %}</title>
-        <meta name="description" content="The PHP package archivist." />
+        <meta name="description" content="{% block description %}The PHP Package Repository{% endblock %}" />
         <meta name="author" content="Jordi Boggiano" />
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -39,7 +39,7 @@
                             <span class="icon-bar"></span>
                             <span class="icon-bar"></span>
                         </button>
-                        <h1 class="navbar-brand"><a href="{{ path('home') }}">Packagist</a> <em class="hidden-sm">The PHP package archivist.</em></h1>
+                        <h1 class="navbar-brand"><a href="{{ path('home') }}">Packagist</a> <em class="hidden-sm hidden-xs">The PHP Package Repository</em></h1>
                     </div>
 
                     <div class="collapse navbar-collapse">
@@ -99,7 +99,10 @@
                             </li>
                         {%- endif %}
                             <li>
-                                <a style="background: #83c129;" href="{{ path('submit') }}">Submit Package</a>
+                                <a style="background: #83c129;" href="{{ path('browse') }}">Browse</a>
+                            </li>
+                            <li>
+                                <a style="background: #83c129;" href="{{ path('submit') }}">Submit</a>
                             </li>
                         </ul>
                     </div>

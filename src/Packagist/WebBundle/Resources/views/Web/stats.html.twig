@@ -9,7 +9,7 @@
 
     <section class="row">
         <div class="col-lg-12">
-            <h2>Packages/versions over time</h2>
+            <h3>Packages/versions over time</h3>
 
             <p class="row">
                 <canvas class="col-xs-12" width="500" height="200" data-labels="{{ chart.months|join(',') }}" data-scale="1000" data-values="{{ chart.versions|join(',') }}|{{ chart.packages|join(',') }}">
@@ -23,7 +23,7 @@
             <p>The last data point is for the current month and shows partial data.</p>
 
             {% if downloadsChart %}
-                <h2>Packages installed in the last 30 days</h2>
+                <h3>Packages installed in the last 30 days</h3>
                 <p class="row">
                     <canvas class="col-xs-12" width="500" height="200" data-labels="{{ downloadsChart.labels|join(',') }}" data-scale="1000" data-values="{{ downloadsChart.values|join(',') }}">
                         Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
@@ -34,7 +34,7 @@
                 </ul>
             {% endif %}
             {% if downloadsChartMonthly %}
-                <h2>Packages installed per month</h2>
+                <h3>Packages installed per month</h3>
                 <p class="row">
                     <canvas class="col-xs-12" width="500" height="200" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-scale="1000000" data-values="{{ downloadsChartMonthly.values|join(',') }}">
                         Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
@@ -46,22 +46,22 @@
                 <p>The last data point is for the current month and shows partial data.</p>
             {% endif %}
 
-            <h2>Totals</h2>
+            <h3>Totals</h3>
             <dl class="dl-horizontal">
-                <dt class="font-bold">Packages registered</dt>
-                <dd class="font-slim">{{ packages|number_format(0, '.', " ") }}</dd>
+                <dt class="font-normal">Packages registered</dt>
+                <dd class="font-normal">{{ packages|number_format(0, '.', "&#8201;")|raw }}</dd>
 
-                <dt class="font-bold">Versions available</dt>
-                <dd class="font-slim">{{ versions|number_format(0, '.', " ") }}</dd>
+                <dt class="font-normal">Versions available</dt>
+                <dd class="font-normal">{{ versions|number_format(0, '.', "&#8201;")|raw }}</dd>
 
-                <dt class="font-bold">Packages installed<br><small>(since {{ downloadsStartDate }})</small></dt>
-                <dd class="font-slim">{{ downloads == 'N/A' ? downloads : downloads|number_format(0, '.', " ") }}</dd>
+                <dt class="font-normal">Packages installed<br><small>(since {{ downloadsStartDate }})</small></dt>
+                <dd class="font-normal">{% if downloads == 'N/A' %}{{ downloads }}{% else %}{{ downloads|number_format(0, '.', "&#8201;")|raw }}{% endif %}</dd>
             </dl>
         </div>
     </section>
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('js/libs/Chart.js/Chart.min.js') }}"></script>
-    <script src="{{ asset('bundles/packagistweb/js/charts.js') }}"></script>
+    <script src="{{ asset('js/libs/Chart.js/Chart.min.js?v=2') }}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/charts.js?v=2') }}"></script>
 {% endblock %}
