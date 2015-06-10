@@ -550,29 +550,50 @@ class SymlinkDumper
         return !is_dir($path);
     }
 
+    private function getTargetListingBlocks($now)
+    {
+        $blocks = array();
+
+        // monday last week
+        $blocks['latest'] = strtotime('monday last week', $now);
+
+        $month = date('n', $now);
+        $month = ceil($month / 3) * 3 - 2; // 1 for months 1-3, 10 for months 10-12
+        $block = new \DateTime(date('Y', $now).'-'.$month.'-01'); // 1st day of current trimester
+
+        // split last 12 months in 4 trimesters
+        for ($i=0; $i < 4; $i++) {
+            $blocks[$block->format('Y-m')] = $block->getTimestamp();
+            $block->sub(new \DateInterval('P3M'));
+        }
+
+        $year = (int) $block->format('Y');
+
+        while ($year >= 2013) {
+            $blocks[''.$year] = strtotime($year.'-01-01');
+            $year--;
+        }
+
+        return $blocks;
+    }
+
     private function getTargetListing($file)
     {
-        static $firstOfTheMonth;
-        if (!$firstOfTheMonth) {
-            $date = new \DateTime;
-            $date->setDate($date->format('Y'), $date->format('m'), 1);
-            $date->setTime(0, 0, 0);
-            $firstOfTheMonth = $date->format('U');
+        static $blocks;
+
+        if (!$blocks) {
+            $blocks = $this->getTargetListingBlocks(time());
         }
 
         $mtime = filemtime($file);
 
-        if ($mtime < $firstOfTheMonth - 86400 * 180) {
-            return 'provider-archived.json';
-        }
-        if ($mtime < $firstOfTheMonth - 86400 * 60) {
-            return 'provider-stale.json';
-        }
-        if ($mtime < $firstOfTheMonth - 86400 * 10) {
-            return 'provider-active.json';
+        foreach ($blocks as $label => $block) {
+            if ($mtime >= $block) {
+                return "provider-${label}.json";
+            }
         }
 
-        return 'provider-latest.json';
+        return "provider-archived.json";
     }
 
     private function writeFile($path, $contents, $mtime = null)

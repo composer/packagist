@@ -5,7 +5,7 @@
 
 {% block search %}
     <div class="box clearfix">
-        {% include "PackagistWebBundle:Web:searchForm.html.twig" %}
+        {{ render(controller('PackagistWebBundle:Web:searchForm', { req: app.request })) }}
 
         <div class="search-list {% if packages is not defined %}hidden{% endif %}">
             {% if packages is defined %}

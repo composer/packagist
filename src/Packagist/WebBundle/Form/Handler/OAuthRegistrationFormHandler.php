@@ -16,7 +16,6 @@ use FOS\UserBundle\Model\UserManagerInterface;
 use FOS\UserBundle\Util\TokenGeneratorInterface;
 use HWI\Bundle\OAuthBundle\Form\RegistrationFormHandlerInterface;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
-use HWI\Bundle\OAuthBundle\OAuth\Response\AdvancedUserResponseInterface;
 use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -52,10 +51,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
         // Try to get some properties for the initial form when coming from github
         if ('GET' === $request->getMethod()) {
             $user->setUsername($this->getUniqueUsername($userInformation->getNickname()));
-
-            if ($userInformation instanceof AdvancedUserResponseInterface) {
-                $user->setEmail($userInformation->getEmail());
-            }
+            $user->setEmail($userInformation->getEmail());
         }
 
         $form->setData($user);

@@ -93,14 +93,10 @@ class Updater
             $start = new \DateTime();
         }
         $pruneDate = clone $start;
-        $pruneDate->modify('-8days');
+        $pruneDate->modify('-1min');
 
         $versions = $repository->getPackages();
         $em = $this->doctrine->getManager();
-
-        if ($repository->hadInvalidBranches()) {
-            throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
-        }
 
         usort($versions, function ($a, $b) {
             $aVersion = $a->getVersion();
@@ -169,6 +165,9 @@ class Updater
         $package->setUpdatedAt(new \DateTime);
         $package->setCrawledAt(new \DateTime);
         $em->flush();
+        if ($repository->hadInvalidBranches()) {
+            throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
+        }
     }
 
     private function updateInformation(Package $package, PackageInterface $data, $flags)
