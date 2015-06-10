@@ -3,7 +3,7 @@ parameters:
     database_host: <%= node[:packagist][:db][:host] %>
     database_name: <%= node[:packagist][:db][:name] %>
     database_user: <%= node[:packagist][:db][:user] %>
-    database_password: <%= node[:packagist][:db][:password] %>
+    database_password: <%= node[:packagist][:db][:pass] %>
 
     mailer_transport:
     mailer_host: localhost
@@ -24,8 +24,8 @@ parameters:
         ga_key:
 
     # set those to values obtained by creating an application at https://github.com/settings/applications
-    github.client_id:
-    github.client_secret:
+    github.client_id: <%= node[:packagist][:git][:client_id] %>
+    github.client_secret: <%= node[:packagist][:git][:client_secret] %>
 
     # -- performance features --
     # set both to apc to optimize things if it is available
