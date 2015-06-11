@@ -47,7 +47,6 @@
                         {%- if app.user %}
                             <li class="nav-user">
                                 <section>
-                                    <img width="57" height="57" alt="" src="http://www.gravatar.com/avatar/{{ app.user.email|gravatar_hash }}">
                                     <a href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a>
 
                                     <section class="nav-user-menu">
@@ -57,7 +56,7 @@
                             </li>
                         {%- else %}
                             <li>
-                                <a href="{{ path('fos_user_registration_register') }}">Create a new account</a>
+                                <a href="{{ path('fos_user_registration_register') }}">Create account</a>
                             </li>
                             <li class="nav-user">
                                 <section class="nav-user-signin">
@@ -86,7 +85,7 @@
                                             {%- endif %}
 
                                             <div class="signin-box-buttons">
-                                                <a href="{{ hwi_oauth_login_url('github') }}" class="pull-right btn btn-github"><span class="icon-github"></span>Use Github</a>
+                                                <a href="{{ hwi_oauth_login_url('github') }}" class="pull-right btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
                                                 <button type="submit" class="btn btn-success" id="_submit" name="_submit">{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}</button>
                                             </div>
                                         </form>
@@ -99,10 +98,10 @@
                             </li>
                         {%- endif %}
                             <li>
-                                <a style="background: #83c129;" href="{{ path('browse') }}">Browse</a>
+                                <a href="{{ path('browse') }}">Browse</a>
                             </li>
                             <li>
-                                <a style="background: #83c129;" href="{{ path('submit') }}">Submit</a>
+                                <a href="{{ path('submit') }}">Submit</a>
                             </li>
                         </ul>
                     </div>
@@ -152,13 +151,13 @@
         <footer class="wrapper-footer">
             <nav class="container">
                 <div class="row">
-                    <ul class="social col-xs-3 col-md-2 pull-right">
+                    <ul class="social col-xs-5 col-md-2 pull-right">
                         <li><a href="http://github.com/composer/packagist" title="{{ 'menu.github'|trans }}"><span class="icon-github"></span></a></li>
                         <li><a href="https://twitter.com/packagist" title="{{ 'menu.twitter'|trans }}"><span class="icon-twitter"></span></a></li>
                         <li><a href="mailto:contact@packagist.org" title="{{ 'menu.contact'|trans }}"><span class="icon-mail"></span></a></li>
                     </ul>
 
-                    <ul class="col-xs-3 col-md-2">
+                    <ul class="col-xs-4 col-md-2">
                         <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
                         <li><a href="{{ path('feeds') }}">{{ 'menu.rss_feeds'|trans }}</a></li>
                     </ul>
@@ -170,7 +169,7 @@
                 </div>
 
                 <div class="row">
-                    <p class="toran col-xs-8 pull-right text-right">Packagist maintenance and hosting is supported by <a href="https://toranproxy.com/">Toran Proxy</a></p>
+                    <p class="toran col-xs-12">Packagist maintenance and hosting is supported by <a href="https://toranproxy.com/">Toran Proxy</a></p>
                 </div>
             </nav>
         </footer>

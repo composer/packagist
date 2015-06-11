@@ -26,7 +26,6 @@ class PackageType extends AbstractType
         $builder->add('repository', 'text', array(
             'label' => 'Repository URL (Git/Svn/Hg)',
             'attr'  => array(
-                'class'       => 'input-lg',
                 'placeholder' => 'i.e.: git://github.com/composer/composer.git',
             )
         ));

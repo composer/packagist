@@ -108,43 +108,41 @@
                 <div class="col-md-offset-1 col-md-3">
                     <div class="row package-aside">
                         <div class="details col-xs-12 col-sm-6 col-md-12">
-                            {% set repoUrl = package.repository|replace({'git://github.com/': 'https://github.com/', 'git@github.com:': 'https://github.com/'}) %}
-                            <p class="canonical">
-                                <i class="icon-box" title="Canonical Repository URL"></i>
-                                <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
-                            </p>
                             <p class="maintainers">
-                                <i class="glyphicon glyphicon-user"></i>
                                 {% for maintainer in package.maintainers -%}
-                                    <a href="{{ path('user_profile', {'name': maintainer.username}) }}">{{ maintainer.username }}</a>{{ loop.last ? '' : ', ' }}
+                                    <a href="{{ path('user_profile', {'name': maintainer.username}) }}"><img width="48" height="48" title="{{ maintainer.username }}" src="http://www.gravatar.com/avatar/{{ maintainer.email|gravatar_hash }}?s=48&amp;d=identicon"></a>
                                 {% endfor %}
                                 {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
                                     {% if addMaintainerForm is defined %}<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
-                                    {% if addMaintainerForm is defined and removeMaintainerForm is defined %} / {% endif %}
                                     {% if removeMaintainerForm is defined %}<a id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
                                 {% endif %}
                             </p>
 
+                            {% set repoUrl = package.repository|replace({'git://github.com/': 'https://github.com/', 'git@github.com:': 'https://github.com/'}) %}
+                            <p class="canonical">
+                                <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
+                            </p>
+
                             {% if version and version.homepage %}
-                                <p><i class="glyphicon glyphicon-home"></i> <a href="{{ version.homepage }}">Homepage</a></p>
+                                <p><a href="{{ version.homepage }}">Homepage</a></p>
                             {% endif %}
                             {% if version.support.source is defined %}
-                                <p><i class="glyphicon glyphicon-align-left"></i> <a href="{{ version.support.source }}">Source</a></p>
+                                <p><a href="{{ version.support.source }}">Source</a></p>
                             {% endif %}
                             {% if version and version.support.issues is defined %}
-                                <p><i class="glyphicon glyphicon-exclamation-sign"></i> <a href="{{ version.support.issues }}">Issues</a></p>
+                                <p><a href="{{ version.support.issues }}">Issues</a></p>
                             {% endif %}
                             {% if version and version.support.irc is defined %}
-                                <p><i class="glyphicon glyphicon-comment"></i> <a href="{{ version.support.irc }}">IRC</a></p>
+                                <p><a href="{{ version.support.irc }}">IRC</a></p>
                             {% endif %}
                             {% if version and version.support.forum is defined %}
-                                <p><i class="glyphicon glyphicon-comment"></i> <a href="{{ version.support.forum }}">Forum</a></p>
+                                <p><a href="{{ version.support.forum }}">Forum</a></p>
                             {% endif %}
                             {% if version and version.support.wiki is defined %}
-                                <p><i class="glyphicon glyphicon-book"></i> <a href="{{ version.support.wiki }}">Wiki</a></p>
+                                <p><a href="{{ version.support.wiki }}">Wiki</a></p>
                             {% endif %}
                             {% if version and version.support.docs is defined %}
-                                <p><i class="glyphicon glyphicon-book"></i> <a href="{{ version.support.docs }}">Documentation</a></p>
+                                <p><a href="{{ version.support.docs }}">Documentation</a></p>
                             {% endif %}
                         </div>
 
@@ -160,7 +158,7 @@
             {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
                 <div class="row">
                     {% if addMaintainerForm is defined %}
-                        <form id="add-maintainer-form" class="col-sm-6 col-sm-offset-6 {{ show_add_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('add_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(addMaintainerForm) }}>
+                        <form id="add-maintainer-form" class="col-sm-6 col-md-3 col-md-offset-9 {{ show_add_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('add_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(addMaintainerForm) }}>
                             <div>
                                 <h4>Add Maintainer</h4>
                                 <p>
@@ -175,7 +173,7 @@
                     {% endif %}
 
                     {% if removeMaintainerForm is defined %}
-                        <form id="remove-maintainer-form" class="col-sm-6 col-sm-offset-6 {{ show_remove_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('remove_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(removeMaintainerForm) }}>
+                        <form id="remove-maintainer-form" class="col-sm-6 col-md-3 col-md-offset-9 {{ show_remove_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('remove_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(removeMaintainerForm) }}>
                             <div>
                                 <h4>Remove Maintainer</h4>
                                 <p>

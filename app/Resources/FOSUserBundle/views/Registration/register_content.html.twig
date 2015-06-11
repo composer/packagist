@@ -1,6 +1,10 @@
 {% trans_default_domain 'FOSUserBundle' %}
 
 <form action="{{ path('fos_user_registration_register') }}" method="POST" class="fos_user_registration_register col-md-6">
+    <h2 class="title">
+        Create account
+    </h2>
+
     {% if form is defined %}
         {{ form_errors(form) }}
     {% endif %}
@@ -8,7 +12,7 @@
     <div class="form-group clearfix">
         <label for="fos_user_registration_email">Email:</label>
         <div class="input-group clearfix">
-            <input class="form-control input-lg" type="text" id="fos_user_registration_email" name="fos_user_registration_email">
+            <input class="form-control" type="text" id="fos_user_registration_email" name="fos_user_registration_email">
             <span class="input-group-addon"><span class="icon-mail"></span></span>
         </div>
     </div>
@@ -16,7 +20,7 @@
     <div class="form-group">
         <label for="fos_user_registration_username">Username:</label>
         <div class="input-group">
-            <input class="form-control input-lg" type="text" id="fos_user_registration_username" name="fos_user_registration_username">
+            <input class="form-control" type="text" id="fos_user_registration_username" name="fos_user_registration_username">
             <span class="input-group-addon"><span class="icon-user"></span></span>
         </div>
     </div>
@@ -24,7 +28,7 @@
     <div class="form-group">
         <label for="fos_user_registration_plainPassword_first">Password:</label>
         <div class="input-group">
-            <input class="form-control input-lg" type="password" id="fos_user_registration_plainPassword_first" name="fos_user_registration_plainPassword[first]">
+            <input class="form-control" type="password" id="fos_user_registration_plainPassword_first" name="fos_user_registration_plainPassword[first]">
             <span class="input-group-addon"><span class="icon-lock"></span></span>
         </div>
     </div>
@@ -32,10 +36,14 @@
     <div class="form-group">
         <label for="fos_user_registration_plainPassword_second">Repeat Password:</label>
         <div class="input-group">
-            <input class="form-control input-lg" type="password" id="fos_user_registration_plainPassword_second" name="fos_user_registration_plainPassword[second]">
+            <input class="form-control" type="password" id="fos_user_registration_plainPassword_second" name="fos_user_registration_plainPassword[second]">
             <span class="input-group-addon"><span class="icon-lock-open"></span></span>
         </div>
     </div>
 
-    <input type="submit" class="btn btn-block btn-primary btn-lg" value="{{ 'registration.submit'|trans }}" />
+    <div class="clearfix"></div>
+
+    <hr>
+
+    <input type="submit" class="btn btn-block btn-success btn-lg" value="{{ 'registration.submit'|trans }}" />
 </form>

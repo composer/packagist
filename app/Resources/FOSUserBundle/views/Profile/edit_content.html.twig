@@ -4,7 +4,7 @@
     <div class="form-group">
         {{ form_label(form.username) }}
         <div class="input-group">
-            {{ form_widget(form.username, {'attr': {'class': 'input-lg'}}) }}
+            {{ form_widget(form.username) }}
             <span class="input-group-addon"><span class="icon-user"></span></span>
         </div>
     </div>
@@ -12,7 +12,7 @@
     <div class="form-group">
         {{ form_label(form.email) }}
         <div class="input-group clearfix">
-            {{ form_widget(form.email, {'attr': {'class': 'input-lg'}}) }}
+            {{ form_widget(form.email) }}
             <span class="input-group-addon"><span class="icon-mail"></span></span>
         </div>
     </div>
@@ -20,7 +20,7 @@
     <div class="form-group">
         {{ form_label(form.current_password) }}
         <div class="input-group">
-            {{ form_widget(form.current_password, {'attr': {'class': 'input-lg'}}) }}
+            {{ form_widget(form.current_password) }}
             <span class="input-group-addon"><span class="icon-lock"></span></span>
         </div>
     </div>
