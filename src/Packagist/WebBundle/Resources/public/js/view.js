@@ -1,6 +1,10 @@
 /*jslint nomen: true, browser: true*/
 (function ($, humane, ZeroClipboard) {
     "use strict";
+
+    var versionCache = {},
+        ongoingRequest = false;
+
     $('#add-maintainer').click(function (e) {
         $('#remove-maintainer-form').addClass('hidden');
         $('#add-maintainer-form').toggleClass('hidden');
@@ -11,25 +15,43 @@
         $('#remove-maintainer-form').toggleClass('hidden');
         e.preventDefault();
     });
-    $('.package .version h1').click(function (e) {
-        e.preventDefault();
-        $(this).siblings('.details-toggler').click();
-    });
+
     $('.package .details-toggler').click(function () {
         var target = $(this);
-        target.toggleClass('open')
-            .prev().toggleClass('open');
-        if (target.attr('data-load-more')) {
+
+        if (versionCache[target.attr('data-version-id')]) {
+            $('.package .version-details').html(versionCache[target.attr('data-version-id')]);
+        } else if (target.attr('data-load-more')) {
+            if (ongoingRequest) { // TODO cancel previous requests instead?
+                return;
+            }
+            ongoingRequest = true;
+            $('.package .version-details').addClass('loading');
             $.ajax({
                 url: target.attr('data-load-more'),
                 dataType: 'json',
                 success: function (data) {
-                    target.attr('data-load-more', '')
-                        .prev().html(data.content);
+                    versionCache[target.attr('data-version-id')] = data.content;
+                    ongoingRequest = false;
+                    $('.package .version-details')
+                        .removeClass('loading')
+                        .html(data.content);
                 }
             });
         }
+
+        $('.package .versions .open').removeClass('open');
+        target.toggleClass('open');
     });
+
+    // initializer for #<version-id> present on page load
+    (function () {
+        var hash = document.location.hash;
+        if (hash.length > 1) {
+            hash = hash.substring(1);
+            $('.package .details-toggler[data-version-id="'+hash+'"]').click();
+        }
+    }());
 
     function forceUpdatePackage(e, updateAll) {
         var submit = $('input[type=submit]', '.package .force-update'), data;

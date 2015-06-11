@@ -194,14 +194,14 @@
             {% if versions|length %}
             <div class="row versions-section">
                 <div class="version-details col-md-9">
-                    {% if version %}
+                    {% if expandedVersion %}
                         {% include 'PackagistWebBundle:Web:versionDetails.html.twig' with {version: expandedVersion} %}
                     {% endif %}
                 </div>
                 <div class="col-md-3 package-aside versions-wrapper">
                     <ul class="versions">
                         {% for version in versions %}
-                            {% set expanded = version.id == expandedVersion.id %}
+                            {% set expanded = version.id == expandedVersion.id|default(false) %}
                             <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
                                 <a href="#{{ version.version }}" class="version-number">
                                     {{- version.version -}}

@@ -322,6 +322,9 @@ body > section:first-child {
     padding: 26px 20px;
     color: #2c3e50;
 }
+.wrapper .container.flash-container {
+  padding-bottom: 0;
+}
 
 .content p {
     font-size: 14px;
@@ -334,7 +337,8 @@ body > section:first-child {
 }
 
 .wrapper-blue .container p {
-    margin-top: 8px;
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 
 .wrapper .container .btn-white {
@@ -954,6 +958,17 @@ ul.packages .abandoned {
   font-weight: 600;
   color: #2C3E50;
 }
+.version-details.loading .title .version-number:after {
+  display: inline-block;
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-image: url("../img/loader-white.gif");
+  background-repeat: no-repeat;
+  position: relative;
+  top: 2px;
+  left: 10px;
+}
 .package .version-details .release-date {
   float: right;
   position: relative;
@@ -1247,11 +1262,14 @@ pre, code {
     border-radius: 2px;
     padding: 5px 0 5px 10px;
 }
+.flash-container .alert {
+  margin-bottom: 0;
+}
 .alert-warning {
     border-left-color: #D58512;
     color: #D58512;
 }
-.alert-danger {
+.alert-danger, .alert-error {
     border-left-color: #CD3729;
     color: #CD3729;
 }

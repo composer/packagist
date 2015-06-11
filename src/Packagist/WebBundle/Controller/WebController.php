@@ -552,20 +552,29 @@ class WebController extends Controller
      * @Route(
      *     "/p/{name}.{_format}",
      *     name="view_package_alias",
-     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"},
+     *     requirements={"name"="[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+?)?", "_format"="(json)"},
      *     defaults={"_format"="html"}
      * )
      * @Route(
      *     "/packages/{name}",
      *     name="view_package_alias2",
-     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?/", "_format"="(json)"},
+     *     requirements={"name"="[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+?)?/"},
      *     defaults={"_format"="html"}
      * )
      * @Method({"GET"})
      */
     public function viewPackageAliasAction(Request $req, $name)
     {
-        return $this->redirect($this->generateUrl('view_package', array('name' => trim($name, '/'), '_format' => $req->getRequestFormat())));
+        $format = $req->getRequestFormat();
+        if ($format === 'html') {
+            $format = null;
+        }
+
+        if (false === strpos(trim($name, '/'), '/')) {
+            return $this->redirect($this->generateUrl('view_vendor', array('vendor' => $name, '_format' => $format)));
+        }
+
+        return $this->redirect($this->generateUrl('view_package', array('name' => trim($name, '/'), '_format' => $format)));
     }
 
     /**
@@ -968,6 +977,9 @@ class WebController extends Controller
 
         $data = array(
             'package' => $package,
+            'versions' => null,
+            'expandedVersion' => null,
+            'version' => null,
             'addMaintainerForm' => $form->createView(),
             'show_add_maintainer_form' => true,
         );
@@ -1023,6 +1035,8 @@ class WebController extends Controller
 
         $data = array(
             'package' => $package,
+            'versions' => null,
+            'expandedVersion' => null,
             'version' => null,
             'removeMaintainerForm' => $removeMaintainerForm->createView(),
             'show_remove_maintainer_form' => true,

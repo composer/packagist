@@ -1,24 +1,5 @@
 {% extends 'PackagistWebBundle::layout.html.twig' %}
 
-{% block content_header %}
-<section class="wrapper wrapper-blue">
-    <div class="container">
-        <form autocomplete="off" method="GET" action="{{ path('search') }}" id="search-form">
-
-            <input type="search" class=" form-control" tabindex="1" placeholder="Search packages..." autofocus="autofocus" autocomplete="off" required="required" name="search_query[query]" id="search_query_query">
-
-        </form>
-
-        <div class="row">
-            <div class="col-lg-12 hidden-xs">
-                <p>Packagist is the main <a href="http://getcomposer.org/">Composer</a> repository. It aggregates all sorts of PHP packages that are installable with Composer.</p>
-                <p><a href="{{ path('browse') }}">Browse packages</a> or <a href="{{ path('submit') }}">submit your own</a>.</p>
-            </div>
-        </div>
-    </div>
-</section>
-{% endblock %}
-
 {% block content %}
 <section class="wrapper">
     <section class="container error">
@@ -26,10 +7,6 @@
             <h2 class="title">Oh noes, 404!</h2>
             <h3 class="font-normal">It looks like you requested a page that was not found.</h3>
             <h4>Go back to the <a href="{{ path('home') }}">homepage</a> or use the search above to find the package you want.</h4>
-        </div>
-
-        <div class="row hidden">
-            <div class="search-list col-md-12"></div>
         </div>
     </section>
 </section>

@@ -108,19 +108,23 @@
                     </div>
                 </div>
             </nav>
-{#
-            {%- if app.session.flashbag.all()|length > 0 %}
+        </header>
+
+        {{ include("PackagistWebBundle:Web:searchSection.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
+
+        {% block flashMessages %}
+            {%- if app.session.flashbag.peekAll()|length > 0 %}
             <section class="wrapper wrapper-white">
-                <div class="container">
+                <div class="container flash-container">
                 {%- for type, flashMessages in app.session.flashbag.all() %}
                     {%- for flashMessage in flashMessages %}
                         {%- if 'fos_user_' in type %}
-                            <div class="flash-message {{ type|replace({'fos_user_': ''}) }}">
+                            <div class="alert alert-{{ type|replace({'fos_user_': ''}) }}">
                                 <p>{{ flashMessage|trans({}, 'FOSUserBundle') }}</p>
                             </div>
                         {%- else %}
-                            <div class="flash-message {{ type }}">
-                                <p>{{ flashMessage }}</p>
+                            <div class="alert alert-{{ type }}">
+                                <p>{{ flashMessage|trans }}</p>
                             </div>
                         {%- endif %}
                     {%- endfor %}
@@ -128,10 +132,7 @@
                 </div>
             </section>
             {%- endif %}
-#}
-        </header>
-
-        {{ include("PackagistWebBundle:Web:searchSection.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
+        {% endblock %}
 
         {% block content_header %}{% endblock %}
 
