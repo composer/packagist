@@ -94,7 +94,7 @@ services:
 
     packagist.menu_builder:
         class: Packagist\WebBundle\Menu\MenuBuilder
-        arguments: [@knp_menu.factory, @security.token_storage]
+        arguments: [@knp_menu.factory, @security.context]
 
     packagist.menu.user:
         class: Knp\Menu\MenuItem

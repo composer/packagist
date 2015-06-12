@@ -116,9 +116,3 @@ body {
   opacity: 0.7;
   filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=70);
 }
-
-.humane pre {
-  background: #2d2d32;
-  color: #fff;
-  text-shadow: none;
-}

@@ -3,7 +3,7 @@
 namespace Packagist\WebBundle\Menu;
 
 use Knp\Menu\FactoryInterface;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\SecurityContextInterface;
 
 class MenuBuilder
 {
@@ -12,14 +12,14 @@ class MenuBuilder
 
     /**
      * @param FactoryInterface $factory
-     * @param TokenStorageInterface $securityContext
+     * @param SecurityContextInterface $securityContext
      */
-    public function __construct(FactoryInterface $factory, TokenStorageInterface $securityContext)
+    public function __construct(FactoryInterface $factory, SecurityContextInterface $securityContext)
     {
         $this->factory = $factory;
 
-        if ($securityContext->getToken() && $securityContext->getToken()->getUser()) {
-            $this->username = $securityContext->getToken()->getUser()->getUsername();
+        if ($securityContext->getToken() && $securityContext->getToken()->getUsername()) {
+            $this->username = $securityContext->getToken()->getUsername();
         }
     }
 
