@@ -11,13 +11,9 @@
 
 <section class="row">
     <form class="col-md-6" id="submit-package-form" action="{{ path('submit') }}" data-check-url="{{ path('submit.fetch_info') }}" method="POST" {{ form_enctype(form) }}>
-        {{ form_label(form.repository) }}
-        {{ form_errors(form.repository) }}
-        {{ form_widget(form.repository) }}
+        {{ form_widget(form) }}
 
         {{ form_rest(form) }}
-
-        <hr>
 
         <input class="btn btn-block btn-success btn-lg" id="submit" type="submit" value="Submit" />
     </form>

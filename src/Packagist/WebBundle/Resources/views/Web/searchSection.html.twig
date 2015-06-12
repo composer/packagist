@@ -1,10 +1,11 @@
 <section class="wrapper wrapper-blue">
-    <div class="container">
+    <div class="container {% if showSearchDesc == 'show' %}with-description{% endif %}">
         {{ render(controller('PackagistWebBundle:Web:searchForm', { req: app.request })) }}
 
         {%- if showSearchDesc == 'show' %}
         <div class="row">
-            <div class="col-xs-12 hidden-xs">
+            <div class="col-sm-9 hidden-xs">
+                <img src="{{ asset('bundles/packagistweb/img/logo-small.png') }}" class="logo">
                 <p>Packagist is the main <a href="http://getcomposer.org/">Composer</a> repository. It aggregates public PHP packages installable with Composer.</p>
             </div>
         </div>

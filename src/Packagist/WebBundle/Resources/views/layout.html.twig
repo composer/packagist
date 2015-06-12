@@ -10,10 +10,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
-        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" type="text/css" />
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" type="text/css" />
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
         <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=16') }}" />
         <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css?v=4') }}" />
 
@@ -151,7 +150,7 @@
         <footer class="wrapper-footer">
             <nav class="container">
                 <div class="row">
-                    <ul class="social col-xs-5 col-md-2 pull-right">
+                    <ul class="social col-xs-7 col-sm-4 col-md-2 pull-right">
                         <li><a href="http://github.com/composer/packagist" title="{{ 'menu.github'|trans }}"><span class="icon-github"></span></a></li>
                         <li><a href="https://twitter.com/packagist" title="{{ 'menu.twitter'|trans }}"><span class="icon-twitter"></span></a></li>
                         <li><a href="mailto:contact@packagist.org" title="{{ 'menu.contact'|trans }}"><span class="icon-mail"></span></a></li>
@@ -161,6 +160,8 @@
                         <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
                         <li><a href="{{ path('feeds') }}">{{ 'menu.rss_feeds'|trans }}</a></li>
                     </ul>
+
+                    <div class="clearfix visible-xs-block"></div>
 
                     <ul class="col-xs-3 col-md-2">
                         <li><a href="{{ path('stats') }}">{{ 'menu.stats'|trans }}</a></li>
@@ -179,7 +180,7 @@
         <script src="{{ asset('js/libs/ZeroClipboard.min.js') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/layout.js?v=3') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/search.js?v=7')}}"></script>
-        <script src="//getbootstrap.com/dist/js/bootstrap.js"></script>
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 
         {%- if not app.debug and google_analytics.ga_key %}
         <script>

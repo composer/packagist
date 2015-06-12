@@ -1,4 +1,4 @@
-@import url(http://fonts.googleapis.com/css?family=Open+Sans:400,300,500,600,300italic);
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:400,300,500,600,300italic);
 
 /*
  main header: #2d2d32
@@ -39,7 +39,23 @@ body {
     background: #FAFAFA;
     font-family: 'Open Sans', sans-serif;
 }
+.logo {
+  position: absolute;
+  width: 100px;
+  left: -98px;
+  top: -42px;
+}
+@media (min-width: 1200px) {
+  .logo {
+    width: 80px;
+    left: -90px;
+    top: -43px;
+  }
+}
 
+hr {
+  border-color: #F28D1A;
+}
 a, .package .package-aside a {
   color: #F25B1A;
 }
@@ -364,7 +380,11 @@ body > section:first-child {
 .wrapper-blue .container {
     padding: 10px 20px 15px;
 }
-
+@media (min-width: 768px) {
+  .wrapper-blue .container.with-description {
+    padding-left: 143px;
+  }
+}
 .wrapper-blue .container p {
   margin-top: 8px;
   margin-bottom: 0;
@@ -440,7 +460,7 @@ footer p {
 
 
 button {
-    font-family: 'Open Sans';
+    font-family: 'Open Sans', sans-serif;
 }
 
 .form-control {
@@ -846,7 +866,7 @@ ul.packages .metadata-block:last-child {
 
 .package p.description {
     margin-top: 0;
-    font-size: 28px;
+    font-size: 25px;
     font-style: italic;
     font-weight: 300;
     margin-bottom: 15px;
@@ -918,7 +938,7 @@ ul.packages .metadata-block:last-child {
 
 
 .package .package-aside {
-  border-top: 2px solid #f28d1a;
+  border-top: 1px solid #f28d1a;
   border-radius: 0;
 
   margin: 0;
@@ -947,7 +967,7 @@ ul.packages .metadata-block:last-child {
   margin-top: 20px;
 }
 .package .version-details .title {
-  border-top: 2px solid #f28d1a;
+  border-top: 1px solid #f28d1a;
   padding-top: 10px;
 }
 .package .versions {
@@ -1022,6 +1042,17 @@ ul.packages .metadata-block:last-child {
       right: 15px;
     }
 }
+@media (max-width: 767px) {
+  .package-aside .downloads {
+    padding-left: 0;
+  }
+  .wrapper-footer {
+    font-size: 12px;
+  }
+  .wrapper-footer a {
+    white-space: nowrap;
+  }
+}
 
 .package .version-details .version-number {
   font-size: 16px;
@@ -1056,7 +1087,12 @@ ul.packages .metadata-block:last-child {
     margin-left: 10px;
     display: inline-block;
 }
-.package .version .license .unknown {
+.package .version-details .license {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.package .version-details .license .unknown {
   color: #c00;
 }
 .package .version-details .authors {
@@ -1076,8 +1112,8 @@ ul.packages .metadata-block:last-child {
   content: "";
 }
 .package .version-details .package-links {
-  border-top: 2px solid #f28d1a;
-  border-bottom: 2px solid #f28d1a;
+  border-top: 1px solid #f28d1a;
+  border-bottom: 1px solid #f28d1a;
   margin-top: 10px;
   padding-top: 10px;
   padding-bottom: 10px;
@@ -1194,7 +1230,7 @@ pre, code {
 .wrapper .content h2.title, .wrapper .content h3.title {
     margin: -5px 0 15px;
     padding: 0 0 15px;
-    border-bottom: 2px solid #f28d1a;
+    border-bottom: 1px solid #f28d1a;
     color: #2d2d32;
 }
 
@@ -1310,8 +1346,8 @@ pre, code {
 }
 
 .packages .selected .package-item {
-    padding: 3px 13px;
-    border: 2px solid #F28D1A;
+    padding: 4px 14px;
+    border: 1px solid #F28D1A;
 }
 
 .packages .package-item h4 {

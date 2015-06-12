@@ -46,7 +46,10 @@
                     {%- else -%}
                         {{ author.name }}
                     {%- endif -%}
-                    {% if author.email %} &lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;{% endif -%}
+                    {% if author.email %}
+                        <span class="visible-sm-inline visible-md-inline visible-lg-inline">&lt;<a href="mailto:{{ author.email }}">{{ author.email }}</a>&gt;</span>
+                        <span class="visible-xs-inline"><a href="mailto:{{ author.email }}"><i class="glyphicon glyphicon-envelope"></i></a></span>
+                    {%- endif -%}
                 </li>
             {% endfor %}
         </ul>

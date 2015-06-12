@@ -11,8 +11,6 @@
     <form class="col-md-6" action="{{ path('edit_package', {'name': package.name}) }}" method="POST" {{ form_enctype(form) }}>
         {{ form_widget(form) }}
 
-        <hr>
-
         <input class="btn btn-block btn-primary btn-lg" id="submit" type="submit" value="Update" />
     </form>
 </section>
