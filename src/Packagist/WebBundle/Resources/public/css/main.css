@@ -32,6 +32,7 @@ pre, code {
 }
 
 label {
+  display: block;
   font-weight: normal;
 }
 

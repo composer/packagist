@@ -1,5 +1,5 @@
 /*jslint nomen: true, browser: true*/
-(function ($, humane, ZeroClipboard) {
+(function ($, humane) {
     "use strict";
 
     var versionCache = {},
@@ -134,10 +134,4 @@
                 .css('max-height', 'auto');
         });
     }
-
-    ZeroClipboard.setMoviePath("/js/libs/ZeroClipboard.swf");
-    var clip = new ZeroClipboard.Client("#copy");
-    clip.on("complete", function () {
-        humane.log("Copied");
-    });
-}(jQuery, humane, ZeroClipboard));
+}(jQuery, humane));
