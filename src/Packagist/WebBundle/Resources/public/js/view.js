@@ -110,9 +110,7 @@
     $('.package .delete-version .submit').click(function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        if (window.confirm('Are you sure?')) {
-            $(e.target).closest('.delete-version').submit();
-        }
+        $(e.target).closest('.delete-version').submit();
     });
     $('.package .delete-version').submit(function (e) {
         e.preventDefault();

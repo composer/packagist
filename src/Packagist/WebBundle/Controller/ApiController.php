@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Composer\Console\HtmlOutputFormatter;
 use Composer\Factory;
 use Composer\IO\BufferIO;
 use Composer\Package\Loader\ArrayLoader;
@@ -207,7 +208,7 @@ class ApiController extends Controller
         // put both updating the database and scanning the repository in a transaction
         $em = $this->get('doctrine.orm.entity_manager');
         $updater = $this->get('packagist.package_updater');
-        $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE);
+        $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
 
         try {
             foreach ($packages as $package) {

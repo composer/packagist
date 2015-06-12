@@ -9,6 +9,7 @@ menu:
     register: Register
     browse_packages: Browse Packages
     twitter: Follow @packagist
+    github: GitHub
     contact: Contact
     stats: Statistics
 

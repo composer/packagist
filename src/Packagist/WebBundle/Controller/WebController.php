@@ -714,7 +714,7 @@ class WebController extends Controller
             $this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')
             || $package->getMaintainers()->contains($this->getUser())
         )) {
-            $data['deleteVersionCsrfToken'] = $this->get('form.csrf_provider')->generateCsrfToken('delete_version');
+            $data['deleteVersionCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('delete_version');
         }
 
         return $data;
