@@ -694,7 +694,7 @@ ul.packages .metadata-block:last-child {
     font-size: 12px;
 }
 
-.btn.loading {
+.btn.loading, .btn.loading:hover, .btn.loading:active {
     background-image: url("../img/loader.gif");
     background-position: 95% 50%;
     background-repeat: no-repeat;
@@ -708,7 +708,7 @@ ul.packages .metadata-block:last-child {
 }
 .btn-default:focus, .btn-default:active {
   color: #fff;
-  background-color: #a5aab0;
+  background: #a5aab0;
   border-bottom-color: #bbbfc4;
 }
 
@@ -850,7 +850,7 @@ ul.packages .metadata-block:last-child {
     margin-bottom: -1px !important;
     position: relative;
 }
-.package .action input.loading {
+.package .action input.loading, .package .action input.loading:hover, .package .action input.loading:active {
   background-position: 10px center;
   background-image: url("../img/loader.gif");
   background-repeat: no-repeat;

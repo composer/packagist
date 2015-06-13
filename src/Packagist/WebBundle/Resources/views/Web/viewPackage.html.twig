@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('bundles/packagistweb/js/view.js?v=14')}}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/view.js?v=15')}}"></script>
 {% endblock %}
 
 {% block description -%}
@@ -39,7 +39,7 @@
 
             <div class="row">
                 <div class="col-md-8">
-                    <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="composer require {{ "#{version.package.vendor}/#{version.package.packageName}" }}" /></p>
+                    <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="composer require {{ "#{package.vendor}/#{package.packageName}" }}" /></p>
 
                     {% if not package.autoUpdated and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
                         {% if "github.com" in package.repository %}

@@ -105,7 +105,9 @@
     });
     $('.package .delete').submit(function (e) {
         e.preventDefault();
-        e.target.submit();
+        if (window.confirm('Are you sure?')) {
+            e.target.submit();
+        }
     });
     $('.package .delete-version .submit').click(function (e) {
         e.preventDefault();

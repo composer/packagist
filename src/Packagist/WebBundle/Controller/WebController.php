@@ -651,6 +651,7 @@ class WebController extends Controller
         }
 
         $version = null;
+        $expandedVersion = null;
         $versions = $package->getVersions();
         if (is_object($versions)) {
             $versions = $versions->toArray();
@@ -674,16 +675,16 @@ class WebController extends Controller
         if (count($versions)) {
             $versionRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
             $version = $versionRepo->getFullVersion(reset($versions)->getId());
-        }
 
-        $expandedVersion = reset($versions);
-        foreach ($versions as $v) {
-            if (!$v->isDevelopment()) {
-                $expandedVersion = $v;
-                break;
+            $expandedVersion = reset($versions);
+            foreach ($versions as $v) {
+                if (!$v->isDevelopment()) {
+                    $expandedVersion = $v;
+                    break;
+                }
             }
+            $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
         }
-        $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
 
         $data = array(
             'package' => $package,
