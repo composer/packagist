@@ -199,6 +199,7 @@ strong {
 .navbar .nav > .nav-user > section a {
     color: #fff;
     text-decoration: none;
+    display: block;
 }
 
 .navbar .nav > .nav-user > section:hover {
