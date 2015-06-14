@@ -92,6 +92,7 @@ strong {
 .navbar {
     margin: 0;
     border: 0;
+    -webkit-font-smoothing: subpixel-antialiased;
 }
 
 .navbar .navbar-brand {
