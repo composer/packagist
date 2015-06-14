@@ -60,7 +60,9 @@
         {% endif %}
 
         {% for owner in hwi_oauth_resource_owners() %}
-            <div class="clearfix"></div>
+            {% if not app.user %}
+                <div class="clearfix"></div>
+            {% endif %}
             <div class="col-md-6">
                 <a class="btn btn-block btn-{{ owner }} btn-primary btn-lg" href="{{ hwi_oauth_login_url(owner) }}"><span class="icon-{{ owner }}"></span>Login with {{ owner | trans({}, 'HWIOAuthBundle') }}</a>{% if not loop.last %}<br />{% endif %}
             </div>
