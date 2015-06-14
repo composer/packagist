@@ -21,6 +21,7 @@
         $('.order-by-group').attr('href', function (index, current) {
             return current.replace(/q=.*?&/, 'q=' + encodeURIComponent($('input[type="search"]', form).val()) + '&')
         });
+        $('.js-search-field-wrapper').removeClass('col-xs-12').addClass('col-xs-8');
         $('#order-bys-wrapper').removeClass('hidden');
 
         searching = false;

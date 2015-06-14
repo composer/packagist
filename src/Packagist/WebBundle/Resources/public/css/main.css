@@ -808,6 +808,9 @@ ul.packages .metadata-block:last-child {
   position: relative;
   top: 2px;
   margin-left: -12px;
+  padding-right: 0;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .sortable .order-by-group .icon:first-child {
