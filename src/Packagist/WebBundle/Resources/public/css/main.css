@@ -1096,7 +1096,7 @@ ul.packages .metadata-block:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.package .version-details .license .unknown {
+.package .version-details .license .unknown, .abandoned i {
   color: #c00;
 }
 .package .version-details .authors {

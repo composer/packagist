@@ -50,7 +50,7 @@
                     {% endif %}
 
                     {% if package.abandoned %}
-                        <div class="alert alert-warning">
+                        <div class="alert alert-danger">
                             This package is <strong>abandoned</strong> and no longer maintained.
                             {% if package.replacementPackage is not empty %}
                                 The author suggests using the <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
