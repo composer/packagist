@@ -100,5 +100,7 @@ hwi_oauth:
             type:          github
             client_id:     %github.client_id%
             client_secret: %github.client_secret%
+            options:
+                csrf: true
 
 nelmio_solarium: ~
