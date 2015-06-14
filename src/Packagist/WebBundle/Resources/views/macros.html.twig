@@ -13,7 +13,7 @@
                             {% if package.language is defined and package.language != null %}<p class="pull-right language">{{ package.language }}</p>{% endif %}
                             <h4 class="font-bold">
                                 <a href="{{ packageUrl }}">{{ package.name }}</a>
-                                {% if package.id is not numeric or package.name == 'nelmio/alice' %}
+                                {% if package.id is not numeric %}
                                     <small>(Virtual Package)</small>
                                 {% endif %}
                                 {% if showAutoUpdateWarning and not package.autoUpdated %}
