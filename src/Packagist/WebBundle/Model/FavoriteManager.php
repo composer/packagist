@@ -69,17 +69,23 @@ class FavoriteManager
 
     public function getFaverCount(Package $package)
     {
-        return $this->redis->zcard('pkg:'.$package->getId().':fav');
+        return $this->redis->zcard('pkg:'.$package->getId().':fav') + $package->getGitHubStars();
     }
 
     public function getFaverCounts(array $packageIds)
     {
         $res = array();
+
         // TODO should be done with scripting when available
         foreach ($packageIds as $id) {
             if (ctype_digit((string) $id)) {
                 $res[$id] = $this->redis->zcard('pkg:'.$id.':fav');
             }
+        }
+
+        $rows = $this->packageRepo->getGitHubStars($packageIds);
+        foreach ($rows as $row) {
+            $res[$row['id']] += $row['gitHubStars'];
         }
 
         return $res;

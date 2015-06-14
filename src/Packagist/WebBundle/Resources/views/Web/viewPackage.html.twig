@@ -146,11 +146,18 @@
                             {% endif %}
                         </div>
 
-                        <p class="downloads col-xs-12 col-sm-6 col-md-12">
-                            <span>Overall:</span> {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }} install{{ downloads.total == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
-                            <span>30 days:</span> {% if downloads.monthly is defined %}{{ downloads.monthly|number_format(0, '.', '&#8201;')|raw }} install{{ downloads.monthly == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
-                            <span>Today:</span> {% if downloads.daily is defined %}{{ downloads.daily|number_format(0, '.', '&#8201;')|raw }} install{{ downloads.daily == 1 ? '' : 's' }}{% else %}N/A{% endif %}<br />
-                        </p>
+                        <div class="facts col-xs-12 col-sm-6 col-md-12">
+                            <p><strong>Installs</strong></p>
+                            <p><span>Overall:</span> {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
+                            <p><span>30 days:</span> {% if downloads.monthly is defined %}{{ downloads.monthly|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
+                            <p><span>Today:</span> {% if downloads.daily is defined %}{{ downloads.daily|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
+                            {% if package.gitHubWatches != null %}<br>{% endif %}
+                            {% if package.language != null %}<p><span>Language:</span> {{ package.language }}</p>{% endif %}
+                            {% if package.gitHubStars != null %}<p><span>Stars:</span> {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
+                            {% if package.gitHubWatches != null %}<p><span>Watches:</span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
+                            {% if package.gitHubForks != null %}<p><span>Forks:</span> {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
+                            {% if package.gitHubOpenIssues != null %}<p><span>Open Issues:</span> {{ package.gitHubOpenIssues|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -228,5 +235,16 @@
                 <p class="col-xs-12">This package has no released version yet, and little information is available.</p>
             {% endif %}
         </div>
+
+        {% if package.readme != null %}
+            <hr class="clearfix">
+            <div class="readme">
+                <h1>README</h1>
+                {{ package.readme|raw }}
+            </div>
+            <div class="hidden readme-expander">
+                <i class="glyphicon glyphicon-chevron-down"></i>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}

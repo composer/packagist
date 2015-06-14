@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "2259146deb50eb0cc9a96e86253ab4d5",
+    "hash": "abcc8fe5bfd89428e322fea1635a6ce5",
     "packages": [
         {
             "name": "composer/composer",
@@ -679,6 +679,50 @@
             "time": "2014-12-16 13:45:01"
         },
         {
+            "name": "ezyang/htmlpurifier",
+            "version": "v4.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ezyang/htmlpurifier.git",
+                "reference": "6f389f0f25b90d0b495308efcfa073981177f0fd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/6f389f0f25b90d0b495308efcfa073981177f0fd",
+                "reference": "6f389f0f25b90d0b495308efcfa073981177f0fd",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "HTMLPurifier": "library/"
+                },
+                "files": [
+                    "library/HTMLPurifier.composer.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL"
+            ],
+            "authors": [
+                {
+                    "name": "Edward Z. Yang",
+                    "email": "admin@htmlpurifier.org",
+                    "homepage": "http://ezyang.com"
+                }
+            ],
+            "description": "Standards compliant HTML filter written in PHP",
+            "homepage": "http://htmlpurifier.org/",
+            "keywords": [
+                "html"
+            ],
+            "time": "2013-11-30 08:25:19"
+        },
+        {
             "name": "friendsofsymfony/user-bundle",
             "version": "v1.3.5",
             "target-dir": "FOS/UserBundle",
@@ -756,7 +800,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/2e12c7ab9cf83ce0d3e9d6a98315bbf21ab23ab3",
+                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/d7caff8257d7b5807f2f56d03d7bddca6484265b",
                 "reference": "2e12c7ab9cf83ce0d3e9d6a98315bbf21ab23ab3",
                 "shasum": ""
             },
@@ -2445,7 +2489,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/symfony/zipball/cff69aa18b5db9aac978b35f186ff670ff75d3e9",
+                "url": "https://api.github.com/repos/symfony/symfony/zipball/11010ca691aee993fd3c7198faadb22923201a50",
                 "reference": "cff69aa18b5db9aac978b35f186ff670ff75d3e9",
                 "shasum": ""
             },
@@ -2716,7 +2760,7 @@
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zendframework-57de1d9e3fe0564d2572e0a961e905ae2279c003-zip-992dda.zip",
+                "url": "https://api.github.com/repos/zendframework/zf2/zipball/57de1d9e3fe0564d2572e0a961e905ae2279c003",
                 "reference": "2.0.8",
                 "shasum": "0b8790b1e9f5cbb5b50c0443851b26e1ed36e80c"
             },
@@ -2831,7 +2875,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=5.3.3"
+        "php": ">=5.5"
     },
     "platform-dev": []
 }

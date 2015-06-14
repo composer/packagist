@@ -108,7 +108,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                     }
                     $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                     $repository->setLoader($loader);
-                    $updater->update($package, $repository, $flags, $start);
+                    $updater->update($io, $config, $package, $repository, $flags, $start);
                 } catch (InvalidRepositoryException $e) {
                     $output->writeln('<error>Broken repository in '.$router->generate('view_package', array('name' => $package->getName()), true).': '.$e->getMessage().'</error>');
                     if ($input->getOption('notify-failures')) {

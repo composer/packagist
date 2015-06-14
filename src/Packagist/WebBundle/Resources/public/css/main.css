@@ -811,6 +811,7 @@ ul.packages .metadata-block:last-child {
   padding-right: 0;
   white-space: nowrap;
   overflow: hidden;
+  height: 30px;
 }
 
 .sortable .order-by-group .icon:first-child {
@@ -886,7 +887,7 @@ ul.packages .metadata-block:last-child {
 .package .details p > i:first-child {
     margin-right: 5px;
 }
-.package .details p {
+.package .details p, .package .facts p {
     margin: 0;
 }
 .package .details .maintainers {
@@ -915,14 +916,17 @@ ul.packages .metadata-block:last-child {
   white-space: nowrap;
 }
 
+.package .facts {
+    margin-top: 10px;
+}
 @media (max-width: 991px) and (min-width: 768px) {
-    .package .downloads {
+    .package .facts {
         margin-top: 0;
     }
 }
-.package .downloads span {
+.package .facts span {
     display: inline-block;
-    width: 60px;
+    width: 100px;
 }
 
 .package .tags a:before {
@@ -940,6 +944,41 @@ ul.packages .metadata-block:last-child {
 
 
 
+.package .readme {
+  padding-bottom: 20px;
+  max-height: 300px;
+  overflow-y: hidden;
+}
+.wrapper .content .package .readme h1:first-child,
+.wrapper .content .package .readme p:first-child,
+.wrapper .content .package .readme h2:first-child,
+.wrapper .content .package .readme h3:first-child {
+  margin-top: 0;
+}
+.wrapper .content .package .readme h1 {
+  font-size: 20px;
+  font-weight: 300;
+  padding: 0;
+  margin: 25px 0 10px;
+  line-height: 100%;
+}
+.wrapper .content .package .readme h2 {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 0;
+  margin: 25px 0 10px;
+  line-height: 100%;
+}
+.wrapper .content .package .readme h3,
+.wrapper .content .package .readme h4,
+.wrapper .content .package .readme h5,
+.wrapper .content .package .readme h6 {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0;
+  margin: 15px 0 5px;
+  line-height: 100%;
+}
 
 .package .package-aside {
   border-top: 1px solid #f28d1a;
@@ -955,10 +994,10 @@ ul.packages .metadata-block:last-child {
 .package-aside .details {
   padding-left: 0;
 }
-.package .package-aside i {
+.package .package-aside i, .package .readme-expander i {
   color: #bbbfc4;
 }
-.package .package-aside i:hover {
+.package .package-aside i:hover, .package .readme-expander i:hover {
   color: #a5aab0;
 }
 
@@ -982,10 +1021,15 @@ ul.packages .metadata-block:last-child {
   padding: 0;
   margin: 0;
 }
-.package .versions-expander {
+.package .versions-expander, .package .readme-expander {
   text-align: center;
   cursor: pointer;
-  padding: 10px 0 0;
+  margin: 10px 0 0;
+  line-height: 25px;
+}
+.package .readme-expander {
+  margin-bottom: 20px;
+  background: #fff;
 }
 .package .versions .version {
   padding: 2px 0 2px 5px;
@@ -1027,7 +1071,7 @@ ul.packages .metadata-block:last-child {
       background: #fff;
       border-radius: 2px;
       border-top: 0;
-      padding: 10px 0 0 0;
+      padding: 10px 0;
       margin-left: -15px;
       margin-right: -15px;
     }
@@ -1047,7 +1091,7 @@ ul.packages .metadata-block:last-child {
     }
 }
 @media (max-width: 767px) {
-  .package-aside .downloads {
+  .package-aside .facts {
     padding-left: 0;
   }
   .wrapper-footer {

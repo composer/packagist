@@ -890,7 +890,7 @@ class WebController extends Controller
                 $repository->setLoader($loader);
 
                 try {
-                    $updater->update($package, $repository, $updateEqualRefs ? Updater::UPDATE_EQUAL_REFS : 0);
+                    $updater->update($io, $config, $package, $repository, $updateEqualRefs ? Updater::UPDATE_EQUAL_REFS : 0);
                 } catch (\Exception $e) {
                     return new Response(json_encode(array(
                         'status' => 'error',

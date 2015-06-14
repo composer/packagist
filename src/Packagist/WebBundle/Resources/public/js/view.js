@@ -72,7 +72,7 @@
             data: data,
             type: 'PUT',
             success: function () {
-                window.location.href = window.location.href;
+                document.location.reload(true);
             },
             context: $('.package .force-update')[0]
         }).complete(function () { submit.removeClass('loading'); });
@@ -128,12 +128,39 @@
         forceUpdatePackage(null, true);
     }
 
+    $('.readme a').on('click', function (e) {
+        var targetEl,
+            href = e.target.getAttribute('href');
+
+        if (href.substr(0, 1) === '#') {
+            targetEl = $(href);
+            if (targetEl.length) {
+                window.scrollTo(0, targetEl.offset().top - 70);
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }
+    });
+
     var versionsList = $('.package .versions')[0];
     if (versionsList.offsetHeight < versionsList.scrollHeight) {
         $('.package .versions-expander').removeClass('hidden').on('click', function () {
-            $(this).addClass('hidden')
+            $(this).addClass('hidden');
             $(versionsList).css('overflow-y', 'visible')
-                .css('max-height', 'auto');
+                .css('max-height', 'inherit');
         });
+    }
+
+    var readme = $('.package .readme')[0];
+    if (readme && readme.offsetHeight < readme.scrollHeight) {
+        $('.package .readme-expander').removeClass('hidden').on('click', function () {
+            $(this).addClass('hidden');
+            $(readme).css('overflow-y', 'visible')
+                .css('max-height', 'inherit');
+        });
+        // auto-expand when contracting doesn't hide enough to make it worth it
+        if (readme.offsetHeight > readme.scrollHeight - 200) {
+            $('.package .readme-expander').click();
+        }
     }
 }(jQuery, humane));
