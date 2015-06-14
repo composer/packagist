@@ -13,8 +13,8 @@
 
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" type="text/css" />
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
-        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=17') }}" />
-        <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css?v=4') }}" />
+        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" />
+        <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css') }}" />
 
         {% block head_feeds %}
         <link rel="alternate" type="application/rss+xml" title="Newly Submitted Packages - Packagist" href="{{ url('feed_packages', {_format: 'rss'}) }}" />
@@ -176,9 +176,9 @@
         </footer>
 
         <script src="//code.jquery.com/jquery-2.1.0.min.js"></script>
-        <script src="{{ asset('js/libs/humane.min.js?v=2') }}"></script>
-        <script src="{{ asset('bundles/packagistweb/js/layout.js?v=3') }}"></script>
-        <script src="{{ asset('bundles/packagistweb/js/search.js?v=7')}}"></script>
+        <script src="{{ asset('js/libs/humane.min.js') }}"></script>
+        <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
+        <script src="{{ asset('bundles/packagistweb/js/search.js')}}"></script>
         <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 
         {%- if not app.debug and google_analytics.ga_key %}

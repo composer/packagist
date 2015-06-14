@@ -12,7 +12,7 @@ framework:
     csrf_protection: true
     validation:      { enable_annotations: true }
     translator:      { fallback: en }
-    templating:      { engines: ['twig'] } #assets_version: SomeVersionScheme
+    templating:      { engines: ['twig'], assets_version: v=%assets_version% }
     default_locale: %locale%
     session:
         name:            packagist
