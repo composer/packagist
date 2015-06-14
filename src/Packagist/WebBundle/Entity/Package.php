@@ -370,6 +370,7 @@ class Package
             return;
         }
 
+        $repoUrl = preg_replace('{^git@github.com:}i', 'https://github.com/', $repoUrl);
         $this->repository = $repoUrl;
 
         // avoid user@host URLs
