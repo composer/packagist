@@ -1173,7 +1173,7 @@ class WebController extends Controller
      */
     public function aboutComposerFallbackAction()
     {
-        return new RedirectResponse('http://getcomposer.org/', 301);
+        return new RedirectResponse('https://getcomposer.org/', 301);
     }
 
     private function createAddMaintainerForm($package)
