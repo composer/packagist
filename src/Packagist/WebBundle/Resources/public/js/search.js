@@ -149,4 +149,11 @@
             }
         }
     });
+
+    // handle pressing S to focus the search
+    $(document.body).bind('keyup', function (event) {
+        if (event.which === 83 && (!document.activeElement || document.activeElement.tagName !== 'INPUT')) {
+            $('#search_query_query').focus();
+        }
+    });
 }(jQuery));
