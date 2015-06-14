@@ -167,7 +167,7 @@ class Updater
             }
         }
 
-        if (preg_match('{^(?:git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
+        if (preg_match('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
             $this->updateGitHubInfo($rfs, $package, $match[1], $match[2]);
         }
 
@@ -396,10 +396,18 @@ class Updater
 
         try {
             $repoData = JsonFile::parseJson($rfs->getContents('github.com', $baseApiUrl, false), $baseApiUrl);
+        } catch (\Exception $e) {
+            return;
+        }
+
+        try {
             $opts = ['http' => ['header' => ['Accept: application/vnd.github.v3.html']]];
             $readme = $rfs->getContents('github.com', $baseApiUrl.'/readme', false, $opts);
         } catch (\Exception $e) {
-            return;
+            if (!$e instanceof \Composer\Downloader\TransportException || $e->getCode() !== 404) {
+                return;
+            }
+            // 404s just mean no readme present so we proceed with the rest
         }
 
         if (!empty($readme)) {
