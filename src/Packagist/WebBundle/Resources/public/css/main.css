@@ -949,6 +949,9 @@ ul.packages .metadata-block:last-child {
   max-height: 300px;
   overflow-y: hidden;
 }
+.wrapper .content .package .readme img {
+  max-width: 100%;
+}
 .wrapper .content .package .readme h1:first-child,
 .wrapper .content .package .readme p:first-child,
 .wrapper .content .package .readme h2:first-child,
