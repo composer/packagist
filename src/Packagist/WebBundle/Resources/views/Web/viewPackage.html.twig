@@ -151,12 +151,12 @@
                             <p><span>Overall:</span> {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
                             <p><span>30 days:</span> {% if downloads.monthly is defined %}{{ downloads.monthly|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
                             <p><span>Today:</span> {% if downloads.daily is defined %}{{ downloads.daily|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
-                            {% if package.gitHubWatches != null %}<br>{% endif %}
-                            {% if package.language != null %}<p><span>Language:</span> {{ package.language }}</p>{% endif %}
-                            {% if package.gitHubStars != null %}<p><span>Stars:</span> {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
-                            {% if package.gitHubWatches != null %}<p><span>Watches:</span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
-                            {% if package.gitHubForks != null %}<p><span>Forks:</span> {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
-                            {% if package.gitHubOpenIssues != null %}<p><span>Open Issues:</span> {{ package.gitHubOpenIssues|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
+                            {% if package.gitHubWatches is not null %}<br>{% endif %}
+                            {% if package.language is not empty %}<p><span>Language:</span> {{ package.language }}</p>{% endif %}
+                            {% if package.gitHubStars is not null %}<p><span>Stars:</span> {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
+                            {% if package.gitHubWatches is not null %}<p><span>Watches:</span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
+                            {% if package.gitHubForks is not null %}<p><span>Forks:</span> {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
+                            {% if package.gitHubOpenIssues is not null %}<p><span>Open Issues:</span> {{ package.gitHubOpenIssues|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
                         </div>
                     </div>
                 </div>
