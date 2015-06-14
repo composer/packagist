@@ -58,7 +58,7 @@ hr {
   border-color: #F28D1A;
 }
 a, .package .package-aside a {
-  color: #F25B1A;
+  color: #B34E22;
 }
 a:hover, .package .package-aside a:hover {
   color: #2d2d32;
@@ -1128,12 +1128,6 @@ ul.packages .metadata-block:last-child {
 }
 .package .version-details .package-links .no-links {
     color: #999;
-}
-.package .version-details .metadata,
-.package .version-details .metadata p,
-.package .version-details .package-links ul,
-.package .version-details .package-links .no-links {
-    font-size: 12px;
 }
 
 .package .requireme {
