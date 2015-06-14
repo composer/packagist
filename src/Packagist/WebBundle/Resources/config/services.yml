@@ -113,3 +113,6 @@ services:
         scope: request
         tags:
             - { name: knp_menu.menu, alias: profile_menu }
+
+parameters:
+    security.exception_listener.class: Packagist\WebBundle\Security\ExceptionListener
