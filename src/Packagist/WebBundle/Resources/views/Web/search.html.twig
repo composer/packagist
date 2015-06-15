@@ -1,16 +1,10 @@
-{% extends "PackagistWebBundle:Web:list.html.twig" %}
+{% embed "PackagistWebBundle:Web:list.html.twig" %}
+    {% block search_results %}
+    {% endblock %}
 
-{% block content %}
-{% endblock %}
-
-{% block search %}
-    <div class="box clearfix">
-        {{ render(controller('PackagistWebBundle:Web:searchForm', { req: app.request })) }}
-
-        <div class="search-list {% if packages is not defined %}hidden{% endif %}">
-            {% if packages is defined %}
-                {{ block('list') }}
-            {% endif %}
+    {% block content %}
+        <div class="search-list">
+            {{ block('list') }}
         </div>
-    </div>
-{% endblock %}
+    {% endblock %}
+{% endembed %}

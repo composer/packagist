@@ -101,7 +101,7 @@ abstract class PackageLink
     /**
      * Set version
      *
-     * @param \Packagist\WebBundle\Entity\Version $version
+     * @param Version $version
      */
     public function setVersion(Version $version)
     {
@@ -111,7 +111,7 @@ abstract class PackageLink
     /**
      * Get version
      *
-     * @return \Packagist\WebBundle\Entity\Version
+     * @return Version
      */
     public function getVersion()
     {

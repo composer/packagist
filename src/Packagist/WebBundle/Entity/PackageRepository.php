@@ -258,6 +258,17 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function getGitHubStars(array $ids)
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p.gitHubStars', 'p.id')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->where($qb->expr()->in('p.id', ':ids'))
+            ->setParameter('ids', $ids);
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function getFilteredQueryBuilder(array $filters = array())
     {
         $qb = $this->getEntityManager()->createQueryBuilder();

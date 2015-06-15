@@ -12,22 +12,22 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Composer\IO\BufferIO;
 use Composer\Factory;
-use Composer\Repository\VcsRepository;
-use Composer\Repository\InvalidRepositoryException;
-use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\IO\BufferIO;
 use Composer\Package\Loader\ArrayLoader;
-use Packagist\WebBundle\Package\Updater;
+use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\Repository\InvalidRepositoryException;
+use Composer\Repository\VcsRepository;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
-use Symfony\Component\HttpFoundation\Response;
+use Packagist\WebBundle\Package\Updater;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Console\Output\OutputInterface;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -207,14 +207,14 @@ class ApiController extends Controller
         // put both updating the database and scanning the repository in a transaction
         $em = $this->get('doctrine.orm.entity_manager');
         $updater = $this->get('packagist.package_updater');
+        $config = Factory::createConfig();
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE);
+        $io->loadConfiguration($config);
 
         try {
             foreach ($packages as $package) {
-                $em->transactional(function($em) use ($package, $updater, $io) {
+                $em->transactional(function($em) use ($package, $updater, $io, $config) {
                     // prepare dependencies
-                    $config = Factory::createConfig();
-                    $io->loadConfiguration($config);
                     $loader = new ValidatingArrayLoader(new ArrayLoader());
 
                     // prepare repository
@@ -222,7 +222,7 @@ class ApiController extends Controller
                     $repository->setLoader($loader);
 
                     // perform the actual update (fetch and re-scan the repository's source)
-                    $updater->update($package, $repository);
+                    $updater->update($io, $config, $package, $repository);
 
                     // update the package entity
                     $package->setAutoUpdated(true);

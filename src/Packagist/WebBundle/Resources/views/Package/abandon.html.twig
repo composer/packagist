@@ -3,20 +3,22 @@
 {% block title %}{{ package.name }} - {{ parent() }}{% endblock %}
 
 {% block content %}
-    <div class="box">
-        <h1>
-            <a href="{{ path("view_vendor", {vendor: package.vendor}) }}">{{ package.vendor }}/</a><a href="{{ path("view_package", {name: package.name}) }}">{{ package.packageName }}</a>
-        </h1>
+<h2 class="title">
+    <a href="{{ path("view_vendor", {vendor: package.vendor}) }}">{{ package.vendor }}/</a><a href="{{ path("view_package", {name: package.name}) }}">{{ package.packageName }}</a>
+</h2 class="title">
 
+<section class="row">
+    <form method="post" {{ form_enctype(form) }} class="col-sm-6">
+        {{ form_widget(form) }}
+
+        <input class="btn btn-block btn-default btn-lg" type="submit" value="Abandon Package" />
+    </form>
+
+    <div class="col-sm-6">
         <p>You are about to mark this package as abandoned. This will alert users that this package will no longer be maintained.</p>
         <p>If you are handing this project over to a new maintainer or know of a package that replaces it, please use
             the field below to point users to the new package. In case you cannot point them to a new package, this one
             will be tagged as abandoned and a replacement can be added later.</p>
-
-        <form method="post" {{ form_enctype(form) }}>
-            {{ form_widget(form) }}
-
-            <input type="submit" value="Abandon Package" />
-        </form>
     </div>
+</section>
 {% endblock %}

@@ -21,20 +21,38 @@ class Controller extends BaseController
 {
     protected function getPackagesMetadata($packages)
     {
+        $favMgr = $this->get('packagist.favorite_manager');
+        $dlMgr = $this->get('packagist.download_manager');
+
         try {
             $ids = array();
 
-            foreach ($packages as $package) {
-                $ids[] = $package instanceof \Solarium_Document_ReadOnly ? $package->id : $package->getId();
-            }
-
-            if (!$ids) {
+            if (!count($packages)) {
                 return;
             }
 
+            $favs = array();
+            $solarium = false;
+            foreach ($packages as $package) {
+                if ($package instanceof \Solarium_Document_ReadOnly) {
+                    $solarium = true;
+                    $ids[] = $package->id;
+                } else {
+                    $ids[] = $package->getId();
+                    $favs[$package->getId()] = $favMgr->getFaverCount($package);
+                }
+            }
+
+            if ($solarium) {
+                return array(
+                    'downloads' => $dlMgr->getPackagesDownloads($ids),
+                    'favers' => $favMgr->getFaverCounts($ids),
+                );
+            }
+
             return array(
-                'downloads' => $this->get('packagist.download_manager')->getPackagesDownloads($ids),
-                'favers' => $this->get('packagist.favorite_manager')->getFaverCounts($ids),
+                'downloads' => $dlMgr->getPackagesDownloads($ids),
+                'favers' => $favs,
             );
         } catch (\Predis\Connection\ConnectionException $e) {}
     }

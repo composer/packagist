@@ -57,7 +57,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
         $form->setData($user);
 
         if ('POST' === $request->getMethod()) {
-            $form->bind($request);
+            $form->handleRequest($request);
 
             if ($form->isValid()) {
                 $randomPassword = $this->tokenGenerator->generateToken();

@@ -1,24 +1,20 @@
 <!DOCTYPE html>
-<!--[if lte IE 8 ]> <html lang="en" class="no-js oldie"> <![endif]-->
-<!--[if (gte IE 9)|!(IE)]><!--> <html lang="en" class="no-js"> <!--<![endif]-->
+<html>
     <head>
         <meta charset="UTF-8" />
 
         <title>{% block title %}Packagist{% endblock %}</title>
-        <meta name="description" content="" />
+        <meta name="description" content="{% block description %}The PHP Package Repository{% endblock %}" />
         <meta name="author" content="Jordi Boggiano" />
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
-        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}" />
 
-        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css?v=15') }}" />
-        <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css?v=3') }}" />
-        <link rel="stylesheet" href="{{ asset('css/fontawesome/font-awesome.css') }}" />
-        <!--[if lt IE 8]>
-        <link rel="stylesheet" href="{{ asset('css/fontawesome/font-awesome-ie7.css') }}" />
-        <![endif]-->
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" type="text/css" />
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="{{ asset('bundles/packagistweb/css/main.css') }}" />
+        <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css') }}" />
 
         {% block head_feeds %}
         <link rel="alternate" type="application/rss+xml" title="Newly Submitted Packages - Packagist" href="{{ url('feed_packages', {_format: 'rss'}) }}" />
@@ -27,107 +23,172 @@
 
         <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist" />
 
-        {# {% stylesheets
-            '@PackagistWebBundle/Resources/public/css/main.css'
-            'css/humane/jackedup.css'
-            filter="yui_css" output='css/main.css' %}
-            <link rel="stylesheet" href="{{ asset_url }}" />
-        {% endstylesheets %} #}
-
-        <script src="{{ asset('js/libs/modernizr-1.7.min.js') }}"></script>
-
         {% block head_additions %}{% endblock %}
     </head>
+
     <body>
-        <div class="container">
-            <div class="user">
-                {% if app.user %}
-                    <a href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a> | <a href="{{ path('logout') }}">Logout</a>
-                {% else %}
-                    <a href="{{ path('fos_user_registration_register') }}">Create a new account</a>
-                    |
-                    <a href="{{ path('hwi_oauth_connect') }}">Login</a>
-                {% endif %}
-            </div>
+    <section class="wrap">
+        <header class="navbar-wrapper navbar-fixed-top">
+            <nav class="container">
+                <div class="navbar" role="navigation">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <h1 class="navbar-brand"><a href="{{ path('home') }}">Packagist</a> <em class="hidden-sm hidden-xs">The PHP Package Repository</em></h1>
+                    </div>
 
-            <header>
-                {% if page is not defined or page != 'submit' %}
-                    <a class="submit" href="{{ path('submit') }}">Submit Package</a>
-                {% endif %}
-                <h1><a href="{{ path('home') }}">Packagist</a></h1>
-                <h2>The PHP package archivist.</h2>
-            </header>
+                    <div class="collapse navbar-collapse">
+                        <ul class="nav navbar-nav">
+                        {%- if app.user %}
+                            <li class="nav-user">
+                                <section>
+                                    <a href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a>
 
-            <div class="main" role="main">
-                {% for type, flashMessages in app.session.flashbag.all() %}
-                    {% for flashMessage in flashMessages %}
-                        {% if 'fos_user_' in type %}
-                            <div class="flash-message {{ type|replace({'fos_user_': ''}) }}">
+                                    <section class="nav-user-menu">
+                                        {{ knp_menu_render('user_menu', {'allow_safe_labels': true}) }}
+                                    </section>
+                                </section>
+                            </li>
+                        {%- else %}
+                            <li>
+                                <a href="{{ path('fos_user_registration_register') }}">Create account</a>
+                            </li>
+                            <li class="nav-user">
+                                <section class="nav-user-signin">
+                                    <a href="{{ path('hwi_oauth_connect') }}">Sign in</a>
+
+                                    <section class="signin-box">
+                                        <form action="{{ path('login_check') }}" method="POST">
+                                            <div class="input-group">
+                                                <input class="form-control" type="text" id="_username" name="_username" placeholder="{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}">
+                                                <span class="input-group-addon"><span class="icon-user"></span></span>
+                                            </div>
+                                            <div class="input-group">
+                                                <input class="form-control" type="password" id="_password" name="_password" placeholder="{{ 'security.login.password'|trans({}, 'FOSUserBundle') }}">
+                                                <span class="input-group-addon"><span class="icon-lock"></span></span>
+                                            </div>
+
+                                            <div class="checkbox">
+                                                <label for="_remember_me">
+                                                    <input type="checkbox" id="_remember_me" name="_remember_me" value="on" checked="checked" />
+                                                    {{- 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}
+                                                </label>
+                                            </div>
+
+                                            {%- if packagist_host and packagist_host in app.request.headers.get('Referer') %}
+                                                <input type="hidden" name="_target_path" value="{{ app.request.headers.get('Referer') }}" />
+                                            {%- endif %}
+
+                                            <div class="signin-box-buttons">
+                                                <a href="{{ hwi_oauth_login_url('github') }}" class="pull-right btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
+                                                <button type="submit" class="btn btn-success" id="_submit" name="_submit">{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}</button>
+                                            </div>
+                                        </form>
+
+                                        <div class="signin-box-register">
+                                            <a href="{{ path('fos_user_registration_register') }}">No account yet? Create one now!</a>
+                                        </div>
+                                    </section>
+                                </section>
+                            </li>
+                        {%- endif %}
+                            <li>
+                                <a href="{{ path('browse') }}">Browse</a>
+                            </li>
+                            <li>
+                                <a href="{{ path('submit') }}">Submit</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        {{ include("PackagistWebBundle:Web:searchSection.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
+
+        {% block flashMessages %}
+            {%- if app.session.flashbag.peekAll()|length > 0 %}
+            <section class="wrapper wrapper-white">
+                <div class="container flash-container">
+                {%- for type, flashMessages in app.session.flashbag.all() %}
+                    {%- for flashMessage in flashMessages %}
+                        {%- if 'fos_user_' in type %}
+                            <div class="alert alert-{{ type|replace({'fos_user_': ''}) }}">
                                 <p>{{ flashMessage|trans({}, 'FOSUserBundle') }}</p>
                             </div>
-                        {% else %}
-                            <div class="flash-message {{ type }}">
-                                <p>{{ flashMessage }}</p>
+                        {%- else %}
+                            <div class="alert alert-{{ type }}">
+                                <p>{{ flashMessage|trans }}</p>
                             </div>
-                        {% endif %}
-                    {% endfor %}
-                {% endfor %}
+                        {%- endif %}
+                    {%- endfor %}
+                {%- endfor %}
+                </div>
+            </section>
+            {%- endif %}
+        {% endblock %}
 
-                {% block search %}
-                    <div class="box">
-                        {{ render(controller('PackagistWebBundle:Web:searchForm', { req: app.request })) }}
-                        <div class="search-list hidden">
-                        </div>
+        {% block content_header %}{% endblock %}
+
+        <section class="wrapper">
+            <section class="container content" role="main">
+                {% block search_results %}
+                    <div class="row hidden">
+                        <div class="search-list col-md-12"></div>
                     </div>
                 {% endblock %}
 
-                {% block content %}
-                {% endblock %}
-            </div>
-        </div>
+                {% block content %}{% endblock %}
+            </section>
+        </section>
+    </section>
 
-        <footer>
-            <ul>
-                <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
-                <li><a href="{{ path('feeds') }}">{{ 'menu.rss_feeds'|trans }}</a></li>
-                <li><a href="{{ path('home') }}">{{ 'menu.home'|trans }}</a></li>
-            </ul>
-            <ul>
-                {% if app.user %}
-                    <li><a href="{{ path('fos_user_profile_show') }}">{{ 'menu.profile'|trans }}</a></li>
-                    <li><a href="{{ path('logout') }}">{{ 'menu.logout'|trans }}</a></li>
-                {% else %}
-                    <li><a href="{{ path('fos_user_registration_register') }}">{{ 'menu.register'|trans }}</a></li>
-                    <li><a href="{{ path('hwi_oauth_connect') }}">{{ 'menu.login'|trans }}</a></li>
-                {% endif %}
-            </ul>
-            <ul>
-                <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
-                <li><a href="{{ path('stats') }}">{{ 'menu.stats'|trans }}</a></li>
-            </ul>
-            <ul>
-                <li><a href="https://twitter.com/packagist">{{ 'menu.twitter'|trans }}</a></li>
-                <li><a href="mailto:contact@packagist.org">{{ 'menu.contact'|trans }}</a></li>
-            </ul>
-            <p>Packagist maintenance and hosting is supported by <a href="https://toranproxy.com/">Toran Proxy</a></p>
-            <div class="clearfix"></div>
+        <footer class="wrapper-footer">
+            <nav class="container">
+                <div class="row">
+                    <ul class="social col-xs-7 col-sm-4 col-md-2 pull-right">
+                        <li><a href="http://github.com/composer/packagist" title="{{ 'menu.github'|trans }}"><span class="icon-github"></span></a></li>
+                        <li><a href="https://twitter.com/packagist" title="{{ 'menu.twitter'|trans }}"><span class="icon-twitter"></span></a></li>
+                        <li><a href="mailto:contact@packagist.org" title="{{ 'menu.contact'|trans }}"><span class="icon-mail"></span></a></li>
+                    </ul>
+
+                    <ul class="col-xs-4 col-md-2">
+                        <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
+                        <li><a href="{{ path('feeds') }}">{{ 'menu.rss_feeds'|trans }}</a></li>
+                    </ul>
+
+                    <div class="clearfix visible-xs-block"></div>
+
+                    <ul class="col-xs-3 col-md-2">
+                        <li><a href="{{ path('stats') }}">{{ 'menu.stats'|trans }}</a></li>
+                        <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <p class="toran col-xs-12">Packagist maintenance and hosting is supported by <a href="https://toranproxy.com/">Toran Proxy</a></p>
+                </div>
+            </nav>
         </footer>
 
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-        <script>!window.jQuery && document.write(unescape('%3Cscript src="{{ asset('js/libs/jquery-1.8.2.min.js') }}"%3E%3C/script%3E'))</script>
-        <script src="{{ asset('js/libs/humane.min.js?v=2') }}"></script>
-        <script src="{{ asset('js/libs/ZeroClipboard.min.js') }}"></script>
-        <script src="{{ asset('bundles/packagistweb/js/layout.js?v=2') }}"></script>
-        <script src="{{ asset('bundles/packagistweb/js/search.js?v=6')}}"></script>
+        <script src="//code.jquery.com/jquery-2.1.0.min.js"></script>
+        <script src="{{ asset('js/libs/humane.min.js') }}"></script>
+        <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
+        <script src="{{ asset('bundles/packagistweb/js/search.js')}}"></script>
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 
-        {% if not app.debug and google_analytics.ga_key %}
-            <script>
-                var _gaq=[['_setAccount','{{ google_analytics.ga_key }}'],['_trackPageview']];
-                (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.async=1;
-                g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
-                s.parentNode.insertBefore(g,s)}(document,'script'));
-            </script>
-        {% endif %}
+        {%- if not app.debug and google_analytics.ga_key %}
+        <script>
+            var _gaq=[['_setAccount','{{ google_analytics.ga_key }}'],['_trackPageview']];
+            (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.async=1;
+            g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+            s.parentNode.insertBefore(g,s)}(document,'script'));
+        </script>
+        {%- endif %}
 
         {% block scripts %}{% endblock %}
     </body>

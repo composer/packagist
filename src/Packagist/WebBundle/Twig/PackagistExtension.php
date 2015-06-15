@@ -28,7 +28,8 @@ class PackagistExtension extends \Twig_Extension
     public function getFilters()
     {
         return array(
-            'prettify_source_reference' => new \Twig_Filter_Method($this, 'prettifySourceReference')
+            'prettify_source_reference' => new \Twig_Filter_Method($this, 'prettifySourceReference'),
+            'gravatar_hash' => new \Twig_Filter_Method($this, 'generateGravatarHash')
         );
     }
 
@@ -67,5 +68,10 @@ class PackagistExtension extends \Twig_Extension
         }
 
         return $sourceReference;
+    }
+
+    public function generateGravatarHash($email)
+    {
+        return md5(strtolower($email));
     }
 }

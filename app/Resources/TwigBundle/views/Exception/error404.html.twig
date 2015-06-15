@@ -1,17 +1,13 @@
 {% extends 'PackagistWebBundle::layout.html.twig' %}
 
 {% block content %}
-    <div class="box">
-         <form id="search-form" action="/search/" method="GET"  autocomplete="off">
-            <p class="submit-wrapper"><input class="submit" type="submit" value="Search" /></p>
-            <p><input type="search" id="search_query_query" name="search_query[query]" required="required"    autocomplete="off" placeholder="Search packages..." tabindex="1" /></p>
-        </form>
-        <div class="search-list hidden">
+<section class="wrapper">
+    <section class="container error">
+        <div class="row">
+            <h2 class="title">Oh noes, 404!</h2>
+            <h3 class="font-normal">It looks like you requested a page that was not found.</h3>
+            <h4>Go back to the <a href="{{ path('home') }}">homepage</a> or use the search above to find the package you want.</h4>
         </div>
-    </div>
-
-    <div class="box clearfix">
-        <h1>Oh noes, 404!</h1>
-        <p>It looks like you requested a page that was not found. Go back to the <a href="{{ path('home') }}">homepage</a> or use the search above to find the package you want.</p>
-    </div>
+    </section>
+</section>
 {% endblock %}

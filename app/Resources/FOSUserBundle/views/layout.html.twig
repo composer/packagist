@@ -1,7 +1,23 @@
 {% extends 'PackagistWebBundle::layout.html.twig' %}
 
 {% block content %}
-    <div class="box clearfix">
-        {% block fos_user_content %}{% endblock %}
-    </div>
+{% if app.user is null %}
+    {{ block('fos_user_header') }}
+
+    <section class="row">
+        {{ block('fos_user_content') }}
+    </section>
+{% else %}
+    <h2 class="title">
+        {{ app.user.username }}
+    </h2>
+
+    <section class="row">
+        <div class="col-md-3">
+            {{ knp_menu_render('profile_menu', {'currentClass': 'active', 'allow_safe_labels': true}) }}
+        </div>
+
+        {{ block('fos_user_content') }}
+    </section>
+{% endif %}
 {% endblock %}

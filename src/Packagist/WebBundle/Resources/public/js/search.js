@@ -16,11 +16,13 @@
         var newList = $(page);
 
         list.html(newList.html());
-        list.removeClass('hidden');
+        list.parent().removeClass('hidden');
         list.find('ul.packages li:first').addClass('selected');
         $('.order-by-group').attr('href', function (index, current) {
             return current.replace(/q=.*?&/, 'q=' + encodeURIComponent($('input[type="search"]', form).val()) + '&')
         });
+        $('.js-search-field-wrapper').removeClass('col-xs-12').addClass('col-xs-8');
+        $('#order-bys-wrapper').removeClass('hidden');
 
         searching = false;
 
@@ -32,10 +34,6 @@
 
     doSearch = function () {
         var currentQuery,
-            orderBys,
-            orderBysStrParts,
-            joinedOrderBys,
-            joinedOrderBysQryStrPart,
             q,
             pathname,
             urlPrefix,
@@ -49,7 +47,8 @@
 
         if ($('#search_query_query').val().match(/^\s*$/) !== null) {
             if (!firstQuery) {
-                list.addClass('hidden');
+                list.parent().addClass('hidden');
+                $('#order-bys-wrapper').addClass('hidden');
             }
             return;
         }
@@ -60,29 +59,9 @@
             return;
         }
 
+        $('.order-by-group .active').removeClass('active');
+
         if (window.history.pushState) {
-            orderBys = [];
-
-            $('#search_query_orderBys > div').each(function (i, e) {
-                var sort,
-                    order;
-                sort = $(e).find('input').val();
-                order = $(e).find('select').val();
-
-                orderBys.push({
-                    sort: sort,
-                    order: order
-                });
-            });
-
-            orderBysStrParts = [];
-
-            orderBys.forEach(function (e, i) {
-                orderBysStrParts.push('orderBys[' + i + '][sort]=' + e.sort + '&orderBys[' + i + '][order]=' + e.order);
-            });
-
-            joinedOrderBys = orderBysStrParts.join('&');
-
             q = encodeURIComponent($('input[type="search"]', form).val());
 
             pathname = window.location.pathname;
@@ -95,13 +74,7 @@
                 urlPrefix = '';
             }
 
-            if (joinedOrderBys === '') {
-                joinedOrderBysQryStrPart = '';
-            } else {
-                joinedOrderBysQryStrPart = '&' + joinedOrderBys;
-            }
-
-            url = urlPrefix + '/search/?q=' + q + joinedOrderBysQryStrPart;
+            url = urlPrefix + '/search/?q=' + q;
             title = 'Search';
 
             if (firstQuery) {
@@ -151,6 +124,10 @@
         currentSelected = list.find('ul.packages li.selected');
         nextSelected = (keymap.down === event.which) ? currentSelected.next('li') : currentSelected.prev('li');
 
+        if (currentSelected.length === 0 && keymap.down === event.which) {
+            currentSelected = list.find('ul.packages li:first').addClass('selected');
+        }
+
         if (keymap.enter === event.which && currentSelected.data('url')) {
             window.location = currentSelected.data('url');
             return;
@@ -170,6 +147,13 @@
             } else if (elTop + elHeight > windowTop + windowHeight) {
                 $(window).scrollTop(elTop + elHeight + 20 - windowHeight);
             }
+        }
+    });
+
+    // handle pressing S to focus the search
+    $(document.body).bind('keyup', function (event) {
+        if (event.which === 83 && (!document.activeElement || document.activeElement.tagName !== 'INPUT')) {
+            $('#search_query_query').focus();
         }
     });
 }(jQuery));

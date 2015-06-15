@@ -1,6 +1,10 @@
 /*jslint nomen: true, browser: true*/
-(function ($, humane, ZeroClipboard) {
+(function ($, humane) {
     "use strict";
+
+    var versionCache = {},
+        ongoingRequest = false;
+
     $('#add-maintainer').click(function (e) {
         $('#remove-maintainer-form').addClass('hidden');
         $('#add-maintainer-form').toggleClass('hidden');
@@ -11,25 +15,43 @@
         $('#remove-maintainer-form').toggleClass('hidden');
         e.preventDefault();
     });
-    $('.package .version h1').click(function (e) {
-        e.preventDefault();
-        $(this).siblings('.details-toggler').click();
-    });
+
     $('.package .details-toggler').click(function () {
         var target = $(this);
-        target.toggleClass('open')
-            .prev().toggleClass('open');
-        if (target.attr('data-load-more')) {
+
+        if (versionCache[target.attr('data-version-id')]) {
+            $('.package .version-details').html(versionCache[target.attr('data-version-id')]);
+        } else if (target.attr('data-load-more')) {
+            if (ongoingRequest) { // TODO cancel previous requests instead?
+                return;
+            }
+            ongoingRequest = true;
+            $('.package .version-details').addClass('loading');
             $.ajax({
                 url: target.attr('data-load-more'),
                 dataType: 'json',
                 success: function (data) {
-                    target.attr('data-load-more', '')
-                        .prev().html(data.content);
+                    versionCache[target.attr('data-version-id')] = data.content;
+                    ongoingRequest = false;
+                    $('.package .version-details')
+                        .removeClass('loading')
+                        .html(data.content);
                 }
             });
         }
+
+        $('.package .versions .open').removeClass('open');
+        target.toggleClass('open');
     });
+
+    // initializer for #<version-id> present on page load
+    (function () {
+        var hash = document.location.hash;
+        if (hash.length > 1) {
+            hash = hash.substring(1);
+            $('.package .details-toggler[data-version-id="'+hash+'"]').click();
+        }
+    }());
 
     function forceUpdatePackage(e, updateAll) {
         var submit = $('input[type=submit]', '.package .force-update'), data;
@@ -50,7 +72,7 @@
             data: data,
             type: 'PUT',
             success: function () {
-                window.location.href = window.location.href;
+                document.location.reload(true);
             },
             context: $('.package .force-update')[0]
         }).complete(function () { submit.removeClass('loading'); });
@@ -62,7 +84,7 @@
             dataType: 'json',
             cache: false,
             success: function () {
-                $(this).toggleClass('icon-star icon-star-empty');
+                $(this).toggleClass('is-starred');
             },
             context: this
         };
@@ -70,7 +92,7 @@
         if ($(this).is('.loading')) {
             return;
         }
-        if ($(this).is('.icon-star')) {
+        if ($(this).is('.is-starred')) {
             options.type = 'DELETE';
             options.url = $(this).data('remove-url');
         } else {
@@ -87,8 +109,10 @@
             e.target.submit();
         }
     });
-    $('.package .delete-version').click(function (e) {
+    $('.package .delete-version .submit').click(function (e) {
+        e.preventDefault();
         e.stopImmediatePropagation();
+        $(e.target).closest('.delete-version').submit();
     });
     $('.package .delete-version').submit(function (e) {
         e.preventDefault();
@@ -104,9 +128,39 @@
         forceUpdatePackage(null, true);
     }
 
-    ZeroClipboard.setMoviePath("/js/libs/ZeroClipboard.swf");
-    var clip = new ZeroClipboard.Client("#copy");
-    clip.on("complete", function () {
-        humane.log("Copied");
+    $('.readme a').on('click', function (e) {
+        var targetEl,
+            href = e.target.getAttribute('href');
+
+        if (href.substr(0, 1) === '#') {
+            targetEl = $(href);
+            if (targetEl.length) {
+                window.scrollTo(0, targetEl.offset().top - 70);
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }
     });
-}(jQuery, humane, ZeroClipboard));
+
+    var versionsList = $('.package .versions')[0];
+    if (versionsList.offsetHeight < versionsList.scrollHeight) {
+        $('.package .versions-expander').removeClass('hidden').on('click', function () {
+            $(this).addClass('hidden');
+            $(versionsList).css('overflow-y', 'visible')
+                .css('max-height', 'inherit');
+        });
+    }
+
+    var readme = $('.package .readme')[0];
+    if (readme && readme.offsetHeight < readme.scrollHeight) {
+        $('.package .readme-expander').removeClass('hidden').on('click', function () {
+            $(this).addClass('hidden');
+            $(readme).css('overflow-y', 'visible')
+                .css('max-height', 'inherit');
+        });
+        // auto-expand when contracting doesn't hide enough to make it worth it
+        if (readme.offsetHeight > readme.scrollHeight - 200) {
+            $('.package .readme-expander').click();
+        }
+    }
+}(jQuery, humane));

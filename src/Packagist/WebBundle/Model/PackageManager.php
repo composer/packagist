@@ -12,8 +12,6 @@
 
 namespace Packagist\WebBundle\Model;
 
-use Swift_Mailer;
-use Twig_Environment;
 use Doctrine\ORM\EntityManager;
 use Packagist\WebBundle\Entity\Package;
 use Symfony\Component\HttpKernel\Log\LoggerInterface;
@@ -29,7 +27,7 @@ class PackageManager
     protected $logger;
     protected $options;
 
-    public function __construct(EntityManager $em, Swift_Mailer $mailer, Twig_Environment $twig, LoggerInterface $logger, array $options)
+    public function __construct(EntityManager $em, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options)
     {
         $this->em = $em;
         $this->mailer = $mailer;

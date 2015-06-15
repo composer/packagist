@@ -12,19 +12,19 @@
 
 namespace Packagist\WebBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Output\OutputInterface;
-use Packagist\WebBundle\Package\Updater;
-use Composer\Repository\VcsRepository;
 use Composer\Factory;
-use Composer\Package\Loader\ValidatingArrayLoader;
-use Composer\Package\Loader\ArrayLoader;
 use Composer\IO\BufferIO;
 use Composer\IO\ConsoleIO;
+use Composer\Package\Loader\ArrayLoader;
+use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Repository\InvalidRepositoryException;
+use Composer\Repository\VcsRepository;
+use Packagist\WebBundle\Package\Updater;
+use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -108,7 +108,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                     }
                     $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                     $repository->setLoader($loader);
-                    $updater->update($package, $repository, $flags, $start);
+                    $updater->update($io, $config, $package, $repository, $flags, $start);
                 } catch (InvalidRepositoryException $e) {
                     $output->writeln('<error>Broken repository in '.$router->generate('view_package', array('name' => $package->getName()), true).': '.$e->getMessage().'</error>');
                     if ($input->getOption('notify-failures')) {

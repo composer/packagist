@@ -3,14 +3,12 @@
 namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Form\Type\AbandonedType;
+use Packagist\WebBundle\Entity\Package;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-
-use Packagist\WebBundle\Entity\Package;
-
 
 class PackageController extends Controller
 {

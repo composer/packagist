@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
     <ShortName>Packagist</ShortName>
-    <Description>Use Packagist.org to search for packages.</Description>
-    <Tags>packagist composer</Tags>
+    <LongName>Packagist PHP Package Search</LongName>
+    <Description>Use Packagist.org to search for PHP packages.</Description>
+    <Tags>packagist composer php</Tags>
     <Contact>contact@packagist.org</Contact>
-    <Url type="text/html" template="http://packagist.org/search/?q={searchTerms}"/>
+    <Url type="text/html" template="https://packagist.org/search/?q={searchTerms}"/>
+    <Language>en-us</Language>
+    <OutputEncoding>UTF-8</OutputEncoding>
+    <InputEncoding>UTF-8</InputEncoding>
+    <Image height="180" width="180" type="image/png">https://packagist.org/apple-touch-icon.png</Image>
+    <Image height="16" width="16" type="image/vnd.microsoft.icon">https://packagist.org/favicon.ico</Image>
 </OpenSearchDescription>

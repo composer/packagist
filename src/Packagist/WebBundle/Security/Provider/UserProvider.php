@@ -16,9 +16,10 @@ use FOS\UserBundle\Model\UserManagerInterface;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
 use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
+use Packagist\WebBundle\Entity\User;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
-use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInterface
 {
@@ -74,7 +75,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
             throw new AccountNotLinkedException(sprintf('No user with github username "%s" was found.', $username));
         }
 
-        if (!$user->getGithubToken()) {
+        if ($user->getGithubToken() !== $response->getAccessToken()) {
             $user->setGithubToken($response->getAccessToken());
             $this->userManager->updateUser($user);
         }

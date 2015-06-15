@@ -1,16 +1,54 @@
-<form action="{{ path('fos_user_profile_edit') }}" {{ form_enctype(form) }} method="POST" class="fos_user_profile_edit">
-    {{ form_row(form.username) }}
-    {{ form_row(form.email) }}
-    {{ form_row(form.current_password) }}
+<form action="{{ path('fos_user_profile_edit') }}" {{ form_enctype(form) }} method="POST" class="fos_user_profile_edit col-md-6">
+    {{ form_errors(form) }}
 
-    <div class="notifications">
+    <div class="form-group clearfix">
+        {{ form_label(form.username) }}
+        <div class="input-group">
+            {{ form_errors(form.username) }}
+            {{ form_widget(form.username) }}
+            <span class="input-group-addon"><span class="icon-user"></span></span>
+        </div>
+    </div>
+
+    <div class="form-group clearfix">
+        {{ form_label(form.email) }}
+        <div class="input-group clearfix">
+            {{ form_errors(form.email) }}
+            {{ form_widget(form.email) }}
+            <span class="input-group-addon"><span class="icon-mail"></span></span>
+        </div>
+    </div>
+
+    <div class="form-group clearfix">
+        {{ form_label(form.current_password) }}
+        <div class="input-group">
+            {{ form_errors(form.current_password) }}
+            {{ form_widget(form.current_password) }}
+            <span class="input-group-addon"><span class="icon-lock"></span></span>
+        </div>
+    </div>
+
+    <div class="notifications form-group">
         {{ form_errors(form.failureNotifications) }}
-        {{ form_widget(form.failureNotifications) }}
-        {{ form_label(form.failureNotifications) }}
+        <label>
+            {{ form_widget(form.failureNotifications) }}
+            Notify me of package update failures
+        </label>
     </div>
 
-    <div>
-        {{ form_widget(form) }}
-        <input type="submit" value="{{ 'profile.edit.submit'|trans({}, 'FOSUserBundle') }}" />
-    </div>
+    {{ form_rest(form) }}
+
+    <input type="submit" class="btn btn-block btn-success btn-lg" value="{{ 'profile.edit.submit'|trans({}, 'FOSUserBundle') }}" />
+
+    <hr>
+
+    <h5>Using GitHub:</h5>
+
+    <a href="{{ app.user.githubId ? '#' : hwi_oauth_login_url('github') }}" class="btn btn-block btn-github btn-lg {{ app.user.githubId ? 'disabled' : 'btn-primary' }}">
+        <span class="icon-github"></span>
+        {{ app.user.githubId ? 'Accounts connected' : 'Connect accounts' }}
+    </a>
 </form>
+
+<div class="col-md-2">
+</div>

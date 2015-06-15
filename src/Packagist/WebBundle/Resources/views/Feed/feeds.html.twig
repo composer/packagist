@@ -1,20 +1,17 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
 {% block content %}
-    {% set packageCount = 0 %}
-    <div class="box clearfix">
-        <h1>Atom/RSS Feeds</h1>
+    <h2 class="title">Atom/RSS Feeds</h2>
 
-        <h2>Global Feeds</h2>
-        <p>Newly Submitted Packages: <a href="{{ url('feed_packages', {_format: 'rss'}) }}">RSS</a>, <a href="{{ url('feed_packages', {_format: 'atom'}) }}">Atom</a></p>
-        <p>New Releases: <a href="{{ url('feed_releases', {_format: 'rss'}) }}">RSS</a>, <a href="{{ url('feed_releases', {_format: 'atom'}) }}">Atom</a></p>
+    <h3>Global Feeds</h3>
+    <p>Newly Submitted Packages: <a href="{{ url('feed_packages', {_format: 'rss'}) }}">RSS</a>, <a href="{{ url('feed_packages', {_format: 'atom'}) }}">Atom</a></p>
+    <p>New Releases: <a href="{{ url('feed_releases', {_format: 'rss'}) }}">RSS</a>, <a href="{{ url('feed_releases', {_format: 'atom'}) }}">Atom</a></p>
 
-        <h2>Vendor Feed</h2>
-        <p>New Releases for a specific vendor namespace: <code>{{ url('feed_vendor', {vendor: 'XXX', _format: 'rss'})|replace({XXX: '%vendor%'}) }}</code></p>
-        <p>Replace <code>%vendor%</code> by the vendor name, and change rss to atom if you would like an atom feed.</p>
+    <h3>Vendor Feed</h3>
+    <p>New Releases for a specific vendor namespace: <code>{{ url('feed_vendor', {vendor: 'XXX', _format: 'rss'})|replace({XXX: '%vendor%'}) }}</code></p>
+    <p>Replace <code>%vendor%</code> by the vendor name, and change rss to atom if you would like an atom feed.</p>
 
-        <h2>Package Feed</h2>
-        <p>New Releases for a specific package: <code>{{ url('feed_package', {package: 'X/X', _format: 'rss'})|replace({'X/X': '%vendor/package%'}) }}</code></p>
-        <p>Replace <code>%vendor/package%</code> by the package name, and change rss to atom if you would like an atom feed.</p>
-    </div>
+    <h3>Package Feed</h3>
+    <p>New Releases for a specific package: <code>{{ url('feed_package', {package: 'X/X', _format: 'rss'})|replace({'X/X': '%vendor/package%'}) }}</code></p>
+    <p>Replace <code>%vendor/package%</code> by the package name, and change rss to atom if you would like an atom feed.</p>
 {% endblock %}

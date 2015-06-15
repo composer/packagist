@@ -2,19 +2,26 @@
 
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
+{% set isActualUser = app.user and app.user.username is sameas(user.username) %}
 
 {% block content %}
-    <div class="box clearfix">
-        <h1>{{ user.username }}</h1>
-        {% if is_granted('ROLE_ADMIN') %}
-            <p>Email: <a href="mailto:{{ user.email }}">{{ user.email }}</a></p>
-        {% endif %}
-        <p>Member since {{ user.createdAt|date('M d, Y') }}
-        <h2>Packages</h2>
-        {% if packages|length %}
-            {{ macros.listPackages(packages, true, false, meta) }}
-        {% else %}
-            <p>No packages found.</p>
-        {% endif %}
-    </div>
+<h2 class="title">
+    {{ user.username }}
+    <small>
+        member since: {{ user.createdAt|date('M d, Y') }}
+        {%- if is_granted('ROLE_ADMIN') %}
+            <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+        {%- endif %}
+    </small>
+</h2>
+
+<section class="row">
+    <section class="col-md-12">
+        {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
+            {% block content_title %}
+                <h3 class="font-normal profile-title">{{ user.username }}'s packages</h3>
+            {% endblock %}
+        {% endembed %}
+    </section>
+</section>
 {% endblock %}

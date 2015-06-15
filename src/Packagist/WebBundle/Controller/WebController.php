@@ -13,37 +13,38 @@
 namespace Packagist\WebBundle\Controller;
 
 use Composer\Console\HtmlOutputFormatter;
-use Composer\IO\BufferIO;
 use Composer\Factory;
-use Composer\Repository\VcsRepository;
-use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\IO\BufferIO;
 use Composer\Package\Loader\ArrayLoader;
+use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\Repository\VcsRepository;
 use Doctrine\ORM\NoResultException;
-use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
-use Packagist\WebBundle\Form\Model\MaintainerRequest;
-use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
-use Packagist\WebBundle\Form\Type\SearchQueryType;
-use Packagist\WebBundle\Form\Model\SearchQuery;
-use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
-use Pagerfanta\Adapter\FixedAdapter;
+use Packagist\WebBundle\Form\Model\MaintainerRequest;
+use Packagist\WebBundle\Form\Model\SearchQuery;
+use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Type\PackageType;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
+use Packagist\WebBundle\Form\Type\SearchQueryType;
+use Packagist\WebBundle\Package\Updater;
+use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Adapter\FixedAdapter;
+use Pagerfanta\Adapter\SolariumAdapter;
+use Pagerfanta\Pagerfanta;
+use Predis\Connection\ConnectionException;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Pagerfanta\Pagerfanta;
-use Pagerfanta\Adapter\DoctrineORMAdapter;
-use Pagerfanta\Adapter\SolariumAdapter;
-use Predis\Connection\ConnectionException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -128,34 +129,38 @@ class WebController extends Controller
      */
     public function popularAction(Request $req)
     {
-        $redis = $this->get('snc_redis.default');
-        $perPage = $req->query->getInt('per_page', 15);
-        if ($perPage <= 0 || $perPage > 100) {
-            if ($req->getRequestFormat() === 'json') {
-                return new JsonResponse(array(
-                    'status' => 'error',
-                    'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-                ), 400);
+        try {
+            $redis = $this->get('snc_redis.default');
+            $perPage = $req->query->getInt('per_page', 15);
+            if ($perPage <= 0 || $perPage > 100) {
+                if ($req->getRequestFormat() === 'json') {
+                    return new JsonResponse(array(
+                        'status' => 'error',
+                        'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
+                    ), 400);
+                }
+
+                $perPage = max(0, min(100, $perPage));
             }
 
-            $perPage = max(0, min(100, $perPage));
+            $popularIds = $redis->zrevrange(
+                'downloads:trending',
+                ($req->get('page', 1) - 1) * $perPage,
+                $req->get('page', 1) * $perPage - 1
+            );
+            $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
+                ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
+                ->getQuery()->useResultCache(true, 900, 'popular_packages')->getResult();
+            usort($popular, function ($a, $b) use ($popularIds) {
+                return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
+            });
+
+            $packages = new Pagerfanta(new FixedAdapter($redis->zcard('downloads:trending'), $popular));
+            $packages->setMaxPerPage($perPage);
+            $packages->setCurrentPage($req->get('page', 1), false, true);
+        } catch (ConnectionException $e) {
+            $packages = new Pagerfanta(new FixedAdapter(0, array()));
         }
-
-        $popularIds = $redis->zrevrange(
-            'downloads:trending',
-            ($req->get('page', 1) - 1) * $perPage,
-            $req->get('page', 1) * $perPage - 1
-        );
-        $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
-            ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
-            ->getQuery()->useResultCache(true, 900, 'popular_packages')->getResult();
-        usort($popular, function ($a, $b) use ($popularIds) {
-            return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
-        });
-
-        $packages = new Pagerfanta(new FixedAdapter($redis->zcard('downloads:trending'), $popular));
-        $packages->setMaxPerPage($perPage);
-        $packages->setCurrentPage($req->get('page', 1), false, true);
 
         $data = array(
             'packages' => $packages,
@@ -397,7 +402,7 @@ class WebController extends Controller
 
             if ($req->isXmlHttpRequest()) {
                 try {
-                    return $this->render('PackagistWebBundle:Web:list.html.twig', array(
+                    return $this->render('PackagistWebBundle:Web:search.html.twig', array(
                         'packages' => $paginator,
                         'meta' => $metadata,
                         'noLayout' => true,
@@ -463,7 +468,7 @@ class WebController extends Controller
     /**
      * @Route("/packages/fetch-info", name="submit.fetch_info", defaults={"_format"="json"})
      */
-    public function fetchInfoAction()
+    public function fetchInfoAction(Request $req)
     {
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
@@ -473,11 +478,10 @@ class WebController extends Controller
         $package->addMaintainer($user);
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
-        $req = $this->getRequest();
         if ('POST' === $req->getMethod()) {
             $form->bind($req);
             if ($form->isValid()) {
-                list($vendor, $name) = explode('/', $package->getName(), 2);
+                list(, $name) = explode('/', $package->getName(), 2);
 
                 $existingPackages = $this->getDoctrine()
                     ->getRepository('PackagistWebBundle:Package')
@@ -515,7 +519,7 @@ class WebController extends Controller
             }
         }
 
-        return new Response(json_encode($response));
+        return new JsonResponse($response);
     }
 
     /**
@@ -548,20 +552,29 @@ class WebController extends Controller
      * @Route(
      *     "/p/{name}.{_format}",
      *     name="view_package_alias",
-     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"},
+     *     requirements={"name"="[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+?)?", "_format"="(json)"},
      *     defaults={"_format"="html"}
      * )
      * @Route(
      *     "/packages/{name}",
      *     name="view_package_alias2",
-     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?/", "_format"="(json)"},
+     *     requirements={"name"="[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+?)?/"},
      *     defaults={"_format"="html"}
      * )
      * @Method({"GET"})
      */
     public function viewPackageAliasAction(Request $req, $name)
     {
-        return $this->redirect($this->generateUrl('view_package', array('name' => trim($name, '/'), '_format' => $req->getRequestFormat())));
+        $format = $req->getRequestFormat();
+        if ($format === 'html') {
+            $format = null;
+        }
+
+        if (false === strpos(trim($name, '/'), '/')) {
+            return $this->redirect($this->generateUrl('view_vendor', array('vendor' => $name, '_format' => $format)));
+        }
+
+        return $this->redirect($this->generateUrl('view_package', array('name' => trim($name, '/'), '_format' => $format)));
     }
 
     /**
@@ -631,13 +644,14 @@ class WebController extends Controller
             }
 
             // TODO invalidate cache on update and make the ttl longer
-            $response = new Response(json_encode(array('package' => $data)), 200);
+            $response = new JsonResponse(array('package' => $data));
             $response->setSharedMaxAge(3600);
 
             return $response;
         }
 
         $version = null;
+        $expandedVersion = null;
         $versions = $package->getVersions();
         if (is_object($versions)) {
             $versions = $versions->toArray();
@@ -661,14 +675,15 @@ class WebController extends Controller
         if (count($versions)) {
             $versionRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
             $version = $versionRepo->getFullVersion(reset($versions)->getId());
-        }
 
-        $expandedVersion = reset($versions);
-        foreach ($versions as $v) {
-            if (!$v->isDevelopment()) {
-                $expandedVersion = $v;
-                break;
+            $expandedVersion = reset($versions);
+            foreach ($versions as $v) {
+                if (!$v->isDevelopment()) {
+                    $expandedVersion = $v;
+                    break;
+                }
             }
+            $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
         }
 
         $data = array(
@@ -875,7 +890,7 @@ class WebController extends Controller
                 $repository->setLoader($loader);
 
                 try {
-                    $updater->update($package, $repository, $updateEqualRefs ? Updater::UPDATE_EQUAL_REFS : 0);
+                    $updater->update($io, $config, $package, $repository, $updateEqualRefs ? Updater::UPDATE_EQUAL_REFS : 0);
                 } catch (\Exception $e) {
                     return new Response(json_encode(array(
                         'status' => 'error',
@@ -888,7 +903,7 @@ class WebController extends Controller
             return new Response('{"status": "success"}', 202);
         }
 
-        return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',)), 404);
+        return new JsonResponse(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',), 404);
     }
 
     /**
@@ -963,6 +978,9 @@ class WebController extends Controller
 
         $data = array(
             'package' => $package,
+            'versions' => null,
+            'expandedVersion' => null,
+            'version' => null,
             'addMaintainerForm' => $form->createView(),
             'show_add_maintainer_form' => true,
         );
@@ -1018,6 +1036,8 @@ class WebController extends Controller
 
         $data = array(
             'package' => $package,
+            'versions' => null,
+            'expandedVersion' => null,
             'version' => null,
             'removeMaintainerForm' => $removeMaintainerForm->createView(),
             'show_remove_maintainer_form' => true,
@@ -1094,12 +1114,11 @@ class WebController extends Controller
 
         // fill gaps at the end of the chart
         if (count($chart['months']) > count($chart['packages'])) {
-            $chart['packages'] += array_fill(0, count($chart['months']) - count($chart['packages']), max($chart['packages']));
+            $chart['packages'] += array_fill(0, count($chart['months']) - count($chart['packages']), !empty($chart['packages']) ? max($chart['packages']) : 0);
         }
         if (count($chart['months']) > count($chart['versions'])) {
-            $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), max($chart['versions']));
+            $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), !empty($chart['versions']) ? max($chart['versions']) : 0);
         }
-
 
         $res = $this->getDoctrine()
             ->getConnection()
@@ -1138,8 +1157,8 @@ class WebController extends Controller
 
         return array(
             'chart' => $chart,
-            'packages' => max($chart['packages']),
-            'versions' => max($chart['versions']),
+            'packages' => !empty($chart['packages']) ? max($chart['packages']) : 0,
+            'versions' => !empty($chart['versions']) ? max($chart['versions']) : 0,
             'downloads' => $downloads,
             'downloadsChart' => $dlChart,
             'maxDailyDownloads' => !empty($dlChart) ? max($dlChart['values']) : null,
@@ -1154,7 +1173,7 @@ class WebController extends Controller
      */
     public function aboutComposerFallbackAction()
     {
-        return new RedirectResponse('http://getcomposer.org/', 301);
+        return new RedirectResponse('https://getcomposer.org/', 301);
     }
 
     private function createAddMaintainerForm($package)
@@ -1287,9 +1306,9 @@ class WebController extends Controller
         $makeDefaultArrow = function ($sort) use ($normalizedOrderBys) {
             if (isset($normalizedOrderBys[$sort])) {
                 if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
-                    $val = 'icon-arrow-up';
+                    $val = 'glyphicon-arrow-up';
                 } else {
-                    $val = 'icon-arrow-down';
+                    $val = 'glyphicon-arrow-down';
                 }
             } else {
                 $val = '';
@@ -1326,13 +1345,13 @@ class WebController extends Controller
         return array(
             'downloads' => array(
                 'title' => 'Sort by downloads',
-                'class' => 'icon-download',
+                'class' => 'glyphicon-arrow-down',
                 'arrowClass' => $makeDefaultArrow('downloads'),
                 'href' => $makeDefaultHref('downloads')
             ),
             'favers' => array(
                 'title' => 'Sort by favorites',
-                'class' => 'icon-star',
+                'class' => 'glyphicon-star',
                 'arrowClass' => $makeDefaultArrow('favers'),
                 'href' => $makeDefaultHref('favers')
             ),

@@ -1,0 +1,53 @@
+{% trans_default_domain 'FOSUserBundle' %}
+
+<div class="col-md-12">
+    <h2 class="title">
+        Create account
+    </h2>
+</div>
+
+<form action="{{ path('fos_user_registration_register') }}" method="POST" class="fos_user_registration_register col-md-6">
+    {% if form is defined %}
+        {{ form_errors(form) }}
+    {% endif %}
+
+    <div class="form-group clearfix">
+        <label for="fos_user_registration_email">Email:</label>
+        <div class="input-group clearfix">
+            {{ form_errors(form.email) }}
+            {{ form_widget(form.email) }}
+            <span class="input-group-addon"><span class="icon-mail"></span></span>
+        </div>
+    </div>
+
+    <div class="form-group clearfix">
+        <label for="fos_user_registration_username">Username:</label>
+        <div class="input-group clearfix">
+            {{ form_errors(form.username) }}
+            {{ form_widget(form.username) }}
+            <span class="input-group-addon"><span class="icon-user"></span></span>
+        </div>
+    </div>
+
+    <div class="form-group clearfix">
+        <label for="fos_user_registration_plainPassword_first">Password:</label>
+        <div class="input-group clearfix">
+            {{ form_errors(form.plainPassword.first) }}
+            {{ form_widget(form.plainPassword.first) }}
+            <span class="input-group-addon"><span class="icon-lock"></span></span>
+        </div>
+    </div>
+
+    <div class="form-group clearfix">
+        <label for="fos_user_registration_plainPassword_second">Repeat Password:</label>
+        <div class="input-group clearfix">
+            {{ form_errors(form.plainPassword.second) }}
+            {{ form_widget(form.plainPassword.second) }}
+            <span class="input-group-addon"><span class="icon-lock"></span></span>
+        </div>
+    </div>
+
+    {{ form_widget(form._token) }}
+
+    <input type="submit" class="btn btn-block btn-success btn-lg" value="{{ 'registration.submit'|trans }}" />
+</form>

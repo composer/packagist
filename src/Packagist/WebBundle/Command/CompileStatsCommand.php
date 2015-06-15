@@ -12,7 +12,9 @@
 
 namespace Packagist\WebBundle\Command;
 
+use Packagist\WebBundle\Package\Updater;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -117,7 +119,7 @@ class CompileStatsCommand extends ContainerAwareCommand
             $ids[] = $row['id'];
         }
 
-        // add downloads from the last 5 days to the solr index
+        // add downloads from the last 7 days to the solr index
         $solarium = $this->getContainer()->get('solarium.client');
 
         if ($verbose) {
@@ -125,7 +127,7 @@ class CompileStatsCommand extends ContainerAwareCommand
         }
 
         while ($id = array_shift($ids)) {
-            $trendiness = $this->sumLastNDays(5, $id, $yesterday);
+            $trendiness = $this->sumLastNDays(7, $id, $yesterday);
 
             $redis->zadd('downloads:trending:new', $trendiness, $id);
             $redis->zadd('downloads:absolute:new', $redis->get('dl:'.$id), $id);

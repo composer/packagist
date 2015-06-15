@@ -183,6 +183,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $document->setField('downloads', $downloadManager->getTotalDownloads($package));
         $document->setField('favers', $favoriteManager->getFaverCount($package));
         $document->setField('repository', $package->getRepository());
+        $document->setField('language', $package->getLanguage());
         if ($package->isAbandoned()) {
             $document->setField('abandoned', 1);
             $document->setField('replacementPackage', $package->getReplacementPackage() ?: '');

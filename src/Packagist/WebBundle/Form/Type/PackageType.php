@@ -23,7 +23,12 @@ class PackageType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('repository');
+        $builder->add('repository', 'text', array(
+            'label' => 'Repository URL (Git/Svn/Hg)',
+            'attr'  => array(
+                'placeholder' => 'i.e.: git://github.com/composer/composer.git',
+            )
+        ));
     }
 
     public function setDefaultOptions(OptionsResolverInterface $resolver)

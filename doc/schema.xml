@@ -239,6 +239,7 @@
    <field name="trendiness" type="float" indexed="true" stored="true" />
    <field name="downloads" type="int" indexed="true" stored="true" />
    <field name="favers" type="int" indexed="true" stored="true" />
+   <field name="language" type="string" indexed="true" stored="true" />
    <field name="repository" type="string" indexed="false" stored="true" />
    <field name="abandoned" type="int" indexed="false" stored="true" />
    <field name="replacementPackage" type="string" indexed="false" stored="true" />

@@ -1,5 +1,35 @@
-{% extends "PackagistWebBundle:Web:list.html.twig" %}
+{% extends "PackagistWebBundle:User:packages.html.twig" %}
 
-{% block content_title %}
-    <h1>{{ user.username }}'s favorite packages</h1>
+{% import "PackagistWebBundle::macros.html.twig" as macros %}
+
+{% set isActualUser = app.user and app.user.username is sameas(user.username) %}
+
+{% block content %}
+<h2 class="title">
+    {{ user.username }}
+    <small>
+        {%- if not isActualUser %}
+            member since: {{ user.createdAt|date('M d, Y') }}
+            {%- if is_granted('ROLE_ADMIN') %}
+                <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+            {%- endif %}
+        {%- endif %}
+    </small>
+</h2>
+
+<section class="row">
+    {% if isActualUser %}
+        <section class="col-md-3">
+            {{ knp_menu_render('profile_menu', {currentClass: 'active', allow_safe_labels: true}) }}
+        </section>
+    {% endif %}
+
+    <section class="{{ isActualUser ? 'col-md-9' : 'col-md-12' }}">
+        {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
+            {% block content_title %}
+                <h3 class="font-normal profile-title">{{ isActualUser ? 'My' : user.username~'\'s' }} favorite packages</h3>
+            {% endblock %}
+        {% endembed %}
+    </section>
+</section>
 {% endblock %}

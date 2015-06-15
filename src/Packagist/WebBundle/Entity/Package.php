@@ -12,14 +12,13 @@
 
 namespace Packagist\WebBundle\Entity;
 
+use Composer\Factory;
+use Composer\IO\NullIO;
+use Composer\Repository\VcsRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\ExecutionContextInterface;
-use Doctrine\Common\Collections\ArrayCollection;
-use Composer\IO\NullIO;
-use Composer\Factory;
-use Composer\Repository\VcsRepository;
-use Composer\Repository\Vcs\GitHubDriver;
 
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\PackageRepository")
@@ -62,6 +61,36 @@ class Package
      * @ORM\Column(type="text", nullable=true)
      */
     private $description;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $language;
+
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $readme;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true, name="github_stars")
+     */
+    private $gitHubStars;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true, name="github_watches")
+     */
+    private $gitHubWatches;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true, name="github_forks")
+     */
+    private $gitHubForks;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true, name="github_open_issues")
+     */
+    private $gitHubOpenIssues;
 
     /**
      * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Version", mappedBy="package")
@@ -338,6 +367,110 @@ class Package
     }
 
     /**
+     * Set language
+     *
+     * @param string $language
+     */
+    public function setLanguage($language)
+    {
+        $this->language = $language;
+    }
+
+    /**
+     * Get language
+     *
+     * @return string
+     */
+    public function getLanguage()
+    {
+        return $this->language;
+    }
+
+    /**
+     * Set readme
+     *
+     * @param string $readme
+     */
+    public function setReadme($readme)
+    {
+        $this->readme = $readme;
+    }
+
+    /**
+     * Get readme
+     *
+     * @return string
+     */
+    public function getReadme()
+    {
+        return $this->readme;
+    }
+
+    /**
+     * @param int $val
+     */
+    public function setGitHubStars($val)
+    {
+        $this->gitHubStars = $val;
+    }
+
+    /**
+     * @return int
+     */
+    public function getGitHubStars()
+    {
+        return $this->gitHubStars;
+    }
+
+    /**
+     * @param int $val
+     */
+    public function setGitHubWatches($val)
+    {
+        $this->gitHubWatches = $val;
+    }
+
+    /**
+     * @return int
+     */
+    public function getGitHubWatches()
+    {
+        return $this->gitHubWatches;
+    }
+
+    /**
+     * @param int $val
+     */
+    public function setGitHubForks($val)
+    {
+        $this->gitHubForks = $val;
+    }
+
+    /**
+     * @return int
+     */
+    public function getGitHubForks()
+    {
+        return $this->gitHubForks;
+    }
+
+    /**
+     * @param int $val
+     */
+    public function setGitHubOpenIssues($val)
+    {
+        $this->gitHubOpenIssues = $val;
+    }
+
+    /**
+     * @return int
+     */
+    public function getGitHubOpenIssues()
+    {
+        return $this->gitHubOpenIssues;
+    }
+
+    /**
      * Set createdAt
      *
      * @param \DateTime $createdAt
@@ -371,6 +504,7 @@ class Package
             return;
         }
 
+        $repoUrl = preg_replace('{^git@github.com:}i', 'https://github.com/', $repoUrl);
         $this->repository = $repoUrl;
 
         // avoid user@host URLs
@@ -416,7 +550,7 @@ class Package
     /**
      * Add versions
      *
-     * @param \Packagist\WebBundle\Entity\Version $versions
+     * @param Version $versions
      */
     public function addVersions(Version $versions)
     {
@@ -531,7 +665,7 @@ class Package
     /**
      * Add maintainers
      *
-     * @param \Packagist\WebBundle\Entity\User $maintainer
+     * @param User $maintainer
      */
     public function addMaintainer(User $maintainer)
     {

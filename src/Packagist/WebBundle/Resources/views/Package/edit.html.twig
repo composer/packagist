@@ -5,16 +5,13 @@
 {% endblock %}
 
 {% block content %}
-    <div class="box clearfix">
-        <h1>
-            Edit {{ package.name }}
-        </h1>
+<h2 class="title">Edit {{ package.name }}</h2>
 
-        <form action="{{ path('edit_package', {'name': package.name}) }}" method="post" {{ form_enctype(form) }}>
-            {{ form_widget(form) }}
+<section class="row">
+    <form class="col-md-6" action="{{ path('edit_package', {'name': package.name}) }}" method="POST" {{ form_enctype(form) }}>
+        {{ form_widget(form) }}
 
-            <input type="submit" value="Update" />
-        </form>
-    </div>
+        <input class="btn btn-block btn-primary btn-lg" id="submit" type="submit" value="Update" />
+    </form>
+</section>
 {% endblock %}
-

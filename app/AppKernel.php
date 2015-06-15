@@ -1,7 +1,8 @@
 <?php
 
-use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\Debug\ErrorHandler;
+use Symfony\Component\HttpKernel\Kernel;
 
 class AppKernel extends Kernel
 {
@@ -19,10 +20,12 @@ class AppKernel extends Kernel
             new FOS\UserBundle\FOSUserBundle(),
             new HWI\Bundle\OAuthBundle\HWIOAuthBundle(),
             new Snc\RedisBundle\SncRedisBundle(),
-            new Packagist\WebBundle\PackagistWebBundle(),
             new WhiteOctober\PagerfantaBundle\WhiteOctoberPagerfantaBundle(),
             new Nelmio\SolariumBundle\NelmioSolariumBundle(),
             new Nelmio\SecurityBundle\NelmioSecurityBundle(),
+            new Knp\Bundle\MenuBundle\KnpMenuBundle(),
+
+            new Packagist\WebBundle\PackagistWebBundle(),
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test'))) {
