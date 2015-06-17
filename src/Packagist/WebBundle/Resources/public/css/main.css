@@ -1,6 +1,7 @@
 @import url(https://fonts.googleapis.com/css?family=Open+Sans:400,300,500,600,300italic);
 
 /*
+ primary color: #8892BF
  main header: #2d2d32
  secondary header: #f28d1a
 
@@ -84,9 +85,9 @@ strong {
     left: 0;
     right: 0;
     top: 0;
+    min-height: 58px;
     z-index: 15;
     background: #2d2d32;
-    min-height: 59px;
 }
 
 .navbar {
@@ -135,6 +136,7 @@ strong {
     box-shadow: none;
     text-shadow: none;
     color: #fff;
+    text-transform: uppercase;
 }
 .nav .nav-user-signin {
     padding: 18px 25px 19px !important;
@@ -161,7 +163,7 @@ strong {
     margin: 1px 0 0 0;
     color: #fff;
     font-family: 'Open Sans', sans-serif;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 .nav-user {
@@ -181,12 +183,6 @@ strong {
     padding: 17px 20px;
 }
 
-.navbar .nav > li > a, .navbar .nav > li > section, .navbar .nav > .active > a, .navbar .nav > .nav-user > .nav-user-signin {
-  border-left: 1px solid rgba(118, 111, 107, 0.69);
-}
-.navbar .nav > li:last-child > a {
-  border-right: 1px solid rgba(118, 111, 107, 0.69);
-}
 @media (max-width: 767px) {
   .navbar .nav > li > a, .navbar .nav > .active > a, .navbar .nav > .nav-user > .nav-user-signin, .navbar .nav > .nav-user > section {
     border-right: 1px solid rgba(118, 111, 107, 0.69);
@@ -362,7 +358,7 @@ strong {
 }
 
 body > section:first-child {
-    padding-top: 59px;
+    padding-top: 58px;
 }
 
 .wrapper .container {
@@ -397,7 +393,8 @@ body > section:first-child {
 }
 
 .wrapper-blue {
-    background: #f28d1a;
+    background: #8892BF;
+    border-bottom: 1px solid #666;
 }
 
 .wrapper-blue .container {
@@ -451,13 +448,14 @@ footer p {
 }
 
 #search-form input[type="search"] {
-    padding: 0 0 0 15px;
-    font: 14px 'Open Sans', sans-serif;
+    background: #FFF;
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.08);
+    font: 1.8rem 'Open Sans', sans-serif;
     border: 0;
-    height: 32px;
+    padding: 2.5rem 1.5rem;
     color: #2d2d32;
     outline: none;
-    border-radius: 2px;
+    border-radius: 5px;
 }
 
 
@@ -1212,17 +1210,6 @@ ul.packages .metadata-block:last-child {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
 .pagination {
     margin: 6px 0;
 }
@@ -1266,17 +1253,10 @@ ul.packages .metadata-block:last-child {
   color: #2d2d32;
 }
 
-pre, code {
-    background: #fff;
-    border: none;
-    border-radius: 2px;
-    color: #2d2d32;
-}
-
 .wrapper .content h2.title, .wrapper .content h3.title {
     margin: -5px 0 15px;
     padding: 0 0 15px;
-    border-bottom: 1px solid #f28d1a;
+    border-bottom: 1px solid #CCC;
     color: #2d2d32;
 }
 
