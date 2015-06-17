@@ -29,7 +29,14 @@ html, body {
 }
 
 pre, code {
-  font-family: Consolas, "Courier New", Courier, monospace;
+    background: #fff;
+    font-family: Consolas, "Courier New", Courier, monospace;
+    border-radius: 0;
+    border: none;
+    color: #2d2d32;
+}
+pre {
+  border-left: 2px solid #666;
 }
 
 label {
