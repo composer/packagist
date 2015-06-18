@@ -43,6 +43,12 @@
 
                     <div class="collapse navbar-collapse">
                         <ul class="nav navbar-nav">
+                            <li>
+                                <a href="{{ path('browse') }}">Browse</a>
+                            </li>
+                            <li>
+                                <a href="{{ path('submit') }}">Submit</a>
+                            </li>
                         {%- if app.user %}
                             <li class="nav-user">
                                 <section>
@@ -96,12 +102,6 @@
                                 </section>
                             </li>
                         {%- endif %}
-                            <li>
-                                <a href="{{ path('browse') }}">Browse</a>
-                            </li>
-                            <li>
-                                <a href="{{ path('submit') }}">Submit</a>
-                            </li>
                         </ul>
                     </div>
                 </div>
