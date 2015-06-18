@@ -1,7 +1,6 @@
 @import url(https://fonts.googleapis.com/css?family=Open+Sans:400,300,500,600,300italic);
 
 /*
- primary color: #8892BF
  main header: #2d2d32
  secondary header: #f28d1a
 
@@ -36,7 +35,7 @@ pre, code {
     color: #2d2d32;
 }
 pre {
-  border-left: 2px solid #666;
+  border-left: 2px solid #2d2d32;
 }
 
 label {
@@ -52,13 +51,12 @@ body {
   position: absolute;
   width: 100px;
   left: -98px;
-  top: -42px;
+  top: -43px;
 }
 @media (min-width: 1200px) {
   .logo {
     width: 80px;
     left: -90px;
-    top: -43px;
   }
 }
 
@@ -143,7 +141,6 @@ strong {
     box-shadow: none;
     text-shadow: none;
     color: #fff;
-    text-transform: uppercase;
 }
 .nav .nav-user-signin {
     padding: 18px 25px 19px !important;
@@ -170,7 +167,7 @@ strong {
     margin: 1px 0 0 0;
     color: #fff;
     font-family: 'Open Sans', sans-serif;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .nav-user {
@@ -190,6 +187,14 @@ strong {
     padding: 17px 20px;
 }
 
+.navbar .nav > .nav-user > section > .nav-user-menu, .navbar .nav > .nav-user > section > .signin-box {
+    display: none;
+}
+
+.navbar .nav > .nav-user > section:hover > .nav-user-menu, .navbar .nav > .nav-user > section:hover > .signin-box {
+    display: block;
+}
+
 @media (max-width: 767px) {
     .navbar .nav { float: none; }
     .navbar .nav > li > a,
@@ -199,7 +204,7 @@ strong {
     .navbar .nav > li:last-child > a {
         border-bottom: 0;
     }
-    .navbar .nav > .nav-user > .nav-user-signin:hover > .nav-user-menu,
+    .navbar .nav > .nav-user > section:hover > .nav-user-menu,
     .navbar .nav > .nav-user > .nav-user-signin:hover > .signin-box {
         display: none;
     }
@@ -215,14 +220,6 @@ strong {
     background: rgba(255, 255, 255, 0.1);
 }
 
-.navbar .nav > .nav-user > section > .nav-user-menu, .navbar .nav > .nav-user > section > .signin-box {
-    display: none;
-}
-
-.navbar .nav > .nav-user > section:hover > .nav-user-menu, .navbar .nav > .nav-user > section:hover > .signin-box {
-    display: block;
-}
-
 .navbar .nav > .nav-user > section:hover > .nav-user-menu a:hover {
     color: #f28d1a;
 }
@@ -236,7 +233,7 @@ strong {
 
 .nav-user .nav-user-menu, .nav-user .signin-box {
     z-index: 110;
-    background: #2d2d32;
+    background: #414145;
     box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.3);
     top: 57px;
     right: 0;
@@ -405,8 +402,8 @@ body > section:first-child {
 }
 
 .wrapper-blue {
-    background: #8892BF;
-    border-bottom: 1px solid #666;
+    background: #f28d1a;
+    border-bottom: 1px solid #ccc;
 }
 
 .wrapper-blue .container {
@@ -461,13 +458,12 @@ footer p {
 
 #search-form input[type="search"] {
     background: #FFF;
-    box-shadow: 0 0 0 4px rgba(0,0,0,0.08);
-    font: 1.8rem 'Open Sans', sans-serif;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
+    font: 18px 'Open Sans', sans-serif;
     border: 0;
-    padding: 2.5rem 1.5rem;
+    padding: 17px 10px;
     color: #2d2d32;
     outline: none;
-    border-radius: 5px;
 }
 
 
@@ -1268,7 +1264,7 @@ ul.packages .metadata-block:last-child {
 .wrapper .content h2.title, .wrapper .content h3.title {
     margin: -5px 0 15px;
     padding: 0 0 15px;
-    border-bottom: 1px solid #CCC;
+    border-bottom: 1px solid #f28d1a;
     color: #2d2d32;
 }
 
