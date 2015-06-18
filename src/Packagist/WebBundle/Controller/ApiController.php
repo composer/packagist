@@ -73,8 +73,8 @@ class ApiController extends Controller
             return new JsonResponse(array('status' => 'error', 'message' => 'Missing payload parameter'), 406);
         }
 
-        if (isset($payload['repository']['url'])) { // github/gitlab/anything hook
-            $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>[a-z0-9.-]+)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}i';
+        if (isset($payload['repository']['url'])) { // github/gitlab/anything hook; added support for ssh protocol
+            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}i';
             $url = $payload['repository']['url'];
         } elseif (isset($payload['canon_url']) && isset($payload['repository']['absolute_url'])) { // bitbucket hook
             $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
