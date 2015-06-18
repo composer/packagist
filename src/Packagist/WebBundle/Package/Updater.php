@@ -427,6 +427,8 @@ class Updater
                 $link->setAttribute('rel', 'nofollow');
                 if ('#' === substr($link->getAttribute('href'), 0, 1)) {
                     $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
+                } elseif (false === strpos($link->getAttribute('href'), '//')) {
+                    $link->setAttribute('href', 'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$link->getAttribute('href'));
                 }
             }
 
