@@ -28,7 +28,6 @@
         "doctrine/orm": "~2.3",
         "doctrine/doctrine-bundle": "1.2.*",
         "twig/extensions": "~1.0",
-        "symfony/assetic-bundle": "2.3.*",
         "symfony/swiftmailer-bundle": "2.3.*",
         "symfony/monolog-bundle": "~2.4",
         "sensio/distribution-bundle": "2.3.*",
@@ -50,11 +49,9 @@
         "zendframework/zend-uri": "2.0.*",
         "zendframework/zend-version": "2.0.*",
 
-        "kriswallsmith/assetic": "~1.2",
         "pagerfanta/pagerfanta": "~1.0",
         "knplabs/knp-menu-bundle": "^2.0",
         "ezyang/htmlpurifier": "^4.6"
-
     },
     "scripts": {
         "post-install-cmd": [

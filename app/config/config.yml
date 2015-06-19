@@ -35,17 +35,6 @@ twig:
         google_analytics: %google_analytics%
         packagist_host: %packagist_host%
 
-# Assetic Configuration
-assetic:
-    debug:          %kernel.debug%
-    use_controller: false
-    filters:
-        cssrewrite: ~
-        closure:
-            jar: %kernel.root_dir%/java/compiler.jar
-        yui_css:
-            jar: %kernel.root_dir%/java/yuicompressor-2.4.2.jar
-
 # Doctrine Configuration
 doctrine:
     dbal:
