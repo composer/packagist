@@ -46,6 +46,7 @@ label {
 body {
     background: #FAFAFA;
     font-family: 'Open Sans', sans-serif;
+    padding-top: 58px;
 }
 .logo {
   position: absolute;
@@ -365,10 +366,6 @@ strong {
     margin: 0 auto -135px;
     padding: 0 0 135px;
     position: relative;
-}
-
-body > section:first-child {
-    padding-top: 58px;
 }
 
 .wrapper .container {
