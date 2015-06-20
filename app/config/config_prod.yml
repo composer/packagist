@@ -14,8 +14,9 @@ monolog:
             action_level: error
             handler:      nested
             excluded_404s:
-                - ^/[^/]+\.php$
-                - ^/(favicon\.png|sitemap\.xml|apple-touch-icon-precomposed\.png)$
+                - '\.php$'
+                - '\.json$'
+                - ^/(favicon\.png|sitemap\.xml|apple-touch-icon.*?\.png)$
         nested:
             type:  stream
             path:  %kernel.logs_dir%/%kernel.environment%.log
