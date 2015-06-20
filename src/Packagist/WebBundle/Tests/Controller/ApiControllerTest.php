@@ -70,7 +70,7 @@ class ApiControllerTest extends WebTestCase
     }
 
     /**
-     * @depends      testGithubFailsCorrectly
+     * @depends testGithubFailsCorrectly
      * @dataProvider urlProvider
      */
     public function testUrlDetection($endpoint, $url, $expectedOK)
@@ -117,6 +117,7 @@ class ApiControllerTest extends WebTestCase
             // valid others
             array('update-package', 'https://ghe.example.org/user/repository', true),
             array('update-package', 'https://gitlab.org/user/repository', true),
+            array('update-package', 'ssh://git@stash.xxxxx.com/uuuuu/qqqqq.git', true),
 
             // invalid URLs
             array('github', 'php://github.com/user/repository', false),
@@ -126,6 +127,8 @@ class ApiControllerTest extends WebTestCase
             array('github', 'https://github.com/user', false),
             array('github', 'https://github.com/', false),
             array('github', 'https://github.com', false),
+            array('update-package', 'ssh://git@stash.zzzzz.com/kkkkk.git', false),
+            array('update-package', 'ssh://ghe.example.org/user/jjjjj.git', false),
         );
     }
 }

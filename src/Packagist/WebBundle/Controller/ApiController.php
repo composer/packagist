@@ -75,7 +75,7 @@ class ApiController extends Controller
         }
 
         if (isset($payload['repository']['url'])) { // github/gitlab/anything hook
-            $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>[a-z0-9.-]+)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}i';
+            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}i';
             $url = $payload['repository']['url'];
         } elseif (isset($payload['canon_url']) && isset($payload['repository']['absolute_url'])) { // bitbucket hook
             $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
