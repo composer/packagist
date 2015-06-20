@@ -1429,7 +1429,7 @@ ul.packages .metadata-block:last-child {
         margin-top: 40px;
     }
 }
-#how-to-submit-packages {
+#how-to-submit-packages, #how-to-update-packages {
     margin-top: 40px;
 }
 

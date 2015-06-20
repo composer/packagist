@@ -95,4 +95,32 @@ v2.0.4-p1</code></pre>
             <p>The search index is updated <strong>every five minutes</strong>. It will index (or reindex) any package that has been crawled since the last time the search indexer ran.</p>
         </section>
     </section>
+
+    <div class="clearfix"></div>
+
+    <h2 class="title" id="how-to-update-packages">How to update packages?</h2>
+    <section class="row">
+        <section class="col-md-6">
+            <h3>GitHub Service Hook</h3>
+            <p>Enabling the Packagist service hook ensures that your package will always be updated instantly when you push to GitHub. To do so you can go to your GitHub repository, click the "Settings" button, then "Webhooks &amp; Services". Add a "Packagist" service, and configure it with your API token (see above), plus your Packagist username. Check the "Active" box and submit the form. You can then hit the "Test Service" button to trigger it and check if Packagist removes the warning about the package not being auto-updated.</p>
+        </section>
+
+        <section class="col-md-6">
+            <h3>Bitbucket POST Service</h3>
+            <p>To enable the Bitbucket service hook, go to your BitBucket repository, open the settings and select "Hooks" in the menu. Pick "POST" in the list and add it to your repository. Afterwards, you have to enter the Packagist endpoint, containing both your username and API token (see above). Enter <code>https://packagist.org/api/bitbucket?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> for the service's URL. Save your changes and you're done.</p>
+        </section>
+
+        <div class="clearfix"></div>
+        <section class="col-md-6">
+            <h3>Manual hook setup</h3>
+            <p>If you do not use Bitbucket or GitHub there is a generic endpoint you can call manually from a git post-receive hook or similar. You have to do a <code>POST</code> request to <code>https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> with a request body looking like this: <code>{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}</code></p>
+            <p>You can do this using curl for example:</p>
+            <pre>curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN' -d'{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}'</pre>
+        </section>
+
+        <section class="col-md-6">
+            <h3>API Token</h3>
+            <p>You can find your API token on <a href="{{ path('fos_user_profile_show') }}">your profile page</a>.</p>
+        </section>
+    </section>
 {% endblock %}
