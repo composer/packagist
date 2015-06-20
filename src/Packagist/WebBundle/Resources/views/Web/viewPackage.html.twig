@@ -83,15 +83,13 @@
                                 </form>
                             {% endif %}
                             {% if deleteForm is defined %}
-                                <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="POST">
-                                    <input type="hidden" name="_method" value="DELETE" />
+                                <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE">
                                     {{ form_widget(deleteForm._token) }}
                                     <input class="btn btn-danger" type="submit" value="Delete" />
                                 </form>
                             {% endif %}
                             {% if is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
-                                <form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="POST">
-                                    <input type="hidden" name="_method" value="PUT" />
+                                <form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
                                     <input type="hidden" name="update" value="1" />
                                     <input class="btn btn-success" type="submit" value="Update" />
                                 </form>
@@ -216,8 +214,7 @@
                                 </a>
 
                                 {% if deleteVersionCsrfToken is defined %}
-                                <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="post">
-                                    <input type="hidden" name="_method" value="DELETE" />
+                                <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="DELETE">
                                     <input type="hidden" name="_token" value="{{ deleteVersionCsrfToken }}" />
                                     <i class="submit glyphicon glyphicon-remove"></i>
                                 </form>

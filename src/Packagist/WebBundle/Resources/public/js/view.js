@@ -53,6 +53,21 @@
         }
     }());
 
+    function dispatchAjaxForm(form, success, className) {
+        var options = {
+            cache: false,
+            success: success,
+            data: $(form).serializeArray(),
+            type: $(form).attr('method'),
+            url: $(form).attr('action')
+        };
+        if ($(form).is('.' + className)) {
+            return;
+        }
+        $.ajax(options).complete(function () { $(form).removeClass(className); });
+        $(form).addClass(className);
+    }
+
     function forceUpdatePackage(e, updateAll) {
         var submit = $('input[type=submit]', '.package .force-update'), data;
         if (e) {
@@ -70,7 +85,7 @@
             dataType: 'json',
             cache: false,
             data: data,
-            type: 'PUT',
+            type: $('.package .force-update').attr('method'),
             success: function () {
                 document.location.reload(true);
             },
@@ -106,19 +121,29 @@
     $('.package .delete').submit(function (e) {
         e.preventDefault();
         if (window.confirm('Are you sure?')) {
-            e.target.submit();
+            dispatchAjaxForm(this, function () {
+                humane.log('Package successfully deleted', {timeout: 0, clickToClose: true});
+                setTimeout(function () {
+                    document.location.href = document.location.href.replace(/\/[^\/]+$/, '/');
+                })
+            }, 'request-sent');
         }
     });
     $('.package .delete-version .submit').click(function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        $(e.target).closest('.delete-version').submit();
+        $(e.target).closest('form').submit();
     });
+
     $('.package .delete-version').submit(function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
+        var form = this;
         if (window.confirm('Are you sure?')) {
-            e.target.submit();
+            dispatchAjaxForm(this, function () {
+                humane.log('Version successfully deleted', {timeout: 3000, clickToClose: true});
+                $(form).closest('.version').remove();
+            }, 'request-sent');
         }
     });
     $('.package').on('click', '.requireme input', function () {

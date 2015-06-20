@@ -7,10 +7,9 @@ fos_user_profile:
     prefix: /profile
 
 fos_user_profile_show:
-    pattern: /profile/
+    path: /profile/
     defaults: { _controller: PackagistWebBundle:User:myProfile }
-    requirements:
-        _method: GET
+    methods: [GET]
 
 fos_user_register:
     resource: "@FOSUserBundle/Resources/config/routing/registration.xml"
@@ -38,10 +37,10 @@ hwi_oauth_redirect:
     prefix:   /login
 
 github_check:
-    pattern: /login/check-github
+    path: /login/check-github
 
 logout:
-    pattern: /logout
+    path: /logout
 
 login_check:
-    pattern: /login_check
+    path: /login_check

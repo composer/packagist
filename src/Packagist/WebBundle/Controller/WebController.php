@@ -828,7 +828,7 @@ class WebController extends Controller
         $this->getDoctrine()->getManager()->flush();
         $this->getDoctrine()->getManager()->clear();
 
-        return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
+        return new Response('', 204);
     }
 
     /**
@@ -951,7 +951,7 @@ class WebController extends Controller
                 $solarium->update($update);
             } catch (\Solarium_Client_HttpException $e) {}
 
-            return new RedirectResponse($this->generateUrl('home'));
+            return new Response('', 204);
         }
 
         return new Response('Invalid form input', 400);
