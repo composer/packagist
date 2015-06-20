@@ -389,13 +389,17 @@ class SymlinkDumper
 
     private function switchActiveWebDir($webDir, $buildDir)
     {
-        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-            @rmdir($webDir.'/p');
-        } else {
-            @unlink($webDir.'/p');
+        $newLink = $webDir.'/p-new';
+        $oldLink = $webDir.'/p';
+
+        if (file_exists($newLink)) {
+            unlink($newLink);
         }
-        if (!symlink($buildDir, $webDir.'/p')) {
+        if (!symlink($buildDir, $newLink)) {
             throw new \RuntimeException('Could not symlink the build dir into the web dir');
+        }
+        if (!rename($newLink, $oldLink)) {
+            throw new \RuntimeException('Could not replace the old symlink with the new one in the web dir');
         }
     }
 
@@ -431,7 +435,6 @@ class SymlinkDumper
 
         // clean up old provider listings
         $finder = Finder::create()->depth(0)->files()->name('provider-*.json')->ignoreVCS(true)->in($buildDir)->date('until 10minutes ago');
-        $providerFiles = array();
         foreach ($finder as $provider) {
             $key = strtr(str_replace($buildDir.DIRECTORY_SEPARATOR, '', $provider), '\\', '/');
             if (!in_array($key, $safeFiles, true)) {
@@ -439,6 +442,15 @@ class SymlinkDumper
                 if (file_exists($altDirFile = str_replace($buildDir, $oldBuildDir, (string) $provider))) {
                     unlink($altDirFile);
                 }
+            }
+        }
+
+        // clean up old root listings
+        $finder = Finder::create()->depth(0)->files()->name('packages.json-*')->ignoreVCS(true)->in($buildDir)->date('until 10minutes ago');
+        foreach ($finder as $rootFile) {
+            unlink((string) $rootFile);
+            if (file_exists($altDirFile = str_replace($buildDir, $oldBuildDir, (string) $rootFile))) {
+                unlink($altDirFile);
             }
         }
     }
@@ -452,6 +464,9 @@ class SymlinkDumper
             ksort($this->rootFile['packages'][$package]);
         }
 
+        if (file_exists($file)) {
+            rename($file, $file.'-'.time());
+        }
         $this->writeFile($file, json_encode($this->rootFile));
     }
 
@@ -465,7 +480,9 @@ class SymlinkDumper
         $json = json_encode($this->listings[$key]);
         $hash = hash('sha256', $json);
         $path = substr($path, 0, -5) . '$' . $hash . '.json';
-        $this->writeFile($path, $json);
+        if (!file_exists($path)) {
+            $this->writeFile($path, $json);
+        }
 
         return array($path, $hash);
     }
