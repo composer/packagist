@@ -31,9 +31,9 @@ use Symfony\Component\Validator\ExecutionContextInterface;
  *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"})
  *     }
  * )
- * @Assert\Callback(methods={"isPackageUnique"})
- * @Assert\Callback(methods={"isVendorWritable"})
- * @Assert\Callback(methods={"isRepositoryValid"}, groups={"Update", "Default"})
+ * @Assert\Callback(callback="isPackageUnique")
+ * @Assert\Callback(callback="isVendorWritable")
+ * @Assert\Callback(callback="isRepositoryValid", groups={"Update", "Default"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package

@@ -20,3 +20,10 @@ link_type:
     conflict: Conflicts
     replace: Replaces
     provide: Provides
+
+'Search packages...': 'Search packages...'
+Sort: 'Sort'
+Order: 'Order'
+Username: 'Username'
+asc: 'asc'
+desc: 'desc'

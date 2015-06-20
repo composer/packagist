@@ -31,7 +31,7 @@ class PackageController extends Controller
             throw $this->createNotFoundException("The requested package, $name, could not be found.");
         }
 
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.authorization_checker')->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
@@ -83,7 +83,7 @@ class PackageController extends Controller
             throw $this->createNotFoundException("The requested package, $name, could not be found.");
         }
 
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.authorization_checker')->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
@@ -127,7 +127,7 @@ class PackageController extends Controller
             throw $this->createNotFoundException("The requested package, $name, could not be found.");
         }
 
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.authorization_checker')->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 

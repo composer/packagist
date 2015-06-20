@@ -712,10 +712,10 @@ class WebController extends Controller
             $data['deleteForm'] = $deleteForm->createView();
         }
         if ($this->getUser() && (
-            $this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')
+            $this->get('security.authorization_checker')->isGranted('ROLE_DELETE_PACKAGES')
             || $package->getMaintainers()->contains($this->getUser())
         )) {
-            $data['deleteVersionCsrfToken'] = $this->get('form.csrf_provider')->generateCsrfToken('delete_version');
+            $data['deleteVersionCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('delete_version');
         }
 
         return $data;
@@ -816,7 +816,7 @@ class WebController extends Controller
         $version = $repo->getFullVersion($versionId);
         $package = $version->getPackage();
 
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.authorization_checker')->isGranted('ROLE_DELETE_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
@@ -870,7 +870,7 @@ class WebController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
         }
 
-        if ($package->getMaintainers()->contains($user) || $this->get('security.context')->isGranted('ROLE_UPDATE_PACKAGES')) {
+        if ($package->getMaintainers()->contains($user) || $this->get('security.authorization_checker')->isGranted('ROLE_UPDATE_PACKAGES')) {
             $req->getSession()->save();
 
             if (null !== $autoUpdated) {
@@ -1182,7 +1182,7 @@ class WebController extends Controller
             return;
         }
 
-        if ($this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
+        if ($this->get('security.authorization_checker')->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
             $maintainerRequest = new MaintainerRequest;
             return $this->createForm(new AddMaintainerRequestType, $maintainerRequest);
         }
@@ -1194,7 +1194,7 @@ class WebController extends Controller
             return;
         }
 
-        if ($this->get('security.context')->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
+        if ($this->get('security.authorization_checker')->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
             $maintainerRequest = new MaintainerRequest;
             return $this->createForm(new RemoveMaintainerRequestType(), $maintainerRequest, array('package'=>$package, 'excludeUser'=>$user));
         }
@@ -1207,7 +1207,7 @@ class WebController extends Controller
         }
 
         // super admins bypass additional checks
-        if (!$this->get('security.context')->isGranted('ROLE_DELETE_PACKAGES')) {
+        if (!$this->get('security.authorization_checker')->isGranted('ROLE_DELETE_PACKAGES')) {
             // non maintainers can not delete
             if (!$package->getMaintainers()->contains($user)) {
                 return;

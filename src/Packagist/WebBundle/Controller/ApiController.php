@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Composer\Console\HtmlOutputFormatter;
 use Composer\Factory;
 use Composer\IO\BufferIO;
 use Composer\Package\Loader\ArrayLoader;
@@ -208,7 +209,7 @@ class ApiController extends Controller
         $em = $this->get('doctrine.orm.entity_manager');
         $updater = $this->get('packagist.package_updater');
         $config = Factory::createConfig();
-        $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE);
+        $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
         $io->loadConfiguration($config);
 
         try {

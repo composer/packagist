@@ -17,7 +17,7 @@ use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -34,7 +34,7 @@ class RemoveMaintainerRequestType extends AbstractType
         ));
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setRequired(array('package'));
         $resolver->setDefaults(array(
