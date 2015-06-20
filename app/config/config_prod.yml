@@ -21,6 +21,19 @@ monolog:
             path:  %kernel.logs_dir%/%kernel.environment%.log
             level: debug
 
+snc_redis:
+    clients:
+        default:
+            type: predis
+            alias: default
+            dsn: %redis_dsn%
+        session:
+            type: predis
+            alias: session
+            dsn: %redis_session_dsn%
+    session:
+        client: session
+
 framework:
     session:
         cookie_secure: %force_ssl%
