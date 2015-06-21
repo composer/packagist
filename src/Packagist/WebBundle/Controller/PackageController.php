@@ -135,7 +135,7 @@ class PackageController extends Controller
         $data = [
             'downloads' => $this->get('packagist.download_manager')->getDownloads($package),
             'versions' => $versions,
-            'grouping' => $this->guessStatsGrouping($date),
+            'average' => $this->guessStatsAverage($date),
             'date' => $date->format('Y-m-d'),
         ];
 
@@ -156,7 +156,7 @@ class PackageController extends Controller
                 break;
             }
         }
-        $data['expandedId'] = $expandedVersion->getId();
+        $data['expandedId'] = $expandedVersion ? $expandedVersion->getId() : false;
 
         return $data;
     }
@@ -180,12 +180,12 @@ class PackageController extends Controller
         } else {
             $to = new DateTimeImmutable('-2days 00:00:00');
         }
-        $grouping = $req->query->get('grouping', $this->guessStatsGrouping($from, $to));
+        $average = $req->query->get('average', $this->guessStatsAverage($from, $to));
 
-        $datePoints = $this->createDatePoints($from, $to, $grouping, $package, $version);
+        $datePoints = $this->createDatePoints($from, $to, $average, $package, $version);
 
         $redis = $this->get('snc_redis.default');
-        if ($grouping === 'Daily') {
+        if ($average === 'Daily') {
             $datePoints = array_map(function ($vals) {
                 return $vals[0];
             }, $datePoints);
@@ -203,7 +203,18 @@ class PackageController extends Controller
             );
         }
 
-        $datePoints['grouping'] = $grouping;
+        $datePoints['average'] = $average;
+
+        if ($average !== 'daily') {
+            $dividers = [
+                'monthly' => 30.41,
+                'weekly' => 7,
+            ];
+            $divider = $dividers[$average];
+            $datePoints['values'] = array_map(function ($val) use ($divider) {
+                return ceil($val / $divider);
+            }, $datePoints['values']);
+        }
 
         if (empty($datePoints['labels']) && empty($datePoints['values'])) {
             $datePoints['labels'][] = date('Y-m-d');
@@ -240,14 +251,14 @@ class PackageController extends Controller
         return $this->overallStatsAction($req, $package, $version);
     }
 
-    private function createDatePoints(DateTimeImmutable $from, DateTimeImmutable $to, $grouping, Package $package, Version $version = null)
+    private function createDatePoints(DateTimeImmutable $from, DateTimeImmutable $to, $average, Package $package, Version $version = null)
     {
-        $interval = $this->getStatsInterval($grouping);
+        $interval = $this->getStatsInterval($average);
 
-        $dateKey = $grouping === 'monthly' ? 'Ym' : 'Ymd';
-        $dateFormat = $grouping === 'monthly' ? 'Y-m' : 'Y-m-d';
-        $dateJump = $grouping === 'monthly' ? '+1month' : '+1day';
-        if ($grouping === 'monthly') {
+        $dateKey = $average === 'monthly' ? 'Ym' : 'Ymd';
+        $dateFormat = $average === 'monthly' ? 'Y-m' : 'Y-m-d';
+        $dateJump = $average === 'monthly' ? '+1month' : '+1day';
+        if ($average === 'monthly') {
             $to = new DateTimeImmutable('last day of '.$to->format('Y-m'));
         }
 
@@ -286,23 +297,23 @@ class PackageController extends Controller
         return $date->setTime(0, 0, 0);
     }
 
-    private function guessStatsGrouping(DateTimeImmutable $from, DateTimeImmutable $to = null)
+    private function guessStatsAverage(DateTimeImmutable $from, DateTimeImmutable $to = null)
     {
         if ($to === null) {
             $to = new DateTimeImmutable('-2 days');
         }
         if ($from < $to->modify('-48months')) {
-            $grouping = 'monthly';
+            $average = 'monthly';
         } elseif ($from < $to->modify('-7months')) {
-            $grouping = 'weekly';
+            $average = 'weekly';
         } else {
-            $grouping = 'daily';
+            $average = 'daily';
         }
 
-        return $grouping;
+        return $average;
     }
 
-    private function getStatsInterval($grouping)
+    private function getStatsInterval($average)
     {
         $intervals = [
             'monthly' => '+1month',
@@ -310,10 +321,10 @@ class PackageController extends Controller
             'daily' => '+1day',
         ];
 
-        if (!isset($intervals[$grouping])) {
+        if (!isset($intervals[$average])) {
             throw new BadRequestHttpException();
         }
 
-        return $intervals[$grouping];
+        return $intervals[$average];
     }
 }

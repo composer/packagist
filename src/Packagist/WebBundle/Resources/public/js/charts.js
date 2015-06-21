@@ -67,7 +67,7 @@
         );
     });
 
-    window.initPackageStats = function (grouping, date, versions, statsUrl, versionStatsUrl) {
+    window.initPackageStats = function (average, date, versions, statsUrl, versionStatsUrl) {
         var match,
             hash = document.location.hash,
             versionCache = {},
@@ -82,7 +82,7 @@
         function loadVersionChart(versionId) {
             ongoingRequest = true;
             $.ajax({
-                url: versionStatsUrl.replace('_VERSION_', versionId) + '?from=' + date,
+                url: versionStatsUrl.replace('_VERSION_', versionId) + '?average=' + average + '&from=' + date,
                 success: function (res) {
                     initPackagistChart($('.js-version-dls')[0], res.labels, [res.values], Math.max.apply(res.values) > 10000 ? 1000 : 1, false);
                     versionCache[versionId] = res;
@@ -101,7 +101,9 @@
             }
         }
 
-        loadVersionChart($('.package .details-toggler.open').attr('data-version-id'));
+        if ($('.package .details-toggler.open').length) {
+            loadVersionChart($('.package .details-toggler.open').attr('data-version-id'));
+        }
 
         $('.package .details-toggler').on('click', function () {
             var res, target = $(this), versionId = target.attr('data-version-id');

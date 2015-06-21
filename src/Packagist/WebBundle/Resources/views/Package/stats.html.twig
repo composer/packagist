@@ -40,7 +40,7 @@
                 </div>
             </div>
 
-            <h3>Installs, all versions, {{ grouping }}</h3>
+            <h3>Daily installs{% if average != 'daily' %}, averaged {{ average }}{% endif %}</h3>
             <div class="row">
                 <div class="col-xs-12">
                     <canvas class="js-all-dls" width="500" height="200">
@@ -49,7 +49,7 @@
                 </div>
             </div>
 
-            <h3>Installs, per versions, {{ grouping }}</h3>
+            <h3>Daily installs per version{% if average != 'daily' %}, averaged {{ average }}{% endif %}</h3>
             <div class="row package version-stats">
                 <div class="col-xs-12 col-md-9 version-stats-chart">
                     <canvas class="js-version-dls" width="500" height="200">
@@ -67,11 +67,11 @@
     <script src="{{ asset('bundles/packagistweb/js/charts.js') }}"></script>
     <script>
         (function () {
-            var grouping = {{ grouping|json_encode|raw }};
+            var average = {{ average|json_encode|raw }};
             var date = {{ date|json_encode|raw }};
             var versions = {{ versions|json_encode|raw }};
 
-            initPackageStats(grouping, date, versions, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }});
+            initPackageStats(average, date, versions, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }});
         }());
     </script>
 {% endblock %}
