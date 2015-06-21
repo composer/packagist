@@ -5,18 +5,18 @@
     var versionCache = {},
         ongoingRequest = false;
 
-    $('#add-maintainer').click(function (e) {
+    $('#add-maintainer').on('click', function (e) {
         $('#remove-maintainer-form').addClass('hidden');
-        $('#add-maintainer-form').toggleClass('hidden');
+        $('#add-maintainer-form').removeClass('hidden');
         e.preventDefault();
     });
-    $('#remove-maintainer').click(function (e) {
+    $('#remove-maintainer').on('click', function (e) {
         $('#add-maintainer-form').addClass('hidden');
-        $('#remove-maintainer-form').toggleClass('hidden');
+        $('#remove-maintainer-form').removeClass('hidden');
         e.preventDefault();
     });
 
-    $('.package .details-toggler').click(function () {
+    $('.package .details-toggler').on('click', function () {
         var target = $(this);
 
         if (versionCache[target.attr('data-version-id')]) {
@@ -41,7 +41,7 @@
         }
 
         $('.package .versions .open').removeClass('open');
-        target.toggleClass('open');
+        target.addClass('open');
     });
 
     // initializer for #<version-id> present on page load
@@ -93,8 +93,8 @@
         }).complete(function () { submit.removeClass('loading'); });
         submit.addClass('loading');
     }
-    $('.package .force-update').submit(forceUpdatePackage);
-    $('.package .mark-favorite').click(function (e) {
+    $('.package .force-update').on('submit', forceUpdatePackage);
+    $('.package .mark-favorite').on('click', function (e) {
         var options = {
             dataType: 'json',
             cache: false,
@@ -118,7 +118,7 @@
         $.ajax(options).complete(function () { $(this).removeClass('loading'); });
         $(this).addClass('loading');
     });
-    $('.package .delete').submit(function (e) {
+    $('.package .delete').on('submit', function (e) {
         e.preventDefault();
         if (window.confirm('Are you sure?')) {
             dispatchAjaxForm(this, function () {
@@ -129,13 +129,13 @@
             }, 'request-sent');
         }
     });
-    $('.package .delete-version .submit').click(function (e) {
+    $('.package .delete-version .submit').on('click', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
         $(e.target).closest('form').submit();
     });
 
-    $('.package .delete-version').submit(function (e) {
+    $('.package .delete-version').on('submit', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
         var form = this;

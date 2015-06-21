@@ -1433,6 +1433,23 @@ ul.packages .metadata-block:last-child {
     margin-top: 40px;
 }
 
+.package-installs dt {
+  float: left;
+  min-width: 125px;
+  text-align: right;
+  margin-right: 20px;
+}
+.package-installs dl {
+  margin-bottom: 5px;
+}
+.version-stats.package .package-aside.versions-wrapper {
+  margin-top: 0;
+}
+.version-stats-chart {
+  width: 70%;
+  margin-right: 5%;
+  position: relative;
+}
 
 
 [class^="icon-"]:before,

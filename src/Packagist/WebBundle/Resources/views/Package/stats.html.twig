@@ -1,0 +1,77 @@
+{% extends "PackagistWebBundle::layout.html.twig" %}
+
+{% set showSearchDesc = 'hide' %}
+
+{% block title %}Install Statistics - {{ package.name }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %} data-force-crawl="true"{% endif %}>
+            <div class="package-header">
+                <h2 class="title">
+                    <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a><a href="{{ path("view_package", {name: package.name}) }}">{{ package.packageName }}</a> install statistics
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <section class="row package-installs">
+        <div class="col-lg-12">
+            <h3>Installs</h3>
+
+            <div class="row">
+                <div class="col-md-4 col-xs-12">
+                    <dl class="dl-horizontal">
+                        <dt class="font-normal">Overall</dt>
+                        <dd class="font-normal">{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-4 col-xs-12">
+                    <dl class="dl-horizontal">
+                        <dt class="font-normal">Last 30 days</dt>
+                        <dd class="font-normal">{{ downloads.monthly|number_format(0, '.', '&#8201;')|raw }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-4 col-xs-12">
+                    <dl class="dl-horizontal">
+                        <dt class="font-normal">Today<br><small>(since midnight, UTC)</small></dt>
+                        <dd class="font-normal">{{ downloads.daily|number_format(0, '.', '&#8201;')|raw }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <h3>Installs, all versions, {{ grouping }}</h3>
+            <div class="row">
+                <div class="col-xs-12">
+                    <canvas class="js-all-dls" width="500" height="200">
+                        Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
+                    </canvas>
+                </div>
+            </div>
+
+            <h3>Installs, per versions, {{ grouping }}</h3>
+            <div class="row package version-stats">
+                <div class="col-xs-12 col-md-9 version-stats-chart">
+                    <canvas class="js-version-dls" width="500" height="200">
+                        Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
+                    </canvas>
+                </div>
+                {% include 'PackagistWebBundle:Web:versionList.html.twig' with {versions: versions, expandedId: expandedId} %}
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('js/libs/Chart.js/Chart.min.js') }}"></script>
+    <script src="{{ asset('bundles/packagistweb/js/charts.js') }}"></script>
+    <script>
+        (function () {
+            var grouping = {{ grouping|json_encode|raw }};
+            var date = {{ date|json_encode|raw }};
+            var versions = {{ versions|json_encode|raw }};
+
+            initPackageStats(grouping, date, versions, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }});
+        }());
+    </script>
+{% endblock %}

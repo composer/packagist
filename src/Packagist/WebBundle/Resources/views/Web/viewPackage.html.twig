@@ -142,14 +142,11 @@
                             {% if version and version.support.docs is defined %}
                                 <p><a href="{{ version.support.docs }}">Documentation</a></p>
                             {% endif %}
+                            <p><a href="{{ path('view_package_stats', {name: package.name}) }}">Statistics</a></p>
                         </div>
 
                         <div class="facts col-xs-12 col-sm-6 col-md-12">
-                            <p><strong>Installs</strong></p>
-                            <p><span>Overall:</span> {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
-                            <p><span>30 days:</span> {% if downloads.monthly is defined %}{{ downloads.monthly|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
-                            <p><span>Today:</span> {% if downloads.daily is defined %}{{ downloads.daily|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
-                            {% if package.gitHubWatches is not null %}<br>{% endif %}
+                            <p><span>Installs:</span> {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
                             {% if package.language is not empty %}<p><span>Language:</span> {{ package.language }}</p>{% endif %}
                             {% if package.gitHubStars is not null %}<p><span>Stars:</span> {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
                             {% if package.gitHubWatches is not null %}<p><span>Watches:</span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
@@ -201,31 +198,7 @@
                         {% include 'PackagistWebBundle:Web:versionDetails.html.twig' with {version: expandedVersion} %}
                     {% endif %}
                 </div>
-                <div class="col-md-3 package-aside versions-wrapper">
-                    <ul class="versions">
-                        {% for version in versions %}
-                            {% set expanded = version.id == expandedVersion.id|default(false) %}
-                            <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
-                                <a href="#{{ version.version }}" class="version-number">
-                                    {{- version.version -}}
-                                    {% if version.hasVersionAlias() %}
-                                        / {{ version.versionAlias }}
-                                    {% endif -%}
-                                </a>
-
-                                {% if deleteVersionCsrfToken is defined %}
-                                <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="DELETE">
-                                    <input type="hidden" name="_token" value="{{ deleteVersionCsrfToken }}" />
-                                    <i class="submit glyphicon glyphicon-remove"></i>
-                                </form>
-                                {% endif %}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                    <div class="hidden versions-expander">
-                        <i class="glyphicon glyphicon-chevron-down"></i>
-                    </div>
-                </div>
+                {% include 'PackagistWebBundle:Web:versionList.html.twig' with {versions: versions, expandedId: expandedVersion.id, deleteVersionCsrfToken: deleteVersionCsrfToken} %}
             {% elseif package.crawledAt is null %}
                 <p class="col-xs-12">This package has not been crawled yet, some information is missing.</p>
             {% else %}

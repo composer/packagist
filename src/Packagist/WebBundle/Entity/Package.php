@@ -778,4 +778,20 @@ class Package
     {
         $this->replacementPackage = $replacementPackage;
     }
+
+    public static function sortVersions($a, $b)
+    {
+        $aVersion = $a->getNormalizedVersion();
+        $bVersion = $b->getNormalizedVersion();
+        $aVersion = preg_replace('{^dev-.*}', '0.0.0-alpha', $aVersion);
+        $bVersion = preg_replace('{^dev-.*}', '0.0.0-alpha', $bVersion);
+
+        // equal versions are sorted by date
+        if ($aVersion === $bVersion) {
+            return $b->getReleasedAt() > $a->getReleasedAt() ? 1 : -1;
+        }
+
+        // the rest is sorted by version
+        return version_compare($bVersion, $aVersion);
+    }
 }
