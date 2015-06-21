@@ -13,6 +13,8 @@
 namespace Packagist\WebBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller as BaseController;
+use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Pagerfanta;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -55,5 +57,21 @@ class Controller extends BaseController
                 'favers' => $favs,
             );
         } catch (\Predis\Connection\ConnectionException $e) {}
+    }
+
+    /**
+     * Initializes the pager for a query.
+     *
+     * @param \Doctrine\ORM\QueryBuilder $query Query for packages
+     * @param int                        $page  Pagenumber to retrieve.
+     * @return \Pagerfanta\Pagerfanta
+     */
+    protected function setupPager($query, $page)
+    {
+        $paginator = new Pagerfanta(new DoctrineORMAdapter($query, true));
+        $paginator->setMaxPerPage(15);
+        $paginator->setCurrentPage($page, false, true);
+
+        return $paginator;
     }
 }

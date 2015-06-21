@@ -689,6 +689,8 @@ class WebController extends Controller
         } catch (ConnectionException $e) {
         }
 
+        $data['dependents'] = $repo->getDependentCount($package->getName());
+
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
             $data['addMaintainerForm'] = $maintainerForm->createView();
         }
@@ -1213,22 +1215,6 @@ class WebController extends Controller
         }
 
         return $this->createFormBuilder(array())->getForm();
-    }
-
-    /**
-     * Initializes the pager for a query.
-     *
-     * @param \Doctrine\ORM\QueryBuilder $query Query for packages
-     * @param int                        $page  Pagenumber to retrieve.
-     * @return \Pagerfanta\Pagerfanta
-     */
-    protected function setupPager($query, $page)
-    {
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($query, true));
-        $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage($page, false, true);
-
-        return $paginator;
     }
 
     /**

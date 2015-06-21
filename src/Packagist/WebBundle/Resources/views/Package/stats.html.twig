@@ -2,14 +2,16 @@
 
 {% set showSearchDesc = 'hide' %}
 
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
 {% block title %}Install Statistics - {{ package.name }} - {{ parent() }}{% endblock %}
 
 {% block content %}
     <div class="row">
-        <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %} data-force-crawl="true"{% endif %}>
+        <div class="col-xs-12 package">
             <div class="package-header">
                 <h2 class="title">
-                    <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a><a href="{{ path("view_package", {name: package.name}) }}">{{ package.packageName }}</a> install statistics
+                    <a href="{{ path("view_package", {name: package.name}) }}">{{ package.name }}</a> install statistics
                 </h2>
             </div>
         </div>

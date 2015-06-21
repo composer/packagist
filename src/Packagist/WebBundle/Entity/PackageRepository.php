@@ -62,7 +62,6 @@ class PackageRepository extends EntityRepository
         $names = null;
         $apc = extension_loaded('apc');
 
-        // TODO use container to set caching key and ttl
         if ($apc) {
             $names = apc_fetch('packagist_package_names');
         }
@@ -311,6 +310,52 @@ class PackageRepository extends EntityRepository
         return true;
     }
 
+    public function getDependentCount($name)
+    {
+        $apc = extension_loaded('apc');
+
+        if ($apc) {
+            $count = apc_fetch('packagist_dependentsCount_'.$name);
+        }
+
+        if (!isset($count) || !is_int($count)) {
+            $count = $this->getEntityManager()->getConnection()->fetchColumn(
+                "SELECT COUNT(DISTINCT v.package_id)
+                FROM package_version v
+                LEFT JOIN link_require r ON v.id = r.version_id AND r.packageName = :name
+                LEFT JOIN link_require_dev rd ON v.id = rd.version_id AND rd.packageName = :name
+                WHERE v.development AND (r.packageName IS NOT NULL OR rd.packageName IS NOT NULL)",
+                ['name' => $name]
+            );
+
+            if ($apc) {
+                apc_store('packagist_dependentsCount_'.$name, $count, 7*86400);
+            }
+        }
+
+        return $count;
+    }
+
+    public function getDependents($name, $offset = 0, $limit = 15)
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->leftJoin('p.versions', 'v')
+            ->leftJoin('v.devRequire', 'dr')
+            ->leftJoin('v.require', 'r')
+            ->where('v.development = true')
+            ->andWhere('(r.packageName = :name OR dr.packageName = :name)')
+            ->groupBy('p.id')
+            ->orderBy('p.name')
+            ->setParameter('name', $name);
+
+        return $qb->getQuery()
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->useResultCache(true, 7*86400, 'dependents_'.$name.'_'.$offset.'_'.$limit)
+            ->getResult();
+    }
 
     private function addFilters(QueryBuilder $qb, array $filters)
     {

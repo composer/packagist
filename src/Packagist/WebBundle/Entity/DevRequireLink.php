@@ -16,7 +16,9 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="link_require_dev")
+ * @ORM\Table(name="link_require_dev", indexes={
+ *     @ORM\Index(name="package_name_idx",columns={"version_id", "packageName"})
+ * })
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class DevRequireLink extends PackageLink

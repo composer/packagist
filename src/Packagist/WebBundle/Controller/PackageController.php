@@ -15,6 +15,8 @@ use DateTimeImmutable;
 
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Pagerfanta\Adapter\FixedAdapter;
+use Pagerfanta\Pagerfanta;
 
 class PackageController extends Controller
 {
@@ -157,6 +159,34 @@ class PackageController extends Controller
             }
         }
         $data['expandedId'] = $expandedVersion ? $expandedVersion->getId() : false;
+
+        return $data;
+    }
+
+    /**
+     * @Route(
+     *      "/packages/{name}/dependents",
+     *      name="view_package_dependents",
+     *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
+     * )
+     * @Template()
+     */
+    public function dependentsAction(Request $req, $name)
+    {
+        $page = $req->query->get('page', 1);
+
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $depCount = $repo->getDependentCount($name);
+        $packages = $repo->getDependents($name, ($page - 1) * 15, 15);
+
+        $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
+        $paginator->setMaxPerPage(15);
+        $paginator->setCurrentPage($page, false, true);
+
+        $data['packages'] = $paginator;
+
+        $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['name'] = $name;
 
         return $data;
     }
