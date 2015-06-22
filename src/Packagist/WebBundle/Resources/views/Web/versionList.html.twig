@@ -10,7 +10,7 @@
                     {% endif -%}
                 </a>
 
-                {% if deleteVersionCsrfToken is defined %}
+                {% if deleteVersionCsrfToken is defined and deleteVersionCsrfToken is not empty %}
                 <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="DELETE">
                     <input type="hidden" name="_token" value="{{ deleteVersionCsrfToken }}" />
                     <i class="submit glyphicon glyphicon-remove"></i>

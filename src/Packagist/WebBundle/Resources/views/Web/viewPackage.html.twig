@@ -198,7 +198,7 @@
                         {% include 'PackagistWebBundle:Web:versionDetails.html.twig' with {version: expandedVersion} %}
                     {% endif %}
                 </div>
-                {% include 'PackagistWebBundle:Web:versionList.html.twig' with {versions: versions, expandedId: expandedVersion.id, deleteVersionCsrfToken: deleteVersionCsrfToken} %}
+                {% include 'PackagistWebBundle:Web:versionList.html.twig' with {versions: versions, expandedId: expandedVersion.id, deleteVersionCsrfToken: deleteVersionCsrfToken|default(null)} %}
             {% elseif package.crawledAt is null %}
                 <p class="col-xs-12">This package has not been crawled yet, some information is missing.</p>
             {% else %}
