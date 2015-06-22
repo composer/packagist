@@ -2,68 +2,87 @@
     "use strict";
 
     var colors = [
-        'rgba(242, 141, 26, 1)',
-        'rgba(45, 45, 50, 1)'
+        '#f28d1a',
+        '#2d2d32'
     ];
 
-    Chart.defaults.global.responsive = true;
-    Chart.defaults.global.animationSteps = 10;
-    Chart.defaults.global.tooltipYPadding = 10;
-
-    function initPackagistChart(canvas, labels, values, scale, tooltips) {
-        var ctx = canvas.getContext("2d");
-        var data = {
-            labels: labels.map(function (val, index, arr) {
-                return index % Math.round(arr.length / 50) == 0 ? val : '';
-            }),
-            datasets: []
-        };
-        var scale = parseInt(scale, 10);
-        var scaleUnit = '';
-        switch (scale) {
-            case 1000:
-                scaleUnit = 'K';
-                break;
-            case 1000000:
-                scaleUnit = 'mio';
-                break;
+    function initPackagistChart(svg, labels, series, withDatePicker) {
+        var format = d3.time.format("%Y-%m-%d");
+        if (labels[0].match(/^\d+-\d+$/)) {
+            format = d3.time.format("%Y-%m");
         }
 
-        var opts = {
-            bezierCurve: false,
-            scaleLabel: " <%=value%>" + scaleUnit,
-            tooltipTemplate: "<%if (label){%><%=label%>: <%}%><%= value %>" + scaleUnit,
-            pointDot: false
-        };
+        var chartData = [];
+        series.map(function (serie, index) {
+            var points = [];
+            labels.map(function (label, index) {
+                points.push({x: format.parse(label), y: parseInt(serie.values[index]) || 0});
+            })
+            chartData.push({
+                values: points,
+                key: serie.name,
+                color: colors[index]
+            });
+        })
 
-        if (!tooltips || labels.length > 50 || labels.length <= 2) {
-            opts.showTooltips = false;
+        if (withDatePicker && $(window).width() < 767) {
+            withDatePicker = false;
         }
 
-        for (var i = 0; i < values.length; i++) {
-            data.datasets.push(
-                {
-                    fillColor: "rgba(0,0,0,0)",
-                    strokeColor: colors[i],
-                    pointColor: colors[i],
-                    pointStrokeColor: "#fff",
-                    data: values[i].map(function (value) {
-                        return Math.round(parseInt(value, 10) / scale, 2);
-                    })
+        nv.addGraph(function() {
+            var chart;
+            if (withDatePicker) {
+                chart = nv.models.lineWithFocusChart();
+            } else {
+                chart = nv.models.lineChart();
+            }
+
+            function formatDate(a,b) {
+                if (!(a instanceof Date)) {
+                    a = new Date(a);
                 }
-            );
-        }
+                return format(a,b);
+            }
+            function formatDigit(a,b) {
+                if (a > 1000000) {
+                    return Math.round(a/1000000) + 'mio';
+                }
+                if (a > 1000) {
+                    return Math.round(a/1000) + 'K';
+                }
+                return a;
+            }
 
-        new Chart(ctx).Line(data, opts);
+            chart.xAxis.tickFormat(formatDate);
+            chart.yAxis.tickFormat(formatDigit);
+
+            if (withDatePicker) {
+                chart.x2Axis.tickFormat(formatDate);
+                chart.y2Axis.tickFormat(formatDigit);
+            }
+
+            d3.select(svg)
+                .datum(chartData)
+                .transition().duration(100)
+                .call(chart);
+
+            nv.utils.windowResize(chart.update);
+
+            return chart;
+        });
     };
 
-    $('canvas[data-labels]').each(function () {
+    $('svg[data-labels]').each(function () {
         initPackagistChart(
             this,
             $(this).attr('data-labels').split(','),
-            $(this).attr('data-values').split('|').map(function (values) { return values.split(','); }),
-            $(this).attr('data-scale'),
-            true
+            $(this).attr('data-values').split('|').map(function (values) {
+                values = values.split(':');
+                return {
+                    name: values[0],
+                    values: values[1].split(',')
+                };
+            })
         );
     });
 
@@ -73,10 +92,19 @@
             versionCache = {},
             ongoingRequest = false;
 
+        function initChart(type, res) {
+            initPackagistChart(
+                $('.js-'+type+'-dls')[0],
+                res.labels,
+                [{name: 'Daily Downloads', values: res.values}],
+                true
+            );
+        }
+
         $.ajax({
             url: statsUrl,
             success: function (res) {
-                initPackagistChart($('.js-all-dls')[0], res.labels, [res.values], Math.max.apply(res.values) > 10000 ? 1000 : 1, false);
+                initChart('all', res);
             }
         })
         function loadVersionChart(versionId) {
@@ -84,7 +112,7 @@
             $.ajax({
                 url: versionStatsUrl.replace('_VERSION_', versionId) + '?average=' + average + '&from=' + date,
                 success: function (res) {
-                    initPackagistChart($('.js-version-dls')[0], res.labels, [res.values], Math.max.apply(res.values) > 10000 ? 1000 : 1, false);
+                    initChart('version', res);
                     versionCache[versionId] = res;
                     ongoingRequest = false;
                 }
@@ -110,7 +138,7 @@
 
             if (versionCache[versionId]) {
                 res = versionCache[versionId];
-                initPackagistChart($('.js-version-dls')[0], res.labels, [res.values], Math.max.apply(res.values) > 10000 ? 1000 : 1, false);
+                initChart('version', res);
             } else {
                 if (ongoingRequest) {
                     return;
@@ -123,7 +151,10 @@
         });
 
         $(window).on('scroll', function () {
-            $('.version-stats-chart').css('top', Math.max(0, window.scrollY - $('.version-stats').offset().top + 80) + 'px');
+            var basePos = $('.version-stats').offset().top;
+            var footerPadding = $(document).height() - basePos - $('footer').height() - $('.version-stats-chart').height() - 50;
+            var headerPadding = 80;
+            $('.version-stats-chart').css('top', Math.max(0, Math.min(footerPadding, window.scrollY - basePos + headerPadding)) + 'px');
         });
 
         // initialize version list expander
@@ -131,8 +162,7 @@
         if (versionsList.offsetHeight < versionsList.scrollHeight) {
             $('.package .versions-expander').removeClass('hidden').on('click', function () {
                 $(this).addClass('hidden');
-                $(versionsList).css('overflow-y', 'visible')
-                    .css('max-height', 'inherit');
+                $(versionsList).css('max-height', 'inherit');
             });
         }
     };

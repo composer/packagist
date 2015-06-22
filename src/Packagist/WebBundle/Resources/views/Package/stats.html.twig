@@ -45,18 +45,21 @@
             <h3>Daily installs{% if average != 'daily' %}, averaged {{ average }}{% endif %}</h3>
             <div class="row">
                 <div class="col-xs-12">
-                    <canvas class="js-all-dls" width="500" height="200">
-                        Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
-                    </canvas>
+                    <svg class="chart js-all-dls" width="500" height="200">
+                        Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                    </svg>
                 </div>
             </div>
 
+            <br>
             <h3>Daily installs per version{% if average != 'daily' %}, averaged {{ average }}{% endif %}</h3>
             <div class="row package version-stats">
                 <div class="col-xs-12 col-md-9 version-stats-chart">
-                    <canvas class="js-version-dls" width="500" height="200">
-                        Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
-                    </canvas>
+                    <div style="position: relative">
+                        <svg class="chart js-version-dls" width="500" height="200">
+                            Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                        </svg>
+                    </div>
                 </div>
                 {% include 'PackagistWebBundle:Web:versionList.html.twig' with {versions: versions, expandedId: expandedId} %}
             </div>
@@ -64,8 +67,13 @@
     </section>
 {% endblock %}
 
+{% block stylesheets %}
+    <link href="https://cdn.rawgit.com/novus/nvd3/v1.7.1/build/nv.d3.css" rel="stylesheet">
+{% endblock %}
+
 {% block scripts %}
-    <script src="{{ asset('js/libs/Chart.js/Chart.min.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="https://cdn.rawgit.com/novus/nvd3/v1.7.1/build/nv.d3.min.js"></script>
     <script src="{{ asset('bundles/packagistweb/js/charts.js') }}"></script>
     <script>
         (function () {

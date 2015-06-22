@@ -12,37 +12,27 @@
             <h3>Packages/versions over time</h3>
 
             <p class="row">
-                <canvas class="col-xs-12" width="500" height="200" data-labels="{{ chart.months|join(',') }}" data-scale="1000" data-values="{{ chart.versions|join(',') }}|{{ chart.packages|join(',') }}">
-                    Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
-                </canvas>
+                <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ chart.months|join(',') }}" data-scale="1000" data-values="Versions:{{ chart.versions|join(',') }}|Packages:{{ chart.packages|join(',') }}">
+                    Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                </svg>
             </p>
-            <ul class="legend">
-                <li class="legend-first"><span>&#9632;</span> Versions</li>
-                <li class="legend-second"><span>&#9632;</span> Packages</li>
-            </ul>
             <p>The last data point is for the current month and shows partial data.</p>
 
             {% if downloadsChart %}
                 <h3>Packages installed in the last 30 days</h3>
                 <p class="row">
-                    <canvas class="col-xs-12" width="500" height="200" data-labels="{{ downloadsChart.labels|join(',') }}" data-scale="1000" data-values="{{ downloadsChart.values|join(',') }}">
-                        Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
-                    </canvas>
+                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChart.labels|join(',') }}" data-scale="1000" data-values="Installs:{{ downloadsChart.values|join(',') }}">
+                        Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                    </svg>
                 </p>
-                <ul class="legend">
-                    <li class="legend-first"><span>&#9632;</span> Installs</li>
-                </ul>
             {% endif %}
             {% if downloadsChartMonthly %}
                 <h3>Packages installed per month</h3>
                 <p class="row">
-                    <canvas class="col-xs-12" width="500" height="200" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-scale="1000000" data-values="{{ downloadsChartMonthly.values|join(',') }}">
-                        Sorry, the graph can't be displayed because your browser doesn't support &lt;canvas&gt; html element.
-                    </canvas>
+                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-scale="1000000" data-values="Installs:{{ downloadsChartMonthly.values|join(',') }}">
+                        Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                    </svg>
                 </p>
-                <ul class="legend">
-                    <li class="legend-first"><span>&#9632;</span> Installs</li>
-                </ul>
                 <p>The last data point is for the current month and shows partial data.</p>
             {% endif %}
 
@@ -61,7 +51,12 @@
     </section>
 {% endblock %}
 
+{% block stylesheets %}
+    <link href="https://cdn.rawgit.com/novus/nvd3/v1.7.1/build/nv.d3.css" rel="stylesheet">
+{% endblock %}
+
 {% block scripts %}
-    <script src="{{ asset('js/libs/Chart.js/Chart.min.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="https://cdn.rawgit.com/novus/nvd3/v1.7.1/build/nv.d3.min.js"></script>
     <script src="{{ asset('bundles/packagistweb/js/charts.js') }}"></script>
 {% endblock %}

@@ -171,8 +171,7 @@
     if (versionsList.offsetHeight < versionsList.scrollHeight) {
         $('.package .versions-expander').removeClass('hidden').on('click', function () {
             $(this).addClass('hidden');
-            $(versionsList).css('overflow-y', 'visible')
-                .css('max-height', 'inherit');
+            $(versionsList).css('max-height', 'inherit');
         });
     }
 

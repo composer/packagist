@@ -401,7 +401,6 @@ strong {
 
 .wrapper-search {
     background: #f28d1a;
-    border-bottom: 1px solid #ccc;
 }
 
 .wrapper-search .container {
@@ -456,7 +455,6 @@ footer p {
 
 #search-form input[type="search"] {
     background: #FFF;
-    box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
     font: 18px 'Open Sans', sans-serif;
     border: 0;
     padding: 0px 10px;
@@ -1423,6 +1421,54 @@ ul.packages .metadata-block:last-child {
     color: #2d2d32;
 }
 
+
+.chart {
+    min-height: 300px;
+}
+.version-stats-chart .chart {
+    min-height: 400px;
+}
+svg {
+    display: auto !important;
+    width: auto !important;
+    height: auto !important;
+}
+svg.chart {
+    display: block !important;
+    width:100% !important;
+    height:100% !important;
+    padding-left: 0;
+}
+@media (max-width: 767px) {
+  svg.chart {
+    margin-left: -10px;
+  }
+}
+.nvd3 text {
+  font: normal 12px 'Open Sans';
+}
+.nv-x text {
+  baseline-shift: -10px;
+}
+.nv-context .nv-x text {
+  baseline-shift: -5px;
+}
+.nvd3 .nv-axis .domain {
+  display: none;
+}
+.nvd3 .nv-axis .nv-axisMaxMin text {
+  font-weight: normal !important;
+}
+.nvd3 .nv-y .nv-axis .nv-axisMaxMin:last-child {
+  display: none;
+}
+.nvd3 .nv-x .nv-axis .nv-axisMaxMin:last-child text {
+  text-anchor: end !important;
+}
+.nvd3.nv-scatter.nv-single-point .nv-groups .nv-point {
+  fill-opacity: 0 !important;
+  stroke-opacity: 0 !important;
+}
 
 @media (max-width: 1199px) {
     .publishing-packages {
