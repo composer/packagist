@@ -146,7 +146,7 @@
 
                         <div class="facts col-xs-12 col-sm-6 col-md-12">
                             <p><span><a href="{{ path('view_package_stats', {name: package.name}) }}" rel="nofollow">Installs</a>:</span> {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
-                            <p><span><a href="{{ path('view_package_dependents', {name: package.name}) }}" rel="nofollow">Dependents</a>:</span> {{ dependents|default(38429)|number_format(0, '.', '&#8201;')|raw }}</p>
+                            <p><span><a href="{{ path('view_package_dependents', {name: package.name}) }}" rel="nofollow">Dependents</a>:</span> {{ dependents|number_format(0, '.', '&#8201;')|raw }}</p>
                             {% if package.gitHubStars is not null %}<p><span>Stars:</span> {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
                             {% if package.gitHubWatches is not null %}<p><span>Watches:</span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
                             {% if package.gitHubForks is not null %}<p><span>Forks:</span> {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
