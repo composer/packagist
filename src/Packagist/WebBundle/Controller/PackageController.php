@@ -30,7 +30,7 @@ class PackageController extends Controller
      */
     public function editAction(Request $req, Package $package)
     {
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.authorization_checker')->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
@@ -72,7 +72,7 @@ class PackageController extends Controller
      */
     public function abandonAction(Request $request, Package $package)
     {
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.authorization_checker')->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
@@ -106,7 +106,7 @@ class PackageController extends Controller
      */
     public function unabandonAction(Package $package)
     {
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->get('security.authorization_checker')->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
