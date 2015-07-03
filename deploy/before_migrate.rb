@@ -4,6 +4,9 @@ template "#{release_path}/app/config/parameters.yml" do
   group "apache"
   mode "0644"
   local true
+  variables(
+    :application => node[:deploy][application]
+  )
 end
 
 composer_project "#{release_path}" do
