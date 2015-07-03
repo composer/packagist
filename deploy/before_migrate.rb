@@ -14,14 +14,14 @@ composer_project "#{release_path}" do
 end
 
 execute "change-permission-cache" do
-  command "chown -R 777:777 #{release_path}/app/cache"
-  user "root"
+  command "chmod -R 777:777 #{release_path}/app/cache"
+  user "apache"
   action :nothing
 end
         
 execute "change-permission-logs" do
-  command "chown -R 777:777 #{release_path}/app/logs"
-  user "root"
+  command "chmod -R 777:777 #{release_path}/app/logs"
+  user "apache"
   action :nothing
 end
 
