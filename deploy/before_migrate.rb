@@ -14,13 +14,20 @@ composer_project "#{release_path}" do
 end
 
 execute "change-permission-cache" do
-  command "chown -R 777:777 #{release_path}/cache"
+  command "chown -R 777:777 #{release_path}/app/cache"
   user "root"
   action :nothing
 end
         
 execute "change-permission-logs" do
-  command "chown -R 777:777 #{release_path}/logs"
+  command "chown -R 777:777 #{release_path}/app/logs"
+  user "root"
+  action :nothing
+end
+
+execute "install web assets" do
+  command "app/console assets:install web"
+  cwd "#{release_path}"
   user "root"
   action :nothing
 end
