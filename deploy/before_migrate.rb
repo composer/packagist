@@ -6,6 +6,14 @@ template "#{release_path}/app/config/parameters.yml" do
   local true
 end
 
+template "/etc/cron.d/packagist" do
+  source "#{release_path}/deploy/packagist_cron.erb"
+  owner "root"
+  group "root"
+  mode "0644"
+  local true
+end
+
 composer_project "#{release_path}" do
     dev false
     quiet true
