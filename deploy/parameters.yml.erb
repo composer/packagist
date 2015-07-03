@@ -12,8 +12,8 @@ parameters:
     mailer_from_email: admin@example.org
     mailer_from_name: Admin Team
 
-    # packagist_host: example.org
-    # router.request_context.host: %packagist_host%
+    packagist_host: <%= @application[:domains].first %>
+    router.request_context.host: %packagist_host%
     # router.request_context.scheme: https
 
     redis_dsn: <%= node[:packagist][:redis][:dsn] %>
