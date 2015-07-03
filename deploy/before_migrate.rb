@@ -11,6 +11,8 @@ composer_project "#{release_path}" do
     quiet true
     prefer_dist false
     action :install
+    owner "deploy"
+    group "apache"
 end
 
 execute "change-owner-cache" do
