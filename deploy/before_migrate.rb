@@ -33,6 +33,14 @@ execute "change-permission-logs" do
   user "root"
 end
 
+directory '/home/deploy/.composer' do
+  owner 'deploy'
+  group 'apache'
+  mode '0755'
+  action :create
+end
+
+
 execute "install web assets" do
   command "app/console assets:install web"
   cwd "#{release_path}"
