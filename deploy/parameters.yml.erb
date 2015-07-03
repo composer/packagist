@@ -12,7 +12,7 @@ parameters:
     mailer_from_email: admin@example.org
     mailer_from_name: Admin Team
 
-    packagist_host: <%= @application[:domains].first %>
+    packagist_host: <%= deploy[:domains].first %>
     router.request_context.host: %packagist_host%
     # router.request_context.scheme: https
 
