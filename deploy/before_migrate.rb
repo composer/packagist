@@ -36,7 +36,7 @@ end
 directory '/home/deploy/.composer' do
   owner 'deploy'
   group 'apache'
-  mode '0755'
+  mode '0775'
   action :create
 end
 
