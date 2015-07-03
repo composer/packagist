@@ -12,6 +12,9 @@ template "/etc/cron.d/packagist" do
   group "root"
   mode "0644"
   local true
+  variables({
+     :release_path => release_path
+  })
 end
 
 composer_project "#{release_path}" do
