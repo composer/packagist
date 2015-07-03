@@ -1,6 +1,6 @@
 template "#{release_path}/app/config/parameters.yml" do
   source "#{release_path}/deploy/parameters.yml.erb"
-  owner "apache"
+  owner "deploy"
   group "apache"
   mode "0644"
   local true
@@ -13,15 +13,27 @@ composer_project "#{release_path}" do
     action :install
 end
 
+execute "change-owner-cache" do
+  command "chown -R deploy:apache #{release_path}/app/cache"
+  user "root"
+  action :nothing
+end
+        
+execute "change-owner-logs" do
+  command "chown -R deploy:apache #{release_path}/app/logs"
+  user "root"
+  action :nothing
+end
+
 execute "change-permission-cache" do
   command "chmod -R 777:777 #{release_path}/app/cache"
-  user "apache"
+  user "root"
   action :nothing
 end
         
 execute "change-permission-logs" do
   command "chmod -R 777:777 #{release_path}/app/logs"
-  user "apache"
+  user "root"
   action :nothing
 end
 
