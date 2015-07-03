@@ -25,12 +25,12 @@ execute "change-owner-logs" do
 end
 
 execute "change-permission-cache" do
-  command "chmod -R 777:777 #{release_path}/app/cache"
+  command "chmod -R 777 #{release_path}/app/cache"
   user "root"
 end
         
 execute "change-permission-logs" do
-  command "chmod -R 777:777 #{release_path}/app/logs"
+  command "chmod -R 777 #{release_path}/app/logs"
   user "root"
 end
 
