@@ -22,24 +22,20 @@ end
 execute "change-owner-logs" do
   command "chown -R deploy:apache #{release_path}/app/logs"
   user "root"
-  action :nothing
 end
 
 execute "change-permission-cache" do
   command "chmod -R 777:777 #{release_path}/app/cache"
   user "root"
-  action :nothing
 end
         
 execute "change-permission-logs" do
   command "chmod -R 777:777 #{release_path}/app/logs"
   user "root"
-  action :nothing
 end
 
 execute "install web assets" do
   command "app/console assets:install web"
   cwd "#{release_path}"
   user "root"
-  action :nothing
 end
