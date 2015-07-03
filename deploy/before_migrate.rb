@@ -11,8 +11,6 @@ composer_project "#{release_path}" do
     quiet true
     prefer_dist false
     action :install
-    owner "deploy"
-    group "apache"
 end
 
 execute "change-owner-cache" do
@@ -40,6 +38,11 @@ directory '/home/deploy/.composer' do
   group 'apache'
   mode '0775'
   action :create
+end
+
+execute "change-permission-composer home" do
+  command "chmod -R 777 /home/deploy/.composer"
+  user "root"
 end
 
 
