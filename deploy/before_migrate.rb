@@ -12,3 +12,15 @@ composer_project "#{release_path}" do
     prefer_dist false
     action :install
 end
+
+execute "change-permission-cache" do
+  command "chown -R 777:777 #{release_path}/cache"
+  user "root"
+  action :nothing
+end
+        
+execute "change-permission-logs" do
+  command "chown -R 777:777 #{release_path}/logs"
+  user "root"
+  action :nothing
+end
