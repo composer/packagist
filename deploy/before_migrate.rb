@@ -16,7 +16,6 @@ end
 execute "change-owner-cache" do
   command "chown -R deploy:apache #{release_path}/app/cache"
   user "root"
-  action :nothing
 end
         
 execute "change-owner-logs" do
