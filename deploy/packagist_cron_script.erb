@@ -1,0 +1,5 @@
+#!/bin/bash
+
+<%= @release_path %>/app/console packagist:update -vvv --env=prod
+<%= @release_path %>/app/console packagist:dump -vvv --env=prod
+<%= @release_path %>/app/console packagist:index -vvv --env=prod
