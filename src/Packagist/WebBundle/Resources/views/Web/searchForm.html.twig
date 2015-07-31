@@ -2,7 +2,7 @@
     <div class="{% if orderBys is defined %}sortable{% endif %} row">
         <div class="hidden">{{ form_errors(searchForm.query) }}</div>
         <div class="{% if searchForm.vars.value.query is empty %}col-xs-12{% else %}col-xs-8{% endif %} js-search-field-wrapper col-md-9">
-            {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
+            {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off','autofocus': 'autofocus': 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
         </div>
 
         {% set hasActiveOrderBy = false %}
