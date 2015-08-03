@@ -26,6 +26,8 @@ snc_redis:
             type: predis
             alias: default
             dsn: %redis_dsn%
+            options:
+                profile: 2.8
         session:
             type: predis
             alias: session
