@@ -21,6 +21,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\LockHandler;
 
 /**
  * @author Igor Wiedler <igor@wiedler.ch>
@@ -67,18 +68,15 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $downloadManager = $this->getContainer()->get('packagist.download_manager');
         $favoriteManager = $this->getContainer()->get('packagist.favorite_manager');
 
-        $lock = $this->getContainer()->getParameter('kernel.cache_dir').'/composer-indexer.lock';
-        $timeout = 600;
+        $lock = new LockHandler('packagist_package_indexer');
 
         // another dumper is still active
-        if (file_exists($lock) && filemtime($lock) > time() - $timeout) {
+        if (!$lock->lock()) {
             if ($verbose) {
-                $output->writeln('Aborting, '.$lock.' file present');
+                $output->writeln('Aborting, another indexer is still active');
             }
             return;
         }
-
-        touch($lock);
 
         if ($package) {
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
@@ -165,7 +163,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $solarium->update($update);
         }
 
-        unlink($lock);
+        $lock->release();
     }
 
     private function updateDocumentFromPackage(
