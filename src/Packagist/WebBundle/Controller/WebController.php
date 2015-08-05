@@ -1185,7 +1185,7 @@ class WebController extends Controller
 
         if ($this->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
             $maintainerRequest = new MaintainerRequest;
-            return $this->createForm(new RemoveMaintainerRequestType(), $maintainerRequest, array('package'=>$package, 'excludeUser'=>$user));
+            return $this->createForm(new RemoveMaintainerRequestType(), $maintainerRequest, array('package'=>$package));
         }
     }
 
