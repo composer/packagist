@@ -57,6 +57,35 @@ class ApiController extends Controller
     }
 
     /**
+     * @Route("/api/create-package", name="generic_create", defaults={"_format" = "json"})
+     * @Method({"POST"})
+     */
+    public function createPackageAction(Request $request)
+    {
+        // parse the payload
+        $payload = json_decode($request->request->get('payload'), true);
+        if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
+            $payload = json_decode($request->getContent(), true);
+        }
+
+        if (!$payload) {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Missing payload parameter'), 406);
+        }
+
+        if (isset($payload['repository']['url'])) { // github/gitlab/anything hook
+            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}i';
+            $url = $payload['repository']['url'];
+        } elseif (isset($payload['canon_url']) && isset($payload['repository']['absolute_url'])) { // bitbucket hook
+            $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
+            $url = $payload['canon_url'].$payload['repository']['absolute_url'];
+        } else {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Missing or invalid payload'), 406);
+        }
+
+        return $this->receivePost($request, $url, $urlRegex);
+    }
+
+    /**
      * @Route("/api/update-package", name="generic_postreceive", defaults={"_format" = "json"})
      * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"})
      * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"})
