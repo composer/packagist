@@ -22,6 +22,7 @@ body {
   left: 30%;
   opacity: 0;
   width: 40%;
+  max-height: 500px;
   color: #333;
   padding: 10px;
   text-align: center;
@@ -38,6 +39,7 @@ body {
   -ms-transform: translateY(-100px);
   -o-transform: translateY(-100px);
   transform: translateY(-100px);
+  overflow: auto;
 }
 .humane p,
 .humane-jackedup p,
@@ -98,10 +100,6 @@ body {
   -o-transform: translateY(0);
   transform: translateY(0);
 }
-.humane-animate:hover,
-.humane-jackedup.humane-jackedup-animate:hover {
-  opacity: 0.7;
-}
 .humane-js-animate,
 .humane-jackedup.humane-jackedup-js-animate {
   opacity: 1;
@@ -111,14 +109,10 @@ body {
   -o-transform: translateY(0);
   transform: translateY(0);
 }
-.humane-js-animate:hover,
-.humane-jackedup.humane-jackedup-js-animate:hover {
-  opacity: 0.7;
-  filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=70);
-}
 
 .humane pre {
   background: #2d2d32;
   color: #fff;
   text-shadow: none;
+  text-align: left;
 }
