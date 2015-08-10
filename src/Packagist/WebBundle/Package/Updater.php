@@ -421,7 +421,7 @@ class Updater
             $dom = new \DOMDocument();
             $dom->loadHTML('<?xml encoding="UTF-8">' . $readme);
 
-            // Links can not be trusted
+            // Links can not be trusted, mark them nofollow and convert relative to absolute links
             $links = $dom->getElementsByTagName('a');
             foreach ($links as $link) {
                 $link->setAttribute('rel', 'nofollow');
@@ -429,6 +429,14 @@ class Updater
                     $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
                 } elseif (false === strpos($link->getAttribute('href'), '//')) {
                     $link->setAttribute('href', 'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$link->getAttribute('href'));
+                }
+            }
+
+            // convert relative to absolute images
+            $images = $dom->getElementsByTagName('img');
+            foreach ($images as $img) {
+                if (false === strpos($img->getAttribute('src'), '//')) {
+                    $img->setAttribute('src', 'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$img->getAttribute('src'));
                 }
             }
 
