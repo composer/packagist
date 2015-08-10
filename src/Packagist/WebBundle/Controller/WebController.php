@@ -871,7 +871,7 @@ class WebController extends Controller
                 set_time_limit(3600);
                 $updater = $this->get('packagist.package_updater');
 
-                $io = new BufferIO('', OutputInterface::VERBOSITY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
+                $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
                 $config = Factory::createConfig();
                 $io->loadConfiguration($config);
                 $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
