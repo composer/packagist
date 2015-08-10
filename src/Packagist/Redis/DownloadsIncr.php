@@ -2,7 +2,9 @@
 
 namespace Packagist\Redis;
 
-class DownloadsIncr extends \Predis\Command\ScriptedCommand
+use Predis\Command\ScriptedCommand;
+
+class DownloadsIncr extends ScriptedCommand
 {
     public function getKeysCount()
     {
