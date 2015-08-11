@@ -62,32 +62,21 @@ class ApiController extends Controller
      */
     public function createPackageAction(Request $request)
     {
-        // parse the payload
-        $payload = json_decode($request->request->get('payload'), true);
-        if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
-            $payload = json_decode($request->getContent(), true);
-        }
 
+        $payload = json_decode($request->getContent(), true);
         if (!$payload) {
             return new JsonResponse(array('status' => 'error', 'message' => 'Missing payload parameter'), 406);
         }
-
-        if (isset($payload['repository']['url'])) { // github/gitlab/anything hook
-            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}i';
-            $url = $payload['repository']['url'];
-        } elseif (isset($payload['canon_url']) && isset($payload['repository']['absolute_url'])) { // bitbucket hook
-            $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
-            $url = $payload['canon_url'].$payload['repository']['absolute_url'];
-        } else {
-            return new JsonResponse(array('status' => 'error', 'message' => 'Missing or invalid payload'), 406);
-        }
-
+        $url = $payload['repository']['url'];
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $package->setRouter($this->get('router'));
         $user = $this->findUser($request);
         $package->addMaintainer($user);
         $package->repository = $url;
+        if ($this->get('validator')->validate($package)) {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Invalid package'), 406); 
+        }
         try {
             $em = $this->getDoctrine()->getManager();
             $em->persist($package);
