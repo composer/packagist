@@ -156,4 +156,8 @@
             $('#search_query_query').focus();
         }
     });
+
+    if ($(document).width() >= 992) {
+        $('#search_query_query').focus();
+    }
 }(jQuery));
