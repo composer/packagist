@@ -82,7 +82,16 @@ class ApiController extends Controller
             return new JsonResponse(array('status' => 'error', 'message' => 'Missing or invalid payload'), 406);
         }
 
-        return $this->receivePost($request, $url, $urlRegex);
+        
+        $package = new Package;
+        $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setRouter($this->get('router'));
+        $user = $this->findUser($request);
+        $package->addMaintainer($user);
+        $package->repository = $url;
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($package);
+        $em->flush();
     }
 
     /**
