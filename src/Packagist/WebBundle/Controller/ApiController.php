@@ -83,7 +83,10 @@ class ApiController extends Controller
             $em->flush();
         } catch (\Exception $e) {
             $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+            return new JsonResponse(array('status' => 'error', 'message' => $e->getMessage()), 406); 
         }
+
+        return new JsonResponse(array('status' => 'success'), 202);
     }
 
     /**
