@@ -89,9 +89,13 @@ class ApiController extends Controller
         $user = $this->findUser($request);
         $package->addMaintainer($user);
         $package->repository = $url;
-        $em = $this->getDoctrine()->getManager();
-        $em->persist($package);
-        $em->flush();
+        try {
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($package);
+            $em->flush();
+        } catch (\Exception $e) {
+            $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+        }
     }
 
     /**
