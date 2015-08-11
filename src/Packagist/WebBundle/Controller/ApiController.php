@@ -74,8 +74,10 @@ class ApiController extends Controller
         $user = $this->findUser($request);
         $package->addMaintainer($user);
         $package->repository = $url;
-        if ($this->get('validator')->validate($package)) {
-            return new JsonResponse(array('status' => 'error', 'message' => 'Invalid package'), 406); 
+        $errors = $this->get('validator')->validate($package)
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+            return new JsonResponse(array('status' => 'error', 'message' => $errorsString), 406); 
         }
         try {
             $em = $this->getDoctrine()->getManager();
