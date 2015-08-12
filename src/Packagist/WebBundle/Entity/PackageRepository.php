@@ -116,7 +116,7 @@ class PackageRepository extends EntityRepository
             ->leftJoin('pv.provide', 'pr')
             ->where('pv.development = true')
             ->andWhere('pr.packageName = :name')
-            ->groupBy('p.name')
+            ->orderBy('p.name')
             ->getQuery()
             ->setParameters(array('name' => $name));
 
