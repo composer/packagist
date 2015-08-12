@@ -207,8 +207,9 @@ class Updater
 
         $em->persist($version);
 
-        $version->setDescription($data->getDescription());
-        $package->setDescription($data->getDescription());
+        $descr = $this->sanitize($data->getDescription());
+        $version->setDescription($descr);
+        $package->setDescription($descr);
         $version->setHomepage($data->getHomepage());
         $version->setLicense($data->getLicense() ?: array());
 
@@ -236,9 +237,10 @@ class Updater
         }
 
         if ($data->getType()) {
-            $version->setType($data->getType());
-            if ($data->getType() && $data->getType() !== $package->getType()) {
-                $package->setType($data->getType());
+            $type = $this->sanitize($data->getType());
+            $version->setType($type);
+            if ($type !== $package->getType()) {
+                $package->setType($type);
             }
         }
 
@@ -471,5 +473,13 @@ class Updater
         if (!empty($repoData['open_issues_count'])) {
             $package->setGitHubOpenIssues($repoData['open_issues_count']);
         }
+    }
+
+    private function sanitize($str)
+    {
+        // remove escape chars
+        $str = preg_replace("{\x1B(?:\[.)?}u", '', $str);
+
+        return preg_replace("{[\x01-\x1A]}u", '', $str);
     }
 }
