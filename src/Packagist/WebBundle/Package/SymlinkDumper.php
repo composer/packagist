@@ -231,11 +231,11 @@ class SymlinkDumper
                     $this->fs->mkdir(dirname($buildDir.'/'.$name));
                     $this->writeFile($buildDir.'/'.$name.'.files', json_encode(array_keys($affectedFiles)));
 
+                    // update dump date
                     $package->setDumpedAt($dumpTime);
+                    $this->doctrine->getManager()->flush($package);
                 }
 
-                // update dump dates
-                $this->doctrine->getManager()->flush();
                 unset($packages, $package, $version);
                 $this->doctrine->getManager()->clear();
 

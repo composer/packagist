@@ -155,12 +155,14 @@ class IndexPackagesCommand extends ContainerAwareCommand
                 }
             }
 
-            $doctrine->getManager()->flush();
-            $doctrine->getManager()->clear();
-            unset($packages);
-
             $update->addCommit();
             $solarium->update($update);
+
+            foreach ($packages as $package) {
+                $doctrine->getManager()->flush($package);
+            }
+            $doctrine->getManager()->clear();
+            unset($packages);
         }
 
         $lock->release();
