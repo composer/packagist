@@ -62,7 +62,6 @@ class ApiController extends Controller
      */
     public function createPackageAction(Request $request)
     {
-
         $payload = json_decode($request->getContent(), true);
         if (!$payload) {
             return new JsonResponse(array('status' => 'error', 'message' => 'Missing payload parameter'), 406);
@@ -76,7 +75,7 @@ class ApiController extends Controller
         $package->repository = $url;
         $errors = $this->get('validator')->validate($package)
         if (count($errors) > 0) {
-            foreach( $errors as $error ) {
+            foreach($errors as $error) {
                 $errorArray[$error->getPropertyPath()] =  $error->getMessage();
             }
             return new JsonResponse(array('status' => 'error', 'message' => $errorArray), 406); 
