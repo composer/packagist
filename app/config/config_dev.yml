@@ -5,6 +5,12 @@ framework:
     router:   { resource: "%kernel.root_dir%/config/routing_dev.yml" }
     profiler: { only_exceptions: false }
 
+doctrine:
+    dbal:
+        driver: pdo_sqlite
+        path: %kernel.root_dir%/Resources/sqlite.db
+        charset: UTF8
+
 swiftmailer:
     disable_delivery: true
 

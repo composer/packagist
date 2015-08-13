@@ -96,8 +96,7 @@ class WebController extends Controller
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
             ->getQuery()->useResultCache(true, 900, 'new_submitted_packages')->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
-        $randomIds = $this->getDoctrine()->getConnection()->fetchAll('SELECT id FROM package ORDER BY RAND() LIMIT 10');
-        $random = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $randomIds)->getQuery()->getResult();
+        $random = $pkgRepo->getRandomPackages(10);
         try {
             $popular = array();
             $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);

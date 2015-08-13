@@ -411,4 +411,47 @@ class PackageRepository extends EntityRepository
 
         return $qb;
     }
+
+    /**
+     * Returns up to $limit randomly selected packages, or all if limit exceeds amount of packages in database.
+     *
+     * @param int $limit
+     *
+     * @return array
+     *
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function getRandomPackages($limit = 10)
+    {
+        $count = (int) $this->getEntityManager()
+            ->createQuery('SELECT COUNT(p.id) FROM Packagist\WebBundle\Entity\Package p')
+            ->getSingleScalarResult()
+        ;
+
+        if ($count <= $limit) {
+            return $this->findAll();
+        }
+
+        $offsets = array();
+        $packages = array();
+
+        while ($limit) {
+            do {
+                $rand = mt_rand(0, $count - 1);
+            } while (in_array($rand, $offsets));
+
+            $offsets[] = $rand;
+            $packages[] = $this->getEntityManager()
+                ->createQuery('SELECT p FROM Packagist\WebBundle\Entity\Package p')
+                ->setMaxResults(1)
+                ->setFirstResult($rand)
+                ->getSingleResult()
+            ;
+
+            --$limit;
+        }
+
+        return $packages;
+    }
 }
