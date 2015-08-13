@@ -57,6 +57,42 @@ class ApiController extends Controller
     }
 
     /**
+     * @Route("/api/create-package", name="generic_create", defaults={"_format" = "json"})
+     * @Method({"POST"})
+     */
+    public function createPackageAction(Request $request)
+    {
+        $payload = json_decode($request->getContent(), true);
+        if (!$payload) {
+            return new JsonResponse(array('status' => 'error', 'message' => 'Missing payload parameter'), 406);
+        }
+        $url = $payload['repository']['url'];
+        $package = new Package;
+        $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setRouter($this->get('router'));
+        $user = $this->findUser($request);
+        $package->addMaintainer($user);
+        $package->repository = $url;
+        $errors = $this->get('validator')->validate($package)
+        if (count($errors) > 0) {
+            foreach ($errors as $error) {
+                $errorArray[$error->getPropertyPath()] =  $error->getMessage();
+            }
+            return new JsonResponse(array('status' => 'error', 'message' => $errorArray), 406); 
+        }
+        try {
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($package);
+            $em->flush();
+        } catch (\Exception $e) {
+            $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+            return new JsonResponse(array('status' => 'error', 'message' => 'Error saving package'), 500); 
+        }
+
+        return new JsonResponse(array('status' => 'success'), 202);
+    }
+
+    /**
      * @Route("/api/update-package", name="generic_postreceive", defaults={"_format" = "json"})
      * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"})
      * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"})
