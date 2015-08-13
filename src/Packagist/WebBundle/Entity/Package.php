@@ -24,7 +24,7 @@ use Symfony\Component\Validator\ExecutionContextInterface;
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\PackageRepository")
  * @ORM\Table(
  *     name="package",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="name_idx", columns={"name"})},
+ *     uniqueConstraints={@ORM\UniqueConstraint(name="package_name_idx", columns={"name"})},
  *     indexes={
  *         @ORM\Index(name="indexed_idx",columns={"indexedAt"}),
  *         @ORM\Index(name="crawled_idx",columns={"crawledAt"}),
