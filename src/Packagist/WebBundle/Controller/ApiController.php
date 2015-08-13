@@ -73,12 +73,12 @@ class ApiController extends Controller
         $user = $this->findUser($request);
         $package->addMaintainer($user);
         $package->repository = $url;
-        $errors = $this->get('validator')->validate($package)
+        $errors = $this->get('validator')->validate($package);
         if (count($errors) > 0) {
             foreach ($errors as $error) {
                 $errorArray[$error->getPropertyPath()] =  $error->getMessage();
             }
-            return new JsonResponse(array('status' => 'error', 'message' => $errorArray), 406); 
+            return new JsonResponse(array('status' => 'error', 'message' => $errorArray), 406);
         }
         try {
             $em = $this->getDoctrine()->getManager();
@@ -86,7 +86,7 @@ class ApiController extends Controller
             $em->flush();
         } catch (\Exception $e) {
             $this->get('logger')->crit($e->getMessage(), array('exception', $e));
-            return new JsonResponse(array('status' => 'error', 'message' => 'Error saving package'), 500); 
+            return new JsonResponse(array('status' => 'error', 'message' => 'Error saving package'), 500);
         }
 
         return new JsonResponse(array('status' => 'success'), 202);
