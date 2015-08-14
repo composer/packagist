@@ -72,7 +72,7 @@ class ApiController extends Controller
         $package->setRouter($this->get('router'));
         $user = $this->findUser($request);
         $package->addMaintainer($user);
-        $package->repository = $url;
+        $package->setRepository($url);
         $errors = $this->get('validator')->validate($package);
         if (count($errors) > 0) {
             foreach ($errors as $error) {
