@@ -49,6 +49,10 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * @param Request $req
+     * @return Response
+     */
     public function myProfileAction(Request $req)
     {
         $user = $this->container->get('security.token_storage')->getToken()->getUser();
@@ -158,6 +162,11 @@ class UserController extends Controller
         return new Response('{"status": "success"}', 204);
     }
 
+    /**
+     * @param Request $req
+     * @param User $user
+     * @return Pagerfanta
+     */
     protected function getUserPackages($req, $user)
     {
         $packages = $this->getDoctrine()

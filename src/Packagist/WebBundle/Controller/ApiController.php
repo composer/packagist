@@ -181,6 +181,11 @@ class ApiController extends Controller
         return new JsonResponse(array('status' => 'success'), 201);
     }
 
+    /**
+     * @param string $name
+     * @param string $version
+     * @return array
+     */
     protected function getPackageAndVersionId($name, $version)
     {
         return $this->get('doctrine.dbal.default_connection')->fetchAssoc(
@@ -249,6 +254,7 @@ class ApiController extends Controller
         $io->loadConfiguration($config);
 
         try {
+            /** @var Package $package */
             foreach ($packages as $package) {
                 $em->transactional(function($em) use ($package, $updater, $io, $config) {
                     // prepare dependencies
