@@ -37,7 +37,7 @@ use Pagerfanta\Pagerfanta;
 class PackageController extends Controller
 {
     /**
-     * @Template("PackagistWebBundle:Web:browse.html.twig")
+     * @Template("PackagistWebBundle:Package:browse.html.twig")
      * @Route("/packages/", name="allPackages")
      * @Cache(smaxage=900)
      */
