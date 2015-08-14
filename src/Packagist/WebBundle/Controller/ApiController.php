@@ -36,8 +36,8 @@ use Symfony\Component\HttpFoundation\Response;
 class ApiController extends Controller
 {
     /**
-     * @Template()
      * @Route("/packages.json", name="packages", defaults={"_format" = "json"})
+     * @Method({"GET"})
      */
     public function packagesAction(Request $req)
     {
