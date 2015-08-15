@@ -4,8 +4,10 @@ namespace Packagist\WebBundle\Controller;
 
 use Composer\Factory;
 use Composer\IO\BufferIO;
+use Symfony\Component\Console\Output\OutputInterface;
 use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\Console\HtmlOutputFormatter;
 use Composer\Repository\VcsRepository;
 use Doctrine\ORM\NoResultException;
 use Packagist\WebBundle\Entity\PackageRepository;
@@ -33,6 +35,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
+use Packagist\WebBundle\Package\Updater;
 
 class PackageController extends Controller
 {
@@ -607,7 +610,8 @@ class PackageController extends Controller
                 $update->addCommit();
 
                 $solarium->update($update);
-            } catch (\Solarium_Client_HttpException $e) {}
+            } catch (\Solarium_Client_HttpException $e) {
+            }
 
             return new Response('', 204);
         }
