@@ -36,8 +36,8 @@ use Symfony\Component\HttpFoundation\Response;
 class ApiController extends Controller
 {
     /**
-     * @Template()
      * @Route("/packages.json", name="packages", defaults={"_format" = "json"})
+     * @Method({"GET"})
      */
     public function packagesAction(Request $req)
     {
@@ -72,7 +72,7 @@ class ApiController extends Controller
         $package->setRouter($this->get('router'));
         $user = $this->findUser($request);
         $package->addMaintainer($user);
-        $package->repository = $url;
+        $package->setRepository($url);
         $errors = $this->get('validator')->validate($package);
         if (count($errors) > 0) {
             foreach ($errors as $error) {
@@ -181,6 +181,11 @@ class ApiController extends Controller
         return new JsonResponse(array('status' => 'success'), 201);
     }
 
+    /**
+     * @param string $name
+     * @param string $version
+     * @return array
+     */
     protected function getPackageAndVersionId($name, $version)
     {
         return $this->get('doctrine.dbal.default_connection')->fetchAssoc(
@@ -249,6 +254,7 @@ class ApiController extends Controller
         $io->loadConfiguration($config);
 
         try {
+            /** @var Package $package */
             foreach ($packages as $package) {
                 $em->transactional(function($em) use ($package, $updater, $io, $config) {
                     // prepare dependencies

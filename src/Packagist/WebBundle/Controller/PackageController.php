@@ -37,7 +37,7 @@ use Pagerfanta\Pagerfanta;
 class PackageController extends Controller
 {
     /**
-     * @Template("PackagistWebBundle:Web:browse.html.twig")
+     * @Template("PackagistWebBundle:Package:browse.html.twig")
      * @Route("/packages/", name="allPackages")
      * @Cache(smaxage=900)
      */
@@ -550,10 +550,10 @@ class PackageController extends Controller
                     $updater->update($io, $config, $package, $repository, $updateEqualRefs ? Updater::UPDATE_EQUAL_REFS : 0);
                 } catch (\Exception $e) {
                     return new Response(json_encode(array(
-                                                        'status' => 'error',
-                                                        'message' => '['.get_class($e).'] '.$e->getMessage(),
-                                                        'details' => '<pre>'.$io->getOutput().'</pre>',
-                                                    )), 400);
+                        'status' => 'error',
+                        'message' => '['.get_class($e).'] '.$e->getMessage(),
+                        'details' => '<pre>'.$io->getOutput().'</pre>',
+                    )), 400);
                 }
             }
 
