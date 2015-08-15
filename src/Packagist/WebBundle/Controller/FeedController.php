@@ -20,6 +20,7 @@ use Pagerfanta\Pagerfanta;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Zend\Feed\Writer\Entry;
 use Zend\Feed\Writer\Feed;
@@ -48,7 +49,7 @@ class FeedController extends Controller
      * )
      * @Method({"GET"})
      */
-    public function packagesAction()
+    public function packagesAction(Request $req)
     {
         /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
@@ -57,13 +58,14 @@ class FeedController extends Controller
         );
 
         $feed = $this->buildFeed(
+            $req,
             'Newly Submitted Packages',
             'Latest packages submitted to Packagist.',
             $this->generateUrl('browse', array(), true),
             $packages
         );
 
-        return $this->buildResponse($feed);
+        return $this->buildResponse($req, $feed);
     }
 
     /**
@@ -74,7 +76,7 @@ class FeedController extends Controller
      * )
      * @Method({"GET"})
      */
-    public function releasesAction()
+    public function releasesAction(Request $req)
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
@@ -83,13 +85,14 @@ class FeedController extends Controller
         );
 
         $feed = $this->buildFeed(
+            $req,
             'New Releases',
             'Latest releases of all packages.',
             $this->generateUrl('browse', array(), true),
             $packages
         );
 
-        return $this->buildResponse($feed);
+        return $this->buildResponse($req, $feed);
     }
 
     /**
@@ -100,7 +103,7 @@ class FeedController extends Controller
      * )
      * @Method({"GET"})
      */
-    public function vendorAction($vendor)
+    public function vendorAction(Request $req, $vendor)
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
@@ -109,13 +112,14 @@ class FeedController extends Controller
         );
 
         $feed = $this->buildFeed(
+            $req,
             "$vendor packages",
             "Latest packages updated on Packagist of $vendor.",
             $this->generateUrl('view_vendor', array('vendor' => $vendor), true),
             $packages
         );
 
-        return $this->buildResponse($feed);
+        return $this->buildResponse($req, $feed);
     }
 
     /**
@@ -126,7 +130,7 @@ class FeedController extends Controller
      * )
      * @Method({"GET"})
      */
-    public function packageAction($package)
+    public function packageAction(Request $req, $package)
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
@@ -135,13 +139,14 @@ class FeedController extends Controller
         );
 
         $feed = $this->buildFeed(
+            $req,
             "$package releases",
             "Latest releases on Packagist of $package.",
             $this->generateUrl('view_package', array('name' => $package), true),
             $packages
         );
 
-        return $this->buildResponse($feed);
+        return $this->buildResponse($req, $feed);
     }
 
     /**
@@ -171,7 +176,7 @@ class FeedController extends Controller
      *
      * @return \Zend\Feed\Writer\Feed
      */
-    protected function buildFeed($title, $description, $url, $items)
+    protected function buildFeed(Request $req, $title, $description, $url, $items)
     {
         $feed = new Feed();
         $feed->setTitle($title);
@@ -185,10 +190,10 @@ class FeedController extends Controller
             $feed->addEntry($entry);
         }
 
-        if ($this->getRequest()->getRequestFormat() == 'atom') {
+        if ($req->getRequestFormat() == 'atom') {
             $feed->setFeedLink(
-                $this->getRequest()->getUri(),
-                $this->getRequest()->getRequestFormat()
+                $req->getUri(),
+                $req->getRequestFormat()
             );
         }
 
@@ -269,9 +274,9 @@ class FeedController extends Controller
      *
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    protected function buildResponse(Feed $feed)
+    protected function buildResponse(Request $req, Feed $feed)
     {
-        $content = $feed->export($this->getRequest()->getRequestFormat());
+        $content = $feed->export($req->getRequestFormat());
 
         $response = new Response($content, 200);
         $response->setSharedMaxAge(3600);

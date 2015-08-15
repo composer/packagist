@@ -492,7 +492,7 @@ class PackageController extends Controller
      * @Route("/packages/{name}", name="update_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
      * @Method({"PUT"})
      */
-    public function updatePackageAction($name)
+    public function updatePackageAction(Request $req, $name)
     {
         $doctrine = $this->getDoctrine();
 
@@ -504,8 +504,6 @@ class PackageController extends Controller
         } catch (NoResultException $e) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Package not found',)), 404);
         }
-
-        $req = $this->getRequest();
 
         $username = $req->request->has('username') ?
             $req->request->get('username') :

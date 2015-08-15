@@ -123,13 +123,11 @@ class UserController extends Controller
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      * @Method({"POST"})
      */
-    public function postFavoriteAction(User $user)
+    public function postFavoriteAction(Request $req, User $user)
     {
         if ($user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You can only change your own favorites');
         }
-
-        $req = $this->getRequest();
 
         $package = $req->request->get('package');
         try {
