@@ -11,6 +11,6 @@ class AboutControllerTest extends WebTestCase
         $client = self::createClient();
 
         $crawler = $client->request('GET', '/about');
-        $this->assertEquals('What is Packagist?', $crawler->filter('.box h1')->first()->text());
+        $this->assertEquals('What is Packagist?', $crawler->filter('h2.title')->first()->text());
     }
 }

@@ -21,7 +21,7 @@ class FeedControllerTest extends WebTestCase
 
         $crawler = $client->request('GET', $url);
 
-        $this->assertEquals(200, $client->getResponse()->getStatusCode());
+        $this->assertEquals(200, $client->getResponse()->getStatusCode(), $client->getResponse()->getContent());
         $this->assertContains($format, $client->getResponse()->getContent());
 
         if ($vendor !== null) {

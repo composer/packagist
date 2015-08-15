@@ -16,7 +16,7 @@ class WebControllerTest extends WebTestCase
         $client = self::createClient();
 
         $crawler = $client->request('GET', '/');
-        $this->assertEquals('Getting Started', $crawler->filter('.getting-started h1')->text());
+        $this->assertEquals('Getting Started', $crawler->filter('.getting-started h2')->text());
     }
 
     public function testPackages()
@@ -32,7 +32,7 @@ class WebControllerTest extends WebTestCase
         $client = self::createClient();
         //we expect package to be clickable and showing at least 'package' div
         $crawler = $client->request('GET', '/packages/');
-        $link = $crawler->filter('.packages li h1 a')->first()->attr('href');
+        $link = $crawler->filter('.packages li a')->first()->attr('href');
 
         $crawler = $client->request('GET', $link);
         $this->assertTrue($crawler->filter('.package')->count() > 0);
