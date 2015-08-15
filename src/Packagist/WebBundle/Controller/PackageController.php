@@ -262,7 +262,7 @@ class PackageController extends Controller
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
-        return $this->render('PackagistWebBundle:Web:providers.html.twig', array(
+        return $this->render('PackagistWebBundle:Package:providers.html.twig', array(
             'name' => $name,
             'packages' => $providers,
             'meta' => $this->getPackagesMetadata($providers),
@@ -450,7 +450,7 @@ class PackageController extends Controller
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
 
         $html = $this->renderView(
-            'PackagistWebBundle:Web:versionDetails.html.twig',
+            'PackagistWebBundle:Package:versionDetails.html.twig',
             array('version' => $repo->getFullVersion($versionId))
         );
 
@@ -620,7 +620,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template("PackagistWebBundle:Web:viewPackage.html.twig")
+     * @Template("PackagistWebBundle:Package:viewPackage.html.twig")
      * @Route("/packages/{name}/maintainers/", name="add_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
     public function createMaintainerAction(Request $req, $name)
@@ -679,7 +679,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template("PackagistWebBundle:Web:viewPackage.html.twig")
+     * @Template("PackagistWebBundle:Package:viewPackage.html.twig")
      * @Route("/packages/{name}/maintainers/delete", name="remove_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
     public function removeMaintainerAction(Request $req, $name)
