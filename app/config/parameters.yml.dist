@@ -19,6 +19,7 @@ parameters:
 
     redis_dsn: redis://localhost/1
     redis_dsn_test: redis://127.0.0.1/14
+    redis_session_dsn: redis://localhost/2
 
     locale: en
 
