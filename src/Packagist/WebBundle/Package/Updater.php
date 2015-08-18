@@ -413,8 +413,25 @@ class Updater
         }
 
         if (!empty($readme)) {
+            $elements = array(
+                'p',
+                'br',
+                'small',
+                'strong', 'b',
+                'em', 'i',
+                'strike',
+                'sub', 'sup',
+                'ins', 'del',
+                'ol', 'ul', 'li',
+                'h1', 'h2', 'h3',
+                'dl', 'dd', 'dt',
+                'pre', 'code', 'samp', 'kbd',
+                'q', 'blockquote', 'abbr', 'cite',
+                'a[href|target|rel|id]',
+                'img[src|title|alt|width|height|style]'
+            );
             $config = \HTMLPurifier_Config::createDefault();
-            $config->set('HTML.Allowed', 'a[href|target|rel|id],strong,b,em,i,strike,pre,code,p,ol,ul,li,br,h1,h2,h3,img[src|title|alt|width|height|style]');
+            $config->set('HTML.Allowed', implode(',', $elements));
             $config->set('Attr.EnableID', true);
             $config->set('Attr.AllowedFrameTargets', ['_blank']);
             $purifier = new \HTMLPurifier($config);
