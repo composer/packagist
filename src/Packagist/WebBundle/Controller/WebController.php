@@ -40,6 +40,8 @@ class WebController extends Controller
 
     public function searchFormAction(Request $req)
     {
+        $this->cleanRequest($req);
+
         $form = $this->createForm(new SearchQueryType, new SearchQuery);
 
         $filteredOrderBys = $this->getFilteredOrderedBys($req);
@@ -64,6 +66,8 @@ class WebController extends Controller
      */
     public function searchAction(Request $req)
     {
+        $this->cleanRequest($req);
+
         $form = $this->createForm(new SearchQueryType, new SearchQuery);
 
         $filteredOrderBys = $this->getFilteredOrderedBys($req);
@@ -451,6 +455,26 @@ class WebController extends Controller
         );
     }
 
+    private function cleanRequest(Request $req)
+    {
+        $clean = function ($in) {
+            return str_replace('laravel', '', $in);    
+        };
+
+        if ($req->query->has('q')) {
+            $req->query->set('q', $clean($req->query->get('q')));
+        }
+
+        if ($req->query->has('search_query')) {
+            $block = $req->query->get('search_query');
+
+            if (is_array($block) && isset($block['query'])) {
+                $block['query'] = $clean($block['query']);
+                $req->query->set('search_query', $block);
+            }
+        }
+    }
+
     /**
      * @param Request $req
      * @param array $filteredOrderBys
@@ -460,8 +484,6 @@ class WebController extends Controller
         // transform q=search shortcut
         if ($req->query->has('q') || $req->query->has('orderBys')) {
             $searchQuery = array();
-
-            $q = $req->query->get('q');
 
             if ($q !== null) {
                 $searchQuery['query'] = $q;
