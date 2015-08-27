@@ -485,6 +485,8 @@ class WebController extends Controller
         if ($req->query->has('q') || $req->query->has('orderBys')) {
             $searchQuery = array();
 
+            $q = $req->query->get('q');
+
             if ($q !== null) {
                 $searchQuery['query'] = $q;
             }
