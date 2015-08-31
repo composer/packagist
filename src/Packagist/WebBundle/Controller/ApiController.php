@@ -114,7 +114,7 @@ class ApiController extends Controller
             $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}i';
             $url = $payload['repository']['url'];
         } elseif (isset($payload['repository']['links']['html']['href'])) { // bitbucket push event payload
-            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)[:/](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?$}i';
+            $urlRegex = '{^(?:https?://|git://|git@)?(?:api\.)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
             $url = $payload['repository']['links']['html']['href'];
         } elseif (isset($payload['canon_url']) && isset($payload['repository']['absolute_url'])) { // bitbucket post hook (deprecated)
             $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
