@@ -66,6 +66,12 @@ class DumpPackagesCommand extends ContainerAwareCommand
         foreach ($packages as $package) {
             $ids[] = $package['id'];
         }
+        if (!$ids && !$force) {
+            if ($verbose) {
+                $output->writeln('Aborting, no packages to dump and not doing a forced run');
+            }
+            return 0;
+        }
 
         $lock = new LockHandler('packagist_package_dumper');
 
