@@ -341,7 +341,7 @@ class PackageRepository extends EntityRepository
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
+            ->join('p.versions', 'v')
             ->leftJoin('v.devRequire', 'dr')
             ->leftJoin('v.require', 'r')
             ->where('v.development = true')
