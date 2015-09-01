@@ -338,6 +338,9 @@ class SymlinkDumper
                 if (file_exists($webDir.'/packages.json')) {
                     unlink($webDir.'/packages.json');
                 }
+                if (file_exists($webDir.'/packages.json.gz')) {
+                    unlink($webDir.'/packages.json.gz');
+                }
                 if (defined('PHP_WINDOWS_VERSION_BUILD')) {
                     $sourcePath = $buildDir.'/packages.json';
                     if (!copy($sourcePath, $webDir.'/packages.json')) {
@@ -347,6 +350,9 @@ class SymlinkDumper
                     $sourcePath = 'p/packages.json';
                     if (!symlink($sourcePath, $webDir.'/packages.json')) {
                         throw new \RuntimeException('Could not symlink the packages.json file');
+                    }
+                    if ($this->compress && !symlink($sourcePath.'.gz', $webDir.'/packages.json.gz')) {
+                        throw new \RuntimeException('Could not symlink the packages.json.gz file');
                     }
                 }
             }
