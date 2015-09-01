@@ -86,6 +86,12 @@ class SymlinkDumper
     private $writeLog = array();
 
     /**
+     * Generate compressed files.
+     * @var int 0 disabled, 9 maximum.
+     */
+    private $compress;
+
+    /**
      * Constructor
      *
      * @param RegistryInterface     $doctrine
@@ -93,8 +99,9 @@ class SymlinkDumper
      * @param UrlGeneratorInterface $router
      * @param string                $webDir     web root
      * @param string                $targetDir
+     * @param int                   $compress
      */
-    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, $webDir, $targetDir)
+    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, $webDir, $targetDir, $compress)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
@@ -102,6 +109,7 @@ class SymlinkDumper
         $this->router = $router;
         $this->webDir = realpath($webDir);
         $this->buildDir = $targetDir;
+        $this->compress = $compress;
     }
 
     /**
@@ -467,7 +475,14 @@ class SymlinkDumper
         if (file_exists($file)) {
             rename($file, $file.'-'.time());
         }
-        $this->writeFile($file, json_encode($this->rootFile));
+
+        $json = json_encode($this->rootFile);
+        $time = time();
+
+        $this->writeFile($file, $json, $time);
+        if ($this->compress) {
+            $this->writeFile($file . '.gz', gzencode($json, $this->compress), $time);
+        }
     }
 
     private function dumpListing($path)
@@ -480,8 +495,13 @@ class SymlinkDumper
         $json = json_encode($this->listings[$key]);
         $hash = hash('sha256', $json);
         $path = substr($path, 0, -5) . '$' . $hash . '.json';
+        $time = time();
+
         if (!file_exists($path)) {
-            $this->writeFile($path, $json);
+            $this->writeFile($path, $json, $time);
+            if ($this->compress) {
+                $this->writeFile($path . '.gz', gzencode($json, $this->compress), $time);
+            }
         }
 
         return array($path, $hash);

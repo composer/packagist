@@ -17,7 +17,7 @@ services:
 
     packagist.package_dumper:
         class: Packagist\WebBundle\Package\SymlinkDumper
-        arguments: [ @doctrine, @filesystem, @router, "%kernel.root_dir%/../web/", "%packagist_metadata_dir%" ]
+        arguments: [ @doctrine, @filesystem, @router, "%kernel.root_dir%/../web/", "%packagist_metadata_dir%", "%packagist_dumper_compress%" ]
 
     packagist.user_provider:
         class: Packagist\WebBundle\Security\Provider\UserProvider
