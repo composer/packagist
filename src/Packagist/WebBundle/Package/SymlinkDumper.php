@@ -452,9 +452,16 @@ class SymlinkDumper
         foreach ($finder as $provider) {
             $key = strtr(str_replace($buildDir.DIRECTORY_SEPARATOR, '', $provider), '\\', '/');
             if (!in_array($key, $safeFiles, true)) {
-                unlink((string) $provider);
-                if (file_exists($altDirFile = str_replace($buildDir, $oldBuildDir, (string) $provider))) {
+                $path = (string) $provider;
+                unlink($path);
+                if (file_exists($path.'.gz')) {
+                    unlink($path.'.gz');
+                }
+                if (file_exists($altDirFile = str_replace($buildDir, $oldBuildDir, $path))) {
                     unlink($altDirFile);
+                    if (file_exists($altDirFile.'.gz')) {
+                        unlink($altDirFile.'.gz');
+                    }
                 }
             }
         }
@@ -462,9 +469,16 @@ class SymlinkDumper
         // clean up old root listings
         $finder = Finder::create()->depth(0)->files()->name('packages.json-*')->ignoreVCS(true)->in($buildDir)->date('until 10minutes ago');
         foreach ($finder as $rootFile) {
-            unlink((string) $rootFile);
-            if (file_exists($altDirFile = str_replace($buildDir, $oldBuildDir, (string) $rootFile))) {
+            $path = (string) $rootFile;
+            unlink($path);
+            if (file_exists($path.'.gz')) {
+                unlink($path.'.gz');
+            }
+            if (file_exists($altDirFile = str_replace($buildDir, $oldBuildDir, $path))) {
                 unlink($altDirFile);
+                if (file_exists($altDirFile.'.gz')) {
+                    unlink($altDirFile.'.gz');
+                }
             }
         }
     }
@@ -479,7 +493,11 @@ class SymlinkDumper
         }
 
         if (file_exists($file)) {
-            rename($file, $file.'-'.time());
+            $timedFile = $file.'-'.time();
+            rename($file, $timedFile);
+            if (file_exists($file.'.gz')) {
+                rename($file.'.gz', $timedFile.'.gz');
+            }
         }
 
         $json = json_encode($this->rootFile);
