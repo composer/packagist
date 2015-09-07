@@ -262,6 +262,21 @@ class PackageController extends Controller
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
+        try {
+            $redis = $this->get('snc_redis.default');
+            $trendiness = array();
+            foreach ($providers as $package) {
+                /** @var Package $package */
+                $trendiness[$package->getId()] = (int) $redis->zscore('downloads:trending', $package->getId());
+            }
+            usort($packages, function ($a, $b) use ($trendiness) {
+                if ($trendiness[$a->getId()] === $trendiness[$b->getId()]) {
+                    return 0;
+                }
+                return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? 1 : -1;
+            });
+        } catch (ConnectionException $e) {}
+
         return $this->render('PackagistWebBundle:Package:providers.html.twig', array(
             'name' => $name,
             'packages' => $providers,
