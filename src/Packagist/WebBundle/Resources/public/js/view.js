@@ -80,6 +80,9 @@
         if (updateAll) {
             data.push({name: 'updateAll', value: '1'});
         }
+        if (e && e.shiftKey) {
+            data.push({name: 'showOutput', value: '1'});
+        }
         $.ajax({
             url: $('.package .force-update').attr('action'),
             dataType: 'json',
@@ -94,6 +97,7 @@
         submit.addClass('loading');
     }
     $('.package .force-update').on('submit', forceUpdatePackage);
+    $('.package .force-update').on('click', forceUpdatePackage);
     $('.package .mark-favorite').on('click', function (e) {
         var options = {
             dataType: 'json',

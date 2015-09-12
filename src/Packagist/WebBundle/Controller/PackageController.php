@@ -519,6 +519,7 @@ class PackageController extends Controller
         $update = $req->request->get('update', $req->query->get('update'));
         $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
         $updateEqualRefs = $req->request->get('updateAll', $req->query->get('updateAll'));
+        $showOutput = $req->request->get('showOutput', $req->query->get('showOutput', false));
 
         $user = $this->getUser() ?: $doctrine
             ->getRepository('PackagistWebBundle:User')
@@ -550,11 +551,19 @@ class PackageController extends Controller
                 try {
                     $updater->update($io, $config, $package, $repository, $updateEqualRefs ? Updater::UPDATE_EQUAL_REFS : 0);
                 } catch (\Exception $e) {
-                    return new Response(json_encode(array(
+                    return new JsonResponse([
                         'status' => 'error',
                         'message' => '['.get_class($e).'] '.$e->getMessage(),
                         'details' => '<pre>'.$io->getOutput().'</pre>',
-                    )), 400);
+                    ], 400);
+                }
+
+                if ($showOutput) {
+                    return new JsonResponse([
+                        'status' => 'error',
+                        'message' => 'Update successful',
+                        'details' => '<pre>'.$io->getOutput().'</pre>',
+                    ], 400);
                 }
             }
 
