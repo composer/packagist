@@ -269,11 +269,11 @@ class PackageController extends Controller
                 /** @var Package $package */
                 $trendiness[$package->getId()] = (int) $redis->zscore('downloads:trending', $package->getId());
             }
-            usort($packages, function ($a, $b) use ($trendiness) {
+            usort($providers, function ($a, $b) use ($trendiness) {
                 if ($trendiness[$a->getId()] === $trendiness[$b->getId()]) {
-                    return 0;
+                    return strcmp($a->getName(), $b->getName());
                 }
-                return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? 1 : -1;
+                return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? -1 : 1;
             });
         } catch (ConnectionException $e) {}
 
