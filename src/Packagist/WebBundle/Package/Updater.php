@@ -427,6 +427,7 @@ class Updater
                 'dl', 'dd', 'dt',
                 'pre', 'code', 'samp', 'kbd',
                 'q', 'blockquote', 'abbr', 'cite',
+                'table', 'thead', 'tbody', 'th', 'tr', 'td',
                 'a[href|target|rel|id]',
                 'img[src|title|alt|width|height|style]'
             );
