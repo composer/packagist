@@ -1224,21 +1224,26 @@ ul.packages .metadata-block:last-child {
 .pagination ul {
     list-style: none;
     margin: 0;
+    padding-left: 0;
 }
 
 .pagination ul > li {
     float: left;
     line-height: 40px;
-    padding: 0 20px 0 0;
+    padding: 0;
 }
 
 .pagination ul > li > a, .pagination ul > li > span {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     height: 40px;
     text-align: center;
     text-decoration: none;
-    min-width: 20px;
+    padding: 0 10px;
+    display: inline-block;
+}
+.pagination ul > li > a:hover {
+    background: #F2F2F2;
 }
 
 .legend {
