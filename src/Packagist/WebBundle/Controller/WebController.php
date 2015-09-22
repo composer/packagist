@@ -47,9 +47,7 @@ class WebController extends Controller
 
         $this->computeSearchQuery($req, $filteredOrderBys);
 
-        if ($req->query->has('search_query')) {
-            $form->submit($req);
-        }
+        $form->handleRequest($req);
 
         $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
         return $this->render('PackagistWebBundle:Web:searchForm.html.twig', array(
@@ -109,18 +107,15 @@ class WebController extends Controller
                 $select->addSorts($normalizedOrderBys);
             }
 
-            if ($req->query->has('search_query')) {
-                $form->submit($req);
-
-                if ($form->isValid()) {
-                    $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
-                    $escapedQuery = preg_replace('/(^| )\\\\-(\S)/', '$1-$2', $escapedQuery);
-                    $escapedQuery = preg_replace('/(^| )\\\\\+(\S)/', '$1+$2', $escapedQuery);
-                    if ((substr_count($escapedQuery, '"') % 2) == 0) {
-                        $escapedQuery = str_replace('\\"', '"', $escapedQuery);
-                    }
-                    $select->setQuery($escapedQuery);
+            $form->handleRequest($req);
+            if ($form->isValid()) {
+                $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
+                $escapedQuery = preg_replace('/(^| )\\\\-(\S)/', '$1-$2', $escapedQuery);
+                $escapedQuery = preg_replace('/(^| )\\\\\+(\S)/', '$1+$2', $escapedQuery);
+                if ((substr_count($escapedQuery, '"') % 2) == 0) {
+                    $escapedQuery = str_replace('\\"', '"', $escapedQuery);
                 }
+                $select->setQuery($escapedQuery);
             }
 
             $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
