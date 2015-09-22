@@ -48,7 +48,7 @@ class WebController extends Controller
         $this->computeSearchQuery($req, $filteredOrderBys);
 
         if ($req->query->has('search_query')) {
-            $form->bind($req);
+            $form->submit($req);
         }
 
         $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
@@ -110,7 +110,7 @@ class WebController extends Controller
             }
 
             if ($req->query->has('search_query')) {
-                $form->bind($req);
+                $form->submit($req);
 
                 if ($form->isValid()) {
                     $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());

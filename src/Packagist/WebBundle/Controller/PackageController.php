@@ -110,7 +110,7 @@ class PackageController extends Controller
         $package->addMaintainer($user);
 
         if ('POST' === $req->getMethod()) {
-            $form->bind($req);
+            $form->submit($req);
             if ($form->isValid()) {
                 try {
                     $em = $this->getDoctrine()->getManager();
@@ -144,7 +144,7 @@ class PackageController extends Controller
 
         $response = array('status' => 'error', 'reason' => 'No data posted.');
         if ('POST' === $req->getMethod()) {
-            $form->bind($req);
+            $form->submit($req);
             if ($form->isValid()) {
                 list(, $name) = explode('/', $package->getName(), 2);
 
@@ -609,7 +609,7 @@ class PackageController extends Controller
         if (!$form = $this->createDeletePackageForm($package)) {
             throw new AccessDeniedException;
         }
-        $form->bind($req->request->get('form'));
+        $form->submit($req->request->get('form'));
         if ($form->isValid()) {
             $req->getSession()->save();
 
@@ -672,7 +672,7 @@ class PackageController extends Controller
         );
 
         if ('POST' === $req->getMethod()) {
-            $form->bind($req);
+            $form->submit($req);
             if ($form->isValid()) {
                 try {
                     $em = $this->getDoctrine()->getManager();
@@ -730,7 +730,7 @@ class PackageController extends Controller
         );
 
         if ('POST' === $req->getMethod()) {
-            $removeMaintainerForm->bind($req);
+            $removeMaintainerForm->submit($req);
             if ($removeMaintainerForm->isValid()) {
                 try {
                     $em = $this->getDoctrine()->getManager();
@@ -778,7 +778,7 @@ class PackageController extends Controller
             ->getForm();
 
         if ($req->isMethod("POST")) {
-            $form->bind($req);
+            $form->submit($req);
 
             if ($form->isValid()) {
                 // Force updating of packages once the package is viewed after the redirect.
@@ -817,7 +817,7 @@ class PackageController extends Controller
 
         $form = $this->createForm(new AbandonedType());
         if ($request->getMethod() === 'POST') {
-            $form->bind($request->request->get('package'));
+            $form->submit($request->request->get('package'));
             if ($form->isValid()) {
                 $package->setAbandoned(true);
                 $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', $form->get('replacement')->getData()));
