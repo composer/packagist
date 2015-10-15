@@ -908,12 +908,12 @@ ul.packages .metadata-block:last-child {
   margin-top: 3px;
   margin-bottom: 7px;
   float: right;
-  font-size: 14px;
+  font-size: 34px;
 }
 .package .details #remove-maintainer {
   float: right;
-  clear: right;
-  font-size: 14px;
+  font-size: 35px;
+  margin-top: 5px;
 }
 .package .details .canonical {
   text-overflow: ellipsis;

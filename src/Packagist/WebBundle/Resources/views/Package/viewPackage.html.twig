@@ -111,8 +111,8 @@
                                     <a href="{{ path('user_profile', {'name': maintainer.username}) }}"><img width="48" height="48" title="{{ maintainer.username }}" src="//www.gravatar.com/avatar/{{ maintainer.email|gravatar_hash }}?s=48&amp;d=identicon"></a>
                                 {% endfor %}
                                 {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
-                                    {% if addMaintainerForm is defined %}<a id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
-                                    {% if removeMaintainerForm is defined %}<a id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
+                                    {% if removeMaintainerForm is defined %}<a title="Remove Maintainer" id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
+                                    {% if addMaintainerForm is defined %}<a title="Add Maintainer" id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
                                 {% endif %}
                             </p>
 
