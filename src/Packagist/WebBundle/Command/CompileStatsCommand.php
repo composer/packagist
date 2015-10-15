@@ -137,6 +137,7 @@ class CompileStatsCommand extends ContainerAwareCommand
         $redis->rename('downloads:absolute:new', 'downloads:absolute');
     }
 
+    // TODO could probably run faster with lua scripting
     protected function sumLastNDays($days, $id, \DateTime $yesterday)
     {
         $date = clone $yesterday;

@@ -398,6 +398,7 @@ class SymlinkDumper
             $this->cleanOldFiles($buildDir, $oldBuildDir, $safeFiles);
         }
 
+        // TODO when a package is deleted, it should be removed from provider files, or marked for removal at least
         return true;
     }
 
