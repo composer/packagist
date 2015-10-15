@@ -42,6 +42,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages, or if a package name is given forces an update of all versions'),
                 new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all versions before an update'),
                 new InputOption('notify-failures', null, InputOption::VALUE_NONE, 'Notify failures to maintainers by email'),
+                new InputOption('update-equal-refs', null, InputOption::VALUE_NONE, 'Force update of all versions even when they already exist'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
             ))
             ->setDescription('Updates packages')
@@ -79,6 +80,8 @@ class UpdatePackagesCommand extends ContainerAwareCommand
 
         if ($input->getOption('delete-before')) {
             $flags = Updater::DELETE_BEFORE;
+        } elseif ($input->getOption('update-equal-refs')) {
+            $flags = Updater::UPDATE_EQUAL_REFS;
         }
 
         $updater = $this->getContainer()->get('packagist.package_updater');
