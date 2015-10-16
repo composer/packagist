@@ -198,7 +198,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
     ) {
         $document->setField('id', $package->getId());
         $document->setField('name', $package->getName());
-        $document->setField('description', $package->getDescription());
+        $document->setField('description', preg_replace('{[\x00-\x1f]+}u', '', $package->getDescription()));
         $document->setField('type', $package->getType());
         $document->setField('trendiness', $redis->zscore('downloads:trending', $package->getId()));
         $document->setField('downloads', $downloadManager->getTotalDownloads($package));
@@ -214,7 +214,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
         }
 
         $tags = array_map(function ($tag) {
-            return mb_strtolower($tag, 'UTF-8');
+            return mb_strtolower(preg_replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8');
         }, $tags);
         $document->setField('tags', $tags);
     }
