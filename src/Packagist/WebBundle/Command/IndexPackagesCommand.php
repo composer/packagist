@@ -110,7 +110,8 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
         // update package index
         while ($ids) {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($ids, 0, 50));
+            $idsSlice = array_splice($ids, 0, 50);
+            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findById($idsSlice);
             $update = $solarium->createUpdate();
 
             foreach ($packages as $package) {
@@ -121,7 +122,19 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
                 try {
                     $document = $update->createDocument();
-                    $this->updateDocumentFromPackage($document, $package, $redis, $downloadManager, $favoriteManager);
+                    $tags = $doctrine->getManager()->getConnection()->fetchAll(
+                        'SELECT t.name FROM package p
+                            JOIN package_version pv ON p.id = pv.package_id
+                            JOIN version_tag vt ON vt.version_id = pv.id
+                            JOIN tag t ON t.id = vt.tag_id
+                            WHERE p.id = :id
+                            GROUP BY t.id, t.name',
+                        ['id' => $package->getId()]
+                    );
+                    foreach ($tags as $idx => $tag) {
+                        $tags[$idx] = $tag['name'];
+                    }
+                    $this->updateDocumentFromPackage($document, $package, $tags, $redis, $downloadManager, $favoriteManager);
                     $update->addDocument($document);
 
                     $package->setIndexedAt(new \DateTime);
@@ -129,34 +142,41 @@ class IndexPackagesCommand extends ContainerAwareCommand
                     $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
                 }
 
-                foreach ($package->getVersions() as $version) {
-                    // abort when a non-dev version shows up since dev ones are ordered first
-                    if (!$version->isDevelopment()) {
-                        break;
-                    }
-                    if (count($provide = $version->getProvide())) {
-                        foreach ($version->getProvide() as $provide) {
-                            try {
-                                $document = $update->createDocument();
-                                $document->setField('id', $provide->getPackageName());
-                                $document->setField('name', $provide->getPackageName());
-                                $document->setField('description', '');
-                                $document->setField('type', 'virtual-package');
-                                $document->setField('trendiness', 100);
-                                $document->setField('repository', '');
-                                $document->setField('abandoned', 0);
-                                $document->setField('replacementPackage', '');
-                                $update->addDocument($document);
-                            } catch (\Exception $e) {
-                                $output->writeln('<error>'.get_class($e).': '.$e->getMessage().', skipping package '.$package->getName().':provide:'.$provide->getPackageName().'</error>');
-                            }
-                        }
+                $providers = $doctrine->getManager()->getConnection()->fetchAll(
+                    'SELECT lp.packageName
+                        FROM package p
+                        JOIN package_version pv ON p.id = pv.package_id
+                        JOIN link_provide lp ON lp.version_id = pv.id
+                        WHERE p.id = :id
+                        AND pv.development = true
+                        GROUP BY lp.packageName',
+                    ['id' => $package->getId()]
+                );
+                foreach ($providers as $provided) {
+                    $provided = $provided['packageName'];
+                    try {
+                        $document = $update->createDocument();
+                        $document->setField('id', $provided);
+                        $document->setField('name', $provided);
+                        $document->setField('description', '');
+                        $document->setField('type', 'virtual-package');
+                        $document->setField('trendiness', 100);
+                        $document->setField('repository', '');
+                        $document->setField('abandoned', 0);
+                        $document->setField('replacementPackage', '');
+                        $update->addDocument($document);
+                    } catch (\Exception $e) {
+                        $output->writeln('<error>'.get_class($e).': '.$e->getMessage().', skipping package '.$package->getName().':provide:'.$provided.'</error>');
                     }
                 }
             }
 
-            $update->addCommit();
-            $solarium->update($update);
+            try {
+                $update->addCommit();
+                $solarium->update($update);
+            } catch (\Exception $e) {
+                $output->writeln('<error>'.get_class($e).': '.$e->getMessage().', occurred while processing packages: '.implode(',', $idsSlice).'</error>');
+            }
 
             foreach ($packages as $package) {
                 $doctrine->getManager()->flush($package);
@@ -171,6 +191,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
     private function updateDocumentFromPackage(
         Solarium_Document_ReadWrite $document,
         Package $package,
+        array $tags,
         $redis,
         DownloadManager $downloadManager,
         FavoriteManager $favoriteManager
@@ -192,12 +213,9 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $document->setField('replacementPackage', '');
         }
 
-        $tags = array();
-        foreach ($package->getVersions() as $version) {
-            foreach ($version->getTags() as $tag) {
-                $tags[mb_strtolower($tag->getName(), 'UTF-8')] = true;
-            }
-        }
-        $document->setField('tags', array_keys($tags));
+        $tags = array_map(function ($tag) {
+            return mb_strtolower($tag, 'UTF-8');
+        }, $tags);
+        $document->setField('tags', $tags);
     }
 }
