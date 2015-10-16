@@ -18,6 +18,7 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Finder\Finder;
 use Packagist\WebBundle\Entity\Version;
+use Doctrine\DBAL\Connection;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -183,6 +184,8 @@ class SymlinkDumper
             }
         }
 
+        $dumpTimeUpdates = [];
+
         try {
             $modifiedIndividualFiles = array();
 
@@ -239,9 +242,7 @@ class SymlinkDumper
                     $this->fs->mkdir(dirname($buildDir.'/'.$name));
                     $this->writeFile($buildDir.'/'.$name.'.files', json_encode(array_keys($affectedFiles)));
 
-                    // update dump date
-                    $package->setDumpedAt($dumpTime);
-                    $this->doctrine->getManager()->flush($package);
+                    $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
                 }
 
                 unset($packages, $package, $version);
@@ -396,6 +397,31 @@ class SymlinkDumper
             }
 
             $this->cleanOldFiles($buildDir, $oldBuildDir, $safeFiles);
+        }
+
+        if ($verbose) {
+            echo 'Updating package dump times'.PHP_EOL;
+        }
+        foreach ($dumpTimeUpdates as $dt => $ids) {
+            $retries = 5;
+            // retry loop in case of a lock timeout
+            while ($retries--) {
+                try {
+                    $this->doctrine->getManager()->getConnection()->executeQuery(
+                        'UPDATE package SET dumpedAt=:dumped WHERE id IN (:ids)',
+                        [
+                            'ids' => $ids,
+                            'dumped' => $dt,
+                        ],
+                        ['ids' => Connection::PARAM_INT_ARRAY]
+                    );
+                } catch (\Exception $e) {
+                    if (!$retries) {
+                        throw $e;
+                    }
+                    sleep(2);
+                }
+            }
         }
 
         // TODO when a package is deleted, it should be removed from provider files, or marked for removal at least
