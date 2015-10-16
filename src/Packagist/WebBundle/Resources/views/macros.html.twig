@@ -33,7 +33,7 @@
                             {% if meta %}
                                 <p class="metadata">
                                     <span class="metadata-block"><i class="glyphicon glyphicon-arrow-down"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', '&#8201;')|raw }}</span>
-                                    <span class="metadata-block"><i class="glyphicon glyphicon-star"></i> {{ meta.favers[package.id]|number_format(0, '.', '&#8201;')|raw }}</span>
+                                    <span class="metadata-block"><i class="glyphicon glyphicon-star"></i> {{ meta.favers[package.id]|default(0)|number_format(0, '.', '&#8201;')|raw }}</span>
                                 </p>
                             {% endif %}
                         </div>
