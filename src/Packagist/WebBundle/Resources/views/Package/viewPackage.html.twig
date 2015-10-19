@@ -53,7 +53,7 @@
                         <div class="alert alert-danger">
                             This package is <strong>abandoned</strong> and no longer maintained.
                             {% if package.replacementPackage is not empty %}
-                                The author suggests using the <a href="{{ path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
+                                The author suggests using the <a href="{{ '://' in package.replacementPackage ? package.replacementPackage : path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
                             {% else %}
                                 No replacement package was suggested.
                                 {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %}
