@@ -318,7 +318,7 @@ class PackageRepository extends EntityRepository
             $count = apc_fetch('packagist_dependentsCount_'.$name);
         }
 
-        if (!isset($count) || !is_int($count)) {
+        if (!isset($count) || !is_numeric($count)) {
             $count = $this->getEntityManager()->getConnection()->fetchColumn(
                 "SELECT COUNT(DISTINCT v.package_id)
                 FROM package_version v
@@ -333,7 +333,7 @@ class PackageRepository extends EntityRepository
             }
         }
 
-        return $count;
+        return (int) $count;
     }
 
     public function getDependents($name, $offset = 0, $limit = 15)
