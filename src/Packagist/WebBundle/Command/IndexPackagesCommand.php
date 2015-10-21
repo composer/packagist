@@ -22,6 +22,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\LockHandler;
+use Doctrine\DBAL\Connection;
 
 /**
  * @author Igor Wiedler <igor@wiedler.ch>
@@ -110,9 +111,12 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
         // update package index
         while ($ids) {
+            $indexTime = new \DateTime;
             $idsSlice = array_splice($ids, 0, 50);
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findById($idsSlice);
             $update = $solarium->createUpdate();
+
+            $indexTimeUpdates = [];
 
             foreach ($packages as $package) {
                 $current++;
@@ -137,7 +141,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                     $this->updateDocumentFromPackage($document, $package, $tags, $redis, $downloadManager, $favoriteManager);
                     $update->addDocument($document);
 
-                    $package->setIndexedAt(new \DateTime);
+                    $indexTimeUpdates[$indexTime->format('Y-m-d H:i:s')][] = $package->getId();
                 } catch (\Exception $e) {
                     $output->writeln('<error>Exception: '.$e->getMessage().', skipping package '.$package->getName().'.</error>');
                 }
@@ -178,11 +182,33 @@ class IndexPackagesCommand extends ContainerAwareCommand
                 $output->writeln('<error>'.get_class($e).': '.$e->getMessage().', occurred while processing packages: '.implode(',', $idsSlice).'</error>');
             }
 
-            foreach ($packages as $package) {
-                $doctrine->getManager()->flush($package);
-            }
             $doctrine->getManager()->clear();
             unset($packages);
+
+            if ($verbose) {
+                $output->writeln('Updating package index times');
+            }
+            foreach ($indexTimeUpdates as $dt => $idsToUpdate) {
+                $retries = 5;
+                // retry loop in case of a lock timeout
+                while ($retries--) {
+                    try {
+                        $doctrine->getManager()->getConnection()->executeQuery(
+                            'UPDATE package SET indexedAt=:indexed WHERE id IN (:ids)',
+                            [
+                                'ids' => $idsToUpdate,
+                                'indexed' => $dt,
+                            ],
+                            ['ids' => Connection::PARAM_INT_ARRAY]
+                        );
+                    } catch (\Exception $e) {
+                        if (!$retries) {
+                            throw $e;
+                        }
+                        sleep(2);
+                    }
+                }
+            }
         }
 
         $lock->release();
