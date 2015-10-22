@@ -118,6 +118,7 @@ class ApiControllerTest extends WebTestCase
             array('update-package', 'https://ghe.example.org/user/repository', true),
             array('update-package', 'https://gitlab.org/user/repository', true),
             array('update-package', 'ssh://git@stash.xxxxx.com/uuuuu/qqqqq.git', true),
+            array('update-package', 'ssh://git@stash.xxxxx.com:2222/uuuuu/qqqqq.git', true),
 
             // invalid URLs
             array('github', 'php://github.com/user/repository', false),
