@@ -1,0 +1,29 @@
+language: php
+
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+
+services:
+  - redis-server
+
+php:
+  - 5.6
+  - 7.0
+
+matrix:
+  fast_finish: true
+
+before_script:
+    - curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.5.0 SOLR_CONFS="doc/schema.xml" bash
+    - cp app/config/parameters.yml.dist app/config/parameters.yml
+    - composer install
+    - app/console doc:sch:create --env=test -n
+
+script:
+    - phpunit
+
+git:
+  depth: 5
