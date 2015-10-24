@@ -2,6 +2,10 @@ language: php
 
 sudo: false
 
+env:
+  global:
+    secure: E9/Y2vJv4GGGdjRZUJuL31q79C2dbgL1yNcclE4MIPXrPWe5f0LuQMwCGbaGN+b6u/VX6YQL6OcFt+VsxL5e439EoYMMY+MmUeDnq5jRzPOVZqgXlNZAxh4KzoNh3Q2nXp6uSr+yaNCFedcx1Os7n5CoLwqji+TATsTPZ1EEDqI=
+
 cache:
   directories:
     - $HOME/.composer/cache
@@ -17,8 +21,10 @@ matrix:
   fast_finish: true
 
 before_script:
-    - curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.5.0 SOLR_CONFS="doc/schema.xml" bash
     - cp app/config/parameters.yml.dist app/config/parameters.yml
+    - echo "    github.client_id: $GH_CLIENT_ID" >> app/config/parameters.yml
+    - echo "    github.client_secret: $GH_CLIENT_SECRET" >> app/config/parameters.yml
+    - curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.5.0 SOLR_CONFS="doc/schema.xml" bash
     - composer install
     - app/console doc:sch:create --env=test -n
 
