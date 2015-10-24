@@ -155,8 +155,8 @@
                             {% if package.gitHubWatches is not null %}<p><span>Watchers:</span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
                             {% if package.gitHubForks is not null %}<p><span>Forks:</span> {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
                             {% if package.gitHubOpenIssues is not null %}<p><span>Open Issues:</span> {{ package.gitHubOpenIssues|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
-                            {% if package.language is not empty %}<p><span>Language:</span> {{ package.language }}</p>{% endif %}
-                            {% if package.type is not empty %}<p><span>Type:</span> {{ package.type }}</p>{% endif %}
+                            {% if package.language is not empty and package.language != 'PHP' %}<p><span>Language:</span> {{ package.language }}</p>{% endif %}
+                            {% if package.type is not empty and package.type != 'library' %}<p><span>Type:</span> {{ package.type }}</p>{% endif %}
                         </div>
                     </div>
                 </div>
