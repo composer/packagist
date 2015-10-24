@@ -68,6 +68,10 @@
                         <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Force Update" above to see details.</div>
                     {% endif %}
 
+                    {% if expandedVersion and not expandedVersion.license %}
+                        <div class="alert alert-danger">There is no license information available for the current version ({{ expandedVersion.version }}) of this package. Please contact the maintainer for more information.</div>
+                    {% endif %}
+
                     <p class="description">{{ package.description }}</p>
 
                     {% if hasActions %}
