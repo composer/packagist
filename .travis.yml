@@ -22,8 +22,8 @@ matrix:
 
 before_script:
     - cp app/config/parameters.yml.dist app/config/parameters.yml
-    - echo "    github.client_id: $GH_CLIENT_ID" >> app/config/parameters.yml
-    - echo "    github.client_secret: $GH_CLIENT_SECRET" >> app/config/parameters.yml
+    - 'echo "    github.client_id: $GH_CLIENT_ID" >> app/config/parameters.yml'
+    - 'echo "    github.client_secret: $GH_CLIENT_SECRET" >> app/config/parameters.yml'
     - curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.5.0 SOLR_CONFS="doc/schema.xml" bash
     - composer install
     - app/console doc:sch:create --env=test -n
