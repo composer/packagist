@@ -264,7 +264,7 @@ class WebControllerTest extends WebTestCase
 
         $this->executeCommand('rm -f ' . $lock);
 
-        $this->initializePackages($container);
+        list($twigPackage, $packagistPackage, $symfonyPackage) = $this->initializePackages($container);
 
         if (!empty($orderBys)) {
             $orderBysQryStrPart = '&' . http_build_query(
@@ -322,6 +322,8 @@ class WebControllerTest extends WebTestCase
         $em->persist($symfonyPackage);
 
         $em->flush();
+
+        return [$twigPackage, $packagistPackage, $symfonyPackage];
     }
 
     /**
