@@ -24,7 +24,7 @@ before_script:
     - cp app/config/parameters.yml.dist app/config/parameters.yml
     - 'echo "    github.client_id: $GH_CLIENT_ID" >> app/config/parameters.yml'
     - 'echo "    github.client_secret: $GH_CLIENT_SECRET" >> app/config/parameters.yml'
-    - 'curl -sSL https://raw.githubusercontent.com/Seldaek/travis-solr/patch-1/travis-solr.sh | SOLR_VERSION=3.6.0 SOLR_CONFS="doc" SOLR_CORE="collection1" DEBUG=true bash'
+    - 'curl -sSL https://raw.githubusercontent.com/Seldaek/travis-solr/patch-1/travis-solr.sh | SOLR_VERSION=3.6.0 SOLR_CONFS="doc" SOLR_CORE="collection1" bash'
     - composer install
     - app/console doctrine:database:create --env=test -n
     - app/console doctrine:schema:create --env=test -n
