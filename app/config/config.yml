@@ -94,4 +94,10 @@ hwi_oauth:
             options:
                 csrf: true
 
-nelmio_solarium: ~
+nelmio_solarium:
+    clients:
+        default:
+            host: %solr_host%
+            port: %solr_port%
+            path: %solr_path%
+            core: %solr_core%
