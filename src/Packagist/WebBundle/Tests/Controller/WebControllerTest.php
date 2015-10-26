@@ -22,6 +22,9 @@ class WebControllerTest extends WebTestCase
     public function testPackages()
     {
         $client = self::createClient();
+
+        $this->initializePackages($client->getContainer());
+
         //we expect at least one package
         $crawler = $client->request('GET', '/packages/');
         $this->assertTrue($crawler->filter('.packages li')->count() > 0);
@@ -30,6 +33,9 @@ class WebControllerTest extends WebTestCase
     public function testPackage()
     {
         $client = self::createClient();
+
+        $this->initializePackages($client->getContainer());
+
         //we expect package to be clickable and showing at least 'package' div
         $crawler = $client->request('GET', '/packages/');
         $link = $crawler->filter('.packages li a')->first()->attr('href');
@@ -234,13 +240,13 @@ class WebControllerTest extends WebTestCase
     }
 
     /**
-     * @param callable $onBeforeIndex TODO Add typehint when migrating to 5.4+
+     * @param callable $onBeforeIndex
      * @param array $orderBys
      *
      * @return array
      */
     protected function commonTestSearchActionOrderBysAction(
-        $onBeforeIndex,
+        callable $onBeforeIndex,
         array $orderBys = array()
     ) {
         $client = self::createClient();
@@ -258,7 +264,7 @@ class WebControllerTest extends WebTestCase
 
         $this->executeCommand('rm -f ' . $lock);
 
-        $em = $container->get('doctrine')->getManager();
+        $this->initializePackages($container);
 
         if (!empty($orderBys)) {
             $orderBysQryStrPart = '&' . http_build_query(
@@ -269,6 +275,32 @@ class WebControllerTest extends WebTestCase
         } else {
             $orderBysQryStrPart = '';
         }
+
+        $onBeforeIndex($container, $twigPackage, $packagistPackage, $symfonyPackage);
+
+        $this->executeCommand('php '.$kernelRootDir . '/console packagist:index --env=test --force');
+
+        $client->request('GET', '/search.json?q=' . $orderBysQryStrPart);
+
+        $response = $client->getResponse();
+
+        $content = $client->getResponse()->getContent();
+
+        $this->assertSame(200, $response->getStatusCode(), $content);
+
+        return json_decode($content, true);
+    }
+
+    protected function initializePackages(ContainerInterface $container)
+    {
+        $kernelRootDir = $container->getParameter('kernel.root_dir');
+
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:drop --env=test --force', false);
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:create --env=test');
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:schema:create --env=test');
+        $this->executeCommand('php '.$kernelRootDir . '/console redis:flushall --env=test -n');
+
+        $em = $container->get('doctrine')->getManager();
 
         $twigPackage = new Package();
 
@@ -290,20 +322,6 @@ class WebControllerTest extends WebTestCase
         $em->persist($symfonyPackage);
 
         $em->flush();
-
-        $onBeforeIndex($container, $twigPackage, $packagistPackage, $symfonyPackage);
-
-        $this->executeCommand('php '.$kernelRootDir . '/console packagist:index --env=test --force');
-
-        $client->request('GET', '/search.json?q=' . $orderBysQryStrPart);
-
-        $response = $client->getResponse();
-
-        $content = $client->getResponse()->getContent();
-
-        $this->assertSame(200, $response->getStatusCode(), $content);
-
-        return json_decode($content, true);
     }
 
     /**
