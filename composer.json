@@ -20,7 +20,7 @@
           "email": "contact@packagist.org"
     },
     "autoload": {
-        "psr-0": { "Packagist": "src/" }
+        "psr-4": { "Packagist\\": "src/Packagist/" }
     },
     "require": {
         "php": ">=5.5",
