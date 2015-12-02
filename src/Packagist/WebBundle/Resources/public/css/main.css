@@ -577,6 +577,10 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     color: rgb(82, 168, 236);
 }
 
+ul.packages {
+    margin-top: 20px;
+}
+
 ul.packages h1 {
   font-family: Verdana;
   font-size: 22px;
