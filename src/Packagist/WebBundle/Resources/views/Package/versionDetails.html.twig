@@ -56,7 +56,7 @@
 
     {% if version.tags|length %}
         <p class="tags">
-            <i class="glyphicon glyphicon-tag" title="Authors"></i>
+            <i class="glyphicon glyphicon-tag" title="Tags"></i>
             {% for tag in version.tags -%}
                 <a href="{{ url("search", {tags: tag.name}) }}">{{ tag.name }}</a>
             {%- endfor -%}
