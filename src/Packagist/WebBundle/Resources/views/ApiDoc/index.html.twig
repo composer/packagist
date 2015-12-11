@@ -2,14 +2,13 @@
 {% block content %}
 
 <h2 class="title">API documentation</h2>
-<p>Packagist has a public API to consume data. See bellow the most important 
-URIs: <br/>
+<p>Packagist has a public API to consume data. See bellow the most important URIs:</p>
 
 <ul>
-<li><a href="#list-packages-by-organization">List packages by organization</a></li>
-<li><a href="#search-packages-by-tag">Search packages by tag</a></li>
-<li><a href="#search-packages-by-name">Search packages by name</a></li>
-<li><a href="#get-package-by-name">Get a package by name</a></li>
+  <li><a href="#list-packages-by-organization">List packages by organization</a></li>
+  <li><a href="#search-packages-by-tag">Search packages by tag</a></li>
+  <li><a href="#search-packages-by-name">Search packages by name</a></li>
+  <li><a href="#get-package-by-name">Get a package by name</a></li>
 </ul>
 
 <section class="col-d-12">
@@ -26,8 +25,8 @@ GET https://packagist.org/packages/list.json?vendor=[vendor]
 </code></pre>
 </section>
 
-<section class="col-d-12"> 
-<h3 id='search-packages-by-tag'>Search packages by tag </h3>
+<section class="col-d-12">
+<h3 id="search-packages-by-tag">Search packages by tag</h3>
 <pre>
 GET https://packagist.org/search.json?tags=[tag]
 <code>
@@ -49,8 +48,8 @@ GET https://packagist.org/search.json?tags=[tag]
 </section>
 
 
-<section class="col-d-12"> 
-<h3 id='search-packages-by-name'>Search packages by name </h3>
+<section class="col-d-12">
+<h3 id="search-packages-by-name">Search packages by name </h3>
 <pre>
 GET https://packagist.org/search.json?q=[query]
 <code>
@@ -58,8 +57,8 @@ GET https://packagist.org/search.json?q=[query]
   "results" : [
     {
       "name": "[vendor]/[package]",
-      "description": "<description>",
-      "url": "https://packagist.org/packages/<vendor>/<package>",
+      "description": "[description]",
+      "url": "https://packagist.org/packages/[vendor]/[package]",
       "repository": [repository url],
       "downloads": [number of downloads],
       "favers": [number of favers]
@@ -72,8 +71,8 @@ GET https://packagist.org/search.json?q=[query]
 </code>
 </section>
 
-<section class="col-d-12"> 
-<h3 id='get-package-by-name'>Get package by name </h3>
+<section class="col-d-12">
+<h3 id="get-package-by-name">Get package by name </h3>
 <pre>
 GET https://packagist.org/packages/[vendor]/[package].json
 <code>
