@@ -27,7 +27,8 @@ class SearchQueryType extends AbstractType
         $builder->add('orderBys', 'collection', array(
             'type' => new OrderByType(),
             'allow_add' => true,
-            'allow_delete' => true
+            'allow_delete' => true,
+            'prototype' => false,
         ));
     }
 
