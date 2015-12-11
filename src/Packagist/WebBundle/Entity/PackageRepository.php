@@ -339,14 +339,14 @@ class PackageRepository extends EntityRepository
     public function getDependents($name, $offset = 0, $limit = 15)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p')
+        $qb->select('p.id, p.name, p.description, p.language')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->join('p.versions', 'v')
             ->leftJoin('v.devRequire', 'dr')
             ->leftJoin('v.require', 'r')
             ->where('v.development = true')
             ->andWhere('(r.packageName = :name OR dr.packageName = :name)')
-            ->groupBy('p.id')
+            ->groupBy('p.id, p.name, p.description, p.language')
             ->orderBy('p.name')
             ->setParameter('name', $name);
 

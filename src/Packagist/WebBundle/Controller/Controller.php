@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller as BaseController;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Pagerfanta;
+use Packagist\Entity\Package;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -39,9 +40,14 @@ class Controller extends BaseController
                 if ($package instanceof \Solarium_Document_ReadOnly) {
                     $solarium = true;
                     $ids[] = $package->id;
-                } else {
+                } elseif ($package instanceof Package) {
                     $ids[] = $package->getId();
                     $favs[$package->getId()] = $favMgr->getFaverCount($package);
+                } elseif (is_array($package)) {
+                    $solarium = true;
+                    $ids[] = $package['id'];
+                } else {
+                    throw new \LogicException();
                 }
             }
 
