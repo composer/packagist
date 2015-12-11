@@ -5,7 +5,7 @@
 {% block content %}
 <h2 class="title">
     <a href="{{ path("view_vendor", {vendor: package.vendor}) }}">{{ package.vendor }}/</a><a href="{{ path("view_package", {name: package.name}) }}">{{ package.packageName }}</a>
-</h2 class="title">
+</h2>
 
 <section class="row">
     <form method="post" {{ form_enctype(form) }} class="col-sm-6">
