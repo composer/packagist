@@ -21,10 +21,8 @@ use Composer\Repository\InvalidRepositoryException;
 use Composer\Repository\VcsRepository;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
-use Packagist\WebBundle\Package\Updater;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -39,7 +37,7 @@ class ApiController extends Controller
      * @Route("/packages.json", name="packages", defaults={"_format" = "json"})
      * @Method({"GET"})
      */
-    public function packagesAction(Request $req)
+    public function packagesAction()
     {
         // fallback if any of the dumped files exist
         $rootJson = $this->container->getParameter('kernel.root_dir').'/../web/packages_root.json';
@@ -75,6 +73,7 @@ class ApiController extends Controller
         $package->setRepository($url);
         $errors = $this->get('validator')->validate($package);
         if (count($errors) > 0) {
+            $errorArray = array();
             foreach ($errors as $error) {
                 $errorArray[$error->getPropertyPath()] =  $error->getMessage();
             }
@@ -85,7 +84,7 @@ class ApiController extends Controller
             $em->persist($package);
             $em->flush();
         } catch (\Exception $e) {
-            $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+            $this->get('logger')->critical($e->getMessage(), array('exception', $e));
             return new JsonResponse(array('status' => 'error', 'message' => 'Error saving package'), 500);
         }
 

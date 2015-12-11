@@ -51,7 +51,7 @@ class FeedController extends Controller
      */
     public function packagesAction(Request $req)
     {
-        /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
+        /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForNewestPackages()
@@ -78,7 +78,7 @@ class FeedController extends Controller
      */
     public function releasesAction(Request $req)
     {
-        /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
+        /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForLatestVersionWithPackage()
@@ -105,7 +105,7 @@ class FeedController extends Controller
      */
     public function vendorAction(Request $req, $vendor)
     {
-        /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
+        /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForLatestVersionWithPackage($vendor)
@@ -132,7 +132,7 @@ class FeedController extends Controller
      */
     public function packageAction(Request $req, $package)
     {
-        /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
+        /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForLatestVersionWithPackage(null, $package)
