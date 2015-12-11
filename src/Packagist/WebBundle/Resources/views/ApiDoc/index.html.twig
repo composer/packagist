@@ -1,0 +1,101 @@
+{% extends "PackagistWebBundle::layout.html.twig" %}
+{% block content %}
+
+<h2 class="title">API documentation</h2>
+<p>Packagist has a public API to consume data. See bellow the most important 
+URIs: <br/>
+
+<ul>
+<li><a href="#list-packages-by-organization">List packages by organization</a></li>
+<li><a href="#search-packages-by-tag">Search packages by tag</a></li>
+<li><a href="#search-packages-by-name">Search packages by name</a></li>
+<li><a href="#get-package-by-name">Get a package by name</a></li>
+</ul>
+
+<section class="col-d-12">
+<h3 id="list-packages-by-organization"> List packages by organization </h3>
+<pre>
+GET https://packagist.org/packages/list.json?vendor=[vendor]
+<code>
+{
+  "packageNames": [
+    "[vendor]/[package]",
+    ...
+  ]
+}
+</code></pre>
+</section>
+
+<section class="col-d-12"> 
+<h3 id='search-packages-by-tag'>Search packages by tag </h3>
+<pre>
+GET https://packagist.org/search.json?tags=[tag]
+<code>
+{
+  "results": [
+    {
+      "name": "[vendor]/[package]",
+      "description": "[description]",
+      "url": "https://packagist.org/packages/[vendor]/[package]",
+      "repository": "[repository url]",
+      "downloads": [number of downloads],
+      "favers": [number of favers]
+    }
+    ...
+  ],
+  "total": [numbers of results]
+}
+</code>
+</section>
+
+
+<section class="col-d-12"> 
+<h3 id='search-packages-by-name'>Search packages by name </h3>
+<pre>
+GET https://packagist.org/search.json?q=[query]
+<code>
+{
+  "results" : [
+    {
+      "name": "[vendor]/[package]",
+      "description": "<description>",
+      "url": "https://packagist.org/packages/<vendor>/<package>",
+      "repository": [repository url],
+      "downloads": [number of downloads],
+      "favers": [number of favers]
+    },
+    ...
+  ],
+  "total": [number of results],
+  "next": "https://packagist.org/search.json?q=[query]&amp;page=[next page number]"
+}
+</code>
+</section>
+
+<section class="col-d-12"> 
+<h3 id='get-package-by-name'>Get package by name </h3>
+<pre>
+GET https://packagist.org/packages/[vendor]/[package].json
+<code>
+{
+  "package": {
+    "name": "[vendor]/[package],
+    "description": [description],
+    "time": [time of the last release],
+    "maintainers": [list of maintainers],
+    "versions": [list of versions and their dependencies, the same data of <a href="https://getcomposer.org/doc/01-basic-usage.md#package-versions">composer.json</a>]
+    "type": [package type],
+    "repository": [repository url],
+    "downloads": {
+      "total": [numbers of download],
+      "monthly": [numbers of download per month],
+      "daily": [numbers of download per day]
+    },
+    "favers": [number of favers]
+  }
+}
+</code>
+</section>
+
+
+{% endblock %}

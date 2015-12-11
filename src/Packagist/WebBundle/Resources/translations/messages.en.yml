@@ -12,6 +12,7 @@ menu:
     github: GitHub
     contact: Contact
     stats: Statistics
+    api_doc: Api doc
 
 link_type:
     require: Requires
