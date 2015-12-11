@@ -15,7 +15,7 @@ namespace Packagist\WebBundle\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller as BaseController;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Pagerfanta;
-use Packagist\Entity\Package;
+use Packagist\WebBundle\Entity\Package;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -47,7 +47,7 @@ class Controller extends BaseController
                     $solarium = true;
                     $ids[] = $package['id'];
                 } else {
-                    throw new \LogicException();
+                    throw new \LogicException('Got invalid package entity');
                 }
             }
 
