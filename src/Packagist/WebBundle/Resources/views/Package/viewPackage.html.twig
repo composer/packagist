@@ -122,41 +122,140 @@
 
                             {% set repoUrl = package.repository|replace({'git://github.com/': 'https://github.com/', 'git@github.com:': 'https://github.com/'}) %}
                             <p class="canonical">
-                                <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
+                                <span>
+                                    <i class="fa fa-fw fa-github"></i>
+                                    <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
+                                </span>
                             </p>
 
                             {% if version and version.homepage %}
-                                <p><a href="{{ version.homepage }}">Homepage</a></p>
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-home"></i>
+                                        <a href="{{ version.homepage }}">Homepage</a>
+                                    </span>
+                                </p>
                             {% endif %}
                             {% if version.support.source is defined %}
-                                <p><a href="{{ version.support.source }}">Source</a></p>
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-code"></i>
+                                        <a href="{{ version.support.source }}">Source</a>
+                                    </span>
+                                </p>
                             {% endif %}
                             {% if version and version.support.issues is defined %}
-                                <p><a href="{{ version.support.issues }}">Issues</a></p>
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-exclamation-circle"></i>
+                                        <a href="{{ version.support.issues }}">Issues</a>
+                                    </span>
+                                </p>
                             {% endif %}
                             {% if version and version.support.irc is defined %}
-                                <p><a href="{{ version.support.irc }}">IRC</a></p>
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-hashtag"></i>
+                                        <a href="{{ version.support.irc }}">IRC</a>
+                                    </span>
+                                </p>
                             {% endif %}
                             {% if version and version.support.forum is defined %}
-                                <p><a href="{{ version.support.forum }}">Forum</a></p>
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-comments-o"></i>
+                                        <a href="{{ version.support.forum }}">Forum</a>
+                                    </span>
+                                </p>
                             {% endif %}
                             {% if version and version.support.wiki is defined %}
-                                <p><a href="{{ version.support.wiki }}">Wiki</a></p>
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-wikipedia-w"></i>
+                                        <a href="{{ version.support.wiki }}">Wiki</a>
+                                    </span>
+                                </p>
                             {% endif %}
                             {% if version and version.support.docs is defined %}
-                                <p><a href="{{ version.support.docs }}">Documentation</a></p>
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-book"></i>
+                                        <a href="{{ version.support.docs }}">Documentation</a>
+                                    </span>
+                                </p>
                             {% endif %}
                         </div>
 
                         <div class="facts col-xs-12 col-sm-6 col-md-12">
-                            <p><span><a href="{{ path('view_package_stats', {name: package.name}) }}" rel="nofollow">Installs</a>:</span> {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}</p>
-                            {% if dependents is defined %}<p><span><a href="{{ path('view_package_dependents', {name: package.name}) }}" rel="nofollow">Dependents</a>:</span> {{ dependents|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
-                            {% if package.gitHubStars is not null %}<p><span>Stars:</span> {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
-                            {% if package.gitHubWatches is not null %}<p><span>Watchers:</span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
-                            {% if package.gitHubForks is not null %}<p><span>Forks:</span> {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
-                            {% if package.gitHubOpenIssues is not null %}<p><span>Open Issues:</span> {{ package.gitHubOpenIssues|number_format(0, '.', '&#8201;')|raw }}</p>{% endif %}
-                            {% if package.language is not empty and package.language != 'PHP' %}<p><span>Language:</span> {{ package.language }}</p>{% endif %}
-                            {% if package.type is not empty and package.type != 'library' %}<p><span>Type:</span> {{ package.type }}</p>{% endif %}
+                            <p>
+                                <span>
+                                    <i class="fa fa-fw fa-download"></i>
+                                    <a href="{{ path('view_package_stats', {name: package.name}) }}" rel="nofollow">Installs</a>:
+                                </span>
+                                {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}
+                            </p>
+                            {% if dependents is defined %}
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-exchange"></i>
+                                        <a href="{{ path('view_package_dependents', {name: package.name}) }}" rel="nofollow">Dependents</a>:
+                                    </span>
+                                    {{ dependents|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if package.gitHubStars is not null %}
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-star"></i>
+                                        <a href="{{ repoUrl }}/stargazers">Stars</a>:
+                                    </span>
+                                    {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if package.gitHubWatches is not null %}
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-eye"></i>
+                                        <a href="{{ repoUrl }}/watchers">Watchers</a>:
+                                    </span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if package.gitHubForks is not null %}
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-code-fork"></i>
+                                        <a href="{{ repoUrl }}/network">Forks</a>:
+                                    </span>
+                                    {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if package.gitHubOpenIssues is not null %}
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-exclamation-circle"></i>
+                                        <a href="{{ version.support.issues }}">Open Issues</a>:
+                                    </span>
+                                    {{ package.gitHubOpenIssues|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if package.language is not empty and package.language != 'PHP' %}
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-code"></i>
+                                        Language:
+                                    </span>
+                                    {{ package.language }}
+                                </p>
+                            {% endif %}
+                            {% if package.type is not empty and package.type != 'library' %}
+                                <p>
+                                    <span>
+                                        <i class="fa fa-fw fa-cube"></i>
+                                        Type:
+                                    </span>
+                                    {{ package.type }}
+                                </p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
