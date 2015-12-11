@@ -32,8 +32,8 @@ parameters:
         ga_key:
 
     # set those to values obtained by creating an application at https://github.com/settings/applications
-    github.client_id:
-    github.client_secret:
+    github.client_id: CHANGE_ME_IN_PROD
+    github.client_secret: CHANGE_ME_IN_PROD
 
     # -- performance features --
     # set both to apc to optimize things if it is available
