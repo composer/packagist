@@ -36,7 +36,6 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
 use Packagist\WebBundle\Package\Updater;
-use Zend\Json\Json;
 
 class PackageController extends Controller
 {
@@ -121,7 +120,7 @@ class PackageController extends Controller
 
                 return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
             } catch (\Exception $e) {
-                $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+                $this->get('logger')->critical($e->getMessage(), array('exception', $e));
                 $this->get('session')->getFlashBag()->set('error', $package->getName().' could not be saved.');
             }
         }
@@ -243,7 +242,6 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template()
      * @Route(
      *     "/providers/{name}",
      *     name="view_providers",
@@ -252,7 +250,7 @@ class PackageController extends Controller
      * )
      * @Method({"GET"})
      */
-    public function viewProvidersAction(Request $req, $name)
+    public function viewProvidersAction($name)
     {
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
@@ -394,7 +392,6 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template()
      * @Route(
      *     "/packages/{name}/downloads.{_format}",
      *     name="package_downloads_full",
@@ -450,7 +447,6 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template()
      * @Route(
      *     "/versions/{versionId}.{_format}",
      *     name="view_version",
@@ -458,7 +454,7 @@ class PackageController extends Controller
      * )
      * @Method({"GET"})
      */
-    public function viewPackageVersionAction(Request $req, $versionId)
+    public function viewPackageVersionAction($versionId)
     {
         /** @var VersionRepository $repo  */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
@@ -472,7 +468,6 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template()
      * @Route(
      *     "/versions/{versionId}/delete",
      *     name="delete_version",
@@ -493,7 +488,7 @@ class PackageController extends Controller
             throw new AccessDeniedException;
         }
 
-        if (!$this->get('form.csrf_provider')->isCsrfTokenValid('delete_version', $req->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('delete_version', $req->request->get('_token'))) {
             throw new AccessDeniedException;
         }
 
@@ -505,7 +500,6 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template()
      * @Route("/packages/{name}", name="update_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
      * @Method({"PUT"})
      */
@@ -588,7 +582,6 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template()
      * @Route("/packages/{name}", name="delete_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      * @Method({"DELETE"})
      */
@@ -691,7 +684,7 @@ class PackageController extends Controller
                 }
                 $this->get('session')->getFlashBag()->set('error', 'The user could not be found.');
             } catch (\Exception $e) {
-                $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+                $this->get('logger')->critical($e->getMessage(), array('exception', $e));
                 $this->get('session')->getFlashBag()->set('error', 'The maintainer could not be added.');
             }
         }
@@ -746,7 +739,7 @@ class PackageController extends Controller
                 }
                 $this->get('session')->getFlashBag()->set('error', 'The user could not be found.');
             } catch (\Exception $e) {
-                $this->get('logger')->crit($e->getMessage(), array('exception', $e));
+                $this->get('logger')->critical($e->getMessage(), array('exception', $e));
                 $this->get('session')->getFlashBag()->set('error', 'The maintainer could not be removed.');
             }
         }
@@ -1014,7 +1007,7 @@ class PackageController extends Controller
         return $this->overallStatsAction($req, $package, $version);
     }
 
-    private function createAddMaintainerForm($package)
+    private function createAddMaintainerForm(Package $package)
     {
         if (!$user = $this->getUser()) {
             return;
