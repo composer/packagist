@@ -5,7 +5,11 @@ ini_set('date.timezone', 'UTC');
 use Symfony\Component\ClassLoader\ApcClassLoader;
 use Symfony\Component\HttpFoundation\Request;
 
-$loader = include __DIR__.'/../app/bootstrap.php.cache';
+/**
+ * @var \Symfony\Component\ClassLoader\ClassLoader
+ */
+$loader = include __DIR__.'/../app/autoload.php';
+include_once __DIR__.'/../app/bootstrap.php.cache';
 
 // Use APC for autoloading to improve performance.
 if (function_exists('apc_store')) {
@@ -13,8 +17,6 @@ if (function_exists('apc_store')) {
     $loader->unregister();
     $apcLoader->register(true);
 }
-
-include __DIR__.'/../app/AppKernel.php';
 
 $kernel = new AppKernel('prod', false);
 $kernel->loadClassCache();

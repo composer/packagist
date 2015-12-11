@@ -8,10 +8,10 @@
 <h2 class="title">Edit {{ package.name }}</h2>
 
 <section class="row">
-    <form class="col-md-6" action="{{ path('edit_package', {'name': package.name}) }}" method="POST" {{ form_enctype(form) }}>
+    {{ form_start(form, { attr: { class: 'col-md-6' } }) }}
         {{ form_widget(form) }}
 
         <input class="btn btn-block btn-primary btn-lg" id="submit" type="submit" value="Update" />
-    </form>
+    {{ form_end(form) }}
 </section>
 {% endblock %}

@@ -8,11 +8,11 @@
 </h2>
 
 <section class="row">
-    <form method="post" {{ form_enctype(form) }} class="col-sm-6">
+    {{ form_start(form, { attr: { class: 'col-sm-6' } }) }}
         {{ form_widget(form) }}
 
         <input class="btn btn-block btn-default btn-lg" type="submit" value="Abandon Package" />
-    </form>
+    {{ form_end(form) }}
 
     <div class="col-sm-6">
         <p>You are about to mark this package as abandoned. This will alert users that this package will no longer be maintained.</p>

@@ -12,6 +12,8 @@
 
 namespace Packagist\WebBundle\Form\Type;
 
+use FOS\UserBundle\Form\Type\UsernameFormType;
+use Packagist\WebBundle\Form\Model\MaintainerRequest;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -23,17 +25,20 @@ class AddMaintainerRequestType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('user', 'fos_user_username');
+        $builder->add('user', UsernameFormType::class);
     }
 
     public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(array(
-            'data_class' => 'Packagist\WebBundle\Form\Model\MaintainerRequest',
+            'data_class' => MaintainerRequest::class,
         ));
     }
 
-    public function getName()
+    /**
+     * {@inheritdoc}
+     */
+    public function getBlockPrefix()
     {
         return 'add_maintainer_form';
     }

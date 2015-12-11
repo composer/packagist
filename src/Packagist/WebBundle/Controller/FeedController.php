@@ -22,6 +22,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Zend\Feed\Writer\Entry;
 use Zend\Feed\Writer\Feed;
 
@@ -61,7 +62,7 @@ class FeedController extends Controller
             $req,
             'Newly Submitted Packages',
             'Latest packages submitted to Packagist.',
-            $this->generateUrl('browse', array(), true),
+            $this->generateUrl('browse', array(), UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -88,7 +89,7 @@ class FeedController extends Controller
             $req,
             'New Releases',
             'Latest releases of all packages.',
-            $this->generateUrl('browse', array(), true),
+            $this->generateUrl('browse', array(), UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -115,7 +116,7 @@ class FeedController extends Controller
             $req,
             "$vendor packages",
             "Latest packages updated on Packagist of $vendor.",
-            $this->generateUrl('view_vendor', array('vendor' => $vendor), true),
+            $this->generateUrl('view_vendor', array('vendor' => $vendor), UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -142,7 +143,7 @@ class FeedController extends Controller
             $req,
             "$package releases",
             "Latest releases on Packagist of $package.",
-            $this->generateUrl('view_package', array('name' => $package), true),
+            $this->generateUrl('view_package', array('name' => $package), UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -235,7 +236,7 @@ class FeedController extends Controller
             $this->generateUrl(
                 'view_package',
                 array('name' => $package->getName()),
-                true
+                UrlGeneratorInterface::ABSOLUTE_URL
             )
         );
         $entry->setId($package->getName());

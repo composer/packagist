@@ -165,7 +165,10 @@
             {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
                 <div class="row">
                     {% if addMaintainerForm is defined %}
-                        <form id="add-maintainer-form" class="col-sm-6 col-md-3 col-md-offset-9 {{ show_add_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('add_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(addMaintainerForm) }}>
+                        {{ form_start(addMaintainerForm, {
+                            attr: { id: 'add-maintainer-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_add_maintainer_form|default(false) ? '': 'hidden') },
+                            action: path('add_maintainer', { 'name': package.name })
+                        }) }}
                             <div>
                                 <h4>Add Maintainer</h4>
                                 <p>
@@ -176,11 +179,14 @@
                                 {{ form_rest(addMaintainerForm) }}
                                 <input class="btn btn-block btn-success btn-lg" type="submit" value="Add Maintainer" />
                             </div>
-                        </form>
+                        {{ form_end(addMaintainerForm) }}
                     {% endif %}
 
                     {% if removeMaintainerForm is defined %}
-                        <form id="remove-maintainer-form" class="col-sm-6 col-md-3 col-md-offset-9 {{ show_remove_maintainer_form|default(false) ? '': 'hidden' }}" action="{{ path('remove_maintainer', {'name': package.name}) }}" method="POST" {{ form_enctype(removeMaintainerForm) }}>
+                        {{ form_start(removeMaintainerForm, {
+                            attr: { id: 'remove-maintainer-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_remove_maintainer_form|default(false) ? '': 'hidden') },
+                            action: path('remove_maintainer', { 'name': package.name })
+                        }) }}
                             <div>
                                 <h4>Remove Maintainer</h4>
                                 <p>
@@ -191,7 +197,7 @@
                                 {{ form_rest(removeMaintainerForm) }}
                                 <input class="btn btn-block btn-danger btn-lg" type="submit" value="Remove Maintainer" />
                             </div>
-                        </form>
+                        {{ form_end(removeMaintainerForm) }}
                     {% endif %}
                 </div>
             {% endif %}

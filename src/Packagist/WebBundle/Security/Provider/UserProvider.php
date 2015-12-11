@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Security\Provider;
 
 use FOS\UserBundle\Model\UserManagerInterface;
+use FOS\UserBundle\Security\EmailUserProvider;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
 use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
@@ -29,11 +30,18 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     private $userManager;
 
     /**
-     * @param UserManagerInterface $userManager
+     * @var EmailUserProvider
      */
-    public function __construct(UserManagerInterface $userManager)
+    private $userProvider;
+
+    /**
+     * @param UserManagerInterface $userManager
+     * @param EmailUserProvider    $userProvider
+     */
+    public function __construct(UserManagerInterface $userManager, EmailUserProvider $userProvider)
     {
         $this->userManager = $userManager;
+        $this->userProvider = $userProvider;
     }
 
     /**
@@ -88,7 +96,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function loadUserByUsername($usernameOrEmail)
     {
-        $user = $this->userManager->findUserByUsernameOrEmail($usernameOrEmail);
+        $user = $this->userProvider->loadUserByUsername($usernameOrEmail);
 
         if (!$user) {
             throw new UsernameNotFoundException(sprintf('No user with name or email "%s" was found.', $usernameOrEmail));
@@ -102,7 +110,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function refreshUser(UserInterface $user)
     {
-        return $this->userManager->refreshUser($user);
+        return $this->userProvider->refreshUser($user);
     }
 
     /**
@@ -110,6 +118,6 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function supportsClass($class)
     {
-        return $this->userManager->supportsClass($class);
+        return $this->userProvider->supportsClass($class);
     }
 }

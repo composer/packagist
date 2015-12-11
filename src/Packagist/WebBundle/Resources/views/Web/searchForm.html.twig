@@ -1,4 +1,4 @@
-<form id="search-form" action="{{ path('search.ajax') }}" method="GET" {{ form_enctype(searchForm) }} autocomplete="off">
+{{ form_start(searchForm, { attr: { id: 'search-form', autocomplete: 'off' } }) }}
     <div class="{% if orderBys is defined %}sortable{% endif %} row">
         <div class="hidden">{{ form_errors(searchForm.query) }}</div>
         <div class="{% if searchForm.vars.value.query is empty %}col-xs-12{% else %}col-xs-8{% endif %} js-search-field-wrapper col-md-9">
@@ -29,5 +29,4 @@
         </div>
         {{ form_rest(searchForm) }}
     </div>
-</form>
-
+{{ form_end(searchForm) }}

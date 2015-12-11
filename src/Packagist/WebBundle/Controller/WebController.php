@@ -21,6 +21,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -38,16 +39,17 @@ class WebController extends Controller
 
     public function searchFormAction(Request $req)
     {
-        $form = $this->createForm(new SearchQueryType, new SearchQuery);
+        $form = $this->createForm(SearchQueryType::class, new SearchQuery(), [
+            'action' => $this->generateUrl('search.ajax'),
+            'method' => 'GET',
+        ]);
 
         $filteredOrderBys = $this->getFilteredOrderedBys($req);
         $normalizedOrderBys = $this->getNormalizedOrderBys($filteredOrderBys);
 
         $this->computeSearchQuery($req, $filteredOrderBys);
 
-        if ($req->query->has('search_query')) {
-            $form->submit($req);
-        }
+        $form->handleRequest($req);
 
         $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
         return $this->render('PackagistWebBundle:Web:searchForm.html.twig', array(
@@ -62,7 +64,7 @@ class WebController extends Controller
      */
     public function searchAction(Request $req)
     {
-        $form = $this->createForm(new SearchQueryType, new SearchQuery);
+        $form = $this->createForm(SearchQueryType::class, new SearchQuery());
 
         $filteredOrderBys = $this->getFilteredOrderedBys($req);
         $normalizedOrderBys = $this->getNormalizedOrderBys($filteredOrderBys);
@@ -107,18 +109,16 @@ class WebController extends Controller
                 $select->addSorts($normalizedOrderBys);
             }
 
-            if ($req->query->has('search_query')) {
-                $form->submit($req);
+            $form->handleRequest($req);
 
-                if ($form->isValid()) {
-                    $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
-                    $escapedQuery = preg_replace('/(^| )\\\\-(\S)/', '$1-$2', $escapedQuery);
-                    $escapedQuery = preg_replace('/(^| )\\\\\+(\S)/', '$1+$2', $escapedQuery);
-                    if ((substr_count($escapedQuery, '"') % 2) == 0) {
-                        $escapedQuery = str_replace('\\"', '"', $escapedQuery);
-                    }
-                    $select->setQuery($escapedQuery);
+            if ($form->isValid()) {
+                $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
+                $escapedQuery = preg_replace('/(^| )\\\\-(\S)/', '$1-$2', $escapedQuery);
+                $escapedQuery = preg_replace('/(^| )\\\\\+(\S)/', '$1+$2', $escapedQuery);
+                if ((substr_count($escapedQuery, '"') % 2) == 0) {
+                    $escapedQuery = str_replace('\\"', '"', $escapedQuery);
                 }
+                $select->setQuery($escapedQuery);
             }
 
             $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
@@ -162,9 +162,9 @@ class WebController extends Controller
 
                 foreach ($paginator as $package) {
                     if (ctype_digit((string) $package->id)) {
-                        $url = $this->generateUrl('view_package', array('name' => $package->name), true);
+                        $url = $this->generateUrl('view_package', array('name' => $package->name), UrlGeneratorInterface::ABSOLUTE_URL);
                     } else {
-                        $url = $this->generateUrl('view_providers', array('name' => $package->name), true);
+                        $url = $this->generateUrl('view_providers', array('name' => $package->name), UrlGeneratorInterface::ABSOLUTE_URL);
                     }
 
                     $row = array(
@@ -197,7 +197,7 @@ class WebController extends Controller
                     if ($perPage !== 15) {
                         $params['per_page'] = $perPage;
                     }
-                    $result['next'] = $this->generateUrl('search', $params, true);
+                    $result['next'] = $this->generateUrl('search', $params, UrlGeneratorInterface::ABSOLUTE_URL);
                 }
 
                 return JsonResponse::create($result)->setCallback($req->query->get('callback'));

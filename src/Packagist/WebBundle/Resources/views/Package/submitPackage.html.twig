@@ -10,13 +10,13 @@
 <h2 class="title">Submit package</h2>
 
 <section class="row">
-    <form class="col-md-6" id="submit-package-form" action="{{ path('submit') }}" data-check-url="{{ path('submit.fetch_info') }}" method="POST" {{ form_enctype(form) }}>
+    {{ form_start(form, { attr: { class: 'col-md-6', data-check-url: path('submit.fetch_info') } }) }}
         {{ form_widget(form) }}
 
         {{ form_rest(form) }}
 
         <input class="btn btn-block btn-success btn-lg" id="submit" type="submit" value="Submit" />
-    </form>
+    {{ form_end(form) }}
 
     <div class="col-md-6">
         <p>Please make sure you have read the package <a href="{{ path('about') }}#naming-your-package">naming conventions</a> before submitting your package. The authoritative name of your package will be taken from the composer.json file inside the master branch or trunk of your repository, and it can not be changed after that.</p>
