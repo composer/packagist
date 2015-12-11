@@ -916,6 +916,7 @@ class PackageController extends Controller
         $paginator->setCurrentPage($page, false, true);
 
         $data['packages'] = $paginator;
+        $data['count'] = $depCount;
 
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['name'] = $name;
