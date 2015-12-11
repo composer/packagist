@@ -100,6 +100,7 @@ class ApiControllerTest extends WebTestCase
             array('github', 'git://github.com/user/repo', true),
             array('github', 'git@github.com:user/repo.git', true),
             array('github', 'git@github.com:user/repo', true),
+            array('github', 'https://github.com/user/repo/', true),
 
             // valid bitbucket URLs
             array('bitbucket', 'bitbucket.org/user/repo', true),
