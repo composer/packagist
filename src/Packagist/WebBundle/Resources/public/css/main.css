@@ -936,7 +936,7 @@ ul.packages .metadata-block:last-child {
 }
 .package .facts span {
     display: inline-block;
-    width: 100px;
+    width: 120px;
 }
 
 .package .tags a:before {
@@ -1007,10 +1007,10 @@ ul.packages .metadata-block:last-child {
 .package-aside .details {
   padding-left: 0;
 }
-.package .package-aside i, .package .readme-expander i {
+.package .package-aside i:not(.fa), .package .readme-expander i:not(.fa) {
   color: #bbbfc4;
 }
-.package .package-aside i:hover, .package .readme-expander i:hover {
+.package .package-aside i:not(.fa):hover, .package .readme-expander i:not(.fa):hover {
   color: #a5aab0;
 }
 
