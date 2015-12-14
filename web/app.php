@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * @var \Symfony\Component\ClassLoader\ClassLoader
  */
-$loader = include __DIR__.'/../app/autoload.php';
+$loader = require __DIR__.'/../app/autoload.php';
 include_once __DIR__.'/../app/bootstrap.php.cache';
 
 // Use APC for autoloading to improve performance.
