@@ -23,22 +23,22 @@ services:
 
     packagist.package_dumper:
         class: Packagist\WebBundle\Package\SymlinkDumper
-        arguments: [ '@doctrine', '@filesystem', '@router', "%kernel.root_dir%/../web/", "%packagist_metadata_dir%", "%packagist_dumper_compress%" ]
+        arguments: [ '@doctrine', '@filesystem', '@router', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%' ]
 
     packagist.user_provider:
         class: Packagist\WebBundle\Security\Provider\UserProvider
         public: false
-        arguments: ["@fos_user.user_manager", "@fos_user.user_provider.username_email"]
+        arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email']
 
     packagist.user_repository:
         class: Packagist\WebBundle\Entity\UserRepository
         factory: ['@doctrine', getRepository]
-        arguments: ["PackagistWebBundle:User"]
+        arguments: ['PackagistWebBundle:User']
 
     packagist.package_repository:
         class: Packagist\WebBundle\Entity\PackageRepository
         factory: ['@doctrine', getRepository]
-        arguments: ["PackagistWebBundle:Package"]
+        arguments: ['PackagistWebBundle:Package']
 
     packagist.package_updater:
         class: Packagist\WebBundle\Package\Updater
