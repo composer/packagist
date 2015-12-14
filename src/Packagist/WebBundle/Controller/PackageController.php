@@ -108,7 +108,6 @@ class PackageController extends Controller
         $package->setRouter($this->get('router'));
         $form = $this->createForm(PackageType::class, $package, [
             'action' => $this->generateUrl('submit'),
-            'method' => 'POST',
         ]);
         $user = $this->getUser();
         $package->addMaintainer($user);
@@ -1021,7 +1020,7 @@ class PackageController extends Controller
 
         if ($this->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
             $maintainerRequest = new MaintainerRequest();
-            return $this->createForm(AddMaintainerRequestType::class, $maintainerRequest, ['method' => 'POST']);
+            return $this->createForm(AddMaintainerRequestType::class, $maintainerRequest);
         }
     }
 
@@ -1035,7 +1034,6 @@ class PackageController extends Controller
             $maintainerRequest = new MaintainerRequest();
             return $this->createForm(RemoveMaintainerRequestType::class, $maintainerRequest, array(
                 'package' => $package,
-                'method'  => 'POST',
             ));
         }
     }
