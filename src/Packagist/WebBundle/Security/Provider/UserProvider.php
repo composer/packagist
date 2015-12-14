@@ -98,10 +98,6 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     {
         $user = $this->userProvider->loadUserByUsername($usernameOrEmail);
 
-        if (!$user) {
-            throw new UsernameNotFoundException(sprintf('No user with name or email "%s" was found.', $usernameOrEmail));
-        }
-
         return $user;
     }
 
