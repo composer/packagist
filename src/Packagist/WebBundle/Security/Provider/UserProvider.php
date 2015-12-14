@@ -13,12 +13,10 @@
 namespace Packagist\WebBundle\Security\Provider;
 
 use FOS\UserBundle\Model\UserManagerInterface;
-use FOS\UserBundle\Security\EmailUserProvider;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
 use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
 use Packagist\WebBundle\Entity\User;
-use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 
@@ -30,15 +28,15 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     private $userManager;
 
     /**
-     * @var EmailUserProvider
+     * @var UserProviderInterface
      */
     private $userProvider;
 
     /**
-     * @param UserManagerInterface $userManager
-     * @param EmailUserProvider    $userProvider
+     * @param UserManagerInterface  $userManager
+     * @param UserProviderInterface $userProvider
      */
-    public function __construct(UserManagerInterface $userManager, EmailUserProvider $userProvider)
+    public function __construct(UserManagerInterface $userManager, UserProviderInterface $userProvider)
     {
         $this->userManager = $userManager;
         $this->userProvider = $userProvider;
@@ -51,8 +49,10 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     {
         $username = $response->getUsername();
 
+        /** @var User $previousUser */
         $previousUser = $this->userManager->findUserBy(array('githubId' => $username));
 
+        /** @var User $user */
         $user->setGithubId($username);
         $user->setGithubToken($response->getAccessToken());
 
@@ -77,6 +77,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     public function loadUserByOAuthUserResponse(UserResponseInterface $response)
     {
         $username = $response->getUsername();
+        /** @var User $user */
         $user = $this->userManager->findUserBy(array('githubId' => $username));
 
         if (!$user) {
