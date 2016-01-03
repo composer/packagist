@@ -10,7 +10,7 @@
 <h2 class="title">Submit package</h2>
 
 <section class="row">
-    {{ form_start(form, { attr: { class: 'col-md-6', data-check-url: path('submit.fetch_info') } }) }}
+    {{ form_start(form, { attr: { class: 'col-md-6', 'data-check-url': path('submit.fetch_info'), id: 'submit-package-form' } }) }}
         {{ form_widget(form) }}
 
         {{ form_rest(form) }}
