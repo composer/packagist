@@ -328,8 +328,8 @@ class ApiController extends Controller
         $packages = array();
         foreach ($user->getPackages() as $package) {
             if (preg_match($urlRegex, $package->getRepository(), $candidate)
-                && $candidate['host'] === $matched['host']
-                && $candidate['path'] === $matched['path']
+                && strtolower($candidate['host']) === strtolower($matched['host'])
+                && strtolower($candidate['path']) === strtolower($matched['path'])
             ) {
                 $packages[] = $package;
             }
