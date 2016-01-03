@@ -21,8 +21,8 @@ use Predis\Client;
  */
 class DownloadManager
 {
-
     protected $redis;
+    protected $redisCommandLoaded = false;
 
     public function __construct(Client $redis)
     {
@@ -114,12 +114,11 @@ class DownloadManager
      */
     public function addDownload($package, $version)
     {
-        static $loaded = false;
         $redis = $this->redis;
 
-        if (!$loaded) {
+        if (!$this->redisCommandLoaded) {
             $redis->getProfile()->defineCommand('downloadsIncr', 'Packagist\Redis\DownloadsIncr');
-            $loaded = true;
+            $this->redisCommandLoaded = true;
         }
 
         if ($package instanceof Package) {
