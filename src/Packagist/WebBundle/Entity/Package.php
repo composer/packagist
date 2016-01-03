@@ -48,7 +48,7 @@ class Package
     /**
      * Unique package name
      *
-     * @ORM\Column()
+     * @ORM\Column(length=191)
      */
     private $name;
 

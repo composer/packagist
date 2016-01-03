@@ -34,7 +34,7 @@ class Tag
     private $id;
 
     /**
-     * @ORM\Column
+     * @ORM\Column(length=191)
      * @Assert\NotBlank()
      */
     private $name;

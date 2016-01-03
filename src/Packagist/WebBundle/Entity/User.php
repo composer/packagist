@@ -19,6 +19,38 @@ use FOS\UserBundle\Model\User as BaseUser;
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\UserRepository")
  * @ORM\Table(name="fos_user")
+ * @ORM\AttributeOverrides({
+ *     @ORM\AttributeOverride(name="username",
+ *         column=@ORM\Column(
+ *             name="username",
+ *             type="string",
+ *             length=191
+ *         )
+ *     ),
+ *     @ORM\AttributeOverride(name="usernameCanonical",
+ *         column=@ORM\Column(
+ *             name="username_canonical",
+ *             type="string",
+ *             length=191,
+ *             unique=true
+ *         )
+ *     ),
+ *     @ORM\AttributeOverride(name="email",
+ *         column=@ORM\Column(
+ *             name="email",
+ *             type="string",
+ *             length=191
+ *         )
+ *     ),
+ *     @ORM\AttributeOverride(name="emailCanonical",
+ *         column=@ORM\Column(
+ *             name="email_canonical",
+ *             type="string",
+ *             length=191,
+ *             unique=true
+ *         )
+ *     )
+ * })
  */
 class User extends BaseUser
 {

@@ -92,7 +92,7 @@ class Version
     private $version;
 
     /**
-     * @ORM\Column
+     * @ORM\Column(length=191)
      * @Assert\NotBlank()
      */
     private $normalizedVersion;

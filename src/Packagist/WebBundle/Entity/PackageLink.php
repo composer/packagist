@@ -28,7 +28,7 @@ abstract class PackageLink
     private $id;
 
     /**
-     * @ORM\Column()
+     * @ORM\Column(length=191)
      */
     private $packageName;
 
