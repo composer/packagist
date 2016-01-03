@@ -114,11 +114,12 @@ class DownloadManager
      */
     public function addDownload($package, $version)
     {
-        static $loaded;
+        static $loaded = false;
         $redis = $this->redis;
 
         if (!$loaded) {
             $redis->getProfile()->defineCommand('downloadsIncr', 'Packagist\Redis\DownloadsIncr');
+            $loaded = true;
         }
 
         if ($package instanceof Package) {
