@@ -40,6 +40,7 @@ class SearchQueryType extends AbstractType
         $resolver->setDefaults(array(
             'data_class' => SearchQuery::class,
             'csrf_protection' => false,
+            'method' => 'GET',
         ));
     }
 
