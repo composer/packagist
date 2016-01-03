@@ -956,8 +956,6 @@ ul.packages .metadata-block:last-child {
 
 .package .readme {
   padding-bottom: 20px;
-  max-height: 300px;
-  overflow-y: hidden;
 }
 .wrapper .content .package .readme img {
   max-width: 100%;
@@ -1007,10 +1005,10 @@ ul.packages .metadata-block:last-child {
 .package-aside .details {
   padding-left: 0;
 }
-.package .package-aside i, .package .readme-expander i {
+.package .package-aside i {
   color: #bbbfc4;
 }
-.package .package-aside i:hover, .package .readme-expander i:hover {
+.package .package-aside i:hover {
   color: #a5aab0;
 }
 
@@ -1034,15 +1032,11 @@ ul.packages .metadata-block:last-child {
   padding: 0;
   margin: 0;
 }
-.package .versions-expander, .package .readme-expander {
+.package .versions-expander {
   text-align: center;
   cursor: pointer;
   margin: 10px 0 0;
   line-height: 25px;
-}
-.package .readme-expander {
-  margin-bottom: 20px;
-  background: #fff;
 }
 .package .versions .version {
   padding: 2px 0 2px 5px;

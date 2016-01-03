@@ -178,17 +178,4 @@
             $(versionsList).css('max-height', 'inherit');
         });
     }
-
-    var readme = $('.package .readme')[0];
-    if (readme && readme.offsetHeight < readme.scrollHeight) {
-        $('.package .readme-expander').removeClass('hidden').on('click', function () {
-            $(this).addClass('hidden');
-            $(readme).css('overflow-y', 'visible')
-                .css('max-height', 'inherit');
-        });
-        // auto-expand when contracting doesn't hide enough to make it worth it
-        if (readme.offsetHeight > readme.scrollHeight - 200) {
-            $('.package .readme-expander').click();
-        }
-    }
 }(jQuery, humane));
