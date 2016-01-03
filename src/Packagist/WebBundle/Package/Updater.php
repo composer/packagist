@@ -479,16 +479,16 @@ class Updater
         if (!empty($repoData['language'])) {
             $package->setLanguage($repoData['language']);
         }
-        if (!empty($repoData['stargazers_count'])) {
+        if (isset($repoData['stargazers_count'])) {
             $package->setGitHubStars($repoData['stargazers_count']);
         }
-        if (!empty($repoData['subscribers_count'])) {
+        if (isset($repoData['subscribers_count'])) {
             $package->setGitHubWatches($repoData['subscribers_count']);
         }
-        if (!empty($repoData['network_count'])) {
+        if (isset($repoData['network_count'])) {
             $package->setGitHubForks($repoData['network_count']);
         }
-        if (!empty($repoData['open_issues_count'])) {
+        if (isset($repoData['open_issues_count'])) {
             $package->setGitHubOpenIssues($repoData['open_issues_count']);
         }
     }
