@@ -60,10 +60,10 @@ class PackageRepository extends EntityRepository
         }
 
         $names = null;
-        $apc = extension_loaded('apc');
+        $apc = extension_loaded('apcu');
 
         if ($apc) {
-            $names = apc_fetch('packagist_package_names');
+            $names = apcu_fetch('packagist_package_names');
         }
 
         if (!is_array($names)) {
@@ -73,7 +73,7 @@ class PackageRepository extends EntityRepository
             $names = $this->getPackageNamesForQuery($query);
             $names = array_combine($names, array_map('strtolower', $names));
             if ($apc) {
-                apc_store('packagist_package_names', $names, 3600);
+                apcu_store('packagist_package_names', $names, 3600);
             }
         }
 
@@ -87,11 +87,11 @@ class PackageRepository extends EntityRepository
         }
 
         $names = null;
-        $apc = extension_loaded('apc');
+        $apc = extension_loaded('apcu');
 
         // TODO use container to set caching key and ttl
         if ($apc) {
-            $names = apc_fetch('packagist_provided_names');
+            $names = apcu_fetch('packagist_provided_names');
         }
 
         if (!is_array($names)) {
@@ -101,7 +101,7 @@ class PackageRepository extends EntityRepository
             $names = $this->getPackageNamesForQuery($query);
             $names = array_combine($names, array_map('strtolower', $names));
             if ($apc) {
-                apc_store('packagist_provided_names', $names, 3600);
+                apcu_store('packagist_provided_names', $names, 3600);
             }
         }
 
@@ -312,10 +312,10 @@ class PackageRepository extends EntityRepository
 
     public function getDependentCount($name)
     {
-        $apc = extension_loaded('apc');
+        $apc = extension_loaded('apcu');
 
         if ($apc) {
-            $count = apc_fetch('packagist_dependentsCount_'.$name);
+            $count = apcu_fetch('packagist_dependentsCount_'.$name);
         }
 
         if (!isset($count) || !is_numeric($count)) {
@@ -329,7 +329,7 @@ class PackageRepository extends EntityRepository
             );
 
             if ($apc) {
-                apc_store('packagist_dependentsCount_'.$name, $count, 7*86400);
+                apcu_store('packagist_dependentsCount_'.$name, $count, 7*86400);
             }
         }
 
