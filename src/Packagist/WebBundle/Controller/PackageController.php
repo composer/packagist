@@ -20,6 +20,7 @@ use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Type\PackageType;
 use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
 use Predis\Connection\ConnectionException;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -105,7 +106,9 @@ class PackageController extends Controller
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $package->setRouter($this->get('router'));
-        $form = $this->createForm(new PackageType(), $package);
+        $form = $this->createForm(PackageType::class, $package, [
+            'action' => $this->generateUrl('submit'),
+        ]);
         $user = $this->getUser();
         $package->addMaintainer($user);
 
@@ -762,7 +765,9 @@ class PackageController extends Controller
         }
 
         $form = $this->createFormBuilder($package, array("validation_groups" => array("Update")))
-            ->add("repository", "text")
+            ->add('repository', TextType::class)
+            ->setMethod('POST')
+            ->setAction($this->generateUrl('edit_package', ['name' => $package->getName()]))
             ->getForm();
 
         $form->handleRequest($req);
@@ -800,7 +805,7 @@ class PackageController extends Controller
             throw new AccessDeniedException;
         }
 
-        $form = $this->createForm(new AbandonedType());
+        $form = $this->createForm(AbandonedType::class);
         $form->handleRequest($request);
         if ($form->isValid()) {
             $package->setAbandoned(true);
@@ -1015,7 +1020,7 @@ class PackageController extends Controller
 
         if ($this->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
             $maintainerRequest = new MaintainerRequest();
-            return $this->createForm(new AddMaintainerRequestType(), $maintainerRequest);
+            return $this->createForm(AddMaintainerRequestType::class, $maintainerRequest);
         }
     }
 
@@ -1027,7 +1032,9 @@ class PackageController extends Controller
 
         if ($this->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
             $maintainerRequest = new MaintainerRequest();
-            return $this->createForm(new RemoveMaintainerRequestType(), $maintainerRequest, array('package'=>$package));
+            return $this->createForm(RemoveMaintainerRequestType::class, $maintainerRequest, array(
+                'package' => $package,
+            ));
         }
     }
 

@@ -29,7 +29,10 @@ class ProfileFormType extends BaseType
         ));
     }
 
-    public function getName()
+    /**
+     * {@inheritdoc}
+     */
+    public function getBlockPrefix()
     {
         return 'packagist_user_profile';
     }

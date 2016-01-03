@@ -6,13 +6,15 @@ imports:
 framework:
     secret:          %secret%
     router:
-        resource: "%kernel.root_dir%/config/routing.yml"
+        resource: '%kernel.root_dir%/config/routing.yml'
         strict_requirements: %kernel.debug%
     form:            true
     csrf_protection: true
     validation:      { enable_annotations: true }
     translator:      { fallback: en }
-    templating:      { engines: ['twig'], assets_version: v=%assets_version% }
+    templating:      { engines: ['twig'] }
+    assets:
+        version: v=%assets_version%
     default_locale: %locale%
     session:
         name:            packagist
@@ -26,9 +28,8 @@ framework:
 
 # Twig Configuration
 twig:
-    form:
-        resources:
-           - 'PackagistWebBundle::forms.html.twig'
+    form_themes:
+        - 'PackagistWebBundle::forms.html.twig'
     debug:            %kernel.debug%
     strict_variables: %kernel.debug%
     globals:
@@ -44,6 +45,8 @@ doctrine:
         user:     %database_user%
         password: %database_password%
         charset:  UTF8
+        # See https://github.com/sonata-project/SonataAdminBundle/issues/3342
+        server_version: 5.6
     orm:
         auto_generate_proxy_classes: %kernel.debug%
         auto_mapping: true
@@ -73,15 +76,12 @@ fos_user:
     from_email:
         address:        %mailer_from_email%
         sender_name:    %mailer_from_name%
-    registration:
-        form:
-            handler: packagist.form.handler.registration
     profile:
         form:
             type:       packagist_user_profile
 
 hwi_oauth:
-    firewall_name: main
+    firewall_names: [main]
     connect:
         account_connector: packagist.user_provider
         registration_form_handler: packagist.oauth.registration_form_handler

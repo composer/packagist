@@ -11,15 +11,15 @@ class MenuBuilder
     private $username;
 
     /**
-     * @param FactoryInterface $factory
-     * @param TokenStorageInterface $securityContext
+     * @param FactoryInterface      $factory
+     * @param TokenStorageInterface $tokenStorage
      */
-    public function __construct(FactoryInterface $factory, TokenStorageInterface $securityContext)
+    public function __construct(FactoryInterface $factory, TokenStorageInterface $tokenStorage)
     {
         $this->factory = $factory;
 
-        if ($securityContext->getToken() && $securityContext->getToken()->getUser()) {
-            $this->username = $securityContext->getToken()->getUser()->getUsername();
+        if ($tokenStorage->getToken() && $tokenStorage->getToken()->getUser()) {
+            $this->username = $tokenStorage->getToken()->getUser()->getUsername();
         }
     }
 

@@ -17,7 +17,6 @@ use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
 use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
 use Packagist\WebBundle\Entity\User;
-use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 
@@ -29,11 +28,18 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     private $userManager;
 
     /**
-     * @param UserManagerInterface $userManager
+     * @var UserProviderInterface
      */
-    public function __construct(UserManagerInterface $userManager)
+    private $userProvider;
+
+    /**
+     * @param UserManagerInterface  $userManager
+     * @param UserProviderInterface $userProvider
+     */
+    public function __construct(UserManagerInterface $userManager, UserProviderInterface $userProvider)
     {
         $this->userManager = $userManager;
+        $this->userProvider = $userProvider;
     }
 
     /**
@@ -43,8 +49,10 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     {
         $username = $response->getUsername();
 
+        /** @var User $previousUser */
         $previousUser = $this->userManager->findUserBy(array('githubId' => $username));
 
+        /** @var User $user */
         $user->setGithubId($username);
         $user->setGithubToken($response->getAccessToken());
 
@@ -69,6 +77,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     public function loadUserByOAuthUserResponse(UserResponseInterface $response)
     {
         $username = $response->getUsername();
+        /** @var User $user */
         $user = $this->userManager->findUserBy(array('githubId' => $username));
 
         if (!$user) {
@@ -88,11 +97,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function loadUserByUsername($usernameOrEmail)
     {
-        $user = $this->userManager->findUserByUsernameOrEmail($usernameOrEmail);
-
-        if (!$user) {
-            throw new UsernameNotFoundException(sprintf('No user with name or email "%s" was found.', $usernameOrEmail));
-        }
+        $user = $this->userProvider->loadUserByUsername($usernameOrEmail);
 
         return $user;
     }
@@ -102,7 +107,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function refreshUser(UserInterface $user)
     {
-        return $this->userManager->refreshUser($user);
+        return $this->userProvider->refreshUser($user);
     }
 
     /**
@@ -110,6 +115,6 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function supportsClass($class)
     {
-        return $this->userManager->supportsClass($class);
+        return $this->userProvider->supportsClass($class);
     }
 }

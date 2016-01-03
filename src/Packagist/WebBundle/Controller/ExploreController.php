@@ -23,6 +23,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * @Route("/explore")
@@ -121,7 +122,7 @@ class ExploreController extends Controller
 
             /** @var Package $package */
             foreach ($packages as $package) {
-                $url = $this->generateUrl('view_package', array('name' => $package->getName()), true);
+                $url = $this->generateUrl('view_package', array('name' => $package->getName()), UrlGeneratorInterface::ABSOLUTE_URL);
 
                 $result['packages'][] = array(
                     'name' => $package->getName(),
@@ -140,7 +141,7 @@ class ExploreController extends Controller
                 if ($perPage !== 15) {
                     $params['per_page'] = $perPage;
                 }
-                $result['next'] = $this->generateUrl('browse_popular', $params, true);
+                $result['next'] = $this->generateUrl('browse_popular', $params, UrlGeneratorInterface::ABSOLUTE_URL);
             }
 
             return new JsonResponse($result);

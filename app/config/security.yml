@@ -19,7 +19,7 @@ security:
                 check_path:     /login_check
                 failure_path:   null
             remember_me:
-                key: %remember_me.secret%
+                secret: %remember_me.secret%
                 user_providers: packagist
                 name: pauth
                 always_remember_me: true
@@ -28,7 +28,7 @@ security:
             anonymous:    true
             oauth:
                 resource_owners:
-                    github: "/login/check-github"
+                    github: '/login/check-github'
                 login_path:        /login
                 failure_path:      /login
                 oauth_user_provider:

@@ -64,7 +64,7 @@ class PackageManager
                 try {
                     $this->mailer->send($message);
                 } catch (\Swift_TransportException $e) {
-                    $this->logger->err('['.get_class($e).'] '.$e->getMessage());
+                    $this->logger->error('['.get_class($e).'] '.$e->getMessage());
 
                     return false;
                 }
@@ -93,7 +93,7 @@ class PackageManager
         try {
             $this->mailer->send($message);
         } catch (\Swift_TransportException $e) {
-            $this->logger->err('['.get_class($e).'] '.$e->getMessage());
+            $this->logger->error('['.get_class($e).'] '.$e->getMessage());
 
             return false;
         }

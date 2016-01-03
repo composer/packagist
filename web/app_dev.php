@@ -2,6 +2,7 @@
 
 ini_set('date.timezone', 'UTC');
 
+use Composer\Autoload\ClassLoader;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Debug\Debug;
 
@@ -19,10 +20,11 @@ if (isset($_SERVER['HTTP_CLIENT_IP'])
     exit('You are not allowed to access this file. Check '.basename(__FILE__).' for more information.');
 }
 
-$loader = require_once __DIR__.'/../app/bootstrap.php.cache';
+/**
+ * @var ClassLoader
+ */
+$loader = require_once __DIR__.'/../app/autoload.php';
 Debug::enable();
-
-require_once __DIR__.'/../app/AppKernel.php';
 
 $kernel = new AppKernel('dev', true);
 $kernel->loadClassCache();
