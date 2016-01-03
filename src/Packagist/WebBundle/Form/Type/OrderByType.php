@@ -30,7 +30,8 @@ class OrderByType extends AbstractType
             'choices' => array(
                 'asc' => 'asc',
                 'desc' => 'desc'
-            )
+            ),
+            'choices_as_values' => true,
         ));
     }
 

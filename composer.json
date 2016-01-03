@@ -43,24 +43,22 @@
         "nelmio/solarium-bundle": "^1.0",
         "nelmio/security-bundle": "^1.0",
         "predis/predis": "^1.0",
-        "snc/redis-bundle": "dev-master",
+        "snc/redis-bundle": "^1.1",
         "white-october/pagerfanta-bundle": "^1.0",
         "zendframework/zend-feed": "^2.0",
         "zendframework/zend-servicemanager": "^2.0",
         "zendframework/zend-uri": "^2.0",
         "zendframework/zend-version": "^2.0",
         "pagerfanta/pagerfanta": "^1.0",
-        "knplabs/knp-menu-bundle": "^2.0",
-        "ezyang/htmlpurifier": "^4.6"
+        "knplabs/knp-menu-bundle": "^2.1",
+        "ezyang/htmlpurifier": "^4.6",
+
+        "knplabs/knp-menu": "^2.1.1@dev"
     },
+    "_": ["knplabs/knp-menu 2.1.1 tag needed", "fos user bundle 2.0.0 tag needed"],
     "require-dev": {
         "symfony/phpunit-bridge": "^2.7 || ^3.0"
     },
-    "conflict": {
-        "knplabs/knp-menu": "<=2.1.0"
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "scripts": {
         "post-install-cmd": [
             "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
