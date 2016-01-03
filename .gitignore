@@ -15,3 +15,4 @@ vendor/
 /.idea
 composer.phar
 /nbproject
+.php_cs.cache
