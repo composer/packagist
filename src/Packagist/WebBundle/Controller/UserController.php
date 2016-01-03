@@ -63,7 +63,7 @@ class UserController extends Controller
         $packages = $this->getUserPackages($req, $user);
 
         return $this->container->get('templating')->renderResponse(
-            'FOSUserBundle:Profile:show.html.'.$this->container->getParameter('fos_user.template.engine'),
+            'FOSUserBundle:Profile:show.html.twig',
             array(
                 'packages' => $packages,
                 'meta' => $this->getPackagesMetadata($packages),
