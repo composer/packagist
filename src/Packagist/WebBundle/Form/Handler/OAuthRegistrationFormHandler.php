@@ -60,8 +60,10 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
             $form->handleRequest($request);
 
             if ($form->isValid()) {
-                $randomPassword = $this->tokenGenerator->generateToken();
-                $user->setPlainPassword($randomPassword);
+                if (!$user->getPassword() && !$user->getPlainPassword()) {
+                    $randomPassword = $this->tokenGenerator->generateToken();
+                    $user->setPlainPassword($randomPassword);
+                }
                 $user->setEnabled(true);
 
                 $apiToken = substr($this->tokenGenerator->generateToken(), 0, 20);

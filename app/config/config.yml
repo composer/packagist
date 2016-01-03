@@ -86,6 +86,10 @@ hwi_oauth:
         account_connector: packagist.user_provider
         registration_form_handler: packagist.oauth.registration_form_handler
         registration_form: packagist.oauth.registration_form
+    fosub:
+        username_iterations: 30
+        properties:
+            github: githubId
     resource_owners:
         github:
             type:          github
