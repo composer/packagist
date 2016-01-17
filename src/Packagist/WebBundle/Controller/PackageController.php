@@ -236,7 +236,9 @@ class PackageController extends Controller
         if ($format === 'html') {
             $format = null;
         }
-
+        if ($format === 'json' || (!$format && substr($name, -5) === '.json')) {
+            throw new NotFoundHttpException('Package not found');
+        }
         if (false === strpos(trim($name, '/'), '/')) {
             return $this->redirect($this->generateUrl('view_vendor', array('vendor' => $name, '_format' => $format)));
         }
