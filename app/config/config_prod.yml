@@ -37,6 +37,8 @@ snc_redis:
 
 framework:
     session:
+    session:
+        handler_id: snc_redis.session.handler
         cookie_secure: %force_ssl%
     validation:
         cache: %validation_cache_backend%

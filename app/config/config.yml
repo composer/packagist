@@ -59,6 +59,10 @@ snc_redis:
             dsn: %redis_dsn%
             options:
                 profile: 2.8
+    session:
+        client: default
+        prefix: 'sess:'
+        ttl: 3600
 
 # Swiftmailer Configuration
 swiftmailer:
