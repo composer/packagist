@@ -5,11 +5,7 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
 if (!$loader = @include __DIR__.'/../vendor/autoload.php') {
 
     $message = <<< EOF
-<p>You must set up the project dependencies by running the following commands:</p>
-<pre>
-    curl -s http://getcomposer.org/installer | php
-    php composer.phar install
-</pre>
+<p>You must set up the project dependencies by running composer install</p>
 
 EOF;
 
