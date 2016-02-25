@@ -29,7 +29,7 @@ html, body {
 
 pre, code {
     background: #fff;
-    font-family: Consolas, "Courier New", Courier, monospace;
+    font-family: Menlo, Consolas, "Courier New", Courier, monospace;
     border-radius: 0;
     border: none;
     color: #2d2d32;
