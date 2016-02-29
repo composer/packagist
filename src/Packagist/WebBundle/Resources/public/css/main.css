@@ -991,6 +991,21 @@ ul.packages .metadata-block:last-child {
   line-height: 100%;
 }
 
+.wrapper .content .package .readme table {
+  margin: 0 0 15px;
+}
+.wrapper .content .package .readme th,
+.wrapper .content .package .readme td {
+  border: 1px solid #CCC;
+  padding: 5px 10px;
+}
+.wrapper .content .package .readme th {
+  background: #EEE;
+}
+.wrapper .content .package .readme table code {
+  font-size: 13px;
+}
+
 .package .package-aside {
   border-top: 1px solid #f28d1a;
   border-radius: 0;
