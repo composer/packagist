@@ -32,6 +32,10 @@ twig:
         - 'PackagistWebBundle::forms.html.twig'
     debug:            %kernel.debug%
     strict_variables: %kernel.debug%
+    number_format:
+        decimals: 0
+        decimal_point: '.'
+        thousands_separator: ','
     globals:
         google_analytics: %google_analytics%
         packagist_host: %packagist_host%
