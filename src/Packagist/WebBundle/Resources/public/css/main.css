@@ -29,10 +29,12 @@ html, body {
 
 pre, code {
     background: #fff;
-    font-family: Menlo, Consolas, "Courier New", Courier, monospace;
+    font-family: "Source Code Pro", Menlo, Consolas, "Courier New", Courier, monospace;
     border-radius: 0;
     border: none;
     color: #2d2d32;
+    line-height: 12px;
+    font-size: 12px;
 }
 pre {
   border-left: 2px solid #2d2d32;
