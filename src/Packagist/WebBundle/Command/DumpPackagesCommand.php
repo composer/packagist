@@ -86,8 +86,11 @@ class DumpPackagesCommand extends ContainerAwareCommand
             return;
         }
 
-        $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
-        $lock->release();
+        try {
+             $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
+        } finally {
+             $lock->release();
+        }
 
         return $result ? 0 : 1;
     }
