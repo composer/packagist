@@ -129,7 +129,13 @@
         }
 
         if (keymap.enter === event.which && currentSelected.data('url')) {
-            window.location = currentSelected.data('url');
+            var url = currentSelected.data('url');
+            if (event.ctrlKey) {
+                window.open(url);
+                return;
+            }
+
+            window.location = url;
             return;
         }
 
