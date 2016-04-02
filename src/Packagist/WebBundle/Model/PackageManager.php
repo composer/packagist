@@ -51,7 +51,7 @@ class PackageManager
                     'package' => $package,
                     'exception' => get_class($e),
                     'exceptionMessage' => $e->getMessage(),
-                    'details' => $details,
+                    'details' => strip_tags($details),
                 ));
 
                 $message = \Swift_Message::newInstance()
