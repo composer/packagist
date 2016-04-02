@@ -23,7 +23,7 @@ class AppKernel extends Kernel
             new Nelmio\SolariumBundle\NelmioSolariumBundle(),
             new Nelmio\SecurityBundle\NelmioSecurityBundle(),
             new Knp\Bundle\MenuBundle\KnpMenuBundle(),
-
+            new Nelmio\CorsBundle\NelmioCorsBundle(),
             new Packagist\WebBundle\PackagistWebBundle(),
         );
 
