@@ -106,8 +106,8 @@ v2.0.4-p1</code></pre>
         </section>
 
         <section class="col-md-6">
-            <h3>Bitbucket POST Service</h3>
-            <p>To enable the Bitbucket service hook, go to your BitBucket repository, open the settings and select "Hooks" in the menu. Pick "POST" in the list and add it to your repository. Afterwards, you have to enter the Packagist endpoint, containing both your username and API token. Enter <code>https://packagist.org/api/bitbucket?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> for the service's URL. Save your changes and you're done.</p>
+            <h3>Bitbucket Webhooks</h3>
+            <p>To enable the Bitbucket web hook, go to your BitBucket repository, open the settings and select "Webhooks" in the menu. Add a new hook. You have to enter the Packagist endpoint, containing both your username and API token. Enter <code>https://packagist.org/api/bitbucket?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> as URL. Save your changes and you're done.</p>
         </section>
 
         <div class="clearfix"></div>

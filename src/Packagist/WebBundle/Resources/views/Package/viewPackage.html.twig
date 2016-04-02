@@ -59,9 +59,9 @@
 
                     {% if not package.autoUpdated and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
                         {% if "github.com" in package.repository %}
-                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('fos_user_profile_show') }}">GitHub Service Hook</a> for Packagist so that it gets updated whenever you push!</div>
+                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">GitHub Service Hook</a> for Packagist so that it gets updated whenever you push!</div>
                         {% elseif "bitbucket.org" in package.repository %}
-                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('fos_user_profile_show') }}">BitBucket POST Service</a> for Packagist so that it gets updated whenever you push!</div>
+                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">BitBucket Webhooks</a> for Packagist so that it gets updated whenever you push!</div>
                         {% endif %}
                     {% endif %}
 
