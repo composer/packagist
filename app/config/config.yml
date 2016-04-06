@@ -116,7 +116,7 @@ nelmio_cors:
         allow_headers: ['*']
         max_age: 600
     paths:
-        '^/packages/list\.json$':
+        '^/packages/list\.json':
             allow_methods: ['GET']
         '^/search\.json$':
             allow_methods: ['GET']
