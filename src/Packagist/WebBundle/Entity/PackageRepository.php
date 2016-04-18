@@ -357,6 +357,51 @@ class PackageRepository extends EntityRepository
             ->getResult();
     }
 
+    public function getSuggestCount($name)
+    {
+        $apc = extension_loaded('apcu');
+
+        if ($apc) {
+            $count = apcu_fetch('packagist_suggesterCount_'.$name);
+        }
+
+        if (!isset($count) || !is_numeric($count)) {
+            $count = $this->getEntityManager()->getConnection()->fetchColumn(
+                "SELECT COUNT(DISTINCT v.package_id)
+                FROM package_version v
+                LEFT JOIN link_suggest s ON v.id = s.version_id AND s.packageName = :name
+                WHERE v.development AND (s.packageName IS NOT NULL)",
+                ['name' => $name]
+            );
+
+            if ($apc) {
+                apcu_store('packagist_dependentsCount_'.$name, $count, 7*86400);
+            }
+        }
+
+        return (int) $count;
+    }
+
+    public function getSuggests($name, $offset = 0, $limit = 15)
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->join('p.versions', 'v')
+            ->leftJoin('v.suggest', 's')
+            ->where('v.development = true')
+            ->andWhere('s.packageName = :name')
+            ->groupBy('p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage')
+            ->orderBy('p.name')
+            ->setParameter('name', $name);
+
+        return $qb->getQuery()
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->useResultCache(true, 7*86400, 'suggesters_'.$name.'_'.$offset.'_'.$limit)
+            ->getResult();
+    }
+
     private function addFilters(QueryBuilder $qb, array $filters)
     {
         foreach ($filters as $name => $value) {

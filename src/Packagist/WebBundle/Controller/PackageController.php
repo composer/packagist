@@ -376,6 +376,7 @@ class PackageController extends Controller
         }
 
         $data['dependents'] = $repo->getDependentCount($package->getName());
+        $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
             $data['addMaintainerForm'] = $maintainerForm->createView();
@@ -917,6 +918,36 @@ class PackageController extends Controller
 
         $data['packages'] = $paginator;
         $data['count'] = $depCount;
+
+        $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['name'] = $name;
+
+        return $data;
+    }
+
+    /**
+     * @Route(
+     *      "/packages/{name}/suggesters",
+     *      name="view_package_suggesters",
+     *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
+     * )
+     * @Template()
+     */
+    public function suggestersAction(Request $req, $name)
+    {
+        $page = $req->query->get('page', 1);
+
+        /** @var PackageRepository $repo */
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $suggestCount = $repo->getSuggestCount($name);
+        $packages = $repo->getSuggests($name, ($page - 1) * 15, 15);
+
+        $paginator = new Pagerfanta(new FixedAdapter($suggestCount, $packages));
+        $paginator->setMaxPerPage(15);
+        $paginator->setCurrentPage($page, false, true);
+
+        $data['packages'] = $paginator;
+        $data['count'] = $suggestCount;
 
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['name'] = $name;
