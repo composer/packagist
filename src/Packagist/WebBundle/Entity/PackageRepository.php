@@ -352,7 +352,7 @@ class PackageRepository extends EntityRepository
             ->where('v.development = true')
             ->andWhere('(r.packageName = :name OR dr.packageName = :name)')
             ->groupBy('p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage')
-            ->orderBy('p.abandoned')
+            ->addOrderBy('p.abandoned')
             ->addOrderBy('p.name')
             ->setParameter('name', $name);
 
