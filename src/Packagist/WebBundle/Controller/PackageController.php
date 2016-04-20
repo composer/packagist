@@ -57,9 +57,7 @@ class PackageController extends Controller
 
         $packages = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
-            ->getFilteredQueryBuilder($filters)
-            ->addOrderBy('p.id', 'DESC')
-        ;
+            ->getFilteredQueryBuilder($filters);
 
         $data['packages'] = $this->setupPager($packages, $page);
         $data['meta'] = $this->getPackagesMetadata($data['packages']);

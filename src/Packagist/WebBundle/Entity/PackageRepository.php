@@ -268,7 +268,7 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getFilteredQueryBuilder(array $filters = array())
+    public function getFilteredQueryBuilder(array $filters = array(), $orderByName = false)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
@@ -280,6 +280,11 @@ class PackageRepository extends EntityRepository
         }
 
         $qb->orderBy('p.abandoned');
+        if (true === $orderByName) {
+            $qb->addOrderBy('p.name');
+        } else {
+            $qb->addOrderBy('p.id', 'DESC');
+        }
 
         $this->addFilters($qb, $filters);
 
