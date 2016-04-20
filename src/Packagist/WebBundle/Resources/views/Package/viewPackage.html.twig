@@ -202,7 +202,7 @@
                                     {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if package.gitHubOpenIssues is not null %}
+                            {% if version.support is not null and version.support.issues is defined %}
                                 <p>
                                     <span>
                                         <a href="{{ version.support.issues }}">Open Issues</a>:
