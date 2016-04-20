@@ -279,7 +279,7 @@ class PackageRepository extends EntityRepository
             $qb->leftJoin('v.tags', 't');
         }
 
-        $qb->orderBy('p.id', 'DESC');
+        $qb->orderBy('p.abandoned');
 
         $this->addFilters($qb, $filters);
 
@@ -347,7 +347,8 @@ class PackageRepository extends EntityRepository
             ->where('v.development = true')
             ->andWhere('(r.packageName = :name OR dr.packageName = :name)')
             ->groupBy('p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage')
-            ->orderBy('p.name')
+            ->orderBy('p.abandoned')
+            ->addOrderBy('p.name')
             ->setParameter('name', $name);
 
         return $qb->getQuery()
