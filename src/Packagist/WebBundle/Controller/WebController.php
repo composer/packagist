@@ -224,10 +224,16 @@ class WebController extends Controller
                 }
             }
 
+            if ($paginator->count() === 1) {
+                $package = $paginator->getIterator()->current();
+                return $this->redirect($this->generateUrl('view_package', array('name' => $package['name'])));
+            }
+
             return $this->render('PackagistWebBundle:Web:search.html.twig', array(
                 'packages' => $paginator,
                 'meta' => $metadata,
             ));
+
         } elseif ($req->getRequestFormat() === 'json') {
             return JsonResponse::create(array(
                 'error' => 'Missing search query, example: ?q=example'
