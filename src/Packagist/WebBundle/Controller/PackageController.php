@@ -813,6 +813,8 @@ class PackageController extends Controller
             $package->setAbandoned(true);
             $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', $form->get('replacement')->getData()));
             $package->setIndexedAt(null);
+            $package->setCrawledAt(new \DateTime());
+            $package->setUpdatedAt(new \DateTime());
 
             $em = $this->getDoctrine()->getManager();
             $em->flush();
@@ -842,6 +844,8 @@ class PackageController extends Controller
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
         $package->setIndexedAt(null);
+        $package->setCrawledAt(new \DateTime());
+        $package->setUpdatedAt(new \DateTime());
 
         $em = $this->getDoctrine()->getManager();
         $em->flush();
