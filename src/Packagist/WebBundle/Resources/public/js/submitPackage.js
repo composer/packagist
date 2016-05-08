@@ -8,7 +8,7 @@
             $('#submit').removeClass('loading');
             if (data.status === 'error') {
                 $.each(data.reason, function (k, v) {
-                    html += '<li><div class="alert alert-warning">'+v+'</div></li>';
+                    html += '<li><div class="alert alert-warning">'+$('<div/>').text(v).html()+'</div></li>';
                 });
                 $('#submit-package-form').prepend('<ul class="list-unstyled package-errors">'+html+'</ul>');
             } else {
