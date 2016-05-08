@@ -13,6 +13,7 @@ monolog:
             type:         fingers_crossed
             action_level: error
             handler:      nested
+            channels: [!event]
             excluded_404s:
                 - ^/
         nested:
