@@ -16,6 +16,7 @@ use Composer\Package\AliasPackage;
 use Composer\Package\PackageInterface;
 use Composer\Repository\RepositoryInterface;
 use Composer\Repository\VcsRepository;
+use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Util\ErrorHandler;
 use Composer\Util\RemoteFilesystem;
@@ -102,12 +103,22 @@ class Updater
         $pruneDate->modify('-1min');
 
         $em = $this->doctrine->getManager();
+        $apc = extension_loaded('apcu');
 
         if ($repository instanceof VcsRepository) {
             $cfg = $repository->getRepoConfig();
             if (isset($cfg['url']) && preg_match('{\bgithub\.com\b}', $cfg['url'])) {
                 foreach ($package->getMaintainers() as $maintainer) {
-                    if ($newGithubToken = $maintainer->getGithubToken()) {
+                    if (!($newGithubToken = $maintainer->getGithubToken())) {
+                        continue;
+                    }
+
+                    $valid = null;
+                    if ($apc) {
+                        $valid = apcu_fetch('is_token_valid_'.$maintainer->getUsernameCanonical());
+                    }
+
+                    if (true !== $valid) {
                         $context = stream_context_create(['http' => ['header' => 'User-agent: packagist-token-check']]);
                         $rate = json_decode(@file_get_contents('https://api.github.com/rate_limit?access_token='.$newGithubToken, false, $context), true);
                         // invalid/outdated token, wipe it so we don't try it again
@@ -116,14 +127,14 @@ class Updater
                             $em->flush($maintainer);
                             continue;
                         }
-                        // not enough limit left
-                        if (is_array($rate) && $rate['resources']['core']['remaining'] < 100) {
-                            continue;
-                        }
-
-                        $io->setAuthentication('github.com', $newGithubToken, 'x-oauth-basic');
-                        break;
                     }
+
+                    if ($apc) {
+                        apcu_store('is_token_valid_'.$maintainer->getUsernameCanonical(), true, 86400);
+                    }
+
+                    $io->setAuthentication('github.com', $newGithubToken, 'x-oauth-basic');
+                    break;
                 }
             }
         }
@@ -194,8 +205,8 @@ class Updater
             }
         }
 
-        if (preg_match('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
-            $this->updateGitHubInfo($rfs, $package, $match[1], $match[2]);
+        if (preg_match('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match) && $repository instanceof VcsRepository) {
+            $this->updateGitHubInfo($rfs, $package, $match[1], $match[2], $repository);
         }
 
         $package->setUpdatedAt(new \DateTime);
@@ -419,15 +430,16 @@ class Updater
         return true;
     }
 
-    private function updateGitHubInfo(RemoteFilesystem $rfs, Package $package, $owner, $repo)
+    private function updateGitHubInfo(RemoteFilesystem $rfs, Package $package, $owner, $repo, VcsRepository $repository)
     {
         $baseApiUrl = 'https://api.github.com/repos/'.$owner.'/'.$repo;
 
-        try {
-            $repoData = JsonFile::parseJson($rfs->getContents('github.com', $baseApiUrl, false), $baseApiUrl);
-        } catch (\Exception $e) {
+        $driver = $repository->getDriver();
+        if (!$driver instanceof GitHubDriver) {
             return;
         }
+
+        $repoData = $driver->getRepoData();
 
         try {
             $opts = ['http' => ['header' => ['Accept: application/vnd.github.v3.html']]];
