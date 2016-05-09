@@ -68,12 +68,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "36e283be680c1e012f0ce819efc1c7bc32a00c7a"
+                "reference": "0040498e2516c6ea020b03ce94a5620b63b1f8db"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/36e283be680c1e012f0ce819efc1c7bc32a00c7a",
-                "reference": "36e283be680c1e012f0ce819efc1c7bc32a00c7a",
+                "url": "https://api.github.com/repos/composer/composer/zipball/0040498e2516c6ea020b03ce94a5620b63b1f8db",
+                "reference": "0040498e2516c6ea020b03ce94a5620b63b1f8db",
                 "shasum": ""
             },
             "require": {
@@ -137,7 +137,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2016-05-08 17:23:21"
+            "time": "2016-05-09 09:31:09"
         },
         {
             "name": "composer/semver",

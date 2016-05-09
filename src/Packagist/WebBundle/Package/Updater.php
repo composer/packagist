@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\Package;
 use Composer\Package\AliasPackage;
 use Composer\Package\PackageInterface;
 use Composer\Repository\RepositoryInterface;
+use Composer\Repository\VcsRepository;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Util\ErrorHandler;
 use Composer\Util\RemoteFilesystem;
@@ -100,8 +101,34 @@ class Updater
         $pruneDate = clone $start;
         $pruneDate->modify('-1min');
 
-        $versions = $repository->getPackages();
         $em = $this->doctrine->getManager();
+
+        if ($repository instanceof VcsRepository) {
+            $cfg = $repository->getRepoConfig();
+            if (isset($cfg['url']) && preg_match('{\bgithub\.com\b}', $cfg['url'])) {
+                foreach ($package->getMaintainers() as $maintainer) {
+                    if ($newGithubToken = $maintainer->getGithubToken()) {
+                        $context = stream_context_create(['http' => ['header' => 'User-agent: packagist-token-check']]);
+                        $rate = json_decode(@file_get_contents('https://api.github.com/rate_limit?access_token='.$newGithubToken, false, $context), true);
+                        // invalid/outdated token, wipe it so we don't try it again
+                        if (!$rate && (strpos($http_response_header[0], '403') || strpos($http_response_header[0], '401'))) {
+                            $maintainer->setGithubToken(null);
+                            $em->flush($maintainer);
+                            continue;
+                        }
+                        // not enough limit left
+                        if (is_array($rate) && $rate['resources']['core']['remaining'] < 100) {
+                            continue;
+                        }
+
+                        $io->setAuthentication('github.com', $newGithubToken, 'x-oauth-basic');
+                        break;
+                    }
+                }
+            }
+        }
+
+        $versions = $repository->getPackages();
 
         usort($versions, function ($a, $b) {
             $aVersion = $a->getVersion();

@@ -96,6 +96,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new BufferIO('');
         $io->loadConfiguration($config);
         $loader = new ValidatingArrayLoader(new ArrayLoader());
+        $auths = $io->getAuthentications();
 
         while ($ids) {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($ids, 0, 50));
@@ -108,6 +109,10 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                     if (null === $io || $io instanceof BufferIO) {
                         $io = new BufferIO('');
                         $io->loadConfiguration($config);
+                    } else {
+                        foreach ($auths as $domain => $auth) {
+                            $io->setAuthentication($domain, $auth['username'], $auth['password']);
+                        }
                     }
                     $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
                     $repository->setLoader($loader);
