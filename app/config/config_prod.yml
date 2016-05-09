@@ -4,8 +4,17 @@ imports:
 doctrine:
     orm:
         metadata_cache_driver: %doctrine_cache_backend%
-        result_cache_driver: %doctrine_cache_backend%
+        result_cache_driver:
+            type: predis
+            cache_provider: predis
         query_cache_driver: %doctrine_cache_backend%
+
+doctrine_cache:
+    providers:
+        predis:
+            type: predis
+            predis:
+                client_id: snc_redis.session.client
 
 monolog:
     handlers:

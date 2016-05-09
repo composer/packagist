@@ -312,28 +312,17 @@ class PackageRepository extends EntityRepository
 
     public function getDependentCount($name)
     {
-        $apc = extension_loaded('apcu');
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('COUNT(DISTINCT v.package)')
+            ->from('Packagist\WebBundle\Entity\Version', 'v')
+            ->leftJoin('v.require', 'r', 'WITH', 'r.packageName = :name')
+            ->leftJoin('v.devRequire', 'rd', 'WITH', 'rd.packageName = :name')
+            ->where('v.development = true AND (r.packageName IS NOT NULL OR rd.packageName IS NOT NULL)')
+            ->setParameter('name', $name);
 
-        if ($apc) {
-            $count = apcu_fetch('packagist_dependentsCount_'.$name);
-        }
-
-        if (!isset($count) || !is_numeric($count)) {
-            $count = $this->getEntityManager()->getConnection()->fetchColumn(
-                "SELECT COUNT(DISTINCT v.package_id)
-                FROM package_version v
-                LEFT JOIN link_require r ON v.id = r.version_id AND r.packageName = :name
-                LEFT JOIN link_require_dev rd ON v.id = rd.version_id AND rd.packageName = :name
-                WHERE v.development AND (r.packageName IS NOT NULL OR rd.packageName IS NOT NULL)",
-                ['name' => $name]
-            );
-
-            if ($apc) {
-                apcu_store('packagist_dependentsCount_'.$name, $count, 7*86400);
-            }
-        }
-
-        return (int) $count;
+        return (int) $qb->getQuery()
+            ->useResultCache(true, 7*86400, 'dependentsCount_'.$name)
+            ->getSingleScalarResult();
     }
 
     public function getDependents($name, $offset = 0, $limit = 15)
@@ -359,27 +348,16 @@ class PackageRepository extends EntityRepository
 
     public function getSuggestCount($name)
     {
-        $apc = extension_loaded('apcu');
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('COUNT(DISTINCT v.package)')
+            ->from('Packagist\WebBundle\Entity\Version', 'v')
+            ->leftJoin('v.suggest', 's', 'WITH', 's.packageName = :name')
+            ->where('v.development = true AND s.packageName IS NOT NULL')
+            ->setParameter('name', $name);
 
-        if ($apc) {
-            $count = apcu_fetch('packagist_suggesterCount_'.$name);
-        }
-
-        if (!isset($count) || !is_numeric($count)) {
-            $count = $this->getEntityManager()->getConnection()->fetchColumn(
-                "SELECT COUNT(DISTINCT v.package_id)
-                FROM package_version v
-                LEFT JOIN link_suggest s ON v.id = s.version_id AND s.packageName = :name
-                WHERE v.development AND (s.packageName IS NOT NULL)",
-                ['name' => $name]
-            );
-
-            if ($apc) {
-                apcu_store('packagist_dependentsCount_'.$name, $count, 7*86400);
-            }
-        }
-
-        return (int) $count;
+        return (int) $qb->getQuery()
+            ->useResultCache(true, 7*86400, 'suggesterCount_'.$name)
+            ->getSingleScalarResult();
     }
 
     public function getSuggests($name, $offset = 0, $limit = 15)
