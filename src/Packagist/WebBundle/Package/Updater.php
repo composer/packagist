@@ -211,7 +211,7 @@ class Updater
 
         $package->setUpdatedAt(new \DateTime);
         $package->setCrawledAt(new \DateTime);
-        $em->flush();
+        $em->flush($package);
         if ($repository->hadInvalidBranches()) {
             throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
         }
@@ -344,7 +344,10 @@ class Updater
                     }
                 }
 
-                $author->setUpdatedAt(new \DateTime);
+                // only update the author timestamp once a month at most as the value is kinda unused
+                if ($author->getUpdatedAt() === null || $author->getUpdatedAt()->getTimestamp() < time() - 86400 * 30) {
+                    $author->setUpdatedAt(new \DateTime);
+                }
                 if (!$version->getAuthors()->contains($author)) {
                     $version->addAuthor($author);
                 }
