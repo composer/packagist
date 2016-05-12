@@ -39,7 +39,7 @@ class ExploreController extends Controller
         /** @var PackageRepository $pkgRepo */
         $pkgRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
         /** @var VersionRepository $verRepo */
-        $verRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $verRepo = $this->get('packagist.version_repository');
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
             ->getQuery()->useResultCache(true, 900, 'new_submitted_packages')->getResult();
         $newReleases = $verRepo->getLatestReleases(10);

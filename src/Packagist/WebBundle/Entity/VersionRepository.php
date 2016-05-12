@@ -13,12 +13,15 @@
 namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\EntityRepository;
+use Predis\Client;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class VersionRepository extends EntityRepository
 {
+    private $redis;
+
     protected $supportedLinkTypes = array(
         'require',
         'conflict',
@@ -27,6 +30,11 @@ class VersionRepository extends EntityRepository
         'devRequire',
         'suggest',
     );
+
+    public function setRedis(Client $client)
+    {
+        $this->redis = $client;
+    }
 
     public function remove(Version $version)
     {
@@ -93,8 +101,12 @@ class VersionRepository extends EntityRepository
 
     public function getLatestReleases($count = 10)
     {
+        if ($cached = $this->redis->get('new_releases')) {
+            return json_decode($cached, true);
+        }
+
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('v')
+        $qb->select('v.name, v.version, v.description')
             ->from('Packagist\WebBundle\Entity\Version', 'v')
             ->where('v.development = false')
             ->andWhere('v.releasedAt < :now')
@@ -102,6 +114,9 @@ class VersionRepository extends EntityRepository
             ->setMaxResults($count)
             ->setParameter('now', date('Y-m-d H:i:s'));
 
-        return $qb->getQuery()->useResultCache(true, 900, 'new_releases')->getResult();
+        $res = $qb->getQuery()->getResult();
+        $this->redis->setex('new_releases', 600, json_encode($res));
+
+        return $res;
     }
 }

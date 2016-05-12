@@ -40,6 +40,13 @@ services:
         factory: ['@doctrine', getRepository]
         arguments: ['PackagistWebBundle:Package']
 
+    packagist.version_repository:
+        class: Packagist\WebBundle\Entity\VersionRepository
+        factory: ['@doctrine', getRepository]
+        arguments: ['PackagistWebBundle:Version']
+        calls:
+            - [ setRedis, [ '@snc_redis.cache_client' ]]
+
     packagist.package_updater:
         class: Packagist\WebBundle\Package\Updater
         arguments: ['@doctrine']

@@ -59,8 +59,14 @@ snc_redis:
             dsn: %redis_dsn%
             options:
                 profile: 2.8
+        session:
+            type: predis
+            alias: cache
+            dsn: %redis_dsn%
+            options:
+                profile: 2.8
     session:
-        client: default
+        client: cache
         prefix: 'sess:'
         ttl: 3600
 
