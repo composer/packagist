@@ -272,7 +272,7 @@ class ApiController extends Controller
 
                     // update the package entity
                     $package->setAutoUpdated(true);
-                    $em->flush();
+                    $em->flush($package);
                 });
             }
         } catch (\Exception $e) {

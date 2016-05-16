@@ -178,7 +178,7 @@ class Updater
             $em->refresh($package);
         }
 
-        $lastUpdated = true;
+        $toFlush = [$package];
         foreach ($versions as $version) {
             if ($version instanceof AliasPackage) {
                 continue;
@@ -188,20 +188,14 @@ class Updater
                 continue;
             }
 
-            $lastUpdated = $this->updateInformation($package, $version, $flags);
-            if ($lastUpdated) {
-                $em->flush();
-            }
-        }
-
-        if (!$lastUpdated) {
-            $em->flush();
+            $toFlush = $this->updateInformation($package, $version, $flags, $toFlush);
         }
 
         // remove outdated versions
         foreach ($package->getVersions() as $version) {
             if ($version->getUpdatedAt() < $pruneDate) {
                 $versionRepository->remove($version);
+                $toFlush[] = $version;
             }
         }
 
@@ -211,13 +205,13 @@ class Updater
 
         $package->setUpdatedAt(new \DateTime);
         $package->setCrawledAt(new \DateTime);
-        $em->flush($package);
+        $em->flush($toFlush);
         if ($repository->hadInvalidBranches()) {
             throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
         }
     }
 
-    private function updateInformation(Package $package, PackageInterface $data, $flags)
+    private function updateInformation(Package $package, PackageInterface $data, $flags, array $toFlush)
     {
         $em = $this->doctrine->getManager();
         $version = new Version();
@@ -234,7 +228,7 @@ class Updater
                 // mark it updated to avoid it being pruned
                 $existingVersion->setUpdatedAt(new \DateTime);
 
-                return false;
+                return $toFlush;
             }
         }
 
@@ -244,6 +238,7 @@ class Updater
         $version->setDevelopment($data->isDev());
 
         $em->persist($version);
+        $toFlush[] = $version;
 
         $descr = $this->sanitize($data->getDescription());
         $version->setDescription($descr);
@@ -289,18 +284,37 @@ class Updater
         $version->setIncludePaths($data->getIncludePaths());
         $version->setSupport($data->getSupport());
 
-        $version->getTags()->clear();
         if ($data->getKeywords()) {
             $keywords = array();
             foreach ($data->getKeywords() as $keyword) {
                 $keywords[mb_strtolower($keyword, 'UTF-8')] = $keyword;
             }
-            foreach ($keywords as $keyword) {
+
+            $existingTags = [];
+            foreach ($version->getTags() as $tag) {
+                $existingTags[mb_strtolower($tag->getName(), 'UTF-8')] = $tag;
+            }
+
+            foreach ($keywords as $tagKey => $keyword) {
+                if (isset($existingTags[$tagKey])) {
+                    unset($existingTags[$tagKey]);
+                    continue;
+                }
+
                 $tag = Tag::getByName($em, $keyword, true);
+                if (!$tag->getId()) {
+                    $toFlush[] = $tag;
+                }
                 if (!$version->getTags()->contains($tag)) {
                     $version->addTag($tag);
                 }
             }
+
+            foreach ($existingTags as $tag) {
+                $version->getTags()->remove($tag);
+            }
+        } elseif (count($version->getTags())) {
+            $version->getTags()->clear();
         }
 
         $authorRepository = $this->doctrine->getRepository('PackagistWebBundle:Author');
@@ -354,6 +368,7 @@ class Updater
                 if (!$author->getVersions()->contains($version)) {
                     $author->addVersion($version);
                 }
+                $toFlush[] = $author;
             }
         }
 
@@ -380,6 +395,7 @@ class Updater
                 if (!isset($links[$link->getPackageName()]) || $links[$link->getPackageName()] !== $link->getPackageVersion()) {
                     $version->{'get'.$linkType}()->removeElement($link);
                     $em->remove($link);
+                    $toFlush[] = $link;
                 } else {
                     // clear those that are already set
                     unset($links[$link->getPackageName()]);
@@ -394,6 +410,7 @@ class Updater
                 $version->{'add'.$linkType.'Link'}($link);
                 $link->setVersion($version);
                 $em->persist($link);
+                $toFlush[] = $link;
             }
         }
 
@@ -404,6 +421,7 @@ class Updater
                 if (!isset($suggests[$link->getPackageName()]) || $suggests[$link->getPackageName()] !== $link->getPackageVersion()) {
                     $version->getSuggest()->removeElement($link);
                     $em->remove($link);
+                    $toFlush[] = $link;
                 } else {
                     // clear those that are already set
                     unset($suggests[$link->getPackageName()]);
@@ -417,11 +435,13 @@ class Updater
                 $version->addSuggestLink($link);
                 $link->setVersion($version);
                 $em->persist($link);
+                $toFlush[] = $link;
             }
         } elseif (count($version->getSuggest())) {
             // clear existing suggests if present
             foreach ($version->getSuggest() as $link) {
                 $em->remove($link);
+                $toFlush[] = $link;
             }
             $version->getSuggest()->clear();
         }
@@ -430,7 +450,7 @@ class Updater
             $package->addVersions($version);
         }
 
-        return true;
+        return $toFlush;
     }
 
     private function updateGitHubInfo(RemoteFilesystem $rfs, Package $package, $owner, $repo, VcsRepository $repository)
