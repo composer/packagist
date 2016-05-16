@@ -59,7 +59,7 @@ snc_redis:
             dsn: %redis_dsn%
             options:
                 profile: 2.8
-        session:
+        cache:
             type: predis
             alias: cache
             dsn: %redis_dsn%

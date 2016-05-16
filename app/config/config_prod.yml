@@ -14,7 +14,7 @@ doctrine_cache:
         predis:
             type: predis
             predis:
-                client_id: snc_redis.cache.client
+                client_id: snc_redis.cache_client
 
 monolog:
     handlers:
@@ -38,7 +38,7 @@ snc_redis:
             dsn: %redis_dsn%
             options:
                 profile: 2.8
-        session:
+        cache:
             type: predis
             alias: cache
             dsn: %redis_session_dsn%
@@ -50,7 +50,7 @@ snc_redis:
 
 framework:
     session:
-        handler_id: snc_redis.cache.handler
+        handler_id: snc_redis.session.handler
         cookie_secure: %force_ssl%
     validation:
         cache: %validation_cache_backend%
