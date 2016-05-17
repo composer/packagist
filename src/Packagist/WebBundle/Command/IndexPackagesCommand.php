@@ -162,6 +162,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                         $document = $update->createDocument();
                         $document->setField('id', $provided);
                         $document->setField('name', $provided);
+                        $document->setField('package_name', '');
                         $document->setField('description', '');
                         $document->setField('type', 'virtual-package');
                         $document->setField('trendiness', 100);
@@ -224,6 +225,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
     ) {
         $document->setField('id', $package->getId());
         $document->setField('name', $package->getName());
+        $document->setField('package_name', $package->getPackageName());
         $document->setField('description', preg_replace('{[\x00-\x1f]+}u', '', $package->getDescription()));
         $document->setField('type', $package->getType());
         $document->setField('trendiness', $redis->zscore('downloads:trending', $package->getId()));

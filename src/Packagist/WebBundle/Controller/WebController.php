@@ -85,7 +85,7 @@ class WebController extends Controller
 
             // configure dismax
             $dismax = $select->getDisMax();
-            $dismax->setQueryFields(array('name^4', 'description', 'tags', 'text', 'text_ngram', 'name_split^2'));
+            $dismax->setQueryFields(array('name^4', 'package_name^4', 'description', 'tags', 'text', 'text_ngram', 'name_split^2'));
             $dismax->setPhraseFields(array('description'));
             $dismax->setBoostFunctions(array('log(trendiness)^10'));
             $dismax->setMinimumMatch(1);

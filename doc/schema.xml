@@ -250,6 +250,8 @@
 
    <!-- extra name field allowing dashes to be omitted/misplaced -->
    <field name="name_split" type="text_en_splitting_tight" indexed="true" stored="false" />
+   <!-- extra name field allowing dashes to be omitted/misplaced and containing no vendor prefix -->
+   <field name="package_name" type="text_en_splitting_tight" indexed="true" stored="false" />
 
    <!-- extra catchall for ngram searches -->
    <field name="text_ngram" type="text_edgengram" indexed="true" stored="false" multiValued="true" />
