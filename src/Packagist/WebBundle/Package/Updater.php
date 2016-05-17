@@ -179,6 +179,7 @@ class Updater
         }
 
         $lastUpdated = true;
+        $lastProcessed = null;
         foreach ($versions as $version) {
             if ($version instanceof AliasPackage) {
                 continue;
@@ -187,6 +188,12 @@ class Updater
             if (preg_match($blacklist, $version->getName().' '.$version->getPrettyVersion())) {
                 continue;
             }
+
+            if ($lastProcessed && $lastProcessed->getVersion() === $version->getVersion()) {
+                $io->write('Skipping version '.$version->getPrettyVersion().' (duplicate of '.$lastProcessed->getPrettyVersion().')', true, IOInterface::VERBOSE);
+                continue;
+            }
+            $lastProcessed = $version;
 
             $lastUpdated = $this->updateInformation($package, $version, $flags);
             if ($lastUpdated) {
