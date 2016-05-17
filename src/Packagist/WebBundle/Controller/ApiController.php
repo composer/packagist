@@ -280,6 +280,8 @@ class ApiController extends Controller
                 $this->get('packagist.package_manager')->notifyUpdateFailure($package, $e, $io->getOutput());
             }
 
+            $this->get('logger')->error('Failed update of '.$package->getName(), ['exception' => $e]);
+
             return new Response(json_encode(array(
                 'status' => 'error',
                 'message' => '['.get_class($e).'] '.$e->getMessage(),

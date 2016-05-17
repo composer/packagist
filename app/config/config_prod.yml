@@ -22,13 +22,14 @@ monolog:
             type:         fingers_crossed
             action_level: error
             handler:      nested
-            channels: [!event]
+            channels: ['!event']
             excluded_404s:
                 - ^/
         nested:
             type:  stream
             path:  %kernel.logs_dir%/%kernel.environment%.log
             level: debug
+            include_stacktraces: true
 
 snc_redis:
     clients:
