@@ -223,7 +223,7 @@ class Package
                     ->addViolation()
                 ;
             } elseif (is_string($this->vcsDriverError)) {
-                $context->buildViolation('Uncaught Exception: '.$this->vcsDriverError)
+                $context->buildViolation('Uncaught Exception: '.htmlentities($this->vcsDriverError, ENT_COMPAT, 'utf-8'))
                     ->atPath($property)
                     ->addViolation()
                 ;
@@ -255,7 +255,7 @@ class Package
             }
 
             if (!preg_match('{^[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*$}i', $information['name'])) {
-                $context->buildViolation('The package name '.$information['name'].' is invalid, it should have a vendor name, a forward slash, and a package name. The vendor and package name can be words separated by -, . or _. The complete name should match "[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*".')
+                $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is invalid, it should have a vendor name, a forward slash, and a package name. The vendor and package name can be words separated by -, . or _. The complete name should match "[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*".')
                     ->atPath($property)
                     ->addViolation()
                 ;
@@ -263,7 +263,7 @@ class Package
             }
 
             if (preg_match('{\.json$}', $information['name'])) {
-                $context->buildViolation('The package name '.$information['name'].' is invalid, package names can not end in .json, consider renaming it or perhaps using a -json suffix instead.')
+                $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is invalid, package names can not end in .json, consider renaming it or perhaps using a -json suffix instead.')
                     ->atPath($property)
                     ->addViolation()
                 ;
@@ -274,14 +274,14 @@ class Package
                 $suggestName = preg_replace('{(?:([a-z])([A-Z])|([A-Z])([A-Z][a-z]))}', '\\1\\3-\\2\\4', $information['name']);
                 $suggestName = strtolower($suggestName);
 
-                $context->buildViolation('The package name '.$information['name'].' is invalid, it should not contain uppercase characters. We suggest using '.$suggestName.' instead.')
+                $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is invalid, it should not contain uppercase characters. We suggest using '.$suggestName.' instead.')
                     ->atPath($property)
                     ->addViolation()
                 ;
                 return;
             }
         } catch (\Exception $e) {
-            $context->buildViolation('We had problems parsing your composer.json file, the parser reports: '.$e->getMessage())
+            $context->buildViolation('We had problems parsing your composer.json file, the parser reports: '.htmlentities($e->getMessage(), ENT_COMPAT, 'utf-8'))
                 ->atPath($property)
                 ->addViolation()
             ;
