@@ -320,7 +320,7 @@ class Updater
             }
 
             foreach ($existingTags as $tag) {
-                $version->getTags()->remove($tag);
+                $version->getTags()->removeElement($tag);
             }
         } elseif (count($version->getTags())) {
             $version->getTags()->clear();
