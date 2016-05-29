@@ -299,6 +299,8 @@ class PackageController extends Controller
      */
     public function viewPackageAction(Request $req, $name)
     {
+        $req->getSession()->save();
+
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
 
@@ -460,8 +462,10 @@ class PackageController extends Controller
      * )
      * @Method({"GET"})
      */
-    public function viewPackageVersionAction($versionId)
+    public function viewPackageVersionAction(Request $req, $versionId)
     {
+        $req->getSession()->save();
+
         /** @var VersionRepository $repo  */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
 

@@ -37,7 +37,7 @@ class AbandonedType extends AbstractType
             array(
                 'required' => false,
                 'label'    => 'Replacement package',
-                'attr'     => array('placeholder' => 'optional')
+                'attr'     => array('placeholder' => 'optional package name')
             )
         );
     }

@@ -55,7 +55,7 @@
         "ezyang/htmlpurifier": "^4.6",
         "nelmio/cors-bundle": "^1.4"
     },
-    "_": ["fos user bundle 2.0.0 tag needed"],
+    "_comment": ["fos user bundle 2.0.0 tag needed"],
     "require-dev": {
         "symfony/phpunit-bridge": "^2.7 || ^3.0",
         "phpunit/phpunit": "^5.0"
