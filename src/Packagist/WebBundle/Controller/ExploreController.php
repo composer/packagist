@@ -41,7 +41,7 @@ class ExploreController extends Controller
         /** @var VersionRepository $verRepo */
         $verRepo = $this->get('packagist.version_repository');
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
-            ->getQuery()->useResultCache(true, 900, 'new_submitted_packages')->getResult();
+            ->getQuery()->useResultCache(true, 900)->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
         $randomIds = $this->getDoctrine()->getConnection()->fetchAll('SELECT id FROM package ORDER BY RAND() LIMIT 10');
         $random = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $randomIds)->getQuery()->getResult();
@@ -50,7 +50,7 @@ class ExploreController extends Controller
             $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);
             if ($popularIds) {
                 $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
-                    ->getQuery()->useResultCache(true, 900, 'popular_packages')->getResult();
+                    ->getQuery()->useResultCache(true, 900)->getResult();
                 usort($popular, function ($a, $b) use ($popularIds) {
                     return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
                 });

@@ -321,7 +321,7 @@ class PackageRepository extends EntityRepository
             ->setParameter('name', $name);
 
         return (int) $qb->getQuery()
-            ->useResultCache(true, 7*86400, 'dependentsCount_'.$name)
+            ->useResultCache(true, 7*86400)
             ->getSingleScalarResult();
     }
 
@@ -356,7 +356,7 @@ class PackageRepository extends EntityRepository
             ->setParameter('name', $name);
 
         return (int) $qb->getQuery()
-            ->useResultCache(true, 7*86400, 'suggesterCount_'.$name)
+            ->useResultCache(true, 7*86400)
             ->getSingleScalarResult();
     }
 
