@@ -97,7 +97,7 @@ class ExploreController extends Controller
             );
             $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
                 ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
-                ->getQuery()->useResultCache(true, 900, 'popular_packages')->getResult();
+                ->getQuery()->useResultCache(true, 900)->getResult();
             usort($popular, function ($a, $b) use ($popularIds) {
                 return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
             });
