@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "754c9f8d1daa9e19b39e07018e464aef",
+    "hash": "ee42dc90894ab27f4cdf0fefd4916f93",
     "content-hash": "23cf95e5c2c0bc833dded981471a86a1",
     "packages": [
         {
@@ -68,19 +68,19 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "43f9d6389d1ecb326d39376a0e8cdcf5a896cfc6"
+                "reference": "02628acf26870f2fdc8d97259912a25654d2deff"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/43f9d6389d1ecb326d39376a0e8cdcf5a896cfc6",
-                "reference": "43f9d6389d1ecb326d39376a0e8cdcf5a896cfc6",
+                "url": "https://api.github.com/repos/composer/composer/zipball/02628acf26870f2fdc8d97259912a25654d2deff",
+                "reference": "02628acf26870f2fdc8d97259912a25654d2deff",
                 "shasum": ""
             },
             "require": {
                 "composer/ca-bundle": "^1.0",
                 "composer/semver": "^1.0",
                 "composer/spdx-licenses": "^1.0",
-                "justinrainbow/json-schema": "^1.6",
+                "justinrainbow/json-schema": "^1.6 || ^2.0",
                 "php": "^5.3.2 || ^7.0",
                 "psr/log": "^1.0",
                 "seld/cli-prompt": "^1.0",
@@ -93,7 +93,7 @@
             },
             "require-dev": {
                 "phpunit/phpunit": "^4.5 || ^5.0.5",
-                "phpunit/phpunit-mock-objects": "2.3.0 || ^3.0"
+                "phpunit/phpunit-mock-objects": "^2.3 || ^3.0"
             },
             "suggest": {
                 "ext-openssl": "Enabling the openssl extension allows you to access https URLs for repositories and packages",
@@ -137,20 +137,20 @@
                 "dependency",
                 "package"
             ],
-            "time": "2016-05-10 14:22:15"
+            "time": "2016-06-02 09:22:15"
         },
         {
             "name": "composer/semver",
-            "version": "1.4.0",
+            "version": "1.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/semver.git",
-                "reference": "84c47f3d8901440403217afc120683c7385aecb8"
+                "reference": "03c9de5aa25e7672c4ad251eeaba0c47a06c8b98"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/semver/zipball/84c47f3d8901440403217afc120683c7385aecb8",
-                "reference": "84c47f3d8901440403217afc120683c7385aecb8",
+                "url": "https://api.github.com/repos/composer/semver/zipball/03c9de5aa25e7672c4ad251eeaba0c47a06c8b98",
+                "reference": "03c9de5aa25e7672c4ad251eeaba0c47a06c8b98",
                 "shasum": ""
             },
             "require": {
@@ -199,7 +199,7 @@
                 "validation",
                 "versioning"
             ],
-            "time": "2016-03-30 13:16:03"
+            "time": "2016-06-02 09:04:51"
         },
         {
             "name": "composer/spdx-licenses",
