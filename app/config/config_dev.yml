@@ -1,6 +1,10 @@
 imports:
     - { resource: config.yml }
 
+doctrine:
+    orm:
+        result_cache_driver: array
+
 framework:
     router:   { resource: '%kernel.root_dir%/config/routing_dev.yml' }
     profiler: { only_exceptions: false }

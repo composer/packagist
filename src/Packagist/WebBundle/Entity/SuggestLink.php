@@ -16,7 +16,10 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="link_suggest")
+ * @ORM\Table(name="link_suggest", indexes={
+ *     @ORM\Index(name="link_suggest_package_name_idx",columns={"version_id", "packageName"}),
+ *     @ORM\Index(name="link_suggest_name_idx",columns={"packageName"})
+ * })
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class SuggestLink extends PackageLink

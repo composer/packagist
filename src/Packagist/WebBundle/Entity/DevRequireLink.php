@@ -17,7 +17,8 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity
  * @ORM\Table(name="link_require_dev", indexes={
- *     @ORM\Index(name="link_require_dev_package_name_idx",columns={"version_id", "packageName"})
+ *     @ORM\Index(name="link_require_dev_package_name_idx",columns={"version_id", "packageName"}),
+ *     @ORM\Index(name="link_require_dev_name_idx",columns={"packageName"})
  * })
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */

@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\DBAL\Cache\QueryCacheProfile;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -312,72 +313,78 @@ class PackageRepository extends EntityRepository
 
     public function getDependentCount($name)
     {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('COUNT(DISTINCT v.package)')
-            ->from('Packagist\WebBundle\Entity\Version', 'v')
-            ->leftJoin('v.require', 'r', 'WITH', 'r.packageName = :name')
-            ->leftJoin('v.devRequire', 'rd', 'WITH', 'rd.packageName = :name')
-            ->where('v.development = true AND (r.packageName IS NOT NULL OR rd.packageName IS NOT NULL)')
-            ->setParameter('name', $name);
+        $sql = 'SELECT COUNT(*) count FROM (
+                SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
+                UNION
+                SELECT pv.package_id FROM link_require_dev r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
+            ) x';
 
-        return (int) $qb->getQuery()
-            ->useResultCache(true, 7*86400)
-            ->getSingleScalarResult();
+        $stmt = $this->getEntityManager()->getConnection()
+            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'dependents_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return (int) $result[0]['count'];
     }
 
     public function getDependents($name, $offset = 0, $limit = 15)
     {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->join('p.versions', 'v')
-            ->leftJoin('v.devRequire', 'dr')
-            ->leftJoin('v.require', 'r')
-            ->where('v.development = true')
-            ->andWhere('(r.packageName = :name OR dr.packageName = :name)')
-            ->groupBy('p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage')
-            ->orderBy('p.name')
-            ->setParameter('name', $name);
+        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+            FROM package p INNER JOIN (
+                SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
+                UNION
+                SELECT pv.package_id FROM link_require_dev r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
+            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
 
-        return $qb->getQuery()
-            ->setMaxResults($limit)
-            ->setFirstResult($offset)
-            ->useResultCache(true, 7*86400, 'dependents_'.$name.'_'.$offset.'_'.$limit)
-            ->getResult();
+        $stmt = $this->getEntityManager()->getConnection()
+            ->executeCacheQuery(
+                $sql,
+                ['name' => $name],
+                [],
+                new QueryCacheProfile(7*86400, 'dependents_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+            );
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return $result;
     }
 
     public function getSuggestCount($name)
     {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('COUNT(DISTINCT v.package)')
-            ->from('Packagist\WebBundle\Entity\Version', 'v')
-            ->leftJoin('v.suggest', 's', 'WITH', 's.packageName = :name')
-            ->where('v.development = true AND s.packageName IS NOT NULL')
-            ->setParameter('name', $name);
+        $sql = 'SELECT COUNT(DISTINCT pv.package_id) count
+            FROM link_suggest s
+            INNER JOIN package_version pv ON (pv.id = s.version_id AND pv.development = 1)
+            WHERE s.packageName = :name';
 
-        return (int) $qb->getQuery()
-            ->useResultCache(true, 7*86400)
-            ->getSingleScalarResult();
+        $stmt = $this->getEntityManager()->getConnection()
+            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'suggesters_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return (int) $result[0]['count'];
     }
 
     public function getSuggests($name, $offset = 0, $limit = 15)
     {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->join('p.versions', 'v')
-            ->leftJoin('v.suggest', 's')
-            ->where('v.development = true')
-            ->andWhere('s.packageName = :name')
-            ->groupBy('p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage')
-            ->orderBy('p.name')
-            ->setParameter('name', $name);
+        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+            FROM link_suggest s
+            INNER JOIN package_version pv ON (pv.id = s.version_id AND pv.development = 1)
+            INNER JOIN package p ON (p.id = pv.package_id)
+            WHERE s.packageName = :name
+            GROUP BY pv.package_id
+            ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
 
-        return $qb->getQuery()
-            ->setMaxResults($limit)
-            ->setFirstResult($offset)
-            ->useResultCache(true, 7*86400, 'suggesters_'.$name.'_'.$offset.'_'.$limit)
-            ->getResult();
+        $stmt = $this->getEntityManager()->getConnection()
+            ->executeCacheQuery(
+                $sql,
+                ['name' => $name],
+                [],
+                new QueryCacheProfile(7*86400, 'suggesters_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+            );
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return $result;
     }
 
     private function addFilters(QueryBuilder $qb, array $filters)
