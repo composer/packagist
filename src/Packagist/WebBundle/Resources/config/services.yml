@@ -1,7 +1,7 @@
 services:
     packagist.twig.extension:
         class: Packagist\WebBundle\Twig\PackagistExtension
-        arguments: [ '@doctrine' ]
+        arguments: [ '@packagist.provider_manager' ]
         tags:
             - { name: twig.extension }
 
@@ -74,6 +74,12 @@ services:
         class: Packagist\WebBundle\Model\DownloadManager
         arguments:
             - '@snc_redis.default_client'
+
+    packagist.provider_manager:
+        class: Packagist\WebBundle\Model\ProviderManager
+        arguments:
+            - '@snc_redis.default_client'
+            - '@packagist.package_repository'
 
     packagist.favorite_manager:
         class: Packagist\WebBundle\Model\FavoriteManager

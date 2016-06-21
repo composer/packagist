@@ -91,7 +91,7 @@ class PackageController extends Controller
         } elseif ($req->query->get('vendor')) {
             $names = $repo->getPackageNamesByVendor($req->query->get('vendor'));
         } else {
-            $names = $repo->getPackageNames();
+            $names = $this->get('packagist.provider_manager')->getPackageNames();
         }
 
         return new JsonResponse(array('packageNames' => $names));
@@ -118,6 +118,8 @@ class PackageController extends Controller
                 $em = $this->getDoctrine()->getManager();
                 $em->persist($package);
                 $em->flush();
+
+                $this->get('packagist.provider_manager')->insertPackage($package);
 
                 $this->get('session')->getFlashBag()->set('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
 
@@ -625,6 +627,8 @@ class PackageController extends Controller
             $em = $doctrine->getManager();
             $em->remove($package);
             $em->flush();
+
+            $this->get('packagist.provider_manager')->deletePackage($package);
 
             // attempt solr cleanup
             try {

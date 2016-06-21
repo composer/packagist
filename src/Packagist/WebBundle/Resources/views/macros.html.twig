@@ -63,10 +63,12 @@
 {% endmacro %}
 
 {% macro packageLink(packageName, type) %}
-    {%- if type == 'provide' and (packageName is existing_provider or packageName is existing_package) -%}
+    {%- if type == 'provide' -%}
         <a href="{{ path('view_providers', { 'name': packageName }) }}">{{ packageName }}</a>
     {%- elseif packageName is existing_package -%}
         <a href="{{ path('view_package', { 'name': packageName }) }}">{{ packageName }}</a>
+    {%- elseif packageName is existing_provider -%}
+        <a href="{{ path('view_providers', { 'name': packageName }) }}">{{ packageName }}</a>
     {%- else -%}
         {{ packageName }}
     {%- endif -%}

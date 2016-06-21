@@ -2,18 +2,18 @@
 
 namespace Packagist\WebBundle\Twig;
 
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Packagist\WebBundle\Model\ProviderManager;
 
 class PackagistExtension extends \Twig_Extension
 {
     /**
-     * @var \Symfony\Bridge\Doctrine\RegistryInterface
+     * @var ProviderManager
      */
-    private $doctrine;
+    private $providerManager;
 
-    public function __construct(RegistryInterface $doctrine)
+    public function __construct(providerManager $providerManager)
     {
-        $this->doctrine = $doctrine;
+        $this->providerManager = $providerManager;
     }
 
     public function getTests()
@@ -49,16 +49,12 @@ class PackagistExtension extends \Twig_Extension
             return false;
         }
 
-        $repo = $this->doctrine->getRepository('PackagistWebBundle:Package');
-
-        return $repo->packageExists($package);
+        return $this->providerManager->packageExists($package);
     }
 
     public function providerExistsTest($package)
     {
-        $repo = $this->doctrine->getRepository('PackagistWebBundle:Package');
-
-        return $repo->packageIsProvided($package);
+        return $this->providerManager->packageIsProvided($package);
     }
 
     public function prettifySourceReference($sourceReference)

@@ -21,94 +21,6 @@ use Doctrine\DBAL\Cache\QueryCacheProfile;
  */
 class PackageRepository extends EntityRepository
 {
-    /**
-     * Lists all package names array(name => true)
-     *
-     * @var array
-     */
-    private $packageNames;
-
-    /**
-     * Lists all provided names array(name => true)
-     *
-     * @var array
-     */
-    private $providedNames;
-
-    public function packageExists($name)
-    {
-        $packages = $this->getRawPackageNames();
-
-        return isset($packages[$name]) || in_array(strtolower($name), $packages, true);
-    }
-
-    public function packageIsProvided($name)
-    {
-        $packages = $this->getProvidedNames();
-
-        return isset($packages[$name]) || in_array(strtolower($name), $packages, true);
-    }
-
-    public function getPackageNames($fields = array())
-    {
-        return array_keys($this->getRawPackageNames());
-    }
-
-    public function getRawPackageNames()
-    {
-        if (null !== $this->packageNames) {
-            return $this->packageNames;
-        }
-
-        $names = null;
-        $apc = extension_loaded('apcu');
-
-        if ($apc) {
-            $names = apcu_fetch('packagist_package_names');
-        }
-
-        if (!is_array($names)) {
-            $query = $this->getEntityManager()
-                ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p");
-
-            $names = $this->getPackageNamesForQuery($query);
-            $names = array_combine($names, array_map('strtolower', $names));
-            if ($apc) {
-                apcu_store('packagist_package_names', $names, 3600);
-            }
-        }
-
-        return $this->packageNames = $names;
-    }
-
-    public function getProvidedNames()
-    {
-        if (null !== $this->providedNames) {
-            return $this->providedNames;
-        }
-
-        $names = null;
-        $apc = extension_loaded('apcu');
-
-        // TODO use container to set caching key and ttl
-        if ($apc) {
-            $names = apcu_fetch('packagist_provided_names');
-        }
-
-        if (!is_array($names)) {
-            $query = $this->getEntityManager()
-                ->createQuery("SELECT p.packageName AS name FROM Packagist\WebBundle\Entity\ProvideLink p GROUP BY p.packageName");
-
-            $names = $this->getPackageNamesForQuery($query);
-            $names = array_combine($names, array_map('strtolower', $names));
-            if ($apc) {
-                apcu_store('packagist_provided_names', $names, 3600);
-            }
-        }
-
-        return $this->providedNames = $names;
-    }
-
     public function findProviders($name)
     {
         $query = $this->createQueryBuilder('p')
@@ -122,6 +34,30 @@ class PackageRepository extends EntityRepository
             ->setParameters(array('name' => $name));
 
         return $query->getResult();
+    }
+
+    public function getPackageNames()
+    {
+        $query = $this->getEntityManager()
+            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p");
+
+        $names = $this->getPackageNamesForQuery($query);
+
+        return array_map('strtolower', $names);
+    }
+
+    public function getProvidedNames()
+    {
+        $query = $this->getEntityManager()
+            ->createQuery("SELECT p.packageName AS name
+                FROM Packagist\WebBundle\Entity\ProvideLink p
+                LEFT JOIN p.version v
+                WHERE v.development = true
+                GROUP BY p.packageName");
+
+        $names = $this->getPackageNamesForQuery($query);
+
+        return array_map('strtolower', $names);
     }
 
     public function getPackageNamesByType($type)
