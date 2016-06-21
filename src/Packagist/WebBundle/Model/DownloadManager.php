@@ -107,36 +107,37 @@ class DownloadManager
     }
 
     /**
-     * Tracks a new download by updating the relevant keys.
+     * Tracks downloads by updating the relevant keys.
      *
-     * @param \Packagist\WebBundle\Entity\Package|int $package
-     * @param \Packagist\WebBundle\Entity\Version|int $version
+     * @param array[] an array of arrays containing id (package id), vid (version id) and ip keys
      */
-    public function addDownload($package, $version)
+    public function addDownloads(array $jobs)
     {
-        $redis = $this->redis;
+        $day = date('Ymd');
+        $month = date('Ym');
 
         if (!$this->redisCommandLoaded) {
-            $redis->getProfile()->defineCommand('downloadsIncr', 'Packagist\Redis\DownloadsIncr');
+            $this->redis->getProfile()->defineCommand('downloadsIncr', 'Packagist\Redis\DownloadsIncr');
             $this->redisCommandLoaded = true;
         }
 
-        if ($package instanceof Package) {
-            $package = $package->getId();
+        $args = ['downloads'];
+
+        foreach ($jobs as $job) {
+            $package = $job['id'];
+            $version = $job['vid'];
+
+            // throttle key
+            $args[] = 'dl:'.$package.':'.$job['ip'].':'.$day;
+            // stats keys
+            $args[] = 'dl:'.$package;
+            $args[] = 'dl:'.$package.':'.$month;
+            $args[] = 'dl:'.$package.':'.$day;
+            $args[] = 'dl:'.$package.'-'.$version;
+            $args[] = 'dl:'.$package.'-'.$version.':'.$month;
+            $args[] = 'dl:'.$package.'-'.$version.':'.$day;
         }
 
-        if ($version instanceof Version) {
-            $version = $version->getId();
-        }
-
-        $redis->downloadsIncr(
-            'downloads',
-            'dl:'.$package,
-            'dl:'.$package.':'.date('Ym'),
-            'dl:'.$package.':'.date('Ymd'),
-            'dl:'.$package.'-'.$version,
-            'dl:'.$package.'-'.$version.':'.date('Ym'),
-            'dl:'.$package.'-'.$version.':'.date('Ymd')
-        );
+        $this->redis->downloadsIncr(...$args);
     }
 }

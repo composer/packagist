@@ -196,13 +196,13 @@ class WebControllerTest extends WebTestCase
                 /* @var $downloadManager DownloadManager */
 
                 for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownload($twigPackage->getId(), 25);
+                    $downloadManager->addDownloads([['id' => $twigPackage->getId(), 'vid' => 25, 'ip' => '127.0.0.'.random_int(0,255)]]);
                 }
                 for ($i = 0; $i < 12; $i += 1) {
-                    $downloadManager->addDownload($packagistPackage->getId(), 12);
+                    $downloadManager->addDownloads([['id' => $packagistPackage->getId(), 'vid' => 12, 'ip' => '127.0.0.'.random_int(0,255)]]);
                 }
                 for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownload($symfonyPackage->getId(), 42);
+                    $downloadManager->addDownloads([['id' => $symfonyPackage->getId(), 'vid' => 42, 'ip' => '127.0.0.'.random_int(0,255)]]);
                 }
 
                 $favoriteManager = $container->get('packagist.favorite_manager');
@@ -346,13 +346,13 @@ class WebControllerTest extends WebTestCase
                 /* @var $downloadManager DownloadManager */
 
                 for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownload($twigPackage->getId(), 25);
+                    $downloadManager->addDownloads([['id' => $twigPackage->getId(), 'vid' => 25, 'ip' => '127.0.0.'.random_int(0,255)]]);
                 }
                 for ($i = 0; $i < 12; $i += 1) {
-                    $downloadManager->addDownload($packagistPackage->getId(), 12);
+                    $downloadManager->addDownloads([['id' => $packagistPackage->getId(), 'vid' => 12, 'ip' => '127.0.0.'.random_int(0,255)]]);
                 }
                 for ($i = 0; $i < 42; $i += 1) {
-                    $downloadManager->addDownload($symfonyPackage->getId(), 42);
+                    $downloadManager->addDownloads([['id' => $symfonyPackage->getId(), 'vid' => 42, 'ip' => '127.0.0.'.random_int(0,255)]]);
                 }
             },
             $orderBys
