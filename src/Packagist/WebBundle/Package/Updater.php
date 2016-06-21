@@ -509,9 +509,11 @@ class Updater
             // Links can not be trusted, mark them nofollow and convert relative to absolute links
             $links = $dom->getElementsByTagName('a');
             foreach ($links as $link) {
-                $link->setAttribute('rel', 'nofollow');
+                $link->setAttribute('rel', 'nofollow noopener external');
                 if ('#' === substr($link->getAttribute('href'), 0, 1)) {
                     $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
+                } elseif ('mailto:' === substr($link->getAttribute('href'), 0, 7)) {
+                    // do nothing
                 } elseif (false === strpos($link->getAttribute('href'), '//')) {
                     $link->setAttribute('href', 'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$link->getAttribute('href'));
                 }
