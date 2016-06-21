@@ -291,7 +291,7 @@ class SymlinkDumper
             $this->rootFile['notify'] = str_replace('VND/PKG', '%package%', $url);
             $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch');
             $this->rootFile['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
-            $this->rootFile['search'] = $this->router->generate('search', array('_format' => 'json')) . '?q=%query%';
+            $this->rootFile['search'] = $this->router->generate('search', array('_format' => 'json')) . '?q=%query%&type=%type%';
 
             if ($verbose) {
                 echo 'Dumping individual listings'.PHP_EOL;
