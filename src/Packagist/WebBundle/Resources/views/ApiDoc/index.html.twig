@@ -8,6 +8,7 @@
   <li><a href="#list-packages-by-organization">List packages by organization</a></li>
   <li><a href="#search-packages-by-tag">Search packages by tag</a></li>
   <li><a href="#search-packages-by-name">Search packages by name</a></li>
+  <li><a href="#search-packages-by-type">Search packages by type</a></li>
   <li><a href="#get-package-by-name">Get a package by name</a></li>
 </ul>
 
@@ -24,6 +25,11 @@ GET https://packagist.org/packages/list.json?vendor=[vendor]
 }
 </code></pre>
 </section>
+
+<h3>Search</h3>
+
+<p>Search results are paginated and you can change the pagination step by using the per_page parameter. For example <code>https://packagist.org/search.json?q=[query]&amp;per_page=5</code></p>
+
 
 <section class="col-d-12">
 <h3 id="search-packages-by-tag">Search packages by tag</h3>
@@ -52,6 +58,29 @@ GET https://packagist.org/search.json?tags=[tag]
 <h3 id="search-packages-by-name">Search packages by name </h3>
 <pre>
 GET https://packagist.org/search.json?q=[query]
+<code>
+{
+  "results" : [
+    {
+      "name": "[vendor]/[package]",
+      "description": "[description]",
+      "url": "https://packagist.org/packages/[vendor]/[package]",
+      "repository": [repository url],
+      "downloads": [number of downloads],
+      "favers": [number of favers]
+    },
+    ...
+  ],
+  "total": [number of results],
+  "next": "https://packagist.org/search.json?q=[query]&amp;page=[next page number]"
+}
+</code>
+</section>
+
+<section class="col-d-12">
+<h3 id="search-packages-by-type">Search packages by type </h3>
+<pre>
+GET https://packagist.org/search.json?q=[query]&amp;type=symfony-bundle
 <code>
 {
   "results" : [
