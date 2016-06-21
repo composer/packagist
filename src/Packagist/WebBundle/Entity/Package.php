@@ -178,12 +178,17 @@ class Package
         $this->createdAt = new \DateTime;
     }
 
-    public function toArray()
+    public function toArray(VersionRepository $versionRepo)
     {
         $versions = array();
+        $versionIds = [];
+        foreach ($this->getVersions() as $version) {
+            $versionIds[] = $version->getId();
+        }
+        $versionData = $versionRepo->getVersionData($versionIds);
         foreach ($this->getVersions() as $version) {
             /** @var $version Version */
-            $versions[$version->getVersion()] = $version->toArray();
+            $versions[$version->getVersion()] = $version->toArray($versionData);
         }
         $maintainers = array();
         foreach ($this->getMaintainers() as $maintainer) {

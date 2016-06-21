@@ -322,7 +322,7 @@ class PackageController extends Controller
         }
 
         if ('json' === $req->getRequestFormat()) {
-            $data = $package->toArray();
+            $data = $package->toArray($this->getDoctrine()->getRepository('PackagistWebBundle:Version'));
 
             try {
                 $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package);

@@ -206,17 +206,22 @@ class Version
         $this->updatedAt = new \DateTime;
     }
 
-    public function toArray()
+    public function toArray(array $versionData)
     {
         $tags = array();
         foreach ($this->getTags() as $tag) {
             /** @var $tag Tag */
             $tags[] = $tag->getName();
         }
-        $authors = array();
-        foreach ($this->getAuthors() as $author) {
-            /** @var $author Author */
-            $authors[] = $author->toArray();
+
+        if (isset($versionData[$this->id]['authors'])) {
+            $authors = $versionData[$this->id]['authors'];
+        } else {
+            $authors = array();
+            foreach ($this->getAuthors() as $author) {
+                /** @var $author Author */
+                $authors[] = $author->toArray();
+            }
         }
 
         $data = array(
@@ -262,6 +267,12 @@ class Version
         );
 
         foreach ($supportedLinkTypes as $method => $linkType) {
+            if (isset($versionData[$this->id][$method])) {
+                foreach ($versionData[$this->id][$method] as $link) {
+                    $data[$linkType][$link['name']] = $link['version'];
+                }
+                continue;
+            }
             foreach ($this->{'get'.$method}() as $link) {
                 $link = $link->toArray();
                 $data[$linkType][key($link)] = current($link);

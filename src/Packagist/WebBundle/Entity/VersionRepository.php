@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Entity;
 
 use Doctrine\ORM\EntityRepository;
+use Doctrine\DBAL\Connection;
 use Predis\Client;
 
 /**
@@ -53,6 +54,54 @@ class VersionRepository extends EntityRepository
         $em->getConnection()->executeQuery('DELETE FROM link_require WHERE version_id=:id', array('id' => $version->getId()));
 
         $em->remove($version);
+    }
+
+    public function getVersionData(array $versionIds)
+    {
+        $links = [
+            'require' => 'link_require',
+            'devRequire' => 'link_require_dev',
+            'suggest' => 'link_suggest',
+            'conflict' => 'link_conflict',
+            'provide' => 'link_provide',
+            'replace' => 'link_replace',
+        ];
+
+        $result = [];
+        foreach ($versionIds as $id) {
+            $result[$id] = [
+                'require' => [],
+                'devRequire' => [],
+                'suggest' => [],
+                'conflict' => [],
+                'provide' => [],
+                'replace' => [],
+            ];
+        }
+
+        foreach ($links as $link => $table) {
+            $rows = $this->getEntityManager()->getConnection()->fetchAll(
+                'SELECT version_id, packageName name, packageVersion version FROM '.$table.' WHERE version_id IN (:ids)',
+                ['ids' => $versionIds],
+                ['ids' => Connection::PARAM_INT_ARRAY]
+            );
+            foreach ($rows as $row) {
+                $result[$row['version_id']][$link][] = $row;
+            }
+        }
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAll(
+            'SELECT va.version_id, name, email, homepage, role FROM author a JOIN version_author va ON va.author_id = a.id WHERE va.version_id IN (:ids)',
+            ['ids' => $versionIds],
+            ['ids' => Connection::PARAM_INT_ARRAY]
+        );
+        foreach ($rows as $row) {
+            $versionId = $row['version_id'];
+            unset($row['version_id']);
+            $result[$versionId]['authors'][] = array_filter($row);
+        }
+
+        return $result;
     }
 
     public function getFullVersion($versionId)

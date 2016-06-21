@@ -186,6 +186,8 @@ class SymlinkDumper
 
         $dumpTimeUpdates = [];
 
+        $versionRepo = $this->doctrine->getRepository('PackagistWebBundle:Version');
+
         try {
             $modifiedIndividualFiles = array();
 
@@ -224,6 +226,11 @@ class SymlinkDumper
                     }
 
                     // (re)write versions in individual files
+                    $versionIds = [];
+                    foreach ($package->getVersions() as $version) {
+                        $versionIds[] = $version->getId();
+                    }
+                    $versionData = $versionRepo->getVersionData($versionIds);
                     foreach ($package->getVersions() as $version) {
                         foreach (array_slice($version->getNames(), 0, 150) as $versionName) {
                             if (!preg_match('{^[A-Za-z0-9_-][A-Za-z0-9_.-]*/[A-Za-z0-9_-][A-Za-z0-9_.-]*$}', $versionName) || strpos($versionName, '..')) {
@@ -232,7 +239,7 @@ class SymlinkDumper
 
                             $file = $buildDir.'/'.$versionName.'.json';
                             $key = $versionName.'.json';
-                            $this->dumpVersionToIndividualFile($version, $file, $key);
+                            $this->dumpVersionToIndividualFile($version, $file, $key, $versionData);
                             $modifiedIndividualFiles[$key] = true;
                             $affectedFiles[$key] = true;
                         }
@@ -602,10 +609,10 @@ class SymlinkDumper
         $this->writeFile($hashedFile, $json);
     }
 
-    private function dumpVersionToIndividualFile(Version $version, $file, $key)
+    private function dumpVersionToIndividualFile(Version $version, $file, $key, $versionData)
     {
         $this->loadIndividualFile($file, $key);
-        $data = $version->toArray();
+        $data = $version->toArray($versionData);
         $data['uid'] = $version->getId();
         $this->individualFiles[$key]['packages'][strtolower($version->getName())][$version->getVersion()] = $data;
         $timestamp = $version->getReleasedAt() ? $version->getReleasedAt()->getTimestamp() : time();
