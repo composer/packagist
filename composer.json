@@ -44,7 +44,7 @@
         "nelmio/solarium-bundle": "^1.0",
         "nelmio/security-bundle": "^1.0",
         "predis/predis": "^1.0",
-        "snc/redis-bundle": "^1.1",
+        "snc/redis-bundle": "^2.0",
         "white-october/pagerfanta-bundle": "^1.0",
         "zendframework/zend-feed": "^2.0",
         "zendframework/zend-servicemanager": "^2.0",
