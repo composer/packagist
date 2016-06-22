@@ -75,7 +75,7 @@ class WebController extends Controller
 
         $this->computeSearchQuery($req, $filteredOrderBys);
 
-        $typeFilter = $req->query->get('type');
+        $typeFilter = str_replace('%type%', '', $req->query->get('type'));
         $tagsFilter = $req->query->get('tags');
 
         if ($req->query->has('search_query') || $typeFilter || $tagsFilter) {
