@@ -11,7 +11,7 @@ class PackagistExtension extends \Twig_Extension
      */
     private $providerManager;
 
-    public function __construct(providerManager $providerManager)
+    public function __construct(ProviderManager $providerManager)
     {
         $this->providerManager = $providerManager;
     }
