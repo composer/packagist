@@ -203,6 +203,11 @@ class Package
             'versions' => $versions,
             'type' => $this->getType(),
             'repository' => $this->getRepository(),
+            'github_stars' => $package->getGitHubStars(),
+            'github_watchers' => $package->getGitHubWatches(),
+            'github_forks' => $package->getGitHubForks(),
+            'github_open_issues' => $package->getGitHubOpenIssues(),
+            'language' => $package->getLanguage(),
         );
 
         if ($this->isAbandoned()) {
