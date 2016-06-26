@@ -327,9 +327,23 @@ class PackageController extends Controller
             try {
                 $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package);
                 $data['favers'] = $this->get('packagist.favorite_manager')->getFaverCount($package);
+                $data['dependents'] = $repo->getDependentCount($package->getName());
+                $data['suggesters'] = $repo->getSuggestCount($package->getName());
+                $data['github_stars'] = $package->getGitHubStars();
+                $data['github_watchers'] = $package->getGitHubWatches();
+                $data['github_forks'] = $package->getGitHubForks();
+                $data['github_open_issues'] = $package->getGitHubOpenIssues();
+                $data['language'] = $package->getLanguage();
             } catch (ConnectionException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
+                $data['dependents'] = null;
+                $data['suggesters'] = null;
+                $data['github_stars'] = null;
+                $data['github_watchers'] = null;
+                $data['github_forks'] = null;
+                $data['github_open_issues'] = null;
+                $data['language'] = null;
             }
 
             // TODO invalidate cache on update and make the ttl longer
