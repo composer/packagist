@@ -199,9 +199,7 @@ class PackageController extends Controller
     {
         $packages = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
-            ->createQueryBuilder('p')
-            ->where('p.name LIKE ?0')
-            ->setParameters(array($vendor.'/%'))
+            ->getFilteredQueryBuilder(['vendor' => $vendor.'/%'], true)
             ->getQuery()
             ->getResult();
 
