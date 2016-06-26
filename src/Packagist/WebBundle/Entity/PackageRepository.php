@@ -205,7 +205,7 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getFilteredQueryBuilder(array $filters = array())
+    public function getFilteredQueryBuilder(array $filters = array(), $orderByName = false)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
@@ -216,7 +216,12 @@ class PackageRepository extends EntityRepository
             $qb->leftJoin('v.tags', 't');
         }
 
-        $qb->orderBy('p.id', 'DESC');
+        $qb->orderBy('p.abandoned');
+        if (true === $orderByName) {
+            $qb->addOrderBy('p.name');
+        } else {
+            $qb->addOrderBy('p.id', 'DESC');
+        }
 
         $this->addFilters($qb, $filters);
 
@@ -338,6 +343,10 @@ class PackageRepository extends EntityRepository
                 case 'maintainer':
                     $qb->leftJoin('p.maintainers', 'm');
                     $qb->andWhere($qb->expr()->in('m.id', ':'.$name));
+                    break;
+
+                case 'vendor':
+                    $qb->andWhere('p.name LIKE :vendor');
                     break;
 
                 default:
