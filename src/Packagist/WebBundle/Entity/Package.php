@@ -203,11 +203,11 @@ class Package
             'versions' => $versions,
             'type' => $this->getType(),
             'repository' => $this->getRepository(),
-            'github_stars' => $package->getGitHubStars(),
-            'github_watchers' => $package->getGitHubWatches(),
-            'github_forks' => $package->getGitHubForks(),
-            'github_open_issues' => $package->getGitHubOpenIssues(),
-            'language' => $package->getLanguage(),
+            'github_stars' => $this->getGitHubStars(),
+            'github_watchers' => $this->getGitHubWatches(),
+            'github_forks' => $this->getGitHubForks(),
+            'github_open_issues' => $this->getGitHubOpenIssues(),
+            'language' => $this->getLanguage(),
         );
 
         if ($this->isAbandoned()) {
