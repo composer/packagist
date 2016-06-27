@@ -19,6 +19,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
+use Composer\Repository\Vcs\GitHubDriver;
 
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\PackageRepository")
