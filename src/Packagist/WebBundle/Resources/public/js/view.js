@@ -172,7 +172,7 @@
     });
 
     var versionsList = $('.package .versions')[0];
-    if (versionsList.offsetHeight < versionsList.scrollHeight) {
+    if (versionsList && versionsList.offsetHeight < versionsList.scrollHeight) {
         $('.package .versions-expander').removeClass('hidden').on('click', function () {
             $(this).addClass('hidden');
             $(versionsList).css('max-height', 'inherit');

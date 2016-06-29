@@ -42,4 +42,10 @@
             e.preventDefault();
         });
     });
+
+    $('.toc a').click(function (e) {
+        setTimeout(function () {
+            scrollTo(0, $($(e.target).attr('href')).offset().top - 65);
+        }, 0);
+    });
 })(jQuery, humane);
