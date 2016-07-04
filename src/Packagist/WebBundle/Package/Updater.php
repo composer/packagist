@@ -48,28 +48,28 @@ class Updater
      * Supported link types
      * @var array
      */
-    protected $supportedLinkTypes = array(
-        'require'     => array(
+    protected $supportedLinkTypes = [
+        'require'     => [
             'method' => 'getRequires',
             'entity' => 'RequireLink',
-        ),
-        'conflict'    => array(
+        ],
+        'conflict'    => [
             'method' => 'getConflicts',
             'entity' => 'ConflictLink',
-        ),
-        'provide'     => array(
+        ],
+        'provide'     => [
             'method' => 'getProvides',
             'entity' => 'ProvideLink',
-        ),
-        'replace'     => array(
+        ],
+        'replace'     => [
             'method' => 'getReplaces',
             'entity' => 'ReplaceLink',
-        ),
-        'devRequire' => array(
+        ],
+        'devRequire' => [
             'method' => 'getDevRequires',
             'entity' => 'DevRequireLink',
-        ),
-    );
+        ],
+    ];
 
     /**
      * Constructor
@@ -256,7 +256,7 @@ class Updater
         $version->setDescription($descr);
         $package->setDescription($descr);
         $version->setHomepage($data->getHomepage());
-        $version->setLicense($data->getLicense() ?: array());
+        $version->setLicense($data->getLicense() ?: []);
 
         $version->setPackage($package);
         $version->setUpdatedAt(new \DateTime);
@@ -297,7 +297,7 @@ class Updater
         $version->setSupport($data->getSupport());
 
         if ($data->getKeywords()) {
-            $keywords = array();
+            $keywords = [];
             foreach ($data->getKeywords() as $keyword) {
                 $keywords[mb_strtolower($keyword, 'UTF-8')] = $keyword;
             }
@@ -333,7 +333,7 @@ class Updater
             foreach ($data->getAuthors() as $authorData) {
                 $author = null;
 
-                foreach (array('email', 'name', 'homepage', 'role') as $field) {
+                foreach (['email', 'name', 'homepage', 'role'] as $field) {
                     if (isset($authorData[$field])) {
                         $authorData[$field] = trim($authorData[$field]);
                         if ('' === $authorData[$field]) {
@@ -349,19 +349,19 @@ class Updater
                     continue;
                 }
 
-                $author = $authorRepository->findOneBy(array(
+                $author = $authorRepository->findOneBy([
                     'email' => $authorData['email'],
                     'name' => $authorData['name'],
                     'homepage' => $authorData['homepage'],
                     'role' => $authorData['role'],
-                ));
+                ]);
 
                 if (!$author) {
                     $author = new Author();
                     $em->persist($author);
                 }
 
-                foreach (array('email', 'name', 'homepage', 'role') as $field) {
+                foreach (['email', 'name', 'homepage', 'role'] as $field) {
                     if (isset($authorData[$field])) {
                         $author->{'set'.$field}($authorData[$field]);
                     }
@@ -382,7 +382,7 @@ class Updater
 
         // handle links
         foreach ($this->supportedLinkTypes as $linkType => $opts) {
-            $links = array();
+            $links = [];
             foreach ($data->{$opts['method']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
                 if (false !== strpos($constraint, ',') && false !== strpos($constraint, '@')) {
@@ -478,7 +478,7 @@ class Updater
         }
 
         if (!empty($readme)) {
-            $elements = array(
+            $elements = [
                 'p',
                 'br',
                 'small',
@@ -495,7 +495,7 @@ class Updater
                 'table', 'thead', 'tbody', 'th', 'tr', 'td',
                 'a[href|target|rel|id]',
                 'img[src|title|alt|width|height|style]'
-            );
+            ];
             $config = \HTMLPurifier_Config::createDefault();
             $config->set('HTML.Allowed', implode(',', $elements));
             $config->set('Attr.EnableID', true);

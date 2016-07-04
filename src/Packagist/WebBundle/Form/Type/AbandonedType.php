@@ -34,11 +34,11 @@ class AbandonedType extends AbstractType
         $builder->add(
             'replacement',
             TextType::class,
-            array(
+            [
                 'required' => false,
                 'label'    => 'Replacement package',
-                'attr'     => array('placeholder' => 'optional package name')
-            )
+                'attr'     => ['placeholder' => 'optional package name']
+            ]
         );
     }
 

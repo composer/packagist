@@ -46,7 +46,7 @@ class ExploreController extends Controller
         $randomIds = $this->getDoctrine()->getConnection()->fetchAll('SELECT id FROM package ORDER BY RAND() LIMIT 10');
         $random = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $randomIds)->getQuery()->getResult();
         try {
-            $popular = array();
+            $popular = [];
             $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);
             if ($popularIds) {
                 $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
@@ -56,15 +56,15 @@ class ExploreController extends Controller
                 });
             }
         } catch (ConnectionException $e) {
-            $popular = array();
+            $popular = [];
         }
 
-        $data = array(
+        $data = [
             'newlySubmitted' => $newSubmitted,
             'newlyReleased' => $newReleases,
             'random' => $random,
             'popular' => $popular,
-        );
+        ];
 
         return $data;
     }
@@ -81,10 +81,10 @@ class ExploreController extends Controller
             $perPage = $req->query->getInt('per_page', 15);
             if ($perPage <= 0 || $perPage > 100) {
                 if ($req->getRequestFormat() === 'json') {
-                    return new JsonResponse(array(
+                    return new JsonResponse([
                         'status' => 'error',
                         'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-                    ), 400);
+                    ], 400);
                 }
 
                 $perPage = max(0, min(100, $perPage));
@@ -106,38 +106,38 @@ class ExploreController extends Controller
             $packages->setMaxPerPage($perPage);
             $packages->setCurrentPage($req->get('page', 1), false, true);
         } catch (ConnectionException $e) {
-            $packages = new Pagerfanta(new FixedAdapter(0, array()));
+            $packages = new Pagerfanta(new FixedAdapter(0, []));
         }
 
-        $data = array(
+        $data = [
             'packages' => $packages,
-        );
+        ];
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
 
         if ($req->getRequestFormat() === 'json') {
-            $result = array(
-                'packages' => array(),
+            $result = [
+                'packages' => [],
                 'total' => $packages->getNbResults(),
-            );
+            ];
 
             /** @var Package $package */
             foreach ($packages as $package) {
-                $url = $this->generateUrl('view_package', array('name' => $package->getName()), UrlGeneratorInterface::ABSOLUTE_URL);
+                $url = $this->generateUrl('view_package', ['name' => $package->getName()], UrlGeneratorInterface::ABSOLUTE_URL);
 
-                $result['packages'][] = array(
+                $result['packages'][] = [
                     'name' => $package->getName(),
                     'description' => $package->getDescription() ?: '',
                     'url' => $url,
                     'downloads' => $data['meta']['downloads'][$package->getId()],
                     'favers' => $data['meta']['favers'][$package->getId()],
-                );
+                ];
             }
 
             if ($packages->hasNextPage()) {
-                $params = array(
+                $params = [
                     '_format' => 'json',
                     'page' => $packages->getNextPage(),
-                );
+                ];
                 if ($perPage !== 15) {
                     $params['per_page'] = $perPage;
                 }

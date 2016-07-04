@@ -17,7 +17,7 @@ class FeedControllerTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $url = $client->getContainer()->get('router')->generate($feed, array('_format' => $format, 'vendor' => $vendor));
+        $url = $client->getContainer()->get('router')->generate($feed, ['_format' => $format, 'vendor' => $vendor]);
 
         $crawler = $client->request('GET', $url);
 
@@ -33,14 +33,14 @@ class FeedControllerTest extends WebTestCase
 
     public function provideForFeed()
     {
-        return array(
-            array('feed_packages', 'rss'),
-            array('feed_packages', 'atom'),
-            array('feed_releases', 'rss'),
-            array('feed_releases', 'atom'),
-            array('feed_vendor', 'rss', 'symfony'),
-            array('feed_vendor', 'atom', 'symfony'),
-        );
+        return [
+            ['feed_packages', 'rss'],
+            ['feed_packages', 'atom'],
+            ['feed_releases', 'rss'],
+            ['feed_releases', 'atom'],
+            ['feed_vendor', 'rss', 'symfony'],
+            ['feed_vendor', 'atom', 'symfony'],
+        ];
     }
 
 }

@@ -181,7 +181,7 @@ class Package
 
     public function toArray(VersionRepository $versionRepo)
     {
-        $versions = array();
+        $versions = [];
         $versionIds = [];
         foreach ($this->getVersions() as $version) {
             $versionIds[] = $version->getId();
@@ -191,12 +191,12 @@ class Package
             /** @var $version Version */
             $versions[$version->getVersion()] = $version->toArray($versionData);
         }
-        $maintainers = array();
+        $maintainers = [];
         foreach ($this->getMaintainers() as $maintainer) {
             /** @var $maintainer User */
             $maintainers[] = $maintainer->toArray();
         }
-        $data = array(
+        $data = [
             'name' => $this->getName(),
             'description' => $this->getDescription(),
             'time' => $this->getCreatedAt()->format('c'),
@@ -209,7 +209,7 @@ class Package
             'github_forks' => $this->getGitHubForks(),
             'github_open_issues' => $this->getGitHubOpenIssues(),
             'language' => $this->getLanguage(),
-        );
+        ];
 
         if ($this->isAbandoned()) {
             $data['abandoned'] = $this->getReplacementPackage() ?: true;
@@ -319,7 +319,7 @@ class Package
     {
         try {
             if ($this->entityRepository->findOneByName($this->name)) {
-                $context->buildViolation('A package with the name <a href="'.$this->router->generate('view_package', array('name' => $this->name)).'">'.$this->name.'</a> already exists.')
+                $context->buildViolation('A package with the name <a href="'.$this->router->generate('view_package', ['name' => $this->name]).'">'.$this->name.'</a> already exists.')
                     ->atPath('repository')
                     ->addViolation()
                 ;
@@ -335,7 +335,7 @@ class Package
                 $context->buildViolation('The vendor is already taken by someone else. '
                         . 'You may ask them to add your package and give you maintainership access. '
                         . 'The packages already in that vendor namespace can be found at '
-                        . '<a href="'.$this->router->generate('view_vendor', array('vendor' => $vendor)).'">'.$vendor.'</a>')
+                        . '<a href="'.$this->router->generate('view_vendor', ['vendor' => $vendor]).'">'.$vendor.'</a>')
                     ->atPath('repository')
                     ->addViolation()
                 ;
@@ -563,7 +563,7 @@ class Package
             $io = new NullIO();
             $config = Factory::createConfig();
             $io->loadConfiguration($config);
-            $repository = new VcsRepository(array('url' => $this->repository), $io, $config);
+            $repository = new VcsRepository(['url' => $this->repository], $io, $config);
 
             $driver = $this->vcsDriver = $repository->getDriver();
             if (!$driver) {
@@ -617,7 +617,7 @@ class Package
     public function getVersion($normalizedVersion)
     {
         if (null === $this->cachedVersions) {
-            $this->cachedVersions = array();
+            $this->cachedVersions = [];
             foreach ($this->getVersions() as $version) {
                 $this->cachedVersions[strtolower($version->getNormalizedVersion())] = $version;
             }

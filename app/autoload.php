@@ -16,6 +16,6 @@ EOF;
     die($message);
 }
 
-AnnotationRegistry::registerLoader(array($loader, 'loadClass'));
+AnnotationRegistry::registerLoader([$loader, 'loadClass']);
 
 return $loader;

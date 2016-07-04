@@ -110,9 +110,9 @@ class User extends BaseUser
 
     public function toArray()
     {
-        return array(
+        return [
             'name' => $this->getUsername(),
-        );
+        ];
     }
 
     /**

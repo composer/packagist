@@ -35,7 +35,7 @@ class WebController extends Controller
      */
     public function indexAction()
     {
-        return array('page' => 'home');
+        return ['page' => 'home'];
     }
 
     /**
@@ -55,10 +55,10 @@ class WebController extends Controller
         $form->handleRequest($req);
 
         $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
-        return $this->render('PackagistWebBundle:Web:searchForm.html.twig', array(
+        return $this->render('PackagistWebBundle:Web:searchForm.html.twig', [
             'searchForm' => $form->createView(),
             'orderBys' => $orderBysViewModel
-        ));
+        ]);
     }
 
     /**
@@ -85,9 +85,9 @@ class WebController extends Controller
 
             // configure dismax
             $dismax = $select->getDisMax();
-            $dismax->setQueryFields(array('name^4', 'package_name^4', 'description', 'tags', 'text', 'text_ngram', 'name_split^2'));
-            $dismax->setPhraseFields(array('description'));
-            $dismax->setBoostFunctions(array('log(trendiness)^10'));
+            $dismax->setQueryFields(['name^4', 'package_name^4', 'description', 'tags', 'text', 'text_ngram', 'name_split^2']);
+            $dismax->setPhraseFields(['description']);
+            $dismax->setBoostFunctions(['log(trendiness)^10']);
             $dismax->setMinimumMatch(1);
             $dismax->setQueryParser('edismax');
 
@@ -100,7 +100,7 @@ class WebController extends Controller
 
             // filter by tags
             if ($tagsFilter) {
-                $tags = array();
+                $tags = [];
                 foreach ((array) $tagsFilter as $tag) {
                     $tags[] = $select->getHelper()->escapeTerm($tag);
                 }
@@ -129,10 +129,10 @@ class WebController extends Controller
             $perPage = $req->query->getInt('per_page', 15);
             if ($perPage <= 0 || $perPage > 100) {
                 if ($req->getRequestFormat() === 'json') {
-                    return JsonResponse::create(array(
+                    return JsonResponse::create([
                         'status' => 'error',
                         'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-                    ), 400)->setCallback($req->query->get('callback'));
+                    ], 400)->setCallback($req->query->get('callback'));
                 }
 
                 $perPage = max(0, min(100, $perPage));
@@ -141,7 +141,7 @@ class WebController extends Controller
 
             $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
-            $metadata = array();
+            $metadata = [];
 
             foreach ($paginator as $package) {
                 if (is_numeric($package->id)) {
@@ -152,30 +152,30 @@ class WebController extends Controller
 
             if ($req->getRequestFormat() === 'json') {
                 try {
-                    $result = array(
-                        'results' => array(),
+                    $result = [
+                        'results' => [],
                         'total' => $paginator->getNbResults(),
-                    );
+                    ];
                 } catch (\Solarium_Client_HttpException $e) {
-                    return JsonResponse::create(array(
+                    return JsonResponse::create([
                         'status' => 'error',
                         'message' => 'Could not connect to the search server',
-                    ), 500)->setCallback($req->query->get('callback'));
+                    ], 500)->setCallback($req->query->get('callback'));
                 }
 
                 foreach ($paginator as $package) {
                     if (ctype_digit((string) $package->id)) {
-                        $url = $this->generateUrl('view_package', array('name' => $package->name), UrlGeneratorInterface::ABSOLUTE_URL);
+                        $url = $this->generateUrl('view_package', ['name' => $package->name], UrlGeneratorInterface::ABSOLUTE_URL);
                     } else {
-                        $url = $this->generateUrl('view_providers', array('name' => $package->name), UrlGeneratorInterface::ABSOLUTE_URL);
+                        $url = $this->generateUrl('view_providers', ['name' => $package->name], UrlGeneratorInterface::ABSOLUTE_URL);
                     }
 
-                    $row = array(
+                    $row = [
                         'name' => $package->name,
                         'description' => $package->description ?: '',
                         'url' => $url,
                         'repository' => $package->repository,
-                    );
+                    ];
                     if (is_numeric($package->id)) {
                         $row['downloads'] = $metadata['downloads'][$package->id];
                         $row['favers'] = $metadata['favers'][$package->id];
@@ -186,11 +186,11 @@ class WebController extends Controller
                 }
 
                 if ($paginator->hasNextPage()) {
-                    $params = array(
+                    $params = [
                         '_format' => 'json',
                         'q' => $form->getData()->getQuery(),
                         'page' => $paginator->getNextPage()
-                    );
+                    ];
                     if ($tagsFilter) {
                         $params['tags'] = (array) $tagsFilter;
                     }
@@ -208,30 +208,30 @@ class WebController extends Controller
 
             if ($req->isXmlHttpRequest()) {
                 try {
-                    return $this->render('PackagistWebBundle:Web:search.html.twig', array(
+                    return $this->render('PackagistWebBundle:Web:search.html.twig', [
                         'packages' => $paginator,
                         'meta' => $metadata,
                         'noLayout' => true,
-                    ));
+                    ]);
                 } catch (\Twig_Error_Runtime $e) {
                     if (!$e->getPrevious() instanceof \Solarium_Client_HttpException) {
                         throw $e;
                     }
-                    return JsonResponse::create(array(
+                    return JsonResponse::create([
                         'status' => 'error',
                         'message' => 'Could not connect to the search server',
-                    ), 500)->setCallback($req->query->get('callback'));
+                    ], 500)->setCallback($req->query->get('callback'));
                 }
             }
 
-            return $this->render('PackagistWebBundle:Web:search.html.twig', array(
+            return $this->render('PackagistWebBundle:Web:search.html.twig', [
                 'packages' => $paginator,
                 'meta' => $metadata,
-            ));
+            ]);
         } elseif ($req->getRequestFormat() === 'json') {
-            return JsonResponse::create(array(
+            return JsonResponse::create([
                 'error' => 'Missing search query, example: ?q=example'
-            ), 400)->setCallback($req->query->get('callback'));
+            ], 400)->setCallback($req->query->get('callback'));
         }
 
         return $this->render('PackagistWebBundle:Web:search.html.twig');
@@ -251,7 +251,7 @@ class WebController extends Controller
             ->getConnection()
             ->fetchAll('SELECT COUNT(*) count, DATE_FORMAT(releasedAt, "%Y-%m") month FROM `package_version` GROUP BY month');
 
-        $chart = array('versions' => array(), 'packages' => array(), 'months' => array());
+        $chart = ['versions' => [], 'packages' => [], 'months' => []];
 
         // prepare x axis
         $date = new \DateTime($packages[0]['month'].'-01');
@@ -297,7 +297,7 @@ class WebController extends Controller
             $yesterday = new \DateTime('-2days 00:00:00');
             $dailyGraphStart = new \DateTime('-32days 00:00:00'); // 30 days before yesterday
 
-            $dlChart = $dlChartMonthly = array();
+            $dlChart = $dlChartMonthly = [];
             while ($date <= $yesterday) {
                 if ($date > $dailyGraphStart) {
                     $dlChart[$date->format('Y-m-d')] = 'downloads:'.$date->format('Ymd');
@@ -306,20 +306,20 @@ class WebController extends Controller
                 $date->modify('+1day');
             }
 
-            $dlChart = array(
+            $dlChart = [
                 'labels' => array_keys($dlChart),
                 'values' => $redis->mget(array_values($dlChart))
-            );
-            $dlChartMonthly = array(
+            ];
+            $dlChartMonthly = [
                 'labels' => array_keys($dlChartMonthly),
                 'values' => $redis->mget(array_values($dlChartMonthly))
-            );
+            ];
         } catch (ConnectionException $e) {
             $downloads = 'N/A';
             $dlChart = $dlChartMonthly = null;
         }
 
-        return array(
+        return [
             'chart' => $chart,
             'packages' => !empty($chart['packages']) ? max($chart['packages']) : 0,
             'versions' => !empty($chart['versions']) ? max($chart['versions']) : 0,
@@ -329,7 +329,7 @@ class WebController extends Controller
             'downloadsChartMonthly' => $dlChartMonthly,
             'maxMonthlyDownloads' => !empty($dlChartMonthly) ? max($dlChartMonthly['values']) : null,
             'downloadsStartDate' => $downloadsStartDate,
-        );
+        ];
     }
 
     /**
@@ -339,24 +339,24 @@ class WebController extends Controller
      */
     protected function getFilteredOrderedBys(Request $req)
     {
-        $orderBys = $req->query->get('orderBys', array());
+        $orderBys = $req->query->get('orderBys', []);
         if (!$orderBys) {
             $orderBys = $req->query->get('search_query');
-            $orderBys = isset($orderBys['orderBys']) ? $orderBys['orderBys'] : array();
+            $orderBys = isset($orderBys['orderBys']) ? $orderBys['orderBys'] : [];
         }
 
         if ($orderBys) {
-            $allowedSorts = array(
+            $allowedSorts = [
                 'downloads' => 1,
                 'favers' => 1
-            );
+            ];
 
-            $allowedOrders = array(
+            $allowedOrders = [
                 'asc' => 1,
                 'desc' => 1,
-            );
+            ];
 
-            $filteredOrderBys = array();
+            $filteredOrderBys = [];
 
             foreach ($orderBys as $orderBy) {
                 if (isset($orderBy['sort'])
@@ -367,7 +367,7 @@ class WebController extends Controller
                 }
             }
         } else {
-            $filteredOrderBys = array();
+            $filteredOrderBys = [];
         }
 
         return $filteredOrderBys;
@@ -380,7 +380,7 @@ class WebController extends Controller
      */
     protected function getNormalizedOrderBys(array $orderBys)
     {
-        $normalizedOrderBys = array();
+        $normalizedOrderBys = [];
 
         foreach ($orderBys as $sort) {
             $normalizedOrderBys[$sort['sort']] = $sort['order'];
@@ -425,31 +425,31 @@ class WebController extends Controller
             $query = $req->query->get('search_query');
             $query = isset($query['query']) ? $query['query'] : '';
 
-            return '?' . http_build_query(array(
+            return '?' . http_build_query([
                 'q' => $query,
-                'orderBys' => array(
-                    array(
+                'orderBys' => [
+                    [
                         'sort' => $sort,
                         'order' => $order
-                    )
-                )
-            ));
+                    ]
+                ]
+            ]);
         };
 
-        return array(
-            'downloads' => array(
+        return [
+            'downloads' => [
                 'title' => 'Sort by downloads',
                 'class' => 'glyphicon-arrow-down',
                 'arrowClass' => $makeDefaultArrow('downloads'),
                 'href' => $makeDefaultHref('downloads')
-            ),
-            'favers' => array(
+            ],
+            'favers' => [
                 'title' => 'Sort by favorites',
                 'class' => 'glyphicon-star',
                 'arrowClass' => $makeDefaultArrow('favers'),
                 'href' => $makeDefaultHref('favers')
-            ),
-        );
+            ],
+        ];
     }
 
     /**
@@ -460,7 +460,7 @@ class WebController extends Controller
     {
         // transform q=search shortcut
         if ($req->query->has('q') || $req->query->has('orderBys')) {
-            $searchQuery = array();
+            $searchQuery = [];
 
             $q = $req->query->get('q');
 

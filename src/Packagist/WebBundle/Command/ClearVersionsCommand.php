@@ -29,10 +29,10 @@ class ClearVersionsCommand extends ContainerAwareCommand
     {
         $this
             ->setName('packagist:clear:versions')
-            ->setDefinition(array(
+            ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force execution, by default it runs in dry-run mode'),
                 new InputOption('filter', null, InputOption::VALUE_NONE, 'Filter (regex) against "<version name> <version number>"'),
-            ))
+            ])
             ->setDescription('Clears all versions from the databases')
             ->setHelp(<<<EOF
 
@@ -53,12 +53,12 @@ EOF
         $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
 
         $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
-        $ids = array();
+        $ids = [];
         foreach ($packages as $package) {
             $ids[] = $package['id'];
         }
 
-        $packageNames = array();
+        $packageNames = [];
 
         while ($ids) {
             $qb = $versionRepo->createQueryBuilder('v');

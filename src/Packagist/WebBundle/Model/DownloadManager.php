@@ -51,18 +51,18 @@ class DownloadManager
         }
 
         $date = new \DateTime();
-        $keys = array('dl:'.$package . $version);
+        $keys = ['dl:'.$package . $version];
         for ($i = 0; $i < 30; $i++) {
             $keys[] = 'dl:' . $package . $version . ':' . $date->format('Ymd');
             $date->modify('-1 day');
         }
 
         $vals = $this->redis->mget($keys);
-        $result = array(
+        $result = [
             'total' => (int) array_shift($vals) ?: 0,
             'monthly' => (int) array_sum($vals) ?: 0,
             'daily' => (int) $vals[0] ?: 0,
-        );
+        ];
 
         return $result;
     }
@@ -90,7 +90,7 @@ class DownloadManager
      */
     public function getPackagesDownloads(array $packageIds)
     {
-        $keys = array();
+        $keys = [];
 
         foreach ($packageIds as $id) {
             if (ctype_digit((string) $id)) {
@@ -99,7 +99,7 @@ class DownloadManager
         }
 
         if (!$keys) {
-            return array();
+            return [];
         }
 
         $res = array_map('intval', $this->redis->mget(array_values($keys)));

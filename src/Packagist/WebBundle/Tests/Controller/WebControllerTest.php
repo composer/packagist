@@ -53,11 +53,11 @@ class WebControllerTest extends WebTestCase
 
         $this->assertSame(
             $this->getJsonResults(
-                array(
+                [
                     $this->getJsonResult('twig/twig', 25, 0),
                     $this->getJsonResult('composer/packagist', 12, 0),
                     $this->getJsonResult('symfony/symfony', 42, 0),
-                )
+                ]
             ),
             $json
         );
@@ -69,21 +69,21 @@ class WebControllerTest extends WebTestCase
     public function testSearchOrderByDownloadsAscAction()
     {
         $json = $this->commonTestSearchActionOrderBysDownloads(
-            array(
-                array(
+            [
+                [
                     'sort' => 'downloads',
                     'order' => 'asc',
-                ),
-            )
+                ],
+            ]
         );
 
         $this->assertSame(
             $this->getJsonResults(
-                array(
+                [
                     $this->getJsonResult('composer/packagist', 12, 0),
                     $this->getJsonResult('twig/twig', 25, 0),
                     $this->getJsonResult('symfony/symfony', 42, 0),
-                )
+                ]
             ),
             $json
         );
@@ -95,21 +95,21 @@ class WebControllerTest extends WebTestCase
     public function testSearchOrderByDownloadsDescAction()
     {
         $json = $this->commonTestSearchActionOrderBysDownloads(
-            array(
-                array(
+            [
+                [
                     'sort' => 'downloads',
                     'order' => 'desc',
-                ),
-            )
+                ],
+            ]
         );
 
         $this->assertSame(
             $this->getJsonResults(
-                array(
+                [
                     $this->getJsonResult('symfony/symfony', 42, 0),
                     $this->getJsonResult('twig/twig', 25, 0),
                     $this->getJsonResult('composer/packagist', 12, 0),
-                )
+                ]
             ),
             $json
         );
@@ -121,21 +121,21 @@ class WebControllerTest extends WebTestCase
     public function testSearchOrderByFaversAscAction()
     {
         $json = $this->commonTestSearchActionOrderBysFavers(
-            array(
-                array(
+            [
+                [
                     'sort' => 'favers',
                     'order' => 'asc',
-                ),
-            )
+                ],
+            ]
         );
 
         $this->assertSame(
             $this->getJsonResults(
-                array(
+                [
                     $this->getJsonResult('composer/packagist', 0, 1),
                     $this->getJsonResult('twig/twig', 0, 2),
                     $this->getJsonResult('symfony/symfony', 0, 3),
-                )
+                ]
             ),
             $json
         );
@@ -147,21 +147,21 @@ class WebControllerTest extends WebTestCase
     public function testSearchOrderByFaversDescAction()
     {
         $json = $this->commonTestSearchActionOrderBysFavers(
-            array(
-                array(
+            [
+                [
                     'sort' => 'favers',
                     'order' => 'desc',
-                ),
-            )
+                ],
+            ]
         );
 
         $this->assertSame(
             $this->getJsonResults(
-                array(
+                [
                     $this->getJsonResult('symfony/symfony', 0, 3),
                     $this->getJsonResult('twig/twig', 0, 2),
                     $this->getJsonResult('composer/packagist', 0, 1),
-                )
+                ]
             ),
             $json
         );
@@ -215,25 +215,25 @@ class WebControllerTest extends WebTestCase
                 $favoriteManager->markFavorite($userMock1, $symfonyPackage);
                 $favoriteManager->markFavorite($userMock2, $symfonyPackage);
             },
-            array(
-                array(
+            [
+                [
                     'sort' => 'downloads',
                     'order' => 'desc',
-                ),
-                array(
+                ],
+                [
                     'sort' => 'favers',
                     'order' => 'desc',
-                ),
-            )
+                ],
+            ]
         );
 
         $this->assertSame(
             $this->getJsonResults(
-                array(
+                [
                     $this->getJsonResult('symfony/symfony', 25, 3),
                     $this->getJsonResult('twig/twig', 25, 0),
                     $this->getJsonResult('composer/packagist', 12, 1),
-                )
+                ]
             ),
             $json
         );
@@ -247,7 +247,7 @@ class WebControllerTest extends WebTestCase
      */
     protected function commonTestSearchActionOrderBysAction(
         callable $onBeforeIndex,
-        array $orderBys = array()
+        array $orderBys = []
     ) {
         $client = self::createClient();
 
@@ -268,9 +268,9 @@ class WebControllerTest extends WebTestCase
 
         if (!empty($orderBys)) {
             $orderBysQryStrPart = '&' . http_build_query(
-                array(
+                [
                     'orderBys' => $orderBys
-                )
+                ]
             );
         } else {
             $orderBysQryStrPart = '';
@@ -332,7 +332,7 @@ class WebControllerTest extends WebTestCase
      * @return array
      */
     protected function commonTestSearchActionOrderBysDownloads(
-        array $orderBys = array()
+        array $orderBys = []
     ) {
         return $this->commonTestSearchActionOrderBysAction(
             function (
@@ -365,7 +365,7 @@ class WebControllerTest extends WebTestCase
      * @return array
      */
     protected function commonTestSearchActionOrderBysFavers(
-        array $orderBys = array()
+        array $orderBys = []
     ) {
         $userMock = $this->getMock('Packagist\WebBundle\Entity\User');
         $userMock1 = $this->getMock('Packagist\WebBundle\Entity\User');
@@ -415,7 +415,7 @@ class WebControllerTest extends WebTestCase
         $command,
         $errorHandling = true
     ) {
-        $output = array();
+        $output = [];
 
         $returnCode = null;;
 
@@ -441,14 +441,14 @@ class WebControllerTest extends WebTestCase
      */
     protected function getJsonResult($package, $downloads, $favers)
     {
-        return array(
+        return [
             'name' => $package,
             'description' => '',
             'url' => 'http://localhost/packages/' . $package,
             'repository' => 'https://github.com/' . $package,
             'downloads' => $downloads,
             'favers' => $favers,
-        );
+        ];
     }
 
     /**
@@ -459,9 +459,9 @@ class WebControllerTest extends WebTestCase
     protected function getJsonResults(
         array $results
     ) {
-        return array(
+        return [
             'results' => $results,
             'total' => count($results)
-        );
+        ];
     }
 }

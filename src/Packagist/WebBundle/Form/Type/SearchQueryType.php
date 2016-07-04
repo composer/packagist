@@ -27,21 +27,21 @@ class SearchQueryType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->add('query', SearchType::class);
-        $builder->add('orderBys', CollectionType::class, array(
+        $builder->add('orderBys', CollectionType::class, [
             'entry_type' => OrderByType::class,
             'allow_add' => true,
             'allow_delete' => true,
             'prototype' => false,
-        ));
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(array(
+        $resolver->setDefaults([
             'data_class' => SearchQuery::class,
             'csrf_protection' => false,
             'method' => 'GET',
-        ));
+        ]);
     }
 
     /**

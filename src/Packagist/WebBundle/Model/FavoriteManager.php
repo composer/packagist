@@ -74,7 +74,7 @@ class FavoriteManager
 
     public function getFaverCounts(array $packageIds)
     {
-        $res = array();
+        $res = [];
 
         // TODO should be done with scripting when available
         foreach ($packageIds as $id) {

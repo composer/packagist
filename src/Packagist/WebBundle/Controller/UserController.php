@@ -42,11 +42,11 @@ class UserController extends Controller
     {
         $packages = $this->getUserPackages($req, $user);
 
-        return array(
+        return [
             'packages' => $packages,
             'meta' => $this->getPackagesMetadata($packages),
             'user' => $user,
-        );
+        ];
     }
 
     /**
@@ -64,11 +64,11 @@ class UserController extends Controller
 
         return $this->container->get('templating')->renderResponse(
             'FOSUserBundle:Profile:show.html.twig',
-            array(
+            [
                 'packages' => $packages,
                 'meta' => $this->getPackagesMetadata($packages),
                 'user' => $user,
-            )
+            ]
         );
     }
 
@@ -82,11 +82,11 @@ class UserController extends Controller
     {
         $packages = $this->getUserPackages($req, $user);
 
-        return array(
+        return [
             'packages' => $packages,
             'meta' => $this->getPackagesMetadata($packages),
             'user' => $user,
-        );
+        ];
     }
 
     /**
@@ -103,9 +103,9 @@ class UserController extends Controller
             }
         } catch (\Exception $e) {
             $this->get('session')->getFlashBag()->set('error', 'Could not connect to the Redis database.');
-            $this->get('logger')->notice($e->getMessage(), array('exception' => $e));
+            $this->get('logger')->notice($e->getMessage(), ['exception' => $e]);
 
-            return array('user' => $user, 'packages' => array());
+            return ['user' => $user, 'packages' => []];
         }
 
         $paginator = new Pagerfanta(
@@ -115,7 +115,7 @@ class UserController extends Controller
         $paginator->setMaxPerPage(15);
         $paginator->setCurrentPage($req->query->get('page', 1), false, true);
 
-        return array('packages' => $paginator, 'user' => $user);
+        return ['packages' => $paginator, 'user' => $user];
     }
 
     /**
@@ -169,7 +169,7 @@ class UserController extends Controller
     {
         $packages = $this->getDoctrine()
             ->getRepository('PackagistWebBundle:Package')
-            ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true);
+            ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true);
 
         $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
         $paginator->setMaxPerPage(15);

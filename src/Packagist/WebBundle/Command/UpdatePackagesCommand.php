@@ -38,13 +38,13 @@ class UpdatePackagesCommand extends ContainerAwareCommand
     {
         $this
             ->setName('packagist:update')
-            ->setDefinition(array(
+            ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages, or if a package name is given forces an update of all versions'),
                 new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all versions before an update'),
                 new InputOption('notify-failures', null, InputOption::VALUE_NONE, 'Notify failures to maintainers by email'),
                 new InputOption('update-equal-refs', null, InputOption::VALUE_NONE, 'Force update of all versions even when they already exist'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
-            ))
+            ])
             ->setDescription('Updates packages')
         ;
     }
@@ -64,7 +64,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $flags = 0;
 
         if ($package) {
-            $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
+            $packages = [['id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()]];
             $flags = $force ? Updater::UPDATE_EQUAL_REFS : 0;
         } elseif ($force) {
             $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
@@ -73,7 +73,7 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
         }
 
-        $ids = array();
+        $ids = [];
         foreach ($packages as $package) {
             $ids[] = $package['id'];
         }
@@ -114,18 +114,18 @@ class UpdatePackagesCommand extends ContainerAwareCommand
                             $io->setAuthentication($domain, $auth['username'], $auth['password']);
                         }
                     }
-                    $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
+                    $repository = new VcsRepository(['url' => $package->getRepository()], $io, $config);
                     $repository->setLoader($loader);
                     $updater->update($io, $config, $package, $repository, $flags, $start);
                 } catch (InvalidRepositoryException $e) {
-                    $output->writeln('<error>Broken repository in '.$router->generate('view_package', array('name' => $package->getName()), true).': '.$e->getMessage().'</error>');
+                    $output->writeln('<error>Broken repository in '.$router->generate('view_package', ['name' => $package->getName()], true).': '.$e->getMessage().'</error>');
                     if ($input->getOption('notify-failures')) {
                         if (!$this->getContainer()->get('packagist.package_manager')->notifyUpdateFailure($package, $e, $io->getOutput())) {
                             $output->writeln('<error>Failed to notify maintainers</error>');
                         }
                     }
                 } catch (\Exception $e) {
-                    $output->writeln('<error>Error updating '.$router->generate('view_package', array('name' => $package->getName()), true).' ['.get_class($e).']: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().'</error>');
+                    $output->writeln('<error>Error updating '.$router->generate('view_package', ['name' => $package->getName()], true).' ['.get_class($e).']: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().'</error>');
                 }
             }
 

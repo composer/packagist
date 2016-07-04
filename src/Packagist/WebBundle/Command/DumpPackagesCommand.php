@@ -31,9 +31,9 @@ class DumpPackagesCommand extends ContainerAwareCommand
     {
         $this
             ->setName('packagist:dump')
-            ->setDefinition(array(
+            ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a dump of all packages'),
-            ))
+            ])
             ->setDescription('Dumps the packages into a packages.json + included files')
         ;
     }
@@ -62,7 +62,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForDumping();
         }
 
-        $ids = array();
+        $ids = [];
         foreach ($packages as $package) {
             $ids[] = $package['id'];
         }
