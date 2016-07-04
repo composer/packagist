@@ -43,16 +43,16 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function connect($user, UserResponseInterface $response)
     {
         $username = $response->getUsername();
 
         /** @var User $previousUser */
-        $previousUser = $this->userManager->findUserBy(array('githubId' => $username));
+        $previousUser = $this->userManager->findUserBy(['githubId' => $username]);
 
-        /** @var User $user */
+        /* @var User $user */
         $user->setGithubId($username);
         $user->setGithubToken($response->getAccessToken());
 
@@ -72,13 +72,13 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function loadUserByOAuthUserResponse(UserResponseInterface $response)
     {
         $username = $response->getUsername();
         /** @var User $user */
-        $user = $this->userManager->findUserBy(array('githubId' => $username));
+        $user = $this->userManager->findUserBy(['githubId' => $username]);
 
         if (!$user) {
             throw new AccountNotLinkedException(sprintf('No user with github username "%s" was found.', $username));
@@ -93,7 +93,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function loadUserByUsername($usernameOrEmail)
     {
@@ -103,7 +103,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function refreshUser(UserInterface $user)
     {
@@ -111,7 +111,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function supportsClass($class)
     {

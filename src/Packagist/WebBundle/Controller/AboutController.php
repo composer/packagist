@@ -27,7 +27,7 @@ class AboutController extends Controller
      */
     public function aboutAction()
     {
-        return array();
+        return [];
     }
 
     /**

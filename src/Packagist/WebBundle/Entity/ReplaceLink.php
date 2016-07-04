@@ -17,6 +17,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity
  * @ORM\Table(name="link_replace")
+ *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class ReplaceLink extends PackageLink

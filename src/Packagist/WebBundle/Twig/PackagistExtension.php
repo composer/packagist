@@ -18,19 +18,19 @@ class PackagistExtension extends \Twig_Extension
 
     public function getTests()
     {
-        return array(
+        return [
             new \Twig_SimpleTest('existing_package', [$this, 'packageExistsTest']),
             new \Twig_SimpleTest('existing_provider', [$this, 'providerExistsTest']),
             new \Twig_SimpleTest('numeric', [$this, 'numericTest']),
-        );
+        ];
     }
 
     public function getFilters()
     {
-        return array(
+        return [
             new \Twig_SimpleFilter('prettify_source_reference', [$this, 'prettifySourceReference']),
-            new \Twig_SimpleFilter('gravatar_hash', [$this, 'generateGravatarHash'])
-        );
+            new \Twig_SimpleFilter('gravatar_hash', [$this, 'generateGravatarHash']),
+        ];
     }
 
     public function getName()

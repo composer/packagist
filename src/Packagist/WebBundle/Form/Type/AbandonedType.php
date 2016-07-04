@@ -17,28 +17,26 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 
 /**
- * Class AbandonedType
+ * Class AbandonedType.
  *
  * Form used to acquire replacement Package information for abandoned package.
- *
- * @package Packagist\WebBundle\Form\Type
  */
 class AbandonedType extends AbstractType
 {
     /**
      * @param FormBuilderInterface $builder
-     * @param array $options
+     * @param array                $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->add(
             'replacement',
             TextType::class,
-            array(
+            [
                 'required' => false,
-                'label'    => 'Replacement package',
-                'attr'     => array('placeholder' => 'optional package name')
-            )
+                'label' => 'Replacement package',
+                'attr' => ['placeholder' => 'optional package name'],
+            ]
         );
     }
 

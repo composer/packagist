@@ -26,7 +26,8 @@ use Doctrine\DBAL\Connection;
 class SymlinkDumper
 {
     /**
-     * Doctrine
+     * Doctrine.
+     *
      * @var RegistryInterface
      */
     protected $doctrine;
@@ -57,43 +58,49 @@ class SymlinkDumper
     protected $router;
 
     /**
-     * Data cache
+     * Data cache.
+     *
      * @var array
      */
     private $rootFile;
 
     /**
-     * Data cache
+     * Data cache.
+     *
      * @var array
      */
-    private $listings = array();
+    private $listings = [];
 
     /**
-     * Data cache
+     * Data cache.
+     *
      * @var array
      */
-    private $individualFiles = array();
+    private $individualFiles = [];
 
     /**
-     * Modified times of individual files
+     * Modified times of individual files.
+     *
      * @var array
      */
-    private $individualFilesMtime = array();
+    private $individualFilesMtime = [];
 
     /**
-     * Stores all the disk writes to be replicated in the second build dir after the symlink has been swapped
+     * Stores all the disk writes to be replicated in the second build dir after the symlink has been swapped.
+     *
      * @var array
      */
-    private $writeLog = array();
+    private $writeLog = [];
 
     /**
      * Generate compressed files.
+     *
      * @var int 0 disabled, 9 maximum.
      */
     private $compress;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param RegistryInterface     $doctrine
      * @param Filesystem            $filesystem
@@ -106,7 +113,7 @@ class SymlinkDumper
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
-        $this->cfs = new ComposerFilesystem;
+        $this->cfs = new ComposerFilesystem();
         $this->router = $router;
         $this->webDir = realpath($webDir);
         $this->buildDir = $targetDir;
@@ -114,11 +121,11 @@ class SymlinkDumper
     }
 
     /**
-     * Dump a set of packages to the web root
+     * Dump a set of packages to the web root.
      *
-     * @param array   $packageIds
-     * @param Boolean $force
-     * @param Boolean $verbose
+     * @param array $packageIds
+     * @param bool  $force
+     * @param bool  $verbose
      */
     public function dump(array $packageIds, $force = false, $verbose = false)
     {
@@ -161,7 +168,7 @@ class SymlinkDumper
                 echo 'Copying existing files'.PHP_EOL;
             }
 
-            foreach (array($buildDir, $oldBuildDir) as $dir) {
+            foreach ([$buildDir, $oldBuildDir] as $dir) {
                 $this->cloneDir($webDir.'/p', $dir);
             }
         }
@@ -189,13 +196,13 @@ class SymlinkDumper
         $versionRepo = $this->doctrine->getRepository('PackagistWebBundle:Version');
 
         try {
-            $modifiedIndividualFiles = array();
+            $modifiedIndividualFiles = [];
 
             $total = count($packageIds);
             $current = 0;
             $step = 50;
             while ($packageIds) {
-                $dumpTime = new \DateTime;
+                $dumpTime = new \DateTime();
                 $packages = $this->doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($packageIds, 0, $step));
 
                 if ($verbose) {
@@ -206,7 +213,7 @@ class SymlinkDumper
 
                 // prepare packages in memory
                 foreach ($packages as $package) {
-                    $affectedFiles = array();
+                    $affectedFiles = [];
                     $name = strtolower($package->getName());
 
                     // clean up versions in individual files
@@ -267,8 +274,8 @@ class SymlinkDumper
             if ($verbose) {
                 echo 'Preparing individual files listings'.PHP_EOL;
             }
-            $safeFiles = array();
-            $individualHashedListings = array();
+            $safeFiles = [];
+            $individualHashedListings = [];
             $finder = Finder::create()->files()->ignoreVCS(true)->name('*.json')->in($buildDir)->depth('1');
 
             foreach ($finder as $file) {
@@ -287,18 +294,18 @@ class SymlinkDumper
                 $hash = hash_file('sha256', $file);
                 $key = substr($key, 0, -5);
                 $safeFiles[] = $key.'$'.$hash.'.json';
-                $this->listings[$listing]['providers'][$key] = array('sha256' => $hash);
+                $this->listings[$listing]['providers'][$key] = ['sha256' => $hash];
                 $individualHashedListings[$listing] = true;
             }
 
             // prepare root file
             $rootFile = $buildDir.'/packages.json';
-            $this->rootFile = array('packages' => array());
-            $url = $this->router->generate('track_download', array('name' => 'VND/PKG'));
+            $this->rootFile = ['packages' => []];
+            $url = $this->router->generate('track_download', ['name' => 'VND/PKG']);
             $this->rootFile['notify'] = str_replace('VND/PKG', '%package%', $url);
             $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch');
-            $this->rootFile['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
-            $this->rootFile['search'] = $this->router->generate('search', array('_format' => 'json')) . '?q=%query%&type=%type%';
+            $this->rootFile['providers-url'] = $this->router->generate('home').'p/%package%$%hash%.json';
+            $this->rootFile['search'] = $this->router->generate('search', ['_format' => 'json']).'?q=%query%&type=%type%';
 
             if ($verbose) {
                 echo 'Dumping individual listings'.PHP_EOL;
@@ -308,7 +315,7 @@ class SymlinkDumper
             foreach ($individualHashedListings as $listing => $dummy) {
                 list($listingPath, $hash) = $this->dumpListing($buildDir.'/'.$listing);
                 $hashedListing = basename($listingPath);
-                $this->rootFile['provider-includes']['p/'.str_replace($hash, '%hash%', $hashedListing)] = array('sha256' => $hash);
+                $this->rootFile['provider-includes']['p/'.str_replace($hash, '%hash%', $hashedListing)] = ['sha256' => $hash];
                 $safeFiles[] = $hashedListing;
             }
 
@@ -457,7 +464,7 @@ class SymlinkDumper
         exec('cp -rpf '.escapeshellarg($source).' '.escapeshellarg($target), $output, $exit);
         if (0 !== $exit) {
             echo 'Warning, cloning a directory using the php fallback does not keep filemtime, invalid behavior may occur';
-            $this->fs->mirror($source, $target, null, array('override' => true));
+            $this->fs->mirror($source, $target, null, ['override' => true]);
         }
     }
 
@@ -539,7 +546,7 @@ class SymlinkDumper
 
         $this->writeFile($file, $json, $time);
         if ($this->compress) {
-            $this->writeFile($file . '.gz', gzencode($json, $this->compress), $time);
+            $this->writeFile($file.'.gz', gzencode($json, $this->compress), $time);
         }
     }
 
@@ -552,17 +559,17 @@ class SymlinkDumper
 
         $json = json_encode($this->listings[$key]);
         $hash = hash('sha256', $json);
-        $path = substr($path, 0, -5) . '$' . $hash . '.json';
+        $path = substr($path, 0, -5).'$'.$hash.'.json';
         $time = time();
 
         if (!file_exists($path)) {
             $this->writeFile($path, $json, $time);
             if ($this->compress) {
-                $this->writeFile($path . '.gz', gzencode($json, $this->compress), $time);
+                $this->writeFile($path.'.gz', gzencode($json, $this->compress), $time);
             }
         }
 
-        return array($path, $hash);
+        return [$path, $hash];
     }
 
     private function loadIndividualFile($path, $key)
@@ -575,7 +582,7 @@ class SymlinkDumper
             $this->individualFiles[$key] = json_decode(file_get_contents($path), true);
             $this->individualFilesMtime[$key] = filemtime($path);
         } else {
-            $this->individualFiles[$key] = array();
+            $this->individualFiles[$key] = [];
             $this->individualFilesMtime[$key] = 0;
         }
     }
@@ -587,8 +594,8 @@ class SymlinkDumper
             $this->dumpIndividualFile($buildDir.'/'.$file, $file);
         }
 
-        $this->individualFiles = array();
-        $this->individualFilesMtime = array();
+        $this->individualFiles = [];
+        $this->individualFilesMtime = [];
     }
 
     private function dumpIndividualFile($path, $key)
@@ -605,7 +612,7 @@ class SymlinkDumper
         $this->writeFile($path, $json, $this->individualFilesMtime[$key]);
 
         // write the hashed provider file
-        $hashedFile = substr($path, 0, -5) . '$' . hash('sha256', $json) . '.json';
+        $hashedFile = substr($path, 0, -5).'$'.hash('sha256', $json).'.json';
         $this->writeFile($hashedFile, $json);
     }
 
@@ -629,6 +636,7 @@ class SymlinkDumper
             return false;
         }
         $this->fs->mkdir($path);
+
         return true;
     }
 
@@ -647,7 +655,7 @@ class SymlinkDumper
 
     private function getTargetListingBlocks($now)
     {
-        $blocks = array();
+        $blocks = [];
 
         // monday last week
         $blocks['latest'] = strtotime('monday last week', $now);
@@ -657,7 +665,7 @@ class SymlinkDumper
         $block = new \DateTime(date('Y', $now).'-'.$month.'-01'); // 1st day of current trimester
 
         // split last 12 months in 4 trimesters
-        for ($i=0; $i < 4; $i++) {
+        for ($i = 0; $i < 4; ++$i) {
             $blocks[$block->format('Y-m')] = $block->getTimestamp();
             $block->sub(new \DateInterval('P3M'));
         }
@@ -666,7 +674,7 @@ class SymlinkDumper
 
         while ($year >= 2013) {
             $blocks[''.$year] = strtotime($year.'-01-01');
-            $year--;
+            --$year;
         }
 
         return $blocks;
@@ -688,7 +696,7 @@ class SymlinkDumper
             }
         }
 
-        return "provider-archived.json";
+        return 'provider-archived.json';
     }
 
     private function writeFile($path, $contents, $mtime = null)
@@ -699,7 +707,7 @@ class SymlinkDumper
         }
 
         if (is_array($this->writeLog)) {
-            $this->writeLog[$path] = array($contents, $mtime);
+            $this->writeLog[$path] = [$contents, $mtime];
         }
     }
 

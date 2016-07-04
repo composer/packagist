@@ -28,13 +28,13 @@ class Controller extends BaseController
         $dlMgr = $this->get('packagist.download_manager');
 
         try {
-            $ids = array();
+            $ids = [];
 
             if (!count($packages)) {
                 return;
             }
 
-            $favs = array();
+            $favs = [];
             $solarium = false;
             foreach ($packages as $package) {
                 if ($package instanceof \Solarium_Document_ReadOnly) {
@@ -52,17 +52,18 @@ class Controller extends BaseController
             }
 
             if ($solarium) {
-                return array(
+                return [
                     'downloads' => $dlMgr->getPackagesDownloads($ids),
                     'favers' => $favMgr->getFaverCounts($ids),
-                );
+                ];
             }
 
-            return array(
+            return [
                 'downloads' => $dlMgr->getPackagesDownloads($ids),
                 'favers' => $favs,
-            );
-        } catch (\Predis\Connection\ConnectionException $e) {}
+            ];
+        } catch (\Predis\Connection\ConnectionException $e) {
+        }
     }
 
     /**
@@ -70,6 +71,7 @@ class Controller extends BaseController
      *
      * @param \Doctrine\ORM\QueryBuilder $query Query for packages
      * @param int                        $page  Pagenumber to retrieve.
+     *
      * @return \Pagerfanta\Pagerfanta
      */
     protected function setupPager($query, $page)

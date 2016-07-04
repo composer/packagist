@@ -3,7 +3,6 @@
 use Doctrine\Common\Annotations\AnnotationRegistry;
 
 if (!$loader = @include __DIR__.'/../vendor/autoload.php') {
-
     $message = <<< EOF
 <p>You must set up the project dependencies by running composer install</p>
 
@@ -16,6 +15,6 @@ EOF;
     die($message);
 }
 
-AnnotationRegistry::registerLoader(array($loader, 'loadClass'));
+AnnotationRegistry::registerLoader([$loader, 'loadClass']);
 
 return $loader;

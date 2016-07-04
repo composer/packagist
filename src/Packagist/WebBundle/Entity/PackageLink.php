@@ -16,6 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\MappedSuperclass()
+ *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 abstract class PackageLink
@@ -39,13 +40,13 @@ abstract class PackageLink
 
     /**
      * Base property holding the version - this must remain protected since it
-     * is redefined with an annotation in the child class
+     * is redefined with an annotation in the child class.
      */
     protected $version;
 
     public function toArray()
     {
-        return array($this->getPackageName() => $this->getPackageVersion());
+        return [$this->getPackageName() => $this->getPackageVersion()];
     }
 
     public function setId($id)
@@ -59,7 +60,7 @@ abstract class PackageLink
     }
 
     /**
-     * Set packageName
+     * Set packageName.
      *
      * @param string $packageName
      */
@@ -69,7 +70,7 @@ abstract class PackageLink
     }
 
     /**
-     * Get packageName
+     * Get packageName.
      *
      * @return string
      */
@@ -79,7 +80,7 @@ abstract class PackageLink
     }
 
     /**
-     * Set packageVersion
+     * Set packageVersion.
      *
      * @param string $packageVersion
      */
@@ -89,7 +90,7 @@ abstract class PackageLink
     }
 
     /**
-     * Get packageVersion
+     * Get packageVersion.
      *
      * @return string
      */
@@ -99,7 +100,7 @@ abstract class PackageLink
     }
 
     /**
-     * Set version
+     * Set version.
      *
      * @param Version $version
      */
@@ -109,7 +110,7 @@ abstract class PackageLink
     }
 
     /**
-     * Get version
+     * Get version.
      *
      * @return Version
      */

@@ -18,6 +18,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\AuthorRepository")
  * @ORM\Table(name="author")
+ *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Author
@@ -30,7 +31,7 @@ class Author
     private $id;
 
     /**
-     * Unique package name
+     * Unique package name.
      *
      * @ORM\Column(type="text", nullable=true)
      */
@@ -74,12 +75,12 @@ class Author
     public function __construct()
     {
         $this->versions = new ArrayCollection();
-        $this->createdAt = new \DateTime;
+        $this->createdAt = new \DateTime();
     }
 
     public function toArray()
     {
-        $data = array();
+        $data = [];
 
         if ($this->getName()) {
             $data['name'] = $this->getName();
@@ -98,7 +99,7 @@ class Author
     }
 
     /**
-     * Get id
+     * Get id.
      *
      * @return string $id
      */
@@ -108,7 +109,7 @@ class Author
     }
 
     /**
-     * Set name
+     * Set name.
      *
      * @param string $name
      */
@@ -118,7 +119,7 @@ class Author
     }
 
     /**
-     * Get name
+     * Get name.
      *
      * @return string $name
      */
@@ -128,7 +129,7 @@ class Author
     }
 
     /**
-     * Set createdAt
+     * Set createdAt.
      *
      * @param \DateTime $createdAt
      */
@@ -138,7 +139,7 @@ class Author
     }
 
     /**
-     * Get createdAt
+     * Get createdAt.
      *
      * @return \DateTime $createdAt
      */
@@ -148,7 +149,7 @@ class Author
     }
 
     /**
-     * Add versions
+     * Add versions.
      *
      * @param Version $version
      */
@@ -158,7 +159,7 @@ class Author
     }
 
     /**
-     * Get versions
+     * Get versions.
      *
      * @return Version[]
      */
@@ -168,7 +169,7 @@ class Author
     }
 
     /**
-     * Set updatedAt
+     * Set updatedAt.
      *
      * @param \DateTime $updatedAt
      */
@@ -178,7 +179,7 @@ class Author
     }
 
     /**
-     * Get updatedAt
+     * Get updatedAt.
      *
      * @return \DateTime $updatedAt
      */
@@ -188,7 +189,7 @@ class Author
     }
 
     /**
-     * Set email
+     * Set email.
      *
      * @param string $email
      */
@@ -198,7 +199,7 @@ class Author
     }
 
     /**
-     * Get email
+     * Get email.
      *
      * @return string
      */
@@ -208,7 +209,7 @@ class Author
     }
 
     /**
-     * Set homepage
+     * Set homepage.
      *
      * @param string $homepage
      */
@@ -218,7 +219,7 @@ class Author
     }
 
     /**
-     * Get homepage
+     * Get homepage.
      *
      * @return string
      */
@@ -228,7 +229,7 @@ class Author
     }
 
     /**
-     * Set role
+     * Set role.
      *
      * @param string $role
      */
@@ -238,7 +239,7 @@ class Author
     }
 
     /**
-     * Get role
+     * Get role.
      *
      * @return string $role
      */
@@ -248,7 +249,7 @@ class Author
     }
 
     /**
-     * Set owner
+     * Set owner.
      *
      * @param User $owner
      */
@@ -258,7 +259,7 @@ class Author
     }
 
     /**
-     * Get owner
+     * Get owner.
      *
      * @return User
      */

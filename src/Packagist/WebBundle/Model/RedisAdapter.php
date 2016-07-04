@@ -33,7 +33,7 @@ class RedisAdapter implements AdapterInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getNbResults()
     {
@@ -41,7 +41,7 @@ class RedisAdapter implements AdapterInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getSlice($offset, $length)
     {

@@ -23,14 +23,14 @@ class VersionRepository extends EntityRepository
 {
     private $redis;
 
-    protected $supportedLinkTypes = array(
+    protected $supportedLinkTypes = [
         'require',
         'conflict',
         'provide',
         'replace',
         'devRequire',
         'suggest',
-    );
+    ];
 
     public function setRedis(Client $client)
     {
@@ -41,17 +41,17 @@ class VersionRepository extends EntityRepository
     {
         $em = $this->getEntityManager();
         $version->getPackage()->getVersions()->removeElement($version);
-        $version->getPackage()->setCrawledAt(new \DateTime);
-        $version->getPackage()->setUpdatedAt(new \DateTime);
+        $version->getPackage()->setCrawledAt(new \DateTime());
+        $version->getPackage()->setUpdatedAt(new \DateTime());
 
-        $em->getConnection()->executeQuery('DELETE FROM version_author WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM version_tag WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_suggest WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_conflict WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_replace WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_provide WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_require_dev WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_require WHERE version_id=:id', array('id' => $version->getId()));
+        $em->getConnection()->executeQuery('DELETE FROM version_author WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM version_tag WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_suggest WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_conflict WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_replace WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_provide WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_require_dev WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_require WHERE version_id=:id', ['id' => $version->getId()]);
 
         $em->remove($version);
     }
@@ -118,10 +118,11 @@ class VersionRepository extends EntityRepository
     }
 
     /**
-     * Returns the latest versions released
+     * Returns the latest versions released.
      *
-     * @param string $vendor optional vendor filter
+     * @param string $vendor  optional vendor filter
      * @param string $package optional vendor/package filter
+     *
      * @return \Doctrine\ORM\QueryBuilder
      */
     public function getQueryBuilderForLatestVersionWithPackage($vendor = null, $package = null)

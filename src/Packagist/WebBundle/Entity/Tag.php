@@ -22,6 +22,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *     name="tag",
  *     uniqueConstraints={@ORM\UniqueConstraint(name="tag_name_idx", columns={"name"})}
  * )
+ *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Tag
@@ -55,6 +56,7 @@ class Tag
      * @param bool                        $create
      *
      * @return Tag
+     *
      * @throws \Doctrine\ORM\NoResultException
      */
     public static function getByName(EntityManager $em, $name, $create = false)
@@ -100,7 +102,7 @@ class Tag
     }
 
     /**
-     * Add versions
+     * Add versions.
      *
      * @param Version $versions
      */
@@ -110,7 +112,7 @@ class Tag
     }
 
     /**
-     * Get versions
+     * Get versions.
      *
      * @return Version[]
      */

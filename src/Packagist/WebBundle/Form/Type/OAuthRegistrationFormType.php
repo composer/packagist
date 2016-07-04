@@ -23,18 +23,18 @@ class OAuthRegistrationFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('username', null, array('label' => 'form.username', 'translation_domain' => 'FOSUserBundle'))
-            ->add('email', EmailType::class, array('label' => 'form.email', 'translation_domain' => 'FOSUserBundle'))
+            ->add('username', null, ['label' => 'form.username', 'translation_domain' => 'FOSUserBundle'])
+            ->add('email', EmailType::class, ['label' => 'form.email', 'translation_domain' => 'FOSUserBundle'])
         ;
     }
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(array(
+        $resolver->setDefaults([
             'data_class' => User::class,
-            'intention'  => 'registration',
-            'validation_groups' => array('Default', 'Profile'),
-        ));
+            'intention' => 'registration',
+            'validation_groups' => ['Default', 'Profile'],
+        ]);
     }
 
     /**

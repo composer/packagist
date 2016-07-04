@@ -26,21 +26,21 @@ class OrderByType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder->add('sort');
-        $builder->add('order', ChoiceType::class, array(
-            'choices' => array(
+        $builder->add('order', ChoiceType::class, [
+            'choices' => [
                 'asc' => 'asc',
-                'desc' => 'desc'
-            ),
+                'desc' => 'desc',
+            ],
             'choices_as_values' => true,
-        ));
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(array(
+        $resolver->setDefaults([
             'data_class' => OrderBy::class,
             'csrf_protection' => false,
-        ));
+        ]);
     }
 
     /**

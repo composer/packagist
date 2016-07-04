@@ -36,11 +36,11 @@ class IndexPackagesCommand extends ContainerAwareCommand
     {
         $this
             ->setName('packagist:index')
-            ->setDefinition(array(
+            ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-indexing of all packages'),
                 new InputOption('all', null, InputOption::VALUE_NONE, 'Index all packages without clearing the index first'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to index'),
-            ))
+            ])
             ->setDescription('Indexes packages in Solr')
         ;
     }
@@ -60,6 +60,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
+
             return;
         }
 
@@ -76,11 +77,12 @@ class IndexPackagesCommand extends ContainerAwareCommand
             if ($verbose) {
                 $output->writeln('Aborting, another indexer is still active');
             }
+
             return;
         }
 
         if ($package) {
-            $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
+            $packages = [['id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()]];
         } elseif ($force || $indexAll) {
             $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
             $doctrine->getManager()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
@@ -88,7 +90,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForIndexing();
         }
 
-        $ids = array();
+        $ids = [];
         foreach ($packages as $row) {
             $ids[] = $row['id'];
         }
@@ -111,7 +113,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
         // update package index
         while ($ids) {
-            $indexTime = new \DateTime;
+            $indexTime = new \DateTime();
             $idsSlice = array_splice($ids, 0, 50);
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findById($idsSlice);
             $update = $solarium->createUpdate();
@@ -119,7 +121,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $indexTimeUpdates = [];
 
             foreach ($packages as $package) {
-                $current++;
+                ++$current;
                 if ($verbose) {
                     $output->writeln('['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
                 }

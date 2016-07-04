@@ -28,21 +28,21 @@ class RemoveMaintainerRequestType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('user', EntityType::class, array(
+        $builder->add('user', EntityType::class, [
             'class' => 'PackagistWebBundle:User',
-            'query_builder' => function(EntityRepository $er) use ($options) {
+            'query_builder' => function (EntityRepository $er) use ($options) {
                 return $er->getPackageMaintainersQueryBuilder($options['package'], $options['excludeUser']);
             },
-        ));
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setRequired(array('package'));
-        $resolver->setDefaults(array(
+        $resolver->setRequired(['package']);
+        $resolver->setDefaults([
             'excludeUser' => null,
-            'data_class' => MaintainerRequest::class
-        ));
+            'data_class' => MaintainerRequest::class,
+        ]);
     }
 
     /**

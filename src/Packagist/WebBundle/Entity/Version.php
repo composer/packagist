@@ -27,6 +27,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *         @ORM\Index(name="is_devel_idx",columns={"development"})
  *     }
  * )
+ *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Version
@@ -62,7 +63,7 @@ class Version
     /**
      * @ORM\Column(type="array", nullable=true)
      */
-    private $extra = array();
+    private $extra = [];
 
     /**
      * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Tag", inversedBy="versions")
@@ -202,29 +203,29 @@ class Version
         $this->devRequire = new ArrayCollection();
         $this->suggest = new ArrayCollection();
         $this->authors = new ArrayCollection();
-        $this->createdAt = new \DateTime;
-        $this->updatedAt = new \DateTime;
+        $this->createdAt = new \DateTime();
+        $this->updatedAt = new \DateTime();
     }
 
     public function toArray(array $versionData)
     {
-        $tags = array();
+        $tags = [];
         foreach ($this->getTags() as $tag) {
-            /** @var $tag Tag */
+            /* @var $tag Tag */
             $tags[] = $tag->getName();
         }
 
         if (isset($versionData[$this->id]['authors'])) {
             $authors = $versionData[$this->id]['authors'];
         } else {
-            $authors = array();
+            $authors = [];
             foreach ($this->getAuthors() as $author) {
-                /** @var $author Author */
+                /* @var $author Author */
                 $authors[] = $author->toArray();
             }
         }
 
-        $data = array(
+        $data = [
             'name' => $this->getName(),
             'description' => (string) $this->getDescription(),
             'keywords' => $tags,
@@ -236,7 +237,7 @@ class Version
             'source' => $this->getSource(),
             'dist' => $this->getDist(),
             'type' => $this->getType(),
-        );
+        ];
 
         if ($this->getReleasedAt()) {
             $data['time'] = $this->getReleasedAt()->format('Y-m-d\TH:i:sP');
@@ -257,14 +258,14 @@ class Version
             $data['bin'] = $this->getBinaries();
         }
 
-        $supportedLinkTypes = array(
-            'require'    => 'require',
+        $supportedLinkTypes = [
+            'require' => 'require',
             'devRequire' => 'require-dev',
-            'suggest'    => 'suggest',
-            'conflict'   => 'conflict',
-            'provide'    => 'provide',
-            'replace'    => 'replace',
-        );
+            'suggest' => 'suggest',
+            'conflict' => 'conflict',
+            'provide' => 'provide',
+            'replace' => 'replace',
+        ];
 
         foreach ($supportedLinkTypes as $method => $linkType) {
             if (isset($versionData[$this->id][$method])) {
@@ -293,7 +294,7 @@ class Version
     }
 
     /**
-     * Get id
+     * Get id.
      *
      * @return string $id
      */
@@ -303,7 +304,7 @@ class Version
     }
 
     /**
-     * Set name
+     * Set name.
      *
      * @param string $name
      */
@@ -313,7 +314,7 @@ class Version
     }
 
     /**
-     * Get name
+     * Get name.
      *
      * @return string $name
      */
@@ -324,9 +325,9 @@ class Version
 
     public function getNames()
     {
-        $names = array(
-            strtolower($this->name) => true
-        );
+        $names = [
+            strtolower($this->name) => true,
+        ];
 
         foreach ($this->getReplace() as $link) {
             $names[strtolower($link->getPackageName())] = true;
@@ -340,7 +341,7 @@ class Version
     }
 
     /**
-     * Set description
+     * Set description.
      *
      * @param string $description
      */
@@ -350,7 +351,7 @@ class Version
     }
 
     /**
-     * Get description
+     * Get description.
      *
      * @return string $description
      */
@@ -360,7 +361,7 @@ class Version
     }
 
     /**
-     * Set homepage
+     * Set homepage.
      *
      * @param string $homepage
      */
@@ -370,7 +371,7 @@ class Version
     }
 
     /**
-     * Get homepage
+     * Get homepage.
      *
      * @return string $homepage
      */
@@ -380,7 +381,7 @@ class Version
     }
 
     /**
-     * Set version
+     * Set version.
      *
      * @param string $version
      */
@@ -390,7 +391,7 @@ class Version
     }
 
     /**
-     * Get version
+     * Get version.
      *
      * @return string $version
      */
@@ -408,7 +409,7 @@ class Version
     }
 
     /**
-     * Set normalizedVersion
+     * Set normalizedVersion.
      *
      * @param string $normalizedVersion
      */
@@ -418,7 +419,7 @@ class Version
     }
 
     /**
-     * Get normalizedVersion
+     * Get normalizedVersion.
      *
      * @return string $normalizedVersion
      */
@@ -428,7 +429,7 @@ class Version
     }
 
     /**
-     * Set license
+     * Set license.
      *
      * @param array $license
      */
@@ -438,7 +439,7 @@ class Version
     }
 
     /**
-     * Get license
+     * Get license.
      *
      * @return array $license
      */
@@ -448,7 +449,7 @@ class Version
     }
 
     /**
-     * Set source
+     * Set source.
      *
      * @param array $source
      */
@@ -458,7 +459,7 @@ class Version
     }
 
     /**
-     * Get source
+     * Get source.
      *
      * @return array|null
      */
@@ -468,7 +469,7 @@ class Version
     }
 
     /**
-     * Set dist
+     * Set dist.
      *
      * @param array $dist
      */
@@ -478,7 +479,7 @@ class Version
     }
 
     /**
-     * Get dist
+     * Get dist.
      *
      * @return array|null
      */
@@ -488,7 +489,7 @@ class Version
     }
 
     /**
-     * Set autoload
+     * Set autoload.
      *
      * @param array $autoload
      */
@@ -498,7 +499,7 @@ class Version
     }
 
     /**
-     * Get autoload
+     * Get autoload.
      *
      * @return array|null
      */
@@ -508,7 +509,7 @@ class Version
     }
 
     /**
-     * Set binaries
+     * Set binaries.
      *
      * @param array $binaries
      */
@@ -518,7 +519,7 @@ class Version
     }
 
     /**
-     * Get binaries
+     * Get binaries.
      *
      * @return array|null
      */
@@ -548,7 +549,7 @@ class Version
     }
 
     /**
-     * Set support
+     * Set support.
      *
      * @param array $support
      */
@@ -558,7 +559,7 @@ class Version
     }
 
     /**
-     * Get support
+     * Get support.
      *
      * @return array|null
      */
@@ -568,7 +569,7 @@ class Version
     }
 
     /**
-     * Set createdAt
+     * Set createdAt.
      *
      * @param \DateTime $createdAt
      */
@@ -578,7 +579,7 @@ class Version
     }
 
     /**
-     * Get createdAt
+     * Get createdAt.
      *
      * @return \DateTime
      */
@@ -588,7 +589,7 @@ class Version
     }
 
     /**
-     * Set releasedAt
+     * Set releasedAt.
      *
      * @param \DateTime $releasedAt
      */
@@ -598,7 +599,7 @@ class Version
     }
 
     /**
-     * Get releasedAt
+     * Get releasedAt.
      *
      * @return \DateTime
      */
@@ -608,7 +609,7 @@ class Version
     }
 
     /**
-     * Set package
+     * Set package.
      *
      * @param Package $package
      */
@@ -618,7 +619,7 @@ class Version
     }
 
     /**
-     * Get package
+     * Get package.
      *
      * @return Package
      */
@@ -628,7 +629,7 @@ class Version
     }
 
     /**
-     * Get tags
+     * Get tags.
      *
      * @return Tag[]
      */
@@ -638,7 +639,7 @@ class Version
     }
 
     /**
-     * Set updatedAt
+     * Set updatedAt.
      *
      * @param \DateTime $updatedAt
      */
@@ -648,7 +649,7 @@ class Version
     }
 
     /**
-     * Get updatedAt
+     * Get updatedAt.
      *
      * @return \DateTime $updatedAt
      */
@@ -658,7 +659,7 @@ class Version
     }
 
     /**
-     * Get authors
+     * Get authors.
      *
      * @return Author[]
      */
@@ -668,7 +669,7 @@ class Version
     }
 
     /**
-     * Set type
+     * Set type.
      *
      * @param string $type
      */
@@ -678,7 +679,7 @@ class Version
     }
 
     /**
-     * Get type
+     * Get type.
      *
      * @return string
      */
@@ -688,7 +689,7 @@ class Version
     }
 
     /**
-     * Set targetDir
+     * Set targetDir.
      *
      * @param string $targetDir
      */
@@ -698,7 +699,7 @@ class Version
     }
 
     /**
-     * Get targetDir
+     * Get targetDir.
      *
      * @return string
      */
@@ -708,7 +709,7 @@ class Version
     }
 
     /**
-     * Set extra
+     * Set extra.
      *
      * @param array $extra
      */
@@ -718,7 +719,7 @@ class Version
     }
 
     /**
-     * Get extra
+     * Get extra.
      *
      * @return array
      */
@@ -728,9 +729,9 @@ class Version
     }
 
     /**
-     * Set development
+     * Set development.
      *
-     * @param Boolean $development
+     * @param bool $development
      */
     public function setDevelopment($development)
     {
@@ -738,9 +739,9 @@ class Version
     }
 
     /**
-     * Get development
+     * Get development.
      *
-     * @return Boolean
+     * @return bool
      */
     public function getDevelopment()
     {
@@ -748,7 +749,7 @@ class Version
     }
 
     /**
-     * @return Boolean
+     * @return bool
      */
     public function isDevelopment()
     {
@@ -756,7 +757,7 @@ class Version
     }
 
     /**
-     * Add tag
+     * Add tag.
      *
      * @param Tag $tag
      */
@@ -766,7 +767,7 @@ class Version
     }
 
     /**
-     * Add authors
+     * Add authors.
      *
      * @param Author $author
      */
@@ -776,7 +777,7 @@ class Version
     }
 
     /**
-     * Add require
+     * Add require.
      *
      * @param RequireLink $require
      */
@@ -786,7 +787,7 @@ class Version
     }
 
     /**
-     * Get require
+     * Get require.
      *
      * @return RequireLink[]
      */
@@ -796,7 +797,7 @@ class Version
     }
 
     /**
-     * Add replace
+     * Add replace.
      *
      * @param ReplaceLink $replace
      */
@@ -806,7 +807,7 @@ class Version
     }
 
     /**
-     * Get replace
+     * Get replace.
      *
      * @return ReplaceLink[]
      */
@@ -816,7 +817,7 @@ class Version
     }
 
     /**
-     * Add conflict
+     * Add conflict.
      *
      * @param ConflictLink $conflict
      */
@@ -826,7 +827,7 @@ class Version
     }
 
     /**
-     * Get conflict
+     * Get conflict.
      *
      * @return ConflictLink[]
      */
@@ -836,7 +837,7 @@ class Version
     }
 
     /**
-     * Add provide
+     * Add provide.
      *
      * @param ProvideLink $provide
      */
@@ -846,7 +847,7 @@ class Version
     }
 
     /**
-     * Get provide
+     * Get provide.
      *
      * @return ProvideLink[]
      */
@@ -856,7 +857,7 @@ class Version
     }
 
     /**
-     * Add devRequire
+     * Add devRequire.
      *
      * @param DevRequireLink $devRequire
      */
@@ -866,7 +867,7 @@ class Version
     }
 
     /**
-     * Get devRequire
+     * Get devRequire.
      *
      * @return DevRequireLink[]
      */
@@ -876,7 +877,7 @@ class Version
     }
 
     /**
-     * Add suggest
+     * Add suggest.
      *
      * @param SuggestLink $suggest
      */
@@ -886,7 +887,7 @@ class Version
     }
 
     /**
-     * Get suggest
+     * Get suggest.
      *
      * @return SuggestLink[]
      */
@@ -896,7 +897,7 @@ class Version
     }
 
     /**
-     * @return Boolean
+     * @return bool
      */
     public function hasVersionAlias()
     {
@@ -911,8 +912,9 @@ class Version
         $extra = $this->getExtra();
 
         if (isset($extra['branch-alias'][$this->getVersion()])) {
-            $parser = new VersionParser;
+            $parser = new VersionParser();
             $version = $parser->normalizeBranch(str_replace('-dev', '', $extra['branch-alias'][$this->getVersion()]));
+
             return preg_replace('{(\.9{7})+}', '.x', $version);
         }
 

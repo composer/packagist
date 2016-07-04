@@ -24,9 +24,9 @@ class ProfileFormType extends BaseType
     {
         parent::buildForm($builder, $options);
 
-        $builder->add('failureNotifications', null, array(
+        $builder->add('failureNotifications', null, [
             'required' => false,
-        ));
+        ]);
     }
 
     /**

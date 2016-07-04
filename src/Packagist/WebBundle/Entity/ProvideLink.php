@@ -17,6 +17,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity
  * @ORM\Table(name="link_provide")
+ *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class ProvideLink extends PackageLink

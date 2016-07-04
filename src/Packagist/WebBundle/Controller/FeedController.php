@@ -39,7 +39,7 @@ class FeedController extends Controller
      */
     public function feedsAction()
     {
-        return array();
+        return [];
     }
 
     /**
@@ -62,7 +62,7 @@ class FeedController extends Controller
             $req,
             'Newly Submitted Packages',
             'Latest packages submitted to Packagist.',
-            $this->generateUrl('browse', array(), UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->generateUrl('browse', [], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -89,7 +89,7 @@ class FeedController extends Controller
             $req,
             'New Releases',
             'Latest releases of all packages.',
-            $this->generateUrl('browse', array(), UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->generateUrl('browse', [], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -116,7 +116,7 @@ class FeedController extends Controller
             $req,
             "$vendor packages",
             "Latest packages updated on Packagist of $vendor.",
-            $this->generateUrl('view_vendor', array('vendor' => $vendor), UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->generateUrl('view_vendor', ['vendor' => $vendor], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -143,7 +143,7 @@ class FeedController extends Controller
             $req,
             "$package releases",
             "Latest releases on Packagist of $package.",
-            $this->generateUrl('view_package', array('name' => $package), UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->generateUrl('view_package', ['name' => $package], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -151,7 +151,7 @@ class FeedController extends Controller
     }
 
     /**
-     * Limits a query to the desired number of results
+     * Limits a query to the desired number of results.
      *
      * @param \Doctrine\ORM\QueryBuilder $queryBuilder
      *
@@ -169,7 +169,7 @@ class FeedController extends Controller
     }
 
     /**
-     * Builds the desired feed
+     * Builds the desired feed.
      *
      * @param string $title
      * @param string $description
@@ -235,7 +235,7 @@ class FeedController extends Controller
         $entry->setLink(
             $this->generateUrl(
                 'view_package',
-                array('name' => $package->getName()),
+                ['name' => $package->getName()],
                 UrlGeneratorInterface::ABSOLUTE_URL
             )
         );
@@ -263,15 +263,15 @@ class FeedController extends Controller
         foreach ($version->getAuthors() as $author) {
             /** @var $author \Packagist\WebBundle\Entity\Author */
             if ($author->getName()) {
-                $entry->addAuthor(array(
-                    'name' => $author->getName()
-                ));
+                $entry->addAuthor([
+                    'name' => $author->getName(),
+                ]);
             }
         }
     }
 
     /**
-     * Creates a HTTP Response and exports feed
+     * Creates a HTTP Response and exports feed.
      *
      * @param \Zend\Feed\Writer\Feed $feed
      *

@@ -20,6 +20,7 @@ use Doctrine\ORM\Mapping as ORM;
  *     @ORM\Index(name="link_require_package_name_idx",columns={"version_id", "packageName"}),
  *     @ORM\Index(name="link_require_name_idx",columns={"packageName"})
  * })
+ *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class RequireLink extends PackageLink

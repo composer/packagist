@@ -29,8 +29,8 @@ class MenuBuilder
         $menu->setChildrenAttribute('class', 'list-unstyled');
 
         $this->addProfileMenu($menu);
-        $menu->addChild('hr', array('label' => '<hr>', 'labelAttributes' => array('class' => 'normal'), 'extras' => array('safe_label' => true)));
-        $menu->addChild('Logout', array('label' => '<span class="icon-off"></span>Logout', 'route' => 'logout', 'extras' => array('safe_label' => true)));
+        $menu->addChild('hr', ['label' => '<hr>', 'labelAttributes' => ['class' => 'normal'], 'extras' => ['safe_label' => true]]);
+        $menu->addChild('Logout', ['label' => '<span class="icon-off"></span>Logout', 'route' => 'logout', 'extras' => ['safe_label' => true]]);
 
         return $menu;
     }
@@ -47,10 +47,10 @@ class MenuBuilder
 
     private function addProfileMenu($menu)
     {
-        $menu->addChild('Profile', array('label' => '<span class="icon-vcard"></span>Profile', 'route' => 'fos_user_profile_show', 'extras' => array('safe_label' => true)));
-        $menu->addChild('Settings', array('label' => '<span class="icon-tools"></span>Settings', 'route' => 'fos_user_profile_edit', 'extras' => array('safe_label' => true)));
-        $menu->addChild('Change password', array('label' => '<span class="icon-key"></span>Change password', 'route' => 'fos_user_change_password', 'extras' => array('safe_label' => true)));
-        $menu->addChild('My packages', array('label' => '<span class="icon-box"></span>My packages', 'route' => 'user_packages', 'routeParameters' => array('name' => $this->username), 'extras' => array('safe_label' => true)));
-        $menu->addChild('My favorites', array('label' => '<span class="icon-leaf"></span>My favorites', 'route' => 'user_favorites', 'routeParameters' => array('name' => $this->username), 'extras' => array('safe_label' => true)));
+        $menu->addChild('Profile', ['label' => '<span class="icon-vcard"></span>Profile', 'route' => 'fos_user_profile_show', 'extras' => ['safe_label' => true]]);
+        $menu->addChild('Settings', ['label' => '<span class="icon-tools"></span>Settings', 'route' => 'fos_user_profile_edit', 'extras' => ['safe_label' => true]]);
+        $menu->addChild('Change password', ['label' => '<span class="icon-key"></span>Change password', 'route' => 'fos_user_change_password', 'extras' => ['safe_label' => true]]);
+        $menu->addChild('My packages', ['label' => '<span class="icon-box"></span>My packages', 'route' => 'user_packages', 'routeParameters' => ['name' => $this->username], 'extras' => ['safe_label' => true]]);
+        $menu->addChild('My favorites', ['label' => '<span class="icon-leaf"></span>My favorites', 'route' => 'user_favorites', 'routeParameters' => ['name' => $this->username], 'extras' => ['safe_label' => true]]);
     }
 }

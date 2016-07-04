@@ -31,7 +31,7 @@ class PackageRepository extends EntityRepository
             ->andWhere('pr.packageName = :name')
             ->orderBy('p.name')
             ->getQuery()
-            ->setParameters(array('name' => $name));
+            ->setParameters(['name' => $name]);
 
         return $query->getResult();
     }
@@ -64,7 +64,7 @@ class PackageRepository extends EntityRepository
     {
         $query = $this->getEntityManager()
             ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.type = :type")
-            ->setParameters(array('type' => $type));
+            ->setParameters(['type' => $type]);
 
         return $this->getPackageNamesForQuery($query);
     }
@@ -73,7 +73,7 @@ class PackageRepository extends EntityRepository
     {
         $query = $this->getEntityManager()
             ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.name LIKE :vendor")
-            ->setParameters(array('vendor' => $vendor.'/%'));
+            ->setParameters(['vendor' => $vendor.'/%']);
 
         return $this->getPackageNamesForQuery($query);
     }
@@ -95,7 +95,7 @@ class PackageRepository extends EntityRepository
             ->createQuery("SELECT p.name $selector  FROM Packagist\WebBundle\Entity\Package p $where")
             ->setParameters($filters);
 
-        $result = array();
+        $result = [];
         foreach ($query->getScalarResult() as $row) {
             $name = $row['name'];
             unset($row['name']);
@@ -107,7 +107,7 @@ class PackageRepository extends EntityRepository
 
     private function getPackageNamesForQuery($query)
     {
-        $names = array();
+        $names = [];
         foreach ($query->getScalarResult() as $row) {
             $names[] = $row['name'];
         }
@@ -134,10 +134,10 @@ class PackageRepository extends EntityRepository
                 OR (p.crawledAt < :autocrawled)
             )
             ORDER BY p.id ASC',
-            array(
+            [
                 'crawled' => date('Y-m-d H:i:s', strtotime('-1week')),
                 'autocrawled' => date('Y-m-d H:i:s', strtotime('-1month')),
-            )
+            ]
         );
     }
 
@@ -159,7 +159,8 @@ class PackageRepository extends EntityRepository
     {
         $qb = $this->getBaseQueryBuilder()
             ->where('p.name = ?0')
-            ->setParameters(array($name));
+            ->setParameters([$name]);
+
         return $qb->getQuery()->getSingleResult();
     }
 
@@ -170,12 +171,12 @@ class PackageRepository extends EntityRepository
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.maintainers', 'm')
             ->where('p.name = ?0')
-            ->setParameters(array($name));
+            ->setParameters([$name]);
 
         return $qb->getQuery()->getSingleResult();
     }
 
-    public function getPackagesWithVersions(array $ids = null, $filters = array())
+    public function getPackagesWithVersions(array $ids = null, $filters = [])
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'v')
@@ -205,7 +206,7 @@ class PackageRepository extends EntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getFilteredQueryBuilder(array $filters = array(), $orderByName = false)
+    public function getFilteredQueryBuilder(array $filters = [], $orderByName = false)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
@@ -236,7 +237,7 @@ class PackageRepository extends EntityRepository
                 FROM Packagist\WebBundle\Entity\Package p
                 JOIN p.maintainers m
                 WHERE p.name LIKE :vendor")
-            ->setParameters(array('vendor' => $vendor.'/%'));
+            ->setParameters(['vendor' => $vendor.'/%']);
 
         $rows = $query->getArrayResult();
         if (!$rows) {
@@ -261,7 +262,7 @@ class PackageRepository extends EntityRepository
             ) x';
 
         $stmt = $this->getEntityManager()->getConnection()
-            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'dependents_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
+            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7 * 86400, 'dependents_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
         $result = $stmt->fetchAll();
         $stmt->closeCursor();
 
@@ -275,14 +276,14 @@ class PackageRepository extends EntityRepository
                 SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
                 UNION
                 SELECT pv.package_id FROM link_require_dev r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
-            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $stmt = $this->getEntityManager()->getConnection()
             ->executeCacheQuery(
                 $sql,
                 ['name' => $name],
                 [],
-                new QueryCacheProfile(7*86400, 'dependents_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+                new QueryCacheProfile(7 * 86400, 'dependents_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
             );
         $result = $stmt->fetchAll();
         $stmt->closeCursor();
@@ -298,7 +299,7 @@ class PackageRepository extends EntityRepository
             WHERE s.packageName = :name';
 
         $stmt = $this->getEntityManager()->getConnection()
-            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'suggesters_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
+            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7 * 86400, 'suggesters_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
         $result = $stmt->fetchAll();
         $stmt->closeCursor();
 
@@ -313,14 +314,14 @@ class PackageRepository extends EntityRepository
             INNER JOIN package p ON (p.id = pv.package_id)
             WHERE s.packageName = :name
             GROUP BY pv.package_id
-            ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+            ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $stmt = $this->getEntityManager()->getConnection()
             ->executeCacheQuery(
                 $sql,
                 ['name' => $name],
                 [],
-                new QueryCacheProfile(7*86400, 'suggesters_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+                new QueryCacheProfile(7 * 86400, 'suggesters_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
             );
         $result = $stmt->fetchAll();
         $stmt->closeCursor();
@@ -373,7 +374,7 @@ class PackageRepository extends EntityRepository
     }
 
     /**
-     * Gets the most recent packages created
+     * Gets the most recent packages created.
      *
      * @return QueryBuilder
      */

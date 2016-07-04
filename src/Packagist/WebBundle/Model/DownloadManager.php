@@ -34,6 +34,7 @@ class DownloadManager
      *
      * @param \Packagist\WebBundle\Entity\Package|int      $package
      * @param \Packagist\WebBundle\Entity\Version|int|null $version
+     *
      * @return array
      */
     public function getDownloads($package, $version = null)
@@ -51,18 +52,18 @@ class DownloadManager
         }
 
         $date = new \DateTime();
-        $keys = array('dl:'.$package . $version);
-        for ($i = 0; $i < 30; $i++) {
-            $keys[] = 'dl:' . $package . $version . ':' . $date->format('Ymd');
+        $keys = ['dl:'.$package.$version];
+        for ($i = 0; $i < 30; ++$i) {
+            $keys[] = 'dl:'.$package.$version.':'.$date->format('Ymd');
             $date->modify('-1 day');
         }
 
         $vals = $this->redis->mget($keys);
-        $result = array(
+        $result = [
             'total' => (int) array_shift($vals) ?: 0,
             'monthly' => (int) array_sum($vals) ?: 0,
             'daily' => (int) $vals[0] ?: 0,
-        );
+        ];
 
         return $result;
     }
@@ -71,6 +72,7 @@ class DownloadManager
      * Gets the total download count for a package.
      *
      * @param \Packagist\WebBundle\Entity\Package|int $package
+     *
      * @return int
      */
     public function getTotalDownloads($package)
@@ -79,18 +81,19 @@ class DownloadManager
             $package = $package->getId();
         }
 
-        return (int) $this->redis->get('dl:' . $package) ?: 0;
+        return (int) $this->redis->get('dl:'.$package) ?: 0;
     }
 
     /**
      * Gets total download counts for multiple package IDs.
      *
      * @param array $packageIds
+     *
      * @return array a map of package ID to download count
      */
     public function getPackagesDownloads(array $packageIds)
     {
-        $keys = array();
+        $keys = [];
 
         foreach ($packageIds as $id) {
             if (ctype_digit((string) $id)) {
@@ -99,10 +102,11 @@ class DownloadManager
         }
 
         if (!$keys) {
-            return array();
+            return [];
         }
 
         $res = array_map('intval', $this->redis->mget(array_values($keys)));
+
         return array_combine(array_keys($keys), $res);
     }
 

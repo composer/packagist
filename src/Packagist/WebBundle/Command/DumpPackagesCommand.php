@@ -13,7 +13,6 @@
 namespace Packagist\WebBundle\Command;
 
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,9 +30,9 @@ class DumpPackagesCommand extends ContainerAwareCommand
     {
         $this
             ->setName('packagist:dump')
-            ->setDefinition(array(
+            ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a dump of all packages'),
-            ))
+            ])
             ->setDescription('Dumps the packages into a packages.json + included files')
         ;
     }
@@ -51,6 +50,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
+
             return;
         }
 
@@ -62,7 +62,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForDumping();
         }
 
-        $ids = array();
+        $ids = [];
         foreach ($packages as $package) {
             $ids[] = $package['id'];
         }
@@ -70,6 +70,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
             if ($verbose) {
                 $output->writeln('Aborting, no packages to dump and not doing a forced run');
             }
+
             return 0;
         }
 
@@ -83,13 +84,14 @@ class DumpPackagesCommand extends ContainerAwareCommand
             if ($verbose) {
                 $output->writeln('Aborting, another dumper is still active');
             }
+
             return;
         }
 
         try {
-             $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
+            $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
         } finally {
-             $lock->release();
+            $lock->release();
         }
 
         return $result ? 0 : 1;

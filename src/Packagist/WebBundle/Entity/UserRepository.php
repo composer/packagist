@@ -23,10 +23,11 @@ class UserRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('u')
             ->where('u.apiToken IS NULL');
+
         return $qb->getQuery()->getResult();
     }
 
-    public function getPackageMaintainersQueryBuilder(Package $package, User $excludeUser=null)
+    public function getPackageMaintainersQueryBuilder(Package $package, User $excludeUser = null)
     {
         $qb = $this->createQueryBuilder('u')
             ->select('u')
