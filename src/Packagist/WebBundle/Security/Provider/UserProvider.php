@@ -43,7 +43,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function connect($user, UserResponseInterface $response)
     {
@@ -52,7 +52,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         /** @var User $previousUser */
         $previousUser = $this->userManager->findUserBy(['githubId' => $username]);
 
-        /** @var User $user */
+        /* @var User $user */
         $user->setGithubId($username);
         $user->setGithubToken($response->getAccessToken());
 
@@ -72,7 +72,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function loadUserByOAuthUserResponse(UserResponseInterface $response)
     {
@@ -93,7 +93,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function loadUserByUsername($usernameOrEmail)
     {
@@ -103,7 +103,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function refreshUser(UserInterface $user)
     {
@@ -111,7 +111,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function supportsClass($class)
     {

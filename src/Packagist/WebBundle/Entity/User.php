@@ -78,24 +78,28 @@ class User extends BaseUser
 
     /**
      * @ORM\Column(type="string", length=20, nullable=true)
+     *
      * @var string
      */
     private $apiToken;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     *
      * @var string
      */
     private $githubId;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     *
      * @var string
      */
     private $githubToken;
 
     /**
      * @ORM\Column(type="boolean", options={"default"=true})
+     *
      * @var string
      */
     private $failureNotifications = true;
@@ -116,7 +120,7 @@ class User extends BaseUser
     }
 
     /**
-     * Add packages
+     * Add packages.
      *
      * @param Package $packages
      */
@@ -126,7 +130,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get packages
+     * Get packages.
      *
      * @return Package[]
      */
@@ -136,7 +140,7 @@ class User extends BaseUser
     }
 
     /**
-     * Add authors
+     * Add authors.
      *
      * @param Author $authors
      */
@@ -146,7 +150,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get authors
+     * Get authors.
      *
      * @return Author[]
      */
@@ -156,7 +160,7 @@ class User extends BaseUser
     }
 
     /**
-     * Set createdAt
+     * Set createdAt.
      *
      * @param \DateTime $createdAt
      */
@@ -166,7 +170,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get createdAt
+     * Get createdAt.
      *
      * @return \DateTime
      */
@@ -176,7 +180,7 @@ class User extends BaseUser
     }
 
     /**
-     * Set apiToken
+     * Set apiToken.
      *
      * @param string $apiToken
      */
@@ -186,7 +190,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get apiToken
+     * Get apiToken.
      *
      * @return string
      */
@@ -236,9 +240,9 @@ class User extends BaseUser
     }
 
     /**
-     * Set failureNotifications
+     * Set failureNotifications.
      *
-     * @param Boolean $failureNotifications
+     * @param bool $failureNotifications
      */
     public function setFailureNotifications($failureNotifications)
     {
@@ -246,9 +250,9 @@ class User extends BaseUser
     }
 
     /**
-     * Get failureNotifications
+     * Get failureNotifications.
      *
-     * @return Boolean
+     * @return bool
      */
     public function getFailureNotifications()
     {
@@ -256,9 +260,9 @@ class User extends BaseUser
     }
 
     /**
-     * Get failureNotifications
+     * Get failureNotifications.
      *
-     * @return Boolean
+     * @return bool
      */
     public function isNotifiableForFailures()
     {

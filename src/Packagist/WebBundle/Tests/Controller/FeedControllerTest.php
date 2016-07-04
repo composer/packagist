@@ -7,8 +7,8 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 class FeedControllerTest extends WebTestCase
 {
     /**
-     * @param string $feed
-     * @param string $format
+     * @param string      $feed
+     * @param string      $format
      * @param string|null $vendor
      *
      * @dataProvider provideForFeed
@@ -27,9 +27,7 @@ class FeedControllerTest extends WebTestCase
         if ($vendor !== null) {
             $this->assertContains($vendor, $client->getResponse()->getContent());
         }
-
     }
-
 
     public function provideForFeed()
     {
@@ -42,5 +40,4 @@ class FeedControllerTest extends WebTestCase
             ['feed_vendor', 'atom', 'symfony'],
         ];
     }
-
 }

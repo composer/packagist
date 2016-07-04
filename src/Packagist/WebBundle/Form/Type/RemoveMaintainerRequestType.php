@@ -30,7 +30,7 @@ class RemoveMaintainerRequestType extends AbstractType
     {
         $builder->add('user', EntityType::class, [
             'class' => 'PackagistWebBundle:User',
-            'query_builder' => function(EntityRepository $er) use ($options) {
+            'query_builder' => function (EntityRepository $er) use ($options) {
                 return $er->getPackageMaintainersQueryBuilder($options['package'], $options['excludeUser']);
             },
         ]);
@@ -41,7 +41,7 @@ class RemoveMaintainerRequestType extends AbstractType
         $resolver->setRequired(['package']);
         $resolver->setDefaults([
             'excludeUser' => null,
-            'data_class' => MaintainerRequest::class
+            'data_class' => MaintainerRequest::class,
         ]);
     }
 

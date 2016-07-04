@@ -65,7 +65,7 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
         }
         $url = $payload['repository']['url'];
-        $package = new Package;
+        $package = new Package();
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $package->setRouter($this->get('router'));
         $user = $this->findUser($request);
@@ -75,8 +75,9 @@ class ApiController extends Controller
         if (count($errors) > 0) {
             $errorArray = [];
             foreach ($errors as $error) {
-                $errorArray[$error->getPropertyPath()] =  $error->getMessage();
+                $errorArray[$error->getPropertyPath()] = $error->getMessage();
             }
+
             return new JsonResponse(['status' => 'error', 'message' => $errorArray], 406);
         }
         try {
@@ -85,6 +86,7 @@ class ApiController extends Controller
             $em->flush();
         } catch (\Exception $e) {
             $this->get('logger')->critical($e->getMessage(), ['exception', $e]);
+
             return new JsonResponse(['status' => 'error', 'message' => 'Error saving package'], 500);
         }
 
@@ -144,7 +146,7 @@ class ApiController extends Controller
     }
 
     /**
-     * Expects a json like:
+     * Expects a json like:.
      *
      * {
      *     "downloads": [
@@ -190,6 +192,7 @@ class ApiController extends Controller
     /**
      * @param string $name
      * @param string $version
+     *
      * @return array
      */
     protected function getPackageAndVersionId($name, $version)
@@ -206,11 +209,12 @@ class ApiController extends Controller
     }
 
     /**
-     * Perform the package update
+     * Perform the package update.
      *
-     * @param Request $request the current request
-     * @param string $url the repository's URL (deducted from the request)
-     * @param string $urlRegex the regex used to split the user packages into domain and path
+     * @param Request $request  the current request
+     * @param string  $url      the repository's URL (deducted from the request)
+     * @param string  $urlRegex the regex used to split the user packages into domain and path
+     *
      * @return Response
      */
     protected function receivePost(Request $request, $url, $urlRegex)
@@ -247,7 +251,7 @@ class ApiController extends Controller
         try {
             /** @var Package $package */
             foreach ($packages as $package) {
-                $em->transactional(function($em) use ($package, $updater, $io, $config) {
+                $em->transactional(function ($em) use ($package, $updater, $io, $config) {
                     // prepare dependencies
                     $loader = new ValidatingArrayLoader(new ArrayLoader());
 
@@ -273,7 +277,7 @@ class ApiController extends Controller
             return new Response(json_encode([
                 'status' => 'error',
                 'message' => '['.get_class($e).'] '.$e->getMessage(),
-                'details' => '<pre>'.$io->getOutput().'</pre>'
+                'details' => '<pre>'.$io->getOutput().'</pre>',
             ]), 400);
         }
 
@@ -281,9 +285,10 @@ class ApiController extends Controller
     }
 
     /**
-     * Find a user by his username and API token
+     * Find a user by his username and API token.
      *
      * @param Request $request
+     *
      * @return User|null the found user or null otherwise
      */
     protected function findUser(Request $request)
@@ -303,11 +308,12 @@ class ApiController extends Controller
     }
 
     /**
-     * Find a user package given by its full URL
+     * Find a user package given by its full URL.
      *
-     * @param User $user
+     * @param User   $user
      * @param string $url
      * @param string $urlRegex
+     *
      * @return array the packages found
      */
     protected function findPackagesByUrl(User $user, $url, $urlRegex)

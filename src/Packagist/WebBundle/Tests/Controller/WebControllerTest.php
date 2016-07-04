@@ -196,13 +196,13 @@ class WebControllerTest extends WebTestCase
                 /* @var $downloadManager DownloadManager */
 
                 for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $twigPackage->getId(), 'vid' => 25, 'ip' => '127.0.0.'.random_int(0,255)]]);
+                    $downloadManager->addDownloads([['id' => $twigPackage->getId(), 'vid' => 25, 'ip' => '127.0.0.'.random_int(0, 255)]]);
                 }
                 for ($i = 0; $i < 12; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $packagistPackage->getId(), 'vid' => 12, 'ip' => '127.0.0.'.random_int(0,255)]]);
+                    $downloadManager->addDownloads([['id' => $packagistPackage->getId(), 'vid' => 12, 'ip' => '127.0.0.'.random_int(0, 255)]]);
                 }
                 for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $symfonyPackage->getId(), 'vid' => 42, 'ip' => '127.0.0.'.random_int(0,255)]]);
+                    $downloadManager->addDownloads([['id' => $symfonyPackage->getId(), 'vid' => 42, 'ip' => '127.0.0.'.random_int(0, 255)]]);
                 }
 
                 $favoriteManager = $container->get('packagist.favorite_manager');
@@ -241,7 +241,7 @@ class WebControllerTest extends WebTestCase
 
     /**
      * @param callable $onBeforeIndex
-     * @param array $orderBys
+     * @param array    $orderBys
      *
      * @return array
      */
@@ -255,21 +255,21 @@ class WebControllerTest extends WebTestCase
 
         $kernelRootDir = $container->getParameter('kernel.root_dir');
 
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:drop --env=test --force', false);
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:schema:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console redis:flushall --env=test -n');
+        $this->executeCommand('php '.$kernelRootDir.'/console doctrine:database:drop --env=test --force', false);
+        $this->executeCommand('php '.$kernelRootDir.'/console doctrine:database:create --env=test');
+        $this->executeCommand('php '.$kernelRootDir.'/console doctrine:schema:create --env=test');
+        $this->executeCommand('php '.$kernelRootDir.'/console redis:flushall --env=test -n');
 
         $lock = $container->getParameter('kernel.cache_dir').'/composer-indexer.lock';
 
-        $this->executeCommand('rm -f ' . $lock);
+        $this->executeCommand('rm -f '.$lock);
 
         list($twigPackage, $packagistPackage, $symfonyPackage) = $this->initializePackages($container);
 
         if (!empty($orderBys)) {
-            $orderBysQryStrPart = '&' . http_build_query(
+            $orderBysQryStrPart = '&'.http_build_query(
                 [
-                    'orderBys' => $orderBys
+                    'orderBys' => $orderBys,
                 ]
             );
         } else {
@@ -278,9 +278,9 @@ class WebControllerTest extends WebTestCase
 
         $onBeforeIndex($container, $twigPackage, $packagistPackage, $symfonyPackage);
 
-        $this->executeCommand('php '.$kernelRootDir . '/console packagist:index --env=test --force');
+        $this->executeCommand('php '.$kernelRootDir.'/console packagist:index --env=test --force');
 
-        $client->request('GET', '/search.json?q=' . $orderBysQryStrPart);
+        $client->request('GET', '/search.json?q='.$orderBysQryStrPart);
 
         $response = $client->getResponse();
 
@@ -295,10 +295,10 @@ class WebControllerTest extends WebTestCase
     {
         $kernelRootDir = $container->getParameter('kernel.root_dir');
 
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:drop --env=test --force', false);
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:schema:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console redis:flushall --env=test -n');
+        $this->executeCommand('php '.$kernelRootDir.'/console doctrine:database:drop --env=test --force', false);
+        $this->executeCommand('php '.$kernelRootDir.'/console doctrine:database:create --env=test');
+        $this->executeCommand('php '.$kernelRootDir.'/console doctrine:schema:create --env=test');
+        $this->executeCommand('php '.$kernelRootDir.'/console redis:flushall --env=test -n');
 
         $em = $container->get('doctrine')->getManager();
 
@@ -346,13 +346,13 @@ class WebControllerTest extends WebTestCase
                 /* @var $downloadManager DownloadManager */
 
                 for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $twigPackage->getId(), 'vid' => 25, 'ip' => '127.0.0.'.random_int(0,255)]]);
+                    $downloadManager->addDownloads([['id' => $twigPackage->getId(), 'vid' => 25, 'ip' => '127.0.0.'.random_int(0, 255)]]);
                 }
                 for ($i = 0; $i < 12; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $packagistPackage->getId(), 'vid' => 12, 'ip' => '127.0.0.'.random_int(0,255)]]);
+                    $downloadManager->addDownloads([['id' => $packagistPackage->getId(), 'vid' => 12, 'ip' => '127.0.0.'.random_int(0, 255)]]);
                 }
                 for ($i = 0; $i < 42; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $symfonyPackage->getId(), 'vid' => 42, 'ip' => '127.0.0.'.random_int(0,255)]]);
+                    $downloadManager->addDownloads([['id' => $symfonyPackage->getId(), 'vid' => 42, 'ip' => '127.0.0.'.random_int(0, 255)]]);
                 }
             },
             $orderBys
@@ -406,8 +406,8 @@ class WebControllerTest extends WebTestCase
     /**
      * Executes a given command.
      *
-     * @param string $command a command to execute
-     * @param bool $errorHandling
+     * @param string $command       a command to execute
+     * @param bool   $errorHandling
      *
      * @throws Exception when the return code is not 0.
      */
@@ -417,7 +417,7 @@ class WebControllerTest extends WebTestCase
     ) {
         $output = [];
 
-        $returnCode = null;;
+        $returnCode = null;
 
         exec($command, $output, $returnCode);
 
@@ -434,8 +434,8 @@ class WebControllerTest extends WebTestCase
 
     /**
      * @param string $package
-     * @param int $downloads
-     * @param int $favers
+     * @param int    $downloads
+     * @param int    $favers
      *
      * @return array
      */
@@ -444,8 +444,8 @@ class WebControllerTest extends WebTestCase
         return [
             'name' => $package,
             'description' => '',
-            'url' => 'http://localhost/packages/' . $package,
-            'repository' => 'https://github.com/' . $package,
+            'url' => 'http://localhost/packages/'.$package,
+            'repository' => 'https://github.com/'.$package,
             'downloads' => $downloads,
             'favers' => $favers,
         ];
@@ -461,7 +461,7 @@ class WebControllerTest extends WebTestCase
     ) {
         return [
             'results' => $results,
-            'total' => count($results)
+            'total' => count($results),
         ];
     }
 }

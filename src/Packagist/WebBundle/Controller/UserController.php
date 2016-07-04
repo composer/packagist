@@ -51,6 +51,7 @@ class UserController extends Controller
 
     /**
      * @param Request $req
+     *
      * @return Response
      */
     public function myProfileAction(Request $req)
@@ -71,7 +72,6 @@ class UserController extends Controller
             ]
         );
     }
-
 
     /**
      * @Template()
@@ -162,7 +162,8 @@ class UserController extends Controller
 
     /**
      * @param Request $req
-     * @param User $user
+     * @param User    $user
+     *
      * @return Pagerfanta
      */
     protected function getUserPackages($req, $user)

@@ -23,10 +23,9 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetTargetListingBlocks($now, array $expected)
     {
-
         $blocks = self::invoke($this->mockDumper, 'getTargetListingBlocks', $now);
 
-        $blocks = array_map(function($timestamp) { return date('Y-m-d', $timestamp); }, $blocks);
+        $blocks = array_map(function ($timestamp) { return date('Y-m-d', $timestamp); }, $blocks);
 
         $this->assertEquals($expected, $blocks);
     }
@@ -37,36 +36,36 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
             [
                 strtotime('2014-12-31'),
                 [
-                    'latest'  => '2014-12-22',
+                    'latest' => '2014-12-22',
                     '2014-10' => '2014-10-01',
                     '2014-07' => '2014-07-01',
                     '2014-04' => '2014-04-01',
                     '2014-01' => '2014-01-01',
-                    '2013'    => '2013-01-01',
+                    '2013' => '2013-01-01',
                 ],
             ],
             [
                 strtotime('2015-01-01'),
                 [
-                    'latest'  => '2014-12-22',
+                    'latest' => '2014-12-22',
                     '2015-01' => '2015-01-01',
                     '2014-10' => '2014-10-01',
                     '2014-07' => '2014-07-01',
                     '2014-04' => '2014-04-01',
-                    '2014'    => '2014-01-01',
-                    '2013'    => '2013-01-01',
+                    '2014' => '2014-01-01',
+                    '2013' => '2013-01-01',
                 ],
             ],
             [
                 strtotime('2015-05-31'),
                 [
-                    'latest'  => '2015-05-25',
+                    'latest' => '2015-05-25',
                     '2015-04' => '2015-04-01',
                     '2015-01' => '2015-01-01',
                     '2014-10' => '2014-10-01',
                     '2014-07' => '2014-07-01',
-                    '2014'    => '2014-01-01',
-                    '2013'    => '2013-01-01',
+                    '2014' => '2014-01-01',
+                    '2013' => '2013-01-01',
                 ],
             ],
         ];

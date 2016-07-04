@@ -12,9 +12,7 @@
 
 namespace Packagist\WebBundle\Command;
 
-use Packagist\WebBundle\Package\Updater;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -79,7 +77,7 @@ class CompileStatsCommand extends ContainerAwareCommand
         while ($date <= $yesterday) {
             // skip months already computed
             if (null !== $this->getMonthly($date) && $date->format('m') !== $yesterday->format('m')) {
-                $date->setDate($date->format('Y'), $date->format('m')+1, 1);
+                $date->setDate($date->format('Y'), $date->format('m') + 1, 1);
                 continue;
             }
 
@@ -142,7 +140,7 @@ class CompileStatsCommand extends ContainerAwareCommand
     {
         $date = clone $yesterday;
         $keys = [];
-        for ($i = 0; $i < $days; $i++) {
+        for ($i = 0; $i < $days; ++$i) {
             $keys[] = 'dl:'.$id.':'.$date->format('Ymd');
             $date->modify('-1day');
         }

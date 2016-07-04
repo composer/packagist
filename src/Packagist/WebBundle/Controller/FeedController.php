@@ -151,7 +151,7 @@ class FeedController extends Controller
     }
 
     /**
-     * Limits a query to the desired number of results
+     * Limits a query to the desired number of results.
      *
      * @param \Doctrine\ORM\QueryBuilder $queryBuilder
      *
@@ -169,7 +169,7 @@ class FeedController extends Controller
     }
 
     /**
-     * Builds the desired feed
+     * Builds the desired feed.
      *
      * @param string $title
      * @param string $description
@@ -264,14 +264,14 @@ class FeedController extends Controller
             /** @var $author \Packagist\WebBundle\Entity\Author */
             if ($author->getName()) {
                 $entry->addAuthor([
-                    'name' => $author->getName()
+                    'name' => $author->getName(),
                 ]);
             }
         }
     }
 
     /**
-     * Creates a HTTP Response and exports feed
+     * Creates a HTTP Response and exports feed.
      *
      * @param \Zend\Feed\Writer\Feed $feed
      *

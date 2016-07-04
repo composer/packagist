@@ -15,8 +15,8 @@ class ApiControllerTest extends WebTestCase
         $client->request('GET', '/api/github');
         $this->assertEquals(405, $client->getResponse()->getStatusCode(), 'GET method should not be allowed for GitHub Post-Receive URL');
 
-        $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer',]]);
-        $client->request('POST', '/api/github?username=INVALID_USER&apiToken=INVALID_TOKEN', ['payload' => $payload,]);
+        $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
+        $client->request('POST', '/api/github?username=INVALID_USER&apiToken=INVALID_TOKEN', ['payload' => $payload]);
         $this->assertEquals(403, $client->getResponse()->getStatusCode(), 'POST method should return 403 "Forbidden" if invalid username and API Token are sent');
     }
 
@@ -27,10 +27,10 @@ class ApiControllerTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $package = new Package;
+        $package = new Package();
         $package->setRepository($url);
 
-        $user = new User;
+        $user = new User();
         $user->addPackages($package);
 
         $repo = $this->getMockBuilder('Packagist\WebBundle\Entity\UserRepository')->disableOriginalConstructor()->getMock();

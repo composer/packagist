@@ -41,8 +41,8 @@ class VersionRepository extends EntityRepository
     {
         $em = $this->getEntityManager();
         $version->getPackage()->getVersions()->removeElement($version);
-        $version->getPackage()->setCrawledAt(new \DateTime);
-        $version->getPackage()->setUpdatedAt(new \DateTime);
+        $version->getPackage()->setCrawledAt(new \DateTime());
+        $version->getPackage()->setUpdatedAt(new \DateTime());
 
         $em->getConnection()->executeQuery('DELETE FROM version_author WHERE version_id=:id', ['id' => $version->getId()]);
         $em->getConnection()->executeQuery('DELETE FROM version_tag WHERE version_id=:id', ['id' => $version->getId()]);
@@ -118,10 +118,11 @@ class VersionRepository extends EntityRepository
     }
 
     /**
-     * Returns the latest versions released
+     * Returns the latest versions released.
      *
-     * @param string $vendor optional vendor filter
+     * @param string $vendor  optional vendor filter
      * @param string $package optional vendor/package filter
+     *
      * @return \Doctrine\ORM\QueryBuilder
      */
     public function getQueryBuilderForLatestVersionWithPackage($vendor = null, $package = null)

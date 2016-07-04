@@ -5,7 +5,7 @@ ini_set('date.timezone', 'UTC');
 use Symfony\Component\ClassLoader\ApcClassLoader;
 use Symfony\Component\HttpFoundation\Request;
 
-/**
+/*
  * @var \Symfony\Component\ClassLoader\ClassLoader
  */
 $loader = require __DIR__.'/../app/autoload.php';

@@ -35,6 +35,7 @@ use Composer\Repository\Vcs\GitHubDriver;
  * @Assert\Callback(callback="isPackageUnique")
  * @Assert\Callback(callback="isVendorWritable")
  * @Assert\Callback(callback="isRepositoryValid", groups={"Update", "Default"})
+ *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package
@@ -47,7 +48,7 @@ class Package
     private $id;
 
     /**
-     * Unique package name
+     * Unique package name.
      *
      * @ORM\Column(length=191)
      */
@@ -176,7 +177,7 @@ class Package
     public function __construct()
     {
         $this->versions = new ArrayCollection();
-        $this->createdAt = new \DateTime;
+        $this->createdAt = new \DateTime();
     }
 
     public function toArray(VersionRepository $versionRepo)
@@ -188,12 +189,12 @@ class Package
         }
         $versionData = $versionRepo->getVersionData($versionIds);
         foreach ($this->getVersions() as $version) {
-            /** @var $version Version */
+            /* @var $version Version */
             $versions[$version->getVersion()] = $version->toArray($versionData);
         }
         $maintainers = [];
         foreach ($this->getMaintainers() as $maintainer) {
-            /** @var $maintainer User */
+            /* @var $maintainer User */
             $maintainers[] = $maintainer->toArray();
         }
         $data = [
@@ -244,6 +245,7 @@ class Package
                     ->addViolation()
                 ;
             }
+
             return;
         }
         try {
@@ -254,6 +256,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -262,6 +265,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -270,6 +274,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -278,6 +283,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -289,6 +295,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
         } catch (\Exception $e) {
@@ -324,7 +331,8 @@ class Package
                     ->addViolation()
                 ;
             }
-        } catch (\Doctrine\ORM\NoResultException $e) {}
+        } catch (\Doctrine\ORM\NoResultException $e) {
+        }
     }
 
     public function isVendorWritable(ExecutionContextInterface $context)
@@ -333,18 +341,19 @@ class Package
             $vendor = $this->getVendor();
             if ($vendor && $this->entityRepository->isVendorTaken($vendor, reset($this->maintainers))) {
                 $context->buildViolation('The vendor is already taken by someone else. '
-                        . 'You may ask them to add your package and give you maintainership access. '
-                        . 'The packages already in that vendor namespace can be found at '
-                        . '<a href="'.$this->router->generate('view_vendor', ['vendor' => $vendor]).'">'.$vendor.'</a>')
+                        .'You may ask them to add your package and give you maintainership access. '
+                        .'The packages already in that vendor namespace can be found at '
+                        .'<a href="'.$this->router->generate('view_vendor', ['vendor' => $vendor]).'">'.$vendor.'</a>')
                     ->atPath('repository')
                     ->addViolation()
                 ;
             }
-        } catch (\Doctrine\ORM\NoResultException $e) {}
+        } catch (\Doctrine\ORM\NoResultException $e) {
+        }
     }
 
     /**
-     * Get id
+     * Get id.
      *
      * @return string
      */
@@ -354,7 +363,7 @@ class Package
     }
 
     /**
-     * Set name
+     * Set name.
      *
      * @param string $name
      */
@@ -364,7 +373,7 @@ class Package
     }
 
     /**
-     * Get name
+     * Get name.
      *
      * @return string
      */
@@ -374,7 +383,7 @@ class Package
     }
 
     /**
-     * Get vendor prefix
+     * Get vendor prefix.
      *
      * @return string
      */
@@ -384,7 +393,7 @@ class Package
     }
 
     /**
-     * Get package name without vendor
+     * Get package name without vendor.
      *
      * @return string
      */
@@ -394,7 +403,7 @@ class Package
     }
 
     /**
-     * Set description
+     * Set description.
      *
      * @param string $description
      */
@@ -404,7 +413,7 @@ class Package
     }
 
     /**
-     * Get description
+     * Get description.
      *
      * @return string
      */
@@ -414,7 +423,7 @@ class Package
     }
 
     /**
-     * Set language
+     * Set language.
      *
      * @param string $language
      */
@@ -424,7 +433,7 @@ class Package
     }
 
     /**
-     * Get language
+     * Get language.
      *
      * @return string
      */
@@ -434,7 +443,7 @@ class Package
     }
 
     /**
-     * Set readme
+     * Set readme.
      *
      * @param string $readme
      */
@@ -444,7 +453,7 @@ class Package
     }
 
     /**
-     * Get readme
+     * Get readme.
      *
      * @return string
      */
@@ -518,7 +527,7 @@ class Package
     }
 
     /**
-     * Set createdAt
+     * Set createdAt.
      *
      * @param \DateTime $createdAt
      */
@@ -528,7 +537,7 @@ class Package
     }
 
     /**
-     * Get createdAt
+     * Get createdAt.
      *
      * @return \DateTime
      */
@@ -538,7 +547,7 @@ class Package
     }
 
     /**
-     * Set repository
+     * Set repository.
      *
      * @param string $repository
      */
@@ -585,7 +594,7 @@ class Package
     }
 
     /**
-     * Get repository
+     * Get repository.
      *
      * @return string $repository
      */
@@ -595,7 +604,7 @@ class Package
     }
 
     /**
-     * Add versions
+     * Add versions.
      *
      * @param Version $versions
      */
@@ -605,7 +614,7 @@ class Package
     }
 
     /**
-     * Get versions
+     * Get versions.
      *
      * @return \Doctrine\Common\Collections\Collection
      */
@@ -629,7 +638,7 @@ class Package
     }
 
     /**
-     * Set updatedAt
+     * Set updatedAt.
      *
      * @param \DateTime $updatedAt
      */
@@ -640,7 +649,7 @@ class Package
     }
 
     /**
-     * Get updatedAt
+     * Get updatedAt.
      *
      * @return \DateTime
      */
@@ -650,7 +659,7 @@ class Package
     }
 
     /**
-     * Set crawledAt
+     * Set crawledAt.
      *
      * @param \DateTime|null $crawledAt
      */
@@ -660,7 +669,7 @@ class Package
     }
 
     /**
-     * Get crawledAt
+     * Get crawledAt.
      *
      * @return \DateTime
      */
@@ -670,7 +679,7 @@ class Package
     }
 
     /**
-     * Set indexedAt
+     * Set indexedAt.
      *
      * @param \DateTime $indexedAt
      */
@@ -680,7 +689,7 @@ class Package
     }
 
     /**
-     * Get indexedAt
+     * Get indexedAt.
      *
      * @return \DateTime
      */
@@ -690,7 +699,7 @@ class Package
     }
 
     /**
-     * Set dumpedAt
+     * Set dumpedAt.
      *
      * @param \DateTime $dumpedAt
      */
@@ -700,7 +709,7 @@ class Package
     }
 
     /**
-     * Get dumpedAt
+     * Get dumpedAt.
      *
      * @return \DateTime
      */
@@ -710,7 +719,7 @@ class Package
     }
 
     /**
-     * Add maintainers
+     * Add maintainers.
      *
      * @param User $maintainer
      */
@@ -720,7 +729,7 @@ class Package
     }
 
     /**
-     * Get maintainers
+     * Get maintainers.
      *
      * @return \Doctrine\Common\Collections\Collection
      */
@@ -730,7 +739,7 @@ class Package
     }
 
     /**
-     * Set type
+     * Set type.
      *
      * @param string $type
      */
@@ -740,7 +749,7 @@ class Package
     }
 
     /**
-     * Get type
+     * Get type.
      *
      * @return string
      */
@@ -750,9 +759,9 @@ class Package
     }
 
     /**
-     * Set autoUpdated
+     * Set autoUpdated.
      *
-     * @param Boolean $autoUpdated
+     * @param bool $autoUpdated
      */
     public function setAutoUpdated($autoUpdated)
     {
@@ -760,9 +769,9 @@ class Package
     }
 
     /**
-     * Get autoUpdated
+     * Get autoUpdated.
      *
-     * @return Boolean
+     * @return bool
      */
     public function isAutoUpdated()
     {
@@ -770,9 +779,9 @@ class Package
     }
 
     /**
-     * Set updateFailureNotified
+     * Set updateFailureNotified.
      *
-     * @param Boolean $updateFailureNotified
+     * @param bool $updateFailureNotified
      */
     public function setUpdateFailureNotified($updateFailureNotified)
     {
@@ -780,9 +789,9 @@ class Package
     }
 
     /**
-     * Get updateFailureNotified
+     * Get updateFailureNotified.
      *
-     * @return Boolean
+     * @return bool
      */
     public function isUpdateFailureNotified()
     {
@@ -790,7 +799,7 @@ class Package
     }
 
     /**
-     * @return boolean
+     * @return bool
      */
     public function isAbandoned()
     {
@@ -798,7 +807,7 @@ class Package
     }
 
     /**
-     * @param boolean $abandoned
+     * @param bool $abandoned
      */
     public function setAbandoned($abandoned)
     {

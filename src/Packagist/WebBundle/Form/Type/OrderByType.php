@@ -29,7 +29,7 @@ class OrderByType extends AbstractType
         $builder->add('order', ChoiceType::class, [
             'choices' => [
                 'asc' => 'asc',
-                'desc' => 'desc'
+                'desc' => 'desc',
             ],
             'choices_as_values' => true,
         ]);

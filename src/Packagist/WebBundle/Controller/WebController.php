@@ -39,7 +39,7 @@ class WebController extends Controller
     }
 
     /**
-     * Rendered by views/Web/searchSection.html.twig
+     * Rendered by views/Web/searchSection.html.twig.
      */
     public function searchFormAction(Request $req)
     {
@@ -55,9 +55,10 @@ class WebController extends Controller
         $form->handleRequest($req);
 
         $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
+
         return $this->render('PackagistWebBundle:Web:searchForm.html.twig', [
             'searchForm' => $form->createView(),
-            'orderBys' => $orderBysViewModel
+            'orderBys' => $orderBysViewModel,
         ]);
     }
 
@@ -189,7 +190,7 @@ class WebController extends Controller
                     $params = [
                         '_format' => 'json',
                         'q' => $form->getData()->getQuery(),
-                        'page' => $paginator->getNextPage()
+                        'page' => $paginator->getNextPage(),
                     ];
                     if ($tagsFilter) {
                         $params['tags'] = (array) $tagsFilter;
@@ -217,6 +218,7 @@ class WebController extends Controller
                     if (!$e->getPrevious() instanceof \Solarium_Client_HttpException) {
                         throw $e;
                     }
+
                     return JsonResponse::create([
                         'status' => 'error',
                         'message' => 'Could not connect to the search server',
@@ -230,7 +232,7 @@ class WebController extends Controller
             ]);
         } elseif ($req->getRequestFormat() === 'json') {
             return JsonResponse::create([
-                'error' => 'Missing search query, example: ?q=example'
+                'error' => 'Missing search query, example: ?q=example',
             ], 400)->setCallback($req->query->get('callback'));
         }
 
@@ -255,7 +257,7 @@ class WebController extends Controller
 
         // prepare x axis
         $date = new \DateTime($packages[0]['month'].'-01');
-        $now = new \DateTime;
+        $now = new \DateTime();
         while ($date < $now) {
             $chart['months'][] = $month = $date->format('Y-m');
             $date->modify('+1month');
@@ -308,11 +310,11 @@ class WebController extends Controller
 
             $dlChart = [
                 'labels' => array_keys($dlChart),
-                'values' => $redis->mget(array_values($dlChart))
+                'values' => $redis->mget(array_values($dlChart)),
             ];
             $dlChartMonthly = [
                 'labels' => array_keys($dlChartMonthly),
-                'values' => $redis->mget(array_values($dlChartMonthly))
+                'values' => $redis->mget(array_values($dlChartMonthly)),
             ];
         } catch (ConnectionException $e) {
             $downloads = 'N/A';
@@ -348,7 +350,7 @@ class WebController extends Controller
         if ($orderBys) {
             $allowedSorts = [
                 'downloads' => 1,
-                'favers' => 1
+                'favers' => 1,
             ];
 
             $allowedOrders = [
@@ -391,7 +393,7 @@ class WebController extends Controller
 
     /**
      * @param Request $req
-     * @param array $normalizedOrderBys
+     * @param array   $normalizedOrderBys
      *
      * @return array
      */
@@ -425,14 +427,14 @@ class WebController extends Controller
             $query = $req->query->get('search_query');
             $query = isset($query['query']) ? $query['query'] : '';
 
-            return '?' . http_build_query([
+            return '?'.http_build_query([
                 'q' => $query,
                 'orderBys' => [
                     [
                         'sort' => $sort,
-                        'order' => $order
-                    ]
-                ]
+                        'order' => $order,
+                    ],
+                ],
             ]);
         };
 
@@ -441,20 +443,20 @@ class WebController extends Controller
                 'title' => 'Sort by downloads',
                 'class' => 'glyphicon-arrow-down',
                 'arrowClass' => $makeDefaultArrow('downloads'),
-                'href' => $makeDefaultHref('downloads')
+                'href' => $makeDefaultHref('downloads'),
             ],
             'favers' => [
                 'title' => 'Sort by favorites',
                 'class' => 'glyphicon-star',
                 'arrowClass' => $makeDefaultArrow('favers'),
-                'href' => $makeDefaultHref('favers')
+                'href' => $makeDefaultHref('favers'),
             ],
         ];
     }
 
     /**
      * @param Request $req
-     * @param array $filteredOrderBys
+     * @param array   $filteredOrderBys
      */
     private function computeSearchQuery(Request $req, array $filteredOrderBys)
     {

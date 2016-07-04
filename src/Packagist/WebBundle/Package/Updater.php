@@ -20,7 +20,6 @@ use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Util\ErrorHandler;
 use Composer\Util\RemoteFilesystem;
-use Composer\Json\JsonFile;
 use Composer\Config;
 use Composer\IO\IOInterface;
 use Packagist\WebBundle\Entity\Author;
@@ -39,29 +38,31 @@ class Updater
     const DELETE_BEFORE = 2;
 
     /**
-     * Doctrine
+     * Doctrine.
+     *
      * @var RegistryInterface
      */
     protected $doctrine;
 
     /**
-     * Supported link types
+     * Supported link types.
+     *
      * @var array
      */
     protected $supportedLinkTypes = [
-        'require'     => [
+        'require' => [
             'method' => 'getRequires',
             'entity' => 'RequireLink',
         ],
-        'conflict'    => [
+        'conflict' => [
             'method' => 'getConflicts',
             'entity' => 'ConflictLink',
         ],
-        'provide'     => [
+        'provide' => [
             'method' => 'getProvides',
             'entity' => 'ProvideLink',
         ],
-        'replace'     => [
+        'replace' => [
             'method' => 'getReplaces',
             'entity' => 'ReplaceLink',
         ],
@@ -72,7 +73,7 @@ class Updater
     ];
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param RegistryInterface $doctrine
      */
@@ -84,12 +85,12 @@ class Updater
     }
 
     /**
-     * Update a project
+     * Update a project.
      *
      * @param \Packagist\WebBundle\Entity\Package $package
-     * @param RepositoryInterface $repository the repository instance used to update from
-     * @param int $flags a few of the constants of this class
-     * @param \DateTime $start
+     * @param RepositoryInterface                 $repository the repository instance used to update from
+     * @param int                                 $flags      a few of the constants of this class
+     * @param \DateTime                           $start
      */
     public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null)
     {
@@ -216,8 +217,8 @@ class Updater
             $this->updateGitHubInfo($rfs, $package, $match[1], $match[2], $repository);
         }
 
-        $package->setUpdatedAt(new \DateTime);
-        $package->setCrawledAt(new \DateTime);
+        $package->setUpdatedAt(new \DateTime());
+        $package->setCrawledAt(new \DateTime());
         $em->flush();
         if ($repository->hadInvalidBranches()) {
             throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
@@ -239,7 +240,7 @@ class Updater
                 $version = $existingVersion;
             } else {
                 // mark it updated to avoid it being pruned
-                $existingVersion->setUpdatedAt(new \DateTime);
+                $existingVersion->setUpdatedAt(new \DateTime());
 
                 return false;
             }
@@ -259,7 +260,7 @@ class Updater
         $version->setLicense($data->getLicense() ?: []);
 
         $version->setPackage($package);
-        $version->setUpdatedAt(new \DateTime);
+        $version->setUpdatedAt(new \DateTime());
         $version->setReleasedAt($data->getReleaseDate());
 
         if ($data->getSourceType()) {
@@ -369,7 +370,7 @@ class Updater
 
                 // only update the author timestamp once a month at most as the value is kinda unused
                 if ($author->getUpdatedAt() === null || $author->getUpdatedAt()->getTimestamp() < time() - 86400 * 30) {
-                    $author->setUpdatedAt(new \DateTime);
+                    $author->setUpdatedAt(new \DateTime());
                 }
                 if (!$version->getAuthors()->contains($author)) {
                     $version->addAuthor($author);
@@ -411,7 +412,7 @@ class Updater
 
             foreach ($links as $linkPackageName => $linkPackageVersion) {
                 $class = 'Packagist\WebBundle\Entity\\'.$opts['entity'];
-                $link = new $class;
+                $link = new $class();
                 $link->setPackageName($linkPackageName);
                 $link->setPackageVersion($linkPackageVersion);
                 $version->{'add'.$linkType.'Link'}($link);
@@ -434,7 +435,7 @@ class Updater
             }
 
             foreach ($suggests as $linkPackageName => $linkPackageVersion) {
-                $link = new SuggestLink;
+                $link = new SuggestLink();
                 $link->setPackageName($linkPackageName);
                 $link->setPackageVersion($linkPackageVersion);
                 $version->addSuggestLink($link);
@@ -494,7 +495,7 @@ class Updater
                 'q', 'blockquote', 'abbr', 'cite',
                 'table', 'thead', 'tbody', 'th', 'tr', 'td',
                 'a[href|target|rel|id]',
-                'img[src|title|alt|width|height|style]'
+                'img[src|title|alt|width|height|style]',
             ];
             $config = \HTMLPurifier_Config::createDefault();
             $config->set('HTML.Allowed', implode(',', $elements));
@@ -504,7 +505,7 @@ class Updater
             $readme = $purifier->purify($readme);
 
             $dom = new \DOMDocument();
-            $dom->loadHTML('<?xml encoding="UTF-8">' . $readme);
+            $dom->loadHTML('<?xml encoding="UTF-8">'.$readme);
 
             // Links can not be trusted, mark them nofollow and convert relative to absolute links
             $links = $dom->getElementsByTagName('a');
@@ -537,7 +538,7 @@ class Updater
             }
 
             $readme = $dom->saveHTML();
-            $readme = substr($readme, strpos($readme, '<body>')+6);
+            $readme = substr($readme, strpos($readme, '<body>') + 6);
             $readme = substr($readme, 0, strrpos($readme, '</body>'));
 
             $package->setReadme($readme);

@@ -62,7 +62,8 @@ class Controller extends BaseController
                 'downloads' => $dlMgr->getPackagesDownloads($ids),
                 'favers' => $favs,
             ];
-        } catch (\Predis\Connection\ConnectionException $e) {}
+        } catch (\Predis\Connection\ConnectionException $e) {
+        }
     }
 
     /**
@@ -70,6 +71,7 @@ class Controller extends BaseController
      *
      * @param \Doctrine\ORM\QueryBuilder $query Query for packages
      * @param int                        $page  Pagenumber to retrieve.
+     *
      * @return \Pagerfanta\Pagerfanta
      */
     protected function setupPager($query, $page)

@@ -20,7 +20,7 @@ use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * OAuthRegistrationFormHandler
+ * OAuthRegistrationFormHandler.
  *
  * @author Alexander <iam.asm89@gmail.com>
  */
@@ -32,7 +32,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
     /**
      * Constructor.
      *
-     * @param UserManagerInterface $userManager
+     * @param UserManagerInterface    $userManager
      * @param TokenGeneratorInterface $tokenGenerator
      */
     public function __construct(UserManagerInterface $userManager, TokenGeneratorInterface $tokenGenerator)
@@ -42,7 +42,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function process(Request $request, Form $form, UserResponseInterface $userInformation)
     {

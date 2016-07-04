@@ -32,7 +32,7 @@ class OAuthRegistrationFormType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => User::class,
-            'intention'  => 'registration',
+            'intention' => 'registration',
             'validation_groups' => ['Default', 'Profile'],
         ]);
     }

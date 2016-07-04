@@ -103,7 +103,7 @@ class PackageController extends Controller
      */
     public function submitPackageAction(Request $req)
     {
-        $package = new Package;
+        $package = new Package();
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $package->setRouter($this->get('router'));
         $form = $this->createForm(PackageType::class, $package, [
@@ -138,10 +138,10 @@ class PackageController extends Controller
      */
     public function fetchInfoAction(Request $req)
     {
-        $package = new Package;
+        $package = new Package();
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $package->setRouter($this->get('router'));
-        $form = $this->createForm(new PackageType, $package);
+        $form = $this->createForm(new PackageType(), $package);
         $user = $this->getUser();
         $package->addMaintainer($user);
 
@@ -268,16 +268,18 @@ class PackageController extends Controller
             $redis = $this->get('snc_redis.default');
             $trendiness = [];
             foreach ($providers as $package) {
-                /** @var Package $package */
+                /* @var Package $package */
                 $trendiness[$package->getId()] = (int) $redis->zscore('downloads:trending', $package->getId());
             }
             usort($providers, function ($a, $b) use ($trendiness) {
                 if ($trendiness[$a->getId()] === $trendiness[$b->getId()]) {
                     return strcmp($a->getName(), $b->getName());
                 }
+
                 return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? -1 : 1;
             });
-        } catch (ConnectionException $e) {}
+        } catch (ConnectionException $e) {
+        }
 
         return $this->render('PackagistWebBundle:Package:providers.html.twig', [
             'name' => $name,
@@ -497,11 +499,11 @@ class PackageController extends Controller
         $package = $version->getPackage();
 
         if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_DELETE_PACKAGES')) {
-            throw new AccessDeniedException;
+            throw new AccessDeniedException();
         }
 
         if (!$this->isCsrfTokenValid('delete_version', $req->request->get('_token'))) {
-            throw new AccessDeniedException;
+            throw new AccessDeniedException();
         }
 
         $repo->remove($version);
@@ -525,7 +527,7 @@ class PackageController extends Controller
                 ->getRepository('PackagistWebBundle:Package')
                 ->getPackageByName($name);
         } catch (NoResultException $e) {
-            return new Response(json_encode(['status' => 'error', 'message' => 'Package not found',]), 404);
+            return new Response(json_encode(['status' => 'error', 'message' => 'Package not found']), 404);
         }
 
         $username = $req->request->has('username') ?
@@ -546,7 +548,7 @@ class PackageController extends Controller
             ->findOneBy(['username' => $username, 'apiToken' => $apiToken]);
 
         if (!$user) {
-            return new Response(json_encode(['status' => 'error', 'message' => 'Invalid credentials',]), 403);
+            return new Response(json_encode(['status' => 'error', 'message' => 'Invalid credentials']), 403);
         }
 
         if ($package->getMaintainers()->contains($user) || $this->isGranted('ROLE_UPDATE_PACKAGES')) {
@@ -590,7 +592,7 @@ class PackageController extends Controller
             return new Response('{"status": "success"}', 202);
         }
 
-        return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',], 404);
+        return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)'], 404);
     }
 
     /**
@@ -611,7 +613,7 @@ class PackageController extends Controller
         }
 
         if (!$form = $this->createDeletePackageForm($package)) {
-            throw new AccessDeniedException;
+            throw new AccessDeniedException();
         }
         $form->submit($req->request->get('form'));
         if ($form->isValid()) {
@@ -772,10 +774,10 @@ class PackageController extends Controller
     public function editAction(Request $req, Package $package)
     {
         if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
-            throw new AccessDeniedException;
+            throw new AccessDeniedException();
         }
 
-        $form = $this->createFormBuilder($package, ["validation_groups" => ["Update"]])
+        $form = $this->createFormBuilder($package, ['validation_groups' => ['Update']])
             ->add('repository', TextType::class)
             ->setMethod('POST')
             ->setAction($this->generateUrl('edit_package', ['name' => $package->getName()]))
@@ -790,15 +792,15 @@ class PackageController extends Controller
             $em->persist($package);
             $em->flush();
 
-            $this->get("session")->getFlashBag()->set("success", "Changes saved.");
+            $this->get('session')->getFlashBag()->set('success', 'Changes saved.');
 
             return $this->redirect(
-                $this->generateUrl("view_package", ["name" => $package->getName()])
+                $this->generateUrl('view_package', ['name' => $package->getName()])
             );
         }
 
         return [
-            "package" => $package, "form" => $form->createView()
+            'package' => $package, 'form' => $form->createView(),
         ];
     }
 
@@ -813,7 +815,7 @@ class PackageController extends Controller
     public function abandonAction(Request $request, Package $package)
     {
         if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
-            throw new AccessDeniedException;
+            throw new AccessDeniedException();
         }
 
         $form = $this->createForm(AbandonedType::class);
@@ -833,7 +835,7 @@ class PackageController extends Controller
 
         return [
             'package' => $package,
-            'form'    => $form->createView()
+            'form' => $form->createView(),
         ];
     }
 
@@ -847,7 +849,7 @@ class PackageController extends Controller
     public function unabandonAction(Package $package)
     {
         if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
-            throw new AccessDeniedException;
+            throw new AccessDeniedException();
         }
 
         $package->setAbandoned(false);
@@ -885,7 +887,7 @@ class PackageController extends Controller
 
         if ($req->getRequestFormat() === 'json') {
             $data['versions'] = array_map(function ($version) {
-                /** @var Version $version */
+                /* @var Version $version */
                 return $version->getVersion();
             }, $data['versions']);
 
@@ -998,14 +1000,14 @@ class PackageController extends Controller
 
             $datePoints = [
                 'labels' => array_keys($datePoints),
-                'values' => $redis->mget(array_values($datePoints))
+                'values' => $redis->mget(array_values($datePoints)),
             ];
         } else {
             $datePoints = [
                 'labels' => array_keys($datePoints),
                 'values' => array_values(array_map(function ($vals) use ($redis) {
                     return array_sum($redis->mget(array_values($vals)));
-                }, $datePoints))
+                }, $datePoints)),
             ];
         }
 
@@ -1042,12 +1044,12 @@ class PackageController extends Controller
      */
     public function versionStatsAction(Request $req, Package $package, $version)
     {
-        $normalizer = new VersionParser;
+        $normalizer = new VersionParser();
         $normVersion = $normalizer->normalize($version);
 
         $version = $this->getDoctrine()->getRepository('PackagistWebBundle:Version')->findOneBy([
             'package' => $package,
-            'normalizedVersion' => $normVersion
+            'normalizedVersion' => $normVersion,
         ]);
 
         if (!$version) {
@@ -1065,6 +1067,7 @@ class PackageController extends Controller
 
         if ($this->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
             $maintainerRequest = new MaintainerRequest();
+
             return $this->createForm(AddMaintainerRequestType::class, $maintainerRequest);
         }
     }
@@ -1077,6 +1080,7 @@ class PackageController extends Controller
 
         if ($this->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
             $maintainerRequest = new MaintainerRequest();
+
             return $this->createForm(RemoveMaintainerRequestType::class, $maintainerRequest, [
                 'package' => $package,
             ]);
@@ -1127,7 +1131,7 @@ class PackageController extends Controller
 
         $datePoints = [];
         while ($from <= $to) {
-            $datePoints[$nextDataPointLabel][] = 'dl:'.$package->getId().($version ? '-' . $version->getId() : '').':'.$from->format($dateKey);
+            $datePoints[$nextDataPointLabel][] = 'dl:'.$package->getId().($version ? '-'.$version->getId() : '').':'.$from->format($dateKey);
 
             $from = $from->modify($dateJump);
             if ($from >= $nextDataPoint) {

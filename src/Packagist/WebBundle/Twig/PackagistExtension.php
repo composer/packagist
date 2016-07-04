@@ -29,7 +29,7 @@ class PackagistExtension extends \Twig_Extension
     {
         return [
             new \Twig_SimpleFilter('prettify_source_reference', [$this, 'prettifySourceReference']),
-            new \Twig_SimpleFilter('gravatar_hash', [$this, 'generateGravatarHash'])
+            new \Twig_SimpleFilter('gravatar_hash', [$this, 'generateGravatarHash']),
         ];
     }
 

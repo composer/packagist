@@ -80,11 +80,11 @@ class PackageManager
     public function notifyNewMaintainer($user, $package)
     {
         $body = $this->twig->render('PackagistWebBundle:Email:maintainer_added.txt.twig', [
-            'package_name' => $package->getName()
+            'package_name' => $package->getName(),
         ]);
 
         $message = \Swift_Message::newInstance()
-            ->setSubject('You have been added to ' . $package->getName() . ' as a maintainer')
+            ->setSubject('You have been added to '.$package->getName().' as a maintainer')
             ->setFrom($this->options['from'], $this->options['fromName'])
             ->setTo($user->getEmail())
             ->setBody($body)

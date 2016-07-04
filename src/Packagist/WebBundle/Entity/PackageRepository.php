@@ -160,6 +160,7 @@ class PackageRepository extends EntityRepository
         $qb = $this->getBaseQueryBuilder()
             ->where('p.name = ?0')
             ->setParameters([$name]);
+
         return $qb->getQuery()->getSingleResult();
     }
 
@@ -261,7 +262,7 @@ class PackageRepository extends EntityRepository
             ) x';
 
         $stmt = $this->getEntityManager()->getConnection()
-            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'dependents_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
+            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7 * 86400, 'dependents_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
         $result = $stmt->fetchAll();
         $stmt->closeCursor();
 
@@ -275,14 +276,14 @@ class PackageRepository extends EntityRepository
                 SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
                 UNION
                 SELECT pv.package_id FROM link_require_dev r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
-            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $stmt = $this->getEntityManager()->getConnection()
             ->executeCacheQuery(
                 $sql,
                 ['name' => $name],
                 [],
-                new QueryCacheProfile(7*86400, 'dependents_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+                new QueryCacheProfile(7 * 86400, 'dependents_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
             );
         $result = $stmt->fetchAll();
         $stmt->closeCursor();
@@ -298,7 +299,7 @@ class PackageRepository extends EntityRepository
             WHERE s.packageName = :name';
 
         $stmt = $this->getEntityManager()->getConnection()
-            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'suggesters_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
+            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7 * 86400, 'suggesters_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
         $result = $stmt->fetchAll();
         $stmt->closeCursor();
 
@@ -313,14 +314,14 @@ class PackageRepository extends EntityRepository
             INNER JOIN package p ON (p.id = pv.package_id)
             WHERE s.packageName = :name
             GROUP BY pv.package_id
-            ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+            ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $stmt = $this->getEntityManager()->getConnection()
             ->executeCacheQuery(
                 $sql,
                 ['name' => $name],
                 [],
-                new QueryCacheProfile(7*86400, 'suggesters_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+                new QueryCacheProfile(7 * 86400, 'suggesters_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
             );
         $result = $stmt->fetchAll();
         $stmt->closeCursor();
@@ -373,7 +374,7 @@ class PackageRepository extends EntityRepository
     }
 
     /**
-     * Gets the most recent packages created
+     * Gets the most recent packages created.
      *
      * @return QueryBuilder
      */

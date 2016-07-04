@@ -60,6 +60,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
+
             return;
         }
 
@@ -76,6 +77,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             if ($verbose) {
                 $output->writeln('Aborting, another indexer is still active');
             }
+
             return;
         }
 
@@ -111,7 +113,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
         // update package index
         while ($ids) {
-            $indexTime = new \DateTime;
+            $indexTime = new \DateTime();
             $idsSlice = array_splice($ids, 0, 50);
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findById($idsSlice);
             $update = $solarium->createUpdate();
@@ -119,7 +121,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $indexTimeUpdates = [];
 
             foreach ($packages as $package) {
-                $current++;
+                ++$current;
                 if ($verbose) {
                     $output->writeln('['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
                 }

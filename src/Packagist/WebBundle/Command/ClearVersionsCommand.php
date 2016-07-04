@@ -89,7 +89,7 @@ EOF
             $packageRepo = $doctrine->getRepository('PackagistWebBundle:Package');
             foreach ($packageNames as $name) {
                 $package = $packageRepo->findOneByName($name);
-                $package->setCrawledAt(new \DateTime);
+                $package->setCrawledAt(new \DateTime());
             }
 
             $doctrine->getManager()->flush();

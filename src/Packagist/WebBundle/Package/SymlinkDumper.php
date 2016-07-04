@@ -26,7 +26,8 @@ use Doctrine\DBAL\Connection;
 class SymlinkDumper
 {
     /**
-     * Doctrine
+     * Doctrine.
+     *
      * @var RegistryInterface
      */
     protected $doctrine;
@@ -57,43 +58,49 @@ class SymlinkDumper
     protected $router;
 
     /**
-     * Data cache
+     * Data cache.
+     *
      * @var array
      */
     private $rootFile;
 
     /**
-     * Data cache
+     * Data cache.
+     *
      * @var array
      */
     private $listings = [];
 
     /**
-     * Data cache
+     * Data cache.
+     *
      * @var array
      */
     private $individualFiles = [];
 
     /**
-     * Modified times of individual files
+     * Modified times of individual files.
+     *
      * @var array
      */
     private $individualFilesMtime = [];
 
     /**
-     * Stores all the disk writes to be replicated in the second build dir after the symlink has been swapped
+     * Stores all the disk writes to be replicated in the second build dir after the symlink has been swapped.
+     *
      * @var array
      */
     private $writeLog = [];
 
     /**
      * Generate compressed files.
+     *
      * @var int 0 disabled, 9 maximum.
      */
     private $compress;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param RegistryInterface     $doctrine
      * @param Filesystem            $filesystem
@@ -106,7 +113,7 @@ class SymlinkDumper
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
-        $this->cfs = new ComposerFilesystem;
+        $this->cfs = new ComposerFilesystem();
         $this->router = $router;
         $this->webDir = realpath($webDir);
         $this->buildDir = $targetDir;
@@ -114,11 +121,11 @@ class SymlinkDumper
     }
 
     /**
-     * Dump a set of packages to the web root
+     * Dump a set of packages to the web root.
      *
-     * @param array   $packageIds
-     * @param Boolean $force
-     * @param Boolean $verbose
+     * @param array $packageIds
+     * @param bool  $force
+     * @param bool  $verbose
      */
     public function dump(array $packageIds, $force = false, $verbose = false)
     {
@@ -195,7 +202,7 @@ class SymlinkDumper
             $current = 0;
             $step = 50;
             while ($packageIds) {
-                $dumpTime = new \DateTime;
+                $dumpTime = new \DateTime();
                 $packages = $this->doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($packageIds, 0, $step));
 
                 if ($verbose) {
@@ -297,8 +304,8 @@ class SymlinkDumper
             $url = $this->router->generate('track_download', ['name' => 'VND/PKG']);
             $this->rootFile['notify'] = str_replace('VND/PKG', '%package%', $url);
             $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch');
-            $this->rootFile['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
-            $this->rootFile['search'] = $this->router->generate('search', ['_format' => 'json']) . '?q=%query%&type=%type%';
+            $this->rootFile['providers-url'] = $this->router->generate('home').'p/%package%$%hash%.json';
+            $this->rootFile['search'] = $this->router->generate('search', ['_format' => 'json']).'?q=%query%&type=%type%';
 
             if ($verbose) {
                 echo 'Dumping individual listings'.PHP_EOL;
@@ -539,7 +546,7 @@ class SymlinkDumper
 
         $this->writeFile($file, $json, $time);
         if ($this->compress) {
-            $this->writeFile($file . '.gz', gzencode($json, $this->compress), $time);
+            $this->writeFile($file.'.gz', gzencode($json, $this->compress), $time);
         }
     }
 
@@ -552,13 +559,13 @@ class SymlinkDumper
 
         $json = json_encode($this->listings[$key]);
         $hash = hash('sha256', $json);
-        $path = substr($path, 0, -5) . '$' . $hash . '.json';
+        $path = substr($path, 0, -5).'$'.$hash.'.json';
         $time = time();
 
         if (!file_exists($path)) {
             $this->writeFile($path, $json, $time);
             if ($this->compress) {
-                $this->writeFile($path . '.gz', gzencode($json, $this->compress), $time);
+                $this->writeFile($path.'.gz', gzencode($json, $this->compress), $time);
             }
         }
 
@@ -605,7 +612,7 @@ class SymlinkDumper
         $this->writeFile($path, $json, $this->individualFilesMtime[$key]);
 
         // write the hashed provider file
-        $hashedFile = substr($path, 0, -5) . '$' . hash('sha256', $json) . '.json';
+        $hashedFile = substr($path, 0, -5).'$'.hash('sha256', $json).'.json';
         $this->writeFile($hashedFile, $json);
     }
 
@@ -629,6 +636,7 @@ class SymlinkDumper
             return false;
         }
         $this->fs->mkdir($path);
+
         return true;
     }
 
@@ -657,7 +665,7 @@ class SymlinkDumper
         $block = new \DateTime(date('Y', $now).'-'.$month.'-01'); // 1st day of current trimester
 
         // split last 12 months in 4 trimesters
-        for ($i=0; $i < 4; $i++) {
+        for ($i = 0; $i < 4; ++$i) {
             $blocks[$block->format('Y-m')] = $block->getTimestamp();
             $block->sub(new \DateInterval('P3M'));
         }
@@ -666,7 +674,7 @@ class SymlinkDumper
 
         while ($year >= 2013) {
             $blocks[''.$year] = strtotime($year.'-01-01');
-            $year--;
+            --$year;
         }
 
         return $blocks;
@@ -688,7 +696,7 @@ class SymlinkDumper
             }
         }
 
-        return "provider-archived.json";
+        return 'provider-archived.json';
     }
 
     private function writeFile($path, $contents, $mtime = null)
