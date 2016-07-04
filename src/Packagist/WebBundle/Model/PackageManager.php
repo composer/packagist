@@ -14,7 +14,7 @@ namespace Packagist\WebBundle\Model;
 
 use Doctrine\ORM\EntityManager;
 use Packagist\WebBundle\Entity\Package;
-use Symfony\Component\HttpKernel\Log\LoggerInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
