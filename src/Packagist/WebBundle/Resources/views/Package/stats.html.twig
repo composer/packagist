@@ -4,14 +4,14 @@
 
 {% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
-{% block title %}Install Statistics - {{ package.name }} - {{ parent() }}{% endblock %}
+{% block title %}{{ 'stats.title'|trans }} - {{ package.name }} - {{ parent() }}{% endblock %}
 
 {% block content %}
     <div class="row">
         <div class="col-xs-12 package">
             <div class="package-header">
                 <h2 class="title">
-                    <a href="{{ path("view_package", {name: package.name}) }}">{{ package.name }}</a> install statistics
+                    <a href="{{ path("view_package", {name: package.name}) }}">{{ package.name }}</a> {{ 'stats.subtitle'|trans }}
                 </h2>
             </div>
         </div>
@@ -19,30 +19,30 @@
 
     <section class="row package-installs">
         <div class="col-lg-12">
-            <h3>Installs</h3>
+            <h3>{{ 'stats.installs'|trans }}</h3>
 
             <div class="row">
                 <div class="col-md-4 col-xs-12">
                     <dl class="dl-horizontal">
-                        <dt class="font-normal">Overall</dt>
+                        <dt class="font-normal">{{ 'stats.overall'|trans }}</dt>
                         <dd class="font-normal">{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}</dd>
                     </dl>
                 </div>
                 <div class="col-md-4 col-xs-12">
                     <dl class="dl-horizontal">
-                        <dt class="font-normal">Last 30 days</dt>
+                        <dt class="font-normal">{{ 'stats.lastmonth'|trans }}</dt>
                         <dd class="font-normal">{{ downloads.monthly|number_format(0, '.', '&#8201;')|raw }}</dd>
                     </dl>
                 </div>
                 <div class="col-md-4 col-xs-12">
                     <dl class="dl-horizontal">
-                        <dt class="font-normal">Today<br><small>(since midnight, UTC)</small></dt>
+                        <dt class="font-normal">{{ 'stats.today'|trans }}<br><small>({{ 'stats.since_midnight'|trans }})</small></dt>
                         <dd class="font-normal">{{ downloads.daily|number_format(0, '.', '&#8201;')|raw }}</dd>
                     </dl>
                 </div>
             </div>
 
-            <h3>Daily installs{% if average != 'daily' %}, averaged {{ average }}{% endif %}</h3>
+            <h3>{{ 'stats.daily'|trans }}{% if average != 'daily' %}, {{ 'stats.averaged'|trans({ _avg_:average }) }}{% endif %}</h3>
             <div class="row">
                 <div class="col-xs-12">
                     <svg class="chart js-all-dls" width="500" height="200">
@@ -52,7 +52,7 @@
             </div>
 
             <br>
-            <h3>Daily installs per version{% if average != 'daily' %}, averaged {{ average }}{% endif %}</h3>
+            <h3>{{ 'stats.daily_per_version'|trans }}{% if average != 'daily' %}, {{ 'stats.averaged'|trans({ _avg_:average }) }}{% endif %}</h3>
             <div class="row package version-stats">
                 <div class="col-xs-12 col-md-9 version-stats-chart">
                     <div style="position: relative">

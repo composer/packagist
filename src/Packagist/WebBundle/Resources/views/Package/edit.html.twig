@@ -1,17 +1,17 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 
 {% block title %}
-    Edit Package {{ package.name }}
+    {{ 'edit.page_title'|trans({ _name:package.name }) }}
 {% endblock %}
 
 {% block content %}
-<h2 class="title">Edit {{ package.name }}</h2>
+<h2 class="title">{{ 'edit.title'|trans({ _name:package.name }) }}</h2>
 
 <section class="row">
     {{ form_start(form, { attr: { class: 'col-md-6' } }) }}
         {{ form_widget(form) }}
 
-        <input class="btn btn-block btn-primary btn-lg" id="submit" type="submit" value="Update" />
+        <input class="btn btn-block btn-primary btn-lg" id="submit" type="submit" value="{{ 'edit.submit'|trans }}" />
     {{ form_end(form) }}
 </section>
 {% endblock %}

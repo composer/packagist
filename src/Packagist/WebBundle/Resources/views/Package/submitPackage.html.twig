@@ -7,7 +7,7 @@
 {% set showSearchDesc = 'hide' %}
 
 {% block content %}
-<h2 class="title">Submit package</h2>
+<h2 class="title">{{ 'submit.title'|trans }}</h2>
 
 <section class="row">
     {{ form_start(form, { attr: { class: 'col-md-6', 'data-check-url': path('submit.fetch_info'), id: 'submit-package-form' } }) }}
@@ -15,13 +15,11 @@
 
         {{ form_rest(form) }}
 
-        <input class="btn btn-block btn-success btn-lg" id="submit" type="submit" value="Submit" />
+        <input class="btn btn-block btn-success btn-lg" id="submit" type="submit" value="{{ 'submit.submit'|trans }}" />
     {{ form_end(form) }}
 
     <div class="col-md-6">
-        <p>Please make sure you have read the package <a href="{{ path('about') }}#naming-your-package">naming conventions</a> before submitting your package. The authoritative name of your package will be taken from the composer.json file inside the master branch or trunk of your repository, and it can not be changed after that.</p>
-        <p><strong>Do not submit forks of existing packages.</strong> If you need to test changes to a package that you forked to patch, use <a href="https://getcomposer.org/doc/05-repositories.md#vcs">VCS Repositories</a> instead. If however it is a real long-term fork you intend on maintaining feel free to submit it.</p>
-        <p>If you need help or if you have any questions please get in touch with the Composer <a href="https://getcomposer.org/doc/07-community.md">community</a>.</p>
+        {{ 'submit.guide'|trans({ _path_about_: path('about') })|raw }}
     </div>
 </section>
 {% endblock %}

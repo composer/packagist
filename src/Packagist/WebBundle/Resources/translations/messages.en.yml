@@ -13,6 +13,18 @@ menu:
     contact: Contact
     stats: Statistics
     api_doc: API
+    browse: Browse
+    submit: Submit
+    togglenav: Toggle navigation
+    create_account: Create account
+    sign_in: Sign in
+    settings: Settings
+    change_password: Change password
+    my_packages: My packages
+    my_favorites: My favorites
+
+signinbox:
+     register: No account yet? Create one now!
 
 link_type:
     require: Requires
@@ -22,7 +34,120 @@ link_type:
     replace: Replaces
     provide: Provides
 
+listing:
+    title: Packages
+    nopackages: No packages found.
+    viewall: View All
+
+explore:
+    title: Packages
+    newreleases: New Releases
+    newpackages: New Packages
+    popularpackages: Popular Packages
+    randompackages: Random Packages
+
+search:
+    claim_html: |
+        Packagist is the main <a href="https://getcomposer.org/">Composer</a> repository. It aggregates public PHP packages installable with Composer.
+
+packages:
+    mine: My packages
+    yours: Your packages
+    maintained_by: Packages maintained by _user
+    my_favorites: My favorite packages
+    users_favorites: _user's favorite packages
+    dependent_title: Dependent Packages
+    dependents: dependents
+    providers_title: The following packages provide _name_
+    suggesters: suggesters
+    suggesters_title: Suggesters Packages
+    from: Packages from _vendor_
+
+browse:
+    packages: Packages
+
+submit:
+    title: Submit package
+    submit: Submit
+    guide: |
+        <p>Please make sure you have read the package <a href="_path_about_#naming-your-package">naming conventions</a> before submitting your package. The authoritative name of your package will be taken from the composer.json file inside the master branch or trunk of your repository, and it can not be changed after that.</p>
+        <p><strong>Do not submit forks of existing packages.</strong> If you need to test changes to a package that you forked to patch, use <a href="https://getcomposer.org/doc/05-repositories.md#vcs">VCS Repositories</a> instead. If however it is a real long-term fork you intend on maintaining feel free to submit it.</p>
+        <p>If you need help or if you have any questions please get in touch with the Composer <a href="https://getcomposer.org/doc/07-community.md">community</a>.</p>
+
+abandon:
+    submit: Abandon Package
+    warning: |
+        <p>You are about to mark this package as abandoned. This will alert users that this package will no longer be maintained.</p>
+        <p>If you are handing this project over to a new maintainer or know of a package that replaces it, please use
+            the field below to point users to the new package. In case you cannot point them to a new package, this one
+            will be tagged as abandoned and a replacement can be added later.</p>
+
+edit:
+    page_title: Edit Package _name
+    title: Edit _name
+    submit: Update
+
+profile:
+    your_api_token: Your API Token
+    show_api_token: Show API Token
+    accounts_connected: Accounts connected
+    connect_accounts: Connect accounts
+    notify_on_failure: Notify me of package update failures
+    api_token_explain: |
+        You can use your API token to interact with the Packagist API, see details in <a href="_path_about_#how-to-update-packages">the docs</a>.
+
+stats:
+    title: Install Statistics
+    subtitle: install statistics
+    installs: Installs
+    overall: Overall
+    lastmonth: Last 30 days
+    today: Today
+    since_midnight: "since midnight, UTC"
+    daily: Daily installs
+    daily_per_version: Daily installs per version
+    averaged: averaged _avg_
+
+statistics:
+    title: Statistics
+    over_time: Packages/versions over time
+    last_partial: The last data point is for the current month and shows partial data.
+    last_month: Packages installed in the last 30 days
+    monthly: Packages installed per month
+    packages: Packages
+    installs: Installs
+    registered: Packages registered
+    installed: Packages installed
+    versions: Versions available
+    versions_avail: Versions available
+    totals: Totals
+    since: since
+
+api_doc:
+    title: API documentation
+    intro: Packagist has a public API to consume data. See bellow the most important URIs:
+    listing_names: Listing package names
+    all_packages: All packages
+    by_organization: By organization
+    by_name: By name
+    by_type: By type
+    by_tag: By tag
+    list_by_organization: List packages by organization
+    list_by_type: List packages by type
+    searching: Searching for packages
+    search_by_name: Search packages by name
+    search_by_tag: Search packages by tag
+    search_by_type: Search packages by type
+    get_by_name: Get a package by name
+    get_package_data: Getting package data
+
+user:
+    member_since: member since
+    packages: _username_'s packages
+
 'Search packages...': 'Search packages...'
+brandname: Packagist
+navclaim: The PHP Package Repository
 Sort: 'Sort'
 Order: 'Order'
 Username: 'Username'

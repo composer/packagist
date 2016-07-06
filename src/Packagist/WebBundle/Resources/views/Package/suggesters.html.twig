@@ -4,14 +4,14 @@
 
 {% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
-{% block title %}Suggesters Packages - {{ name }} - {{ parent() }}{% endblock %}
+{% block title %}{{ 'packages.suggesters_title'|trans }} - {{ name }} - {{ parent() }}{% endblock %}
 
 {% block content %}
     <div class="row">
         <div class="col-xs-12 package">
             <div class="package-header">
                 <h2 class="title">
-                    <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a> suggesters
+                    <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a> {{ 'packages.suggesters'|trans }}
                     <small>({{ count }})</small>
                 </h2>
             </div>

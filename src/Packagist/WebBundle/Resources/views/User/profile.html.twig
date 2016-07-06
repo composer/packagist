@@ -8,7 +8,7 @@
 <h2 class="title">
     {{ user.username }}
     <small>
-        member since: {{ user.createdAt|date('M d, Y') }}
+        {{ 'user.member_since'|trans }}: {{ user.createdAt|date('M d, Y') }}
         {%- if is_granted('ROLE_ADMIN') %}
             <a href="mailto:{{ user.email }}">{{ user.email }}</a>
         {%- endif %}
@@ -19,7 +19,7 @@
     <section class="col-md-12">
         {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
             {% block content_title %}
-                <h3 class="font-normal profile-title">{{ user.username }}'s packages</h3>
+                <h3 class="font-normal profile-title">{{ 'user.packages'|trans({ _username_:user.username }) }}</h3>
             {% endblock %}
         {% endembed %}
     </section>

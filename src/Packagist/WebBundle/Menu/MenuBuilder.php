@@ -4,6 +4,7 @@ namespace Packagist\WebBundle\Menu;
 
 use Knp\Menu\FactoryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Translation\TranslatorInterface;
 
 class MenuBuilder
 {
@@ -13,10 +14,12 @@ class MenuBuilder
     /**
      * @param FactoryInterface      $factory
      * @param TokenStorageInterface $tokenStorage
+     * @param TranslatorInterface   $translator
      */
-    public function __construct(FactoryInterface $factory, TokenStorageInterface $tokenStorage)
+    public function __construct(FactoryInterface $factory, TokenStorageInterface $tokenStorage, TranslatorInterface $translator)
     {
         $this->factory = $factory;
+        $this->translator = $translator;
 
         if ($tokenStorage->getToken() && $tokenStorage->getToken()->getUser()) {
             $this->username = $tokenStorage->getToken()->getUser()->getUsername();
@@ -30,7 +33,7 @@ class MenuBuilder
 
         $this->addProfileMenu($menu);
         $menu->addChild('hr', array('label' => '<hr>', 'labelAttributes' => array('class' => 'normal'), 'extras' => array('safe_label' => true)));
-        $menu->addChild('Logout', array('label' => '<span class="icon-off"></span>Logout', 'route' => 'logout', 'extras' => array('safe_label' => true)));
+        $menu->addChild($this->translator->trans('menu.logout'), array('label' => '<span class="icon-off"></span>' . $this->translator->trans('menu.logout'), 'route' => 'logout', 'extras' => array('safe_label' => true)));
 
         return $menu;
     }
@@ -47,10 +50,10 @@ class MenuBuilder
 
     private function addProfileMenu($menu)
     {
-        $menu->addChild('Profile', array('label' => '<span class="icon-vcard"></span>Profile', 'route' => 'fos_user_profile_show', 'extras' => array('safe_label' => true)));
-        $menu->addChild('Settings', array('label' => '<span class="icon-tools"></span>Settings', 'route' => 'fos_user_profile_edit', 'extras' => array('safe_label' => true)));
-        $menu->addChild('Change password', array('label' => '<span class="icon-key"></span>Change password', 'route' => 'fos_user_change_password', 'extras' => array('safe_label' => true)));
-        $menu->addChild('My packages', array('label' => '<span class="icon-box"></span>My packages', 'route' => 'user_packages', 'routeParameters' => array('name' => $this->username), 'extras' => array('safe_label' => true)));
-        $menu->addChild('My favorites', array('label' => '<span class="icon-leaf"></span>My favorites', 'route' => 'user_favorites', 'routeParameters' => array('name' => $this->username), 'extras' => array('safe_label' => true)));
+        $menu->addChild($this->translator->trans('menu.profile'), array('label' => '<span class="icon-vcard"></span>' . $this->translator->trans('menu.profile'), 'route' => 'fos_user_profile_show', 'extras' => array('safe_label' => true)));
+        $menu->addChild($this->translator->trans('menu.settings'), array('label' => '<span class="icon-tools"></span>' . $this->translator->trans('menu.settings'), 'route' => 'fos_user_profile_edit', 'extras' => array('safe_label' => true)));
+        $menu->addChild($this->translator->trans('menu.change_password'), array('label' => '<span class="icon-key"></span>' . $this->translator->trans('menu.change_password'), 'route' => 'fos_user_change_password', 'extras' => array('safe_label' => true)));
+        $menu->addChild($this->translator->trans('menu.my_packages'), array('label' => '<span class="icon-box"></span>' . $this->translator->trans('menu.my_packages'), 'route' => 'user_packages', 'routeParameters' => array('name' => $this->username), 'extras' => array('safe_label' => true)));
+        $menu->addChild($this->translator->trans('menu.my_favorites'), array('label' => '<span class="icon-leaf"></span>' . $this->translator->trans('menu.my_favorites'), 'route' => 'user_favorites', 'routeParameters' => array('name' => $this->username), 'extras' => array('safe_label' => true)));
     }
 }

@@ -32,7 +32,7 @@
         {{ form_errors(form.failureNotifications) }}
         <label>
             {{ form_widget(form.failureNotifications) }}
-            Notify me of package update failures
+            {{ 'profile.notify_on_failure'|trans }}
         </label>
     </div>
 
@@ -46,7 +46,7 @@
 
     <a href="{{ app.user.githubId ? '#' : hwi_oauth_login_url('github') }}" class="btn btn-block btn-github btn-lg {{ app.user.githubId ? 'disabled' : 'btn-primary' }}">
         <span class="icon-github"></span>
-        {{ app.user.githubId ? 'Accounts connected' : 'Connect accounts' }}
+        {{ (app.user.githubId ? 'profile.accounts_connected' : 'profile.connect_accounts')|trans }}
     </a>
 </form>
 
