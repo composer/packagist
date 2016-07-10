@@ -21,7 +21,8 @@
     },
     "autoload": {
         "psr-4": { "Packagist\\": "src/Packagist/" },
-        "classmap": [ "app/AppKernel.php", "app/AppCache.php" ]
+        "classmap": [ "app/AppKernel.php", "app/AppCache.php" ],
+        "exclude-from-classmap": [ "src/Packagist/WebBundle/Tests/" ]
     },
     "require": {
         "php": ">=5.6",
