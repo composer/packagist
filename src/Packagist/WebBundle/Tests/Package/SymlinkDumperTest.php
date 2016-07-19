@@ -23,6 +23,7 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetTargetListingBlocks($now, array $expected)
     {
+        date_default_timezone_set('UTC');
 
         $blocks = self::invoke($this->mockDumper, 'getTargetListingBlocks', $now);
 
@@ -49,18 +50,17 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
                 strtotime('2015-01-01'),
                 array(
                     'latest'  => '2014-12-22',
-                    '2015-01' => '2015-01-01',
+                    '2014-01' => '2014-01-01',
                     '2014-10' => '2014-10-01',
                     '2014-07' => '2014-07-01',
                     '2014-04' => '2014-04-01',
-                    '2014'    => '2014-01-01',
                     '2013'    => '2013-01-01',
                 ),
             ),
             array(
                 strtotime('2015-05-31'),
                 array(
-                    'latest'  => '2015-05-25',
+                    'latest'  => '2015-05-18',
                     '2015-04' => '2015-04-01',
                     '2015-01' => '2015-01-01',
                     '2014-10' => '2014-10-01',
