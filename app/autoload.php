@@ -1,5 +1,7 @@
 <?php
 
+ini_set('date.timezone', 'UTC');
+
 use Doctrine\Common\Annotations\AnnotationRegistry;
 
 if (!$loader = @include __DIR__.'/../vendor/autoload.php') {

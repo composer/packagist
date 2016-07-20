@@ -23,8 +23,6 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetTargetListingBlocks($now, array $expected)
     {
-        date_default_timezone_set('UTC');
-
         $blocks = self::invoke($this->mockDumper, 'getTargetListingBlocks', $now);
 
         $blocks = array_map(function($timestamp) { return date('Y-m-d', $timestamp); }, $blocks);
