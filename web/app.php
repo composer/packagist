@@ -1,7 +1,5 @@
 <?php
 
-ini_set('date.timezone', 'UTC');
-
 use Symfony\Component\HttpFoundation\Request;
 
 /**
