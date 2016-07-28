@@ -23,7 +23,6 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetTargetListingBlocks($now, array $expected)
     {
-
         $blocks = self::invoke($this->mockDumper, 'getTargetListingBlocks', $now);
 
         $blocks = array_map(function($timestamp) { return date('Y-m-d', $timestamp); }, $blocks);
@@ -60,7 +59,7 @@ class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
             array(
                 strtotime('2015-05-31'),
                 array(
-                    'latest'  => '2015-05-25',
+                    'latest'  => '2015-05-18',
                     '2015-04' => '2015-04-01',
                     '2015-01' => '2015-01-01',
                     '2014-10' => '2014-10-01',
