@@ -45,10 +45,10 @@
             }
             function formatDigit(a,b) {
                 if (a > 1000000) {
-                    return Math.round(a/1000000) + 'mio';
+                    return (a/1000000).toFixed(1) + 'mio';
                 }
                 if (a > 1000) {
-                    return Math.round(a/1000) + 'K';
+                    return (a/1000).toFixed(1) + 'K';
                 }
                 return a;
             }
