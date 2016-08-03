@@ -552,6 +552,10 @@ class Package
         }
 
         $repoUrl = preg_replace('{^git@github.com:}i', 'https://github.com/', $repoUrl);
+        $dotGitLength = -strlen('.git');
+        if (substr($repoUrl, -$dotGitLength, $dotGitLength) === '.git') {
+            $repoUrl = substr($repoUrl, 0, -$dotGitLength);
+        }
         $this->repository = $repoUrl;
 
         // avoid user@host URLs
