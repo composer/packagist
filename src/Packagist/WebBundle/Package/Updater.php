@@ -488,7 +488,7 @@ class Updater
                 'sub', 'sup',
                 'ins', 'del',
                 'ol', 'ul', 'li',
-                'h1', 'h2', 'h3',
+                'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
                 'dl', 'dd', 'dt',
                 'pre', 'code', 'samp', 'kbd',
                 'q', 'blockquote', 'abbr', 'cite',
