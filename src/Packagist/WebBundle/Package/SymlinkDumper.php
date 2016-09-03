@@ -444,9 +444,11 @@ class SymlinkDumper
             unlink($newLink);
         }
         if (!symlink($buildDir, $newLink)) {
+            echo 'Warning: Could not symlink the build dir into the web dir';
             throw new \RuntimeException('Could not symlink the build dir into the web dir');
         }
         if (!rename($newLink, $oldLink)) {
+            echo 'Warning: Could not replace the old symlink with the new one in the web dir';
             throw new \RuntimeException('Could not replace the old symlink with the new one in the web dir');
         }
     }
