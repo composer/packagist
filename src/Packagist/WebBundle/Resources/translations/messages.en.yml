@@ -53,24 +53,28 @@ search:
 packages:
     mine: My packages
     yours: Your packages
-    maintained_by: Packages maintained by _user
+    maintained_by: Packages maintained by %user%
     my_favorites: My favorite packages
-    users_favorites: _user's favorite packages
+    users_favorites: %user%'s favorite packages
     dependent_title: Dependent Packages
     dependents: dependents
-    providers_title: The following packages provide _name_
+    providers_title: The following packages provide %name%
     suggesters: suggesters
     suggesters_title: Suggesters Packages
-    from: Packages from _vendor_
+    from: Packages from %vendor%
 
 browse:
     packages: Packages
+    of_type: of type %type%
+    with_tag: tagged with %tag%
+    join_and: ' and '
+    join_or: ' or '
 
 submit:
     title: Submit package
     submit: Submit
     guide: |
-        <p>Please make sure you have read the package <a href="_path_about_#naming-your-package">naming conventions</a> before submitting your package. The authoritative name of your package will be taken from the composer.json file inside the master branch or trunk of your repository, and it can not be changed after that.</p>
+        <p>Please make sure you have read the package <a href="%path_about%#naming-your-package">naming conventions</a> before submitting your package. The authoritative name of your package will be taken from the composer.json file inside the master branch or trunk of your repository, and it can not be changed after that.</p>
         <p><strong>Do not submit forks of existing packages.</strong> If you need to test changes to a package that you forked to patch, use <a href="https://getcomposer.org/doc/05-repositories.md#vcs">VCS Repositories</a> instead. If however it is a real long-term fork you intend on maintaining feel free to submit it.</p>
         <p>If you need help or if you have any questions please get in touch with the Composer <a href="https://getcomposer.org/doc/07-community.md">community</a>.</p>
 
@@ -83,8 +87,8 @@ abandon:
             will be tagged as abandoned and a replacement can be added later.</p>
 
 edit:
-    page_title: Edit Package _name
-    title: Edit _name
+    page_title: Edit Package %name%
+    title: Edit %name%
     submit: Update
 
 profile:
@@ -94,7 +98,7 @@ profile:
     connect_accounts: Connect accounts
     notify_on_failure: Notify me of package update failures
     api_token_explain: |
-        You can use your API token to interact with the Packagist API, see details in <a href="_path_about_#how-to-update-packages">the docs</a>.
+        You can use your API token to interact with the Packagist API, see details in <a href="%path_about%#how-to-update-packages">the docs</a>.
 
 stats:
     title: Install Statistics
@@ -106,7 +110,7 @@ stats:
     since_midnight: "since midnight, UTC"
     daily: Daily installs
     daily_per_version: Daily installs per version
-    averaged: averaged _avg_
+    averaged: averaged %avg%
 
 statistics:
     title: Statistics
@@ -143,7 +147,7 @@ api_doc:
 
 user:
     member_since: member since
-    packages: _username_'s packages
+    packages: %username%'s packages
 
 'Search packages...': 'Search packages...'
 brandname: Packagist

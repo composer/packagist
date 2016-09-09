@@ -42,7 +42,7 @@
                 </div>
             </div>
 
-            <h3>{{ 'stats.daily'|trans }}{% if average != 'daily' %}, {{ 'stats.averaged'|trans({ _avg_:average }) }}{% endif %}</h3>
+            <h3>{{ 'stats.daily'|trans }}{% if average != 'daily' %}, {{ 'stats.averaged'|trans({ '%avg%':average }) }}{% endif %}</h3>
             <div class="row">
                 <div class="col-xs-12">
                     <svg class="chart js-all-dls" width="500" height="200">
@@ -52,7 +52,7 @@
             </div>
 
             <br>
-            <h3>{{ 'stats.daily_per_version'|trans }}{% if average != 'daily' %}, {{ 'stats.averaged'|trans({ _avg_:average }) }}{% endif %}</h3>
+            <h3>{{ 'stats.daily_per_version'|trans }}{% if average != 'daily' %}, {{ 'stats.averaged'|trans({ '%avg%':average }) }}{% endif %}</h3>
             <div class="row package version-stats">
                 <div class="col-xs-12 col-md-9 version-stats-chart">
                     <div style="position: relative">

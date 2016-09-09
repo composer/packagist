@@ -2,11 +2,11 @@
 
 {% set filters = [] %}
 
-{% if type %}{% set filters = filters|merge(["of type #{type|join(' or ')}"]) %}{% endif %}
-{% if tag %}{% set filters = filters|merge(["tagged with #{tag|join(' or ')}"]) %}{% endif %}
+{% if type %}{% set filters = filters|merge(['browse.of_type'|trans({ '%type%': type|join('browse.join_or'|trans)})]) %}{% endif %}
+{% if tag %}{% set filters = filters|merge(['browse.with_tag'|trans({ '%tag%': tag|join('browse.join_or'|trans)})]) %}{% endif %}
 
 {% block content_title %}
-    <h1>{{ 'browse.packages'|trans }} {{ filters|join(' and ') }}</h1>
+    <h1>{{ 'browse.packages'|trans }} {{ filters|join('browse.join_and'|trans) }}</h1>
 {% endblock %}
 
 {# TODO:
