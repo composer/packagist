@@ -4,25 +4,25 @@ imports:
     - { resource: security.yml }
 
 framework:
-    secret:          %secret%
+    secret:          '%secret%'
     router:
         resource: '%kernel.root_dir%/config/routing.yml'
-        strict_requirements: %kernel.debug%
+        strict_requirements: '%kernel.debug%'
     form:            true
     csrf_protection: true
     validation:      { enable_annotations: true }
     translator:      { fallback: en }
     templating:      { engines: ['twig'] }
     assets:
-        version: v=%assets_version%
-    default_locale: %locale%
+        version: 'v=%assets_version%'
+    default_locale: '%locale%'
     session:
         name:            packagist
         cookie_lifetime: 3600
         cookie_httponly: true
-        save_path: %session_save_path%
-    trusted_proxies: %trusted_proxies%
-    trusted_hosts: %trusted_hosts%
+        save_path: '%session_save_path%'
+    trusted_proxies: '%trusted_proxies%'
+    trusted_hosts: '%trusted_hosts%'
     http_method_override: true
     fragments: ~
 
@@ -30,25 +30,25 @@ framework:
 twig:
     form_themes:
         - 'PackagistWebBundle::forms.html.twig'
-    debug:            %kernel.debug%
-    strict_variables: %kernel.debug%
+    debug:            '%kernel.debug%'
+    strict_variables: '%kernel.debug%'
     globals:
-        google_analytics: %google_analytics%
-        packagist_host: %packagist_host%
+        google_analytics: '%google_analytics%'
+        packagist_host: '%packagist_host%'
 
 # Doctrine Configuration
 doctrine:
     dbal:
-        driver:   %database_driver%
-        host:     %database_host%
-        dbname:   %database_name%
-        user:     %database_user%
-        password: %database_password%
+        driver:   '%database_driver%'
+        host:     '%database_host%'
+        dbname:   '%database_name%'
+        user:     '%database_user%'
+        password: '%database_password%'
         charset:  utf8mb4
         # See https://github.com/sonata-project/SonataAdminBundle/issues/3342
         server_version: 5.6
     orm:
-        auto_generate_proxy_classes: %kernel.debug%
+        auto_generate_proxy_classes: '%kernel.debug%'
         auto_mapping: true
 
 snc_redis:
@@ -56,13 +56,13 @@ snc_redis:
         default:
             type: predis
             alias: default
-            dsn: %redis_dsn%
+            dsn: '%redis_dsn%'
             options:
                 profile: 2.8
         cache:
             type: predis
             alias: cache
-            dsn: %redis_dsn%
+            dsn: '%redis_dsn%'
             options:
                 profile: 2.8
     session:
@@ -72,10 +72,10 @@ snc_redis:
 
 # Swiftmailer Configuration
 swiftmailer:
-    transport: %mailer_transport%
-    host:      %mailer_host%
-    username:  %mailer_user%
-    password:  %mailer_password%
+    transport: '%mailer_transport%'
+    host:      '%mailer_host%'
+    username:  '%mailer_user%'
+    password:  '%mailer_password%'
     spool:     { type: memory }
 
 fos_user:
@@ -84,8 +84,8 @@ fos_user:
     user_class:  Packagist\WebBundle\Entity\User
     use_username_form_type: true
     from_email:
-        address:        %mailer_from_email%
-        sender_name:    %mailer_from_name%
+        address:        '%mailer_from_email%'
+        sender_name:    '%mailer_from_name%'
     profile:
         form:
             type:       packagist_user_profile
@@ -103,18 +103,18 @@ hwi_oauth:
     resource_owners:
         github:
             type:          github
-            client_id:     %github.client_id%
-            client_secret: %github.client_secret%
+            client_id:     '%github.client_id%'
+            client_secret: '%github.client_secret%'
             options:
                 csrf: true
 
 nelmio_solarium:
     clients:
         default:
-            host: %solr_host%
-            port: %solr_port%
-            path: %solr_path%
-            core: %solr_core%
+            host: '%solr_host%'
+            port: '%solr_port%'
+            path: '%solr_path%'
+            core: '%solr_core%'
 
 nelmio_cors:
     defaults:

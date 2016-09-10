@@ -95,11 +95,11 @@ services:
             - '@mailer'
             - '@twig'
             - '@logger'
-            - { from: %mailer_from_email%, fromName: %mailer_from_name% }
+            - { from: '%mailer_from_email%', fromName: '%mailer_from_name%' }
 
     packagist.profile.form.type:
         class: Packagist\WebBundle\Form\Type\ProfileFormType
-        arguments: [%fos_user.model.user.class%]
+        arguments: ['%fos_user.model.user.class%']
         tags:
             - { name: form.type, alias: packagist_user_profile }
 

@@ -8,7 +8,7 @@ menu:
     login: Login
     register: Register
     browse_packages: Browse Packages
-    twitter: Follow @packagist
+    twitter: "Follow @packagist"
     github: GitHub
     contact: Contact
     stats: Statistics
@@ -53,20 +53,20 @@ search:
 packages:
     mine: My packages
     yours: Your packages
-    maintained_by: Packages maintained by %user%
+    maintained_by: "Packages maintained by %user%"
     my_favorites: My favorite packages
-    users_favorites: %user%'s favorite packages
+    users_favorites: "%user%'s favorite packages"
     dependent_title: Dependent Packages
     dependents: dependents
-    providers_title: The following packages provide %name%
+    providers_title: "The following packages provide %name%"
     suggesters: suggesters
     suggesters_title: Suggesters Packages
-    from: Packages from %vendor%
+    from: "Packages from %vendor%"
 
 browse:
     packages: Packages
-    of_type: of type %type%
-    with_tag: tagged with %tag%
+    of_type: "of type %type%"
+    with_tag: "tagged with %tag%"
     join_and: ' and '
     join_or: ' or '
 
@@ -87,8 +87,8 @@ abandon:
             will be tagged as abandoned and a replacement can be added later.</p>
 
 edit:
-    page_title: Edit Package %name%
-    title: Edit %name%
+    page_title: "Edit Package %name%"
+    title: "Edit %name%"
     submit: Update
 
 profile:
@@ -110,7 +110,7 @@ stats:
     since_midnight: "since midnight, UTC"
     daily: Daily installs
     daily_per_version: Daily installs per version
-    averaged: averaged %avg%
+    averaged: "averaged %avg%"
 
 statistics:
     title: Statistics
@@ -147,7 +147,7 @@ api_doc:
 
 user:
     member_since: member since
-    packages: %username%'s packages
+    packages: "%username%'s packages"
 
 'Search packages...': 'Search packages...'
 brandname: Packagist

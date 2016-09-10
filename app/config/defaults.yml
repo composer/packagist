@@ -2,7 +2,7 @@ parameters:
     packagist_host: ~
     packagist_metadata_dir: '%kernel.cache_dir%/composer-packages-build'
     packagist_dumper_compress: 0
-    session_save_path: %kernel.cache_dir%/sessions
+    session_save_path: '%kernel.cache_dir%/sessions'
     database_name_test: packagist_test
     redis_dsn_test: redis://127.0.0.1/14
     assets_version: 1234

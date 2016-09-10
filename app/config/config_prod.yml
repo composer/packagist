@@ -3,11 +3,11 @@ imports:
 
 doctrine:
     orm:
-        metadata_cache_driver: %doctrine_cache_backend%
+        metadata_cache_driver: '%doctrine_cache_backend%'
         result_cache_driver:
             type: predis
             cache_provider: predis
-        query_cache_driver: %doctrine_cache_backend%
+        query_cache_driver: '%doctrine_cache_backend%'
 
 doctrine_cache:
     providers:
@@ -27,7 +27,7 @@ monolog:
                 - ^/
         nested:
             type:  stream
-            path:  %kernel.logs_dir%/%kernel.environment%.log
+            path:  '%kernel.logs_dir%/%kernel.environment%.log'
             level: debug
             include_stacktraces: true
 
@@ -36,13 +36,13 @@ snc_redis:
         default:
             type: predis
             alias: default
-            dsn: %redis_dsn%
+            dsn: '%redis_dsn%'
             options:
                 profile: 2.8
         cache:
             type: predis
             alias: cache
-            dsn: %redis_session_dsn%
+            dsn: '%redis_session_dsn%'
             options:
                 profile: 2.8
     session:
@@ -52,14 +52,14 @@ snc_redis:
 framework:
     session:
         handler_id: snc_redis.session.handler
-        cookie_secure: %force_ssl%
+        cookie_secure: '%force_ssl%'
     validation:
-        cache: %validation_cache_backend%
+        cache: '%validation_cache_backend%'
 
 nelmio_security:
     clickjacking:
         paths:
             '^/.*': DENY
     forced_ssl:
-        enabled: %force_ssl%
+        enabled: '%force_ssl%'
         hsts_max_age: 31104000 # 1y
