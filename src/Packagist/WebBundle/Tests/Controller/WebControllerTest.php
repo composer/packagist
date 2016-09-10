@@ -172,9 +172,9 @@ class WebControllerTest extends WebTestCase
      */
     public function testSearchOrderBysCombinationAction()
     {
-        $userMock = $this->getMock('Packagist\WebBundle\Entity\User');
-        $userMock1 = $this->getMock('Packagist\WebBundle\Entity\User');
-        $userMock2 = $this->getMock('Packagist\WebBundle\Entity\User');
+        $userMock = $this->createMock('Packagist\WebBundle\Entity\User');
+        $userMock1 = $this->createMock('Packagist\WebBundle\Entity\User');
+        $userMock2 = $this->createMock('Packagist\WebBundle\Entity\User');
 
         $userMock->method('getId')->will($this->returnValue(1));
         $userMock1->method('getId')->will($this->returnValue(2));
@@ -367,9 +367,9 @@ class WebControllerTest extends WebTestCase
     protected function commonTestSearchActionOrderBysFavers(
         array $orderBys = array()
     ) {
-        $userMock = $this->getMock('Packagist\WebBundle\Entity\User');
-        $userMock1 = $this->getMock('Packagist\WebBundle\Entity\User');
-        $userMock2 = $this->getMock('Packagist\WebBundle\Entity\User');
+        $userMock = $this->createMock('Packagist\WebBundle\Entity\User');
+        $userMock1 = $this->createMock('Packagist\WebBundle\Entity\User');
+        $userMock2 = $this->createMock('Packagist\WebBundle\Entity\User');
 
         $userMock->method('getId')->will($this->returnValue(1));
         $userMock1->method('getId')->will($this->returnValue(2));
