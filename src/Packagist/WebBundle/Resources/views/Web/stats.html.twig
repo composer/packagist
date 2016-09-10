@@ -5,46 +5,46 @@
 {% block content %}
     {% set packageCount = 0 %}
 
-    <h2 class="title">Statistics</h2>
+    <h2 class="title">{{ 'statistics.title'|trans }}</h2>
 
     <section class="row">
         <div class="col-lg-12">
-            <h3>Packages/versions over time</h3>
+            <h3>{{ 'statistics.over_time'|trans }}</h3>
 
             <p class="row">
-                <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ chart.months|join(',') }}" data-scale="1000" data-values="Versions:{{ chart.versions|join(',') }}|Packages:{{ chart.packages|join(',') }}">
+                <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ chart.months|join(',') }}" data-scale="1000" data-values="{{ 'statistics.versions'|trans }}:{{ chart.versions|join(',') }}|{{ 'statistics.packages'|trans }}:{{ chart.packages|join(',') }}">
                     Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
                 </svg>
             </p>
-            <p>The last data point is for the current month and shows partial data.</p>
+            <p>{{ 'statistics.last_partial'|trans }}</p>
 
             {% if downloadsChart %}
-                <h3>Packages installed in the last 30 days</h3>
+                <h3>{{ 'statistics.last_month'|trans }}</h3>
                 <p class="row">
-                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChart.labels|join(',') }}" data-scale="1000" data-values="Installs:{{ downloadsChart.values|join(',') }}">
+                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChart.labels|join(',') }}" data-scale="1000" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChart.values|join(',') }}">
                         Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
                     </svg>
                 </p>
             {% endif %}
             {% if downloadsChartMonthly %}
-                <h3>Packages installed per month</h3>
+                <h3>{{ 'statistics.monthly'|trans }}</h3>
                 <p class="row">
-                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-scale="1000000" data-values="Installs:{{ downloadsChartMonthly.values|join(',') }}">
+                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-scale="1000000" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChartMonthly.values|join(',') }}">
                         Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
                     </svg>
                 </p>
-                <p>The last data point is for the current month and shows partial data.</p>
+                <p>{{ 'statistics.last_partial'|trans }}</p>
             {% endif %}
 
-            <h3>Totals</h3>
+            <h3>{{ 'statistics.totals'|trans }}</h3>
             <dl class="dl-horizontal">
-                <dt class="font-normal">Packages registered</dt>
+                <dt class="font-normal">{{ 'statistics.registered'|trans }}</dt>
                 <dd class="font-normal">{{ packages|number_format(0, '.', "&#8201;")|raw }}</dd>
 
-                <dt class="font-normal">Versions available</dt>
+                <dt class="font-normal">{{ 'statistics.versions_avail'|trans }}</dt>
                 <dd class="font-normal">{{ versions|number_format(0, '.', "&#8201;")|raw }}</dd>
 
-                <dt class="font-normal">Packages installed<br><small>(since {{ downloadsStartDate }})</small></dt>
+                <dt class="font-normal">{{ 'statistics.installed'|trans }}<br><small>({{ 'statistics.since'|trans }} {{ downloadsStartDate }})</small></dt>
                 <dd class="font-normal">{% if downloads == 'N/A' %}{{ downloads }}{% else %}{{ downloads|number_format(0, '.', "&#8201;")|raw }}{% endif %}</dd>
             </dl>
         </div>

@@ -1,32 +1,32 @@
 {% extends "PackagistWebBundle::layout.html.twig" %}
 {% block content %}
 
-<h2 class="title">API documentation</h2>
+<h2 class="title">{{ 'api_doc.title'|trans }}</h2>
 
 <ul class="toc">
-  <li><a href="#list-packages">Listing package names</a>
+  <li><a href="#list-packages">{{ 'api_doc.listing_names'|trans }}</a>
     <ul>
-      <li><a href="#list-packages-all">All packages</a></li>
-      <li><a href="#list-packages-by-organization">By organization</a></li>
-      <li><a href="#list-packages-by-type">By type</a></li>
+      <li><a href="#list-packages-all">{{ 'api_doc.all_packages'|trans }}</a></li>
+      <li><a href="#list-packages-by-organization">{{ 'api_doc.by_organization'|trans }}</a></li>
+      <li><a href="#list-packages-by-type">{{ 'api_doc.by_type'|trans }}</a></li>
     </ul>
   </li>
-  <li><a href="#search-packages">Searching for packages</a>
+  <li><a href="#search-packages">{{ 'api_doc.searching'|trans }}</a>
     <ul>
-      <li><a href="#search-packages-by-tag">By tag</a></li>
-      <li><a href="#search-packages-by-name">By name</a></li>
-      <li><a href="#search-packages-by-type">By type</a></li>
+      <li><a href="#search-packages-by-tag">{{ 'api_doc.by_tag'|trans }}</a></li>
+      <li><a href="#search-packages-by-name">{{ 'api_doc.by_name'|trans }}</a></li>
+      <li><a href="#search-packages-by-type">{{ 'api_doc.by_type'|trans }}</a></li>
     </ul>
   </li>
-  <li><a href="#get-package-data">Getting package data</a></li>
+  <li><a href="#get-package-data">{{ 'api_doc.get_package_data'|trans }}</a></li>
 </ul>
 
 
 <section class="col-d-12">
-<h3 id="list-packages">Listing package names</h3>
-<h4 id="list-packages-all">List all packages</h4>
+<h3 id="list-packages">{{ 'api_doc.listing_names'|trans }}</h3>
+<h4 id="list-packages-all">{{ 'api_doc.all_packages'|trans }}</h4>
 <pre>
-GET https://packagist.org/packages/list.json
+GET https://{{ packagist_host }}/packages/list.json
 <code>
 {
   "packageNames": [
@@ -35,11 +35,11 @@ GET https://packagist.org/packages/list.json
   ]
 }
 </code></pre>
-<p>Working example: <code><a href="https://packagist.org/packages/list.json">https://packagist.org/packages/list.json</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json">https://{{ packagist_host }}/packages/list.json</a></code></p>
 
-<h4 id="list-packages-by-organization">List packages by organization</h4>
+<h4 id="list-packages-by-organization">{{ 'api_doc.list_by_organization'|trans }}</h4>
 <pre>
-GET https://packagist.org/packages/list.json?vendor=[vendor]
+GET https://{{ packagist_host }}/packages/list.json?vendor=[vendor]
 <code>
 {
   "packageNames": [
@@ -48,11 +48,11 @@ GET https://packagist.org/packages/list.json?vendor=[vendor]
   ]
 }
 </code></pre>
-<p>Working example: <code><a href="https://packagist.org/packages/list.json?vendor=composer">https://packagist.org/packages/list.json?vendor=composer</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?vendor=composer">https://{{ packagist_host }}/packages/list.json?vendor=composer</a></code></p>
 
-<h4 id="list-packages-by-type">List packages by type</h4>
+<h4 id="list-packages-by-type">{{ 'api_doc.list_by_type'|trans }}</h4>
 <pre>
-GET https://packagist.org/packages/list.json?type=[type]
+GET https://{{ packagist_host }}/packages/list.json?type=[type]
 <code>
 {
   "packageNames": [
@@ -61,26 +61,26 @@ GET https://packagist.org/packages/list.json?type=[type]
   ]
 }
 </code></pre>
-<p>Working example: <code><a href="https://packagist.org/packages/list.json?type=composer-plugin">https://packagist.org/packages/list.json?type=composer-plugin</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?type=composer-plugin">https://{{ packagist_host }}/packages/list.json?type=composer-plugin</a></code></p>
 
 </section>
 
 
 <section class="col-d-12">
-<h3 id="search-packages">Search packages</h3>
+<h3 id="search-packages">{{ 'api_doc.searching'|trans }}</h3>
 
-<p>Search results are paginated and you can change the pagination step by using the per_page parameter. For example <code>https://packagist.org/search.json?q=[query]&amp;per_page=5</code></p>
+<p>Search results are paginated and you can change the pagination step by using the per_page parameter. For example <code>https://{{ packagist_host }}/search.json?q=[query]&amp;per_page=5</code></p>
 
-<h4 id="search-packages-by-name">Search packages by name</h4>
+<h4 id="search-packages-by-name">{{ 'api_doc.search_by_name'|trans }}</h4>
 <pre>
-GET https://packagist.org/search.json?q=[query]
+GET https://{{ packagist_host }}/search.json?q=[query]
 <code>
 {
   "results" : [
     {
       "name": "[vendor]/[package]",
       "description": "[description]",
-      "url": "https://packagist.org/packages/[vendor]/[package]",
+      "url": "https://{{ packagist_host }}/packages/[vendor]/[package]",
       "repository": [repository url],
       "downloads": [number of downloads],
       "favers": [number of favers]
@@ -88,21 +88,21 @@ GET https://packagist.org/search.json?q=[query]
     ...
   ],
   "total": [number of results],
-  "next": "https://packagist.org/search.json?q=[query]&amp;page=[next page number]"
+  "next": "https://{{ packagist_host }}/search.json?q=[query]&amp;page=[next page number]"
 }
 </code></pre>
-<p>Working example: <code><a href="https://packagist.org/search.json?q=monolog">https://packagist.org/search.json?q=monolog</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/search.json?q=monolog">https://{{ packagist_host }}/search.json?q=monolog</a></code></p>
 
-<h4 id="search-packages-by-tag">Search packages by tag</h4>
+<h4 id="search-packages-by-tag">{{ 'api_doc.search_by_tag'|trans }}</h4>
 <pre>
-GET https://packagist.org/search.json?tags=[tag]
+GET https://{{ packagist_host }}/search.json?tags=[tag]
 <code>
 {
   "results": [
     {
       "name": "[vendor]/[package]",
       "description": "[description]",
-      "url": "https://packagist.org/packages/[vendor]/[package]",
+      "url": "https://{{ packagist_host }}/packages/[vendor]/[package]",
       "repository": "[repository url]",
       "downloads": [number of downloads],
       "favers": [number of favers]
@@ -112,18 +112,18 @@ GET https://packagist.org/search.json?tags=[tag]
   "total": [numbers of results]
 }
 </code></pre>
-<p>Working example: <code><a href="https://packagist.org/search.json?q=monolog&amp;tags=psr-3">https://packagist.org/search.json?q=monolog&amp;tags=psr-3</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/search.json?q=monolog&amp;tags=psr-3">https://{{ packagist_host }}/search.json?q=monolog&amp;tags=psr-3</a></code></p>
 
-<h4 id="search-packages-by-type">Search packages by type</h4>
+<h4 id="search-packages-by-type">{{ 'api_doc.search_by_type'|trans }}</h4>
 <pre>
-GET https://packagist.org/search.json?q=[query]&amp;type=symfony-bundle
+GET https://{{ packagist_host }}/search.json?q=[query]&amp;type=symfony-bundle
 <code>
 {
   "results" : [
     {
       "name": "[vendor]/[package]",
       "description": "[description]",
-      "url": "https://packagist.org/packages/[vendor]/[package]",
+      "url": "https://{{ packagist_host }}/packages/[vendor]/[package]",
       "repository": [repository url],
       "downloads": [number of downloads],
       "favers": [number of favers]
@@ -131,15 +131,15 @@ GET https://packagist.org/search.json?q=[query]&amp;type=symfony-bundle
     ...
   ],
   "total": [number of results],
-  "next": "https://packagist.org/search.json?q=[query]&amp;page=[next page number]"
+  "next": "https://{{ packagist_host }}/search.json?q=[query]&amp;page=[next page number]"
 }
 </code></pre>
-<p>Working example: <code><a href="https://packagist.org/search.json?q=monolog&amp;type=symfony-bundle">https://packagist.org/search.json?q=monolog&amp;type=symfony-bundle</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/search.json?q=monolog&amp;type=symfony-bundle">https://{{ packagist_host }}/search.json?q=monolog&amp;type=symfony-bundle</a></code></p>
 </section>
 
 
 <section class="col-d-12">
-<h3 id="get-package-data">Getting package data</h3>
+<h3 id="get-package-data">{{ 'api_doc.get_package_data'|trans }}</h3>
 
 <h4 id="get-package-by-name">Using the Composer metadata</h4>
 
@@ -156,7 +156,7 @@ GET https://packagist.org/search.json?q=[query]&amp;type=symfony-bundle
 </p>
 
 <pre>
-GET https://packagist.org/p/[vendor]/[package].json
+GET https://{{ packagist_host }}/p/[vendor]/[package].json
 <code>
 {
   "packages": {
@@ -174,14 +174,14 @@ GET https://packagist.org/p/[vendor]/[package].json
   }
 }
 </code></pre>
-<p>Working example: <code><a href="https://packagist.org/p/monolog/monolog.json">https://packagist.org/p/monolog/monolog.json</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/p/monolog/monolog.json">https://{{ packagist_host }}/p/monolog/monolog.json</a></code></p>
 
 <h4 id="get-package-by-name">Using the API</h4>
 
 <p>The JSON API for packages gives you all the infos we have including downloads, dependents count, github info, etc. However it is generated dynamically so for performance reason we cache the responses for one hour. As such if the static file endpoint described above is enough please use it instead.</p>
 
 <pre>
-GET https://packagist.org/packages/[vendor]/[package].json
+GET https://{{ packagist_host }}/packages/[vendor]/[package].json
 <code>
 {
   "package": {
@@ -201,7 +201,7 @@ GET https://packagist.org/packages/[vendor]/[package].json
   }
 }
 </code></pre>
-<p>Working example: <code><a href="https://packagist.org/packages/monolog/monolog.json">https://packagist.org/packages/monolog/monolog.json</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/monolog/monolog.json">https://{{ packagist_host }}/packages/monolog/monolog.json</a></code></p>
 
 </section>
 

@@ -11,14 +11,11 @@
     {{ form_start(form, { attr: { class: 'col-sm-6' } }) }}
         {{ form_widget(form) }}
 
-        <input class="btn btn-block btn-default btn-lg" type="submit" value="Abandon Package" />
+        <input class="btn btn-block btn-default btn-lg" type="submit" value="{{ 'abandon.submit'|trans }}" />
     {{ form_end(form) }}
 
     <div class="col-sm-6">
-        <p>You are about to mark this package as abandoned. This will alert users that this package will no longer be maintained.</p>
-        <p>If you are handing this project over to a new maintainer or know of a package that replaces it, please use
-            the field below to point users to the new package. In case you cannot point them to a new package, this one
-            will be tagged as abandoned and a replacement can be added later.</p>
+        {{ 'abandon.warning'|trans|raw }}
     </div>
 </section>
 {% endblock %}
