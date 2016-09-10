@@ -11,6 +11,7 @@
 {% endblock %}
 
 {% block head_additions %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.5.0/styles/monokai_sublime.min.css">
     <script type="text/javascript">
       WebFontConfig = {
         google: { families: [ 'Source+Code+Pro::latin' ] }
@@ -23,6 +24,31 @@
         var s = document.getElementsByTagName('script')[0];
         s.parentNode.insertBefore(wf, s);
       })();
+      function highlight_code()
+      {
+        if (typeof (Worker) === undefined) return false;
+
+        var workerFunction = new Blob(['(' + highlight_code_worker_function.toString() + ')()'], {type: "text/javascript"});
+        var localWorkerURL = URL.createObjectURL(workerFunction);
+
+        $('div.readme pre, div.readme code').each(function() {
+          var code = $(this);
+          var worker = new Worker(localWorkerURL);
+          worker.onmessage = function(event) { code.html(event.data).addClass('hljs'); }
+          worker.postMessage(code.text()); // start worker
+        });
+      }
+      function highlight_code_worker_function()
+      {
+        onmessage = function(event) {
+          importScripts('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.5.0/highlight.min.js');
+          self.hljs.configure({tabReplace:4});
+          var result = self.hljs.highlightAuto(event.data);
+          postMessage(result.value);
+          close(); // close worker
+        }
+      }
+      $(window).on('load', highlight_code);
     </script>
 {% endblock %}
 
