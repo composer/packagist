@@ -39,6 +39,7 @@ pre, code {
 pre {
   border-left: 2px solid #2d2d32;
 }
+code.hljs { display: inline; }
 
 label {
   display: block;
