@@ -130,7 +130,9 @@ class VersionRepository extends EntityRepository
         $qb->select('v')
             ->from('Packagist\WebBundle\Entity\Version', 'v')
             ->where('v.development = false')
+            ->andWhere('v.releasedAt <= ?0')
             ->orderBy('v.releasedAt', 'DESC');
+        $qb->setParameter(0, date('Y-m-d H:i:s'));
 
         if ($vendor || $package) {
             $qb->innerJoin('v.package', 'p')
@@ -138,11 +140,11 @@ class VersionRepository extends EntityRepository
         }
 
         if ($vendor) {
-            $qb->andWhere('p.name LIKE ?0');
-            $qb->setParameter(0, $vendor.'/%');
+            $qb->andWhere('p.name LIKE ?1');
+            $qb->setParameter(1, $vendor.'/%');
         } elseif ($package) {
-            $qb->andWhere('p.name = ?0')
-                ->setParameter(0, $package);
+            $qb->andWhere('p.name = ?1')
+                ->setParameter(1, $package);
         }
 
         return $qb;
