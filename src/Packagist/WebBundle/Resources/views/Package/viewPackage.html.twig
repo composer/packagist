@@ -31,31 +31,42 @@
     <script src="{{ asset('bundles/packagistweb/js/view.js')}}"></script>
 
     <script>
-      function highlight_code() {
+    function highlight_code() {
         if (typeof (Worker) === undefined) return false;
 
         var workerFunction = new Blob(['(' + highlight_code_worker_function.toString() + ')()'], {type: "text/javascript"});
-        var localWorkerURL = URL.createObjectURL(workerFunction);
+        var worker = new Worker(URL.createObjectURL(workerFunction));
+        var codeBlocks = $('div.readme pre, div.readme code');
 
-        $('div.readme pre, div.readme code').each(function() {
-          var code = $(this);
-          var worker = new Worker(localWorkerURL);
-          worker.onmessage = function(event) { code.html(event.data).addClass('hljs'); }
-          worker.postMessage(code.text()); // start worker
+        worker.onmessage = function(event) {
+            var data = JSON.parse(event.data);
+            codeBlocks.eq(data.index).html(data.result).addClass('hljs');
+        };
+        worker.onerror = function() {
+            // do nothing
+        };
+
+        codeBlocks.each(function(index) {
+            worker.postMessage(JSON.stringify({index: index, code: $(this).text()}));
         });
-      }
+        worker.postMessage(JSON.stringify({index: -1}));
+    }
 
-      function highlight_code_worker_function() {
+    function highlight_code_worker_function() {
         onmessage = function(event) {
-          importScripts({{ app.request.getSchemeAndHttpHost()|json_encode|raw }} + '/libs/highlightjs-9.6.0/highlight.min.js');
-          self.hljs.configure({tabReplace:4});
-          var result = self.hljs.highlightAuto(event.data);
-          postMessage(result.value);
-          close(); // close worker
-        }
-      }
+            var data = JSON.parse(event.data);
 
-      highlight_code();
+            if (data.index === -1) {
+                close(); // close worker
+            }
+
+            importScripts({{ app.request.getSchemeAndHttpHost()|json_encode|raw }} + '/libs/highlightjs-9.6.0/highlight.min.js');
+            self.hljs.configure({tabReplace:4});
+            var result = self.hljs.highlightAuto(data.code);
+            postMessage(JSON.stringify({result: result.value, index: data.index}));
+        }
+    }
+    highlight_code();
     </script>
 {% endblock %}
 
