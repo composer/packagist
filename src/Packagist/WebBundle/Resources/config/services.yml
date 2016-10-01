@@ -53,7 +53,11 @@ services:
 
     fos_user.util.user_manipulator:
         class: Packagist\WebBundle\Util\UserManipulator
-        arguments: ['@fos_user.user_manager', '@fos_user.util.token_generator']
+        arguments:
+            - '@fos_user.user_manager'
+            - '@fos_user.util.token_generator'
+            - '@event_dispatcher'
+            - '@service_container'
 
     packagist.oauth.registration_form_handler:
         class: Packagist\WebBundle\Form\Handler\OAuthRegistrationFormHandler
