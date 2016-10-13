@@ -492,7 +492,7 @@ class Updater
                 'dl', 'dd', 'dt',
                 'pre', 'code', 'samp', 'kbd',
                 'q', 'blockquote', 'abbr', 'cite',
-                'table', 'thead', 'tbody', 'th', 'tr', 'td',
+                'table', 'thead', 'tbody', 'th[colspan|rowspan]', 'tr', 'td[colspan|rowspan]',
                 'a[href|target|rel|id]',
                 'img[src|title|alt|width|height|style]'
             );
