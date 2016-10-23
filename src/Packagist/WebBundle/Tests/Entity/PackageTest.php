@@ -77,9 +77,14 @@ class PackageTest extends \PHPUnit_Framework_TestCase
      */
     public function testIsRepositoryValid(Package $package)
     {
+        $executionContextLevel3 = $this->prophesize(ConstraintViolationBuilderInterface::class);
+
+        $executionContextLevel2 = $this->prophesize(ConstraintViolationBuilderInterface::class);
+        $executionContextLevel2->atPath(Argument::any())->willReturn($executionContextLevel3->reveal());
+
         $executionContext = $this->prophesize(ExecutionContextInterface::class);
+        $executionContext->buildViolation(Argument::any())->shouldNotBeCalled()->willReturn($executionContextLevel2->reveal());
         $package->isRepositoryValid($executionContext->reveal());
-        $this->assertTrue(true, 'No exception occurred');
     }
 
     /**
