@@ -17,7 +17,7 @@ class PackageTest extends \PHPUnit_Framework_TestCase
             'api-clients/skeleton',
             'react/http-client',
             'wyrihaximus/☼',
-            'elephpants/?-?',
+            'elephpants/🌈-🐘',
             'japan/象の虹',
             'vietnam/voi-cầu-vồng',
             'china-traditional/大象彩虹',
