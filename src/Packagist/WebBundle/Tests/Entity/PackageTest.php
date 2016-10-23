@@ -14,19 +14,19 @@ class PackageTest extends \PHPUnit_Framework_TestCase
     public function provideValidPackages()
     {
         $packages = [
-            'composer/composer',
-            'api-clients/skeleton',
-            'react/http-client',
-            'wyrihaximus/☼',
-            'elephpants/🌈-🐘',
-            'japan/象の虹',
-            'vietnam/voi-cầu-vồng',
-            'china-traditional/大象彩虹',
-            'china-traditional/слон-радуги',
-            'the-netherlands/0226',
-            '31/20',
-            'the.dot/the.dot',
-            'rdohms/c.hash',
+            'composer/composer', // Actual package
+            'api-clients/skeleton', // Actual package
+            'react/http-client', // Actual package
+            'wyrihaximus/☼', // The package I'm doing this PR for
+            'elephpants/🌈-🐘', // https://twitter.com/RainbowLePHPant
+            'japan/象の虹', // Rainbow Elephant in Japanese
+            'vietnam/voi-cầu-vồng', // Rainbow Elephant in Vietnamese
+            'china-traditional/大象彩虹', // Rainbow Elephant in Traditional Chinese
+            'russia/слон-радуги', // Rainbow Elephant in Russian
+            'the-netherlands/0226', // WyriHaximus' area code
+            '31/20', // Amsterdam area code
+            'the.dot/the.dot', // Just the dot
+            'rdohms/c.hash', // https://youtu.be/wYccKQBy26Q?t=3m24s
         ];
 
         foreach ($packages as $packageName) {
@@ -40,9 +40,9 @@ class PackageTest extends \PHPUnit_Framework_TestCase
     {
         $invalidPackageNameMessage = 'The package name %s is invalid, it should have a vendor name, a forward slash, and a package name. The vendor and package name can be words separated by -, . or _. The complete name should match "[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*".';
         $packages = [
-            'CVE-2006-6459' => sprintf($invalidPackageNameMessage, 'CVE-2006-6459'),
-            '☼/🔥' => sprintf($invalidPackageNameMessage, '☼/🔥'),
-            './.' => sprintf($invalidPackageNameMessage, './.'),
+            'CVE-2006-6459' => sprintf($invalidPackageNameMessage, 'CVE-2006-6459'), // Register globals is bad, WyriHaximus learned it the hardway
+            '☼/🔥' => sprintf($invalidPackageNameMessage, '☼/🔥'), // Sun burn
+            './.' => sprintf($invalidPackageNameMessage, './.'), // Just dots
         ];
 
         foreach ($packages as $packageName => $expectedException) {
