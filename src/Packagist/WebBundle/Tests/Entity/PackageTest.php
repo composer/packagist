@@ -40,7 +40,7 @@ class PackageTest extends \PHPUnit_Framework_TestCase
     {
         $invalidPackageNameMessage = 'The package name %s is invalid, it should have a vendor name, a forward slash, and a package name. The vendor and package name can be words separated by -, . or _. The complete name should match "[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*".';
         $packages = [
-            'CVE-2006-6459' => sprintf($invalidPackageNameMessage, 'CVE-2006-6459'), // Register globals is bad, WyriHaximus learned it the hardway
+            'CVE-2006-6459' => sprintf($invalidPackageNameMessage, 'CVE-2006-6459'), // Register globals is bad, WyriHaximus learned it the hard way
             '☼/🔥' => sprintf($invalidPackageNameMessage, '☼/🔥'), // Sun burn
             './.' => sprintf($invalidPackageNameMessage, './.'), // Just dots
         ];
