@@ -143,16 +143,7 @@
             currentSelected.removeClass('selected');
             nextSelected.addClass('selected');
 
-            var elTop = nextSelected.position().top,
-                elHeight = nextSelected.height(),
-                windowTop = $(window).scrollTop(),
-                windowHeight = $(window).height();
-
-            if (elTop < windowTop) {
-                $(window).scrollTop(elTop);
-            } else if (elTop + elHeight > windowTop + windowHeight) {
-                $(window).scrollTop(elTop + elHeight + 20 - windowHeight);
-            }
+            nextSelected.get(0).scrollIntoView(false);
         }
     });
 
