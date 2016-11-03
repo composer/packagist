@@ -15,6 +15,14 @@ services:
         tags:
             - { name: kernel.event_listener, event: kernel.response, method: onResponse }
 
+    packagist.logged_in_user_cannot_register_listener:
+        class: Packagist\WebBundle\EventListener\LoggedInUserCannotRegisterListener
+        arguments:
+            - '@security.authorization_checker'
+            - '@router'
+        tags:
+            - { name: kernel.event_subscriber }
+
     packagist.registration_listener:
         class: Packagist\WebBundle\EventListener\RegistrationListener
         arguments: [ '@fos_user.util.token_generator' ]
