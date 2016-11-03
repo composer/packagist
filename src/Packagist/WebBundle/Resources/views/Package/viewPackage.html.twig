@@ -11,63 +11,11 @@
 {% endblock %}
 
 {% block head_additions %}
-    <link rel="stylesheet" href="{{ asset('libs/highlightjs-9.6.0/styles/monokai_sublime.min.css') }}">
-    <script>
-      WebFontConfig = {
-        google: { families: [ 'Source+Code+Pro::latin' ] }
-      };
-      (function() {
-        var wf = document.createElement('script');
-        wf.src = 'https://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
-        wf.type = 'text/javascript';
-        wf.async = 'true';
-        var s = document.getElementsByTagName('script')[0];
-        s.parentNode.insertBefore(wf, s);
-      })();
-    </script>
+    <link rel="stylesheet" href="{{ asset('css/github/markdown.css') }}">
 {% endblock %}
 
 {% block scripts %}
     <script src="{{ asset('bundles/packagistweb/js/view.js')}}"></script>
-
-    <script>
-    function highlight_code() {
-        if (typeof (Worker) === undefined) return false;
-
-        var workerFunction = new Blob(['(' + highlight_code_worker_function.toString() + ')()'], {type: "text/javascript"});
-        var worker = new Worker(URL.createObjectURL(workerFunction));
-        var codeBlocks = $('div.readme pre, div.readme code');
-
-        worker.onmessage = function(event) {
-            var data = JSON.parse(event.data);
-            codeBlocks.eq(data.index).html(data.result).addClass('hljs');
-        };
-        worker.onerror = function() {
-            // do nothing
-        };
-
-        codeBlocks.each(function(index) {
-            worker.postMessage(JSON.stringify({index: index, code: $(this).text()}));
-        });
-        worker.postMessage(JSON.stringify({index: -1}));
-    }
-
-    function highlight_code_worker_function() {
-        onmessage = function(event) {
-            var data = JSON.parse(event.data);
-
-            if (data.index === -1) {
-                close(); // close worker
-            }
-
-            importScripts({{ app.request.getSchemeAndHttpHost()|json_encode|raw }} + '/libs/highlightjs-9.6.0/highlight.min.js');
-            self.hljs.configure({tabReplace:4});
-            var result = self.hljs.highlightAuto(data.code);
-            postMessage(JSON.stringify({result: result.value, index: data.index}));
-        }
-    }
-    highlight_code();
-    </script>
 {% endblock %}
 
 {% block description -%}
@@ -326,7 +274,7 @@
 
         {% if package.readme != null %}
             <hr class="clearfix">
-            <div class="readme">
+            <div class="readme markdown-body">
                 <h1>README</h1>
                 {{ package.readme|raw }}
             </div>

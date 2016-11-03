@@ -492,12 +492,18 @@ class Updater
                 'dl', 'dd', 'dt',
                 'pre', 'code', 'samp', 'kbd',
                 'q', 'blockquote', 'abbr', 'cite',
-                'table', 'thead', 'tbody', 'th[colspan|rowspan]', 'tr', 'td[colspan|rowspan]',
-                'a[href|target|rel|id]',
-                'img[src|title|alt|width|height|style]'
+                'table', 'thead', 'tbody', 'th', 'tr', 'td',
+                'a', 'span',
+                'img',
             );
             $config = \HTMLPurifier_Config::createDefault();
-            $config->set('HTML.Allowed', implode(',', $elements));
+            $config->set('HTML.AllowedElements', implode(',', $elements));
+            $config->set('HTML.AllowedAttributes',
+                'img.src,img.title,img.alt,img.width,img.height,img.style,'.
+                'a.href,a.target,a.rel,a.id,'.
+                'td.colspan,td.rowspan,th.colspan,th.rowspan,'.
+                '*.class'
+            );
             $config->set('Attr.EnableID', true);
             $config->set('Attr.AllowedFrameTargets', ['_blank']);
             $purifier = new \HTMLPurifier($config);
