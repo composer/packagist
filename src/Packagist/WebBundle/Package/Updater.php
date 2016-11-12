@@ -615,14 +615,16 @@ class Updater
             }
         }
 
-        // convert relative to absolute images
-        $images = $dom->getElementsByTagName('img');
-        foreach ($images as $img) {
-            if ($isGithub && false === strpos($img->getAttribute('src'), '//')) {
-                $img->setAttribute(
-                    'src',
-                    'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$img->getAttribute('src')
-                );
+        if ($isGithub) {
+            // convert relative to absolute images
+            $images = $dom->getElementsByTagName('img');
+            foreach ($images as $img) {
+                if (false === strpos($img->getAttribute('src'), '//')) {
+                    $img->setAttribute(
+                        'src',
+                        'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$img->getAttribute('src')
+                    );
+                }
             }
         }
 
