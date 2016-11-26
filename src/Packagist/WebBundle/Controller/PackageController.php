@@ -301,6 +301,10 @@ class PackageController extends Controller
     {
         $req->getSession()->save();
 
+        if (preg_match('{^(?P<pkg>ext-[a-z0-9_.-]+?)/(?P<method>dependents|suggesters)$}i', $name, $match)) {
+            return $this->{$match['method'].'Action'}($req, $match['pkg']);
+        }
+
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
 
@@ -911,9 +915,8 @@ class PackageController extends Controller
      * @Route(
      *      "/packages/{name}/dependents",
      *      name="view_package_dependents",
-     *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
+     *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"}
      * )
-     * @Template()
      */
     public function dependentsAction(Request $req, $name)
     {
@@ -934,16 +937,15 @@ class PackageController extends Controller
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['name'] = $name;
 
-        return $data;
+        return $this->render('PackagistWebBundle:Package:dependents.html.twig', $data);
     }
 
     /**
      * @Route(
      *      "/packages/{name}/suggesters",
      *      name="view_package_suggesters",
-     *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
+     *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"}
      * )
-     * @Template()
      */
     public function suggestersAction(Request $req, $name)
     {
@@ -964,7 +966,7 @@ class PackageController extends Controller
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['name'] = $name;
 
-        return $data;
+        return $this->render('PackagistWebBundle:Package:suggesters.html.twig', $data);
     }
 
     /**
