@@ -1,0 +1,68 @@
+{
+    "name": "composer/packagist-webbundle",
+    "description": "WebBundle for the Package Repository Website",
+    "keywords": ["package", "composer"],
+    "homepage": "http://packagist.org/",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nils Adermann",
+            "email": "naderman@naderman.de",
+            "homepage": "http://www.naderman.de"
+        },
+        {
+            "name": "Jordi Boggiano",
+            "email": "j.boggiano@seld.be",
+            "homepage": "http://seld.be"
+        }
+    ],
+    "support": {
+          "email": "contact@packagist.org"
+    },
+    "autoload": {
+        "psr-4": { "Packagist\\WebBundle\\": "." }
+    },
+    "require": {
+        "php": ">=5.3.3",
+        "symfony/http-kernel": "~2.3",
+        "symfony/dependency-injection": "~2.3",
+        "symfony/framework-bundle": "~2.3",
+        "symfony/console": "~2.3",
+        "symfony/http-foundation": "~2.3",
+        "symfony/security": "~2.3",
+        "symfony/config": "~2.3",
+        "symfony/validator": "~2.3",
+        "symfony/form": "~2.3",
+        "symfony/options-resolver": "~2.3",
+        "symfony/filesystem": "~2.3",
+        "symfony/doctrine-bridge": "~2.3",
+        "symfony/routing": "~2.3",
+        "symfony/finder": "~2.3",
+
+        "doctrine/orm": "~2.3",
+        "doctrine/doctrine-bundle": "1.2.*",
+        "twig/extensions": "~1.0",
+        "sensio/distribution-bundle": "2.3.*",
+        "sensio/framework-extra-bundle": "2.3.*",
+        "sensio/generator-bundle": "2.3.*",
+        "jms/security-extra-bundle": "1.5.*",
+        "jms/di-extra-bundle": "1.4.*",
+
+        "composer/composer": "1.0.x-dev",
+        "friendsofsymfony/user-bundle": "1.*",
+        "hwi/oauth-bundle": "~0.4@dev",
+        "nelmio/solarium-bundle": "~1.0",
+        "nelmio/security-bundle": "~1.0",
+        "predis/predis": "0.8.*",
+        "snc/redis-bundle": "~1.1@dev",
+        "white-october/pagerfanta-bundle": "~1.0",
+        "zendframework/zend-feed": "2.0.*",
+        "zendframework/zend-servicemanager": "2.0.*",
+        "zendframework/zend-uri": "2.0.*",
+        "zendframework/zend-version": "2.0.*",
+
+        "kriswallsmith/assetic": "~1.2@alpha",
+        "pagerfanta/pagerfanta": "~1.0"
+    }
+}
