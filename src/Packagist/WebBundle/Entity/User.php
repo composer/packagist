@@ -112,6 +112,7 @@ class User extends BaseUser
     {
         return array(
             'name' => $this->getUsername(),
+            'avatar_url' => $this->getGravatarUrl(),
         );
     }
 
@@ -263,5 +264,15 @@ class User extends BaseUser
     public function isNotifiableForFailures()
     {
         return $this->failureNotifications;
+    }
+
+    /**
+     * Get Gravatar Url
+     *
+     * @return string
+     */
+    public function getGravatarUrl()
+    {
+        return 'https://www.gravatar.com/avatar/'.md5(strtolower($this->getEmail()));
     }
 }
