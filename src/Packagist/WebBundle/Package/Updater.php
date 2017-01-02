@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle\Package;
 
+use cebe\markdown\GithubMarkdown;
 use Composer\Package\AliasPackage;
 use Composer\Package\PackageInterface;
 use Composer\Repository\RepositoryInterface;
@@ -214,6 +215,8 @@ class Updater
 
         if (preg_match('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match) && $repository instanceof VcsRepository) {
             $this->updateGitHubInfo($rfs, $package, $match[1], $match[2], $repository);
+        } else {
+            $this->updateReadme($io, $package, $repository);
         }
 
         $package->setUpdatedAt(new \DateTime);
@@ -456,6 +459,56 @@ class Updater
         return true;
     }
 
+    /**
+     * Update the readme for $package from $repository.
+     *
+     * @param IOInterface $io
+     * @param Package $package
+     * @param VcsRepository $repository
+     */
+    private function updateReadme(IOInterface $io, Package $package, VcsRepository $repository)
+    {
+        try {
+            $driver = $repository->getDriver();
+            $composerInfo = $driver->getComposerInformation($driver->getRootIdentifier());
+
+            if (isset($composerInfo['readme'])) {
+                $readmeFile = $composerInfo['readme'];
+                $ext = substr($readmeFile, strrpos($readmeFile, '.'));
+
+                if ($ext === $readmeFile) {
+                    $ext = '.txt';
+                }
+
+                switch ($ext) {
+                    case '.txt':
+                        $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
+                        $package->setReadme('<pre>' . htmlspecialchars($source) . '</pre>');
+                        break;
+
+                    case '.md':
+                        $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
+                        $parser = new GithubMarkdown();
+                        $readme = $parser->parse($source);
+
+                        if (!empty($readme)) {
+                            $package->setReadme($this->prepareReadme($readme));
+                        }
+                        break;
+                }
+
+            }
+
+        } catch (\Exception $e) {
+            // we ignore all errors for this minor function
+            $io->write(
+                'Can not update readme. Error: ' . $e->getMessage(),
+                true,
+                IOInterface::VERBOSE
+            );
+        }
+    }
+
     private function updateGitHubInfo(RemoteFilesystem $rfs, Package $package, $owner, $repo, VcsRepository $repository)
     {
         $baseApiUrl = 'https://api.github.com/repos/'.$owner.'/'.$repo;
@@ -478,75 +531,7 @@ class Updater
         }
 
         if (!empty($readme)) {
-            $elements = array(
-                'p',
-                'br',
-                'small',
-                'strong', 'b',
-                'em', 'i',
-                'strike',
-                'sub', 'sup',
-                'ins', 'del',
-                'ol', 'ul', 'li',
-                'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                'dl', 'dd', 'dt',
-                'pre', 'code', 'samp', 'kbd',
-                'q', 'blockquote', 'abbr', 'cite',
-                'table', 'thead', 'tbody', 'th', 'tr', 'td',
-                'a', 'span',
-                'img',
-            );
-            $config = \HTMLPurifier_Config::createDefault();
-            $config->set('HTML.AllowedElements', implode(',', $elements));
-            $config->set('HTML.AllowedAttributes',
-                'img.src,img.title,img.alt,img.width,img.height,img.style,'.
-                'a.href,a.target,a.rel,a.id,'.
-                'td.colspan,td.rowspan,th.colspan,th.rowspan,'.
-                '*.class'
-            );
-            $config->set('Attr.EnableID', true);
-            $config->set('Attr.AllowedFrameTargets', ['_blank']);
-            $purifier = new \HTMLPurifier($config);
-            $readme = $purifier->purify($readme);
-
-            $dom = new \DOMDocument();
-            $dom->loadHTML('<?xml encoding="UTF-8">' . $readme);
-
-            // Links can not be trusted, mark them nofollow and convert relative to absolute links
-            $links = $dom->getElementsByTagName('a');
-            foreach ($links as $link) {
-                $link->setAttribute('rel', 'nofollow noopener external');
-                if ('#' === substr($link->getAttribute('href'), 0, 1)) {
-                    $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
-                } elseif ('mailto:' === substr($link->getAttribute('href'), 0, 7)) {
-                    // do nothing
-                } elseif (false === strpos($link->getAttribute('href'), '//')) {
-                    $link->setAttribute('href', 'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$link->getAttribute('href'));
-                }
-            }
-
-            // convert relative to absolute images
-            $images = $dom->getElementsByTagName('img');
-            foreach ($images as $img) {
-                if (false === strpos($img->getAttribute('src'), '//')) {
-                    $img->setAttribute('src', 'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$img->getAttribute('src'));
-                }
-            }
-
-            // remove first title as it's usually the project name which we don't need
-            if ($dom->getElementsByTagName('h1')->length) {
-                $first = $dom->getElementsByTagName('h1')->item(0);
-                $first->parentNode->removeChild($first);
-            } elseif ($dom->getElementsByTagName('h2')->length) {
-                $first = $dom->getElementsByTagName('h2')->item(0);
-                $first->parentNode->removeChild($first);
-            }
-
-            $readme = $dom->saveHTML();
-            $readme = substr($readme, strpos($readme, '<body>')+6);
-            $readme = substr($readme, 0, strrpos($readme, '</body>'));
-
-            $package->setReadme($readme);
+            $package->setReadme($this->prepareReadme($readme, true, $owner, $repo));
         }
 
         if (!empty($repoData['language'])) {
@@ -564,6 +549,99 @@ class Updater
         if (isset($repoData['open_issues_count'])) {
             $package->setGitHubOpenIssues($repoData['open_issues_count']);
         }
+    }
+
+    /**
+     * Prepare the readme by stripping elements and attributes that are not supported .
+     *
+     * @param string $readme
+     * @param bool $isGithub
+     * @param null $owner
+     * @param null $repo
+     * @return string
+     */
+    private function prepareReadme($readme, $isGithub = false, $owner = null, $repo = null)
+    {
+        $elements = array(
+            'p',
+            'br',
+            'small',
+            'strong', 'b',
+            'em', 'i',
+            'strike',
+            'sub', 'sup',
+            'ins', 'del',
+            'ol', 'ul', 'li',
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            'dl', 'dd', 'dt',
+            'pre', 'code', 'samp', 'kbd',
+            'q', 'blockquote', 'abbr', 'cite',
+            'table', 'thead', 'tbody', 'th', 'tr', 'td',
+            'a', 'span',
+            'img',
+        );
+
+        $attributes = array(
+            'img.src', 'img.title', 'img.alt', 'img.width', 'img.height', 'img.style',
+            'a.href', 'a.target', 'a.rel', 'a.id',
+            'td.colspan', 'td.rowspan', 'th.colspan', 'th.rowspan',
+            '*.class'
+        );
+
+        $config = \HTMLPurifier_Config::createDefault();
+        $config->set('HTML.AllowedElements', implode(',', $elements));
+        $config->set('HTML.AllowedAttributes', implode(',', $attributes));
+        $config->set('Attr.EnableID', true);
+        $config->set('Attr.AllowedFrameTargets', ['_blank']);
+        $purifier = new \HTMLPurifier($config);
+        $readme = $purifier->purify($readme);
+
+        $dom = new \DOMDocument();
+        $dom->loadHTML('<?xml encoding="UTF-8">' . $readme);
+
+        // Links can not be trusted, mark them nofollow and convert relative to absolute links
+        $links = $dom->getElementsByTagName('a');
+        foreach ($links as $link) {
+            $link->setAttribute('rel', 'nofollow noopener external');
+            if ('#' === substr($link->getAttribute('href'), 0, 1)) {
+                $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
+            } elseif ('mailto:' === substr($link->getAttribute('href'), 0, 7)) {
+                // do nothing
+            } elseif ($isGithub && false === strpos($link->getAttribute('href'), '//')) {
+                $link->setAttribute(
+                    'href',
+                    'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$link->getAttribute('href')
+                );
+            }
+        }
+
+        if ($isGithub) {
+            // convert relative to absolute images
+            $images = $dom->getElementsByTagName('img');
+            foreach ($images as $img) {
+                if (false === strpos($img->getAttribute('src'), '//')) {
+                    $img->setAttribute(
+                        'src',
+                        'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$img->getAttribute('src')
+                    );
+                }
+            }
+        }
+
+        // remove first title as it's usually the project name which we don't need
+        if ($dom->getElementsByTagName('h1')->length) {
+            $first = $dom->getElementsByTagName('h1')->item(0);
+            $first->parentNode->removeChild($first);
+        } elseif ($dom->getElementsByTagName('h2')->length) {
+            $first = $dom->getElementsByTagName('h2')->item(0);
+            $first->parentNode->removeChild($first);
+        }
+
+        $readme = $dom->saveHTML();
+        $readme = substr($readme, strpos($readme, '<body>')+6);
+        $readme = substr($readme, 0, strrpos($readme, '</body>'));
+
+        return $readme;
     }
 
     private function sanitize($str)
