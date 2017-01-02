@@ -485,7 +485,9 @@ class Updater
             switch ($ext) {
                 case '.txt':
                     $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
-                    $package->setReadme('<pre>' . htmlspecialchars($source) . '</pre>');
+                    if (!empty($source)) {
+                        $package->setReadme('<pre>' . htmlspecialchars($source) . '</pre>');
+                    }
                     break;
 
                 case '.md':
