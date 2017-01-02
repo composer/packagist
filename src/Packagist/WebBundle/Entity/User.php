@@ -273,6 +273,6 @@ class User extends BaseUser
      */
     public function getGravatarUrl()
     {
-        return 'https://www.gravatar.com/avatar/'.md5(strtolower($this->getEmail()));
+        return 'https://www.gravatar.com/avatar/'.md5(strtolower($this->getEmail())).'?d=identicon';
     }
 }
