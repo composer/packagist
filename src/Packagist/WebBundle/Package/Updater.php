@@ -641,7 +641,7 @@ class Updater
         $readme = substr($readme, strpos($readme, '<body>')+6);
         $readme = substr($readme, 0, strrpos($readme, '</body>'));
 
-        return $readme;
+        return str_replace("\r\n", "\n", $readme);
     }
 
     private function sanitize($str)
