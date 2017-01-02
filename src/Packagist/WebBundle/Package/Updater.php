@@ -471,34 +471,33 @@ class Updater
         try {
             $driver = $repository->getDriver();
             $composerInfo = $driver->getComposerInformation($driver->getRootIdentifier());
-
             if (isset($composerInfo['readme'])) {
                 $readmeFile = $composerInfo['readme'];
-                $ext = substr($readmeFile, strrpos($readmeFile, '.'));
-
-                if ($ext === $readmeFile) {
-                    $ext = '.txt';
-                }
-
-                switch ($ext) {
-                    case '.txt':
-                        $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
-                        $package->setReadme('<pre>' . htmlspecialchars($source) . '</pre>');
-                        break;
-
-                    case '.md':
-                        $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
-                        $parser = new GithubMarkdown();
-                        $readme = $parser->parse($source);
-
-                        if (!empty($readme)) {
-                            $package->setReadme($this->prepareReadme($readme));
-                        }
-                        break;
-                }
-
+            } else {
+                $readmeFile = 'README.md';
             }
 
+            $ext = substr($readmeFile, strrpos($readmeFile, '.'));
+            if ($ext === $readmeFile) {
+                $ext = '.txt';
+            }
+
+            switch ($ext) {
+                case '.txt':
+                    $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
+                    $package->setReadme('<pre>' . htmlspecialchars($source) . '</pre>');
+                    break;
+
+                case '.md':
+                    $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
+                    $parser = new GithubMarkdown();
+                    $readme = $parser->parse($source);
+
+                    if (!empty($readme)) {
+                        $package->setReadme($this->prepareReadme($readme));
+                    }
+                    break;
+            }
         } catch (\Exception $e) {
             // we ignore all errors for this minor function
             $io->write(
