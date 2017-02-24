@@ -629,12 +629,10 @@ class Updater
             }
         }
 
-        // remove first title as it's usually the project name which we don't need
-        if ($dom->getElementsByTagName('h1')->length) {
+        // remove first page element if it's a h1, because it's usually the project
+        // name or the `README` string which we don't need
+        if ('h1' === $dom->childNodes->item(0)->nodeName) {
             $first = $dom->getElementsByTagName('h1')->item(0);
-            $first->parentNode->removeChild($first);
-        } elseif ($dom->getElementsByTagName('h2')->length) {
-            $first = $dom->getElementsByTagName('h2')->item(0);
             $first->parentNode->removeChild($first);
         }
 
