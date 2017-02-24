@@ -629,10 +629,13 @@ class Updater
             }
         }
 
-        // remove first page element if it's a h1, because it's usually the project
-        // name or the `README` string which we don't need
+        // remove first page element if it's a <h1> or <h2>, because it's usually
+        // the project name or the `README` string which we don't need
         if ('h1' === $dom->childNodes->item(0)->nodeName) {
             $first = $dom->getElementsByTagName('h1')->item(0);
+            $first->parentNode->removeChild($first);
+        } elseif ('h2' === $dom->childNodes->item(0)->nodeName) {
+            $first = $dom->getElementsByTagName('h2')->item(0);
             $first->parentNode->removeChild($first);
         }
 
