@@ -17,9 +17,10 @@ Installation
 1. Clone the repository
 2. Edit `app/config/parameters.yml` and change the relevant values for your setup.
 3. Install dependencies: `php composer.phar install`
-4. Run `app/console doctrine:schema:create` to setup the DB.
-5. Run `app/console assets:install web` to deploy the assets on the web dir.
-6. Make a VirtualHost with DocumentRoot pointing to web/
+4. Run `app/console cache:warmup --env=prod` and `app/console cache:warmup --env=prod` to warmup cache
+5. Run `app/console doctrine:schema:create` to setup the DB
+6. Run `app/console assets:install web` to deploy the assets on the web dir.
+7. Make a VirtualHost with DocumentRoot pointing to web/
 
 You should now be able to access the site, create a user, etc.
 
