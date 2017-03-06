@@ -104,6 +104,34 @@ EOR;
         self::assertSame($readmeHtml, $this->package->getReadme());
     }
 
+    /**
+     * When <h1> or <h2> titles are not the first element of the README contents,
+     * they should not be removed.
+     */
+    public function testNoUsefulTitlesAreRemovedForReadme()
+    {
+        $readme = <<<EOR
+Lorem ipsum dolor sit amet.
+
+# some title
+
+EOR;
+        $readmeHtml = <<<EOR
+<p>Lorem ipsum dolor sit amet.</p>
+<h1>some title</h1>
+EOR;
+
+        $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->expects($this->any())->method('getComposerInformation')
+                         ->willReturn(['readme' => 'README.md']);
+        $this->driverMock->expects($this->once())->method('getFileContent')->with('README.md', 'master')
+                         ->willReturn($readme);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        self::assertSame($readmeHtml, $this->package->getReadme());
+    }
+
     public function testSurrondsTextReadme()
     {
         $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
