@@ -166,7 +166,12 @@ class ApiController extends Controller
         }
 
         $failed = array();
-        $ip = $request->getClientIp();
+
+        $ip = $request->headers->get('X-'.$this->container->getParameter('trusted_ip_header'));
+        if (!$ip) {
+            $ip = $request->getClientIp();
+        }
+
         $jobs = [];
         foreach ($contents['downloads'] as $package) {
             $result = $this->getPackageAndVersionId($package['name'], $package['version']);

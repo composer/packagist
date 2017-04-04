@@ -10,3 +10,4 @@ parameters:
     solr_port: 8983
     solr_path: /solr
     solr_core: collection1
+    trusted_ip_header: ''
