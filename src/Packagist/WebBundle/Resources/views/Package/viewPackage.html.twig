@@ -198,7 +198,7 @@
                                     {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if version and version.support is not null and version.support.issues is defined and version.support.issues starts with 'https://github.com/' %}
+                            {% if version and version.support is not null and version.support.issues is defined and version.support.issues starts with 'https://github.com/' and version.support.issues starts with repoUrl %}
                                 <p>
                                     <span>
                                         <a href="{{ version.support.issues }}">Open Issues</a>:
