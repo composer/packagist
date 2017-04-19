@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "adfc05475108333f135978a48d699f6c",
+    "content-hash": "6e3fe09787ae05bb8046888d99c5bf9c",
     "packages": [
         {
             "name": "cebe/markdown",
@@ -126,16 +126,16 @@
         },
         {
             "name": "composer/composer",
-            "version": "1.4.1",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "7ee2a5e1cf32e9c8439445fe8dce2c046c2abebd"
+                "reference": "8491a21d41fdb22a892f4184861cb314f185317e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/7ee2a5e1cf32e9c8439445fe8dce2c046c2abebd",
-                "reference": "7ee2a5e1cf32e9c8439445fe8dce2c046c2abebd",
+                "url": "https://api.github.com/repos/composer/composer/zipball/8491a21d41fdb22a892f4184861cb314f185317e",
+                "reference": "8491a21d41fdb22a892f4184861cb314f185317e",
                 "shasum": ""
             },
             "require": {
@@ -168,7 +168,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.4-dev"
+                    "dev-master": "1.5-dev"
                 }
             },
             "autoload": {
@@ -199,7 +199,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2017-03-10T08:29:45+00:00"
+            "time": "2017-04-13 22:28:24"
         },
         {
             "name": "composer/semver",
@@ -5646,6 +5646,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
+        "composer/composer": 20,
         "friendsofsymfony/user-bundle": 20
     },
     "prefer-stable": false,
