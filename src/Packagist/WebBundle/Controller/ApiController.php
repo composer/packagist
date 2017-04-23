@@ -110,11 +110,10 @@ class ApiController extends Controller
         }
 
         if (isset($payload['repository']['url'])) { // github/anything hook
-            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>[\w.-]+/[\w.-]+?)(?:\.git|/)?$}i';
-            $url = $payload['repository']['url'];
+            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>(:?[\w.-]+/[\w.-]+?)+)(?:\.git|/)?$}i';            $url = $payload['repository']['url'];
             $url = str_replace('https://api.github.com/repos', 'https://github.com', $url);
         } elseif (isset($payload['project']['git_http_url'])) { // gitlab event payload
-            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>[\w.-]+/[\w.-]+?)(?:\.git|/)?$}i';
+            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>(:?[\w.-]+/[\w.-]+?)+)(?:\.git|/)?$}i';
             $url = $payload['project']['git_http_url'];
         } elseif (isset($payload['repository']['links']['html']['href'])) { // bitbucket push event payload
             $urlRegex = '{^(?:https?://|git://|git@)?(?:api\.)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
