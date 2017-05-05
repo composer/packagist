@@ -334,6 +334,8 @@ class Package
             if ($vendor && $this->entityRepository->isVendorTaken($vendor, reset($this->maintainers))) {
                 $context->buildViolation('The vendor is already taken by someone else. '
                         . 'You may ask them to add your package and give you maintainership access. '
+                        . 'If they add you as a maintainer on any package in that vendor namespace, '
+                        . 'you will then be able to add new packages in that namespace. '
                         . 'The packages already in that vendor namespace can be found at '
                         . '<a href="'.$this->router->generate('view_vendor', array('vendor' => $vendor)).'">'.$vendor.'</a>')
                     ->atPath('repository')
