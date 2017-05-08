@@ -273,6 +273,16 @@ class Package
                 return;
             }
 
+            $reservedNames = ['nul', 'con', 'prn', 'aux', 'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'];
+            $bits = explode('/', strtolower($information['name']));
+            if (in_array($bits[0], $reservedNames, true) || in_array($bits[1], $reservedNames, true)) {
+                $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is reserved, package and vendor names can not match any of: '.implode(', ', $reservedNames).'.')
+                    ->atPath($property)
+                    ->addViolation()
+                ;
+                return;
+            }
+
             if (preg_match('{\.json$}', $information['name'])) {
                 $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is invalid, package names can not end in .json, consider renaming it or perhaps using a -json suffix instead.')
                     ->atPath($property)
