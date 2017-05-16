@@ -111,6 +111,7 @@ class ApiControllerTest extends WebTestCase
             // valid others
             array('update-package', 'https://ghe.example.org/user/repository', true),
             array('update-package', 'https://gitlab.org/user/repository', true),
+            array('update-package', 'https://gitlab.org/user/sub/group/lala/repository', true),
             array('update-package', 'ssh://git@stash.xxxxx.com/uuuuu/qqqqq.git', true),
             array('update-package', 'ssh://git@stash.xxxxx.com:2222/uuuuu/qqqqq.git', true),
 
