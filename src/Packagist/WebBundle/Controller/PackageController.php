@@ -340,9 +340,8 @@ class PackageController extends Controller
                 $data['versions'] = new \stdClass;
             }
 
-            // TODO invalidate cache on update and make the ttl longer
             $response = new JsonResponse(array('package' => $data));
-            $response->setSharedMaxAge(3600);
+            $response->setSharedMaxAge(12*3600);
 
             return $response;
         }
