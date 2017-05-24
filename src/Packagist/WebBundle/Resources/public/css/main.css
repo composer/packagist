@@ -68,10 +68,14 @@ hr {
   border-color: #F28D1A;
 }
 a, .package .package-aside a {
-  color: #B34E22;
+  color: #f28d1a;
 }
 a:hover, .package .package-aside a:hover {
   color: #2d2d32;
+}
+
+a:visited, .package .package-aside a:visited {
+  text-decoration: underline;
 }
 
 h1, h2, h3, h4, h5, h6 {
