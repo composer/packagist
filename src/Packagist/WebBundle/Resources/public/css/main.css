@@ -927,6 +927,8 @@ ul.packages .metadata-block:last-child {
   overflow: hidden;
   width: 100%;
   white-space: nowrap;
+  clear: left;
+  margin-bottom: 14px;
 }
 
 .package .facts {
