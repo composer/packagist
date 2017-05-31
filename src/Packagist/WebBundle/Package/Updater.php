@@ -578,7 +578,7 @@ class Updater
             'pre', 'code', 'samp', 'kbd',
             'q', 'blockquote', 'abbr', 'cite',
             'table', 'thead', 'tbody', 'th', 'tr', 'td',
-            'a', 'span',
+            'a', 'span', 'div',
             'img',
         );
 
