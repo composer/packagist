@@ -147,7 +147,14 @@ class FeedController extends Controller
             $packages
         );
 
-        return $this->buildResponse($req, $feed);
+        $response = $this->buildResponse($req, $feed);
+
+        $first = reset($packages);
+        if (false !== $first) {
+            $response->setDate($first->getReleasedAt());
+        }
+
+        return $response;
     }
 
     /**
