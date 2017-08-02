@@ -310,7 +310,7 @@ class PackageController extends Controller
 
         try {
             /** @var Package $package */
-            $package = $repo->findOneByName($name);
+            $package = $repo->getPartialPackageByNameWithVersions($name);
         } catch (NoResultException $e) {
             if ('json' === $req->getRequestFormat()) {
                 return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 404);
@@ -423,7 +423,7 @@ class PackageController extends Controller
 
         try {
             /** @var $package Package */
-            $package = $repo->findOneByName($name);
+            $package = $repo->getPartialPackageByNameWithVersions($name);
         } catch (NoResultException $e) {
             if ('json' === $req->getRequestFormat()) {
                 return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 404);
@@ -612,7 +612,7 @@ class PackageController extends Controller
             /** @var Package $package */
             $package = $doctrine
                 ->getRepository('PackagistWebBundle:Package')
-                ->findOneByName($name);
+                ->getPartialPackageByNameWithVersions($name);
         } catch (NoResultException $e) {
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }

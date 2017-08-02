@@ -155,12 +155,40 @@ class PackageRepository extends EntityRepository
         return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAt IS NULL OR p.dumpedAt <= p.crawledAt  ORDER BY p.id ASC');
     }
 
-    public function findOneByName($name)
+    public function getPartialPackageByNameWithVersions($name)
     {
-        $qb = $this->getBaseQueryBuilder()
+        // first fetch a partial package including joined versions/maintainers, that way
+        // the join is cheap and heavy data (description, readme) is not duplicated for each joined row
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('partial p.{id}', 'v', 't', 'm')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->leftJoin('p.versions', 'v')
+            ->leftJoin('p.maintainers', 'm')
+            ->leftJoin('v.tags', 't')
+            ->orderBy('v.development', 'DESC')
+            ->addOrderBy('v.releasedAt', 'DESC')
             ->where('p.name = ?0')
             ->setParameters(array($name));
-        return $qb->getQuery()->getSingleResult();
+
+        $pkg = $qb->getQuery()->getSingleResult();
+
+        if ($pkg) {
+            // then refresh the package to complete its data and inject the previously fetched versions/maintainers to
+            // get a complete package
+            $versions = $pkg->getVersions();
+            $maintainers = $pkg->getMaintainers();
+            $this->getEntityManager()->refresh($pkg);
+
+            $prop = new \ReflectionProperty($pkg, 'versions');
+            $prop->setAccessible(true);
+            $prop->setValue($pkg, $versions);
+
+            $prop = new \ReflectionProperty($pkg, 'maintainers');
+            $prop->setAccessible(true);
+            $prop->setValue($pkg, $maintainers);
+        }
+
+        return $pkg;
     }
 
     public function getPackageByName($name)
@@ -356,20 +384,6 @@ class PackageRepository extends EntityRepository
 
             $qb->setParameter($name, $value);
         }
-    }
-
-    public function getBaseQueryBuilder()
-    {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p', 'v', 't', 'm')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->leftJoin('p.maintainers', 'm')
-            ->leftJoin('v.tags', 't')
-            ->orderBy('v.development', 'DESC')
-            ->addOrderBy('v.releasedAt', 'DESC');
-
-        return $qb;
     }
 
     /**
