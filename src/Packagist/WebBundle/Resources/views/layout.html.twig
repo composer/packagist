@@ -138,8 +138,11 @@
         <section class="wrapper">
             <section class="container content" role="main">
                 {% block search_results %}
-                    <div class="row hidden">
+                    <div class="row">
                         <div class="search-list col-md-12"></div>
+                        <div id="pagination-container">
+                            <div class="pagination"></div>
+                        </div>
                     </div>
                 {% endblock %}
 

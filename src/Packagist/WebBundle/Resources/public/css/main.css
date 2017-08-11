@@ -580,11 +580,11 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     color: rgb(82, 168, 236);
 }
 
-ul.packages {
+.packages {
     margin-top: 20px;
 }
 
-ul.packages h1 {
+.packages h1 {
   font-family: Verdana;
   font-size: 22px;
   line-height: 1em;
@@ -597,20 +597,20 @@ ul.packages h1 {
   white-space: nowrap;
 }
 
-ul.packages .metadata {
+.packages .metadata {
   color: #555;
   font-size: 15px;
 }
-ul.packages .metadata .glyphicon {
+.packages .metadata .glyphicon {
   top: 3px;
   margin: 0 1px;
   font-size: 18px;
 }
-ul.packages .metadata-block {
+.packages .metadata-block {
   display: block;
   margin-bottom: 10px;
 }
-ul.packages .metadata-block:last-child {
+.packages .metadata-block:last-child {
   margin-bottom: 0;
 }
 
@@ -1231,6 +1231,11 @@ ul.packages .metadata-block:last-child {
       left: auto;
       right: 0;
     }
+}
+
+#pagination-container {
+    text-align: center;
+    margin-bottom: 32px;
 }
 
 .pagination {
