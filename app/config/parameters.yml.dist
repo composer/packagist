@@ -50,3 +50,8 @@ parameters:
     trusted_proxies: ~
     # e.g. ['.*\.?packagist\.org$'] to allow packagist.org and all subdomains as valid hosts
     trusted_hosts: ~
+
+    # -- Algolia credentials --
+    algolia.app_id: CHANGE_ME
+    algolia.admin_key: CHANGE_ME
+    algolia.index_name: 'packagist'

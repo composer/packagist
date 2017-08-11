@@ -55,7 +55,8 @@
         "knplabs/knp-menu-bundle": "^2.1",
         "ezyang/htmlpurifier": "^4.6",
         "nelmio/cors-bundle": "^1.4",
-        "cebe/markdown": "^1.1"
+        "cebe/markdown": "^1.1",
+        "algolia/algoliasearch-client-php": "^1.18"
     },
     "_comment": ["fos user bundle 2.0.0 tag needed"],
     "require-dev": {
