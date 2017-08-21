@@ -54,4 +54,5 @@ parameters:
     # -- Algolia credentials --
     algolia.app_id: CHANGE_ME
     algolia.admin_key: CHANGE_ME
+    algolia.search_key: CHANGE_ME
     algolia.index_name: 'packagist'

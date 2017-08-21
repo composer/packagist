@@ -186,6 +186,10 @@
             </nav>
         </footer>
 
+        <script>
+            var algoliaConfig = {{ algolia|json_encode|raw }};
+        </script>
+
         <script src="{{ asset('libs/jquery-2.1.4.min.js') }}"></script>
         <script src="{{ asset('libs/humane-3.2.2.min.js') }}"></script>
         <script src="{{ asset('libs/algolia-instantsearch-2.0.2/instantsearch.min.js') }}"></script>

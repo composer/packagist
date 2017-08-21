@@ -35,6 +35,10 @@ twig:
     globals:
         google_analytics: '%google_analytics%'
         packagist_host: '%packagist_host%'
+        algolia:
+          app_id: '%algolia.app_id%'
+          search_key: '%algolia.search_key%'
+          index_name: '%algolia.index_name%'
 
 # Doctrine Configuration
 doctrine:
