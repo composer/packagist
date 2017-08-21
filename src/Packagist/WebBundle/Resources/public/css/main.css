@@ -1233,6 +1233,16 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     }
 }
 
+#powered-by {
+    float: right;
+    width: 160px;
+    text-align: right;
+    padding-top: 16px;
+}
+#powered-by a img {
+    width: 77px;
+}
+
 #pagination-container {
     text-align: center;
     margin-bottom: 32px;
