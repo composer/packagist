@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  php:
+    build:
+      context: docker/
+    working_dir: /var/www/packagist
+    volumes:
+      - .:/var/www/packagist
+    depends_on:
+      - mysql
+      - redis
+      - solr
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: packagist
+  redis:
+    image: redis:3.2
+  solr:
+    image: solr:6.6
+    volumes:
+      - ./doc/schema.xml:/opt/solr/schema.xml
+      - ./doc/solrconfig.xml:/opt/solr/solrconfig.xml
