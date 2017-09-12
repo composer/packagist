@@ -3,7 +3,7 @@ version: '3'
 services:
   php:
     build:
-      context: docker/
+      context: docker/php
     working_dir: /var/www/packagist
     volumes:
       - .:/var/www/packagist
@@ -18,7 +18,9 @@ services:
   redis:
     image: redis:3.2
   solr:
-    image: solr:6.6
-    volumes:
-      - ./doc/schema.xml:/opt/solr/schema.xml
-      - ./doc/solrconfig.xml:/opt/solr/solrconfig.xml
+    build:
+      context: docker/solr
+    environment:
+      DEBUG: 'true'
+      SOLR_VERSION: '3.6.0'
+      SOLR_CONFS: '/etc/solr' 
