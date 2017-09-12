@@ -21,5 +21,4 @@ services:
     build:
       context: docker/solr
     environment:
-      DEBUG: 'true'
       SOLR_CONFS: '/etc/solr' 
