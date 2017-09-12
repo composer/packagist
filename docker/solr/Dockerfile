@@ -6,6 +6,7 @@ RUN apt-get update \
    && apt-get install -y curl \
    && apt-get clean
 
+ADD  http://archive.apache.org/dist/lucene/solr/3.6.0/apache-solr-3.6.0.tgz ./
 COPY entrypoint.sh /usr/local/bin/solr-entrypoint.sh
 COPY *.xml /etc/solr/
 

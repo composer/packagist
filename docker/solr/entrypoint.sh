@@ -36,7 +36,6 @@ wait_for_solr(){
 keep_solr_up(){
     trap "exit" INT
     while is_solr_up; do
-        sl -e
         echo "Still up!" 
         sleep 2
     done
@@ -209,6 +208,6 @@ post_documents_solr5() {
     fi
 }
 
-download_and_run $SOLR_VERSION
+download_and_run 3.6.0
 
 keep_solr_up
