@@ -5,28 +5,7 @@
             {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
         </div>
 
-        {% set hasActiveOrderBy = false %}
-        {% spaceless %}
-        <div id="order-bys-wrapper" class="col-xs-4 col-md-3 col-lg-2{% if searchForm.vars.value.query is empty %} hidden{% endif %}">
-            {% for sort, param in orderBys %}
-                <a title="{{ param.title }}" href="{{ param.href }}" class="order-by-group">
-                    <i class="glyphicon {{ param.class }}{% if param.arrowClass is not empty %} active{% endif %}"></i>
-                    {% if param.arrowClass is not empty %}
-                        {% set hasActiveOrderBy = true %}
-                    {% endif %}
-                </a>
-            {% endfor %}
-            {% if hasActiveOrderBy %}
-                <a title="Clear order bys" href="?q={{ searchForm.vars.value.query }}" class="clear active">
-                    <i class="glyphicon glyphicon-remove-circle"></i>
-                </a>
-            {% endif %}
-        </div>
-        {% endspaceless %}
-        <div
-            class="hidden">
-            {{ form_widget(searchForm.orderBys) }}
-        </div>
         {{ form_rest(searchForm) }}
+
     </div>
 {{ form_end(searchForm) }}

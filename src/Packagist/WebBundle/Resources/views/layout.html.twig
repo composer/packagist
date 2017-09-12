@@ -138,8 +138,14 @@
         <section class="wrapper">
             <section class="container content" role="main">
                 {% block search_results %}
-                    <div class="row hidden">
+                    <div id="search-container" class="row">
                         <div class="search-list col-md-12"></div>
+                        <div id="powered-by">
+                            Search by <a href="https://www.algolia.com/"><img src="{{ asset('bundles/packagistweb/img/algolia-logo-light.svg') }}"></a>
+                        </div>
+                        <div id="pagination-container">
+                            <div class="pagination"></div>
+                        </div>
                     </div>
                 {% endblock %}
 
@@ -183,8 +189,13 @@
             </nav>
         </footer>
 
+        <script>
+            var algoliaConfig = {{ algolia|json_encode|raw }};
+        </script>
+
         <script src="{{ asset('libs/jquery-2.1.4.min.js') }}"></script>
         <script src="{{ asset('libs/humane-3.2.2.min.js') }}"></script>
+        <script src="{{ asset('libs/algolia-instantsearch-2.0.2/instantsearch.min.js') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/search.js')}}"></script>
         <script src="{{ asset('libs/bootstrap-3.3.5/js/bootstrap.min.js')}}"></script>

@@ -1,0 +1,23 @@
+searchableAttributes:
+    - "package_name"
+    - "package_organisation"
+    - "description"
+
+ranking:
+    - "typo"
+    - "geo"
+    - "words"
+    - "filters"
+    - "attribute"
+    - "proximity"
+    - "exact"
+    - "custom"
+
+customRanking:
+    - "desc(popularity)"
+
+attributesToHighlight:
+    - "name"
+    - "package_name"
+    - "package_organisation"
+    - "description"
