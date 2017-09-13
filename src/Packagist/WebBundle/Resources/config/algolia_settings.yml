@@ -1,22 +1,22 @@
 searchableAttributes:
-    - "name"
-    - "package_name"
-    - "package_organisation"
-    - "description"
-    - "tags"
+  - "unordered(package_name)"
+  - "unordered(tags)"
+  - "unordered(package_organisation)"
+  - "unordered(description)"
 
 ranking:
     - "typo"
     - "geo"
     - "words"
     - "filters"
+    - "desc(popularity)"
     - "attribute"
     - "proximity"
     - "exact"
     - "custom"
 
 customRanking:
-    - "desc(popularity)"
+    - "asc(abandoned)"
 
 attributesToHighlight:
     - "name"
