@@ -21,7 +21,6 @@ class AppKernel extends Kernel
             new HWI\Bundle\OAuthBundle\HWIOAuthBundle(),
             new Snc\RedisBundle\SncRedisBundle(),
             new WhiteOctober\PagerfantaBundle\WhiteOctoberPagerfantaBundle(),
-            new Nelmio\SolariumBundle\NelmioSolariumBundle(),
             new Nelmio\SecurityBundle\NelmioSecurityBundle(),
             new Knp\Bundle\MenuBundle\KnpMenuBundle(),
             new Nelmio\CorsBundle\NelmioCorsBundle(),

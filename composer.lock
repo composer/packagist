@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "3997486ee7be835942f6cf3161f38fbb",
+    "content-hash": "d66a4039537323b09a560472fe93c122",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -2273,61 +2273,6 @@
             "time": "2016-02-23T10:42:13+00:00"
         },
         {
-            "name": "nelmio/solarium-bundle",
-            "version": "v1.1.0",
-            "target-dir": "Nelmio/SolariumBundle",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/nelmio/NelmioSolariumBundle.git",
-                "reference": "693700c4deeb04997b90aca659dd881409f33eb9"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/nelmio/NelmioSolariumBundle/zipball/693700c4deeb04997b90aca659dd881409f33eb9",
-                "reference": "693700c4deeb04997b90aca659dd881409f33eb9",
-                "shasum": ""
-            },
-            "require": {
-                "solarium/solarium": "~2.4.0",
-                "symfony/framework-bundle": "2.*"
-            },
-            "require-dev": {
-                "symfony/yaml": "2.*"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.1-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Nelmio\\SolariumBundle": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Nelmio",
-                    "homepage": "http://nelm.io"
-                },
-                {
-                    "name": "Symfony Community",
-                    "homepage": "https://github.com/nelmio/NelmioSolariumBundle/contributors"
-                }
-            ],
-            "description": "Integration with solarium solr client.",
-            "keywords": [
-                "search",
-                "solarium",
-                "solr"
-            ],
-            "time": "2013-01-07T10:35:43+00:00"
-        },
-        {
             "name": "pagerfanta/pagerfanta",
             "version": "v1.0.3",
             "source": {
@@ -2992,48 +2937,6 @@
                 "symfony"
             ],
             "time": "2016-06-17T11:50:26+00:00"
-        },
-        {
-            "name": "solarium/solarium",
-            "version": "2.4.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/solariumphp/solarium.git",
-                "reference": "f7c55cf42d14bb70f534128da3e343bb98fcb504"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/solariumphp/solarium/zipball/f7c55cf42d14bb70f534128da3e343bb98fcb504",
-                "reference": "f7c55cf42d14bb70f534128da3e343bb98fcb504",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.2.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Solarium": "library/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "NewBSD"
-            ],
-            "authors": [
-                {
-                    "name": "See GitHub contributors",
-                    "homepage": "https://github.com/basdenooijer/solarium/contributors"
-                }
-            ],
-            "description": "PHP Solr client",
-            "homepage": "http://www.solarium-project.org",
-            "keywords": [
-                "php",
-                "search",
-                "solr"
-            ],
-            "time": "2013-02-11T13:12:43+00:00"
         },
         {
             "name": "swiftmailer/swiftmailer",

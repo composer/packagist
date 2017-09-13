@@ -6,8 +6,4 @@ parameters:
     database_name_test: packagist_test
     redis_dsn_test: redis://127.0.0.1/14
     assets_version: 1234
-    solr_host: 127.0.0.1
-    solr_port: 8983
-    solr_path: /solr
-    solr_core: collection1
     trusted_ip_header: ''
