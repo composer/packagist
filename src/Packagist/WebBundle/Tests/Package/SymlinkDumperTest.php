@@ -2,13 +2,16 @@
 
 namespace Packagist\WebBundle\Tests\Package;
 
-class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+use Packagist\WebBundle\Package\SymlinkDumper;
+
+class SymlinkDumperTest extends TestCase
 {
     private $mockDumper;
 
     public function setUp()
     {
-        $this->mockDumper = $this->getMockBuilder('Packagist\WebBundle\Package\SymlinkDumper')
+        $this->mockDumper = $this->getMockBuilder(SymlinkDumper::class)
             ->disableOriginalConstructor()
             ->getMock();
     }
