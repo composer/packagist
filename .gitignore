@@ -16,3 +16,4 @@ vendor/
 composer.phar
 /nbproject
 .php_cs.cache
+/docker-compose.override.yml
