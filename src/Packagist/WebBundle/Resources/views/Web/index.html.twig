@@ -38,7 +38,7 @@
         <h2 class="title">Publishing Packages</h2>
         <div>
             <h3>Define Your Package</h3>
-            <p>Put a file named <em>composer.json</em> at the root of your package, containing this information:</p>
+            <p>Put a file named <em>composer.json</em> at the root of your package's repository, containing this information:</p>
             <pre><code>{
     "name": "your-vendor-name/package-name",
     "description": "A short description of what your package does",
@@ -51,7 +51,7 @@
             <p>For more details about package naming and the fields you can use to document your package better, see the <a href="{{ path('about') }}">about</a> page.</p>
 
             <h3>Commit The File</h3>
-            <p>You surely don't need help with that.</p>
+            <p>Add the <code>composer.json</code> to your git or other VCS repository and commit it.</p>
 
             <h3>Publish It</h3>
             <p><a href="{{ path('hwi_oauth_connect') }}">Login</a> or <a href="{{ path('fos_user_registration_register') }}">register</a> on this site, then hit the <a href="{{ path('submit') }}">submit</a> button in the menu.</p>
