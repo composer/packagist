@@ -24,9 +24,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\LockHandler;
 use Doctrine\DBAL\Connection;
 
-/**
- * @author Igor Wiedler <igor@wiedler.ch>
- */
 class IndexAlgoliaPackagesCommand extends ContainerAwareCommand
 {
     /**
@@ -54,8 +51,7 @@ class IndexAlgoliaPackagesCommand extends ContainerAwareCommand
         $force = $input->getOption('force');
         $indexAll = $input->getOption('all');
         $package = $input->getArgument('package');
-        $index_name = $this->getContainer()->getParameter('algolia.index_name');
-
+        $indexName = $this->getContainer()->getParameter('algolia.index_name');
 
         $deployLock = $this->getContainer()->getParameter('kernel.cache_dir').'/deploy.globallock';
         if (file_exists($deployLock)) {
@@ -67,7 +63,7 @@ class IndexAlgoliaPackagesCommand extends ContainerAwareCommand
 
         $doctrine = $this->getContainer()->get('doctrine');
         $algolia = $this->getContainer()->get('packagist.algolia.client');
-        $index = $algolia->initIndex($index_name);
+        $index = $algolia->initIndex($indexName);
 
         $redis = $this->getContainer()->get('snc_redis.default');
         $downloadManager = $this->getContainer()->get('packagist.download_manager');
@@ -125,9 +121,9 @@ class IndexAlgoliaPackagesCommand extends ContainerAwareCommand
                 }
 
                 try {
-                    $tags_formatted = $this->getTags($doctrine, $package);
+                    $tags = $this->getTags($doctrine, $package);
 
-                    $records[] = $this->packageToSearchableArray($package, $tags_formatted, $redis, $downloadManager, $favoriteManager);
+                    $records[] = $this->packageToSearchableArray($package, $tags, $redis, $downloadManager, $favoriteManager);
 
                     $idsToUpdate[] = $package->getId();
                 } catch (\Exception $e) {
@@ -136,34 +132,10 @@ class IndexAlgoliaPackagesCommand extends ContainerAwareCommand
                     continue;
                 }
 
-//                $providers = $doctrine->getManager()->getConnection()->fetchAll(
-//                    'SELECT lp.packageName
-//                        FROM package p
-//                        JOIN package_version pv ON p.id = pv.package_id
-//                        JOIN link_provide lp ON lp.version_id = pv.id
-//                        WHERE p.id = :id
-//                        AND pv.development = true
-//                        GROUP BY lp.packageName',
-//                    ['id' => $package->getId()]
-//                );
-//                foreach ($providers as $provided) {
-//                    $provided = $provided['packageName'];
-//                    try {
-//                        $document = $update->createDocument();
-//                        $document->setField('id', $provided);
-//                        $document->setField('name', $provided);
-//                        $document->setField('package_name', '');
-//                        $document->setField('description', '');
-//                        $document->setField('type', 'virtual-package');
-//                        $document->setField('trendiness', 100);
-//                        $document->setField('repository', '');
-//                        $document->setField('abandoned', 0);
-//                        $document->setField('replacementPackage', '');
-//                        $update->addDocument($document);
-//                    } catch (\Exception $e) {
-//                        $output->writeln('<error>'.get_class($e).': '.$e->getMessage().', skipping package '.$package->getName().':provide:'.$provided.'</error>');
-//                    }
-//                }
+                $providers = $this->getProviders($doctrine, $package);
+                foreach ($providers as $provided) {
+                    $records[] = $this->createSearchableProvider($provided['packageName']);
+                }
             }
 
             try {
@@ -194,10 +166,11 @@ class IndexAlgoliaPackagesCommand extends ContainerAwareCommand
         FavoriteManager $favoriteManager
     ) {
         $faversCount = $favoriteManager->getFaverCount($package);
-        $downloads = $downloadManager->getTotalDownloads($package);
-        $download_log = $package['downloads']['monthly'] ? log($package['downloads']['monthly'], 10) : 0;
-        $start_log = $package->getGitHubStars() ? log($package->getGitHubStars(), 10) : 0;
-        $popularity = round($download_log + $start_log);
+        $downloads = $downloadManager->getDownloads($package);
+        $downloadsLog = $downloads['monthly'] > 0 ? log($downloads['monthly'], 10) : 0;
+        $starsLog = $package->getGitHubStars() > 0 ? log($package->getGitHubStars(), 10) : 0;
+        $popularity = round($downloadsLog + $starsLog);
+        $trendiness = $redis->zscore('downloads:trending', $package->getId());
 
         $record = [
             'id' => $package->getId(),
@@ -205,19 +178,17 @@ class IndexAlgoliaPackagesCommand extends ContainerAwareCommand
             'name' => $package->getName(),
             'package_organisation' => $package->getVendor(),
             'package_name' => $package->getPackageName(),
-            'description' => preg_replace('{[\x00-\x1f]+}u', '', $package->getDescription()),
+            'description' => preg_replace('{[\x00-\x1f]+}u', '', strip_tags($package->getDescription())),
             'type' => $package->getType(),
             'repository' => $package->getRepository(),
             'language' => $package->getLanguage(),
-            'trendiness' => $redis->zscore('downloads:trending', $package->getId()),
+            # log10 of downloads over the last 7days
+            'trendiness' => $trendiness > 0 ? log($trendiness, 10) : 0,
+            # log10 of downloads + gh stars
             'popularity' => $popularity,
             'meta' => [
-                'downloads' => $downloads,
-                'download_formatted' => [
-                    'total' => number_format($downloads['total'], 0, ',', ' '),
-                    'monthly' => number_format($downloads['monthly'], 0, ',', ' '),
-                    'daily' => number_format($downloads['daily'], 0, ',', ' '),
-                ],
+                'downloads' => $downloads['total'],
+                'downloads_formatted' => number_format($downloads['total'], 0, ',', ' '),
                 'favers' => $faversCount,
                 'favers_formatted' => number_format($faversCount, 0, ',', ' '),
             ],
@@ -231,13 +202,48 @@ class IndexAlgoliaPackagesCommand extends ContainerAwareCommand
             $record['replacementPackage'] = '';
         }
 
-
         $record['tags'] = $tags;
 
         return $record;
     }
 
-    private function getTags($doctrine, $package)
+    private function createSearchableProvider(string $provided)
+    {
+        $record = [
+            'id' => $provided,
+            'objectID' => $provided,
+            'name' => $provided,
+            'package_organisation' => preg_replace('{/.*$}', '', $provided),
+            'package_name' => preg_replace('{^[^/]*/}', '', $provided),
+            'description' => '',
+            'type' => 'virtual-package',
+            'repository' => '',
+            'language' => '',
+            'trendiness' => 100,
+            'popularity' => 4,
+            'abandoned' => 0,
+            'replacementPackage' => '',
+            'tags' => [],
+        ];
+
+        return $record;
+    }
+
+    private function getProviders($doctrine, Package $package)
+    {
+        return $doctrine->getManager()->getConnection()->fetchAll(
+            'SELECT lp.packageName
+                FROM package p
+                JOIN package_version pv ON p.id = pv.package_id
+                JOIN link_provide lp ON lp.version_id = pv.id
+                WHERE p.id = :id
+                AND pv.development = true
+                GROUP BY lp.packageName',
+            ['id' => $package->getId()]
+        );
+    }
+
+    private function getTags($doctrine, Package $package)
     {
         $tags = $doctrine->getManager()->getConnection()->fetchAll(
             'SELECT t.name FROM package p
@@ -258,7 +264,7 @@ class IndexAlgoliaPackagesCommand extends ContainerAwareCommand
         }, $tags);
     }
 
-    private function updateIndexedAt($idsToUpdate, $doctrine, $time)
+    private function updateIndexedAt(array $idsToUpdate, $doctrine, string $time)
     {
         $retries = 5;
         // retry loop in case of a lock timeout

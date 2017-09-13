@@ -1,7 +1,9 @@
 searchableAttributes:
+    - "name"
     - "package_name"
     - "package_organisation"
     - "description"
+    - "tags"
 
 ranking:
     - "typo"
@@ -21,3 +23,12 @@ attributesToHighlight:
     - "package_name"
     - "package_organisation"
     - "description"
+
+ignorePlurals: true
+advancedSyntax: true
+separatorsToIndex:
+    - '/'
+
+attributesForFaceting:
+    - "type"
+    - "tags"

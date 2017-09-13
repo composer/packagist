@@ -1,11 +1,7 @@
-{{ form_start(searchForm, { attr: { id: 'search-form', autocomplete: 'off' } }) }}
-    <div class="{% if orderBys is defined %}sortable{% endif %} row">
-        <div class="hidden">{{ form_errors(searchForm.query) }}</div>
-        <div class="{% if searchForm.vars.value.query is empty %}col-xs-12{% else %}col-xs-8{% endif %} js-search-field-wrapper col-md-9">
-            {{ form_widget(searchForm.query, {'attr': {'autocomplete': 'off', 'placeholder': 'Search packages...', 'tabindex': 1}}) }}
+ <form name="search_query" method="get" action="/search/" id="search-form" autocomplete="off">
+    <div class="sortable row">
+        <div class="col-xs-12 js-search-field-wrapper col-md-9">
+            <input type="search" id="search_query_query" name="search_query[query]" required="required" autocomplete="off" placeholder="Search packages..." tabindex="1" class=" form-control" value="{{ searchQuery }}" />
         </div>
-
-        {{ form_rest(searchForm) }}
-
     </div>
-{{ form_end(searchForm) }}
+</form>

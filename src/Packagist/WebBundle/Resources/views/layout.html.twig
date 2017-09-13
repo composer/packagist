@@ -138,13 +138,25 @@
         <section class="wrapper">
             <section class="container content" role="main">
                 {% block search_results %}
-                    <div id="search-container" class="row">
-                        <div class="search-list col-md-12"></div>
-                        <div id="powered-by">
-                            Search by <a href="https://www.algolia.com/"><img src="{{ asset('bundles/packagistweb/img/algolia-logo-light.svg') }}"></a>
+                    <div id="search-container" class="hidden">
+                        <div class="row">
+                            <div class="search-list col-md-9"></div>
+
+                            <div class="search-facets col-md-3">
+                                <div class="search-facets-type"></div>
+                                <div class="search-facets-tags"></div>
+                            </div>
                         </div>
-                        <div id="pagination-container">
-                            <div class="pagination"></div>
+
+                        <div class="row">
+                            <div class="col-md-9">
+                                <div id="powered-by">
+                                    Search by <a href="https://www.algolia.com/"><img src="{{ asset('bundles/packagistweb/img/algolia-logo-light.svg') }}"></a>
+                                </div>
+                                <div id="pagination-container">
+                                    <div class="pagination"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 {% endblock %}
@@ -195,10 +207,10 @@
 
         <script src="{{ asset('libs/jquery-2.1.4.min.js') }}"></script>
         <script src="{{ asset('libs/humane-3.2.2.min.js') }}"></script>
-        <script src="{{ asset('libs/algolia-instantsearch-2.0.2/instantsearch.min.js') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
-        <script src="{{ asset('bundles/packagistweb/js/search.js')}}"></script>
         <script src="{{ asset('libs/bootstrap-3.3.5/js/bootstrap.min.js')}}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@1/dist/instantsearch-preact.min.js"></script>
+        <script src="{{ asset('bundles/packagistweb/js/search.js') }}"></script>
 
         {%- if not app.debug and google_analytics.ga_key %}
         <script>

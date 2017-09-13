@@ -56,8 +56,7 @@ class WebController extends Controller
 
         $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
         return $this->render('PackagistWebBundle:Web:searchForm.html.twig', array(
-            'searchForm' => $form->createView(),
-            'orderBys' => $orderBysViewModel
+            'searchQuery' => $req->query->get('search_query')['query'] ?? '',
         ));
     }
 
@@ -78,163 +77,123 @@ class WebController extends Controller
         $typeFilter = str_replace('%type%', '', $req->query->get('type'));
         $tagsFilter = $req->query->get('tags');
 
-        if ($req->query->has('search_query') || $typeFilter || $tagsFilter) {
-            /** @var $solarium \Solarium_Client */
-            $solarium = $this->get('solarium.client');
-            $select = $solarium->createSelect();
+        if ($req->getRequestFormat() !== 'json') {
+            return $this->render('PackagistWebBundle:Web:search.html.twig', ['packages' => []]);
+        }
 
-            // configure dismax
-            $dismax = $select->getDisMax();
-            $dismax->setQueryFields(array('name^4', 'package_name^4', 'description', 'tags', 'text', 'text_ngram', 'name_split^2'));
-            $dismax->setPhraseFields(array('description'));
-            $dismax->setBoostFunctions(array('log(trendiness)^10'));
-            $dismax->setMinimumMatch(1);
-            $dismax->setQueryParser('edismax');
-
-            // filter by type
-            if ($typeFilter) {
-                $filterQueryTerm = sprintf('type:"%s"', $select->getHelper()->escapeTerm($typeFilter));
-                $filterQuery = $select->createFilterQuery('type')->setQuery($filterQueryTerm);
-                $select->addFilterQuery($filterQuery);
-            }
-
-            // filter by tags
-            if ($tagsFilter) {
-                $tags = array();
-                foreach ((array) $tagsFilter as $tag) {
-                    $tags[] = $select->getHelper()->escapeTerm($tag);
-                }
-                $filterQueryTerm = sprintf('tags:("%s")', implode('" AND "', $tags));
-                $filterQuery = $select->createFilterQuery('tags')->setQuery($filterQueryTerm);
-                $select->addFilterQuery($filterQuery);
-            }
-
-            if (!empty($filteredOrderBys)) {
-                $select->addSorts($normalizedOrderBys);
-            }
-
-            $form->handleRequest($req);
-            if ($form->isValid()) {
-                $escapedQuery = $select->getHelper()->escapeTerm($form->getData()->getQuery());
-                $escapedQuery = preg_replace('/(^| )\\\\-(\S)/', '$1-$2', $escapedQuery);
-                $escapedQuery = preg_replace('/(^| )\\\\\+(\S)/', '$1+$2', $escapedQuery);
-                if ((substr_count($escapedQuery, '"') % 2) == 0) {
-                    $escapedQuery = str_replace('\\"', '"', $escapedQuery);
-                }
-                $select->setQuery($escapedQuery);
-            }
-
-            $paginator = new Pagerfanta(new SolariumAdapter($solarium, $select));
-
-            $perPage = $req->query->getInt('per_page', 15);
-            if ($perPage <= 0 || $perPage > 100) {
-                if ($req->getRequestFormat() === 'json') {
-                    return JsonResponse::create(array(
-                        'status' => 'error',
-                        'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-                    ), 400)->setCallback($req->query->get('callback'));
-                }
-
-                $perPage = max(0, min(100, $perPage));
-            }
-            $paginator->setMaxPerPage($perPage);
-
-            $paginator->setCurrentPage($req->query->get('page', 1), false, true);
-
-            $metadata = array();
-
-            foreach ($paginator as $package) {
-                if (is_numeric($package->id)) {
-                    $metadata['downloads'][$package->id] = $package->downloads;
-                    $metadata['favers'][$package->id] = $package->favers;
-                }
-            }
-
-            if ($req->getRequestFormat() === 'json') {
-                try {
-                    $result = array(
-                        'results' => array(),
-                        'total' => $paginator->getNbResults(),
-                    );
-                } catch (\Solarium_Client_HttpException $e) {
-                    return JsonResponse::create(array(
-                        'status' => 'error',
-                        'message' => 'Could not connect to the search server',
-                    ), 500)->setCallback($req->query->get('callback'));
-                }
-
-                foreach ($paginator as $package) {
-                    if (ctype_digit((string) $package->id)) {
-                        $url = $this->generateUrl('view_package', array('name' => $package->name), UrlGeneratorInterface::ABSOLUTE_URL);
-                    } else {
-                        $url = $this->generateUrl('view_providers', array('name' => $package->name), UrlGeneratorInterface::ABSOLUTE_URL);
-                    }
-
-                    $row = array(
-                        'name' => $package->name,
-                        'description' => $package->description ?: '',
-                        'url' => $url,
-                        'repository' => $package->repository,
-                    );
-                    if (is_numeric($package->id)) {
-                        $row['downloads'] = $metadata['downloads'][$package->id];
-                        $row['favers'] = $metadata['favers'][$package->id];
-                    } else {
-                        $row['virtual'] = true;
-                    }
-                    $result['results'][] = $row;
-                }
-
-                if ($paginator->hasNextPage()) {
-                    $params = array(
-                        '_format' => 'json',
-                        'q' => $form->getData()->getQuery(),
-                        'page' => $paginator->getNextPage()
-                    );
-                    if ($tagsFilter) {
-                        $params['tags'] = (array) $tagsFilter;
-                    }
-                    if ($typeFilter) {
-                        $params['type'] = $typeFilter;
-                    }
-                    if ($perPage !== 15) {
-                        $params['per_page'] = $perPage;
-                    }
-                    $result['next'] = $this->generateUrl('search', $params, UrlGeneratorInterface::ABSOLUTE_URL);
-                }
-
-                return JsonResponse::create($result)->setCallback($req->query->get('callback'));
-            }
-
-            if ($req->isXmlHttpRequest()) {
-                try {
-                    return $this->render('PackagistWebBundle:Web:search.html.twig', array(
-                        'packages' => $paginator,
-                        'meta' => $metadata,
-                        'noLayout' => true,
-                    ));
-                } catch (\Twig_Error_Runtime $e) {
-                    if (!$e->getPrevious() instanceof \Solarium_Client_HttpException) {
-                        throw $e;
-                    }
-                    return JsonResponse::create(array(
-                        'status' => 'error',
-                        'message' => 'Could not connect to the search server',
-                    ), 500)->setCallback($req->query->get('callback'));
-                }
-            }
-
-            return $this->render('PackagistWebBundle:Web:search.html.twig', array(
-                'packages' => $paginator,
-                'meta' => $metadata,
-            ));
-        } elseif ($req->getRequestFormat() === 'json') {
+        if (!$req->query->has('search_query') && !$typeFilter && !$tagsFilter) {
             return JsonResponse::create(array(
                 'error' => 'Missing search query, example: ?q=example'
             ), 400)->setCallback($req->query->get('callback'));
         }
 
-        return $this->render('PackagistWebBundle:Web:search.html.twig');
+        $indexName = $this->container->getParameter('algolia.index_name');
+        $algolia = $this->get('packagist.algolia.client');
+        $index = $algolia->initIndex($indexName);
+        $query = '';
+        $queryParams = [];
+
+        // filter by type
+        if ($typeFilter) {
+            $queryParams['filters'][] = 'type:'.$typeFilter;
+        }
+
+        // filter by tags
+        if ($tagsFilter) {
+
+            $tags = array();
+            foreach ((array) $tagsFilter as $tag) {
+                $tags[] = 'tags:'.$tag;
+            }
+            $queryParams['filters'][] = '(' . implode(' OR ', $tags) . ')';
+        }
+
+        if (!empty($filteredOrderBys)) {
+            return JsonResponse::create(array(
+                'status' => 'error',
+                'message' => 'Search sorting is not available anymore',
+            ), 400)->setCallback($req->query->get('callback'));
+        }
+
+        $form->handleRequest($req);
+        if ($form->isValid()) {
+            $query = $form->getData()->getQuery();
+        }
+
+        $perPage = $req->query->getInt('per_page', 15);
+        if ($perPage <= 0 || $perPage > 100) {
+           if ($req->getRequestFormat() === 'json') {
+                return JsonResponse::create(array(
+                    'status' => 'error',
+                    'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
+                ), 400)->setCallback($req->query->get('callback'));
+            }
+
+            $perPage = max(0, min(100, $perPage));
+        }
+
+        $queryParams['filters'] = implode(' AND ', $queryParams['filters']);
+        $queryParams['hitsPerPage'] = $perPage;
+        $queryParams['page'] = $req->query->get('page', 1) - 1;
+
+        try {
+            $results = $index->search($query, $queryParams);
+        } catch (\Throwable $e) {
+            return JsonResponse::create(array(
+                'status' => 'error',
+                'message' => 'Could not connect to the search server',
+            ), 500)->setCallback($req->query->get('callback'));
+        }
+
+        $result = array(
+            'results' => array(),
+            'total' => $results['nbHits'],
+        );
+
+        foreach ($results['hits'] as $package) {
+            if (ctype_digit((string) $package['id'])) {
+                $url = $this->generateUrl('view_package', array('name' => $package['name']), UrlGeneratorInterface::ABSOLUTE_URL);
+            } else {
+                $url = $this->generateUrl('view_providers', array('name' => $package['name']), UrlGeneratorInterface::ABSOLUTE_URL);
+            }
+
+            $row = array(
+                'name' => $package['name'],
+                'description' => $package['description'] ?: '',
+                'url' => $url,
+                'repository' => $package['repository'],
+            );
+            if (ctype_digit((string) $package['id'])) {
+                $row['downloads'] = $package['meta']['downloads'];
+                $row['favers'] = $package['meta']['favers'];
+            } else {
+                $row['virtual'] = true;
+            }
+            if (!empty($package['abandoned'])) {
+                $row['abandoned'] = $package['replacementPackage'] ?? true;
+            }
+            $result['results'][] = $row;
+        }
+
+        if ($results['nbPages'] > $results['page'] + 1) {
+            $params = array(
+                '_format' => 'json',
+                'q' => $form->getData()->getQuery(),
+                'page' => $results['page'] + 2,
+            );
+            if ($tagsFilter) {
+                $params['tags'] = (array) $tagsFilter;
+            }
+            if ($typeFilter) {
+                $params['type'] = $typeFilter;
+            }
+            if ($perPage !== 15) {
+                $params['per_page'] = $perPage;
+            }
+            $result['next'] = $this->generateUrl('search', $params, UrlGeneratorInterface::ABSOLUTE_URL);
+        }
+
+        return JsonResponse::create($result)->setCallback($req->query->get('callback'));
     }
 
     /**

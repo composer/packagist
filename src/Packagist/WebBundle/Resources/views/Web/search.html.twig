@@ -1,21 +1,4 @@
 {% embed "PackagistWebBundle:Web:list.html.twig" %}
-    {% block search_results %}
-    {% endblock %}
-
     {% block content %}
-        <div class="search-list">
-            {{ block('list') }}
-        </div>
-
-        <div id="powered-by">
-            Search by
-            <a href="https://www.algolia.com/">
-                <img src="{{ asset('bundles/packagistweb/img/algolia-logo-light.svg') }}">
-            </a>
-        </div>
-
-        <div id="pagination-container">
-            <div class="pagination"></div>
-        </div>
     {% endblock %}
 {% endembed %}

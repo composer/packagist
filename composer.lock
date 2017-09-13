@@ -4,8 +4,59 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "6e3fe09787ae05bb8046888d99c5bf9c",
+    "content-hash": "3997486ee7be835942f6cf3161f38fbb",
     "packages": [
+        {
+            "name": "algolia/algoliasearch-client-php",
+            "version": "1.20.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/algolia/algoliasearch-client-php.git",
+                "reference": "3daee8d55c1d84eff227fd99054e78ddc196f309"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/algolia/algoliasearch-client-php/zipball/3daee8d55c1d84eff227fd99054e78ddc196f309",
+                "reference": "3daee8d55c1d84eff227fd99054e78ddc196f309",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "php": ">=5.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^4.8 || ^5.0",
+                "satooshi/php-coveralls": "0.6.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "AlgoliaSearch": "src/",
+                    "AlgoliaSearch\\Tests": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Algolia Team",
+                    "email": "contact@algolia.com"
+                },
+                {
+                    "name": "Ryan T. Catlin",
+                    "email": "ryan.catlin@gmail.com"
+                },
+                {
+                    "name": "Jonathan H. Wage",
+                    "email": "jonwage@gmail.com"
+                }
+            ],
+            "description": "Algolia Search API Client for PHP",
+            "homepage": "https://github.com/algolia/algoliasearch-client-php",
+            "time": "2017-08-30T08:28:40+00:00"
+        },
         {
             "name": "cebe/markdown",
             "version": "1.1.1",
@@ -130,12 +181,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "a019fe7e6fe2a408f36417a455fc61190c451a01"
+                "reference": "e12e0335a4d467878093fc76e3dea592ff3e1ce3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/a019fe7e6fe2a408f36417a455fc61190c451a01",
-                "reference": "a019fe7e6fe2a408f36417a455fc61190c451a01",
+                "url": "https://api.github.com/repos/composer/composer/zipball/e12e0335a4d467878093fc76e3dea592ff3e1ce3",
+                "reference": "e12e0335a4d467878093fc76e3dea592ff3e1ce3",
                 "shasum": ""
             },
             "require": {
@@ -199,7 +250,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2017-08-18T12:14:31+00:00"
+            "time": "2017-09-12T07:24:44+00:00"
         },
         {
             "name": "composer/semver",

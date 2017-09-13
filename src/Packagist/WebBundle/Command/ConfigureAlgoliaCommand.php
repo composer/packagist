@@ -17,9 +17,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Yaml\Yaml;
 
-/**
- * @author Igor Wiedler <igor@wiedler.ch>
- */
 class ConfigureAlgoliaCommand extends ContainerAwareCommand
 {
     /**
