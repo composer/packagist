@@ -92,6 +92,28 @@ search.addWidget(
 );
 
 search.addWidget(
+    instantsearch.widgets.currentRefinedValues({
+        container: '.search-facets-active-filters',
+        clearAll: 'before',
+        clearsQuery: true,
+        cssClasses: {
+            clearAll: 'pull-right'
+        },
+        templates: {
+            header: 'Active filters',
+            item: function (filter) {
+                if ('tags' == filter.attributeName) {
+                    return 'tag: ' + filter.name
+                } else {
+                    return filter.attributeName + ': ' + filter.name
+                }
+            }
+        },
+        onlyListedAttributes: true,
+    })
+);
+
+search.addWidget(
   instantsearch.widgets.menu({
     container: '.search-facets-type',
     attributeName: 'type',
