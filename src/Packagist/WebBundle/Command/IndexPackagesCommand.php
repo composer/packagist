@@ -31,7 +31,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
     protected function configure()
     {
         $this
-            ->setName('packcagist:index')
+            ->setName('packagist:index')
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-indexing of all packages'),
                 new InputOption('all', null, InputOption::VALUE_NONE, 'Index all packages without clearing the index first'),
