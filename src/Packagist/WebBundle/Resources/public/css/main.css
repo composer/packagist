@@ -436,7 +436,7 @@ strong {
     padding: 0 15px;
     margin-top: 35px;
 }
-.search-facets > div:not(:last-child) {
+.search-facets > div:not(:last-child) > div {
     margin-bottom: 15px;
 }
 .search-facets .ais-menu--item__active {
