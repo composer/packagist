@@ -124,6 +124,7 @@ search.addWidget(
     container: '.search-facets-type',
     attributeName: 'type',
     limit: 15,
+    showMore: true,
     templates: {
       header: 'Package type'
     }
@@ -134,7 +135,8 @@ search.addWidget(
   instantsearch.widgets.menu({
     container: '.search-facets-tags',
     attributeName: 'tags',
-    limit: 20,
+    limit: 15,
+    showMore: true,
     templates: {
       header: 'Tags'
     }

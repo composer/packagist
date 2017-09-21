@@ -449,6 +449,16 @@ strong {
     font-weight: bold;
 }
 
+.search-facets .ais-show-more {
+    cursor: pointer;
+    margin-top: 10px;
+    display: inline-block;
+}
+.search-facets .ais-show-more:after {
+    content: '...';
+    display: inline-block;
+}
+
 .wrapper-footer {
     background: #2d2d32;
     font-size: 14px;
