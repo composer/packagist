@@ -1307,8 +1307,11 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     padding: 0 10px;
     display: inline-block;
 }
-.pagination ul > li > a:hover {
+.pagination ul > li > a:hover, .pagination .ais-pagination--item__active {
     background: #F2F2F2;
+}
+.pagination .ais-pagination--item__active a {
+    color: #000 !important;
 }
 
 .legend {
