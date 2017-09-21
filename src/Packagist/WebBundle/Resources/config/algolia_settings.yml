@@ -1,8 +1,9 @@
 searchableAttributes:
-  - "unordered(package_name)"
-  - "unordered(tags)"
-  - "unordered(package_organisation)"
-  - "unordered(description)"
+    - "unordered(package_name)"
+    - "unordered(tags)"
+    - "unordered(package_organisation)"
+    - "unordered(description)"
+    - "unordered(name)"
 
 ranking:
     - "typo"
