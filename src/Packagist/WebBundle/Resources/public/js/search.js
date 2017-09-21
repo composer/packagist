@@ -11,7 +11,7 @@ var search = instantsearch({
     urlSync: true,
     searchFunction: function(helper) {
         var searchResults = $('#search-container');
-        if (helper.state.query === '') {
+        if (helper.state.query === '' && helper.state.hierarchicalFacetsRefinements.type === undefined && helper.state.hierarchicalFacetsRefinements.tags === undefined) {
             searchResults.addClass('hidden');
         } else {
             helper.search();
@@ -101,7 +101,7 @@ search.addWidget(
     instantsearch.widgets.currentRefinedValues({
         container: '.search-facets-active-filters',
         clearAll: 'before',
-        clearsQuery: true,
+        clearsQuery: false,
         cssClasses: {
             clearAll: 'pull-right'
         },
