@@ -637,17 +637,13 @@ class PackageController extends Controller
 
             $this->get('packagist.provider_manager')->deletePackage($package);
 
-            // attempt solr cleanup
+            // attempt search index cleanup
             try {
-                /** @var \Solarium_Client $solarium */
-                $solarium = $this->get('solarium.client');
-
-                $update = $solarium->createUpdate();
-                $update->addDeleteById($packageId);
-                $update->addCommit();
-
-                $solarium->update($update);
-            } catch (\Solarium_Client_HttpException $e) {
+                $indexName = $this->container->getParameter('algolia.index_name');
+                $algolia = $this->get('packagist.algolia.client');
+                $index = $algolia->initIndex($indexName);
+                $index->deleteObject($package->getName());
+            } catch (\AlgoliaSearch\AlgoliaException $e) {
             }
 
             return new Response('', 204);
