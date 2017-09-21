@@ -1,3 +1,9 @@
+document.getElementById('search_query_query').addEventListener('keydown', function (e) {
+    if (e.keyCode === 13) {
+        e.preventDefault();
+    }
+});
+
 var search = instantsearch({
     appId: algoliaConfig.app_id,
     apiKey: algoliaConfig.search_key,
