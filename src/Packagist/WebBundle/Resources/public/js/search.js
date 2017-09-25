@@ -3,6 +3,12 @@ document.getElementById('search_query_query').addEventListener('keydown', functi
         e.preventDefault();
     }
 });
+var searchParameters = algoliaConfig.tags ? {
+    facets: ['tags'],
+    facetsRefinements: {
+        tags: [algoliaConfig.tags]
+    }
+} : {};
 
 var search = instantsearch({
     appId: algoliaConfig.app_id,
@@ -13,13 +19,20 @@ var search = instantsearch({
     },
     searchFunction: function(helper) {
         var searchResults = $('#search-container');
-        if (helper.state.query === '' && helper.state.hierarchicalFacetsRefinements.type === undefined && helper.state.hierarchicalFacetsRefinements.tags === undefined) {
+
+        if (helper.state.query === ''
+            && helper.state.hierarchicalFacetsRefinements.type === undefined
+            && helper.state.hierarchicalFacetsRefinements.tags === undefined
+            && algoliaConfig.tags.length == 0
+        ) {
             searchResults.addClass('hidden');
         } else {
-            helper.search();
             searchResults.removeClass('hidden');
         }
-    }
+
+        helper.search();
+    },
+    searchParameters: searchParameters
 });
 
 search.addWidget(

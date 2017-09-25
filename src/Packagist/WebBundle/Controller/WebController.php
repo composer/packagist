@@ -78,7 +78,10 @@ class WebController extends Controller
         $tagsFilter = $req->query->get('tags');
 
         if ($req->getRequestFormat() !== 'json') {
-            return $this->render('PackagistWebBundle:Web:search.html.twig', ['packages' => []]);
+            return $this->render('PackagistWebBundle:Web:search.html.twig', [
+                'packages' => [],
+                'tags' => $tagsFilter
+            ]);
         }
 
         if (!$req->query->has('search_query') && !$typeFilter && !$tagsFilter) {
