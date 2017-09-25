@@ -8,7 +8,9 @@ var search = instantsearch({
     appId: algoliaConfig.app_id,
     apiKey: algoliaConfig.search_key,
     indexName: algoliaConfig.index_name,
-    urlSync: true,
+    urlSync: {
+        trackedParameters: ['query', 'attribute:*', 'page']
+    },
     searchFunction: function(helper) {
         var searchResults = $('#search-container');
         if (helper.state.query === '' && helper.state.hierarchicalFacetsRefinements.type === undefined && helper.state.hierarchicalFacetsRefinements.tags === undefined) {
