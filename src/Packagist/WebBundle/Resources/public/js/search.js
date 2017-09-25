@@ -28,10 +28,7 @@ search.addWidget(
         magnifier: false,
         reset: false,
         wrapInput: false,
-        autofocus: true,
-        //queryHook: function (query, search) {
-        //    search(query);
-        //}
+        autofocus: true
     })
 );
 
@@ -122,27 +119,33 @@ search.addWidget(
 );
 
 search.addWidget(
-  instantsearch.widgets.menu({
-    container: '.search-facets-type',
-    attributeName: 'type',
-    limit: 15,
-    showMore: true,
-    templates: {
-      header: 'Package type'
-    }
-  })
+    instantsearch.widgets.menu({
+        container: '.search-facets-type',
+        attributeName: 'type',
+        limit: 15,
+        showMore: true,
+        templates: {
+            header: 'Package type'
+        }
+    })
 );
 
 search.addWidget(
-  instantsearch.widgets.menu({
-    container: '.search-facets-tags',
-    attributeName: 'tags',
-    limit: 15,
-    showMore: true,
-    templates: {
-      header: 'Tags'
-    }
-  })
+    instantsearch.widgets.menu({
+        container: '.search-facets-tags',
+        attributeName: 'tags',
+        limit: 15,
+        showMore: true,
+        templates: {
+            header: 'Tags'
+        }
+    })
 );
 
 search.start();
+
+if(algoliaConfig.tags !== '') {
+    search.helper.once('change', function (e) {
+        window.history.replaceState(null, 'title', window.location.pathname);
+    });
+}
