@@ -4,8 +4,8 @@ document.getElementById('search_query_query').addEventListener('keydown', functi
     }
 });
 var searchParameters = algoliaConfig.tags ? {
-    facets: ['tags'],
-    facetsRefinements: {
+    disjunctiveFacets: ['tags'],
+    disjunctiveFacetsRefinements: {
         tags: [algoliaConfig.tags]
     }
 } : {};
@@ -22,7 +22,7 @@ var search = instantsearch({
 
         if (helper.state.query === ''
             && helper.state.hierarchicalFacetsRefinements.type === undefined
-            && helper.state.hierarchicalFacetsRefinements.tags === undefined
+            && helper.state.disjunctiveFacetsRefinements.tags === undefined
             && algoliaConfig.tags.length == 0
         ) {
             searchResults.addClass('hidden');
@@ -144,7 +144,7 @@ search.addWidget(
 );
 
 search.addWidget(
-    instantsearch.widgets.menu({
+    instantsearch.widgets.refinementList({
         container: '.search-facets-tags',
         attributeName: 'tags',
         limit: 15,
