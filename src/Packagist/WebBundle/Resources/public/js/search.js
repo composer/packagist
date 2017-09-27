@@ -151,7 +151,8 @@ search.addWidget(
         showMore: true,
         templates: {
             header: 'Tags'
-        }
+        },
+        searchForFacetValues:true
     })
 );
 

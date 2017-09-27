@@ -32,4 +32,4 @@ separatorsToIndex:
 
 attributesForFaceting:
     - "type"
-    - "tags"
+    - "searchable(tags)"
