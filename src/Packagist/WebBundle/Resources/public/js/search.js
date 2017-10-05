@@ -3,21 +3,36 @@ document.getElementById('search_query_query').addEventListener('keydown', functi
         e.preventDefault();
     }
 });
+var searchParameters = algoliaConfig.tags ? {
+    disjunctiveFacets: ['tags'],
+    disjunctiveFacetsRefinements: {
+        tags: [algoliaConfig.tags]
+    }
+} : {};
 
 var search = instantsearch({
     appId: algoliaConfig.app_id,
     apiKey: algoliaConfig.search_key,
     indexName: algoliaConfig.index_name,
-    urlSync: true,
+    urlSync: {
+        trackedParameters: ['query', 'attribute:*', 'page']
+    },
     searchFunction: function(helper) {
         var searchResults = $('#search-container');
-        if (helper.state.query === '' && helper.state.hierarchicalFacetsRefinements.type === undefined && helper.state.hierarchicalFacetsRefinements.tags === undefined) {
+
+        if (helper.state.query === ''
+            && helper.state.hierarchicalFacetsRefinements.type === undefined
+            && helper.state.disjunctiveFacetsRefinements.tags === undefined
+            && algoliaConfig.tags.length == 0
+        ) {
             searchResults.addClass('hidden');
         } else {
-            helper.search();
             searchResults.removeClass('hidden');
         }
-    }
+
+        helper.search();
+    },
+    searchParameters: searchParameters
 });
 
 search.addWidget(
@@ -26,10 +41,7 @@ search.addWidget(
         magnifier: false,
         reset: false,
         wrapInput: false,
-        autofocus: true,
-        //queryHook: function (query, search) {
-        //    search(query);
-        //}
+        autofocus: true
     })
 );
 
@@ -120,27 +132,34 @@ search.addWidget(
 );
 
 search.addWidget(
-  instantsearch.widgets.menu({
-    container: '.search-facets-type',
-    attributeName: 'type',
-    limit: 15,
-    showMore: true,
-    templates: {
-      header: 'Package type'
-    }
-  })
+    instantsearch.widgets.menu({
+        container: '.search-facets-type',
+        attributeName: 'type',
+        limit: 15,
+        showMore: true,
+        templates: {
+            header: 'Package type'
+        }
+    })
 );
 
 search.addWidget(
-  instantsearch.widgets.menu({
-    container: '.search-facets-tags',
-    attributeName: 'tags',
-    limit: 15,
-    showMore: true,
-    templates: {
-      header: 'Tags'
-    }
-  })
+    instantsearch.widgets.refinementList({
+        container: '.search-facets-tags',
+        attributeName: 'tags',
+        limit: 15,
+        showMore: true,
+        templates: {
+            header: 'Tags'
+        },
+        searchForFacetValues:true
+    })
 );
 
 search.start();
+
+if(algoliaConfig.tags !== '') {
+    search.helper.once('change', function (e) {
+        window.history.replaceState(null, 'title', window.location.pathname);
+    });
+}
