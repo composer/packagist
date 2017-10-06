@@ -204,7 +204,8 @@
 
         <script>
             var algoliaConfig = {{ algolia|json_encode|raw }};
-            algoliaConfig['tags'] = '{{ tags|default(false) }}';
+            algoliaConfig.tags = {{ tags|default([])|json_encode|raw }};
+            algoliaConfig.type = {{ type|default('')|json_encode|raw }};
         </script>
 
         <script src="{{ asset('libs/jquery-2.1.4.min.js') }}"></script>

@@ -459,6 +459,33 @@ strong {
     display: inline-block;
 }
 
+.sbx-sffv__wrapper {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+}
+.sbx-sffv__wrapper input {
+    height: 22px;
+    border: 1px solid #f28d1a;
+    border-radius: 3px;
+    margin-right: 6px;
+    padding-left: 4px;
+    margin-bottom: 5px;
+}
+.sbx-sffv__wrapper button {
+    width: 22px;
+    height: 22px;
+    display: inline-block;
+    overflow: hidden;
+    padding: 2px 5px 1px;
+    background: none;
+    border: 0;
+}
+.sbx-sffv__wrapper svg {
+    width: 100% !important;
+    height: 100% !important;
+}
+
 .wrapper-footer {
     background: #2d2d32;
     font-size: 14px;

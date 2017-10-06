@@ -3,12 +3,22 @@ document.getElementById('search_query_query').addEventListener('keydown', functi
         e.preventDefault();
     }
 });
-var searchParameters = algoliaConfig.tags ? {
-    disjunctiveFacets: ['tags'],
-    disjunctiveFacetsRefinements: {
-        tags: [algoliaConfig.tags]
-    }
-} : {};
+
+var searchParameters = {};
+
+if (algoliaConfig.tags) {
+    searchParameters.disjunctiveFacets = ['tags'];
+    searchParameters.disjunctiveFacetsRefinements = {
+        tags: algoliaConfig.tags,
+    };
+}
+
+if (algoliaConfig.type) {
+    searchParameters.hierarchicalFacets = [{attributes: ['type'], name: 'type'}];
+    searchParameters.hierarchicalFacetsRefinements = {
+        type: [algoliaConfig.type],
+    };
+}
 
 var search = instantsearch({
     appId: algoliaConfig.app_id,
@@ -22,8 +32,9 @@ var search = instantsearch({
 
         if (helper.state.query === ''
             && helper.state.hierarchicalFacetsRefinements.type === undefined
-            && helper.state.disjunctiveFacetsRefinements.tags === undefined
-            && algoliaConfig.tags.length == 0
+            && (helper.state.disjunctiveFacetsRefinements.tags === undefined || helper.state.disjunctiveFacetsRefinements.tags.length === 0)
+            && algoliaConfig.tags.length === 0
+            && algoliaConfig.type.length === 0
         ) {
             searchResults.addClass('hidden');
         } else {
@@ -158,7 +169,7 @@ search.addWidget(
 
 search.start();
 
-if(algoliaConfig.tags !== '') {
+if (algoliaConfig.tags.length || algoliaConfig.type.length) {
     search.helper.once('change', function (e) {
         window.history.replaceState(null, 'title', window.location.pathname);
     });
