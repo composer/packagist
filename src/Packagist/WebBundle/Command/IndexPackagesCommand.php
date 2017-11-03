@@ -210,7 +210,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
     {
         $record = [
             'id' => $provided,
-            'objectID' => $provided,
+            'objectID' => 'virtual:'.$provided,
             'name' => $provided,
             'package_organisation' => preg_replace('{/.*$}', '', $provided),
             'package_name' => preg_replace('{^[^/]*/}', '', $provided),

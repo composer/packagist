@@ -67,8 +67,10 @@ search.addWidget(
     instantsearch.widgets.hits({
         container: '.search-list',
         transformData: function (hit) {
+            hit.url = '/packages/' + hit.name;
             if (hit.type === 'virtual-package') {
                 hit.virtual = true;
+                hit.url = '/providers/' + hit.name;
             }
 
             return hit;
@@ -76,12 +78,12 @@ search.addWidget(
         templates: {
             empty: 'No packages found.',
             item: `
-<div data-url="/packages/{{ name }}" class="col-xs-12 package-item">
+<div data-url="{{ url }}" class="col-xs-12 package-item">
     <div class="row">
         <div class="col-sm-9 col-lg-10">
             <p class="pull-right language">{{ language }}</p>
             <h4 class="font-bold">
-                <a href="/packages/{{ name }}" tabindex="2">{{{ _highlightResult.name.value }}}</a>
+                <a href="{{ url }}" tabindex="2">{{{ _highlightResult.name.value }}}</a>
                 {{#virtual}}
                     <small>(Virtual Package)</small>
                 {{/virtual}}
