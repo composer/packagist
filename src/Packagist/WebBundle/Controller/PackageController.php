@@ -264,6 +264,11 @@ class PackageController extends Controller
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
+        $package = $repo->findOneBy(['name' => $name]);
+        if ($package) {
+            $providers[] = $package;
+        }
+
         try {
             $redis = $this->get('snc_redis.default');
             $trendiness = array();
