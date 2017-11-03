@@ -20,6 +20,7 @@ if (algoliaConfig.type) {
     };
 }
 
+var searchThrottle = null;
 var search = instantsearch({
     appId: algoliaConfig.app_id,
     apiKey: algoliaConfig.search_key,
@@ -41,7 +42,13 @@ var search = instantsearch({
             searchResults.removeClass('hidden');
         }
 
-        helper.search();
+        if (searchThrottle) {
+            clearTimeout(searchThrottle);
+        }
+
+        searchThrottle = setTimeout(function () {
+            helper.search();
+        }, 300);
     },
     searchParameters: searchParameters
 });
