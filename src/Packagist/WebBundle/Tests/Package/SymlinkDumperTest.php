@@ -2,7 +2,9 @@
 
 namespace Packagist\WebBundle\Tests\Package;
 
-class SymlinkDumperTest extends \PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+
+class SymlinkDumperTest extends TestCase
 {
     private $mockDumper;
 
