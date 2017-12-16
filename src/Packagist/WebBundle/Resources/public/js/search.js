@@ -6,6 +6,10 @@ document.getElementById('search_query_query').addEventListener('keydown', functi
 
 var searchParameters = {};
 
+if (decodeURI(location.search).match(/[<>]/)) {
+    location.replace(location.pathname);
+}
+
 if (algoliaConfig.tags) {
     searchParameters.disjunctiveFacets = ['tags'];
     searchParameters.disjunctiveFacetsRefinements = {
