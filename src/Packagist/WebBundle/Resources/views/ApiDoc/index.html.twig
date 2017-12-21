@@ -178,7 +178,7 @@ GET https://{{ packagist_host }}/p/[vendor]/[package].json
 
 <h4 id="get-package-by-name">Using the API</h4>
 
-<p>The JSON API for packages gives you all the infos we have including downloads, dependents count, github info, etc. However it is generated dynamically so for performance reason we cache the responses for one hour. As such if the static file endpoint described above is enough please use it instead.</p>
+<p>The JSON API for packages gives you all the infos we have including downloads, dependents count, github info, etc. However it is generated dynamically so for performance reason we cache the responses for twelve hours. As such if the static file endpoint described above is enough please use it instead.</p>
 
 <pre>
 GET https://{{ packagist_host }}/packages/[vendor]/[package].json
