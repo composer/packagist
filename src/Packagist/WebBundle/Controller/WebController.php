@@ -305,7 +305,7 @@ class WebController extends Controller
         $orderBys = $req->query->get('orderBys', array());
         if (!$orderBys) {
             $orderBys = $req->query->get('search_query');
-            $orderBys = isset($orderBys['orderBys']) ? $orderBys['orderBys'] : array();
+            $orderBys = $orderBys['orderBys'] ?? array();
         }
 
         if ($orderBys) {
@@ -386,7 +386,7 @@ class WebController extends Controller
             }
 
             $query = $req->query->get('search_query');
-            $query = isset($query['query']) ? $query['query'] : '';
+            $query = $query['query'] ?? '';
 
             return '?' . http_build_query(array(
                 'q' => $query,
