@@ -21,7 +21,6 @@ use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Util\ErrorHandler;
 use Composer\Util\RemoteFilesystem;
-use Composer\Json\JsonFile;
 use Composer\Config;
 use Composer\IO\IOInterface;
 use Packagist\WebBundle\Entity\Author;

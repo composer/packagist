@@ -14,8 +14,6 @@ namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
-use Pagerfanta\Adapter\SolariumAdapter;
-use Pagerfanta\Pagerfanta;
 use Predis\Connection\ConnectionException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
