@@ -1,7 +1,6 @@
 <?php
 
 use Symfony\Component\Config\Loader\LoaderInterface;
-use Symfony\Component\Debug\ErrorHandler;
 use Symfony\Component\HttpKernel\Kernel;
 
 class AppKernel extends Kernel

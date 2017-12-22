@@ -13,7 +13,6 @@
 namespace Packagist\WebBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>

@@ -4,8 +4,6 @@ namespace Packagist\WebBundle\Tests\Controller;
 
 use Exception;
 use Packagist\WebBundle\Entity\Package;
-use Packagist\WebBundle\Model\DownloadManager;
-use Packagist\WebBundle\Model\FavoriteManager;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
