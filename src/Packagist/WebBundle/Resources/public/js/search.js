@@ -57,13 +57,17 @@ var search = instantsearch({
     searchParameters: searchParameters
 });
 
+var autofocus = false;
+if(location.pathname == "/") {
+    autofocus = true;
+}
 search.addWidget(
     instantsearch.widgets.searchBox({
         container: '#search_query_query',
         magnifier: false,
         reset: false,
         wrapInput: false,
-        autofocus: true
+        autofocus: autofocus
     })
 );
 
