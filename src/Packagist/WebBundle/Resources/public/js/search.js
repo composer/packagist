@@ -58,7 +58,7 @@ var search = instantsearch({
 });
 
 var autofocus = false;
-if(location.pathname == "/") {
+if (location.pathname == "/" || location.pathname == "/app_dev.php/") {
     autofocus = true;
 }
 search.addWidget(
