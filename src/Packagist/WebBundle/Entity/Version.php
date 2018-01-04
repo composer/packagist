@@ -183,6 +183,11 @@ class Version
     private $createdAt;
 
     /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $softDeletedAt;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $updatedAt;
@@ -655,6 +660,26 @@ class Version
     public function getUpdatedAt()
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * Set softDeletedAt
+     *
+     * @param \DateTime|null $softDeletedAt
+     */
+    public function setSoftDeletedAt($softDeletedAt)
+    {
+        $this->softDeletedAt = $softDeletedAt;
+    }
+
+    /**
+     * Get softDeletedAt
+     *
+     * @return \DateTime|null $softDeletedAt
+     */
+    public function getSoftDeletedAt()
+    {
+        return $this->softDeletedAt;
     }
 
     /**

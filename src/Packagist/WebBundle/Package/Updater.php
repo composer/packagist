@@ -101,6 +101,8 @@ class Updater
         }
         $pruneDate = clone $start;
         $pruneDate->modify('-1min');
+        $deleteDate = clone $start;
+        $deleteDate->modify('-1day');
 
         $em = $this->doctrine->getManager();
         $apc = extension_loaded('apcu');
@@ -208,7 +210,13 @@ class Updater
         // remove outdated versions
         foreach ($package->getVersions() as $version) {
             if ($version->getUpdatedAt() < $pruneDate) {
-                $versionRepository->remove($version);
+                if (!is_null($version->getSoftDeletedAt()) && $version->getSoftDeletedAt() < $deleteDate) {
+                    $versionRepository->remove($version);
+                } else {
+                    // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
+                    // version is still missing it will be really removed
+                    $version->setSoftDeletedAt(new \DateTime);
+                }
             }
         }
 
@@ -242,6 +250,7 @@ class Updater
             } else {
                 // mark it updated to avoid it being pruned
                 $existingVersion->setUpdatedAt(new \DateTime);
+                $existingVersion->setSoftDeletedAt(null);
 
                 return false;
             }
