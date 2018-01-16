@@ -22,11 +22,13 @@ use Composer\Repository\VcsRepository;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -127,6 +129,47 @@ class ApiController extends Controller
         }
 
         return $this->receivePost($request, $url, $urlRegex);
+    }
+
+    /**
+     * @Route(
+     *     "/api/packages/{package}",
+     *     name="api_edit_package",
+     *     requirements={"package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"},
+     *     defaults={"_format" = "json"}
+     * )
+     * @ParamConverter("package", options={"mapping": {"package": "name"}})
+     * @Method({"PUT"})
+     */
+    public function editPackageAction(Request $request, Package $package)
+    {
+        $user = $this->findUser($request);
+        if (!$package->getMaintainers()->contains($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
+            throw new AccessDeniedException;
+        }
+
+        $payload = json_decode($request->request->get('payload'), true);
+        if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
+            $payload = json_decode($request->getContent(), true);
+        }
+
+        $package->setRepository($payload['repository']);
+        $errors = $this->get('validator')->validate($package, array("Update"));
+        if (count($errors) > 0) {
+            $errorArray = array();
+            foreach ($errors as $error) {
+                $errorArray[$error->getPropertyPath()] =  $error->getMessage();
+            }
+            return new JsonResponse(array('status' => 'error', 'message' => $errorArray), 406);
+        }
+
+        $package->setCrawledAt(null);
+
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($package);
+        $em->flush();
+
+        return new JsonResponse(array('status' => 'success'), 200);
     }
 
     /**
