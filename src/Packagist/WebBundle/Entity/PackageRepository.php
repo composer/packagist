@@ -159,12 +159,15 @@ class PackageRepository extends EntityRepository
     {
         // first fetch a partial package including joined versions/maintainers, that way
         // the join is cheap and heavy data (description, readme) is not duplicated for each joined row
+        //
+        // fetching everything partial here to avoid fetching tons of data,
+        // this helps for packages like https://packagist.org/packages/ccxt/ccxt
+        // with huge amounts of versions
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('partial p.{id}', 'v', 't', 'm')
+        $qb->select('partial p.{id}', 'partial v.{id, version, normalizedVersion, development, releasedAt}', 'partial m.{id, username, email}')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->leftJoin('p.maintainers', 'm')
-            ->leftJoin('v.tags', 't')
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC')
             ->where('p.name = ?0')

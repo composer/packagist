@@ -363,6 +363,7 @@ class PackageController extends Controller
         if (count($versions)) {
             /** @var VersionRepository $versionRepo */
             $versionRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+            $this->getDoctrine()->getManager()->refresh(reset($versions));
             $version = $versionRepo->getFullVersion(reset($versions)->getId());
 
             $expandedVersion = reset($versions);
@@ -372,6 +373,8 @@ class PackageController extends Controller
                     break;
                 }
             }
+
+            $this->getDoctrine()->getManager()->refresh($expandedVersion);
             $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
         }
 
