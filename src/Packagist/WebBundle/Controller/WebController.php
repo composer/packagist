@@ -134,7 +134,9 @@ class WebController extends Controller
             $perPage = max(0, min(100, $perPage));
         }
 
-        $queryParams['filters'] = implode(' AND ', $queryParams['filters']);
+        if (isset($queryParams['filters'])) {
+            $queryParams['filters'] = implode(' AND ', $queryParams['filters']);
+        }
         $queryParams['hitsPerPage'] = $perPage;
         $queryParams['page'] = $req->query->get('page', 1) - 1;
 
