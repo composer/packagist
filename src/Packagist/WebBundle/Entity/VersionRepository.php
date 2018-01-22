@@ -56,6 +56,28 @@ class VersionRepository extends EntityRepository
         $em->remove($version);
     }
 
+    public function refreshVersions($versions)
+    {
+        $versionIds = [];
+        foreach ($versions as $version) {
+            $versionIds[] = $version->getId();
+            $this->getEntityManager()->detach($version);
+        }
+
+        $refreshedVersions = $this->findBy(['id' => $versionIds]);
+        $versionsById = [];
+        foreach ($refreshedVersions as $version) {
+            $versionsById[$version->getId()] = $version;
+        }
+
+        $refreshedVersions = [];
+        foreach ($versions as $version) {
+            $refreshedVersions[] = $versionsById[$version->getId()];
+        }
+
+        return $refreshedVersions;
+    }
+
     public function getVersionData(array $versionIds)
     {
         $links = [

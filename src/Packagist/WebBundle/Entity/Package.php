@@ -183,6 +183,7 @@ class Package
     {
         $versions = array();
         $versionIds = [];
+        $this->versions = $versionRepo->refreshVersions($this->getVersions());
         foreach ($this->getVersions() as $version) {
             $versionIds[] = $version->getId();
         }
