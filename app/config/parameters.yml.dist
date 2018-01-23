@@ -12,6 +12,8 @@ parameters:
     mailer_password:
     mailer_from_email: admin@example.org
     mailer_from_name: Admin Team
+    mailer_encryption: tls
+    mailer_auth_mode: login
 
     # packagist_host: example.org
     # router.request_context.host: '%packagist_host%'

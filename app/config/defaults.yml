@@ -7,3 +7,6 @@ parameters:
     redis_dsn_test: redis://127.0.0.1/14
     assets_version: 1234
     trusted_ip_header: ''
+    mailer_encryption: tls
+    mailer_auth_mode: login
+    fingers_crossed_handlers: []
