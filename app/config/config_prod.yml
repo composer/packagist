@@ -63,3 +63,37 @@ nelmio_security:
     forced_ssl:
         enabled: '%force_ssl%'
         hsts_max_age: 31104000 # 1y
+    csp:
+        enabled: true
+        report_logger_service: logger
+        hosts: []
+        content_types: []
+        enforce:
+            browser_adaptive:
+                enabled: false
+            default-src:
+                - 'self'
+            script-src:
+                - 'self'
+                - 'unsafe-inline'
+                - 'unsafe-eval'
+                - 'https://cdn.jsdelivr.net/'
+                - 'https://ssl.google-analytics.com/'
+            connect-src:
+                - 'self'
+                - '*.algolia.net'
+                - '*.algolianet.com'
+            img-src:
+                - 'self'
+                - 'https://www.gravatar.com/'
+                - 'https://camo.githubusercontent.com/'
+                - 'https://ssl.google-analytics.com/'
+                - 'http://www.google-analytics.com/'
+            style-src:
+                - 'self'
+                - 'unsafe-inline'
+                - 'https://fonts.googleapis.com/'
+            font-src:
+                - 'self'
+                - 'https://fonts.gstatic.com/'
+            block-all-mixed-content: true # defaults to false, blocks HTTP content over HTTPS transport
