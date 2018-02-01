@@ -92,6 +92,7 @@ nelmio_security:
             style-src:
                 - 'self'
                 - 'unsafe-inline'
+                - 'https://cdn.jsdelivr.net/'
                 - 'https://fonts.googleapis.com/'
             font-src:
                 - 'self'
