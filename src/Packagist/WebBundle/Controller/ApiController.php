@@ -21,11 +21,13 @@ use Composer\Repository\InvalidRepositoryException;
 use Composer\Repository\VcsRepository;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
+use Packagist\WebBundle\Entity\Job;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -190,6 +192,15 @@ class ApiController extends Controller
     }
 
     /**
+     * @Route("/jobs/{id}", name="get_job", requirements={"id"="[a-f0-9]+"}, defaults={"_format" = "json"})
+     * @Method({"GET"})
+     */
+    public function getJobAction(Request $request, string $id)
+    {
+        return new JsonResponse($this->get('scheduler')->getJobStatus($id), 200);
+    }
+
+    /**
      * Expects a json like:
      *
      * {
@@ -285,50 +296,20 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)')), 404);
         }
 
-        // don't die if this takes a while
-        set_time_limit(3600);
-
         // put both updating the database and scanning the repository in a transaction
         $em = $this->get('doctrine.orm.entity_manager');
-        $updater = $this->get('packagist.package_updater');
-        $config = Factory::createConfig();
-        $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
-        $io->loadConfiguration($config);
+        $jobs = [];
 
-        try {
-            /** @var Package $package */
-            foreach ($packages as $package) {
-                $em->transactional(function($em) use ($package, $updater, $io, $config) {
-                    // prepare dependencies
-                    $loader = new ValidatingArrayLoader(new ArrayLoader());
+        /** @var Package $package */
+        foreach ($packages as $package) {
+            $package->setAutoUpdated(true);
+            $em->flush($package);
 
-                    // prepare repository
-                    $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
-                    $repository->setLoader($loader);
-
-                    // perform the actual update (fetch and re-scan the repository's source)
-                    $updater->update($io, $config, $package, $repository);
-
-                    // update the package entity
-                    $package->setAutoUpdated(true);
-                    $em->flush($package);
-                });
-            }
-        } catch (\Exception $e) {
-            if ($e instanceof InvalidRepositoryException) {
-                $this->get('packagist.package_manager')->notifyUpdateFailure($package, $e, $io->getOutput());
-            }
-
-            $this->get('logger')->error('Failed update of '.$package->getName(), ['exception' => $e]);
-
-            return new Response(json_encode(array(
-                'status' => 'error',
-                'message' => '['.get_class($e).'] '.$e->getMessage(),
-                'details' => '<pre>'.$io->getOutput().'</pre>'
-            )), 400);
+            $job = $this->get('scheduler')->scheduleUpdate($package, $updateEqualRefs);
+            $jobs[] = $job->getId();
         }
 
-        return new JsonResponse(array('status' => 'success'), 202);
+        return new JsonResponse(['status' => 'success', 'jobs' => $jobs], 202);
     }
 
     /**

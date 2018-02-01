@@ -12,7 +12,7 @@
 
 namespace Packagist\WebBundle\Model;
 
-use Doctrine\ORM\EntityManager;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Packagist\WebBundle\Entity\Package;
 use Psr\Log\LoggerInterface;
 
@@ -21,15 +21,15 @@ use Psr\Log\LoggerInterface;
  */
 class PackageManager
 {
-    protected $em;
+    protected $doctrine;
     protected $mailer;
     protected $twig;
     protected $logger;
     protected $options;
 
-    public function __construct(EntityManager $em, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options)
+    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options)
     {
-        $this->em = $em;
+        $this->doctrine = $doctrine;
         $this->mailer = $mailer;
         $this->twig = $twig;
         $this->logger = $logger;
@@ -71,7 +71,7 @@ class PackageManager
             }
 
             $package->setUpdateFailureNotified(true);
-            $this->em->flush();
+            $this->doctrine->getEntityManager()->flush();
         }
 
         return true;

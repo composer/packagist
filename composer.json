@@ -55,7 +55,8 @@
         "ezyang/htmlpurifier": "^4.6",
         "nelmio/cors-bundle": "^1.4",
         "cebe/markdown": "^1.1",
-        "algolia/algoliasearch-client-php": "^1.18"
+        "algolia/algoliasearch-client-php": "^1.18",
+        "seld/signal-handler": "^1.1"
     },
     "_comment": ["fos user bundle 2.0.0 tag needed"],
     "require-dev": {
@@ -77,5 +78,10 @@
     "extra": {
         "symfony-app-dir": "app",
         "symfony-web-dir": "web"
+    },
+    "config": {
+        "platform": {
+            "php": "7.0.27"
+        }
     }
 }

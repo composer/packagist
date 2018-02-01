@@ -554,55 +554,28 @@ class PackageController extends Controller
         $update = $req->request->get('update', $req->query->get('update'));
         $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
         $updateEqualRefs = $req->request->get('updateAll', $req->query->get('updateAll'));
-        $showOutput = $req->request->get('showOutput', $req->query->get('showOutput', false));
 
         $user = $this->getUser() ?: $doctrine
             ->getRepository('PackagistWebBundle:User')
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 
         if (!$user) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials',)), 403);
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
         }
 
         if ($package->getMaintainers()->contains($user) || $this->isGranted('ROLE_UPDATE_PACKAGES')) {
-            $req->getSession()->save();
-
             if (null !== $autoUpdated) {
-                $package->setAutoUpdated((Boolean) $autoUpdated);
+                $package->setAutoUpdated((bool) $autoUpdated);
                 $doctrine->getManager()->flush();
             }
 
             if ($update) {
-                set_time_limit(3600);
-                $updater = $this->get('packagist.package_updater');
+                $job = $this->get('scheduler')->scheduleUpdate($package, $updateEqualRefs);
 
-                $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
-                $config = Factory::createConfig();
-                $io->loadConfiguration($config);
-                $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
-                $loader = new ValidatingArrayLoader(new ArrayLoader());
-                $repository->setLoader($loader);
-
-                try {
-                    $updater->update($io, $config, $package, $repository, $updateEqualRefs ? Updater::UPDATE_EQUAL_REFS : 0);
-                } catch (\Exception $e) {
-                    return new JsonResponse([
-                        'status' => 'error',
-                        'message' => '['.get_class($e).'] '.$e->getMessage(),
-                        'details' => '<pre>'.$io->getOutput().'</pre>',
-                    ], 400);
-                }
-
-                if ($showOutput) {
-                    return new JsonResponse([
-                        'status' => 'error',
-                        'message' => 'Update successful',
-                        'details' => '<pre>'.$io->getOutput().'</pre>',
-                    ], 400);
-                }
+                return new JsonResponse(['status' => 'success', 'job' => $job->getId()], 202);
             }
 
-            return new Response('{"status": "success"}', 202);
+            return new JsonResponse(['status' => 'success'], 202);
         }
 
         return new JsonResponse(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',), 404);

@@ -31,6 +31,15 @@ monolog:
             level: debug
             include_stacktraces: true
 
+        console_debug:
+            type:   console
+            verbosity_levels:
+                VERBOSITY_NORMAL: EMERGENCY
+                VERBOSITY_VERBOSE: INFO
+                VERBOSITY_VERY_VERBOSE: NOTICE
+                VERBOSITY_DEBUG: DEBUG
+            formatter: packagist.console_stack_trace_line_formatter
+
 snc_redis:
     clients:
         default:
