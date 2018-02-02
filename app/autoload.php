@@ -1,6 +1,6 @@
 <?php
 
-ini_set('date.timezone', 'UTC');
+//ini_set('date.timezone', 'UTC');
 
 if (!class_exists('\PHPUnit\Framework\TestCase', true)) {
     class_alias('\PHPUnit_Framework_TestCase', '\PHPUnit\Framework\TestCase');
