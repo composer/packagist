@@ -60,7 +60,7 @@
     "_comment": ["fos user bundle 2.0.0 tag needed"],
     "require-dev": {
         "symfony/phpunit-bridge": "^2.7 || ^3.0",
-        "phpunit/phpunit": "^5.0"
+        "phpunit/phpunit": "^6.0"
     },
     "scripts": {
         "post-install-cmd": [
