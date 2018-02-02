@@ -74,7 +74,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
 
         $lock = new LockHandler('packagist_package_dumper');
 
-        ini_set('memory_limit', -1);
+//        ini_set('memory_limit', -1);
         gc_enable();
 
         // another dumper is still active
