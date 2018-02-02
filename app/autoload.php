@@ -2,6 +2,19 @@
 
 ini_set('date.timezone', 'UTC');
 
+if (!class_exists('\PHPUnit\Framework\TestCase', true)) {
+    class_alias('\PHPUnit_Framework_TestCase', '\PHPUnit\Framework\TestCase');
+} elseif (!class_exists('\PHPUnit_Framework_TestCase', true)) {
+    class_alias('\PHPUnit\Framework\TestCase', '\PHPUnit_Framework_TestCase');
+}
+
+if (!class_exists('\PHPUnit\Util\Test', true)) {
+    class_alias('\PHPUnit_Util_Test', '\PHPUnit\Util\Test');
+} elseif (!class_exists('\PHPUnit_Util_Test', true)) {
+    class_alias('\PHPUnit\Util\Test', '\PHPUnit_Util_Test');
+}
+
+
 use Doctrine\Common\Annotations\AnnotationRegistry;
 
 if (!$loader = @include __DIR__.'/../vendor/autoload.php') {
