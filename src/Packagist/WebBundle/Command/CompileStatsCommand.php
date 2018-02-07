@@ -117,10 +117,7 @@ class CompileStatsCommand extends ContainerAwareCommand
             $ids[] = $row['id'];
         }
 
-        // add downloads from the last 7 days to the solr index
-        $solarium = $this->getContainer()->get('solarium.client');
-
-        if ($verbose) {
+         if ($verbose) {
             $output->writeln('Writing new trendiness data into redis');
         }
 
