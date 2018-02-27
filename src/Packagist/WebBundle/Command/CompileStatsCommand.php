@@ -117,7 +117,7 @@ class CompileStatsCommand extends ContainerAwareCommand
             $ids[] = $row['id'];
         }
 
-         if ($verbose) {
+        if ($verbose) {
             $output->writeln('Writing new trendiness data into redis');
         }
 
