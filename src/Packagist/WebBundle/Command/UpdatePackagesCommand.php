@@ -102,13 +102,6 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             $idsGroup = array_splice($ids, 0, 100);
 
             foreach ($idsGroup as $id) {
-                if ($scheduler->hasPendingUpdateJob($id, $updateEqualRefs, $deleteBefore)) {
-                    if ($verbose) {
-                        $output->writeln('Package '.$id.' already has a pending job, skipping');
-                    }
-                    continue;
-                }
-
                 $job = $scheduler->scheduleUpdate($id, $updateEqualRefs, $deleteBefore, $randomTimes ? new \DateTime('+'.rand(1, 1800).'seconds') : null);
                 if ($verbose) {
                     $output->writeln('Scheduled update job '.$job->getId().' for package '.$id);

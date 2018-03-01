@@ -102,14 +102,14 @@ class UpdaterWorker
             if (strpos($e->getMessage(), 'file could not be downloaded: failed to open stream: HTTP request failed!')) {
                 return [
                     'status' => Job::STATUS_FAILED,
-                    'message' => 'Package data could not be downloaded. Could not reach remote VCS server. Please try again later.',
+                    'message' => 'Package data of '.$package->getName().' could not be downloaded. Could not reach remote VCS server. Please try again later.',
                     'exception' => $e
                 ];
             }
 
             return [
                 'status' => Job::STATUS_FAILED,
-                'message' => 'Package data could not be downloaded.',
+                'message' => 'Package data of '.$package->getName().' could not be downloaded.',
                 'exception' => $e
             ];
         } catch (\Throwable $e) {
@@ -125,7 +125,7 @@ class UpdaterWorker
 
             return [
                 'status' => Job::STATUS_FAILED,
-                'message' => 'Update failed',
+                'message' => 'Update of '.$package->getName().' failed',
                 'details' => '<pre>'.$io->getOutput().'</pre>',
                 'exception' => $e,
             ];
@@ -135,7 +135,7 @@ class UpdaterWorker
 
         return [
             'status' => Job::STATUS_COMPLETED,
-            'message' => 'Update complete',
+            'message' => 'Update of '.$package->getName().' complete',
             'details' => '<pre>'.$io->getOutput().'</pre>'
         ];
     }
