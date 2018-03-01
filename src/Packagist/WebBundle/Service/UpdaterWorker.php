@@ -22,6 +22,7 @@ use Packagist\WebBundle\Entity\Job;
 use Packagist\WebBundle\Model\PackageManager;
 use Seld\Signal\SignalHandler;
 use Composer\Factory;
+use Composer\Downloader\TransportException;
 
 class UpdaterWorker
 {
@@ -59,7 +60,7 @@ class UpdaterWorker
         if (!$package) {
             $this->logger->info('Package is gone, skipping', ['id' => $id]);
 
-            return ['status' => Job::STATUS_FAILED, 'message' => 'Package is gone, skipped'];
+            return ['status' => Job::STATUS_PACKAGE_GONE, 'message' => 'Package was deleted, skipped'];
         }
 
         $lockAcquired = $this->locker->lockPackageUpdate($id);
@@ -92,14 +93,64 @@ class UpdaterWorker
 
                 // perform the actual update (fetch and re-scan the repository's source)
                 $this->updater->update($io, $config, $package, $repository, $flags);
-
-                // update the package entity
-                $package->setAutoUpdated(true);
-                $em->flush($package);
             });
-        } catch (\Composer\Downloader\TransportException $e) {
+        } catch (\Throwable $e) {
+            $output = $io->getOutput();
+
+            if (!$this->doctrine->getEntityManager()->isOpen()) {
+                $this->doctrine->resetManager();
+                $package = $this->doctrine->getEntityManager()->getRepository(Package::class)->findOneById($package->getId());
+            }
+
+            // invalid composer data somehow, notify the owner and then mark the job failed
+            if ($e instanceof InvalidRepositoryException) {
+                $this->packageManager->notifyUpdateFailure($package, $e, $output);
+
+                return [
+                    'status' => Job::STATUS_FAILED,
+                    'message' => 'Update of '.$package->getName().' failed, invalid composer.json metadata',
+                    'details' => '<pre>'.$output.'</pre>',
+                    'exception' => $e,
+                ];
+            }
+
+            $found404 = false;
+
+            // attempt to detect a 404/dead repository
+            // TODO check and delete those packages with crawledAt in the far future but updatedAt in the past in a second step/job if the repo is really unreachable
+            // probably should check for download count and a few other metrics to avoid false positives and ask humans to check the others
+            if ($e instanceof \RuntimeException && strpos($e->getMessage(), 'remote: Repository not found')) {
+                // git clone was attempted and says the repo is not found, that's very conclusive
+                $found404 = true;
+            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), 'git@gitlab.com') && strpos($e->getMessage(), 'Please make sure you have the correct access rights')) {
+                // git clone says we have no right on gitlab for 404s
+                $found404 = true;
+            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), 'git@bitbucket.org') && strpos($e->getMessage(), 'Please make sure you have the correct access rights')) {
+                // git clone says we have no right on bitbucket for 404s
+                $found404 = true;
+            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Please ask the owner to check their account')) {
+                // git clone says account is disabled on github for private repos(?) if cloning via https
+                $found404 = true;
+            } elseif ($e instanceof TransportException && preg_match('{https://api.bitbucket.org/2.0/repositories/[^/]+/.+?\?fields=-project}i', $e->getMessage()) && $e->getStatusCode() == 404) {
+                // bitbucket api root returns a 404
+                $found404 = true;
+            }
+
+            // detected a 404 so mark the package as gone and prevent updates for 1y
+            if ($found404) {
+                $package->setCrawledAt(new \DateTime('+1 year'));
+                $this->doctrine->getEntityManager()->flush($package);
+
+                return [
+                    'status' => Job::STATUS_PACKAGE_GONE,
+                    'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been marked as crawled for 1year',
+                    'details' => '<pre>'.$output.'</pre>',
+                    'exception' => $e,
+                ];
+            }
+
             // Catch request timeouts e.g. gitlab.com
-            if (strpos($e->getMessage(), 'file could not be downloaded: failed to open stream: HTTP request failed!')) {
+            if ($e instanceof TransportException && strpos($e->getMessage(), 'file could not be downloaded: failed to open stream: HTTP request failed!')) {
                 return [
                     'status' => Job::STATUS_FAILED,
                     'message' => 'Package data of '.$package->getName().' could not be downloaded. Could not reach remote VCS server. Please try again later.',
@@ -107,35 +158,19 @@ class UpdaterWorker
                 ];
             }
 
-            return [
-                'status' => Job::STATUS_FAILED,
-                'message' => 'Package data of '.$package->getName().' could not be downloaded.',
-                'exception' => $e
-            ];
-        } catch (\Throwable $e) {
-            if (!$this->doctrine->getEntityManager()->isOpen()) {
-                $this->doctrine->resetManager();
-                $this->doctrine->getEntityManager()->refresh($package);
-            }
-
-            if ($e instanceof InvalidRepositoryException) {
-                $this->packageManager->notifyUpdateFailure($package, $e, $io->getOutput());
-            } else {
-                // TODO check and delete those packages with crawledAt in the far future but updatedAt in the past in a second step/job if the repo is really unreachable
-                if (strpos($io->getOutput(), 'Repository not found')) {
-                    $package->setCrawledAt(new \DateTime('+1 year'));
-                    $this->doctrine->getEntityManager()->flush($package);
-                }
+            // generic transport exception
+            if ($e instanceof TransportException) {
+                return [
+                    'status' => Job::STATUS_FAILED,
+                    'message' => 'Package data of '.$package->getName().' could not be downloaded.',
+                    'exception' => $e
+                ];
             }
 
             $this->logger->error('Failed update of '.$package->getName(), ['exception' => $e]);
 
-            return [
-                'status' => Job::STATUS_FAILED,
-                'message' => 'Update of '.$package->getName().' failed',
-                'details' => '<pre>'.$io->getOutput().'</pre>',
-                'exception' => $e,
-            ];
+            // unexpected error so mark the job errored
+            throw $e;
         } finally {
             $this->locker->unlockPackageUpdate($package->getId());
         }

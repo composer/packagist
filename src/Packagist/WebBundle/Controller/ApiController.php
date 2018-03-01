@@ -305,7 +305,7 @@ class ApiController extends Controller
             $package->setAutoUpdated(true);
             $em->flush($package);
 
-            $job = $this->get('scheduler')->scheduleUpdate($package, $updateEqualRefs);
+            $job = $this->get('scheduler')->scheduleUpdate($package);
             $jobs[] = $job->getId();
         }
 

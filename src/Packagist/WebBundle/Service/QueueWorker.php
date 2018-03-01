@@ -113,6 +113,16 @@ class QueueWorker
             ];
         }
 
+        // If an exception is thrown during a transaction the EntityManager is closed
+        // and we won't be able to update the job or handle future jobs
+        if (!$this->doctrine->getEntityManager()->isOpen()) {
+            $this->doctrine->resetManager();
+        }
+
+        // refetch objects in case the EM was reset during the job run
+        $em = $this->doctrine->getEntityManager();
+        $repo = $em->getRepository(Job::class);
+
         if ($result['status'] === Job::STATUS_RESCHEDULE) {
             $job->reschedule($result['after']);
             $em->flush($job);
@@ -128,21 +138,13 @@ class QueueWorker
             throw new \LogicException('$result must be an array with at least status and message keys');
         }
 
-        if (!in_array($result['status'], [Job::STATUS_COMPLETED, Job::STATUS_FAILED, Job::STATUS_ERRORED], true)) {
+        if (!in_array($result['status'], [Job::STATUS_COMPLETED, Job::STATUS_FAILED, Job::STATUS_ERRORED, Job::STATUS_PACKAGE_GONE], true)) {
             throw new \LogicException('$result[\'status\'] must be one of '.Job::STATUS_COMPLETED.' or '.Job::STATUS_FAILED.', '.$result['status'].' given');
         }
 
         if (isset($result['exception'])) {
             $result['exceptionMsg'] = $result['exception']->getMessage();
             $result['exceptionClass'] = get_class($result['exception']);
-        }
-
-        // If an exception is thrown during a transaction the EntityManager is closed
-        // and we won't be able to update the job or handle future jobs
-        if (!$this->doctrine->getEntityManager()->isOpen()) {
-            $this->doctrine->resetManager();
-            $em = $this->doctrine->getEntityManager();
-            $repo = $em->getRepository(Job::class);
         }
 
         $job = $repo->findOneById($jobId);
