@@ -179,12 +179,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "ef46a8afa4f5d845befbc7be832432c4b30d6313"
+                "reference": "1dc78c1ad93d1c0588dc856cd398957d8be12fcd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/ef46a8afa4f5d845befbc7be832432c4b30d6313",
-                "reference": "ef46a8afa4f5d845befbc7be832432c4b30d6313",
+                "url": "https://api.github.com/repos/composer/composer/zipball/1dc78c1ad93d1c0588dc856cd398957d8be12fcd",
+                "reference": "1dc78c1ad93d1c0588dc856cd398957d8be12fcd",
                 "shasum": ""
             },
             "require": {
@@ -248,7 +248,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2018-02-11T10:02:41+00:00"
+            "time": "2018-03-01T14:49:33+00:00"
         },
         {
             "name": "composer/semver",
@@ -1175,20 +1175,23 @@
         },
         {
             "name": "ezyang/htmlpurifier",
-            "version": "v4.8.0",
+            "version": "v4.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ezyang/htmlpurifier.git",
-                "reference": "d0c392f77d2f2a3dcf7fcb79e2a1e2b8804e75b2"
+                "reference": "d85d39da4576a6934b72480be6978fb10c860021"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/d0c392f77d2f2a3dcf7fcb79e2a1e2b8804e75b2",
-                "reference": "d0c392f77d2f2a3dcf7fcb79e2a1e2b8804e75b2",
+                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/d85d39da4576a6934b72480be6978fb10c860021",
+                "reference": "d85d39da4576a6934b72480be6978fb10c860021",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.2"
+            },
+            "require-dev": {
+                "simpletest/simpletest": "^1.1"
             },
             "type": "library",
             "autoload": {
@@ -1215,7 +1218,7 @@
             "keywords": [
                 "html"
             ],
-            "time": "2016-07-16T12:58:58+00:00"
+            "time": "2018-02-23T01:58:20+00:00"
         },
         {
             "name": "friendsofsymfony/user-bundle",
