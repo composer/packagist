@@ -113,12 +113,19 @@ class UpdaterWorker
                 'exception' => $e
             ];
         } catch (\Throwable $e) {
+            if (!$this->doctrine->getEntityManager()->isOpen()) {
+                $this->doctrine->resetManager();
+                $this->doctrine->getEntityManager()->refresh($package);
+            }
+
             if ($e instanceof InvalidRepositoryException) {
                 $this->packageManager->notifyUpdateFailure($package, $e, $io->getOutput());
             } else {
-                // TODO implement this somehow to keep track of failures and maybe delete packages
-                // or at least mark abandoned if they keep failing for X times/days?
-                // $this->packageManager->logHardFailure($package);
+                // TODO check and delete those packages with crawledAt in the far future but updatedAt in the past in a second step/job if the repo is really unreachable
+                if (strpos($io->getOutput(), 'Repository not found')) {
+                    $package->setCrawledAt(new \DateTime('+1 year'));
+                    $this->doctrine->getEntityManager()->flush($package);
+                }
             }
 
             $this->logger->error('Failed update of '.$package->getName(), ['exception' => $e]);
