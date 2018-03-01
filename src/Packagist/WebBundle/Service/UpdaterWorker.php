@@ -112,18 +112,6 @@ class UpdaterWorker
                 'message' => 'Package data could not be downloaded.',
                 'exception' => $e
             ];
-        } catch (InvalidRepositoryException $e) {
-            if ($package->getRepoType() === 'package') {
-                $this->logger->warning('Composer Invalid Repository Exception.', ['exception' => $e]);
-
-                return [
-                    'status' => Job::STATUS_FAILED,
-                    'message' => explode("\n", $e->getMessage())[0],
-                    'exception' => $e
-                ];
-            }
-
-            throw $e;
         } catch (\Throwable $e) {
             if ($e instanceof InvalidRepositoryException) {
                 $this->packageManager->notifyUpdateFailure($package, $e, $io->getOutput());
