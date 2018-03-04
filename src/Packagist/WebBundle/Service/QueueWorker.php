@@ -37,7 +37,7 @@ class QueueWorker
 
         $this->logger->info('Waiting for new messages');
 
-        $this->doctrine->getEntityManager()->getRepository(Job::class)->markTimedOutJobs();
+        $nextTimedoutJobCheck = $this->checkForTimedoutJobs();
         $nextScheduledJobCheck = $this->checkForScheduledJobs($signal);
 
         while ($this->processedJobs++ < $count) {
@@ -46,7 +46,11 @@ class QueueWorker
                 break;
             }
 
-            if ($nextScheduledJobCheck <= time()) {
+            $now = time();
+            if ($nextTimedoutJobCheck <= $now) {
+                $nextTimedoutJobCheck = $this->checkForTimedoutJobs();
+            }
+            if ($nextScheduledJobCheck <= $now) {
                 $nextScheduledJobCheck = $this->checkForScheduledJobs($signal);
             }
 
@@ -61,6 +65,14 @@ class QueueWorker
         }
     }
 
+    private function checkForTimedoutJobs(): int
+    {
+        $this->doctrine->getEntityManager()->getRepository(Job::class)->markTimedOutJobs();
+
+        // check for timed out jobs every 20 min at least
+        return time() + 1200;
+    }
+
     private function checkForScheduledJobs(SignalHandler $signal): int
     {
         $em = $this->doctrine->getEntityManager();
@@ -72,8 +84,8 @@ class QueueWorker
             }
         }
 
-        // check for scheduled jobs every 30 sec at least
-        return time() + 30;
+        // check for scheduled jobs every 5 minutes at least
+        return time() + 300;
     }
 
     /**

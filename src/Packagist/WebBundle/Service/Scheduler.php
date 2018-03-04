@@ -56,10 +56,14 @@ class Scheduler
 
     private function getPendingUpdateJob(int $packageId, $updateEqualRefs = false, $deleteBefore = false)
     {
-        $result = $this->doctrine->getManager()->getConnection()->fetchAssoc('SELECT id, payload FROM job WHERE packageId = :package AND status = :status', [
-            'package' => $packageId,
-            'status' => Job::STATUS_QUEUED,
-        ]);
+        $result = $this->doctrine->getManager()->getConnection()->fetchAssoc(
+            'SELECT id, payload FROM job WHERE packageId = :package AND type = :type AND status = :status',
+            [
+                'package' => $packageId,
+                'type' => 'package:updates',
+                'status' => Job::STATUS_QUEUED,
+            ]
+        );
 
         if ($result) {
             $payload = json_decode($result['payload'], true);
