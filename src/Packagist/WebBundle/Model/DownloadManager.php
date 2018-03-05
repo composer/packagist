@@ -128,7 +128,7 @@ class DownloadManager
             $version = $job['vid'];
 
             // throttle key
-            $args[] = 'dl:'.$package.':'.$job['ip'].':'.$day;
+            $args[] = 'throttle:'.$package.':'.$job['ip'].':'.$day;
             // stats keys
             $args[] = 'dl:'.$package;
             $args[] = 'dl:'.$package.':'.$month;
