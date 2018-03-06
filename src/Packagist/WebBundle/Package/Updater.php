@@ -639,7 +639,10 @@ class Updater
 
         // remove first page element if it's a <h1> or <h2>, because it's usually
         // the project name or the `README` string which we don't need
-        $first = $dom->getElementsByTagName('body')->item(0)->childNodes->item(0);
+        $first = $dom->getElementsByTagName('body')->item(0);
+        if ($first) {
+            $first = $first->childNodes->item(0);
+        }
 
         if ($first && ('h1' === $first->nodeName || 'h2' === $first->nodeName)) {
             $first->parentNode->removeChild($first);
