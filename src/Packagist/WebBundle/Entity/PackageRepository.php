@@ -152,7 +152,7 @@ class PackageRepository extends EntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAt IS NULL OR p.dumpedAt <= p.crawledAt  ORDER BY p.id ASC');
+        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAt IS NULL OR p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW() ORDER BY p.id ASC');
     }
 
     public function getPartialPackageByNameWithVersions($name)

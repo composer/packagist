@@ -53,6 +53,15 @@ class DumpPackagesCommand extends ContainerAwareCommand
             return;
         }
 
+        // another dumper is still active
+        $lock = new LockHandler('packagist_package_dumper');
+        if (!$lock->lock()) {
+            if ($verbose) {
+                $output->writeln('Aborting, another dumper is still active');
+            }
+            return;
+        }
+
         $doctrine = $this->getContainer()->get('doctrine');
 
         if ($force) {
@@ -72,18 +81,8 @@ class DumpPackagesCommand extends ContainerAwareCommand
             return 0;
         }
 
-        $lock = new LockHandler('packagist_package_dumper');
-
         ini_set('memory_limit', -1);
         gc_enable();
-
-        // another dumper is still active
-        if (!$lock->lock()) {
-            if ($verbose) {
-                $output->writeln('Aborting, another dumper is still active');
-            }
-            return;
-        }
 
         try {
              $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
