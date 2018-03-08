@@ -8,7 +8,7 @@ This project is not meant for re-use. It is open source to make it easy to contr
 Requirements
 ------------
 
-- MySQL for the main data store
+- MySQL for the main data store, with strict mode disabled (MySQL 5.7+ enables it by default)
 - Redis for some functionality (favorites, download statistics)
 - git/svn/hg depending on which repositories you want to support
 
