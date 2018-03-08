@@ -5,7 +5,6 @@ namespace Packagist\WebBundle\Service;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Predis\Client as RedisClient;
 use Packagist\WebBundle\Entity\Package;
-use Packagist\WebBundle\Entity\Organization;
 use Packagist\WebBundle\Entity\Job;
 
 class Scheduler
