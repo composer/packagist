@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Form\Type;
 
 use FOS\UserBundle\Form\Type\ProfileFormType as BaseType;
+use FOS\UserBundle\Util\LegacyFormHelper;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormEvent;
@@ -25,15 +26,14 @@ class ProfileFormType extends BaseType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('username', null, array('label' => 'form.username', 'translation_domain' => 'FOSUserBundle'))
-                ->add('email', 'email', array('label' => 'form.email', 'translation_domain' => 'FOSUserBundle'));
+        $this->buildUserForm($builder, $options);
 
         $builder->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event)
         {
-            if ( ! ($user = $event->getData())) return;
+            if ( ! ($user = $event->getData())) { return; }
 
             if ( ! $user->getGithubId()) {
-                $event->getForm()->add('current_password', 'password', array(
+                $event->getForm()->add('current_password', LegacyFormHelper::getType('Symfony\Component\Form\Extension\Core\Type\PasswordType'), array(
                     'label' => 'form.current_password',
                     'translation_domain' => 'FOSUserBundle',
                     'mapped' => false,
