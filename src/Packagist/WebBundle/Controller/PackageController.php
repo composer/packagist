@@ -973,7 +973,7 @@ class PackageController extends Controller
         $datePoints = $this->createDatePoints($from, $to, $average, $package, $version);
 
         $redis = $this->get('snc_redis.default');
-        if ($average === 'Daily') {
+        if ($average === 'daily') {
             $datePoints = array_map(function ($vals) {
                 return $vals[0];
             }, $datePoints);
