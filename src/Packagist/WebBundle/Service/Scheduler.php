@@ -57,7 +57,7 @@ class Scheduler
     private function getPendingUpdateJob(int $packageId, $updateEqualRefs = false, $deleteBefore = false)
     {
         $result = $this->doctrine->getManager()->getConnection()->fetchAssoc(
-            'SELECT id, payload FROM job WHERE packageId = :package AND type = :type AND status = :status',
+            'SELECT id, payload FROM job WHERE packageId = :package AND status = :status AND type = :type LIMIT 1',
             [
                 'package' => $packageId,
                 'type' => 'package:updates',
