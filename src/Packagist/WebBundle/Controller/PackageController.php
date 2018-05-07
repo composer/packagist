@@ -41,28 +41,11 @@ use Packagist\WebBundle\Package\Updater;
 class PackageController extends Controller
 {
     /**
-     * @Template("PackagistWebBundle:Package:browse.html.twig")
      * @Route("/packages/", name="allPackages")
-     * @Cache(smaxage=900)
      */
     public function allAction(Request $req)
     {
-        $filters = array(
-            'type' => $req->query->get('type'),
-            'tag' => $req->query->get('tag'),
-        );
-
-        $data = $filters;
-        $page = $req->query->get('page', 1);
-
-        $packages = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
-            ->getFilteredQueryBuilder($filters);
-
-        $data['packages'] = $this->setupPager($packages, $page);
-        $data['meta'] = $this->getPackagesMetadata($data['packages']);
-
-        return $data;
+        return new RedirectResponse($this->generateUrl('browse'), Response::HTTP_MOVED_PERMANENTLY);
     }
 
     /**
