@@ -16,6 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Packagist\WebBundle\Entity\Download;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -32,7 +33,6 @@ class CompileStatsCommand extends ContainerAwareCommand
         $this
             ->setName('packagist:stats:compile')
             ->setDefinition(array(
-                new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-build of all stats'),
             ))
             ->setDescription('Updates the redis stats indices')
         ;
@@ -44,37 +44,26 @@ class CompileStatsCommand extends ContainerAwareCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $verbose = $input->getOption('verbose');
-        $force = $input->getOption('force');
 
         $doctrine = $this->getContainer()->get('doctrine');
+        $conn = $doctrine->getManager()->getConnection();
         $this->redis = $redis = $this->getContainer()->get('snc_redis.default');
 
-        $minMax = $doctrine->getManager()->getConnection()->fetchAssoc('SELECT MAX(id) maxId, MIN(id) minId FROM package');
+        // TODO delete this whole block mid-august 2018
+        $minMax = $conn->fetchAssoc('SELECT MAX(id) maxId, MIN(id) minId FROM package');
         if (!isset($minMax['minId'])) {
             return 0;
         }
 
         $ids = range($minMax['minId'], $minMax['maxId']);
-        $res = $doctrine->getManager()->getConnection()->fetchAssoc('SELECT MIN(createdAt) minDate FROM package');
+        $res = $conn->fetchAssoc('SELECT MIN(createdAt) minDate FROM package');
         $date = new \DateTime($res['minDate']);
         $date->modify('00:00:00');
         $yesterday = new \DateTime('yesterday 00:00:00');
 
-        if ($force) {
-            if ($verbose) {
-                $output->writeln('Clearing aggregated DB');
-            }
-            $clearDate = clone $date;
-            $keys = array();
-            while ($clearDate <= $yesterday) {
-                $keys['downloads:'.$clearDate->format('Ymd')] = true;
-                $keys['downloads:'.$clearDate->format('Ym')] = true;
-                $clearDate->modify('+1day');
-            }
-            $redis->del(array_keys($keys));
-        }
-
-        while ($date <= $yesterday) {
+        // after this date no need to compute anymore
+        $cutoffDate = new \DateTime('2018-07-31 23:59:59');
+        while ($date <= $yesterday && $date <= $cutoffDate) {
             // skip months already computed
             if (null !== $this->getMonthly($date) && $date->format('m') !== $yesterday->format('m')) {
                 $date->setDate($date->format('Y'), $date->format('m')+1, 1);
@@ -108,13 +97,14 @@ class CompileStatsCommand extends ContainerAwareCommand
 
             $date = $nextDay;
         }
+        // TODO end delete here
 
         // fetch existing ids
         $doctrine = $this->getContainer()->get('doctrine');
-        $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+        $packages = $conn->fetchAll('SELECT id FROM package ORDER BY id ASC');
         $ids = array();
         foreach ($packages as $row) {
-            $ids[] = $row['id'];
+            $ids[] = (int) $row['id'];
         }
 
         if ($verbose) {
@@ -122,29 +112,40 @@ class CompileStatsCommand extends ContainerAwareCommand
         }
 
         while ($id = array_shift($ids)) {
-            $trendiness = $this->sumLastNDays(7, $id, $yesterday);
+            $total = (int) $redis->get('dl:'.$id);
+            if ($total > 10) {
+                $trendiness = $this->sumLastNDays(7, $id, $yesterday, $conn);
+            } else {
+                $trendiness = 0;
+            }
 
             $redis->zadd('downloads:trending:new', $trendiness, $id);
-            $redis->zadd('downloads:absolute:new', $redis->get('dl:'.$id), $id);
+            $redis->zadd('downloads:absolute:new', $total, $id);
         }
 
         $redis->rename('downloads:trending:new', 'downloads:trending');
         $redis->rename('downloads:absolute:new', 'downloads:absolute');
     }
 
-    // TODO could probably run faster with lua scripting
-    protected function sumLastNDays($days, $id, \DateTime $yesterday)
+    protected function sumLastNDays($days, $id, \DateTime $yesterday, $conn)
     {
         $date = clone $yesterday;
-        $keys = array();
+        $row = $conn->fetchAssoc('SELECT data FROM download WHERE id = :id AND type = :type', ['id' => $id, 'type' => Download::TYPE_PACKAGE]);
+        if (!$row) {
+            return 0;
+        }
+
+        $data = json_decode($row['data'], true);
+        $sum = 0;
         for ($i = 0; $i < $days; $i++) {
-            $keys[] = 'dl:'.$id.':'.$date->format('Ymd');
+            $sum += $data[$date->format('Ymd')] ?? 0;
             $date->modify('-1day');
         }
 
-        return array_sum($this->redis->mget($keys));
+        return $sum;
     }
 
+    // TODO delete all below as well once july data is computed
     protected function sum($date, array $ids)
     {
         $sum = 0;

@@ -52,6 +52,9 @@ class PackageManager
             $versionRepo->remove($version);
         }
 
+        $downloadRepo = $this->doctrine->getRepository('PackagistWebBundle:Download');
+        $downloadRepo->deletePackageDownloads($package);
+
         $this->providerManager->deletePackage($package);
         $packageName = $package->getName();
 

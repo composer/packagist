@@ -159,6 +159,22 @@ class PackageRepository extends EntityRepository
         return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAt IS NULL OR p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW() ORDER BY p.id ASC');
     }
 
+    public function iterateStaleDownloadCountPackageIds()
+    {
+        $qb = $this->createQueryBuilder('p');
+        $res = $qb
+            ->select('p.id, d.lastUpdated, p.createdAt')
+            ->leftJoin('p.downloads', 'd')
+            ->where('((d.type = :type AND d.lastUpdated < :time) OR d.lastUpdated IS NULL)')
+            ->setParameters(['type' => Download::TYPE_PACKAGE, 'time' => new \DateTime('-20hours')])
+            ->getQuery()
+            ->getResult();
+
+        foreach ($res as $row) {
+            yield ['id' => $row['id'], 'lastUpdated' => is_null($row['lastUpdated']) ? new \DateTimeImmutable($row['createdAt']->format('r')) : new \DateTimeImmutable($row['lastUpdated']->format('r'))];
+        }
+    }
+
     public function getPartialPackageByNameWithVersions($name)
     {
         // first fetch a partial package including joined versions/maintainers, that way

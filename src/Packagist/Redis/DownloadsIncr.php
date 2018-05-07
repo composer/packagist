@@ -30,7 +30,7 @@ local successful = 0;
 for i, key in ipairs(KEYS) do
     if i <= 3 then
         -- nothing
-    elseif ((i - 4) % 7) == 0 then
+    elseif ((i - 4) % 4) == 0 then
         local requests = tonumber(redis.call("ZINCRBY", key, 1, ARGV[1]));
         if 1 == requests then
             redis.call("EXPIRE", key, 86400);

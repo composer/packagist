@@ -12,6 +12,7 @@ use Composer\Repository\VcsRepository;
 use Doctrine\ORM\NoResultException;
 use Packagist\WebBundle\Entity\PackageRepository;
 use Packagist\WebBundle\Entity\VersionRepository;
+use Packagist\WebBundle\Entity\Download;
 use Packagist\WebBundle\Form\Model\MaintainerRequest;
 use Packagist\WebBundle\Form\Type\AbandonedType;
 use Packagist\WebBundle\Entity\Package;
@@ -944,35 +945,27 @@ class PackageController extends Controller
         }
         $average = $req->query->get('average', $this->guessStatsAverage($from, $to));
 
-        $datePoints = $this->createDatePoints($from, $to, $average, $package, $version);
-
-        $redis = $this->get('snc_redis.default');
-        if ($average === 'daily') {
-            $datePoints = array_map(function ($vals) {
-                return $vals[0];
-            }, $datePoints);
-
-            if (count($datePoints)) {
-                $datePoints = array(
-                    'labels' => array_keys($datePoints),
-                    'values' => array_map(function ($val) {
-                        return (int) $val;
-                    }, $redis->mget(array_values($datePoints))),
-                );
-            } else {
-                $datePoints = [
-                    'labels' => [],
-                    'values' => [],
-                ];
-            }
+        if ($version) {
+            $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
         } else {
-            $datePoints = array(
-                'labels' => array_keys($datePoints),
-                'values' => array_values(array_map(function ($vals) use ($redis) {
-                    return array_sum($redis->mget(array_values($vals)));
-                }, $datePoints))
-            );
+            $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
         }
+
+        $datePoints = $this->createDatePoints($from, $to, $average, $package, $version);
+        $dlData = $downloads ? $downloads->getData() : [];
+
+        foreach ($datePoints as $label => $values) {
+            $value = 0;
+            foreach ($values as $valueKey) {
+                $value += $dlData[$valueKey] ?? 0;
+            }
+            $datePoints[$label] = $value;
+        }
+
+        $datePoints = array(
+            'labels' => array_keys($datePoints),
+            'values' => array_values($datePoints),
+        );
 
         $datePoints['average'] = $average;
 
@@ -1080,11 +1073,12 @@ class PackageController extends Controller
     {
         $interval = $this->getStatsInterval($average);
 
-        $dateKey = $average === 'monthly' ? 'Ym' : 'Ymd';
+        $dateKey = 'Ymd';
         $dateFormat = $average === 'monthly' ? 'Y-m' : 'Y-m-d';
-        $dateJump = $average === 'monthly' ? '+1month' : '+1day';
+        $dateJump = '+1day';
         if ($average === 'monthly') {
-            $to = new DateTimeImmutable('last day of '.$to->format('Y-m'));
+            $from = new DateTimeImmutable('first day of ' . $from->format('Y-m'));
+            $to = new DateTimeImmutable('last day of ' . $to->format('Y-m'));
         }
 
         $nextDataPointLabel = $from->format($dateFormat);
@@ -1092,7 +1086,7 @@ class PackageController extends Controller
 
         $datePoints = [];
         while ($from <= $to) {
-            $datePoints[$nextDataPointLabel][] = 'dl:'.$package->getId().($version ? '-' . $version->getId() : '').':'.$from->format($dateKey);
+            $datePoints[$nextDataPointLabel][] = $from->format($dateKey);
 
             $from = $from->modify($dateJump);
             if ($from >= $nextDataPoint) {

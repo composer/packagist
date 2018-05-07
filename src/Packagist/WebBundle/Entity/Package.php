@@ -138,6 +138,11 @@ class Package
     private $dumpedAt;
 
     /**
+     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Download", mappedBy="package")
+     */
+    private $downloads;
+
+    /**
      * @ORM\Column(type="boolean")
      */
     private $autoUpdated = false;

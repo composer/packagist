@@ -86,6 +86,7 @@ services:
         class: Packagist\WebBundle\Model\DownloadManager
         arguments:
             - '@snc_redis.default_client'
+            - '@doctrine'
 
     packagist.provider_manager:
         class: Packagist\WebBundle\Model\ProviderManager
