@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\Controller;
 use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
 use Predis\Connection\ConnectionException;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -203,21 +204,22 @@ class WebController extends Controller
     /**
      * @Route("/statistics", name="stats")
      * @Template
+     * @Cache(smaxage=5)
      */
     public function statsAction()
     {
         $packages = $this->getDoctrine()
             ->getConnection()
-            ->fetchAll('SELECT COUNT(*) count, DATE_FORMAT(createdAt, "%Y-%m") month FROM `package` GROUP BY month');
+            ->fetchAll('SELECT COUNT(*) count, YEAR(createdAt) year, MONTH(createdAt) month FROM `package` GROUP BY year, month');
 
         $versions = $this->getDoctrine()
             ->getConnection()
-            ->fetchAll('SELECT COUNT(*) count, DATE_FORMAT(releasedAt, "%Y-%m") month FROM `package_version` GROUP BY month');
+            ->fetchAll('SELECT COUNT(*) count, YEAR(releasedAt) year, MONTH(releasedAt) month FROM `package_version` GROUP BY year, month');
 
         $chart = array('versions' => array(), 'packages' => array(), 'months' => array());
 
         // prepare x axis
-        $date = new \DateTime($packages[0]['month'].'-01');
+        $date = new \DateTime($packages[0]['year'] . '-' . $packages[0]['month'] . '-01');
         $now = new \DateTime;
         while ($date < $now) {
             $chart['months'][] = $month = $date->format('Y-m');
@@ -228,14 +230,15 @@ class WebController extends Controller
         $count = 0;
         foreach ($packages as $dataPoint) {
             $count += $dataPoint['count'];
-            $chart['packages'][$dataPoint['month']] = $count;
+            $chart['packages'][$dataPoint['year'] . '-' . $dataPoint['month']] = $count;
         }
 
         $count = 0;
         foreach ($versions as $dataPoint) {
+            $yearMonth = $dataPoint['year'] . '-' . $dataPoint['month'];
             $count += $dataPoint['count'];
-            if (in_array($dataPoint['month'], $chart['months'])) {
-                $chart['versions'][$dataPoint['month']] = $count;
+            if (in_array($yearMonth, $chart['months'])) {
+                $chart['versions'][$yearMonth] = $count;
             }
         }
 
@@ -247,10 +250,7 @@ class WebController extends Controller
             $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), !empty($chart['versions']) ? max($chart['versions']) : 0);
         }
 
-        $res = $this->getDoctrine()
-            ->getConnection()
-            ->fetchAssoc('SELECT DATE_FORMAT(createdAt, "%Y-%m-%d") createdAt FROM `package` ORDER BY id LIMIT 1');
-        $downloadsStartDate = $res['createdAt'] > '2012-04-13' ? $res['createdAt'] : '2012-04-13';
+        $downloadsStartDate = '2012-04-13';
 
         try {
             $redis = $this->get('snc_redis.default');
