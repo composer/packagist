@@ -133,20 +133,18 @@ class PackageController extends Controller
             list(, $name) = explode('/', $package->getName(), 2);
 
             $existingPackages = $this->getDoctrine()
-                ->getRepository('PackagistWebBundle:Package')
-                ->createQueryBuilder('p')
-                ->where('p.name LIKE ?0')
-                ->setParameters(array('%/'.$name))
-                ->getQuery()
-                ->getResult();
+                ->getConnection()
+                ->fetchAll(
+                    'SELECT name FROM package WHERE name LIKE :query',
+                    ['query' => '%/'.$name]
+                );
 
             $similar = array();
 
-            /** @var Package $existingPackage */
             foreach ($existingPackages as $existingPackage) {
                 $similar[] = array(
-                    'name' => $existingPackage->getName(),
-                    'url' => $this->generateUrl('view_package', array('name' => $existingPackage->getName()), true),
+                    'name' => $existingPackage,
+                    'url' => $this->generateUrl('view_package', array('name' => $existingPackage), true),
                 );
             }
 
