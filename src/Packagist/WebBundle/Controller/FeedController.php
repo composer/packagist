@@ -166,13 +166,13 @@ class FeedController extends Controller
      */
     protected function getLimitedResults(QueryBuilder $queryBuilder)
     {
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($queryBuilder));
-        $paginator->setMaxPerPage(
-            $this->container->getParameter('packagist_web.rss_max_items')
-        );
-        $paginator->setCurrentPage(1);
+        $query = $queryBuilder
+            ->getQuery()
+            ->setMaxResults(
+                $this->container->getParameter('packagist_web.rss_max_items')
+            );
 
-        return $paginator->getCurrentPageResults();
+        return $query->getResult();
     }
 
     /**
