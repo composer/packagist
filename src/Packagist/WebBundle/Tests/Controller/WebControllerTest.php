@@ -24,8 +24,8 @@ class WebControllerTest extends WebTestCase
         $this->initializePackages($client->getContainer());
 
         //we expect at least one package
-        $crawler = $client->request('GET', '/packages/');
-        $this->assertGreaterThan(0, $crawler->filter('.packages li')->count());
+        $crawler = $client->request('GET', '/explore/');
+        $this->assertGreaterThan(0, $crawler->filter('.packages-short li')->count());
     }
 
     public function testPackage()
@@ -35,8 +35,8 @@ class WebControllerTest extends WebTestCase
         $this->initializePackages($client->getContainer());
 
         //we expect package to be clickable and showing at least 'package' div
-        $crawler = $client->request('GET', '/packages/');
-        $link = $crawler->filter('.packages li a')->first()->attr('href');
+        $crawler = $client->request('GET', '/explore/');
+        $link = $crawler->filter('.packages-short li a')->first()->attr('href');
 
         $crawler = $client->request('GET', $link);
         $this->assertGreaterThan(0, $crawler->filter('.package')->count());
