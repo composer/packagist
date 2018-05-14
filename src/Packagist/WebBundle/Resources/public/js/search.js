@@ -93,6 +93,10 @@ search.addWidget(
                 hit.url = '/providers/' + hit.name;
             }
 
+            if (hit._highlightResult && hit._highlightResult.description.value && hit._highlightResult.description.value.length > 200) {
+                hit._highlightResult.description.value = hit._highlightResult.description.value.substring(0, 200).replace(/<[a-z ]+$/, '');
+            }
+
             return hit;
         },
         templates: {
