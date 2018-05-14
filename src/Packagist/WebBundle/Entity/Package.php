@@ -274,6 +274,14 @@ class Package
                 return;
             }
 
+            if (preg_match('{(free.*watch|watch.*free|movie.*free|free.*movie|generate.*resource|generate.*unlimited|hack.*coin|coin.*hack|vbucks|hack.*cheat|cheat.*hack|putlocker)}i', $information['name'])) {
+                $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is blocked, if you think this is a mistake please get in touch with us.')
+                    ->atPath($property)
+                    ->addViolation()
+                ;
+                return;
+            }
+
             $reservedNames = ['nul', 'con', 'prn', 'aux', 'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'];
             $bits = explode('/', strtolower($information['name']));
             if (in_array($bits[0], $reservedNames, true) || in_array($bits[1], $reservedNames, true)) {
