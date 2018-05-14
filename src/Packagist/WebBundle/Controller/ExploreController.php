@@ -41,7 +41,7 @@ class ExploreController extends Controller
         /** @var VersionRepository $verRepo */
         $verRepo = $this->get('packagist.version_repository');
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
-            ->getQuery()->useResultCache(true, 900)->getResult();
+            ->getQuery()->useResultCache(true, 60)->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
         $maxId = $this->getDoctrine()->getConnection()->fetchColumn('SELECT max(id) FROM package');
         $random = $pkgRepo->createQueryBuilder('p')->where('p.id >= :randId')->setParameter('randId', rand(1, $maxId))->setMaxResults(10)->getQuery()->getResult();
