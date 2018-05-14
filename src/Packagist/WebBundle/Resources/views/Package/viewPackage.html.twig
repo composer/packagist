@@ -22,7 +22,7 @@
     {{ package.description }}
 {%- endblock %}
 
-{% set hasActions = is_granted('ROLE_EDIT_PACKAGES') or is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
+{% set hasActions = is_granted('ROLE_EDIT_PACKAGES') or is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
 
 {% block content %}
     <div class="row">
