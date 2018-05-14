@@ -36,6 +36,7 @@ class ApiControllerTest extends WebTestCase
 
         $user = new User;
         $user->addPackages($package);
+        $user->setEnabled(true);
 
         $repo = $this->getMockBuilder('Packagist\WebBundle\Entity\UserRepository')->disableOriginalConstructor()->getMock();
         $em = $this->getMockBuilder('Doctrine\ORM\EntityManager')->disableOriginalConstructor()->getMock();
