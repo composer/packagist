@@ -87,13 +87,17 @@ class PackageController extends Controller
      */
     public function submitPackageAction(Request $req)
     {
+        $user = $this->getUser();
+        if (!$user->isEnabled()) {
+            throw new AccessDeniedException();
+        }
+
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $package->setRouter($this->get('router'));
         $form = $this->createForm(PackageType::class, $package, [
             'action' => $this->generateUrl('submit'),
         ]);
-        $user = $this->getUser();
         $package->addMaintainer($user);
 
         $form->handleRequest($req);
@@ -310,6 +314,10 @@ class PackageController extends Controller
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
+        if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
+            throw new NotFoundHttpException('This is a spam package');
+        }
+
         if ('json' === $req->getRequestFormat()) {
             $data = $package->toArray($this->getDoctrine()->getRepository('PackagistWebBundle:Version'));
             $data['dependents'] = $repo->getDependentCount($package->getName());
@@ -523,6 +531,10 @@ class PackageController extends Controller
                 ->getPackageByName($name);
         } catch (NoResultException $e) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Package not found',)), 404);
+        }
+
+        if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
+            throw new NotFoundHttpException('This is a spam package');
         }
 
         $username = $req->request->has('username') ?

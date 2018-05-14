@@ -119,6 +119,16 @@ class IndexPackagesCommand extends ContainerAwareCommand
                     $output->writeln('['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
                 }
 
+                // delete spam packages from the search index
+                if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
+                    try {
+                        $index->deleteObject($package->getName());
+                        $idsToUpdate[] = $package->getId();
+                        continue;
+                    } catch (\AlgoliaSearch\AlgoliaException $e) {
+                    }
+                }
+
                 try {
                     $tags = $this->getTags($doctrine, $package);
 

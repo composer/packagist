@@ -331,6 +331,10 @@ class ApiController extends Controller
         $user = $this->get('packagist.user_repository')
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 
+        if ($user && !$user->isEnabled()) {
+            return null;
+        }
+
         return $user;
     }
 

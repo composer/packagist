@@ -399,6 +399,7 @@ class PackageRepository extends EntityRepository
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->where('p.abandoned = false')
             ->orderBy('p.id', 'DESC');
 
         return $qb;

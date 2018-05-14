@@ -206,6 +206,12 @@ class SymlinkDumper
 
                 // prepare packages in memory
                 foreach ($packages as $package) {
+                    // skip spam packages in the dumper in case we do a forced full dump and prevent them from being dumped for a little while
+                    if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
+                        $dumpTimeUpdates['2100-01-01 00:00:00'][] = $package->getId();
+                        continue;
+                    }
+
                     $affectedFiles = array();
                     $name = strtolower($package->getName());
 

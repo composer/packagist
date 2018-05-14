@@ -50,6 +50,56 @@ class UserController extends Controller
     }
 
     /**
+     * @Route("/spammers/{name}/", name="mark_spammer")
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @Method({"POST"})
+     */
+    public function markSpammerAction(Request $req, User $user)
+    {
+        if (!$this->isGranted('ROLE_ANTISPAM')) {
+            throw new AccessDeniedException('This user can not mark others as spammers');
+        }
+
+        $form = $this->createFormBuilder(array())->getForm();
+
+        $form->submit($req->request->get('form'));
+        if ($form->isValid()) {
+            $user->addRole('ROLE_SPAMMER');
+            $user->setEnabled(false);
+            $this->get('fos_user.user_manager')->updateUser($user);
+            $doctrine = $this->getDoctrine();
+
+            $doctrine->getConnection()->executeUpdate(
+                'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id JOIN fos_user u ON mp.user_id = u.id
+                 SET abandoned = 1, replacementPackage = "spam/spam", description = "", readme = "", indexedAt = NULL, dumpedAt = "2100-01-01 00:00:00"
+                 WHERE u.id = :userId',
+                ['userId' => $user->getId()]
+            );
+
+            /** @var VersionRepository $versionRepo */
+            $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
+            $packages = $doctrine
+                ->getRepository('PackagistWebBundle:Package')
+                ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true)
+                ->getQuery()->getResult();
+
+            foreach ($packages as $package) {
+                foreach ($package->getVersions() as $version) {
+                    $versionRepo->remove($version);
+                }
+            }
+
+            $this->getDoctrine()->getManager()->flush();
+
+            $this->get('session')->getFlashBag()->set('success', $user->getUsername().' has been marked as a spammer');
+        }
+
+        return $this->redirect(
+            $this->generateUrl("user_profile", array("name" => $user->getUsername()))
+        );
+    }
+
+    /**
      * @param Request $req
      * @return Response
      */
@@ -72,7 +122,6 @@ class UserController extends Controller
         );
     }
 
-
     /**
      * @Template()
      * @Route("/users/{name}/", name="user_profile")
@@ -82,11 +131,17 @@ class UserController extends Controller
     {
         $packages = $this->getUserPackages($req, $user);
 
-        return array(
+        $data = array(
             'packages' => $packages,
             'meta' => $this->getPackagesMetadata($packages),
             'user' => $user,
         );
+
+        if ($this->isGranted('ROLE_ANTISPAM')) {
+            $data['spammerForm'] = $this->createFormBuilder(array())->getForm()->createView();
+        }
+
+        return $data;
     }
 
     /**
