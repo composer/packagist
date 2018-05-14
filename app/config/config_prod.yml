@@ -97,6 +97,7 @@ nelmio_security:
                 - 'https://www.gravatar.com/'
                 - 'https://camo.githubusercontent.com/'
                 - 'https://user-images.githubusercontent.com/'
+                - 'https:/raw.github.com/'
                 - 'https://ssl.google-analytics.com/'
                 - 'http://www.google-analytics.com/'
             style-src:
