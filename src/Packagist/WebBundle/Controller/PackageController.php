@@ -33,6 +33,7 @@ use DateTimeImmutable;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
@@ -936,6 +937,7 @@ class PackageController extends Controller
      *      name="package_stats",
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
      * )
+     * @ParamConverter("version", options={"exclude": {"name"}})
      */
     public function overallStatsAction(Request $req, Package $package, Version $version = null)
     {
