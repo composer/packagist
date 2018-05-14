@@ -961,7 +961,7 @@ class PackageController extends Controller
 
             $datePoints = array(
                 'labels' => array_keys($datePoints),
-                'values' => $redis->mget(array_values($datePoints))
+                'values' => $datePoints ? $redis->mget(array_values($datePoints)) : [],
             );
         } else {
             $datePoints = array(
