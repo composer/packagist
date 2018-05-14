@@ -4,8 +4,9 @@ namespace Packagist\WebBundle\Tests\Model;
 
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Model\PackageManager;
+use PHPUnit\Framework\TestCase;
 
-class PackageManagerTest extends \PHPUnit_Framework_TestCase
+class PackageManagerTest extends TestCase
 {
     public function testNotifyFailure()
     {
