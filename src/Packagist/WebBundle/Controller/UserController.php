@@ -70,9 +70,9 @@ class UserController extends Controller
             $doctrine = $this->getDoctrine();
 
             $doctrine->getConnection()->executeUpdate(
-                'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id JOIN fos_user u ON mp.user_id = u.id
+                'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id
                  SET abandoned = 1, replacementPackage = "spam/spam", description = "", readme = "", indexedAt = NULL, dumpedAt = "2100-01-01 00:00:00"
-                 WHERE u.id = :userId',
+                 WHERE mp.user_id = :userId',
                 ['userId' => $user->getId()]
             );
 
