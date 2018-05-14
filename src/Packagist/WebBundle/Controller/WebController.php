@@ -79,8 +79,6 @@ class WebController extends Controller
         if ($req->getRequestFormat() !== 'json') {
             return $this->render('PackagistWebBundle:Web:search.html.twig', [
                 'packages' => [],
-                'tags' => array_map('htmlentities', (array) $tagsFilter),
-                'type' => htmlentities($typeFilter),
             ]);
         }
 

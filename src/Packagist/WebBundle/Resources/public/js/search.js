@@ -10,27 +10,41 @@ if (decodeURI(location.search).match(/[<>]/)) {
     location.replace(location.pathname);
 }
 
-if (algoliaConfig.tags) {
-    searchParameters.disjunctiveFacets = ['tags'];
-    searchParameters.disjunctiveFacetsRefinements = {
-        tags: algoliaConfig.tags,
-    };
-}
-
-if (algoliaConfig.type) {
-    searchParameters.hierarchicalFacets = [{attributes: ['type'], name: 'type'}];
-    searchParameters.hierarchicalFacetsRefinements = {
-        type: [algoliaConfig.type],
-    };
-}
-
 var searchThrottle = null;
 var search = instantsearch({
     appId: algoliaConfig.app_id,
     apiKey: algoliaConfig.search_key,
     indexName: algoliaConfig.index_name,
-    urlSync: {
-        trackedParameters: ['query', 'attribute:*', 'page']
+    routing: {
+        stateMapping: {
+            stateToRoute: function (uiState) {
+                return {
+                    query: uiState.query,
+                    type: uiState.menu && uiState.menu.type,
+                    tags: uiState.refinementList && uiState.refinementList.tags && uiState.refinementList.tags.join('~'),
+                    page: uiState.page,
+                };
+            },
+            routeToState: function (routeState) {
+                if (routeState.q) {
+                    routeState.query = routeState.q;
+                }
+                if (routeState.query === undefined || routeState.query === '') {
+                    return {};
+                }
+
+                return {
+                    query: routeState.query,
+                    menu: {
+                        type: routeState.type
+                    },
+                    refinementList: {
+                        tags: routeState.tags && routeState.tags.split('~'),
+                    },
+                    page: routeState.page
+                };
+            },
+        },
     },
     searchFunction: function(helper) {
         var searchResults = $('#search-container');
@@ -38,8 +52,6 @@ var search = instantsearch({
         if (helper.state.query === ''
             && helper.state.hierarchicalFacetsRefinements.type === undefined
             && (helper.state.disjunctiveFacetsRefinements.tags === undefined || helper.state.disjunctiveFacetsRefinements.tags.length === 0)
-            && algoliaConfig.tags.length === 0
-            && algoliaConfig.type.length === 0
         ) {
             searchResults.addClass('hidden');
         } else {
@@ -185,9 +197,3 @@ search.addWidget(
 );
 
 search.start();
-
-if (algoliaConfig.tags.length || algoliaConfig.type.length) {
-    search.helper.once('change', function (e) {
-        window.history.replaceState(null, 'title', window.location.pathname);
-    });
-}
