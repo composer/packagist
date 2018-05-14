@@ -2,7 +2,7 @@
 
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
-{% set isActualUser = app.user and app.user.username is sameas(user.username) %}
+{% set isActualUser = app.user and app.user.username is same as(user.username) %}
 
 {% block content %}
 <h2 class="title">
