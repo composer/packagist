@@ -69,7 +69,7 @@
                     {% if package.updateFailureNotified
                         and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES'))
                     %}
-                        <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Force Update" above to see details.</div>
+                        <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Update" below to see details.</div>
                     {% endif %}
 
                     {% if expandedVersion and not expandedVersion.license %}
