@@ -30,6 +30,10 @@ class ApiControllerTest extends WebTestCase
         $package = new Package;
         $package->setRepository($url);
 
+        $ref = new \ReflectionProperty(Package::class, 'id');
+        $ref->setAccessible(true);
+        $ref->setValue($package, 1);
+
         $user = new User;
         $user->addPackages($package);
 
