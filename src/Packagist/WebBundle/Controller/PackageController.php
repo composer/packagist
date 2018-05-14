@@ -143,8 +143,8 @@ class PackageController extends Controller
 
             foreach ($existingPackages as $existingPackage) {
                 $similar[] = array(
-                    'name' => $existingPackage,
-                    'url' => $this->generateUrl('view_package', array('name' => $existingPackage), true),
+                    'name' => $existingPackage['name'],
+                    'url' => $this->generateUrl('view_package', array('name' => $existingPackage['name']), true),
                 );
             }
 
