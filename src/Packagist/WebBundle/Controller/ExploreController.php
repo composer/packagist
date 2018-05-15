@@ -44,7 +44,10 @@ class ExploreController extends Controller
             ->getQuery()->useResultCache(true, 60)->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
         $maxId = $this->getDoctrine()->getConnection()->fetchColumn('SELECT max(id) FROM package');
-        $random = $pkgRepo->createQueryBuilder('p')->where('p.id >= :randId')->setParameter('randId', rand(1, $maxId))->setMaxResults(10)->getQuery()->getResult();
+        $random = $pkgRepo
+            ->createQueryBuilder('p')->where('p.id >= :randId')->andWhere('p.abandoned = 0')
+            ->setParameter('randId', rand(1, $maxId))->setMaxResults(10)
+            ->getQuery()->getResult();
         try {
             $popular = array();
             $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);
