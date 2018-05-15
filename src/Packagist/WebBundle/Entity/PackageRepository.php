@@ -130,12 +130,18 @@ class PackageRepository extends EntityRepository
             WHERE p.abandoned = false
             AND (
                 p.crawledAt IS NULL
+                OR (p.autoUpdated = 0 AND p.crawledAt < :recent AND p.createdAt >= :yesterday)
                 OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
                 OR (p.crawledAt < :autocrawled)
             )
             ORDER BY p.id ASC',
             array(
+                // crawl new packages once an hour for the first day so that dummy packages get deleted ASAP
+                'recent' => date('Y-m-d H:i:s', strtotime('-1hour')),
+                'yesterday' => date('Y-m-d H:i:s', strtotime('-1day')),
+                // crawl packages without auto-update once a week
                 'crawled' => date('Y-m-d H:i:s', strtotime('-1week')),
+                // crawl auto-updated packages once a month just in case
                 'autocrawled' => date('Y-m-d H:i:s', strtotime('-1month')),
             )
         );
