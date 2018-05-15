@@ -106,6 +106,7 @@ class Updater
 
         $em = $this->doctrine->getManager();
         $apc = extension_loaded('apcu');
+        $rootIdentifier = null;
 
         if ($repository instanceof VcsRepository) {
             $cfg = $repository->getRepoConfig();
@@ -139,6 +140,8 @@ class Updater
                     break;
                 }
             }
+
+            $rootIdentifier = $repository->getDriver()->getRootIdentifier();
         }
 
         $versions = $repository->getPackages();
@@ -197,7 +200,7 @@ class Updater
             }
             $lastProcessed = $version;
 
-            $lastUpdated = $this->updateInformation($package, $version, $flags);
+            $lastUpdated = $this->updateInformation($package, $version, $flags, $rootIdentifier);
             if ($lastUpdated) {
                 $em->flush();
             }
@@ -234,7 +237,7 @@ class Updater
         }
     }
 
-    private function updateInformation(Package $package, PackageInterface $data, $flags)
+    private function updateInformation(Package $package, PackageInterface $data, $flags, $rootIdentifier)
     {
         $em = $this->doctrine->getManager();
         $version = new Version();
@@ -265,7 +268,12 @@ class Updater
 
         $descr = $this->sanitize($data->getDescription());
         $version->setDescription($descr);
-        $package->setDescription($descr);
+
+        // update the package description only for the default branch
+        if ($rootIdentifier === null || preg_replace('{dev-|-dev}', '', $version->getVersion()) === $rootIdentifier) {
+            $package->setDescription($descr);
+        }
+
         $version->setHomepage($data->getHomepage());
         $version->setLicense($data->getLicense() ?: array());
 
