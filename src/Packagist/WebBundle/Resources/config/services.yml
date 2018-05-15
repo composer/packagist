@@ -108,6 +108,9 @@ services:
             - '@twig'
             - '@logger'
             - { from: '%mailer_from_email%', fromName: '%mailer_from_name%' }
+            - '@packagist.provider_manager'
+            - '@packagist.algolia.client'
+            - '%algolia.index_name%'
 
     packagist.profile.form.type:
         class: Packagist\WebBundle\Form\Type\ProfileFormType
@@ -154,7 +157,7 @@ services:
 
     updater_worker:
         class: Packagist\WebBundle\Service\UpdaterWorker
-        arguments: ["@logger", "@doctrine", "@packagist.package_updater", "@locker", "@scheduler", "@packagist.package_manager"]
+        arguments: ["@logger", "@doctrine", "@packagist.package_updater", "@locker", "@scheduler", "@packagist.package_manager", "@packagist.download_manager"]
 
     packagist.log_resetter:
         class: Packagist\WebBundle\Service\LogResetter

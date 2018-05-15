@@ -15,6 +15,8 @@ namespace Packagist\WebBundle\Model;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Packagist\WebBundle\Entity\Package;
 use Psr\Log\LoggerInterface;
+use AlgoliaSearch\Client as AlgoliaClient;
+
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -26,14 +28,45 @@ class PackageManager
     protected $twig;
     protected $logger;
     protected $options;
+    protected $providerManager;
+    protected $algoliaClient;
+    protected $algoliaIndexName;
 
-    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options)
+    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, AlgoliaClient $algoliaClient, string $algoliaIndexName)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;
         $this->twig = $twig;
         $this->logger = $logger;
         $this->options = $options;
+        $this->providerManager = $providerManager;
+        $this->algoliaClient = $algoliaClient;
+        $this->algoliaIndexName  = $algoliaIndexName;
+    }
+
+    public function deletePackage(Package $package)
+    {
+        /** @var VersionRepository $versionRepo */
+        $versionRepo = $this->doctrine->getRepository('PackagistWebBundle:Version');
+        foreach ($package->getVersions() as $version) {
+            $versionRepo->remove($version);
+        }
+
+        $this->providerManager->deletePackage($package);
+        $packageName = $package->getName();
+
+        $em = $this->doctrine->getManager();
+        $em->remove($package);
+        $em->flush();
+
+        // attempt search index cleanup
+        try {
+            $indexName = $this->algoliaIndexName;
+            $algolia = $this->algoliaClient;
+            $index = $algolia->initIndex($indexName);
+            $index->deleteObject($packageName);
+        } catch (\AlgoliaSearch\AlgoliaException $e) {
+        }
     }
 
     public function notifyUpdateFailure(Package $package, \Exception $e, $details = null)

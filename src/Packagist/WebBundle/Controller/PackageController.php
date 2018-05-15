@@ -599,27 +599,7 @@ class PackageController extends Controller
         if ($form->isValid()) {
             $req->getSession()->save();
 
-            /** @var VersionRepository $versionRepo */
-            $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
-            foreach ($package->getVersions() as $version) {
-                $versionRepo->remove($version);
-            }
-
-            $packageId = $package->getId();
-            $em = $doctrine->getManager();
-            $em->remove($package);
-            $em->flush();
-
-            $this->get('packagist.provider_manager')->deletePackage($package);
-
-            // attempt search index cleanup
-            try {
-                $indexName = $this->container->getParameter('algolia.index_name');
-                $algolia = $this->get('packagist.algolia.client');
-                $index = $algolia->initIndex($indexName);
-                $index->deleteObject($package->getName());
-            } catch (\AlgoliaSearch\AlgoliaException $e) {
-            }
+            $this->get('packagist.package_manager')->deletePackage($package);
 
             return new Response('', 204);
         }

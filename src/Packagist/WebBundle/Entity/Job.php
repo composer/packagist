@@ -26,6 +26,7 @@ class Job
     const STATUS_STARTED = 'started';
     const STATUS_COMPLETED = 'completed';
     const STATUS_PACKAGE_GONE = 'package_gone';
+    const STATUS_PACKAGE_DELETED = 'package_deleted';
     const STATUS_FAILED = 'failed'; // failed in an expected/correct way
     const STATUS_ERRORED = 'errored'; // unexpected failure
     const STATUS_TIMEOUT = 'timeout'; // job was marked timed out

@@ -95,7 +95,7 @@
                             url: '/jobs/' + data.job,
                             cache: false,
                             success: function (data) {
-                                if (data.status == 'completed' || data.status == 'errored' || data.status == 'failed') {
+                                if (data.status == 'completed' || data.status == 'errored' || data.status == 'failed' || data.status == 'package_deleted') {
                                     humane.remove();
 
                                     var message = data.message;

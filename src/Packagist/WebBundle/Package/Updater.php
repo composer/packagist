@@ -93,7 +93,7 @@ class Updater
      * @param int $flags a few of the constants of this class
      * @param \DateTime $start
      */
-    public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null)
+    public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null): Package
     {
         $rfs = new RemoteFilesystem($io, $config);
 
@@ -245,6 +245,8 @@ class Updater
         if ($repository->hadInvalidBranches()) {
             throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
         }
+
+        return $package;
     }
 
     /**
