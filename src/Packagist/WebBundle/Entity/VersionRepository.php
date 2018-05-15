@@ -126,6 +126,24 @@ class VersionRepository extends EntityRepository
         return $result;
     }
 
+    public function getVersionMetadataForUpdate(Package $package)
+    {
+        $rows = $this->getEntityManager()->getConnection()->fetchAll(
+            'SELECT id, normalizedVersion, source, softDeletedAt FROM package_version v WHERE v.package_id = :id',
+            ['id' => $package->getId()]
+        );
+
+        $versions = [];
+        foreach ($rows as $row) {
+            if ($row['source']) {
+                $row['source'] = json_decode($row['source'], true);
+            }
+            $versions[strtolower($row['normalizedVersion'])] = $row;
+        }
+
+        return $versions;
+    }
+
     public function getFullVersion($versionId)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();

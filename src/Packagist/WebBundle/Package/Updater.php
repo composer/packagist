@@ -27,8 +27,10 @@ use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Version;
+use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Entity\SuggestLink;
 use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\DBAL\Connection;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -94,13 +96,10 @@ class Updater
     public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null)
     {
         $rfs = new RemoteFilesystem($io, $config);
-        $blacklist = '{^symfony/symfony (2.0.[456]|dev-charset|dev-console)}i';
 
         if (null === $start) {
             $start = new \DateTime();
         }
-        $pruneDate = clone $start;
-        $pruneDate->modify('-1min');
         $deleteDate = clone $start;
         $deleteDate->modify('-1day');
 
@@ -145,7 +144,6 @@ class Updater
         }
 
         $versions = $repository->getPackages();
-
         usort($versions, function ($a, $b) {
             $aVersion = $a->getVersion();
             $bVersion = $b->getVersion();
@@ -183,14 +181,13 @@ class Updater
             $em->refresh($package);
         }
 
+        $existingVersions = $versionRepository->getVersionMetadataForUpdate($package);
+
         $lastUpdated = true;
         $lastProcessed = null;
+        $idsToMarkUpdated = [];
         foreach ($versions as $version) {
             if ($version instanceof AliasPackage) {
-                continue;
-            }
-
-            if (preg_match($blacklist, $version->getName().' '.$version->getPrettyVersion())) {
                 continue;
             }
 
@@ -200,26 +197,39 @@ class Updater
             }
             $lastProcessed = $version;
 
-            $lastUpdated = $this->updateInformation($package, $version, $flags, $rootIdentifier);
+            $result = $this->updateInformation($versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
+            $lastUpdated = $result['updated'];
+
             if ($lastUpdated) {
                 $em->flush();
+                $em->clear();
+                $package = $em->merge($package);
+            } else {
+                $idsToMarkUpdated[] = $result['id'];
             }
+
+            // mark the version processed so we can prune leftover ones
+            unset($existingVersions[$result['version']]);
         }
 
-        if (!$lastUpdated) {
-            $em->flush();
-        }
+        // mark versions that did not update as updated to avoid them being pruned
+        $em->getConnection()->executeUpdate(
+            'UPDATE package_version SET updatedAt = :now, softDeletedAt = NULL WHERE id IN (:ids)',
+            ['now' => date('Y-m-d H:i:s'), 'ids' => $idsToMarkUpdated],
+            ['ids' => Connection::PARAM_INT_ARRAY]
+        );
 
         // remove outdated versions
-        foreach ($package->getVersions() as $version) {
-            if ($version->getUpdatedAt() < $pruneDate) {
-                if (!is_null($version->getSoftDeletedAt()) && $version->getSoftDeletedAt() < $deleteDate) {
-                    $versionRepository->remove($version);
-                } else {
-                    // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
-                    // version is still missing it will be really removed
-                    $version->setSoftDeletedAt(new \DateTime);
-                }
+        foreach ($existingVersions as $version) {
+            if (!is_null($version['softDeletedAt']) && new \DateTime($version['softDeletedAt']) < $deleteDate) {
+                $versionRepository->remove($versionRepository->findOneById($version['id']));
+            } else {
+                // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
+                // version is still missing it will be really removed
+                $em->getConnection()->executeUpdate(
+                    'UPDATE package_version SET softDeletedAt = :now WHERE id = :id',
+                    ['now' => date('Y-m-d H:i:s'), 'id' => $version['id']]
+                );
             }
         }
 
@@ -237,25 +247,28 @@ class Updater
         }
     }
 
-    private function updateInformation(Package $package, PackageInterface $data, $flags, $rootIdentifier)
+    /**
+     * @return array with keys:
+     *                    - updated (whether the version was updated or needs to be marked as updated)
+     *                    - id (version id, can be null for newly created versions)
+     *                    - version (normalized version from the composer package)
+     *                    - object (Version instance if it was updated)
+     */
+    private function updateInformation(VersionRepository $versionRepo, Package $package, array $existingVersions, PackageInterface $data, $flags, $rootIdentifier)
     {
         $em = $this->doctrine->getManager();
         $version = new Version();
 
         $normVersion = $data->getVersion();
 
-        $existingVersion = $package->getVersion($normVersion);
+        $existingVersion = $existingVersions[strtolower($normVersion)] ?? null;
         if ($existingVersion) {
-            $source = $existingVersion->getSource();
+            $source = $existingVersion['source'];
             // update if the right flag is set, or the source reference has changed (re-tag or new commit on branch)
             if ($source['reference'] !== $data->getSourceReference() || ($flags & self::UPDATE_EQUAL_REFS)) {
-                $version = $existingVersion;
+                $version = $versionRepo->findOneById($existingVersion['id']);
             } else {
-                // mark it updated to avoid it being pruned
-                $existingVersion->setUpdatedAt(new \DateTime);
-                $existingVersion->setSoftDeletedAt(null);
-
-                return false;
+                return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
             }
         }
 
@@ -279,6 +292,7 @@ class Updater
 
         $version->setPackage($package);
         $version->setUpdatedAt(new \DateTime);
+        $version->setSoftDeletedAt(null);
         $version->setReleasedAt($data->getReleaseDate());
 
         if ($data->getSourceType()) {
@@ -393,9 +407,6 @@ class Updater
                 if (!$version->getAuthors()->contains($author)) {
                     $version->addAuthor($author);
                 }
-                if (!$author->getVersions()->contains($version)) {
-                    $author->addVersion($version);
-                }
             }
         }
 
@@ -468,11 +479,7 @@ class Updater
             $version->getSuggest()->clear();
         }
 
-        if (!$package->getVersions()->contains($version)) {
-            $package->addVersions($version);
-        }
-
-        return true;
+        return ['updated' => true, 'id' => $version->getId(), 'version' => strtolower($normVersion), 'object' => $version];
     }
 
     /**

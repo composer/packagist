@@ -83,17 +83,15 @@ class UpdaterWorker
                 $flags = Updater::DELETE_BEFORE;
             }
 
-            $em->transactional(function($em) use ($package, $io, $config, $flags) {
-                // prepare dependencies
-                $loader = new ValidatingArrayLoader(new ArrayLoader());
+            // prepare dependencies
+            $loader = new ValidatingArrayLoader(new ArrayLoader());
 
-                // prepare repository
-                $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
-                $repository->setLoader($loader);
+            // prepare repository
+            $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
+            $repository->setLoader($loader);
 
-                // perform the actual update (fetch and re-scan the repository's source)
-                $this->updater->update($io, $config, $package, $repository, $flags);
-            });
+            // perform the actual update (fetch and re-scan the repository's source)
+            $this->updater->update($io, $config, $package, $repository, $flags);
         } catch (\Throwable $e) {
             $output = $io->getOutput();
 
