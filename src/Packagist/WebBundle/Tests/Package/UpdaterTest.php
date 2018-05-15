@@ -12,8 +12,11 @@ use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
+use Doctrine\DBAL\Connection;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Package\Updater;
+use Packagist\WebBundle\Entity\VersionRepository;
+use Packagist\WebBundle\Entity\AuthorRepository;
 use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_MockObject;
 
@@ -43,10 +46,19 @@ class UpdaterTest extends TestCase
         $this->repositoryMock = $this->getMockBuilder(VcsRepository::class)->disableOriginalConstructor()->getMock();
         $registryMock         = $this->getMockBuilder(Registry::class)->disableOriginalConstructor()->getMock();
         $emMock               = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
+        $connectionMock       = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
         $packageMock          = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
         $this->driverMock     = $this->getMockBuilder(GitDriver::class)->disableOriginalConstructor()->getMock();
+        $versionRepoMock      = $this->getMockBuilder(VersionRepository::class)->disableOriginalConstructor()->getMock();
+        $authorRepoMock      = $this->getMockBuilder(AuthorRepository::class)->disableOriginalConstructor()->getMock();
+
+        $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn(array());
+        $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
+        $emMock->expects($this->any())->method('merge')->will($this->returnCallback(function ($package) { return $package; }));
 
         $registryMock->expects($this->any())->method('getManager')->willReturn($emMock);
+        $registryMock->expects($this->at(1))->method('getRepository')->with('PackagistWebBundle:Version')->willReturn($versionRepoMock);
+        $registryMock->expects($this->at(3))->method('getRepository')->with('PackagistWebBundle:Author')->willReturn($authorRepoMock);
         $this->repositoryMock->expects($this->any())->method('getPackages')->willReturn([
             $packageMock
         ]);
