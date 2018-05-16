@@ -953,10 +953,19 @@ class PackageController extends Controller
                 return $vals[0];
             }, $datePoints);
 
-            $datePoints = array(
-                'labels' => array_keys($datePoints),
-                'values' => $datePoints ? $redis->mget(array_values($datePoints)) : [],
-            );
+            if (count($datePoints)) {
+                $datePoints = array(
+                    'labels' => array_keys($datePoints),
+                    'values' => array_map(function ($val) {
+                        return (int) $val;
+                    }, $redis->mget(array_values($datePoints))),
+                );
+            } else {
+                $datePoints = [
+                    'labels' => [],
+                    'values' => [],
+                ];
+            }
         } else {
             $datePoints = array(
                 'labels' => array_keys($datePoints),
