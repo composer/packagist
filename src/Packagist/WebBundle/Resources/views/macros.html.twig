@@ -41,11 +41,11 @@
                 </div>
             </li>
         {% endfor %}
-
-        {% if paginate is defined and paginate and packages.haveToPaginate() %}
-            {{ pagerfanta(packages, 'twitter_bootstrap', {'proximity': 2}) }}
-        {% endif %}
     </ul>
+
+    {% if paginate is defined and paginate and packages.haveToPaginate() %}
+        {{ pagerfanta(packages, 'twitter_bootstrap', {'proximity': 2}) }}
+    {% endif %}
 {% endmacro %}
 
 {% macro listPackagesShort(packages, showVersion, showMoreUrl) %}
