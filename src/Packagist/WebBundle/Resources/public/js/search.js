@@ -29,12 +29,17 @@ var search = instantsearch({
                 if (routeState.q) {
                     routeState.query = routeState.q;
                 }
-                if (routeState.query === undefined || routeState.query === '') {
+
+                if (
+                    (routeState.query === undefined || routeState.query === '')
+                    && (routeState.type === undefined || routeState.type === '')
+                    && (routeState.tags === undefined || routeState.tags === '')
+                ) {
                     return {};
                 }
 
                 return {
-                    query: routeState.query,
+                    query: routeState.query || '',
                     menu: {
                         type: routeState.type
                     },
