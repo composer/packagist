@@ -229,7 +229,12 @@ class Package
         $property = 'repository';
         $driver = $this->vcsDriver;
         if (!is_object($driver)) {
-            if (preg_match('{https?://.+@}', $this->repository)) {
+            if (preg_match('{^http://}', $this->repository)) {
+                $context->buildViolation('Non-secure HTTP URLs are not supported, make sure you use an HTTPS or SSH URL')
+                    ->atPath($property)
+                    ->addViolation()
+                ;
+            } elseif (preg_match('{https?://.+@}', $this->repository)) {
                 $context->buildViolation('URLs with user@host are not supported, use a read-only public URL')
                     ->atPath($property)
                     ->addViolation()
