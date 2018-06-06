@@ -63,7 +63,7 @@ class PackageRepository extends EntityRepository
     public function getPackageNamesByType($type)
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.type = :type")
+            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.type = :type AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
             ->setParameters(array('type' => $type));
 
         return $this->getPackageNamesForQuery($query);
@@ -72,7 +72,7 @@ class PackageRepository extends EntityRepository
     public function getPackageNamesByVendor($vendor)
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.name LIKE :vendor")
+            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.name LIKE :vendor AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
             ->setParameters(array('vendor' => $vendor.'/%'));
 
         return $this->getPackageNamesForQuery($query);
@@ -84,15 +84,13 @@ class PackageRepository extends EntityRepository
         foreach ($fields as $field) {
             $selector .= ', p.'.$field;
         }
-        $where = '';
+        $where = 'p.replacementPackage != :replacement';
         foreach ($filters as $filter => $val) {
-            $where .= 'p.'.$filter.' = :'.$filter;
+            $where .= ' AND p.'.$filter.' = :'.$filter;
         }
-        if ($where) {
-            $where = 'WHERE '.$where;
-        }
+        $filters['replacement'] = "spam/spam";
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name $selector  FROM Packagist\WebBundle\Entity\Package p $where")
+            ->createQuery("SELECT p.name $selector  FROM Packagist\WebBundle\Entity\Package p WHERE $where")
             ->setParameters($filters);
 
         $result = array();
