@@ -107,6 +107,7 @@ class ApiControllerTest extends WebTestCase
             array('github', 'git@github.com:user/repo.git', true),
             array('github', 'git@github.com:user/repo', true),
             array('github', 'https://github.com/user/repo/', true),
+            array('github', 'https://github.com/user/', true), // not strictly valid but marked as valid due to support for https://example.org/some-repo.git
 
             // valid bitbucket URLs
             array('bitbucket', 'bitbucket.org/user/repo', true),
@@ -115,20 +116,19 @@ class ApiControllerTest extends WebTestCase
 
             // valid others
             array('update-package', 'https://ghe.example.org/user/repository', true),
+            array('update-package', 'https://example.org/some-repo.git', true),
             array('update-package', 'https://gitlab.org/user/repository', true),
             array('update-package', 'https://gitlab.org/user/sub/group/lala/repository', true),
             array('update-package', 'ssh://git@stash.xxxxx.com/uuuuu/qqqqq.git', true),
             array('update-package', 'ssh://git@stash.xxxxx.com:2222/uuuuu/qqqqq.git', true),
+            array('update-package', 'ssh://git@stash.zzzzz.com/kkkkk.git', true),
 
             // invalid URLs
             array('github', 'php://github.com/user/repository', false),
             array('github', 'javascript://github.com/user/repository', false),
             array('github', 'http://', false),
-            array('github', 'https://github.com/user/', false),
-            array('github', 'https://github.com/user', false),
             array('github', 'https://github.com/', false),
             array('github', 'https://github.com', false),
-            array('update-package', 'ssh://git@stash.zzzzz.com/kkkkk.git', false),
             array('update-package', 'ssh://ghe.example.org/user/jjjjj.git', false),
         );
     }
