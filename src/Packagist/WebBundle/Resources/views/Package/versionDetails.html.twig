@@ -42,7 +42,7 @@
             {% for author in version.authors %}
                 <li>
                     {%- if author.homepage -%}
-                        <a href="{{ author.homepage }}">{{ author.name }}</a>
+                        <a rel="nofollow noopener external noindex" href="{{ author.homepage }}">{{ author.name }}</a>
                     {%- else -%}
                         {{ author.name }}
                     {%- endif -%}
