@@ -153,7 +153,7 @@ search.addWidget(
     instantsearch.widgets.pagination({
         container: '.pagination',
         maxPages: 200,
-        scrollTo: false,
+        scrollTo: document.getElementById('search_query_query'),
         showFirstLast: false,
     })
 );
