@@ -542,7 +542,7 @@ class SymlinkDumper
             }
         }
 
-        $json = json_encode($this->rootFile);
+        $json = json_encode($this->rootFile, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
         $time = time();
 
         $this->writeFile($file, $json, $time);
@@ -558,7 +558,7 @@ class SymlinkDumper
         // sort files to make hash consistent
         ksort($this->listings[$key]['providers']);
 
-        $json = json_encode($this->listings[$key]);
+        $json = json_encode($this->listings[$key], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
         $hash = hash('sha256', $json);
         $path = substr($path, 0, -5) . '$' . $hash . '.json';
         $time = time();
@@ -609,7 +609,7 @@ class SymlinkDumper
 
         $this->fs->mkdir(dirname($path));
 
-        $json = json_encode($this->individualFiles[$key]);
+        $json = json_encode($this->individualFiles[$key], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
         $this->writeFile($path, $json, $this->individualFilesMtime[$key]);
 
         // write the hashed provider file
