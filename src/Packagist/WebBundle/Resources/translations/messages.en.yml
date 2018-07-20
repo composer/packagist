@@ -13,6 +13,7 @@ menu:
     contact: Contact
     stats: Statistics
     api_doc: API
+    mirrors: Mirrors
     browse: Browse
     submit: Submit
     togglenav: Toggle navigation
@@ -144,6 +145,12 @@ api_doc:
     search_by_type: Search packages by type
     get_by_name: Get a package by name
     get_package_data: Getting package data
+
+mirrors:
+    title: Mirrors of the Packagist.org Metadata
+    caution: 'Disclaimer: A word of caution'
+    mirror_list: Existing mirrors
+    running_your_own: Running your own mirror
 
 user:
     member_since: member since
