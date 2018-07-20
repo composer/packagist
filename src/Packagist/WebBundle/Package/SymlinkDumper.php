@@ -300,11 +300,11 @@ class SymlinkDumper
             // prepare root file
             $rootFile = $buildDir.'/packages.json';
             $this->rootFile = array('packages' => array());
-            $url = $this->router->generate('track_download', array('name' => 'VND/PKG'));
+            $url = $this->router->generate('track_download', ['name' => 'VND/PKG'], UrlGeneratorInterface::ABSOLUTE_URL);
             $this->rootFile['notify'] = str_replace('VND/PKG', '%package%', $url);
-            $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch');
-            $this->rootFile['providers-url'] = $this->router->generate('home') . 'p/%package%$%hash%.json';
-            $this->rootFile['search'] = $this->router->generate('search', array('_format' => 'json')) . '?q=%query%&type=%type%';
+            $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch', [], UrlGeneratorInterface::ABSOLUTE_URL);
+            $this->rootFile['providers-url'] = $this->router->generate('home', []) . 'p/%package%$%hash%.json';
+            $this->rootFile['search'] = $this->router->generate('search', ['_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL) . '?q=%query%&type=%type%';
 
             if ($verbose) {
                 echo 'Dumping individual listings'.PHP_EOL;
