@@ -83,10 +83,13 @@ class UserController extends Controller
                 ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true)
                 ->getQuery()->getResult();
 
+            $providerManager = $this->get('packagist.provider_manager');
             foreach ($packages as $package) {
                 foreach ($package->getVersions() as $version) {
                     $versionRepo->remove($version);
                 }
+
+                $providerManager->deletePackage($package);
             }
 
             $this->getDoctrine()->getManager()->flush();
