@@ -12,7 +12,7 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
             throw new \LogicException('getKeysCount called before filterArguments');
         }
 
-        return count($this->args);
+        return count($this->args) - 1;
     }
 
     protected function filterArguments(array $arguments)
@@ -28,10 +28,10 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
 local doIncr = false;
 local successful = 0;
 for i, key in ipairs(KEYS) do
-    if i == 1 then
+    if i <= 3 then
         -- nothing
-    elseif ((i - 2) % 7) == 0 then
-        local requests = redis.call("INCR", key);
+    elseif ((i - 4) % 7) == 0 then
+        local requests = tonumber(redis.call("ZINCRBY", key, 1, ARGV[1]));
         if 1 == requests then
             redis.call("EXPIRE", key, 86400);
         end
@@ -48,6 +48,8 @@ end
 
 if successful > 0 then
     redis.call("INCRBY", KEYS[1], successful);
+    redis.call("INCRBY", KEYS[2], successful);
+    redis.call("INCRBY", KEYS[3], successful);
 end
 
 return redis.status_reply("OK");

@@ -121,14 +121,14 @@ class DownloadManager
             $this->redisCommandLoaded = true;
         }
 
-        $args = ['downloads'];
+        $args = ['downloads', 'downloads:'.$day, 'downloads:'.$month];
 
         foreach ($jobs as $job) {
             $package = $job['id'];
             $version = $job['vid'];
 
             // throttle key
-            $args[] = 'throttle:'.$package.':'.$job['ip'].':'.$day;
+            $args[] = 'throttle:'.$package.':'.$day;
             // stats keys
             $args[] = 'dl:'.$package;
             $args[] = 'dl:'.$package.':'.$month;
@@ -137,6 +137,8 @@ class DownloadManager
             $args[] = 'dl:'.$package.'-'.$version.':'.$month;
             $args[] = 'dl:'.$package.'-'.$version.':'.$day;
         }
+
+        $args[] = $job['ip'];
 
         $this->redis->downloadsIncr(...$args);
     }
