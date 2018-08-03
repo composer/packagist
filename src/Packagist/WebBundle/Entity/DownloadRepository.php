@@ -10,6 +10,6 @@ class DownloadRepository extends EntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        $conn->executeUpdate('DELETE FROM download WHERE package_id = :id', ['package_id' => $package->getId()]);
+        $conn->executeUpdate('DELETE FROM download WHERE package_id = :id', ['id' => $package->getId()]);
     }
 }

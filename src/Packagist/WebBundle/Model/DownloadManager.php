@@ -82,7 +82,7 @@ class DownloadManager
             $date->modify('-1 day');
         }
 
-        $total = $redisData[2];
+        $total = (int) $redisData[2];
 
         // how much of yesterday to add to today to make it a whole day (sort of..)
         $dayRatio = (2400 - (int) date('Hi')) / 2400;
