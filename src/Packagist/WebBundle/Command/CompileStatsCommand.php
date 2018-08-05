@@ -49,6 +49,8 @@ class CompileStatsCommand extends ContainerAwareCommand
         $conn = $doctrine->getManager()->getConnection();
         $this->redis = $redis = $this->getContainer()->get('snc_redis.default');
 
+        $yesterday = new \DateTime('yesterday 00:00:00');
+
         // fetch existing ids
         $doctrine = $this->getContainer()->get('doctrine');
         $packages = $conn->fetchAll('SELECT id FROM package ORDER BY id ASC');
