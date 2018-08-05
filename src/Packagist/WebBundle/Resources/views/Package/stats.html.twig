@@ -6,18 +6,6 @@
 
 {% block title %}{{ 'stats.title'|trans }} - {{ package.name }} - {{ parent() }}{% endblock %}
 
-{% block content_header %}
-    <section class="wrapper wrapper-white">
-        <div class="container flash-container">
-            <div class="alert alert-error">
-                <p>We are currently doing some background processing of download statistics, they might be unavailable on some packages for the next few days. Thanks for your patience.</p>
-            </div>
-        </div>
-    </section>
-
-    {{ parent() }}
-{% endblock %}
-
 {% block content %}
     <div class="row">
         <div class="col-xs-12 package">
