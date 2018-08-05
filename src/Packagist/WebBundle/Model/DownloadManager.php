@@ -58,12 +58,12 @@ class DownloadManager
 
         if ($version !== null) {
             $id = $version;
-            $type = Download::TYPE_PACKAGE;
+            $type = Download::TYPE_VERSION;
             $keyBase .= '-'.$version;
         }
 
         $record = $this->doctrine->getRepository(Download::class)->findOneBy(['id' => $id, 'type' => $type]);
-        $dlData = $record ? $record->data : [];
+        $dlData = $record ? $record->getData() : [];
 
         $keyBase .= ':';
         $date = new \DateTime();
@@ -84,6 +84,9 @@ class DownloadManager
         }
 
         $total = (int) $redisData[2];
+        if ($version) {
+            $total = $record ? $record->getTotal() : 0;
+        }
 
         // how much of yesterday to add to today to make it a whole day (sort of..)
         $dayRatio = (2400 - (int) date('Hi')) / 2400;
