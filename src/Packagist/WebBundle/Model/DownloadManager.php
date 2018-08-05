@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Model;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\DBAL\Connection;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\Download;
@@ -167,88 +168,71 @@ class DownloadManager
         $this->redis->downloadsIncr(...$args);
     }
 
-    public function transferDownloadsToDb(Package $package, DateTimeImmutable $lastUpdated)
+    public function transferDownloadsToDb(int $packageId, array $keys, DateTimeImmutable $now)
     {
-        // might be a large dataset coming through here especially on first run due to historical data
-        ini_set('memory_limit', '1G');
+        $package = $this->doctrine->getRepository(Package::class)->findOneById($packageId);
+        // package was deleted in the meantime, abort
+        if (!$package) {
+            $this->redis->del($keys);
+            return;
+        }
 
-        $packageId = $package->getId();
-        $rows = $this->doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package_version WHERE package_id = :id', ['id' => $packageId]);
+        $versionsWithDownloads = [];
+        foreach ($keys as $key) {
+            if (preg_match('{^dl:'.$packageId.'-(\d+):\d+$}', $key, $match)) {
+                $versionsWithDownloads[(int) $match[1]] = true;
+            }
+        }
+
+        $rows = $this->doctrine->getManager()->getConnection()->fetchAll(
+            'SELECT id FROM package_version WHERE id IN (:ids)',
+            ['ids' => array_keys($versionsWithDownloads)],
+            ['ids' => Connection::PARAM_INT_ARRAY]
+        );
         $versionIds = [];
         foreach ($rows as $row) {
-            $versionIds[] = $row['id'];
+            $versionIds[] = (int) $row['id'];
         }
-
-        $now = new DateTimeImmutable();
-        $keys = [];
-        $firstIteration = true;
-        while ($lastUpdated < $now) {
-            // TODO delete once the redis db has been purged
-            if ($firstIteration || $lastUpdated->format('d') === '01') {
-                $firstIteration = false;
-                // dl:$package:Ym
-                $keys[] = 'dl:'.$packageId.':'.$lastUpdated->format('Ym');
-                foreach ($versionIds as $id) {
-                    // dl:$package-$version and dl:$package-$version:Ym
-                    $keys[] = 'dl:'.$packageId.'-'.$id;
-                    $keys[] = 'dl:'.$packageId.'-'.$id.':'.$lastUpdated->format('Ym');
-                }
-            }
-
-            // dl:$package:Ymd
-            $keys[] = 'dl:'.$packageId.':'.$lastUpdated->format('Ymd');
-            foreach ($versionIds as $id) {
-                // dl:$package-$version:Ymd
-                $keys[] = 'dl:'.$packageId.'-'.$id.':'.$lastUpdated->format('Ymd');
-            }
-
-            $lastUpdated = $lastUpdated->modify('+1day');
-        }
+        unset($versionsWithDownloads, $rows, $row);
 
         sort($keys);
 
+        $values = $this->redis->mget($keys);
+
         $buffer = [];
-        $toDelete = [];
-        $lastPrefix = '';
+        $lastPrefix = null;
 
-        foreach ($keys as $key) {
-            // ignore IP keys temporarily until they all switch to throttle:* prefix
-            if (preg_match('{^dl:\d+:(\d+\.|[0-9a-f]+:[0-9a-f]+:)}', $key)) {
-                continue;
-            }
-
-            // delete version totals when we find one
-            if (preg_match('{^dl:\d+-\d+$}', $key)) {
-                $toDelete[] = $key;
-                continue;
-            }
-
+        foreach ($keys as $index => $key) {
             $prefix = preg_replace('{:\d+$}', ':', $key);
 
             if ($lastPrefix && $prefix !== $lastPrefix && $buffer) {
-                $toDelete = $this->createDbRecordsForKeys($package, $buffer, $toDelete, $now);
+                $this->createDbRecordsForKeys($package, $buffer, $versionIds, $now);
                 $buffer = [];
             }
 
-            $buffer[] = $key;
+            $buffer[$key] = (int) $values[$index];
             $lastPrefix = $prefix;
         }
 
         if ($buffer) {
-            $toDelete = $this->createDbRecordsForKeys($package, $buffer, $toDelete, $now);
+            $this->createDbRecordsForKeys($package, $buffer, $versionIds, $now);
         }
 
         $this->doctrine->getManager()->flush();
 
-        while ($toDelete) {
-            $batch = array_splice($toDelete, 0, 1000);
-            $this->redis->del($batch);
-        }
+        $this->redis->del($keys);
     }
 
-    private function createDbRecordsForKeys(Package $package, array $keys, array $toDelete, DateTimeImmutable $now): array
+    private function createDbRecordsForKeys(Package $package, array $keys, array $validVersionIds, DateTimeImmutable $now)
     {
-        list($id, $type) = $this->getKeyInfo($keys[0]);
+        reset($keys);
+        list($id, $type) = $this->getKeyInfo(key($keys));
+
+        // skip if the version was deleted in the meantime
+        if ($type === Download::TYPE_VERSION && !in_array($id, $validVersionIds, true)) {
+            return;
+        }
+
         $record = $this->doctrine->getRepository(Download::class)->findOneBy(['id' => $id, 'type' => $type]);
         $isNewRecord = false;
         if (!$record) {
@@ -259,26 +243,12 @@ class DownloadManager
             $isNewRecord = true;
         }
 
-        $today = date('Ymd');
         $record->setLastUpdated($now);
 
-        $values = $this->redis->mget($keys);
-        foreach ($keys as $index => $key) {
+        foreach ($keys as $key => $val) {
             $date = preg_replace('{^.*?:(\d+)$}', '$1', $key);
-
-            // monthly data point, discard
-            if (strlen($date) === 6) {
-                $toDelete[] = $key;
-                continue;
-            }
-
-            $val = (int) $values[$index];
             if ($val) {
                 $record->setDataPoint($date, $val);
-            }
-            // today's value is not deleted yet as it might not be complete and we want to update it when its complete
-            if ($date !== $today) {
-                $toDelete[] = $key;
             }
         }
 
@@ -288,8 +258,6 @@ class DownloadManager
         }
 
         $record->computeSum();
-
-        return $toDelete;
     }
 
     private function getKeyInfo(string $key): array

@@ -40,18 +40,63 @@ class MigrateDownloadCountsCommand extends ContainerAwareCommand
         $packageRepo = $doctrine->getRepository(Package::class);
 
         try {
-            $packagesToProcess = $packageRepo->iterateStaleDownloadCountPackageIds();
-            foreach ($packagesToProcess as $packageDetails) {
-                $packageId = $packageDetails['id'];
-                $logger->debug('Processing package #'.$packageId);
-                $package = $packageRepo->findOneById($packageId);
-                $downloadManager->transferDownloadsToDb($package, $packageDetails['lastUpdated']);
+            // might be a large-ish dataset coming through here
+            ini_set('memory_limit', '1G');
 
-                $doctrine->getManager()->clear();
+            $redis = $this->getContainer()->get('snc_redis.default_client');
+            $now = new \DateTimeImmutable();
+            $todaySuffix = ':'.$now->format('Ymd');
+            $keysToUpdate = $redis->keys('dl:*:*');
 
-                if ($signal->isTriggered()) {
-                    break;
+            // skip today datapoints as we will store that to the DB tomorrow
+            $keysToUpdate = array_filter($keysToUpdate, function ($key) use ($todaySuffix) {
+                return strpos($key, $todaySuffix) === false;
+            });
+
+            // sort by package id, then package datapoint first followed by version datapoints
+            usort($keysToUpdate, function ($a, $b) {
+                $amin = preg_replace('{^(dl:\d+).*}', '$1', $a);
+                $bmin = preg_replace('{^(dl:\d+).*}', '$1', $b);
+
+                if ($amin !== $bmin) {
+                    return strcmp($amin, $bmin);
                 }
+
+                return strcmp($b, $a);
+            });
+
+            // buffer keys per package id and process all keys for a given package one by one
+            // to reduce SQL load
+            $buffer = [];
+            $lastPackageId = null;
+            while ($keysToUpdate) {
+                $key = array_shift($keysToUpdate);
+                if (!preg_match('{^dl:(\d+)}', $key, $m)) {
+                    $logger->error('Invalid dl key found: '.$key);
+                    continue;
+                }
+
+                $packageId = (int) $m[1];
+
+                if ($lastPackageId && $lastPackageId !== $packageId) {
+                    $logger->warning('Processing package #'.$lastPackageId);
+                    $downloadManager->transferDownloadsToDb($lastPackageId, $buffer, $now);
+                    $buffer = [];
+
+                    $doctrine->getManager()->clear();
+
+                    if ($signal->isTriggered()) {
+                        break;
+                    }
+                }
+
+                $buffer[] = $key;
+                $lastPackageId = $packageId;
+            }
+
+            // process last package
+            if ($buffer) {
+                $downloadManager->transferDownloadsToDb($lastPackageId, $buffer, $now);
             }
         } finally {
             $locker->unlockCommand($this->getName());
