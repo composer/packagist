@@ -79,7 +79,7 @@ class MigrateDownloadCountsCommand extends ContainerAwareCommand
                 $packageId = (int) $m[1];
 
                 if ($lastPackageId && $lastPackageId !== $packageId) {
-                    $logger->warning('Processing package #'.$lastPackageId);
+                    $logger->debug('Processing package #'.$lastPackageId);
                     $downloadManager->transferDownloadsToDb($lastPackageId, $buffer, $now);
                     $buffer = [];
 
