@@ -193,7 +193,7 @@ class Updater
             }
 
             if (isset($processedVersions[strtolower($version->getVersion())])) {
-                $io->write('Skipping version '.$version->getPrettyVersion().' (duplicate of '.$processedVersions[$version->getVersion()]->getPrettyVersion().')', true, IOInterface::VERBOSE);
+                $io->write('Skipping version '.$version->getPrettyVersion().' (duplicate of '.$processedVersions[strtolower($version->getVersion())]->getPrettyVersion().')', true, IOInterface::VERBOSE);
                 continue;
             }
             $processedVersions[strtolower($version->getVersion())] = $version;
