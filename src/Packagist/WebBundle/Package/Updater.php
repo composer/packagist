@@ -183,6 +183,7 @@ class Updater
 
         $existingVersions = $versionRepository->getVersionMetadataForUpdate($package);
 
+        $processedVersions = [];
         $lastUpdated = true;
         $lastProcessed = null;
         $idsToMarkUpdated = [];
@@ -191,11 +192,11 @@ class Updater
                 continue;
             }
 
-            if ($lastProcessed && $lastProcessed->getVersion() === $version->getVersion()) {
-                $io->write('Skipping version '.$version->getPrettyVersion().' (duplicate of '.$lastProcessed->getPrettyVersion().')', true, IOInterface::VERBOSE);
+            if (isset($processedVersions[strtolower($version->getVersion())])) {
+                $io->write('Skipping version '.$version->getPrettyVersion().' (duplicate of '.$processedVersions[$version->getVersion()]->getPrettyVersion().')', true, IOInterface::VERBOSE);
                 continue;
             }
-            $lastProcessed = $version;
+            $processedVersions[strtolower($version->getVersion())] = $version;
 
             $result = $this->updateInformation($versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
             $lastUpdated = $result['updated'];
