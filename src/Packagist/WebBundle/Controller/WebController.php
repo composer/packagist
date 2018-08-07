@@ -255,11 +255,11 @@ class WebController extends Controller
             $downloads = $redis->get('downloads') ?: 0;
 
             $date = new \DateTime($downloadsStartDate.' 00:00:00');
-            $yesterday = new \DateTime('-2days 00:00:00');
-            $dailyGraphStart = new \DateTime('-32days 00:00:00'); // 30 days before yesterday
+            $today = new \DateTime('today 00:00:00');
+            $dailyGraphStart = new \DateTime('-30days 00:00:00'); // 30 days before today
 
             $dlChart = $dlChartMonthly = array();
-            while ($date <= $yesterday) {
+            while ($date <= $today) {
                 if ($date > $dailyGraphStart) {
                     $dlChart[$date->format('Y-m-d')] = 'downloads:'.$date->format('Ymd');
                 }

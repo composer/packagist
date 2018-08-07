@@ -117,6 +117,7 @@ statistics:
     title: Statistics
     over_time: Packages/versions over time
     last_partial: The last data point is for the current month and shows partial data.
+    last_partial_day: The last data point is for the current day (UTC) and shows partial data.
     last_month: Packages installed in the last 30 days
     monthly: Packages installed per month
     packages: Packages
