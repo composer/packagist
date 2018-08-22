@@ -632,6 +632,20 @@ class Package
     }
 
     /**
+     * Get a user-browsable version of the repository URL
+     *
+     * @return string $repository
+     */
+    public function getBrowsableRepository()
+    {
+        if (preg_match('{(://|@)bitbucket.org[:/]}i', $this->repository)) {
+            return preg_replace('{^(?:git@|https://|git://)bitbucket.org[:/](.+?)(?:\.git)?$}i', 'https://bitbucket.org/$1', $this->repository);
+        }
+
+        return preg_replace('{^(git://github.com/|git@github.com:)}', 'https://github.com/', $this->repository);
+    }
+
+    /**
      * Add versions
      *
      * @param Version $versions
