@@ -87,7 +87,7 @@ nelmio_security:
                 - 'unsafe-inline'
                 - 'unsafe-eval'
                 - 'https://cdn.jsdelivr.net/'
-                - 'https://ssl.google-analytics.com/'
+                - 'https://www.google-analytics.com/'
             connect-src:
                 - 'self'
                 - '*.algolia.net'
@@ -99,7 +99,7 @@ nelmio_security:
                 - 'https://raw.github.com/'
                 - 'https://github.com/'
                 - 'https://gitlab.com/'
-                - 'https://ssl.google-analytics.com/'
+                - 'https://www.google-analytics.com/'
                 - 'http://www.google-analytics.com/'
             style-src:
                 - 'self'
