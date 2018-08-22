@@ -485,6 +485,16 @@ class Package
     }
 
     /**
+     * Get readme with transformations that should not be done in the stored readme as they might not be valid in the long run
+     *
+     * @return string
+     */
+    public function getOptimizedReadme()
+    {
+        return str_replace(['<img src="https://raw.github.com/', '<img src="https://raw.githubusercontent.com/'], '<img src="https://rawcdn.githack.com/', $this->readme);
+    }
+
+    /**
      * @param int $val
      */
     public function setGitHubStars($val)
