@@ -68,12 +68,14 @@ class UpdaterWorker
             return ['status' => Job::STATUS_PACKAGE_GONE, 'message' => 'Package was deleted, skipped'];
         }
 
+        $packageName = $package->getName();
+
         $lockAcquired = $this->locker->lockPackageUpdate($id);
         if (!$lockAcquired) {
             return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+5 seconds')];
         }
 
-        $this->logger->info('Updating '.$package->getName());
+        $this->logger->info('Updating '.$packageName);
 
         $config = Factory::createConfig();
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
@@ -115,13 +117,22 @@ class UpdaterWorker
                 $package = $packageRepository->findOneById($id);
             }
 
+            if (!$package) {
+                return [
+                    'status' => Job::STATUS_FAILED,
+                    'message' => 'Update of '.$packageName.' failed, package appears to be gone',
+                    'details' => '<pre>'.$output.'</pre>',
+                    'exception' => $e,
+                ];
+            }
+
             // invalid composer data somehow, notify the owner and then mark the job failed
             if ($e instanceof InvalidRepositoryException) {
                 $this->packageManager->notifyUpdateFailure($package, $e, $output);
 
                 return [
                     'status' => Job::STATUS_FAILED,
-                    'message' => 'Update of '.$package->getName().' failed, invalid composer.json metadata',
+                    'message' => 'Update of '.$packageName.' failed, invalid composer.json metadata',
                     'details' => '<pre>'.$output.'</pre>',
                     'exception' => $e,
                 ];
@@ -163,7 +174,7 @@ class UpdaterWorker
 
                 return [
                     'status' => Job::STATUS_PACKAGE_GONE,
-                    'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been marked as crawled for 1year',
+                    'message' => 'Update of '.$packageName.' failed, package appears to be 404/gone and has been marked as crawled for 1year',
                     'details' => '<pre>'.$output.'</pre>',
                     'exception' => $e,
                 ];
@@ -173,7 +184,7 @@ class UpdaterWorker
             if ($e instanceof TransportException && strpos($e->getMessage(), 'file could not be downloaded: failed to open stream: HTTP request failed!')) {
                 return [
                     'status' => Job::STATUS_FAILED,
-                    'message' => 'Package data of '.$package->getName().' could not be downloaded. Could not reach remote VCS server. Please try again later.',
+                    'message' => 'Package data of '.$packageName.' could not be downloaded. Could not reach remote VCS server. Please try again later.',
                     'exception' => $e
                 ];
             }
@@ -182,12 +193,12 @@ class UpdaterWorker
             if ($e instanceof TransportException) {
                 return [
                     'status' => Job::STATUS_FAILED,
-                    'message' => 'Package data of '.$package->getName().' could not be downloaded.',
+                    'message' => 'Package data of '.$packageName.' could not be downloaded.',
                     'exception' => $e
                 ];
             }
 
-            $this->logger->error('Failed update of '.$package->getName(), ['exception' => $e]);
+            $this->logger->error('Failed update of '.$packageName, ['exception' => $e]);
 
             // unexpected error so mark the job errored
             throw $e;
@@ -197,7 +208,7 @@ class UpdaterWorker
 
         return [
             'status' => Job::STATUS_COMPLETED,
-            'message' => 'Update of '.$package->getName().' complete',
+            'message' => 'Update of '.$packageName.' complete',
             'details' => '<pre>'.$io->getOutput().'</pre>'
         ];
     }
