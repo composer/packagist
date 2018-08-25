@@ -615,6 +615,15 @@ class Updater
             '*.class'
         );
 
+        // detect base path if the github readme is located in a subfolder like docs/README.md
+        $basePath = '';
+        if ($isGithub && preg_match('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
+            $basePath = dirname($match[1]);
+        }
+        if ($basePath) {
+            $basePath .= '/';
+        }
+
         $config = \HTMLPurifier_Config::createDefault();
         $config->set('HTML.AllowedElements', implode(',', $elements));
         $config->set('HTML.AllowedAttributes', implode(',', $attributes));
@@ -637,7 +646,7 @@ class Updater
             } elseif ($isGithub && false === strpos($link->getAttribute('href'), '//')) {
                 $link->setAttribute(
                     'href',
-                    'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$link->getAttribute('href')
+                    'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$basePath.$link->getAttribute('href')
                 );
             }
         }
@@ -649,7 +658,7 @@ class Updater
                 if (false === strpos($img->getAttribute('src'), '//')) {
                     $img->setAttribute(
                         'src',
-                        'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$img->getAttribute('src')
+                        'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$basePath.$img->getAttribute('src')
                     );
                 }
             }
