@@ -179,12 +179,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "0f6b305bd94b4b2de37816cd6e26071378be811d"
+                "reference": "d1006209871ff28f617611972569421d22e36100"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/0f6b305bd94b4b2de37816cd6e26071378be811d",
-                "reference": "0f6b305bd94b4b2de37816cd6e26071378be811d",
+                "url": "https://api.github.com/repos/composer/composer/zipball/d1006209871ff28f617611972569421d22e36100",
+                "reference": "d1006209871ff28f617611972569421d22e36100",
                 "shasum": ""
             },
             "require": {
@@ -251,7 +251,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2018-08-22T07:57:41+00:00"
+            "time": "2018-08-25T16:49:56+00:00"
         },
         {
             "name": "composer/semver",
@@ -378,16 +378,16 @@
         },
         {
             "name": "composer/xdebug-handler",
-            "version": "1.2.0",
+            "version": "1.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/xdebug-handler.git",
-                "reference": "e1809da56ce1bd1b547a752936817341ac244d8e"
+                "reference": "e37cbd80da64afe314c72de8d2d2fec0e40d9373"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/xdebug-handler/zipball/e1809da56ce1bd1b547a752936817341ac244d8e",
-                "reference": "e1809da56ce1bd1b547a752936817341ac244d8e",
+                "url": "https://api.github.com/repos/composer/xdebug-handler/zipball/e37cbd80da64afe314c72de8d2d2fec0e40d9373",
+                "reference": "e37cbd80da64afe314c72de8d2d2fec0e40d9373",
                 "shasum": ""
             },
             "require": {
@@ -418,7 +418,7 @@
                 "Xdebug",
                 "performance"
             ],
-            "time": "2018-08-16T10:54:23+00:00"
+            "time": "2018-08-23T12:00:19+00:00"
         },
         {
             "name": "container-interop/container-interop",
