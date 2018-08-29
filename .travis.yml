@@ -4,7 +4,7 @@ sudo: false
 
 env:
   global:
-    secure: E9/Y2vJv4GGGdjRZUJuL31q79C2dbgL1yNcclE4MIPXrPWe5f0LuQMwCGbaGN+b6u/VX6YQL6OcFt+VsxL5e439EoYMMY+MmUeDnq5jRzPOVZqgXlNZAxh4KzoNh3Q2nXp6uSr+yaNCFedcx1Os7n5CoLwqji+TATsTPZ1EEDqI=
+    secure: "ejwL5+8AWrlcno3bSOfLNgNEGe6Kdegk19dr/It4QCZDw9Vs5nmuUq3e7sZ0+CSLVoo5q3L1Zs0YbkDdgkFA8Z2zWyhWxNjIWx+qb1aDh7ffSSileVRiw8ReQ14GiXxGTi0V5zR2zNwY5KdJNor0CsV8hOgZmFz6/qEUzXWY9Kw="
 
 cache:
   directories:
