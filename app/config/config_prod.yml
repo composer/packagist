@@ -102,6 +102,9 @@ nelmio_security:
                 - 'https://gitlab.com/'
                 - 'https://www.google-analytics.com/'
                 - 'http://www.google-analytics.com/'
+                - 'https://img.shields.io/'
+                - 'https://gitlab.styleci.io/'
+                - 'https://poser.pugx.org/'
             style-src:
                 - 'self'
                 - 'unsafe-inline'
