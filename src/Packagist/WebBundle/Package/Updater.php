@@ -286,7 +286,7 @@ class Updater
         $version->setDescription($descr);
 
         // update the package description only for the default branch
-        if ($rootIdentifier === null || preg_replace('{dev-|-dev}', '', $version->getVersion()) === $rootIdentifier) {
+        if ($rootIdentifier === null || preg_replace('{dev-|(\.x)?-dev}', '', $version->getVersion()) === $rootIdentifier) {
             $package->setDescription($descr);
         }
 
