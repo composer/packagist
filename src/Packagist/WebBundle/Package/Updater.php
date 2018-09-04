@@ -140,6 +140,10 @@ class Updater
                 }
             }
 
+            if (!$repository->getDriver()) {
+                throw new \RuntimeException('Driver could not be established for package '.$package->getName().' ('.$package->getRepository().')');
+            }
+
             $rootIdentifier = $repository->getDriver()->getRootIdentifier();
         }
 
