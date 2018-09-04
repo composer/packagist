@@ -65,7 +65,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
         $doctrine = $this->getContainer()->get('doctrine');
 
         if ($force) {
-            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForDumping();
         }
