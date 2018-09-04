@@ -63,7 +63,6 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         $user->setGithubId($username);
         $user->setGithubToken($response->getAccessToken());
         $user->setGithubScope($response->getOAuthToken()->getRawToken()['scope']);
-        $this->scheduler->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
 
         // The account is already connected. Do nothing
         if ($previousUser === $user) {
@@ -78,6 +77,8 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         }
 
         $this->userManager->updateUser($user);
+
+        $this->scheduler->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
     }
 
     /**
