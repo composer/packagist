@@ -186,7 +186,7 @@ class ApiController extends Controller
             return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 200);
         }
 
-        $this->get('packagist.download_manager')->addDownloads(['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $request->getClientIp()]);
+        $this->get('packagist.download_manager')->addDownloads([['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $request->getClientIp()]]);
 
         return new JsonResponse(array('status' => 'success'), 201);
     }
