@@ -69,7 +69,7 @@ services:
             - '@fos_user.user_manager'
             - '@fos_user.util.token_generator'
             - '@event_dispatcher'
-            - '@service_container'
+            - '@request_stack'
 
     packagist.oauth.registration_form_handler:
         class: Packagist\WebBundle\Form\Handler\OAuthRegistrationFormHandler

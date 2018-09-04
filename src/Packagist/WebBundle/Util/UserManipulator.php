@@ -15,8 +15,8 @@ namespace Packagist\WebBundle\Util;
 use FOS\UserBundle\Model\UserManagerInterface;
 use FOS\UserBundle\Util\TokenGeneratorInterface;
 use FOS\UserBundle\Util\UserManipulator as BaseManipulator;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class UserManipulator extends BaseManipulator
 {
@@ -30,13 +30,13 @@ class UserManipulator extends BaseManipulator
         UserManagerInterface $userManager,
         TokenGeneratorInterface $tokenGenerator,
         EventDispatcherInterface $dispatcher,
-        ContainerInterface $container
+        RequestStack $requestStack
     )
     {
         $this->userManager = $userManager;
         $this->tokenGenerator = $tokenGenerator;
 
-        parent::__construct($userManager, $dispatcher, $container);
+        parent::__construct($userManager, $dispatcher, $requestStack);
     }
 
     /**
