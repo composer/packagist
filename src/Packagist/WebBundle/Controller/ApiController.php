@@ -240,7 +240,10 @@ class ApiController extends Controller
 
             $jobs[] = ['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $ip];
         }
-        $this->get('packagist.download_manager')->addDownloads($jobs);
+
+        if ($jobs) {
+            $this->get('packagist.download_manager')->addDownloads($jobs);
+        }
 
         if ($failed) {
             return new JsonResponse(array('status' => 'partial', 'message' => 'Packages '.json_encode($failed).' not found'), 200);
