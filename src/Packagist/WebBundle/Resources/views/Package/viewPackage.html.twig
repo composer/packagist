@@ -45,12 +45,15 @@
                 <div class="col-md-8">
                     <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="composer {% if package.type == 'project' %}create-project{% else %}require{% endif %} {{ "#{package.vendor}/#{package.packageName}" }}" /></p>
 
-                    {% if not package.autoUpdated and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
+                    {% if not package.isAutoUpdated() and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
                         {% if "github.com" in package.repository %}
-                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">GitHub Service Hook</a> for Packagist so that it gets updated whenever you push!</div>
+                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">GitHub Hook</a> for Packagist so that it gets updated whenever you push!</div>
                         {% elseif "bitbucket.org" in package.repository %}
                             <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">BitBucket Webhooks</a> for Packagist so that it gets updated whenever you push!</div>
                         {% endif %}
+                    {% endif %}
+                    {% if "github.com" in package.repository and package.getAutoUpdated() == 1 and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
+                        <div class="alert alert-danger">This package is using the legacy GitHub service and will stop being auto-updated in early 2019. Please set up the new <a href="{{ path('about') }}#how-to-update-packages">GitHub Hook</a> for Packagist so that it keeps working in the future.</div>
                     {% endif %}
 
                     {% if package.abandoned %}

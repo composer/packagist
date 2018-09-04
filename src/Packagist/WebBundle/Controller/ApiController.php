@@ -278,19 +278,35 @@ class ApiController extends Controller
     protected function receivePost(Request $request, $url, $urlRegex)
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
-        if (!preg_match($urlRegex, $url)) {
+        if (!preg_match($urlRegex, $url, $match)) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL')), 406);
         }
 
         // find the user
         $user = $this->findUser($request);
 
-        if (!$user) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials')), 403);
+        $packages = null;
+        $autoUpdated = Package::AUTO_MANUAL_HOOK;
+        if (!$user && $match['host'] === 'github.com' && $request->getContent()) {
+            $sig = $request->headers->get('X-Hub-Signature');
+            if ($sig) {
+                list($algo, $sig) = explode('=', $sig);
+                $expected = hash_hmac($algo, $request->getContent(), $this->container->getParameter('github.webhook_secret'));
+                if (hash_equals($expected, $sig)) {
+                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path']);
+                    $autoUpdated = Package::AUTO_GITHUB_HOOK;
+                }
+            }
         }
 
-        // try to find the user package
-        $packages = $this->findPackagesByUrl($user, $url, $urlRegex);
+        if (!$packages) {
+            if (!$user) {
+                return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials')), 403);
+            }
+
+            // try to find the user package
+            $packages = $this->findPackagesByUrl($user, $url, $urlRegex);
+        }
 
         if (!$packages) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)')), 404);
@@ -302,7 +318,7 @@ class ApiController extends Controller
 
         /** @var Package $package */
         foreach ($packages as $package) {
-            $package->setAutoUpdated(true);
+            $package->setAutoUpdated($autoUpdated);
             $em->flush($package);
 
             $job = $this->get('scheduler')->scheduleUpdate($package);
@@ -327,6 +343,10 @@ class ApiController extends Controller
         $apiToken = $request->request->has('apiToken') ?
             $request->request->get('apiToken') :
             $request->query->get('apiToken');
+
+        if (!$apiToken || !$username) {
+            return null;
+        }
 
         $user = $this->get('packagist.user_repository')
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
@@ -363,5 +383,14 @@ class ApiController extends Controller
         }
 
         return $packages;
+    }
+
+    /**
+     * @param string $url
+     * @return array the packages found
+     */
+    protected function findPackagesByRepository(string $url): array
+    {
+        return $this->getDoctrine()->getRepository('PackagistWebBundle:Package')->findBy(['repository' => $url]);
     }
 }

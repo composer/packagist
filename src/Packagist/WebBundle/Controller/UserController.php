@@ -50,6 +50,37 @@ class UserController extends Controller
     }
 
     /**
+     * @Route("/trigger-github-sync/", name="user_github_sync")
+     */
+    public function triggerGitHubSyncAction(Request $req)
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            throw new \AccessDeniedException();
+        }
+
+        if (!$user->getGithubToken()) {
+            $this->get('session')->getFlashBag()->set('error', 'You must connect your user account to github to sync packages.');
+
+            return $this->redirectToRoute('fos_user_profile_show');
+        }
+
+        if (!$user->getGithubScope()) {
+            $this->get('session')->getFlashBag()->set('error', 'Please log out and log in with GitHub again to make sure the correct GitHub permissions are granted.');
+
+            return $this->redirectToRoute('fos_user_profile_show');
+        }
+
+        $this->get('scheduler')->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
+
+        sleep(5);
+
+        $this->get('session')->getFlashBag()->set('success', 'User sync scheduled. It might take a few seconds to run through, make sure you refresh then to check if any packages still need sync.');
+
+        return $this->redirectToRoute('fos_user_profile_show');
+    }
+
+    /**
      * @Route("/spammers/{name}/", name="mark_spammer")
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      * @Method({"POST"})

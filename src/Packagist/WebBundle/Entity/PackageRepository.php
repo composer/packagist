@@ -78,6 +78,20 @@ class PackageRepository extends EntityRepository
         return $this->getPackageNamesForQuery($query);
     }
 
+    public function getGitHubPackagesByMaintainer(int $userId)
+    {
+        $query = $this->createQueryBuilder('p')
+            ->select('p')
+            ->leftJoin('p.maintainers', 'm')
+            ->where('m.id = :userId')
+            ->andWhere('p.repository LIKE :repoUrl')
+            ->andWhere('p.autoUpdated != :synced')
+            ->getQuery()
+            ->setParameters(['userId' => $userId, 'repoUrl' => 'https://github.com/%', 'synced' => Package::AUTO_GITHUB_HOOK]);
+
+        return $query->getResult();
+    }
+
     public function getPackagesWithFields($filters, $fields)
     {
         $selector = '';

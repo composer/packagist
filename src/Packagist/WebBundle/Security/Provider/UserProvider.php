@@ -19,6 +19,7 @@ use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
 use Packagist\WebBundle\Entity\User;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
+use Packagist\WebBundle\Service\Scheduler;
 
 class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInterface
 {
@@ -33,13 +34,19 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     private $userProvider;
 
     /**
+     * @var Scheduler
+     */
+    private $scheduler;
+
+    /**
      * @param UserManagerInterface  $userManager
      * @param UserProviderInterface $userProvider
      */
-    public function __construct(UserManagerInterface $userManager, UserProviderInterface $userProvider)
+    public function __construct(UserManagerInterface $userManager, UserProviderInterface $userProvider, Scheduler $scheduler)
     {
         $this->userManager = $userManager;
         $this->userProvider = $userProvider;
+        $this->scheduler = $scheduler;
     }
 
     /**
@@ -55,6 +62,8 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         /** @var User $user */
         $user->setGithubId($username);
         $user->setGithubToken($response->getAccessToken());
+        $user->setGithubScope($response->getOAuthToken()->getRawToken()['scope']);
+        $this->scheduler->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
 
         // The account is already connected. Do nothing
         if ($previousUser === $user) {
@@ -86,7 +95,12 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
 
         if ($user->getGithubToken() !== $response->getAccessToken()) {
             $user->setGithubToken($response->getAccessToken());
+            $oldScope = $user->getGithubScope();
+            $user->setGithubScope($response->getOAuthToken()->getRawToken()['scope']);
             $this->userManager->updateUser($user);
+            if ($oldScope !== $user->getGithubScope()) {
+                $this->scheduler->scheduleUserScopeMigration($user->getId(), $oldScope ?: '', $user->getGithubScope());
+            }
         }
 
         return $user;

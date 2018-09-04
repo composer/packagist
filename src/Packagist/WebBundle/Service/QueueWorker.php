@@ -56,7 +56,6 @@ class QueueWorker
 
             $result = $this->redis->brpop('jobs', 10);
             if (!$result) {
-                $this->logger->debug('No message in queue');
                 continue;
             }
 

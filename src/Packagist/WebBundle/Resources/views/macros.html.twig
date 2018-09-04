@@ -16,7 +16,11 @@
                                 {% if package.id is not numeric %}
                                     <small>(Virtual Package)</small>
                                 {% endif %}
-                                {% if showAutoUpdateWarning and not package.autoUpdated %}
+                                {% if showAutoUpdateWarning and '://github.com/' in package.repository and package.getAutoUpdated() == 1 %}
+                                    <small>(Legacy Auto-Update, Needs Attention)</small>
+                                {% elseif showAutoUpdateWarning and '://github.com/' in package.repository and package.getAutoUpdated() == 0 %}
+                                    <small>(Not Auto-Updated, Needs Attention)</small>
+                                {% elseif showAutoUpdateWarning and not package.isAutoUpdated() %}
                                     <small>(Not Auto-Updated)</small>
                                 {% endif %}
                             </h4>

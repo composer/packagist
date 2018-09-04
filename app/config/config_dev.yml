@@ -42,9 +42,5 @@ monolog:
                 VERBOSITY_DEBUG: DEBUG
             channels: ["doctrine"]
 
-hwi_oauth:
-    http_client:
-        verify_peer: false
-
 #assetic:
 #    use_controller: true

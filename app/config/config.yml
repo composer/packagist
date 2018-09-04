@@ -111,6 +111,7 @@ hwi_oauth:
             type:          github
             client_id:     '%github.client_id%'
             client_secret: '%github.client_secret%'
+            scope: admin:repo_hook,read:org
             options:
                 csrf: true
 
@@ -128,3 +129,13 @@ nelmio_cors:
         '^/packages/[^/]+/[^/]+\.json$':
             allow_methods: ['GET']
             forced_allow_origin_value: '*'
+
+httplug:
+    plugins:
+        logger: ~
+    clients:
+        default:
+            factory: 'httplug.factory.guzzle6'
+            plugins: ['httplug.plugin.logger']
+            config:
+                timeout: 2

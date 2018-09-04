@@ -101,17 +101,15 @@ v2.0.4-p1</code></pre>
     <h2 class="title" id="how-to-update-packages">How to update packages?</h2>
     <section class="row">
         <section class="col-md-6">
-            <h3>GitHub Service Hook</h3>
+            <h3>GitHub Hook</h3>
             <p>Enabling the Packagist service hook ensures that your package will always be updated instantly when you push to GitHub.</p>
             <p>To do so you can:</p>
             <ul>
-                <li>Go to your GitHub repository</li>
-                <li>Click the "Settings" button</li>
-                <li>Click "Integrations &amp; services"</li>
-                <li>Add a "Packagist" service, and configure it with your API token, plus your Packagist username</li>
-                <li>Check the "Active" box and submit the form</li>
+                <li>Make sure you login via GitHub (if you already have an account not connected to GitHub, you can <a href="https://packagist.org/profile/edit">connect it on your profile</a>).</li>
+                <li>Make sure <a href="https://github.com/settings/connections/applications/a059f127e1c09c04aa5a">the Packagist application</a> has access to all the GitHub organizations you need to publish packages from.</li>
+                <li>Check <a href="https://packagist.org/profile/">your package list</a> to see if any has a warning about not being automatically synced.</li>
+                <li>If you still need to setup sync on some packages, try <a rel="nofollow noindex" href="{{ path('user_github_sync') }}">triggering a manual account sync</a> to have Packagist try to set up hooks on your account again.</li>
             </ul>
-            <p>You can then hit the "Test Service" button to trigger it and check if Packagist removes the warning about the package not being auto-updated.</p>
         </section>
 
         <section class="col-md-6">

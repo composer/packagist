@@ -108,6 +108,9 @@ class PackageController extends Controller
                 $em->flush();
 
                 $this->get('packagist.provider_manager')->insertPackage($package);
+                if ($user->getGithubToken()) {
+                    $this->get('github_user_migration_worker')->setupWebHook($user->getGithubToken(), $package);
+                }
 
                 $this->get('session')->getFlashBag()->set('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
 
@@ -559,7 +562,7 @@ class PackageController extends Controller
 
         if ($package->getMaintainers()->contains($user) || $this->isGranted('ROLE_UPDATE_PACKAGES')) {
             if (null !== $autoUpdated) {
-                $package->setAutoUpdated((bool) $autoUpdated);
+                $package->setAutoUpdated($autoUpdated ? Package::AUTO_MANUAL_HOOK : 0);
                 $doctrine->getManager()->flush();
             }
 

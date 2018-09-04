@@ -29,7 +29,8 @@ use Composer\Repository\Vcs\GitHubDriver;
  *     indexes={
  *         @ORM\Index(name="indexed_idx",columns={"indexedAt"}),
  *         @ORM\Index(name="crawled_idx",columns={"crawledAt"}),
- *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"})
+ *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"}),
+ *         @ORM\Index(name="repository_idx",columns={"repository"})
  *     }
  * )
  * @Assert\Callback(callback="isPackageUnique")
@@ -39,6 +40,9 @@ use Composer\Repository\Vcs\GitHubDriver;
  */
 class Package
 {
+    const AUTO_MANUAL_HOOK = 1;
+    const AUTO_GITHUB_HOOK = 2;
+
     /**
      * @ORM\Id
      * @ORM\Column(type="integer")
@@ -143,9 +147,9 @@ class Package
     private $downloads;
 
     /**
-     * @ORM\Column(type="boolean")
+     * @ORM\Column(type="smallint")
      */
-    private $autoUpdated = false;
+    private $autoUpdated = 0;
 
     /**
      * @var bool
@@ -813,7 +817,7 @@ class Package
     /**
      * Set autoUpdated
      *
-     * @param Boolean $autoUpdated
+     * @param int $autoUpdated
      */
     public function setAutoUpdated($autoUpdated)
     {
@@ -823,11 +827,21 @@ class Package
     /**
      * Get autoUpdated
      *
+     * @return int
+     */
+    public function getAutoUpdated()
+    {
+        return $this->autoUpdated;
+    }
+
+    /**
+     * Get autoUpdated
+     *
      * @return Boolean
      */
     public function isAutoUpdated()
     {
-        return $this->autoUpdated;
+        return $this->autoUpdated > 0;
     }
 
     /**

@@ -95,6 +95,12 @@ class User extends BaseUser
     private $githubToken;
 
     /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     * @var string
+     */
+    private $githubScope;
+
+    /**
      * @ORM\Column(type="boolean", options={"default"=true})
      * @var string
      */
@@ -217,7 +223,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get githubId.
+     * Get githubToken.
      *
      * @return string
      */
@@ -234,6 +240,26 @@ class User extends BaseUser
     public function setGithubToken($githubToken)
     {
         $this->githubToken = $githubToken;
+    }
+
+    /**
+     * Get githubScope.
+     *
+     * @return string
+     */
+    public function getGithubScope()
+    {
+        return $this->githubScope;
+    }
+
+    /**
+     * Set githubScope.
+     *
+     * @param string $githubScope
+     */
+    public function setGithubScope($githubScope)
+    {
+        $this->githubScope = $githubScope;
     }
 
     /**

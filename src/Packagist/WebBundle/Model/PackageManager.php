@@ -16,7 +16,7 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
 use Packagist\WebBundle\Entity\Package;
 use Psr\Log\LoggerInterface;
 use AlgoliaSearch\Client as AlgoliaClient;
-
+use Packagist\WebBundle\Service\GitHubUserMigrationWorker;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -31,8 +31,9 @@ class PackageManager
     protected $providerManager;
     protected $algoliaClient;
     protected $algoliaIndexName;
+    protected $githubWorker;
 
-    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, AlgoliaClient $algoliaClient, string $algoliaIndexName)
+    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, AlgoliaClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;
@@ -42,6 +43,7 @@ class PackageManager
         $this->providerManager = $providerManager;
         $this->algoliaClient = $algoliaClient;
         $this->algoliaIndexName  = $algoliaIndexName;
+        $this->githubWorker  = $githubWorker;
     }
 
     public function deletePackage(Package $package)
@@ -50,6 +52,15 @@ class PackageManager
         $versionRepo = $this->doctrine->getRepository('PackagistWebBundle:Version');
         foreach ($package->getVersions() as $version) {
             $versionRepo->remove($version);
+        }
+
+        if ($package->getAutoUpdated() === Package::AUTO_GITHUB_HOOK) {
+            foreach ($package->getMaintainers() as $maintainer) {
+                $token = $maintainer->getGithubToken();
+                if ($token && $this->githubWorker->deleteWebHook($token, $package)) {
+                    break;
+                }
+            }
         }
 
         $downloadRepo = $this->doctrine->getRepository('PackagistWebBundle:Download');
