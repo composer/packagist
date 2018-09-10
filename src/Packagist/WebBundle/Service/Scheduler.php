@@ -21,6 +21,9 @@ class Scheduler
 
     public function scheduleUpdate($packageOrId, $updateEqualRefs = false, $deleteBefore = false, $executeAfter = null): Job
     {
+        $updateEqualRefs = (bool) $updateEqualRefs;
+        $deleteBefore = (bool) $deleteBefore;
+
         if ($packageOrId instanceof Package) {
             $packageOrId = $packageOrId->getId();
         } elseif (!is_int($packageOrId)) {
