@@ -8,7 +8,7 @@ fos_user_profile:
 
 fos_user_profile_show:
     path: /profile/
-    defaults: { _controller: PackagistWebBundle:User:myProfile }
+    defaults: { _controller: PackagistWebBundle:User:viewProfile }
     methods: [GET]
 
 fos_user_register:

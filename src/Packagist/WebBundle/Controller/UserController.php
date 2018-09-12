@@ -16,6 +16,7 @@ use Doctrine\ORM\NoResultException;
 use FOS\UserBundle\Model\UserInterface;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
+use Packagist\WebBundle\Entity\Job;
 use Packagist\WebBundle\Model\RedisAdapter;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Pagerfanta;
@@ -137,7 +138,7 @@ class UserController extends Controller
      * @param Request $req
      * @return Response
      */
-    public function myProfileAction(Request $req)
+    public function viewProfileAction(Request $req)
     {
         $user = $this->container->get('security.token_storage')->getToken()->getUser();
         if (!is_object($user) || !$user instanceof UserInterface) {
@@ -145,6 +146,7 @@ class UserController extends Controller
         }
 
         $packages = $this->getUserPackages($req, $user);
+        $lastGithubSync = $this->getDoctrine()->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
 
         return $this->container->get('templating')->renderResponse(
             'FOSUserBundle:Profile:show.html.twig',
@@ -152,6 +154,7 @@ class UserController extends Controller
                 'packages' => $packages,
                 'meta' => $this->getPackagesMetadata($packages),
                 'user' => $user,
+                'githubSync' => $lastGithubSync,
             )
         );
     }

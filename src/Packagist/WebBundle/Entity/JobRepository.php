@@ -28,6 +28,18 @@ class JobRepository extends EntityRepository
         ]);
     }
 
+    public function getLastGitHubSyncJob(int $userId)
+    {
+        return $this->createQueryBuilder('j')
+            ->where('j.packageId = :userId')
+            ->andWhere('j.type = :type')
+            ->orderBy('j.createdAt', 'DESC')
+            ->getQuery()
+            ->setMaxResults(1)
+            ->setParameters(['userId' => $userId, 'type' => 'githubuser:migrate'])
+            ->getOneOrNullResult();
+    }
+
     public function getScheduledJobIds(): \Generator
     {
         $conn = $this->getEntityManager()->getConnection();

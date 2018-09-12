@@ -45,9 +45,17 @@ class GitHubUserMigrationWorker
         }
 
         try {
-            $hookChanges = 0;
+            $results = ['hooks_setup' => 0, 'hooks_failed' => [], 'hooks_ok_unchanged' => 0];
             foreach ($packageRepository->getGitHubPackagesByMaintainer($id) as $package) {
-                $hookChanges += $this->setupWebHook($user->getGithubToken(), $package);
+                $result = $this->setupWebHook($user->getGithubToken(), $package);
+                if (is_string($result)) {
+                    $results['hooks_failed'][] = ['package' => $package->getName(), 'reason' => $result];
+                } elseif ($result === true) {
+                    $results['hooks_setup']++;
+                } elseif ($result === false) {
+                    $results['hooks_ok_unchanged']++;
+                }
+                // null result means not processed as not a github-like URL
             }
         } catch (\GuzzleHttp\Exception\ServerException $e) {
             return [
@@ -66,19 +74,20 @@ class GitHubUserMigrationWorker
         return [
             'status' => Job::STATUS_COMPLETED,
             'message' => 'Hooks updated for user '.$user->getUsername(),
-            'hookChanges' => $hookChanges,
+            'results' => $results,
         ];
     }
 
-    public function setupWebHook(string $token, Package $package): int
+    public function setupWebHook(string $token, Package $package)
     {
         if (!preg_match('#^(?:(?:https?|git)://([^/]+)/|git@([^:]+):)(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git|/)?$#', $package->getRepository(), $match)) {
-            return 0;
+            return;
         }
 
         $this->logger->debug('Updating hooks for package '.$package->getName());
 
         $repoKey = $match['owner'].'/'.$match['repo'];
+        $changed = false;
 
         try {
             $hooks = $this->getHooks($token, $repoKey);
@@ -106,32 +115,37 @@ class GitHubUserMigrationWorker
                 if ($hook['updated_at'] < '2018-09-04T13:00:00' || $hook['events'] != $hookData['events'] || $configWithoutSecret != $expectedConfigWithoutSecret || !$hook['active']) {
                     $this->logger->debug('Updating hook '.$hook['id']);
                     $this->request($token, 'PATCH', 'repos/'.$repoKey.'/hooks/'.$hook['id'], $hookData);
-                    $hasValidHook = true;
+                    $changed = true;
                 }
+
+                $hasValidHook = true;
                 unset($currentHooks[$index]);
             }
 
             foreach (array_merge(array_values($currentHooks), $legacyHooks) as $hook) {
                 $this->logger->debug('Deleting hook '.$hook['id'], ['hook' => $hook]);
                 $this->request($token, 'DELETE', 'repos/'.$repoKey.'/hooks/'.$hook['id']);
+                $changed = true;
             }
 
             if (!$hasValidHook) {
                 $this->logger->debug('Creating hook');
                 $this->request($token, 'POST', 'repos/'.$repoKey.'/hooks', $hookData);
+                $changed = true;
             }
         } catch (\GuzzleHttp\Exception\ClientException $e) {
-            // repo not found probably means the user does not have admin access to it on github
             if ($msg = $this->isAcceptableException($e)) {
                 $this->logger->debug($msg);
 
-                return 0;
+                return $msg;
             }
+
+            $this->logger->error('Rejected GitHub hook request', ['response' => (string) $e->getResponse()->getBody()]);
 
             throw $e;
         }
 
-        return 1;
+        return $changed;
     }
 
     public function deleteWebHook(string $token, Package $package): bool
@@ -213,6 +227,7 @@ class GitHubUserMigrationWorker
                 'url' => self::HOOK_URL,
                 'content_type' => 'json',
                 'secret' => $this->webhookSecret,
+                'insecure_ssl' => 0,
             ],
             'events' => [
                 'push',
@@ -225,11 +240,11 @@ class GitHubUserMigrationWorker
     {
         // repo not found probably means the user does not have admin access to it on github
         if ($e->getCode() === 404) {
-            return 'User has no access, skipping';
+            return 'GitHub user has no admin access to repository';
         }
 
         if ($e->getCode() === 403 && strpos($e->getMessage(), 'Repository was archived so is read-only') !== false) {
-            return 'Repository was archived';
+            return 'Repository is archived and read-only';
         }
 
         return false;

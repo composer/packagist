@@ -19,6 +19,25 @@
         <hr>
     {%- endif %}
 
+    {% if githubSync is not null and githubSync.createdAt > '-2 days'|date %}
+        <h3 class="font-normal">GitHub Hook Sync</h3>
+        {% if githubSync.completedAt is null %}
+            <p>Still running... <a href="{{ path('fos_user_profile_show') }}">Refresh</a></p>
+        {% else %}
+            <p>Completed at {{ githubSync.completedAt|date('Y-m-d H:i:s') }} UTC, <a href="{{ path('user_github_sync') }}">retry hook sync</a>.</p>
+            {% if githubSync.result.results is defined %}
+                <h4>{{ githubSync.result.results.hooks_setup }} hooks setup/updated</h4>
+                <h4>{{ githubSync.result.results.hooks_ok_unchanged }} hooks already setup and left unchanged</h4>
+                {% if githubSync.result.results.hooks_failed|length > 0 %}
+                    <h4>Hooks setup failures</h4>
+                    {% for fail in githubSync.result.results.hooks_failed %}
+                        <p><a href="{{ path('view_package', {name: fail.package}) }}">{{ fail.package }}</a> {{ fail.reason }}</p>
+                    {% endfor %}
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
     {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: true} %}
         {% block content_title %}
             <h3 class="font-normal">{{ 'packages.yours'|trans }}</h3>

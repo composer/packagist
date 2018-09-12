@@ -58,7 +58,7 @@ class Scheduler
 
     public function scheduleUserScopeMigration(int $userId, string $oldScope, string $newScope): Job
     {
-        return $this->createJob('githubuser:migrate', ['id' => $userId, 'old_scope' => $oldScope, 'new_scope' => $newScope]);
+        return $this->createJob('githubuser:migrate', ['id' => $userId, 'old_scope' => $oldScope, 'new_scope' => $newScope], $userId);
     }
 
     private function getPendingUpdateJob(int $packageId, $updateEqualRefs = false, $deleteBefore = false)
