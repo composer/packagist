@@ -23,6 +23,8 @@
         <h3 class="font-normal">GitHub Hook Sync</h3>
         {% if githubSync.completedAt is null %}
             <p>Still running... <a href="{{ path('fos_user_profile_show') }}">Refresh</a></p>
+        {% elseif githubSync.status == 'errored' %}
+            <p>An unexpected error occurred during sync.</p>
         {% else %}
             <p>Completed at {{ githubSync.completedAt|date('Y-m-d H:i:s') }} UTC, <a href="{{ path('user_github_sync') }}">retry hook sync</a>.</p>
             {% if githubSync.result.results is defined %}
