@@ -19,7 +19,7 @@
         <hr>
     {%- endif %}
 
-    {% if githubSync is not null and githubSync.createdAt > '-2 days'|date %}
+    {% if githubSync is not null and githubSync.createdAt|date('YmdHis') > '-2 days'|date('YmdHis') %}
         <h3 class="font-normal">GitHub Hook Sync</h3>
         {% if githubSync.completedAt is null %}
             <p>Still running... <a href="{{ path('fos_user_profile_show') }}">Refresh</a></p>
