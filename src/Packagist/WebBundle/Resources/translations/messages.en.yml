@@ -95,7 +95,7 @@ edit:
 profile:
     your_api_token: Your API Token
     show_api_token: Show API Token
-    accounts_connected: Accounts connected
+    accounts_connected: Account connected to %user%
     connect_accounts: Connect accounts
     notify_on_failure: Notify me of package update failures
     api_token_explain: |

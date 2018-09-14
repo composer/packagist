@@ -213,6 +213,30 @@ class User extends BaseUser
     }
 
     /**
+     * Get githubId.
+     *
+     * @return string
+     */
+    public function getGithubUsername()
+    {
+        if ($this->githubId) {
+            if (!$this->githubToken) {
+                return false;
+            }
+
+            $ctxt = ['http' => ['header' => ['User-Agent: packagist.org']]];
+            $res = @file_get_contents('https://api.github.com/user?access_token='.$this->githubToken, false, stream_context_create($ctxt));
+            if (!$res || !($res = json_decode($res, true))) {
+                return false;
+            }
+
+            return $res['login'];
+        }
+
+        return false;
+    }
+
+    /**
      * Set githubId.
      *
      * @param string $githubId

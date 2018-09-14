@@ -1,7 +1,7 @@
 services:
     packagist.twig.extension:
         class: Packagist\WebBundle\Twig\PackagistExtension
-        arguments: [ '@packagist.provider_manager' ]
+        arguments: [ '@packagist.provider_manager', '@security.csrf.token_manager' ]
         tags:
             - { name: twig.extension }
 

@@ -182,6 +182,27 @@ class UserController extends Controller
     }
 
     /**
+     * @Route("/oauth/github/disconnect", name="user_github_disconnect")
+     */
+    public function disconnectGitHubAction(Request $req)
+    {
+        $user = $this->getUser();
+        $token = $this->get('security.csrf.token_manager')->getToken('unlink_github')->getValue();
+        if (!hash_equals($token, $req->query->get('token', '')) || !$user) {
+            throw new AccessDeniedException('Invalid CSRF token');
+        }
+
+        if ($user->getGithubId()) {
+            $user->setGithubId(null);
+            $user->setGithubToken(null);
+            $user->setGithubScope(null);
+            $this->getDoctrine()->getEntityManager()->flush();
+        }
+
+        return $this->redirectToRoute('fos_user_profile_edit');
+    }
+
+    /**
      * @Template()
      * @Route("/users/{name}/favorites/", name="user_favorites")
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
