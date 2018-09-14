@@ -240,11 +240,11 @@ class GitHubUserMigrationWorker
     {
         // repo not found probably means the user does not have admin access to it on github
         if ($e->getCode() === 404) {
-            return 'GitHub user has no admin access to repository';
+            return 'GitHub user has no admin access to the repository, or Packagist was not granted access to the organization (<a href="https://github.com/settings/connections/applications/a059f127e1c09c04aa5a">check here</a>)';
         }
 
         if ($e->getCode() === 403 && strpos($e->getMessage(), 'Repository was archived so is read-only') !== false) {
-            return 'Repository is archived and read-only';
+            return 'The repository is archived and read-only';
         }
 
         return false;

@@ -33,7 +33,7 @@
                 {% if githubSync.result.results.hooks_failed|length > 0 %}
                     <h4>Hooks setup failures</h4>
                     {% for fail in githubSync.result.results.hooks_failed %}
-                        <p><a href="{{ path('view_package', {name: fail.package}) }}">{{ fail.package }}</a> {{ fail.reason }}</p>
+                        <p><a href="{{ path('view_package', {name: fail.package}) }}">{{ fail.package }}</a> {{ fail.reason|raw }}</p>
                     {% endfor %}
                 {% endif %}
             {% endif %}
