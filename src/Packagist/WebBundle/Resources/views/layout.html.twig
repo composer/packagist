@@ -6,6 +6,7 @@
         <title>{% block title %}Packagist{% endblock %}</title>
         <meta name="description" content="{% block description %}The PHP Package Repository{% endblock %}" />
         <meta name="author" content="Jordi Boggiano" />
+        {% block head_canonical %}<meta name="canonical" href="{{ app.request.uri }}" />{% endblock %}
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 

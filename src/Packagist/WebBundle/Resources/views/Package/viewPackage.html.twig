@@ -10,6 +10,10 @@
     {{ parent() }}
 {% endblock %}
 
+{% block head_canonical %}
+    <link rel="canonical" href="{{ url('view_package', {name: package.name}) }}" />
+{% endblock %}
+
 {% block head_additions %}
     <link rel="stylesheet" href="{{ asset('css/github/markdown.css') }}">
 {% endblock %}
