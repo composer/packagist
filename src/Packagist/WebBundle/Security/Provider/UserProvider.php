@@ -112,9 +112,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function loadUserByUsername($usernameOrEmail)
     {
-        $user = $this->userProvider->loadUserByUsername($usernameOrEmail);
-
-        return $user;
+        return $this->userProvider->loadUserByUsername($usernameOrEmail);
     }
 
     /**

@@ -62,14 +62,12 @@ class ExploreController extends Controller
             $popular = array();
         }
 
-        $data = array(
+        return array(
             'newlySubmitted' => $newSubmitted,
             'newlyReleased' => $newReleases,
             'random' => $random,
             'popular' => $popular,
         );
-
-        return $data;
     }
 
     /**

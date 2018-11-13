@@ -218,7 +218,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
 
     private function createSearchableProvider(string $provided)
     {
-        $record = [
+        return [
             'id' => $provided,
             'objectID' => 'virtual:'.$provided,
             'name' => $provided,
@@ -234,8 +234,6 @@ class IndexPackagesCommand extends ContainerAwareCommand
             'replacementPackage' => '',
             'tags' => [],
         ];
-
-        return $record;
     }
 
     private function getProviders($doctrine, Package $package)
