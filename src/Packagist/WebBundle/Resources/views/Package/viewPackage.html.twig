@@ -148,6 +148,9 @@
                             {% if version and version.support.irc is defined %}
                                 <p><a rel="nofollow noopener external noindex" href="{{ version.support.irc }}">IRC</a></p>
                             {% endif %}
+                            {% if version and version.support.chat is defined %}
+                                <p><a rel="nofollow noopener external noindex" href="{{ version.support.chat }}">Chat</a></p>
+                            {% endif %}
                             {% if version and version.support.forum is defined %}
                                 <p><a rel="nofollow noopener external noindex" href="{{ version.support.forum }}">Forum</a></p>
                             {% endif %}
