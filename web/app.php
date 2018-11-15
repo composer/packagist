@@ -11,7 +11,7 @@ include_once __DIR__.'/../app/bootstrap.php.cache';
 $kernel = new AppKernel('prod', false);
 $kernel->loadClassCache();
 
-if (in_array($_SERVER['REMOTE_ADDR'], ['144.217.203.53', '54.38.136.239', '54.37.131.18', '142.44.164.249', '142.44.164.255', '54.37.2.184', '139.99.121.122'], true)) {
+if (in_array($_SERVER['REMOTE_ADDR'], ['144.217.203.53', '54.38.136.239', '54.37.131.18', '142.44.164.249', '142.44.164.255', '54.37.2.184', '139.99.121.122', '54.37.4.73', '51.38.227.34'], true)) {
     Request::setTrustedProxies([$_SERVER['REMOTE_ADDR']]);
     // force all trusted header names
     Request::setTrustedHeaderName(Request::HEADER_FORWARDED, '');
