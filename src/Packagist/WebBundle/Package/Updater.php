@@ -610,6 +610,7 @@ class Updater
             'table', 'thead', 'tbody', 'th', 'tr', 'td',
             'a', 'span',
             'img',
+            'details', 'summary',
         );
 
         $attributes = array(
