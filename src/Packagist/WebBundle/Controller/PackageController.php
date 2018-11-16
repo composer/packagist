@@ -30,6 +30,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Composer\Package\Version\VersionParser;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use DateTimeImmutable;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
@@ -79,6 +80,32 @@ class PackageController extends Controller
         }
 
         return new JsonResponse(array('packageNames' => $names));
+    }
+
+    /**
+     * @Route("/packages/updated.json", name="updated_packages", defaults={"_format"="json"})
+     * @Method({"GET"})
+     */
+    public function updatedSinceAction(Request $req)
+    {
+        $since = $req->query->get('since');
+        if (!$since) {
+            return new JsonResponse(['error' => 'Missing "since" query parameter with the latest timestamp you got from this endpoint'], 400);
+        }
+
+        $now = time();
+        try {
+            $since = new DateTimeImmutable('@'.$since);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Invalid "since" query parameter, make sure you store the timestamp returned and re-use it in the next query. Use '.$this->generateUrl('updated_packages', ['since' => time() - 60], UrlGeneratorInterface::ABSOLUTE_URL).' to initialize it.'], 400);
+        }
+
+        /** @var PackageRepository $repo */
+        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+
+        $names = $repo->getPackageNamesUpdatedSince($since);
+
+        return new JsonResponse(['packageNames' => $names, 'timestamp' => $now]);
     }
 
     /**

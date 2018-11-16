@@ -36,6 +36,20 @@ class PackageRepository extends EntityRepository
         return $query->getResult();
     }
 
+    public function getPackageNamesUpdatedSince(\DateTimeInterface $date)
+    {
+        $query = $this->getEntityManager()
+            ->createQuery("
+                SELECT p.name FROM Packagist\WebBundle\Entity\Package p
+                WHERE p.dumpedAt >= :date AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')
+            ")
+            ->setParameters(['date' => $date]);
+
+        $names = $this->getPackageNamesForQuery($query);
+
+        return array_map('strtolower', $names);
+    }
+
     public function getPackageNames()
     {
         $query = $this->getEntityManager()
