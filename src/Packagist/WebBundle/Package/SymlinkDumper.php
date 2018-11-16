@@ -304,6 +304,7 @@ class SymlinkDumper
             $this->rootFile['notify'] = str_replace('VND/PKG', '%package%', $url);
             $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch', [], UrlGeneratorInterface::ABSOLUTE_URL);
             $this->rootFile['providers-url'] = $this->router->generate('home', []) . 'p/%package%$%hash%.json';
+            $this->rootFile['metadata-url'] = $this->router->generate('home', []) . 'p/%package%.json'; // TODO make this p2/ once we dump the new format there
             $this->rootFile['search'] = $this->router->generate('search', ['_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL) . '?q=%query%&type=%type%';
 
             if ($verbose) {
