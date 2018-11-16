@@ -121,7 +121,7 @@
                 <div class="col-md-offset-1 col-md-3">
                     <div class="row package-aside">
                         <div class="details col-xs-12 col-sm-6 col-md-12">
-                            <h4>Maintainers</h4>
+                            <h5>Maintainers</h5>
                             <p class="maintainers">
                                 {% for maintainer in package.maintainers -%}
                                     <a href="{{ path('user_profile', {'name': maintainer.username}) }}"><img width="48" height="48" title="{{ maintainer.username }}" src="https://www.gravatar.com/avatar/{{ maintainer.email|gravatar_hash }}?s=48&amp;d=identicon" srcset="https://www.gravatar.com/avatar/{{ maintainer.email|gravatar_hash }}?s=96&amp;d=identicon 2x"></a>
@@ -132,7 +132,7 @@
                                 {% endif %}
                             </p>
 
-                            <h4>Details</h4>
+                            <h5>Details</h5>
                             {% set repoUrl = package.browsableRepository %}
                             <p class="canonical">
                                 <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
