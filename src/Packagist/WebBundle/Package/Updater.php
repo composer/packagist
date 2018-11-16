@@ -610,7 +610,8 @@ class Updater
             'table', 'thead', 'tbody', 'th', 'tr', 'td',
             'a', 'span',
             'img',
-            'details', 'summary',
+            // Disabled for the time being, see https://github.com/composer/packagist/issues/951
+            // 'details', 'summary',
         );
 
         $attributes = array(
