@@ -99,6 +99,8 @@ class VersionRepository extends EntityRepository
                 'conflict' => [],
                 'provide' => [],
                 'replace' => [],
+                'authors' => [],
+                'tags' => [],
             ];
         }
 
@@ -122,6 +124,16 @@ class VersionRepository extends EntityRepository
             $versionId = $row['version_id'];
             unset($row['version_id']);
             $result[$versionId]['authors'][] = array_filter($row);
+        }
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAll(
+            'SELECT vt.version_id, name FROM tag t JOIN version_tag vt ON vt.tag_id = t.id WHERE vt.version_id IN (:ids)',
+            ['ids' => $versionIds],
+            ['ids' => Connection::PARAM_INT_ARRAY]
+        );
+        foreach ($rows as $row) {
+            $versionId = $row['version_id'];
+            $result[$versionId]['tags'][] = $row['name'];
         }
 
         return $result;

@@ -32,8 +32,9 @@ class PackageManager
     protected $algoliaClient;
     protected $algoliaIndexName;
     protected $githubWorker;
+    protected $metadataDir;
 
-    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, AlgoliaClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker)
+    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, AlgoliaClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;
@@ -44,6 +45,7 @@ class PackageManager
         $this->algoliaClient = $algoliaClient;
         $this->algoliaIndexName  = $algoliaIndexName;
         $this->githubWorker  = $githubWorker;
+        $this->metadataDir  = $metadataDir;
     }
 
     public function deletePackage(Package $package)
@@ -72,6 +74,14 @@ class PackageManager
         $em = $this->doctrine->getManager();
         $em->remove($package);
         $em->flush();
+
+        $metadataV2 = $this->metadataDir.'/p2/'.strtolower($packageName).'.json';
+        if (file_exists($metadataV2)) {
+            @unlink($metadataV2);
+        }
+        if (file_exists($metadataV2.'.gz')) {
+            @unlink($metadataV2.'.gz');
+        }
 
         // attempt search index cleanup
         try {

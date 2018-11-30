@@ -213,10 +213,14 @@ class Version
 
     public function toArray(array $versionData)
     {
-        $tags = array();
-        foreach ($this->getTags() as $tag) {
-            /** @var $tag Tag */
-            $tags[] = $tag->getName();
+        if (isset($versionData[$this->id]['tags'])) {
+            $tags = $versionData[$this->id]['tags'];
+        } else {
+            $tags = array();
+            foreach ($this->getTags() as $tag) {
+                /** @var $tag Tag */
+                $tags[] = $tag->getName();
+            }
         }
 
         if (isset($versionData[$this->id]['authors'])) {
@@ -291,6 +295,15 @@ class Version
         return $data;
     }
 
+    public function toV2Array(array $versionData)
+    {
+        $array = $this->toArray($versionData);
+
+        unset($array['keywords'], $array['authors']);
+
+        return $array;
+    }
+
     public function equals(Version $version)
     {
         return strtolower($version->getName()) === strtolower($this->getName())
@@ -327,18 +340,28 @@ class Version
         return $this->name;
     }
 
-    public function getNames()
+    public function getNames(array $versionData = null)
     {
         $names = array(
             strtolower($this->name) => true
         );
 
-        foreach ($this->getReplace() as $link) {
-            $names[strtolower($link->getPackageName())] = true;
-        }
+        if (isset($versionData[$this->id])) {
+            foreach (($versionData[$this->id]['replace'] ?? []) as $link) {
+                $names[strtolower($link['name'])] = true;
+            }
 
-        foreach ($this->getProvide() as $link) {
-            $names[strtolower($link->getPackageName())] = true;
+            foreach (($versionData[$this->id]['provide'] ?? []) as $link) {
+                $names[strtolower($link['name'])] = true;
+            }
+        } else {
+            foreach ($this->getReplace() as $link) {
+                $names[strtolower($link->getPackageName())] = true;
+            }
+
+            foreach ($this->getProvide() as $link) {
+                $names[strtolower($link->getPackageName())] = true;
+            }
         }
 
         return array_keys($names);

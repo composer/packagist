@@ -97,7 +97,7 @@ class PackageController extends Controller
         try {
             $since = new DateTimeImmutable('@'.$since);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Invalid "since" query parameter, make sure you store the timestamp returned and re-use it in the next query. Use '.$this->generateUrl('updated_packages', ['since' => time() - 60], UrlGeneratorInterface::ABSOLUTE_URL).' to initialize it.'], 400);
+            return new JsonResponse(['error' => 'Invalid "since" query parameter, make sure you store the timestamp returned and re-use it in the next query. Use '.$this->generateUrl('updated_packages', ['since' => time() - 180], UrlGeneratorInterface::ABSOLUTE_URL).' to initialize it.'], 400);
         }
 
         /** @var PackageRepository $repo */
@@ -105,7 +105,9 @@ class PackageController extends Controller
 
         $names = $repo->getPackageNamesUpdatedSince($since);
 
-        return new JsonResponse(['packageNames' => $names, 'timestamp' => $now]);
+        $lastDumpTime = $this->get('snc_redis.default_client')->get('last_metadata_dump_time') ?: (time() - 60);
+
+        return new JsonResponse(['packageNames' => $names, 'timestamp' => $lastDumpTime]);
     }
 
     /**

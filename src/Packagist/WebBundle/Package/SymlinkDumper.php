@@ -18,7 +18,9 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Finder\Finder;
 use Packagist\WebBundle\Entity\Version;
+use Packagist\WebBundle\Entity\Package;
 use Doctrine\DBAL\Connection;
+use Predis\Client;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -57,6 +59,11 @@ class SymlinkDumper
     protected $router;
 
     /**
+     * @var Client
+     */
+    protected $redis;
+
+    /**
      * Data cache
      * @var array
      */
@@ -75,10 +82,22 @@ class SymlinkDumper
     private $individualFiles = array();
 
     /**
+     * Data cache
+     * @var array
+     */
+    private $individualFilesV2 = array();
+
+    /**
      * Modified times of individual files
      * @var array
      */
     private $individualFilesMtime = array();
+
+    /**
+     * Modified times of individual files V2
+     * @var array
+     */
+    private $individualFilesV2Mtime = array();
 
     /**
      * Stores all the disk writes to be replicated in the second build dir after the symlink has been swapped
@@ -102,7 +121,7 @@ class SymlinkDumper
      * @param string                $targetDir
      * @param int                   $compress
      */
-    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, $webDir, $targetDir, $compress)
+    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
@@ -111,6 +130,7 @@ class SymlinkDumper
         $this->webDir = realpath($webDir);
         $this->buildDir = $targetDir;
         $this->compress = $compress;
+        $this->redis = $redis;
     }
 
     /**
@@ -129,6 +149,7 @@ class SymlinkDumper
 
         $buildDirA = $this->buildDir.'/a';
         $buildDirB = $this->buildDir.'/b';
+        $buildDirV2 = $this->buildDir.'/p2';
 
         // initialize
         $initialRun = false;
@@ -140,6 +161,9 @@ class SymlinkDumper
             $this->fs->mkdir($buildDirA);
             $this->fs->mkdir($buildDirB);
         }
+        if (!is_dir($buildDirV2)) {
+            $this->fs->mkdir($buildDirV2);
+        }
 
         // set build dir to the not-active one
         if (realpath($webDir.'/p') === realpath($buildDirA)) {
@@ -149,6 +173,7 @@ class SymlinkDumper
             $buildDir = realpath($buildDirA);
             $oldBuildDir = realpath($buildDirB);
         }
+        $buildDirV2 = realpath($buildDirV2);
 
         // copy existing stuff for smooth BC transition
         if ($initialRun && !$force) {
@@ -169,6 +194,7 @@ class SymlinkDumper
         if ($verbose) {
             echo 'Web dir is '.$webDir.'/p ('.realpath($webDir.'/p').')'.PHP_EOL;
             echo 'Build dir is '.$buildDir.PHP_EOL;
+            echo 'Build v2 dir is '.$buildDirV2.PHP_EOL;
         }
 
         // clean the build dir to start over if we are re-dumping everything
@@ -190,6 +216,7 @@ class SymlinkDumper
 
         try {
             $modifiedIndividualFiles = array();
+            $modifiedV2Files = array();
 
             $total = count($packageIds);
             $current = 0;
@@ -238,7 +265,7 @@ class SymlinkDumper
                     }
                     $versionData = $versionRepo->getVersionData($versionIds);
                     foreach ($package->getVersions() as $version) {
-                        foreach (array_slice($version->getNames(), 0, 150) as $versionName) {
+                        foreach (array_slice($version->getNames($versionData), 0, 150) as $versionName) {
                             if (!preg_match('{^[A-Za-z0-9_-][A-Za-z0-9_.-]*/[A-Za-z0-9_-][A-Za-z0-9_.-]*$}', $versionName) || strpos($versionName, '..')) {
                                 continue;
                             }
@@ -249,7 +276,13 @@ class SymlinkDumper
                             $modifiedIndividualFiles[$key] = true;
                             $affectedFiles[$key] = true;
                         }
+
                     }
+
+                    // dump v2 format
+                    $key = $name.'.json';
+                    $this->dumpPackageToV2File($package, $versionData, $key);
+                    $modifiedV2Files[$key] = true;
 
                     // store affected files to clean up properly in the next update
                     $this->fs->mkdir(dirname($buildDir.'/'.$name));
@@ -266,6 +299,7 @@ class SymlinkDumper
                         echo 'Dumping individual files'.PHP_EOL;
                     }
                     $this->dumpIndividualFiles($buildDir);
+                    $this->dumpIndividualFilesV2($buildDirV2);
                 }
             }
 
@@ -304,7 +338,7 @@ class SymlinkDumper
             $this->rootFile['notify'] = str_replace('VND/PKG', '%package%', $url);
             $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch', [], UrlGeneratorInterface::ABSOLUTE_URL);
             $this->rootFile['providers-url'] = $this->router->generate('home', []) . 'p/%package%$%hash%.json';
-            $this->rootFile['metadata-url'] = $this->router->generate('home', []) . 'p/%package%.json'; // TODO make this p2/ once we dump the new format there
+            $this->rootFile['metadata-url'] = $this->router->generate('home', []) . 'p2/%package%.json';
             $this->rootFile['search'] = $this->router->generate('search', ['_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL) . '?q=%query%&type=%type%';
 
             if ($verbose) {
@@ -332,6 +366,11 @@ class SymlinkDumper
         try {
             if ($verbose) {
                 echo 'Putting new files in production'.PHP_EOL;
+            }
+
+            if (!file_exists($webDir.'/p2') && !@symlink($buildDirV2, $webDir.'/p2')) {
+                echo 'Warning: Could not symlink the build dir v2 into the web dir';
+                throw new \RuntimeException('Could not symlink the build dir v2 into the web dir');
             }
 
             // move away old files for BC update
@@ -416,6 +455,8 @@ class SymlinkDumper
         if ($verbose) {
             echo 'Updating package dump times'.PHP_EOL;
         }
+
+        $maxDumpTime = 0;
         foreach ($dumpTimeUpdates as $dt => $ids) {
             $retries = 5;
             // retry loop in case of a lock timeout
@@ -429,12 +470,25 @@ class SymlinkDumper
                         ],
                         ['ids' => Connection::PARAM_INT_ARRAY]
                     );
+                    break;
                 } catch (\Exception $e) {
                     if (!$retries) {
                         throw $e;
                     }
                     sleep(2);
                 }
+            }
+
+            $maxDumpTime = max($maxDumpTime, strtotime($dt));
+        }
+
+        if ($maxDumpTime !== 0) {
+            $this->redis->set('last_metadata_dump_time', $maxDumpTime + 1);
+
+            // make sure no next dumper has a chance to start and dump things within the same second as $maxDumpTime
+            // as in updatedSince we will return the updates from the next second only (the +1 above) to avoid serving the same updates twice
+            if (time() === $maxDumpTime) {
+                sleep(1);
             }
         }
 
@@ -628,6 +682,57 @@ class SymlinkDumper
         if (!isset($this->individualFilesMtime[$key]) || $this->individualFilesMtime[$key] < $timestamp) {
             $this->individualFilesMtime[$key] = $timestamp;
         }
+    }
+
+    private function dumpIndividualFilesV2($dir)
+    {
+        // dump individual files to build dir
+        foreach ($this->individualFilesV2 as $key => $data) {
+            $path = $dir . '/' . $key;
+            $this->fs->mkdir(dirname($path));
+
+            $json = json_encode($data, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+            $this->writeFile($path, $json, $this->individualFilesV2Mtime[$key]);
+        }
+
+        $this->individualFilesV2 = array();
+        $this->individualFilesV2Mtime = array();
+    }
+
+    private function dumpPackageToV2File(Package $package, $versionData, string $packageKey)
+    {
+        $deduplicatedVersions = [];
+        $uniqKeys = ['version', 'version_normalized', 'source', 'dist', 'time'];
+        $mtime = 0;
+
+        foreach ($package->getVersions() as $version) {
+            $versionArray = $version->toV2Array($versionData);
+
+            $filtered = $versionArray;
+            foreach ($uniqKeys as $key) {
+                unset($filtered[$key]);
+            }
+            $hash = md5(json_encode($filtered));
+
+            if (isset($deduplicatedVersions[$hash])) {
+                foreach ($uniqKeys as $key) {
+                    $deduplicatedVersions[$hash][$key.'s'][] = $versionArray[$key];
+                }
+            } else {
+                foreach ($uniqKeys as $key) {
+                    $filtered[$key.'s'] = [$versionArray[$key]];
+                }
+                $deduplicatedVersions[$hash] = $filtered;
+            }
+
+            $mtime = max($mtime, $version->getReleasedAt() ? $version->getReleasedAt()->getTimestamp() : time());
+        }
+
+        // get rid of md5 hash keys
+        $deduplicatedVersions = array_values($deduplicatedVersions);
+
+        $this->individualFilesV2[$packageKey]['packages'][strtolower($package->getName())] = $deduplicatedVersions;
+        $this->individualFilesV2Mtime[$packageKey] = $mtime;
     }
 
     private function clearDirectory($path)

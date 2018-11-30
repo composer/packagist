@@ -35,7 +35,7 @@ services:
 
     packagist.package_dumper:
         class: Packagist\WebBundle\Package\SymlinkDumper
-        arguments: [ '@doctrine', '@filesystem', '@router', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%' ]
+        arguments: [ '@doctrine', '@filesystem', '@router', '@snc_redis.default_client', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%' ]
 
     packagist.user_provider:
         class: Packagist\WebBundle\Security\Provider\UserProvider
@@ -117,6 +117,7 @@ services:
             - '@packagist.algolia.client'
             - '%algolia.index_name%'
             - '@github_user_migration_worker'
+            - '%packagist_metadata_dir%'
 
     packagist.profile.form.type:
         class: Packagist\WebBundle\Form\Type\ProfileFormType
