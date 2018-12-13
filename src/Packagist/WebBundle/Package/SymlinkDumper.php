@@ -716,11 +716,11 @@ class SymlinkDumper
 
             if (isset($deduplicatedVersions[$hash])) {
                 foreach ($uniqKeys as $key) {
-                    $deduplicatedVersions[$hash][$key.'s'][] = $versionArray[$key];
+                    $deduplicatedVersions[$hash][$key.'s'][] = $versionArray[$key] ?? null;
                 }
             } else {
                 foreach ($uniqKeys as $key) {
-                    $filtered[$key.'s'] = [$versionArray[$key]];
+                    $filtered[$key.'s'] = [$versionArray[$key] ?? null];
                 }
                 $deduplicatedVersions[$hash] = $filtered;
             }
