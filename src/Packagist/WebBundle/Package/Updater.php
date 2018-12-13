@@ -610,15 +610,14 @@ class Updater
             'table', 'thead', 'tbody', 'th', 'tr', 'td',
             'a', 'span',
             'img',
-            // Disabled for the time being, see https://github.com/composer/packagist/issues/951
-            // 'details', 'summary',
+            'details', 'summary',
         );
 
         $attributes = array(
             'img.src', 'img.title', 'img.alt', 'img.width', 'img.height', 'img.style',
             'a.href', 'a.target', 'a.rel', 'a.id',
             'td.colspan', 'td.rowspan', 'th.colspan', 'th.rowspan',
-            '*.class'
+            '*.class', 'details.open'
         );
 
         // detect base path if the github readme is located in a subfolder like docs/README.md
@@ -635,6 +634,14 @@ class Updater
         $config->set('HTML.AllowedAttributes', implode(',', $attributes));
         $config->set('Attr.EnableID', true);
         $config->set('Attr.AllowedFrameTargets', ['_blank']);
+
+        // add custom HTML tag definitions
+        $def = $config->getHTMLDefinition(true);
+        $def->addElement('details', 'Block', 'Flow', 'Common', array(
+          'open' => 'Bool#open',
+        ));
+        $def->addElement('summary', 'Inline', 'Inline', 'Common');
+
         $purifier = new \HTMLPurifier($config);
         $readme = $purifier->purify($readme);
 
