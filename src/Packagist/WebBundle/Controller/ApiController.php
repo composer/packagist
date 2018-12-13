@@ -285,11 +285,34 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL')), 406);
         }
 
-        // find the user
-        $user = $this->findUser($request);
-
         $packages = null;
+        $user = null;
         $autoUpdated = Package::AUTO_MANUAL_HOOK;
+
+        // manual hook set up with user API token as secret
+        if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature')) {
+            $username = $request->query->get('username');
+            $sig = $request->headers->get('X-Hub-Signature');
+            $user = $this->get('packagist.user_repository')->findOneByUsername($username);
+            if ($sig && $user && $user->isEnabled()) {
+                list($algo, $sig) = explode('=', $sig);
+                $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
+                if (hash_equals($expected, $sig)) {
+                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path']);
+                    $autoUpdated = Package::AUTO_GITHUB_HOOK;
+                } else {
+                    return new Response(json_encode(array('status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.')), 403);
+                }
+            } else {
+                $user = null;
+            }
+        }
+
+        if (!$user) {
+            // find the user
+            $user = $this->findUser($request);
+        }
+
         if (!$user && $match['host'] === 'github.com' && $request->getContent()) {
             $sig = $request->headers->get('X-Hub-Signature');
             if ($sig) {

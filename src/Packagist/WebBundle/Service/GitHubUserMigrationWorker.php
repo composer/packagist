@@ -14,6 +14,7 @@ use GuzzleHttp\Psr7\Response;
 class GitHubUserMigrationWorker
 {
     const HOOK_URL = 'https://packagist.org/api/github';
+    const HOOK_URL_ALT = 'https://packagist.org/api/update-package';
 
     private $logger;
     private $doctrine;
@@ -101,7 +102,7 @@ class GitHubUserMigrationWorker
             $currentHooks = array_values(array_filter(
                 $hooks,
                 function ($hook) {
-                    return $hook['name'] === 'web' && strpos($hook['config']['url'], self::HOOK_URL) === 0;
+                    return $hook['name'] === 'web' && (strpos($hook['config']['url'], self::HOOK_URL) === 0 || strpos($hook['config']['url'], self::HOOK_URL_ALT) === 0);
                 }
             ));
 

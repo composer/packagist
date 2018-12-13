@@ -111,6 +111,14 @@ v2.0.4-p1</code></pre>
                 <li>Check <a href="https://packagist.org/profile/">your package list</a> to see if any has a warning about not being automatically synced.</li>
                 <li>If you still need to setup sync on some packages, try <a rel="nofollow noindex" href="{{ path('user_github_sync') }}">triggering a manual account sync</a> to have Packagist try to set up hooks on your account again. Note that archived repositories can not be setup as they are readonly in GitHub's API.</li>
             </ul>
+            <h4>Do not want to log in via GitHub and grant us webhook configuration access?</h4>
+            <p>You can configure a GitHub webhook manually by using the following values:</p>
+            <ul>
+                <li>Payload URL: <code>https://packagist.org/api/update-package?username={{ app.user.username|default('PACKAGIST_USERNAME') }}</code></li>
+                <li>Content Type: <code>application/json</code></li>
+                <li>Secret: your <a href="{{ path('fos_user_profile_show') }}">Packagist API Token</a></li>
+                <li>Which events? Just the <code>push</code> event is enough.</li>
+            </ul>
         </section>
 
         <section class="col-md-6">
