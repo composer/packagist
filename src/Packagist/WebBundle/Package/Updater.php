@@ -645,6 +645,7 @@ class Updater
         $purifier = new \HTMLPurifier($config);
         $readme = $purifier->purify($readme);
 
+        libxml_use_internal_errors(true);
         $dom = new \DOMDocument();
         $dom->loadHTML('<?xml encoding="UTF-8">' . $readme);
 
@@ -691,6 +692,9 @@ class Updater
         $readme = $dom->saveHTML();
         $readme = substr($readme, strpos($readme, '<body>')+6);
         $readme = substr($readme, 0, strrpos($readme, '</body>'));
+
+        libxml_use_internal_errors(false);
+        libxml_clear_errors();
 
         return str_replace("\r\n", "\n", $readme);
     }
