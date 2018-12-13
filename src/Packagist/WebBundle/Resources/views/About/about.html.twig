@@ -114,7 +114,7 @@ v2.0.4-p1</code></pre>
             <h4>Do not want to log in via GitHub and grant us webhook configuration access?</h4>
             <p>You can configure a GitHub webhook manually by using the following values:</p>
             <ul>
-                <li>Payload URL: <code>https://packagist.org/api/update-package?username={{ app.user.username|default('PACKAGIST_USERNAME') }}</code></li>
+                <li>Payload URL: <code>https://packagist.org/api/github?username={{ app.user.username|default('PACKAGIST_USERNAME') }}</code></li>
                 <li>Content Type: <code>application/json</code></li>
                 <li>Secret: your <a href="{{ path('fos_user_profile_show') }}">Packagist API Token</a></li>
                 <li>Which events? Just the <code>push</code> event is enough.</li>
