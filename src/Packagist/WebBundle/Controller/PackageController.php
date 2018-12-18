@@ -2,44 +2,35 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Composer\Factory;
-use Composer\IO\BufferIO;
-use Symfony\Component\Console\Output\OutputInterface;
-use Composer\Package\Loader\ArrayLoader;
-use Composer\Package\Loader\ValidatingArrayLoader;
-use Composer\Console\HtmlOutputFormatter;
-use Composer\Repository\VcsRepository;
+use Composer\Package\Version\VersionParser;
+use DateTimeImmutable;
 use Doctrine\ORM\NoResultException;
-use Packagist\WebBundle\Entity\PackageRepository;
-use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Entity\Download;
+use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\PackageRepository;
+use Packagist\WebBundle\Entity\Version;
+use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Form\Model\MaintainerRequest;
 use Packagist\WebBundle\Form\Type\AbandonedType;
-use Packagist\WebBundle\Entity\Package;
-use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Type\PackageType;
 use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
+use Pagerfanta\Adapter\FixedAdapter;
+use Pagerfanta\Pagerfanta;
 use Predis\Connection\ConnectionException;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Composer\Package\Version\VersionParser;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use DateTimeImmutable;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Pagerfanta\Adapter\FixedAdapter;
-use Pagerfanta\Pagerfanta;
-use Packagist\WebBundle\Package\Updater;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 class PackageController extends Controller
 {
@@ -52,8 +43,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @Route("/packages/list.json", name="list", defaults={"_format"="json"})
-     * @Method({"GET"})
+     * @Route("/packages/list.json", name="list", defaults={"_format"="json"}, methods={"GET"})
      * @Cache(smaxage=300)
      */
     public function listAction(Request $req)
@@ -83,8 +73,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @Route("/packages/updated.json", name="updated_packages", defaults={"_format"="json"})
-     * @Method({"GET"})
+     * @Route("/packages/updated.json", name="updated_packages", defaults={"_format"="json"}, methods={"GET"})
      */
     public function updatedSinceAction(Request $req)
     {
@@ -238,15 +227,16 @@ class PackageController extends Controller
      *     "/p/{name}.{_format}",
      *     name="view_package_alias",
      *     requirements={"name"="[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+?)?", "_format"="(json)"},
-     *     defaults={"_format"="html"}
+     *     defaults={"_format"="html"},
+     *     methods={"GET"}
      * )
      * @Route(
      *     "/packages/{name}",
      *     name="view_package_alias2",
      *     requirements={"name"="[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+?)?/"},
-     *     defaults={"_format"="html"}
+     *     defaults={"_format"="html"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function viewPackageAliasAction(Request $req, $name)
     {
@@ -269,9 +259,9 @@ class PackageController extends Controller
      *     "/providers/{name}",
      *     name="view_providers",
      *     requirements={"name"="[A-Za-z0-9/_.-]+?"},
-     *     defaults={"_format"="html"}
+     *     defaults={"_format"="html"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function viewProvidersAction($name)
     {
@@ -316,9 +306,9 @@ class PackageController extends Controller
      *     "/packages/{name}.{_format}",
      *     name="view_package",
      *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"},
-     *     defaults={"_format"="html"}
+     *     defaults={"_format"="html"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function viewPackageAction(Request $req, $name)
     {
@@ -442,9 +432,9 @@ class PackageController extends Controller
      * @Route(
      *     "/packages/{name}/downloads.{_format}",
      *     name="package_downloads_full",
-     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"}
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function viewPackageDownloadsAction(Request $req, $name)
     {
@@ -497,9 +487,9 @@ class PackageController extends Controller
      * @Route(
      *     "/versions/{versionId}.{_format}",
      *     name="view_version",
-     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "versionId"="[0-9]+", "_format"="(json)"}
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "versionId"="[0-9]+", "_format"="(json)"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function viewPackageVersionAction(Request $req, $versionId)
     {
@@ -520,9 +510,9 @@ class PackageController extends Controller
      * @Route(
      *     "/versions/{versionId}/delete",
      *     name="delete_version",
-     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "versionId"="[0-9]+"}
+     *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "versionId"="[0-9]+"},
+     *     methods={"DELETE"}
      * )
-     * @Method({"DELETE"})
      */
     public function deletePackageVersionAction(Request $req, $versionId)
     {
@@ -549,8 +539,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @Route("/packages/{name}", name="update_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
-     * @Method({"PUT"})
+     * @Route("/packages/{name}", name="update_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"}, methods={"PUT"})
      */
     public function updatePackageAction(Request $req, $name)
     {
@@ -608,8 +597,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @Route("/packages/{name}", name="delete_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
-     * @Method({"DELETE"})
+     * @Route("/packages/{name}", name="delete_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, methods={"DELETE"})
      */
     public function deletePackageAction(Request $req, $name)
     {

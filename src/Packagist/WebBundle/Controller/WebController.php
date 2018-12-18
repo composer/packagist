@@ -16,9 +16,8 @@ use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
 use Predis\Connection\ConnectionException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -60,9 +59,8 @@ class WebController extends Controller
     }
 
     /**
-     * @Route("/search/", name="search.ajax")
-     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"})
-     * @Method({"GET"})
+     * @Route("/search/", name="search.ajax", methods={"GET"})
+     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"}, methods={"GET"})
      */
     public function searchAction(Request $req)
     {
