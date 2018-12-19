@@ -188,7 +188,6 @@ class Updater
         $existingVersions = $versionRepository->getVersionMetadataForUpdate($package);
 
         $processedVersions = [];
-        $lastUpdated = true;
         $lastProcessed = null;
         $idsToMarkUpdated = [];
         foreach ($versions as $version) {

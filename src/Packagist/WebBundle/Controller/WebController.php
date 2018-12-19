@@ -47,13 +47,11 @@ class WebController extends Controller
         ]);
 
         $filteredOrderBys = $this->getFilteredOrderedBys($req);
-        $normalizedOrderBys = $this->getNormalizedOrderBys($filteredOrderBys);
 
         $this->computeSearchQuery($req, $filteredOrderBys);
 
         $form->handleRequest($req);
 
-        $orderBysViewModel = $this->getOrderBysViewModel($req, $normalizedOrderBys);
         return $this->render('PackagistWebBundle:Web:searchForm.html.twig', array(
             'searchQuery' => $req->query->get('search_query')['query'] ?? '',
         ));
@@ -69,7 +67,6 @@ class WebController extends Controller
         $form = $this->createForm(SearchQueryType::class, new SearchQuery());
 
         $filteredOrderBys = $this->getFilteredOrderedBys($req);
-        $normalizedOrderBys = $this->getNormalizedOrderBys($filteredOrderBys);
 
         $this->computeSearchQuery($req, $filteredOrderBys);
 
@@ -332,85 +329,6 @@ class WebController extends Controller
         }
 
         return $filteredOrderBys;
-    }
-
-    /**
-     * @param array $orderBys
-     *
-     * @return array
-     */
-    protected function getNormalizedOrderBys(array $orderBys)
-    {
-        $normalizedOrderBys = array();
-
-        foreach ($orderBys as $sort) {
-            $normalizedOrderBys[$sort['sort']] = $sort['order'];
-        }
-
-        return $normalizedOrderBys;
-    }
-
-    /**
-     * @param Request $req
-     * @param array $normalizedOrderBys
-     *
-     * @return array
-     */
-    protected function getOrderBysViewModel(Request $req, array $normalizedOrderBys)
-    {
-        $makeDefaultArrow = function ($sort) use ($normalizedOrderBys) {
-            if (isset($normalizedOrderBys[$sort])) {
-                if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
-                    $val = 'glyphicon-arrow-up';
-                } else {
-                    $val = 'glyphicon-arrow-down';
-                }
-            } else {
-                $val = '';
-            }
-
-            return $val;
-        };
-
-        $makeDefaultHref = function ($sort) use ($req, $normalizedOrderBys) {
-            if (isset($normalizedOrderBys[$sort])) {
-                if (strtolower($normalizedOrderBys[$sort]) === 'asc') {
-                    $order = 'desc';
-                } else {
-                    $order = 'asc';
-                }
-            } else {
-                $order = 'desc';
-            }
-
-            $query = $req->query->get('search_query');
-            $query = $query['query'] ?? '';
-
-            return '?' . http_build_query(array(
-                'q' => $query,
-                'orderBys' => array(
-                    array(
-                        'sort' => $sort,
-                        'order' => $order
-                    )
-                )
-            ));
-        };
-
-        return array(
-            'downloads' => array(
-                'title' => 'Sort by downloads',
-                'class' => 'glyphicon-arrow-down',
-                'arrowClass' => $makeDefaultArrow('downloads'),
-                'href' => $makeDefaultHref('downloads')
-            ),
-            'favers' => array(
-                'title' => 'Sort by favorites',
-                'class' => 'glyphicon-star',
-                'arrowClass' => $makeDefaultArrow('favers'),
-                'href' => $makeDefaultHref('favers')
-            ),
-        );
     }
 
     /**

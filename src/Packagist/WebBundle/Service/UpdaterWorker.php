@@ -227,7 +227,6 @@ class UpdaterWorker
                         // remove packages with very low downloads and that are 404
                         && $this->downloadManager->getTotalDownloads($package) <= 100
                     ) {
-                        $name = $package->getName();
                         $this->packageManager->deletePackage($package);
 
                         return [

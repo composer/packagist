@@ -17,6 +17,7 @@ use FOS\UserBundle\Model\UserInterface;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
 use Packagist\WebBundle\Entity\Job;
+use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Model\RedisAdapter;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Pagerfanta;
@@ -53,11 +54,11 @@ class UserController extends Controller
     /**
      * @Route("/trigger-github-sync/", name="user_github_sync")
      */
-    public function triggerGitHubSyncAction(Request $req)
+    public function triggerGitHubSyncAction()
     {
         $user = $this->getUser();
         if (!$user) {
-            throw new \AccessDeniedException();
+            throw new AccessDeniedException();
         }
 
         if (!$user->getGithubToken()) {
