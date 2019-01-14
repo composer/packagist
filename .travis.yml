@@ -12,6 +12,8 @@ cache:
 
 services:
   - redis-server
+  - mysql
+
 
 php:
   - 7.0
