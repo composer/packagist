@@ -16,7 +16,6 @@ use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -180,7 +179,7 @@ class ApiController extends Controller
     /**
      * @Route("/jobs/{id}", name="get_job", requirements={"id"="[a-f0-9]+"}, defaults={"_format" = "json"}, methods={"GET"})
      */
-    public function getJobAction(Request $request, string $id)
+    public function getJobAction(string $id)
     {
         return new JsonResponse($this->get('scheduler')->getJobStatus($id), 200);
     }

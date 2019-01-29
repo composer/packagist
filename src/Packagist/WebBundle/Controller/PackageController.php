@@ -37,7 +37,7 @@ class PackageController extends Controller
     /**
      * @Route("/packages/", name="allPackages")
      */
-    public function allAction(Request $req)
+    public function allAction()
     {
         return new RedirectResponse($this->generateUrl('browse'), Response::HTTP_MOVED_PERMANENTLY);
     }
@@ -82,7 +82,6 @@ class PackageController extends Controller
             return new JsonResponse(['error' => 'Missing "since" query parameter with the latest timestamp you got from this endpoint'], 400);
         }
 
-        $now = time();
         try {
             $since = new DateTimeImmutable('@'.$since);
         } catch (\Exception $e) {
@@ -971,7 +970,7 @@ class PackageController extends Controller
             $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
         }
 
-        $datePoints = $this->createDatePoints($from, $to, $average, $package, $version);
+        $datePoints = $this->createDatePoints($from, $to, $average);
         $dlData = $downloads ? $downloads->getData() : [];
 
         foreach ($datePoints as $label => $values) {
@@ -1089,7 +1088,7 @@ class PackageController extends Controller
         return $this->createFormBuilder(array())->getForm();
     }
 
-    private function createDatePoints(DateTimeImmutable $from, DateTimeImmutable $to, $average, Package $package, Version $version = null)
+    private function createDatePoints(DateTimeImmutable $from, DateTimeImmutable $to, $average)
     {
         $interval = $this->getStatsInterval($average);
 

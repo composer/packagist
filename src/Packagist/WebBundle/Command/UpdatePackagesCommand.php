@@ -58,7 +58,6 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $package = $input->getArgument('package');
 
         $doctrine = $this->getContainer()->get('doctrine');
-        $router = $this->getContainer()->get('router');
         $deleteBefore = false;
         $updateEqualRefs = false;
         $randomTimes = true;

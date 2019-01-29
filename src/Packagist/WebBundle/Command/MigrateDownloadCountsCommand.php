@@ -37,7 +37,6 @@ class MigrateDownloadCountsCommand extends ContainerAwareCommand
         $signal = SignalHandler::create(null, $logger);
         $downloadManager = $this->getContainer()->get('packagist.download_manager');
         $doctrine = $this->getContainer()->get('doctrine');
-        $packageRepo = $doctrine->getRepository(Package::class);
 
         try {
             // might be a large-ish dataset coming through here

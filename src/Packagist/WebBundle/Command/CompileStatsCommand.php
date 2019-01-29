@@ -52,7 +52,6 @@ class CompileStatsCommand extends ContainerAwareCommand
         $yesterday = new \DateTime('yesterday 00:00:00');
 
         // fetch existing ids
-        $doctrine = $this->getContainer()->get('doctrine');
         $packages = $conn->fetchAll('SELECT id FROM package ORDER BY id ASC');
         $ids = array();
         foreach ($packages as $row) {
