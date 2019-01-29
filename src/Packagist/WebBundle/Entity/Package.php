@@ -905,6 +905,10 @@ class Package
 
         // equal versions are sorted by date
         if ($aVersion === $bVersion) {
+            // make sure sort is stable
+            if ($a->getReleasedAt() === $a->getReleasedAt()) {
+                return $a->getNormalizedVersion() <=> $b->getNormalizedVersion();
+            }
             return $b->getReleasedAt() > $a->getReleasedAt() ? 1 : -1;
         }
 

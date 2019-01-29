@@ -701,37 +701,50 @@ class SymlinkDumper
 
     private function dumpPackageToV2File(Package $package, $versionData, string $packageKey)
     {
-        $deduplicatedVersions = [];
-        $uniqKeys = ['version', 'version_normalized', 'source', 'dist', 'time'];
+        $minifiedVersions = [];
         $mtime = 0;
 
-        foreach ($package->getVersions() as $version) {
-            $versionArray = $version->toV2Array($versionData);
-
-            $filtered = $versionArray;
-            foreach ($uniqKeys as $key) {
-                unset($filtered[$key]);
-            }
-            $hash = md5(json_encode($filtered));
-
-            if (isset($deduplicatedVersions[$hash])) {
-                foreach ($uniqKeys as $key) {
-                    $deduplicatedVersions[$hash][$key.'s'][] = $versionArray[$key] ?? null;
-                }
-            } else {
-                foreach ($uniqKeys as $key) {
-                    $filtered[$key.'s'] = [$versionArray[$key] ?? null];
-                }
-                $deduplicatedVersions[$hash] = $filtered;
-            }
-
-            $mtime = max($mtime, $version->getReleasedAt() ? $version->getReleasedAt()->getTimestamp() : time());
+        $versions = $package->getVersions();
+        if (is_object($versions)) {
+            $versions = $versions->toArray();
         }
 
-        // get rid of md5 hash keys
-        $deduplicatedVersions = array_values($deduplicatedVersions);
+        usort($versions, Package::class.'::sortVersions');
 
-        $this->individualFilesV2[$packageKey]['packages'][strtolower($package->getName())] = $deduplicatedVersions;
+        $lastKnownVersionData = null;
+        foreach ($versions as $version) {
+            $versionArray = $version->toV2Array($versionData);
+            $mtime = max($mtime, $version->getReleasedAt() ? $version->getReleasedAt()->getTimestamp() : time());
+
+            if (!$lastKnownVersionData) {
+                $lastKnownVersionData = $versionArray;
+                $minifiedVersions[] = $versionArray;
+                continue;
+            }
+
+            $minifiedVersion = [];
+
+            // add any changes from the previous version
+            foreach ($versionArray as $key => $val) {
+                if (!isset($lastKnownVersionData[$key]) || $lastKnownVersionData[$key] !== $val) {
+                    $minifiedVersion[$key] = $val;
+                    $lastKnownVersionData[$key] = $val;
+                }
+            }
+
+            // store any deletions from the previous version for keys missing in current one
+            foreach ($lastKnownVersionData as $key => $val) {
+                if (!isset($versionArray[$key])) {
+                    $minifiedVersion[$key] = "__unset";
+                    unset($lastKnownVersionData[$key]);
+                }
+            }
+
+            $minifiedVersions[] = $minifiedVersion;
+        }
+
+        $this->individualFilesV2[$packageKey]['packages'][strtolower($package->getName())] = $minifiedVersions;
+        $this->individualFilesV2[$packageKey]['minified'] = 'composer/2.0';
         $this->individualFilesV2Mtime[$packageKey] = $mtime;
     }
 

@@ -1,5 +1,5 @@
 language: php
-
+dist: xenial
 sudo: false
 
 env:
@@ -12,6 +12,8 @@ cache:
 
 services:
   - redis-server
+  - mysql
+
 
 php:
   - 7.0

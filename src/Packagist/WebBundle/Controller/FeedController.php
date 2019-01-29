@@ -15,13 +15,10 @@ namespace Packagist\WebBundle\Controller;
 use Doctrine\ORM\QueryBuilder;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
-use Pagerfanta\Adapter\DoctrineORMAdapter;
-use Pagerfanta\Pagerfanta;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Zend\Feed\Writer\Entry;
 use Zend\Feed\Writer\Feed;
@@ -46,9 +43,9 @@ class FeedController extends Controller
      * @Route(
      *     "/packages.{_format}",
      *     name="feed_packages",
-     *     requirements={"_format"="(rss|atom)"}
+     *     requirements={"_format"="(rss|atom)"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function packagesAction(Request $req)
     {
@@ -73,9 +70,9 @@ class FeedController extends Controller
      * @Route(
      *     "/releases.{_format}",
      *     name="feed_releases",
-     *     requirements={"_format"="(rss|atom)"}
+     *     requirements={"_format"="(rss|atom)"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function releasesAction(Request $req)
     {
@@ -100,9 +97,9 @@ class FeedController extends Controller
      * @Route(
      *     "/vendor.{vendor}.{_format}",
      *     name="feed_vendor",
-     *     requirements={"_format"="(rss|atom)", "vendor"="[A-Za-z0-9_.-]+"}
+     *     requirements={"_format"="(rss|atom)", "vendor"="[A-Za-z0-9_.-]+"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function vendorAction(Request $req, $vendor)
     {
@@ -127,9 +124,9 @@ class FeedController extends Controller
      * @Route(
      *     "/package.{package}.{_format}",
      *     name="feed_package",
-     *     requirements={"_format"="(rss|atom)", "package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}
+     *     requirements={"_format"="(rss|atom)", "package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function packageAction(Request $req, $package)
     {
