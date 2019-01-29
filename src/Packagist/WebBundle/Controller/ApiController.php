@@ -12,24 +12,14 @@
 
 namespace Packagist\WebBundle\Controller;
 
-use Composer\Console\HtmlOutputFormatter;
-use Composer\Factory;
-use Composer\IO\BufferIO;
-use Composer\Package\Loader\ArrayLoader;
-use Composer\Package\Loader\ValidatingArrayLoader;
-use Composer\Repository\InvalidRepositoryException;
-use Composer\Repository\VcsRepository;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
-use Packagist\WebBundle\Entity\Job;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
@@ -38,8 +28,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 class ApiController extends Controller
 {
     /**
-     * @Route("/packages.json", name="packages", defaults={"_format" = "json"})
-     * @Method({"GET"})
+     * @Route("/packages.json", name="packages", defaults={"_format" = "json"}, methods={"GET"})
      */
     public function packagesAction()
     {
@@ -59,8 +48,7 @@ class ApiController extends Controller
     }
 
     /**
-     * @Route("/api/create-package", name="generic_create", defaults={"_format" = "json"})
-     * @Method({"POST"})
+     * @Route("/api/create-package", name="generic_create", defaults={"_format" = "json"}, methods={"POST"})
      */
     public function createPackageAction(Request $request)
     {
@@ -96,10 +84,9 @@ class ApiController extends Controller
     }
 
     /**
-     * @Route("/api/update-package", name="generic_postreceive", defaults={"_format" = "json"})
-     * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"})
-     * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"})
-     * @Method({"POST"})
+     * @Route("/api/update-package", name="generic_postreceive", defaults={"_format" = "json"}, methods={"POST"})
+     * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"}, methods={"POST"})
+     * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"}, methods={"POST"})
      */
     public function updatePackageAction(Request $request)
     {
@@ -138,10 +125,10 @@ class ApiController extends Controller
      *     "/api/packages/{package}",
      *     name="api_edit_package",
      *     requirements={"package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"},
-     *     defaults={"_format" = "json"}
+     *     defaults={"_format" = "json"},
+     *     methods={"PUT"}
      * )
      * @ParamConverter("package", options={"mapping": {"package": "name"}})
-     * @Method({"PUT"})
      */
     public function editPackageAction(Request $request, Package $package)
     {
@@ -175,8 +162,7 @@ class ApiController extends Controller
     }
 
     /**
-     * @Route("/downloads/{name}", name="track_download", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"})
-     * @Method({"POST"})
+     * @Route("/downloads/{name}", name="track_download", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"}, methods={"POST"})
      */
     public function trackDownloadAction(Request $request, $name)
     {
@@ -192,8 +178,7 @@ class ApiController extends Controller
     }
 
     /**
-     * @Route("/jobs/{id}", name="get_job", requirements={"id"="[a-f0-9]+"}, defaults={"_format" = "json"})
-     * @Method({"GET"})
+     * @Route("/jobs/{id}", name="get_job", requirements={"id"="[a-f0-9]+"}, defaults={"_format" = "json"}, methods={"GET"})
      */
     public function getJobAction(Request $request, string $id)
     {
@@ -212,8 +197,7 @@ class ApiController extends Controller
      *
      * The version must be the normalized one
      *
-     * @Route("/downloads/", name="track_download_batch", defaults={"_format" = "json"})
-     * @Method({"POST"})
+     * @Route("/downloads/", name="track_download_batch", defaults={"_format" = "json"}, methods={"POST"})
      */
     public function trackDownloadsAction(Request $request)
     {
