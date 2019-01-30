@@ -99,9 +99,9 @@ class PackageRepository extends EntityRepository
             ->leftJoin('p.maintainers', 'm')
             ->where('m.id = :userId')
             ->andWhere('p.repository LIKE :repoUrl')
-            ->andWhere('p.autoUpdated != :synced')
+            ->orderBy('p.autoUpdated', 'ASC')
             ->getQuery()
-            ->setParameters(['userId' => $userId, 'repoUrl' => 'https://github.com/%', 'synced' => Package::AUTO_GITHUB_HOOK]);
+            ->setParameters(['userId' => $userId, 'repoUrl' => 'https://github.com/%']);
 
         return $query->getResult();
     }

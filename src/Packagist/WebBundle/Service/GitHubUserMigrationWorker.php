@@ -31,7 +31,7 @@ class GitHubUserMigrationWorker
 
     public function process(Job $job, SignalHandler $signal): array
     {
-        $em = $this->doctrine->getEntityManager();
+        $em = $this->doctrine->getManager();
         $id = $job->getPayload()['id'];
         $packageRepository = $em->getRepository(Package::class);
         $userRepository = $em->getRepository(User::class);
@@ -131,8 +131,18 @@ class GitHubUserMigrationWorker
 
             if (!$hasValidHook) {
                 $this->logger->debug('Creating hook');
-                $this->request($token, 'POST', 'repos/'.$repoKey.'/hooks', $hookData);
-                $changed = true;
+                $resp = $this->request($token, 'POST', 'repos/'.$repoKey.'/hooks', $hookData);
+                if ($resp->getStatusCode() === 201) {
+                    $hooks[] = json_decode((string) $resp->getBody(), true);
+                    $changed = true;
+                }
+            }
+
+            if (count($hooks) && !preg_match('{^https://api\.github\.com/repos/'.$repoKey.'/hooks/}', $hooks[0]['url'])) {
+                if (preg_match('https://api\.github\.com/repos/([^/]+/[^/]+)/hooks', $hooks[0]['url'], $match)) {
+                    $package->setRepository('https://github.com/'.$match[1]);
+                    $this->doctrine->getManager()->flush($package);
+                }
             }
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             if ($msg = $this->isAcceptableException($e)) {
