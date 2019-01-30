@@ -46,10 +46,10 @@ class WebControllerTest extends WebTestCase
     {
         $kernelRootDir = $container->getParameter('kernel.root_dir');
 
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:drop --env=test --force', false);
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:schema:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console redis:flushall --env=test -n');
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:drop --env=test --force -q', false);
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:create --env=test -q');
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:schema:create --env=test -q');
+        $this->executeCommand('php '.$kernelRootDir . '/console redis:flushall --env=test -n -q');
 
         $em = $container->get('doctrine')->getManager();
 

@@ -2,8 +2,6 @@
 
 ini_set('date.timezone', 'UTC');
 
-use Doctrine\Common\Annotations\AnnotationRegistry;
-
 if (!$loader = @include __DIR__.'/../vendor/autoload.php') {
 
     $message = <<< EOF
@@ -17,7 +15,5 @@ EOF;
 
     die($message);
 }
-
-AnnotationRegistry::registerLoader(array($loader, 'loadClass'));
 
 return $loader;
