@@ -271,6 +271,7 @@ class ApiController extends Controller
         $packages = null;
         $user = null;
         $autoUpdated = Package::AUTO_MANUAL_HOOK;
+        $receiveType = 'manual';
 
         // manual hook set up with user API token as secret
         if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature')) {
@@ -283,6 +284,7 @@ class ApiController extends Controller
                 if (hash_equals($expected, $sig)) {
                     $packages = $this->findPackagesByRepository('https://github.com/'.$match['path']);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
+                    $receiveType = 'github_user_secret';
                 } else {
                     return new Response(json_encode(array('status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.')), 403);
                 }
@@ -304,6 +306,7 @@ class ApiController extends Controller
                 if (hash_equals($expected, $sig)) {
                     $packages = $this->findPackagesByRepository('https://github.com/'.$match['path']);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
+                    $receiveType = 'github_auto';
                 }
             }
         }
@@ -334,7 +337,7 @@ class ApiController extends Controller
             $jobs[] = $job->getId();
         }
 
-        return new JsonResponse(['status' => 'success', 'jobs' => $jobs], 202);
+        return new JsonResponse(['status' => 'success', 'jobs' => $jobs, 'type' => $receiveType], 202);
     }
 
     /**
