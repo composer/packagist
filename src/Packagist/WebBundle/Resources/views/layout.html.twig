@@ -110,7 +110,7 @@
             </nav>
         </header>
 
-        {{ include("PackagistWebBundle:Web:searchSection.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
+        {{ include("PackagistWebBundle:web:search_section.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
 
         {% block flashMessages %}
             {%- if app.session.flashbag.peekAll()|length > 0 %}

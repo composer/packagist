@@ -273,10 +273,10 @@
             <div class="row versions-section">
                 <div class="version-details col-md-9">
                     {% if expandedVersion %}
-                        {% include 'PackagistWebBundle:Package:versionDetails.html.twig' with {version: expandedVersion} %}
+                        {% include 'PackagistWebBundle:package:version_details.html.twig' with {version: expandedVersion} %}
                     {% endif %}
                 </div>
-                {% include 'PackagistWebBundle:Package:versionList.html.twig' with {versions: versions, expandedId: expandedVersion.id, deleteVersionCsrfToken: deleteVersionCsrfToken|default(null)} %}
+                {% include 'PackagistWebBundle:package:version_list.html.twig' with {versions: versions, expandedId: expandedVersion.id, deleteVersionCsrfToken: deleteVersionCsrfToken|default(null)} %}
             {% elseif package.crawledAt is null %}
                 <p class="col-xs-12">This package has not been crawled yet, some information is missing.</p>
             {% else %}

@@ -26,15 +26,15 @@
     },
     "require": {
         "php": ">=7.0",
-        "symfony/symfony": "^2.8",
+        "symfony/symfony": "^3.4",
         "doctrine/orm": "^2.4",
         "doctrine/doctrine-bundle": "^1.2",
         "doctrine/doctrine-cache-bundle": "^1.3",
         "twig/extensions": "^1.0",
-        "symfony/swiftmailer-bundle": "^2.3",
-        "symfony/monolog-bundle": "^2.4",
+        "symfony/swiftmailer-bundle": "^3.0",
+        "symfony/monolog-bundle": "^3.1",
         "sensio/distribution-bundle": "^5.0",
-        "sensio/framework-extra-bundle": "^3.0",
+        "sensio/framework-extra-bundle": "^5.0",
         "sensio/generator-bundle": "^3.0",
 
         "composer/composer": "^1.8@dev",
@@ -47,18 +47,18 @@
         "zendframework/zend-feed": "^2.0",
         "zendframework/zend-servicemanager": "^2.0",
         "zendframework/zend-uri": "^2.0",
-        "pagerfanta/pagerfanta": "^1.0",
+        "pagerfanta/pagerfanta": "^2.0",
         "knplabs/knp-menu-bundle": "^2.1",
         "ezyang/htmlpurifier": "^4.6",
         "nelmio/cors-bundle": "^1.4",
         "cebe/markdown": "^1.1",
-        "algolia/algoliasearch-client-php": "^1.18",
+        "algolia/algoliasearch-client-php": "^2.0",
         "seld/signal-handler": "^1.1",
         "php-http/httplug-bundle": "^1.11",
         "php-http/guzzle6-adapter": "^1.1"
     },
     "require-dev": {
-        "symfony/phpunit-bridge": "^2.7 || ^3.0",
+        "symfony/phpunit-bridge": "^4.2",
         "phpunit/phpunit": "^6.5"
     },
     "scripts": {

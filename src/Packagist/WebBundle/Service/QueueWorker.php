@@ -7,11 +7,9 @@ use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Packagist\WebBundle\Entity\Job;
 use Seld\Signal\SignalHandler;
-use Packagist\WebBundle\Service\LogResetter;
 
 class QueueWorker
 {
-    private $logResetter;
     private $redis;
     private $logger;
     /** @var RegistryInterface */
@@ -19,9 +17,8 @@ class QueueWorker
     private $jobWorkers;
     private $processedJobs = 0;
 
-    public function __construct(LogResetter $logResetter, Redis $redis, RegistryInterface $doctrine, LoggerInterface $logger, array $jobWorkers)
+    public function __construct(Redis $redis, RegistryInterface $doctrine, LoggerInterface $logger, array $jobWorkers)
     {
-        $this->logResetter = $logResetter;
         $this->redis = $redis;
         $this->logger = $logger;
         $this->doctrine = $doctrine;
@@ -109,9 +106,7 @@ class QueueWorker
 
         $processor = $this->jobWorkers[$job->getType()];
 
-        // clears/resets all fingers-crossed handlers to avoid dumping info messages that happened between two job executions
-        $this->logResetter->reset();
-
+        $this->logger->reset();
         $this->logger->debug('Processing ' . $job->getType() . ' job', ['job' => $job->getPayload()]);
 
         try {
@@ -138,8 +133,7 @@ class QueueWorker
             $job->reschedule($result['after']);
             $em->flush($job);
 
-            // reset logger
-            $this->logResetter->reset();
+            $this->logger->reset();
             $this->logger->popProcessor();
 
             return true;
@@ -172,9 +166,7 @@ class QueueWorker
             $this->logger->error('Job '.$job->getId().' errored', $result);
         }
 
-        // clears/resets all fingers-crossed handlers so that if one triggers it doesn't dump the entire debug log for all processed
-        $this->logResetter->reset();
-
+        $this->logger->reset();
         $this->logger->popProcessor();
 
         return true;

@@ -291,7 +291,7 @@ class PackageController extends Controller
             });
         } catch (ConnectionException $e) {}
 
-        return $this->render('PackagistWebBundle:Package:providers.html.twig', array(
+        return $this->render('PackagistWebBundle:package:providers.html.twig', array(
             'name' => $name,
             'packages' => $providers,
             'meta' => $this->getPackagesMetadata($providers),
@@ -498,7 +498,7 @@ class PackageController extends Controller
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
 
         $html = $this->renderView(
-            'PackagistWebBundle:Package:versionDetails.html.twig',
+            'PackagistWebBundle:Package:version_details.html.twig',
             array('version' => $repo->getFullVersion($versionId))
         );
 
@@ -627,7 +627,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template("PackagistWebBundle:Package:viewPackage.html.twig")
+     * @Template("PackagistWebBundle:package:view_package.html.twig")
      * @Route("/packages/{name}/maintainers/", name="add_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
     public function createMaintainerAction(Request $req, $name)
@@ -684,7 +684,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template("PackagistWebBundle:Package:viewPackage.html.twig")
+     * @Template("PackagistWebBundle:package:view_package.html.twig")
      * @Route("/packages/{name}/maintainers/delete", name="remove_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
     public function removeMaintainerAction(Request $req, $name)
@@ -910,7 +910,7 @@ class PackageController extends Controller
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['name'] = $name;
 
-        return $this->render('PackagistWebBundle:Package:dependents.html.twig', $data);
+        return $this->render('PackagistWebBundle:package:dependents.html.twig', $data);
     }
 
     /**
@@ -939,7 +939,7 @@ class PackageController extends Controller
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['name'] = $name;
 
-        return $this->render('PackagistWebBundle:Package:suggesters.html.twig', $data);
+        return $this->render('PackagistWebBundle:package:suggesters.html.twig', $data);
     }
 
     /**

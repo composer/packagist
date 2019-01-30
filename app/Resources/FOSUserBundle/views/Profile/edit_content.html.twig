@@ -1,4 +1,4 @@
-<form action="{{ path('fos_user_profile_edit') }}" {{ form_enctype(form) }} method="POST" class="fos_user_profile_edit col-md-6">
+{{ form_start(form, { 'action': path('fos_user_profile_edit'), 'attr': { 'class': 'fos_user_profile_edit col-md-6' } }) }}
     {{ form_errors(form) }}
 
     <div class="form-group clearfix">
@@ -56,7 +56,7 @@
             <p><a href="{{ path('user_github_disconnect', {token: csrf_token('unlink_github')}) }}">Disconnect your GitHub account</a> to connect another one.</p>
         {% endif %}
     {% endif %}
-</form>
+{{ form_end(form) }}
 
 <div class="col-md-2">
 </div>

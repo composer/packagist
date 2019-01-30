@@ -1,4 +1,4 @@
-{% extends "PackagistWebBundle:Web:list.html.twig" %}
+{% extends "PackagistWebBundle:web:list.html.twig" %}
 
 {% block head_feeds %}
     <link rel="alternate" type="application/rss+xml" title="New Releases - {{ vendor }}" href="{{ url('feed_vendor', {vendor: vendor, _format: 'rss'}) }}" />

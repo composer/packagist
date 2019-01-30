@@ -104,7 +104,7 @@ class PackageManager
             }
 
             if ($recipients) {
-                $body = $this->twig->render('PackagistWebBundle:Email:update_failed.txt.twig', array(
+                $body = $this->twig->render('PackagistWebBundle:email:update_failed.txt.twig', array(
                     'package' => $package,
                     'exception' => get_class($e),
                     'exceptionMessage' => $e->getMessage(),
@@ -136,7 +136,7 @@ class PackageManager
 
     public function notifyNewMaintainer($user, $package)
     {
-        $body = $this->twig->render('PackagistWebBundle:Email:maintainer_added.txt.twig', array(
+        $body = $this->twig->render('PackagistWebBundle:email:maintainer_added.txt.twig', array(
             'package_name' => $package->getName()
         ));
 

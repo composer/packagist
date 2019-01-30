@@ -24,6 +24,7 @@ security:
                 name: pauth
                 always_remember_me: true
                 lifetime: 31104000 # 1y
+            logout_on_user_change: true
             logout:       true
             anonymous:    true
             oauth:

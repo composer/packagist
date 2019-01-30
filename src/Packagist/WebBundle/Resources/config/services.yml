@@ -1,21 +1,32 @@
 services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+        bind:
+
+
     packagist.twig.extension:
+        public: true
         class: Packagist\WebBundle\Twig\PackagistExtension
         arguments: [ '@packagist.provider_manager', '@security.csrf.token_manager' ]
         tags:
             - { name: twig.extension }
 
     twig.extension.text:
+        public: true
         class: Twig_Extensions_Extension_Text
         tags:
             - { name: twig.extension }
 
     packagist.cache_listener:
+        public: true
         class: Packagist\WebBundle\EventListener\CacheListener
         tags:
             - { name: kernel.event_listener, event: kernel.response, method: onResponse }
 
     packagist.logged_in_user_cannot_register_listener:
+        public: true
         class: Packagist\WebBundle\EventListener\LoggedInUserCannotRegisterListener
         arguments:
             - '@security.authorization_checker'
@@ -24,35 +35,40 @@ services:
             - { name: kernel.event_subscriber }
 
     packagist.registration_listener:
+        public: true
         class: Packagist\WebBundle\EventListener\RegistrationListener
         arguments: [ '@fos_user.util.token_generator' ]
         tags:
             - { name: kernel.event_subscriber }
 
     guzzle_client:
+        public: true
         class: GuzzleHttp\Client
         arguments: [{timeout: 3}]
 
     packagist.package_dumper:
+        public: true
         class: Packagist\WebBundle\Package\SymlinkDumper
         arguments: [ '@doctrine', '@filesystem', '@router', '@snc_redis.default_client', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%' ]
 
     packagist.user_provider:
         class: Packagist\WebBundle\Security\Provider\UserProvider
-        public: false
         arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email', '@scheduler']
 
     packagist.user_repository:
+        public: true
         class: Packagist\WebBundle\Entity\UserRepository
         factory: ['@doctrine', getRepository]
         arguments: ['PackagistWebBundle:User']
 
     packagist.package_repository:
+        public: true
         class: Packagist\WebBundle\Entity\PackageRepository
         factory: ['@doctrine', getRepository]
         arguments: ['PackagistWebBundle:Package']
 
     packagist.version_repository:
+        public: true
         class: Packagist\WebBundle\Entity\VersionRepository
         factory: ['@doctrine', getRepository]
         arguments: ['PackagistWebBundle:Version']
@@ -60,10 +76,12 @@ services:
             - [ setRedis, [ '@snc_redis.cache_client' ]]
 
     packagist.package_updater:
+        public: true
         class: Packagist\WebBundle\Package\Updater
         arguments: ['@doctrine']
 
     fos_user.util.user_manipulator:
+        public: true
         class: Packagist\WebBundle\Util\UserManipulator
         arguments:
             - '@fos_user.user_manager'
@@ -72,33 +90,39 @@ services:
             - '@request_stack'
 
     packagist.oauth.registration_form_handler:
+        public: true
         class: Packagist\WebBundle\Form\Handler\OAuthRegistrationFormHandler
         arguments: ['@fos_user.user_manager', '@fos_user.util.token_generator']
 
     packagist.oauth.registration_form_type:
+        public: true
         class: Packagist\WebBundle\Form\Type\OAuthRegistrationFormType
         tags:
             - { name: form.type, alias: packagist_oauth_user_registration }
 
     packagist.oauth.registration_form:
+        public: true
         factory: ['@form.factory', create]
         class: Symfony\Component\Form\Form
         arguments:
             - 'packagist_oauth_user_registration'
 
     packagist.download_manager:
+        public: true
         class: Packagist\WebBundle\Model\DownloadManager
         arguments:
             - '@snc_redis.default_client'
             - '@doctrine'
 
     packagist.provider_manager:
+        public: true
         class: Packagist\WebBundle\Model\ProviderManager
         arguments:
             - '@snc_redis.default_client'
             - '@packagist.package_repository'
 
     packagist.favorite_manager:
+        public: true
         class: Packagist\WebBundle\Model\FavoriteManager
         arguments:
             - '@snc_redis.default_client'
@@ -106,6 +130,7 @@ services:
             - '@packagist.user_repository'
 
     packagist.package_manager:
+        public: true
         class: Packagist\WebBundle\Model\PackageManager
         arguments:
             - '@doctrine'
@@ -120,35 +145,40 @@ services:
             - '%packagist_metadata_dir%'
 
     packagist.profile.form.type:
+        public: true
         class: Packagist\WebBundle\Form\Type\ProfileFormType
         arguments: ['%fos_user.model.user.class%']
         tags:
             - { name: form.type, alias: packagist_user_profile }
 
     packagist.menu_builder:
+        public: true
         class: Packagist\WebBundle\Menu\MenuBuilder
         arguments: ['@knp_menu.factory', '@security.token_storage', '@translator']
 
     packagist.menu.user:
+        public: true
         class: Knp\Menu\MenuItem
         factory: ['@packagist.menu_builder', createUserMenu]
         tags:
             - { name: knp_menu.menu, alias: user_menu }
 
     packagist.menu.profile:
+        public: true
         class: Knp\Menu\MenuItem
         factory: ['@packagist.menu_builder', createProfileMenu]
         tags:
             - { name: knp_menu.menu, alias: profile_menu }
 
     packagist.algolia.client:
+        public: true
         class: AlgoliaSearch\Client
         arguments: ['%algolia.app_id%', '%algolia.admin_key%']
 
     packagist.queue_worker:
+        public: true
         class: Packagist\WebBundle\Service\QueueWorker
         arguments:
-            - "@packagist.log_resetter"
             - "@snc_redis.default_client"
             - "@doctrine"
             - "@logger"
@@ -156,30 +186,24 @@ services:
               'githubuser:migrate': '@github_user_migration_worker'
 
     scheduler:
+        public: true
         class: Packagist\WebBundle\Service\Scheduler
         arguments: ["@snc_redis.default_client", "@doctrine"]
 
     locker:
+        public: true
         class: Packagist\WebBundle\Service\Locker
         arguments: ["@doctrine"]
 
     updater_worker:
+        public: true
         class: Packagist\WebBundle\Service\UpdaterWorker
         arguments: ["@logger", "@doctrine", "@packagist.package_updater", "@locker", "@scheduler", "@packagist.package_manager", "@packagist.download_manager"]
 
     github_user_migration_worker:
+        public: true
         class: Packagist\WebBundle\Service\GitHubUserMigrationWorker
         arguments: ["@logger", "@doctrine", "@guzzle_client", "%github.webhook_secret%"]
-
-    packagist.log_resetter:
-        class: Packagist\WebBundle\Service\LogResetter
-        arguments: ['@service_container', '%fingers_crossed_handlers%']
-
-    packagist.console_stack_trace_line_formatter:
-        class: Symfony\Bridge\Monolog\Formatter\ConsoleFormatter
-        arguments: []
-        calls:
-          - [includeStacktraces, [true]]
 
 parameters:
     security.exception_listener.class: Packagist\WebBundle\Security\ExceptionListener

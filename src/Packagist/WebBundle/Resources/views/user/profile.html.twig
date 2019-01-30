@@ -26,7 +26,7 @@
 
 <section class="row">
     <section class="col-md-12">
-        {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
+        {% embed "PackagistWebBundle:web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
             {% block content_title %}
                 <h3 class="font-normal profile-title">{{ 'user.packages'|trans({ '%username%':user.username }) }}</h3>
             {% endblock %}

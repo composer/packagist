@@ -37,7 +37,7 @@ class WebController extends Controller
     }
 
     /**
-     * Rendered by views/Web/searchSection.html.twig
+     * Rendered by views/Web/search_section.html.twig
      */
     public function searchFormAction(Request $req)
     {
@@ -51,7 +51,7 @@ class WebController extends Controller
 
         $form->handleRequest($req);
 
-        return $this->render('PackagistWebBundle:Web:searchForm.html.twig', array(
+        return $this->render('PackagistWebBundle:web:search_form.html.twig', array(
             'searchQuery' => $req->query->get('search_query')['query'] ?? '',
         ));
     }
@@ -72,7 +72,7 @@ class WebController extends Controller
         $tagsFilter = $req->query->get('tags');
 
         if ($req->getRequestFormat() !== 'json') {
-            return $this->render('PackagistWebBundle:Web:search.html.twig', [
+            return $this->render('PackagistWebBundle:web:search.html.twig', [
                 'packages' => [],
             ]);
         }

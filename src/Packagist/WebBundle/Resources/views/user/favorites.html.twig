@@ -1,4 +1,4 @@
-{% extends "PackagistWebBundle:User:packages.html.twig" %}
+{% extends "PackagistWebBundle:user:packages.html.twig" %}
 
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
@@ -25,7 +25,7 @@
     {% endif %}
 
     <section class="{{ isActualUser ? 'col-md-9' : 'col-md-12' }}">
-        {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
+        {% embed "PackagistWebBundle:web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
             {% block content_title %}
                 <h3 class="font-normal profile-title">{{ (isActualUser ? 'packages.my_favorites' : 'packages.users_favorites')|trans({ '%user%': user.username }) }}</h3>
             {% endblock %}

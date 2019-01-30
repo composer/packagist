@@ -21,7 +21,6 @@ framework:
         cookie_lifetime: 3600
         cookie_httponly: true
         save_path: '%session_save_path%'
-    trusted_proxies: '%trusted_proxies%'
     trusted_hosts: '%trusted_hosts%'
     http_method_override: true
     fragments: ~
@@ -94,7 +93,7 @@ fos_user:
         sender_name:    '%mailer_from_name%'
     profile:
         form:
-            type:       packagist_user_profile
+            type: Packagist\WebBundle\Form\Type\ProfileFormType
 
 hwi_oauth:
     firewall_names: [main]
@@ -139,3 +138,6 @@ httplug:
             plugins: ['httplug.plugin.logger']
             config:
                 timeout: 2
+
+sensio_framework_extra:
+    router: { annotations: false }

@@ -98,7 +98,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                 $output->writeln('Deleting existing index');
             }
 
-            $index->clearIndex();
+            $index->clear();
         }
 
         $total = count($ids);
@@ -148,7 +148,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             }
 
             try {
-                $index->addObjects($records);
+                $index->saveObjects($records);
             } catch (\Exception $e) {
                 $output->writeln('<error>'.get_class($e).': '.$e->getMessage().', occurred while processing packages: '.implode(',', $idsSlice).'</error>');
                 continue;

@@ -45,9 +45,7 @@ parameters:
 
     # set to true to enforce ssl, make sure you have a proper certificate in place
     force_ssl: false
-    # e.g. [127.0.0.1] if the app is running behind a reverse proxy on localhost
-    trusted_proxies: ~
-    # e.g. ['.*\.?packagist\.org$'] to allow packagist.org and all subdomains as valid hosts
+    # e.g. ['^(.+\.)?packagist\.org$'] to allow packagist.org and all subdomains as valid hosts
     trusted_hosts: ~
 
     # -- Algolia credentials --

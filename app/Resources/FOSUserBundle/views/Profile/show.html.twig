@@ -40,7 +40,7 @@
         {% endif %}
     {% endif %}
 
-    {% embed "PackagistWebBundle:Web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: true} %}
+    {% embed "PackagistWebBundle:web:list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: true} %}
         {% block content_title %}
             <h3 class="font-normal">{{ 'packages.yours'|trans }}</h3>
         {% endblock %}
