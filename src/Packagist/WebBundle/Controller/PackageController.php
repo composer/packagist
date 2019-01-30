@@ -311,7 +311,9 @@ class PackageController extends Controller
      */
     public function viewPackageAction(Request $req, $name)
     {
-        $req->getSession()->save();
+        if ($req->getSession()->isStarted()) {
+            $req->getSession()->save();
+        }
 
         if (preg_match('{^(?P<pkg>ext-[a-z0-9_.-]+?)/(?P<method>dependents|suggesters)$}i', $name, $match)) {
             return $this->{$match['method'].'Action'}($req, $match['pkg']);
@@ -492,7 +494,9 @@ class PackageController extends Controller
      */
     public function viewPackageVersionAction(Request $req, $versionId)
     {
-        $req->getSession()->save();
+        if ($req->getSession()->isStarted()) {
+            $req->getSession()->save();
+        }
 
         /** @var VersionRepository $repo  */
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
@@ -616,7 +620,9 @@ class PackageController extends Controller
         }
         $form->submit($req->request->get('form'));
         if ($form->isValid()) {
-            $req->getSession()->save();
+            if ($req->getSession()->isStarted()) {
+                $req->getSession()->save();
+            }
 
             $this->get('packagist.package_manager')->deletePackage($package);
 
