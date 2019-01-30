@@ -79,6 +79,21 @@ class VersionRepository extends EntityRepository
         return $refreshedVersions;
     }
 
+    /**
+     * @param Version[] $versions
+     */
+    public function detachToArray(array $versions, array $versionData): array
+    {
+        $res = [];
+        $em = $this->getEntityManager();
+        foreach ($versions as $version) {
+            $res[$version->getVersion()] = $version->toArray($versionData);
+            $em->detach($version);
+        }
+
+        return $res;
+    }
+
     public function getVersionData(array $versionIds)
     {
         $links = [

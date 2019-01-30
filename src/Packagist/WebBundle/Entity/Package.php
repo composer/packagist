@@ -191,16 +191,15 @@ class Package
     public function toArray(VersionRepository $versionRepo)
     {
         $versions = array();
-        $versionIds = [];
-        $this->versions = $versionRepo->refreshVersions($this->getVersions());
-        foreach ($this->getVersions() as $version) {
-            $versionIds[] = $version->getId();
+        $partialVersions = $this->getVersions()->toArray();
+
+        while ($partialVersions) {
+            $slice = array_splice($partialVersions, 0, 100);
+            $fullVersions = $versionRepo->refreshVersions($slice);
+            $versionData = $versionRepo->getVersionData(array_map(function ($v) { return $v->getId(); }, $fullVersions));
+            $versions = array_merge($versions, $versionRepo->detachToArray($fullVersions, $versionData));
         }
-        $versionData = $versionRepo->getVersionData($versionIds);
-        foreach ($this->getVersions() as $version) {
-            /** @var $version Version */
-            $versions[$version->getVersion()] = $version->toArray($versionData);
-        }
+
         $maintainers = array();
         foreach ($this->getMaintainers() as $maintainer) {
             /** @var $maintainer User */
