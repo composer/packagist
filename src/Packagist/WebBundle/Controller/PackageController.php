@@ -149,7 +149,7 @@ class PackageController extends Controller
         $package = new Package;
         $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
         $package->setRouter($this->get('router'));
-        $form = $this->createForm(new PackageType, $package);
+        $form = $this->createForm(PackageType::class, $package);
         $user = $this->getUser();
         $package->addMaintainer($user);
 
@@ -277,7 +277,7 @@ class PackageController extends Controller
         }
 
         try {
-            $redis = $this->get('snc_redis.default');
+            $redis = $this->get('snc_redis.default_client');
             $trendiness = array();
             foreach ($providers as $package) {
                 /** @var Package $package */
@@ -498,7 +498,7 @@ class PackageController extends Controller
         $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
 
         $html = $this->renderView(
-            'PackagistWebBundle:Package:version_details.html.twig',
+            'PackagistWebBundle:package:version_details.html.twig',
             array('version' => $repo->getFullVersion($versionId))
         );
 

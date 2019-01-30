@@ -113,10 +113,10 @@
         {{ include("PackagistWebBundle:web:search_section.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
 
         {% block flashMessages %}
-            {%- if app.session.flashbag.peekAll()|length > 0 %}
+            {%- if app.request.hasPreviousSession and app.session.flashbag.peekAll()|length > 0 %}
             <section class="wrapper wrapper-white">
                 <div class="container flash-container">
-                {%- for type, flashMessages in app.session.flashbag.all() %}
+                {%- for type, flashMessages in app.flashes() %}
                     {%- for flashMessage in flashMessages %}
                         {%- if 'fos_user_' in type %}
                             <div class="alert alert-{{ type|replace({'fos_user_': ''}) }}">

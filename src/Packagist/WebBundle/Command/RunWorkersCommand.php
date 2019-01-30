@@ -39,7 +39,7 @@ class RunWorkersCommand extends ContainerAwareCommand
             $worker = $this->getContainer()->get('packagist.queue_worker');
 
             $logger->notice('Worker started successfully');
-            $this->getContainer()->get('packagist.log_resetter')->reset();
+            $logger->reset();
 
             $worker->processMessages((int) $input->getOption('messages'));
 

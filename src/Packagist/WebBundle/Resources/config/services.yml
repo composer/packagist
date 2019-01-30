@@ -172,8 +172,9 @@ services:
 
     packagist.algolia.client:
         public: true
-        class: AlgoliaSearch\Client
+        class: Algolia\AlgoliaSearch\SearchClient
         arguments: ['%algolia.app_id%', '%algolia.admin_key%']
+        factory: ['Algolia\AlgoliaSearch\SearchClient', create]
 
     packagist.queue_worker:
         public: true

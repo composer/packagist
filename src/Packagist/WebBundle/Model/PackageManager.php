@@ -15,7 +15,7 @@ namespace Packagist\WebBundle\Model;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Packagist\WebBundle\Entity\Package;
 use Psr\Log\LoggerInterface;
-use AlgoliaSearch\Client as AlgoliaClient;
+use Algolia\AlgoliaSearch\SearchClient;
 use Packagist\WebBundle\Service\GitHubUserMigrationWorker;
 
 /**
@@ -34,7 +34,7 @@ class PackageManager
     protected $githubWorker;
     protected $metadataDir;
 
-    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, AlgoliaClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir)
+    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;
@@ -111,7 +111,7 @@ class PackageManager
                     'details' => strip_tags($details),
                 ));
 
-                $message = \Swift_Message::newInstance()
+                $message = (new \Swift_Message)
                     ->setSubject($package->getName().' failed to update, invalid composer.json data')
                     ->setFrom($this->options['from'], $this->options['fromName'])
                     ->setTo($recipients)
@@ -140,7 +140,7 @@ class PackageManager
             'package_name' => $package->getName()
         ));
 
-        $message = \Swift_Message::newInstance()
+        $message = (new \Swift_Message)
             ->setSubject('You have been added to ' . $package->getName() . ' as a maintainer')
             ->setFrom($this->options['from'], $this->options['fromName'])
             ->setTo($user->getEmail())
