@@ -324,7 +324,7 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)')), 404);
         }
 
-        $em = $this->getDoctrine()->getManager();
+        $em = $this->get('doctrine.orm.entity_manager');
         $jobs = [];
 
         /** @var Package $package */

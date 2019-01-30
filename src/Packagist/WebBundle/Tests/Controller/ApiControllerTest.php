@@ -53,7 +53,7 @@ class ApiControllerTest extends WebTestCase
 
         $payload = json_encode(array('repository' => array('url' => 'git://github.com/composer/composer')));
         $client->request('POST', '/api/github?username=test&apiToken=token', array('payload' => $payload));
-        $this->assertEquals(202, $client->getResponse()->getStatusCode());
+        $this->assertEquals(202, $client->getResponse()->getStatusCode(), $client->getResponse()->getContent());
     }
 
     public function githubApiProvider()
