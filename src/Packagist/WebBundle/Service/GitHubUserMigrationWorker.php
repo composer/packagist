@@ -139,7 +139,7 @@ class GitHubUserMigrationWorker
             }
 
             if (count($hooks) && !preg_match('{^https://api\.github\.com/repos/'.$repoKey.'/hooks/}', $hooks[0]['url'])) {
-                if (preg_match('https://api\.github\.com/repos/([^/]+/[^/]+)/hooks', $hooks[0]['url'], $match)) {
+                if (preg_match('{https://api\.github\.com/repos/([^/]+/[^/]+)/hooks}', $hooks[0]['url'], $match)) {
                     $package->setRepository('https://github.com/'.$match[1]);
                     $this->doctrine->getManager()->flush($package);
                 }
