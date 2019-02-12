@@ -94,9 +94,7 @@ services:
         class: Packagist\WebBundle\Form\Handler\OAuthRegistrationFormHandler
         arguments: ['@fos_user.user_manager', '@fos_user.util.token_generator']
 
-    packagist.oauth.registration_form_type:
-        public: true
-        class: Packagist\WebBundle\Form\Type\OAuthRegistrationFormType
+    Packagist\WebBundle\Form\Type\OAuthRegistrationFormType:
         tags:
             - { name: form.type, alias: packagist_oauth_user_registration }
 
@@ -105,7 +103,7 @@ services:
         factory: ['@form.factory', create]
         class: Symfony\Component\Form\Form
         arguments:
-            - 'packagist_oauth_user_registration'
+            - 'Packagist\WebBundle\Form\Type\OAuthRegistrationFormType'
 
     packagist.download_manager:
         public: true
