@@ -281,8 +281,10 @@ class SymlinkDumper
 
                     // dump v2 format
                     $key = $name.'.json';
-                    $this->dumpPackageToV2File($package, $versionData, $key);
+                    $keyDev = $name.'~dev.json';
+                    $this->dumpPackageToV2File($package, $versionData, $key, $keyDev);
                     $modifiedV2Files[$key] = true;
+                    $modifiedV2Files[$keyDev] = true;
 
                     // store affected files to clean up properly in the next update
                     $this->fs->mkdir(dirname($buildDir.'/'.$name));
@@ -699,17 +701,33 @@ class SymlinkDumper
         $this->individualFilesV2Mtime = array();
     }
 
-    private function dumpPackageToV2File(Package $package, $versionData, string $packageKey)
+    private function dumpPackageToV2File(Package $package, $versionData, string $packageKey, string $packageKeyDev)
     {
-        $minifiedVersions = [];
-        $mtime = 0;
-
         $versions = $package->getVersions();
         if (is_object($versions)) {
             $versions = $versions->toArray();
         }
 
         usort($versions, Package::class.'::sortVersions');
+
+        $tags = [];
+        $branches = [];
+        foreach ($versions as $version) {
+            if ($version->isDevelopment()) {
+                $branches[] = $version;
+            } else {
+                $tags[] = $version;
+            }
+        }
+
+        $this->dumpVersionsToV2File($package, $tags, $versionData, $packageKey);
+        $this->dumpVersionsToV2File($package, $branches, $versionData, $packageKeyDev);
+    }
+
+    private function dumpVersionsToV2File(Package $package, $versions, $versionData, string $packageKey)
+    {
+        $minifiedVersions = [];
+        $mtime = 0;
 
         $lastKnownVersionData = null;
         foreach ($versions as $version) {
