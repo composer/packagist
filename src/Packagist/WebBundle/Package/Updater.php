@@ -91,16 +91,12 @@ class Updater
      * @param \Packagist\WebBundle\Entity\Package $package
      * @param RepositoryInterface $repository the repository instance used to update from
      * @param int $flags a few of the constants of this class
-     * @param \DateTime $start
      */
-    public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null): Package
+    public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, array $existingVersions = null): Package
     {
         $rfs = new RemoteFilesystem($io, $config);
 
-        if (null === $start) {
-            $start = new \DateTime();
-        }
-        $deleteDate = clone $start;
+        $deleteDate = new \DateTime();
         $deleteDate->modify('-1day');
 
         $em = $this->doctrine->getManager();
@@ -185,7 +181,9 @@ class Updater
             $em->refresh($package);
         }
 
-        $existingVersions = $versionRepository->getVersionMetadataForUpdate($package);
+        if (!$existingVersions) {
+            $existingVersions = $versionRepository->getVersionMetadataForUpdate($package);
+        }
 
         $processedVersions = [];
         $lastProcessed = null;

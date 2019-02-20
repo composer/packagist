@@ -5,6 +5,9 @@ services:
         public: false
         bind:
 
+    Packagist\WebBundle\Command\:
+        resource: '../../Command/*'
+        tags: ['console.command']
 
     packagist.twig.extension:
         public: true
