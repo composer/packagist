@@ -82,6 +82,13 @@ class PackageManager
         if (file_exists($metadataV2.'.gz')) {
             @unlink($metadataV2.'.gz');
         }
+        $metadataV2Dev = $this->metadataDir.'/p2/'.strtolower($packageName).'~dev.json';
+        if (file_exists($metadataV2Dev)) {
+            @unlink($metadataV2Dev);
+        }
+        if (file_exists($metadataV2Dev.'.gz')) {
+            @unlink($metadataV2Dev.'.gz');
+        }
 
         // attempt search index cleanup
         try {
