@@ -57,7 +57,7 @@
                         {% endif %}
                     {% endif %}
                     {% if "github.com" in package.repository and package.getAutoUpdated() == 1 and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
-                        <div class="alert alert-danger">This package is using the legacy GitHub service and will stop being auto-updated in early 2019. Please set up the new <a href="{{ path('about') }}#how-to-update-packages">GitHub Hook</a> for Packagist so that it keeps working in the future.</div>
+                        <div class="alert alert-danger">This package is using the legacy service integration that GitHub deprecated in January 2019 and <strong>will not auto-update anymore</strong>. Please <strong>set up the new <a href="{{ path('about') }}#how-to-update-packages">GitHub Hook</a></strong> for Packagist so that it starts updating again.</div>
                     {% endif %}
 
                     {% if package.abandoned %}
