@@ -20,6 +20,7 @@ use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\Job;
+use Packagist\WebBundle\Entity\EmptyReferenceCache;
 use Packagist\WebBundle\Model\PackageManager;
 use Packagist\WebBundle\Model\DownloadManager;
 use Seld\Signal\SignalHandler;
@@ -99,10 +100,19 @@ class UpdaterWorker
 
             $versionCache = null;
             $existingVersions = null;
+            $emptyRefCache = $em->getRepository(EmptyReferenceCache::class)->findOneBy(['package' => $package]);
+            if (!$emptyRefCache) {
+                $emptyRefCache = new EmptyReferenceCache($package);
+                $em->persist($emptyRefCache);
+                $em->flush($emptyRefCache);
+            }
 
             if ($useVersionCache) {
                 $existingVersions = $em->getRepository(Version::class)->getVersionMetadataForUpdate($package);
-                $versionCache = new VersionCache($package, $existingVersions);
+
+                $versionCache = new VersionCache($package, $existingVersions, $emptyRefCache->getEmptyReferences());
+            } else {
+                $emptyRefCache->setEmptyReferences([]);
             }
 
             // prepare repository
@@ -118,6 +128,10 @@ class UpdaterWorker
 
             // perform the actual update (fetch and re-scan the repository's source)
             $package = $this->updater->update($io, $config, $package, $repository, $flags, $existingVersions);
+
+            $emptyRefCache = $em->merge($emptyRefCache);
+            $emptyRefCache->setEmptyReferences($repository->getEmptyReferences());
+            $em->flush($emptyRefCache);
 
             // github update downgraded to a git clone, this should not happen, so check through API whether the package still exists
             if (preg_match('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository(), $match) && 0 === strpos($repository->getDriver()->getUrl(), 'git@')) {

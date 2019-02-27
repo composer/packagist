@@ -248,12 +248,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "d3873a05650e168251067d9648845c220c50e2d7"
+                "reference": "ba1e5c213c2932093ee3d8aa3ee1591ffa35e877"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/d3873a05650e168251067d9648845c220c50e2d7",
-                "reference": "d3873a05650e168251067d9648845c220c50e2d7",
+                "url": "https://api.github.com/repos/composer/composer/zipball/ba1e5c213c2932093ee3d8aa3ee1591ffa35e877",
+                "reference": "ba1e5c213c2932093ee3d8aa3ee1591ffa35e877",
                 "shasum": ""
             },
             "require": {
@@ -301,9 +301,26 @@
             "license": [
                 "MIT"
             ],
+            "authors": [
+                {
+                    "name": "Nils Adermann",
+                    "email": "naderman@naderman.de",
+                    "homepage": "http://www.naderman.de"
+                },
+                {
+                    "name": "Jordi Boggiano",
+                    "email": "j.boggiano@seld.be",
+                    "homepage": "http://seld.be"
+                }
+            ],
             "description": "Composer helps you declare, manage and install dependencies of PHP projects, ensuring you have the right stack everywhere.",
             "homepage": "https://getcomposer.org/",
-            "time": "2019-02-20T07:43:56+00:00"
+            "keywords": [
+                "autoload",
+                "dependency",
+                "package"
+            ],
+            "time": "2019-02-27T14:07:33+00:00"
         },
         {
             "name": "composer/semver",
