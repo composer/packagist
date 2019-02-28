@@ -36,6 +36,8 @@ class RunWorkersCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        \Monolog\ErrorHandler::register($this->logger);
+
         $lock = new LockHandler('packagist_run_' . $input->getOption('worker-id'));
 
         // another dumper is still active
