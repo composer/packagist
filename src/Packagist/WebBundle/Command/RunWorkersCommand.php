@@ -39,6 +39,7 @@ class RunWorkersCommand extends Command
         \Monolog\ErrorHandler::register($this->logger);
 
         $lock = new LockHandler('packagist_run_' . $input->getOption('worker-id'));
+        ini_set('memory_limit', '1G');
 
         // another dumper is still active
         if (!$lock->lock()) {

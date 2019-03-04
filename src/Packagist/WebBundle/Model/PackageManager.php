@@ -65,13 +65,21 @@ class PackageManager
             }
         }
 
+        $em = $this->doctrine->getManager();
+
         $downloadRepo = $this->doctrine->getRepository('PackagistWebBundle:Download');
         $downloadRepo->deletePackageDownloads($package);
+
+        $emptyRefRepo = $this->doctrine->getRepository('PackagistWebBundle:EmptyReferenceCache');
+        $emptyRef = $emptyRefRepo->findOneBy(['package' => $package]);
+        if ($emptyRef) {
+            $em->remove($emptyRef);
+            $em->flush();
+        }
 
         $this->providerManager->deletePackage($package);
         $packageName = $package->getName();
 
-        $em = $this->doctrine->getManager();
         $em->remove($package);
         $em->flush();
 
