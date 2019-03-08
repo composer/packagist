@@ -4,10 +4,23 @@ services:
         autoconfigure: true
         public: false
         bind:
+            # services
+            $redis: '@snc_redis.default_client'
+
+            # params
+            $awsMetadata: '%aws_metadata%'
+            $databaseHost: '%database_host%'
+            $databaseName: '%database_name%'
+            $databaseUser: '%database_user%'
+            $databasePassword: '%database_password%'
 
     Packagist\WebBundle\Command\:
         resource: '../../Command/*'
         tags: ['console.command']
+
+    Packagist\WebBundle\Controller\:
+        resource: '../../Controller/*'
+        tags: ['controller.service_arguments']
 
     packagist.twig.extension:
         public: true

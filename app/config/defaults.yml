@@ -10,3 +10,4 @@ parameters:
     mailer_encryption: tls
     mailer_auth_mode: login
     fingers_crossed_handlers: []
+    aws_metadata: {}
