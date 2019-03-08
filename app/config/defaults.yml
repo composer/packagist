@@ -11,3 +11,4 @@ parameters:
     mailer_auth_mode: login
     fingers_crossed_handlers: []
     aws_metadata: {}
+    forced_ssl_hosts: []

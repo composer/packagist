@@ -70,6 +70,7 @@ nelmio_security:
             '^/.*': DENY
     forced_ssl:
         enabled: '%force_ssl%'
+        hosts: '%forced_ssl_hosts%'
         hsts_max_age: 31104000 # 1y
     csp:
         enabled: true
