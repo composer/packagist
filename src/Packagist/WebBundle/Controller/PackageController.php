@@ -984,7 +984,7 @@ class PackageController extends Controller
             foreach ($values as $valueKey) {
                 $value += $dlData[$valueKey] ?? 0;
             }
-            $datePoints[$label] = ceil($value / count($datePoints[$label]));
+            $datePoints[$label] = ceil($value / count($values));
         }
 
         $datePoints = array(
