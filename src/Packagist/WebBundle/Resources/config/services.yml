@@ -13,6 +13,8 @@ services:
             $databaseName: '%database_name%'
             $databaseUser: '%database_user%'
             $databasePassword: '%database_password%'
+            $webDir: '%kernel.root_dir%/../web/'
+            $metadataDir: '%packagist_metadata_dir%'
 
     Packagist\WebBundle\Command\:
         resource: '../../Command/*'

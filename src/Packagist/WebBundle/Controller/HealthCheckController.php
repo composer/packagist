@@ -58,7 +58,7 @@ class HealthCheckController
         }
 
         $runner->addCheck(new Check\DiskUsage(80, 90, '/'));
-        if ($this->awsMeta['primary'] === true) {
+        if ($this->awsMeta['has_instance_store'] === true) {
             $runner->addCheck(new Check\DiskUsage(80, 90, '/mnt/sdephemeral'));
         }
         $runner->addCheck(new Check\DiskFree(100 * 1024 * 1024, '/tmp'));
