@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use ZendDiagnostics\Check;
 use ZendDiagnostics\Runner\Runner;
 use Packagist\WebBundle\HealthCheck\RedisHealthCheck;
+use Packagist\WebBundle\HealthCheck\MetadataDirCheck;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -56,10 +57,14 @@ class HealthCheckController
             $machineName = 'dev';
         }
 
-        $runner->addCheck($d = new Check\DiskUsage(80, 90, '/'));
+        $runner->addCheck(new Check\DiskUsage(80, 90, '/'));
+        if ($this->awsMeta['primary'] === true) {
+            $runner->addCheck(new Check\DiskUsage(80, 90, '/mnt/sdephemeral'));
+        }
         $runner->addCheck(new Check\DiskFree(100 * 1024 * 1024, '/tmp'));
         $runner->addCheck(new Check\PDOCheck('mysql:dbname='.$dbname.';host='.$dbhost, $dbuser, $dbpass));
         $runner->addCheck(new RedisHealthCheck($this->redisClient));
+        $runner->addCheck(new MetadataDirCheck($this->awsMeta));
 
         $results = $runner->run();
 
