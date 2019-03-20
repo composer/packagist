@@ -16,7 +16,7 @@ services:
 
 
 php:
-  - 7.0
+  - 7.3
 
 matrix:
   fast_finish: true
