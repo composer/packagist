@@ -67,7 +67,7 @@ services:
     packagist.package_dumper:
         public: true
         class: Packagist\WebBundle\Package\SymlinkDumper
-        arguments: [ '@doctrine', '@filesystem', '@router', '@snc_redis.default_client', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%' ]
+        arguments: [ '@doctrine', '@filesystem', '@router', '@snc_redis.default_client', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%', '%aws_metadata%' ]
 
     packagist.user_provider:
         class: Packagist\WebBundle\Security\Provider\UserProvider

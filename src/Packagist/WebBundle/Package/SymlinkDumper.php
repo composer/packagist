@@ -20,6 +20,7 @@ use Symfony\Component\Finder\Finder;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\Package;
 use Doctrine\DBAL\Connection;
+use Packagist\WebBundle\HealthCheck\MetadataDirCheck;
 use Predis\Client;
 
 /**
@@ -112,6 +113,11 @@ class SymlinkDumper
     private $compress;
 
     /**
+     * @var array
+     */
+    private $awsMeta;
+
+    /**
      * Constructor
      *
      * @param RegistryInterface     $doctrine
@@ -121,7 +127,7 @@ class SymlinkDumper
      * @param string                $targetDir
      * @param int                   $compress
      */
-    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress)
+    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress, $awsMetadata)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
@@ -131,6 +137,7 @@ class SymlinkDumper
         $this->buildDir = $targetDir;
         $this->compress = $compress;
         $this->redis = $redis;
+        $this->awsMeta = $awsMetadata;
     }
 
     /**
@@ -142,6 +149,10 @@ class SymlinkDumper
      */
     public function dump(array $packageIds, $force = false, $verbose = false)
     {
+        if (MetadataDirCheck::isMetadataStoreMounted($this->awsMeta)) {
+            throw new \RuntimeException('Metadata store not mounted, can not dump metadata');
+        }
+
         $cleanUpOldFiles = date('i') == 0;
 
         // prepare build dir
