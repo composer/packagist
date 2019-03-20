@@ -149,7 +149,7 @@ class SymlinkDumper
      */
     public function dump(array $packageIds, $force = false, $verbose = false)
     {
-        if (MetadataDirCheck::isMetadataStoreMounted($this->awsMeta)) {
+        if (!MetadataDirCheck::isMetadataStoreMounted($this->awsMeta)) {
             throw new \RuntimeException('Metadata store not mounted, can not dump metadata');
         }
 
