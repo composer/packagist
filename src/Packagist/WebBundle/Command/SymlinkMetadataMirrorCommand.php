@@ -62,12 +62,22 @@ class SymlinkMetadataMirrorCommand extends Command
         ];
 
         foreach ($sources as $source) {
+            if (!file_exists($source)) {
+                if ($verbose) {
+                    $output->writeln('Can not link to '.$source.' as it is missing');
+                }
+                continue;
+            }
+
             $target = $this->webDir.'/'.basename($source);
             if (file_exists($target) && is_link($target) && readlink($target) === $source) {
                 continue;
             }
+            if ($verbose) {
+                $output->writeln('Linking '.$target.' => '.$source);
+            }
             if (!symlink($source, $target)) {
-                echo 'Warning: Could not symlink '.$source.' into the web dir ('.$target.')';
+                $output->writeln('Warning: Could not symlink '.$source.' into the web dir ('.$target.')');
                 throw new \RuntimeException('Could not symlink '.$source.' into the web dir ('.$target.')');
             }
         }
