@@ -59,8 +59,12 @@ class PackageManager
         if ($package->getAutoUpdated() === Package::AUTO_GITHUB_HOOK) {
             foreach ($package->getMaintainers() as $maintainer) {
                 $token = $maintainer->getGithubToken();
-                if ($token && $this->githubWorker->deleteWebHook($token, $package)) {
-                    break;
+                try {
+                    if ($token && $this->githubWorker->deleteWebHook($token, $package)) {
+                        break;
+                    }
+                } catch (\GuzzleHttp\Exception\TransferException $e) {
+                    // ignore
                 }
             }
         }
