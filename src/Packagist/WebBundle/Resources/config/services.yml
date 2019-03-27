@@ -6,6 +6,7 @@ services:
         bind:
             # services
             $redis: '@snc_redis.default_client'
+            #$instantMailer: '@swiftmailer.mailer.instant'
 
             # params
             $awsMetadata: '%aws_metadata%'
@@ -151,6 +152,7 @@ services:
         arguments:
             - '@doctrine'
             - '@mailer'
+            - '@swiftmailer.mailer.instant'
             - '@twig'
             - '@logger'
             - { from: '%mailer_from_email%', fromName: '%mailer_from_name%' }

@@ -80,13 +80,29 @@ snc_redis:
 
 # Swiftmailer Configuration
 swiftmailer:
-    transport: '%mailer_transport%'
-    host:      '%mailer_host%'
-    username:  '%mailer_user%'
-    password:  '%mailer_password%'
-    encryption: '%mailer_encryption%'
-    auth_mode: '%mailer_auth_mode%'
-    spool:     { type: memory }
+    default_mailer: main
+    mailers:
+        # default main mailer for controllers and whatnot.. uses a memory spool
+        # to delay sending until end of the request
+        main:
+            transport: '%mailer_transport%'
+            host:      '%mailer_host%'
+            username:  '%mailer_user%'
+            password:  '%mailer_password%'
+            encryption: '%mailer_encryption%'
+            port: 587
+            auth_mode: '%mailer_auth_mode%'
+            spool:     { type: memory }
+        # fast mailer for background workers that does not spool but rather sends instantaneously
+        # request it to be injected by defining the argument as $instantMailer
+        instant:
+            transport: '%mailer_transport%'
+            host:      '%mailer_host%'
+            username:  '%mailer_user%'
+            password:  '%mailer_password%'
+            encryption: '%mailer_encryption%'
+            port: 587
+            auth_mode: '%mailer_auth_mode%'
 
 fos_user:
     db_driver:     orm

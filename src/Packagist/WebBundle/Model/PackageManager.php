@@ -25,6 +25,7 @@ class PackageManager
 {
     protected $doctrine;
     protected $mailer;
+    protected $instantMailer;
     protected $twig;
     protected $logger;
     protected $options;
@@ -34,10 +35,11 @@ class PackageManager
     protected $githubWorker;
     protected $metadataDir;
 
-    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir)
+    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Swift_Mailer $instantMailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;
+        $this->instantMailer = $instantMailer;
         $this->twig = $twig;
         $this->logger = $logger;
         $this->options = $options;
@@ -138,7 +140,7 @@ class PackageManager
                 ;
 
                 try {
-                    $this->mailer->send($message);
+                    $this->instantMailer->send($message);
                 } catch (\Swift_TransportException $e) {
                     $this->logger->error('['.get_class($e).'] '.$e->getMessage());
 
