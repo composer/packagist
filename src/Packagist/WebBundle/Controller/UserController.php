@@ -16,6 +16,7 @@ use Doctrine\ORM\NoResultException;
 use FOS\UserBundle\Model\UserInterface;
 use Packagist\WebBundle\Entity\Job;
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\User;
 use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Model\RedisAdapter;
@@ -108,9 +109,9 @@ class UserController extends Controller
             );
 
             /** @var VersionRepository $versionRepo */
-            $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
+            $versionRepo = $doctrine->getRepository(Version::class);
             $packages = $doctrine
-                ->getRepository('PackagistWebBundle:Package')
+                ->getRepository(Package::class)
                 ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true)
                 ->getQuery()->getResult();
 
@@ -242,7 +243,7 @@ class UserController extends Controller
         $package = $req->request->get('package');
         try {
             $package = $this->getDoctrine()
-                ->getRepository('PackagistWebBundle:Package')
+                ->getRepository(Package::class)
                 ->findOneByName($package);
         } catch (NoResultException $e) {
             throw new NotFoundHttpException('The given package "'.$package.'" was not found.');
@@ -277,7 +278,7 @@ class UserController extends Controller
     protected function getUserPackages($req, $user)
     {
         $packages = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
+            ->getRepository(Package::class)
             ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true);
 
         $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));

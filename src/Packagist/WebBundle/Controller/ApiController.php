@@ -57,7 +57,7 @@ class ApiController extends Controller
         }
         $url = $payload['repository']['url'];
         $package = new Package;
-        $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setEntityRepository($this->getDoctrine()->getRepository(Package::class));
         $package->setRouter($this->get('router'));
         $user = $this->findUser($request);
         $package->addMaintainer($user);
@@ -406,6 +406,6 @@ class ApiController extends Controller
      */
     protected function findPackagesByRepository(string $url): array
     {
-        return $this->getDoctrine()->getRepository('PackagistWebBundle:Package')->findBy(['repository' => $url]);
+        return $this->getDoctrine()->getRepository(Package::class)->findBy(['repository' => $url]);
     }
 }

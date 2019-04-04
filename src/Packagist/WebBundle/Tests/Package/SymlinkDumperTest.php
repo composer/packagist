@@ -9,14 +9,14 @@ class SymlinkDumperTest extends TestCase
 {
     private $mockDumper;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->mockDumper = $this->getMockBuilder(SymlinkDumper::class)
             ->disableOriginalConstructor()
             ->getMock();
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->mockDumper = null;
     }

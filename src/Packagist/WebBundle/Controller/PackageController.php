@@ -49,7 +49,7 @@ class PackageController extends Controller
     public function listAction(Request $req)
     {
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository(Package::class);
         $fields = (array) $req->query->get('fields', array());
         $fields = array_intersect($fields, array('repository', 'type'));
 
@@ -89,7 +89,7 @@ class PackageController extends Controller
         }
 
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository(Package::class);
 
         $names = $repo->getPackageNamesUpdatedSince($since);
 
@@ -110,7 +110,7 @@ class PackageController extends Controller
         }
 
         $package = new Package;
-        $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setEntityRepository($this->getDoctrine()->getRepository(Package::class));
         $package->setRouter($this->get('router'));
         $form = $this->createForm(PackageType::class, $package, [
             'action' => $this->generateUrl('submit'),
@@ -147,7 +147,7 @@ class PackageController extends Controller
     public function fetchInfoAction(Request $req)
     {
         $package = new Package;
-        $package->setEntityRepository($this->getDoctrine()->getRepository('PackagistWebBundle:Package'));
+        $package->setEntityRepository($this->getDoctrine()->getRepository(Package::class));
         $package->setRouter($this->get('router'));
         $form = $this->createForm(PackageType::class, $package);
         $user = $this->getUser();
@@ -204,7 +204,7 @@ class PackageController extends Controller
     public function viewVendorAction($vendor)
     {
         $packages = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
+            ->getRepository(Package::class)
             ->getFilteredQueryBuilder(['vendor' => $vendor.'/%'], true)
             ->getQuery()
             ->getResult();
@@ -265,7 +265,7 @@ class PackageController extends Controller
     public function viewProvidersAction($name)
     {
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository(Package::class);
         $providers = $repo->findProviders($name);
         if (!$providers) {
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
@@ -320,7 +320,7 @@ class PackageController extends Controller
         }
 
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository(Package::class);
 
         try {
             /** @var Package $package */
@@ -342,7 +342,7 @@ class PackageController extends Controller
         }
 
         if ('json' === $req->getRequestFormat()) {
-            $data = $package->toArray($this->getDoctrine()->getRepository('PackagistWebBundle:Version'));
+            $data = $package->toArray($this->getDoctrine()->getRepository(Version::class));
             $data['dependents'] = $repo->getDependentCount($package->getName());
             $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
@@ -375,7 +375,7 @@ class PackageController extends Controller
 
         if (count($versions)) {
             /** @var VersionRepository $versionRepo */
-            $versionRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+            $versionRepo = $this->getDoctrine()->getRepository(Version::class);
             $this->getDoctrine()->getManager()->refresh(reset($versions));
             $version = $versionRepo->getFullVersion(reset($versions)->getId());
 
@@ -440,7 +440,7 @@ class PackageController extends Controller
     public function viewPackageDownloadsAction(Request $req, $name)
     {
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository(Package::class);
 
         try {
             /** @var $package Package */
@@ -499,7 +499,7 @@ class PackageController extends Controller
         }
 
         /** @var VersionRepository $repo  */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $repo = $this->getDoctrine()->getRepository(Version::class);
 
         $html = $this->renderView(
             'PackagistWebBundle:package:version_details.html.twig',
@@ -520,7 +520,7 @@ class PackageController extends Controller
     public function deletePackageVersionAction(Request $req, $versionId)
     {
         /** @var VersionRepository $repo  */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $repo = $this->getDoctrine()->getRepository(Version::class);
 
         /** @var Version $version  */
         $version = $repo->getFullVersion($versionId);
@@ -551,7 +551,7 @@ class PackageController extends Controller
         try {
             /** @var Package $package */
             $package = $doctrine
-                ->getRepository('PackagistWebBundle:Package')
+                ->getRepository(Package::class)
                 ->getPackageByName($name);
         } catch (NoResultException $e) {
             return new Response(json_encode(array('status' => 'error', 'message' => 'Package not found',)), 404);
@@ -609,7 +609,7 @@ class PackageController extends Controller
         try {
             /** @var Package $package */
             $package = $doctrine
-                ->getRepository('PackagistWebBundle:Package')
+                ->getRepository(Package::class)
                 ->getPartialPackageByNameWithVersions($name);
         } catch (NoResultException $e) {
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
@@ -640,7 +640,7 @@ class PackageController extends Controller
     {
         /** @var $package Package */
         $package = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
+            ->getRepository(Package::class)
             ->findOneByName($name);
 
         if (!$package) {
@@ -697,7 +697,7 @@ class PackageController extends Controller
     {
         /** @var $package Package */
         $package = $this->getDoctrine()
-            ->getRepository('PackagistWebBundle:Package')
+            ->getRepository(Package::class)
             ->findOneByName($name);
 
         if (!$package) {
@@ -902,7 +902,7 @@ class PackageController extends Controller
         $page = $req->query->get('page', 1);
 
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository(Package::class);
         $depCount = $repo->getDependentCount($name);
         $packages = $repo->getDependents($name, ($page - 1) * 15, 15);
 
@@ -931,7 +931,7 @@ class PackageController extends Controller
         $page = $req->query->get('page', 1);
 
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository(Package::class);
         $suggestCount = $repo->getSuggestCount($name);
         $packages = $repo->getSuggests($name, ($page - 1) * 15, 15);
 
@@ -1028,7 +1028,7 @@ class PackageController extends Controller
         $normalizer = new VersionParser;
         $normVersion = $normalizer->normalize($version);
 
-        $version = $this->getDoctrine()->getRepository('PackagistWebBundle:Version')->findOneBy([
+        $version = $this->getDoctrine()->getRepository(Version::class)->findOneBy([
             'package' => $package,
             'normalizedVersion' => $normVersion
         ]);

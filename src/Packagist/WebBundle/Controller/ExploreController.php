@@ -37,7 +37,7 @@ class ExploreController extends Controller
     public function exploreAction()
     {
         /** @var PackageRepository $pkgRepo */
-        $pkgRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $pkgRepo = $this->getDoctrine()->getRepository(Package::class);
         /** @var VersionRepository $verRepo */
         $verRepo = $this->get('packagist.version_repository');
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
@@ -96,7 +96,7 @@ class ExploreController extends Controller
                 (min(1, (int) $req->get('page', 1)) - 1) * $perPage,
                 min(1, (int) $req->get('page', 1)) * $perPage - 1
             );
-            $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
+            $popular = $this->getDoctrine()->getRepository(Package::class)
                 ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
                 ->getQuery()->useResultCache(true, 900)->getResult();
             usort($popular, function ($a, $b) use ($popularIds) {

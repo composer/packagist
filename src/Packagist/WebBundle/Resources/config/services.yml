@@ -78,19 +78,19 @@ services:
         public: true
         class: Packagist\WebBundle\Entity\UserRepository
         factory: ['@doctrine', getRepository]
-        arguments: ['PackagistWebBundle:User']
+        arguments: ['Packagist\WebBundle\Entity\User']
 
     packagist.package_repository:
         public: true
         class: Packagist\WebBundle\Entity\PackageRepository
         factory: ['@doctrine', getRepository]
-        arguments: ['PackagistWebBundle:Package']
+        arguments: ['Packagist\WebBundle\Entity\Package']
 
     packagist.version_repository:
         public: true
         class: Packagist\WebBundle\Entity\VersionRepository
         factory: ['@doctrine', getRepository]
-        arguments: ['PackagistWebBundle:Version']
+        arguments: ['Packagist\WebBundle\Entity\Version']
         calls:
             - [ setRedis, [ '@snc_redis.cache_client' ]]
 
@@ -194,9 +194,7 @@ services:
         arguments: ['%algolia.app_id%', '%algolia.admin_key%']
         factory: ['Algolia\AlgoliaSearch\SearchClient', create]
 
-    packagist.queue_worker:
-        public: true
-        class: Packagist\WebBundle\Service\QueueWorker
+    Packagist\WebBundle\Service\QueueWorker:
         arguments:
             - "@snc_redis.default_client"
             - "@doctrine"

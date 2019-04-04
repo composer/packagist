@@ -5,7 +5,7 @@ namespace Packagist\WebBundle\Twig;
 use Packagist\WebBundle\Model\ProviderManager;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
-class PackagistExtension extends \Twig_Extension
+class PackagistExtension extends \Twig\Extension\AbstractExtension
 {
     /**
      * @var ProviderManager

@@ -60,7 +60,7 @@
     },
     "require-dev": {
         "symfony/phpunit-bridge": "^4.2",
-        "phpunit/phpunit": "^6.5"
+        "phpunit/phpunit": "^8.0"
     },
     "scripts": {
         "post-install-cmd": [

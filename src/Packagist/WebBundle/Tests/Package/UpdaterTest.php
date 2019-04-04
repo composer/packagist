@@ -35,7 +35,7 @@ class UpdaterTest extends TestCase
     /** @var VcsDriverInterface|PHPUnit_Framework_MockObject_MockObject */
     private $driverMock;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -82,7 +82,7 @@ class UpdaterTest extends TestCase
 
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
 
-        self::assertContains('This is the readme', $this->package->getReadme());
+        $this->assertStringContainsString('This is the readme', $this->package->getReadme());
     }
 
     public function testConvertsMarkdownForReadme()
