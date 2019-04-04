@@ -287,7 +287,7 @@ class Package
                 return;
             }
 
-            if (preg_match('{(free.*watch|watch.*free|movie.*free|free.*movie|watch.*movie|watch.*full|generate.*resource|generate.*unlimited|hack.*coin|coin.*hack|v[.-]?bucks|(fortnite|pubg).*free|hack.*cheat|cheat.*hack|putlocker)}i', $information['name'])) {
+            if (preg_match('{(free.*watch|watch.*free|movie.*free|free.*movie|watch.*movie|watch.*full|generate.*resource|generate.*unlimited|hack.*coin|coin.*hack|v[.-]?bucks|hack.*cheat|hack.*unlimited|cheat.*unlimited|cheat.*hack|putlocker|generat.*free|coins.*generat|generat.*coins|unlimited.*coins|(fortnite|pubg|apex.*legend|tik.*tok).*(free|generat|unlimited|coins|mobile|hack))}i', $information['name'])) {
                 $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is blocked, if you think this is a mistake please get in touch with us.')
                     ->atPath($property)
                     ->addViolation()
