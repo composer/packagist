@@ -292,7 +292,7 @@
             {% endif %}
         </div>
 
-        {% if package.readme != null and allowIndex %}
+        {% if package.readme != null and (allowIndex or hasActions) %}
             <hr class="clearfix">
             <div class="readme markdown-body">
                 <h1>README</h1>
