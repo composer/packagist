@@ -95,6 +95,7 @@ class DownloadManager
             'total' => $total,
             'monthly' => $monthly,
             'daily' => round(($redisData[0] ?? $dlData[$todayDate] ?? 0) + (($redisData[1] ?? $dlData[$yesterdayDate] ?? 0) * $dayRatio)),
+            'views' => $this->redis->incr('views:'.$package),
         ];
     }
 
