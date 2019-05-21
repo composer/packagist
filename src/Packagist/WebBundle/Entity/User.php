@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 use FOS\UserBundle\Model\User as BaseUser;
 
 /**
@@ -60,6 +61,24 @@ class User extends BaseUser
      * @ORM\GeneratedValue(strategy="AUTO")
      */
     protected $id;
+
+    /**
+     * @Assert\Length(
+     *     min=8,
+     *     max=180,
+     *     groups={"Profile", "Registration"}
+     * )
+     * @Assert\Regex(
+     *     pattern="{^[^/""\r\n><#\[\]]{2,100}$}",
+     *     message="Username invalid, /""\r\n><#[] are not allowed",
+     *     groups={"Profile", "Registration"}
+     * )
+     * @Assert\NotBlank(
+     *     message="fos_user.username.blank",
+     *     groups={"Profile", "Registration"}
+     * )
+     */
+    protected $username;
 
     /**
      * @ORM\ManyToMany(targetEntity="Package", mappedBy="maintainers")
