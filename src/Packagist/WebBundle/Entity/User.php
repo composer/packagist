@@ -64,7 +64,7 @@ class User extends BaseUser
 
     /**
      * @Assert\Length(
-     *     min=8,
+     *     min=2,
      *     max=180,
      *     groups={"Profile", "Registration"}
      * )
