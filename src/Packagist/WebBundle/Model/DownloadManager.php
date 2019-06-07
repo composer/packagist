@@ -42,7 +42,7 @@ class DownloadManager
      * @param \Packagist\WebBundle\Entity\Version|int|null $version
      * @return array
      */
-    public function getDownloads($package, $version = null)
+    public function getDownloads($package, $version = null, bool $incrViews = false)
     {
         if ($package instanceof Package) {
             $package = $package->getId();
@@ -91,12 +91,17 @@ class DownloadManager
         // how much of yesterday to add to today to make it a whole day (sort of..)
         $dayRatio = (2400 - (int) date('Hi')) / 2400;
 
-        return [
+        $result = [
             'total' => $total,
             'monthly' => $monthly,
             'daily' => round(($redisData[0] ?? $dlData[$todayDate] ?? 0) + (($redisData[1] ?? $dlData[$yesterdayDate] ?? 0) * $dayRatio)),
-            'views' => $this->redis->incr('views:'.$package),
         ];
+
+        if ($incrViews) {
+            $result['views'] = $this->redis->incr('views:'.$package);
+        }
+
+        return $result;
     }
 
     /**

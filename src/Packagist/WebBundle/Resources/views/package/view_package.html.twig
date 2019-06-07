@@ -2,11 +2,6 @@
 
 {% set showSearchDesc = 'hide' %}
 
-{% set allowIndex = true %}
-{% if downloads.total is defined and downloads.views >= 100 and downloads.total <= 10 %}
-    {% set allowIndex = false %}
-{% endif %}
-
 {% block title %}{{ package.name }} - {{ parent() }}{% endblock %}
 
 {% block head_feeds %}
@@ -21,7 +16,7 @@
 
 {% block head_additions %}
     <link rel="stylesheet" href="{{ asset('css/github/markdown.css') }}">
-    {% if not allowIndex %}
+    {% if package.isSuspect() %}
         <meta name="robots" content="noindex, nofollow">
     {% endif %}
 {% endblock %}
@@ -292,7 +287,7 @@
             {% endif %}
         </div>
 
-        {% if package.readme != null and (allowIndex or hasActions) %}
+        {% if package.readme != null and (not package.isSuspect() or hasActions) %}
             <hr class="clearfix">
             <div class="readme markdown-body">
                 <h1>README</h1>

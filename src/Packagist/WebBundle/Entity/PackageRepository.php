@@ -331,6 +331,35 @@ class PackageRepository extends EntityRepository
         return true;
     }
 
+    public function markPackageSuspect(Package $package)
+    {
+        $sql = 'UPDATE package SET suspect = :suspect WHERE id = :id';
+        $this->getEntityManager()->getConnection()->executeUpdate($sql, ['suspect' => $package->getSuspect(), 'id' => $package->getId()]);
+    }
+
+    public function getSuspectPackageCount()
+    {
+        $sql = 'SELECT COUNT(*) count FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam")';
+
+        $stmt = $this->getEntityManager()->getConnection()->executeQuery($sql);
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return (int) $result[0]['count'];
+    }
+
+    public function getSuspectPackages($offset = 0, $limit = 15)
+    {
+        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+            FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam") ORDER BY p.createdAt DESC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+
+        $stmt = $this->getEntityManager()->getConnection()->executeQuery($sql);
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return $result;
+    }
+
     public function getDependentCount($name)
     {
         $sql = 'SELECT COUNT(*) count FROM (

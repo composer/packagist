@@ -168,6 +168,11 @@ class Package
      */
     private $updateFailureNotified = false;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $suspect;
+
     private $entityRepository;
     private $router;
 
@@ -861,6 +866,21 @@ class Package
     public function isUpdateFailureNotified()
     {
         return $this->updateFailureNotified;
+    }
+
+    public function setSuspect(?string $reason)
+    {
+        $this->suspect = $reason;
+    }
+
+    public function isSuspect(): bool
+    {
+        return !is_null($this->suspect);
+    }
+
+    public function getSuspect(): ?string
+    {
+        return $this->suspect;
     }
 
     /**

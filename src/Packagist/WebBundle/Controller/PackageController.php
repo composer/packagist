@@ -300,6 +300,38 @@ class PackageController extends Controller
     }
 
     /**
+     * @Route(
+     *     "/spam",
+     *     name="view_spam",
+     *     defaults={"_format"="html"},
+     *     methods={"GET"}
+     * )
+     */
+    public function viewSpamAction(Request $req)
+    {
+        if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
+            throw new NotFoundHttpException();
+        }
+
+        $page = $req->query->get('page', 1);
+
+        /** @var PackageRepository $repo */
+        $repo = $this->getDoctrine()->getRepository(Package::class);
+        $count = $repo->getSuspectPackageCount();
+        $packages = $repo->getSuspectPackages(($page - 1) * 15, 15);
+
+        $paginator = new Pagerfanta(new FixedAdapter($count, $packages));
+        $paginator->setMaxPerPage(15);
+        $paginator->setCurrentPage($page, false, true);
+
+        $data['packages'] = $paginator;
+        $data['count'] = $count;
+        $data['meta'] = $this->getPackagesMetadata($data['packages']);
+
+        return $this->render('PackagistWebBundle:package:spam.html.twig', $data);
+    }
+
+    /**
      * @Template()
      * @Route(
      *     "/packages/{name}.{_format}",
@@ -399,7 +431,12 @@ class PackageController extends Controller
         );
 
         try {
-            $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package);
+            $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package, null, true);
+
+            if (!$package->isSuspect() && ($data['downloads']['total'] ?? 0) <= 10 && ($data['downloads']['views'] ?? 0) >= 100) {
+                $package->setSuspect('Too many views');
+                $repo->markPackageSuspect($package);
+            }
 
             if ($this->getUser()) {
                 $data['is_favorite'] = $this->get('packagist.favorite_manager')->isMarked($this->getUser(), $package);

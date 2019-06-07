@@ -161,6 +161,7 @@ services:
             - '%algolia.index_name%'
             - '@github_user_migration_worker'
             - '%packagist_metadata_dir%'
+            - '@snc_redis.default_client'
 
     packagist.profile.form.type:
         public: true
