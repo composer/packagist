@@ -20,7 +20,7 @@ class MetadataDirCheck extends AbstractCheck
 
     public static function isMetadataStoreMounted(array $awsMeta): bool
     {
-        if ($awsMeta['primary'] && $awsMeta['has_instance_store']) {
+        if (isset($awsMeta['primary']) && isset($awsMeta['has_instance_store'])) {
             // TODO in symfony4, use fromShellCommandline
             $proc = new Process('lsblk -io NAME,TYPE,SIZE,MOUNTPOINT,FSTYPE,MODEL | grep Instance | grep sdeph');
             if (0 !== $proc->run()) {
@@ -33,7 +33,7 @@ class MetadataDirCheck extends AbstractCheck
 
     public function check()
     {
-        if ($this->awsMeta['primary']) {
+        if (isset($this->awsMeta['primary'])) {
             if ($this->awsMeta['has_instance_store']) {
                 if (!self::isMetadataStoreMounted($this->awsMeta)) {
                     return new Failure('Instance store needs configuring');
