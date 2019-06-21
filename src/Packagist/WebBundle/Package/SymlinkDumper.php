@@ -492,7 +492,9 @@ class SymlinkDumper
                 }
             }
 
-            $maxDumpTime = max($maxDumpTime, strtotime($dt));
+            if ($dt !== '2100-01-01 00:00:00') {
+                $maxDumpTime = max($maxDumpTime, strtotime($dt));
+            }
         }
 
         if ($maxDumpTime !== 0) {

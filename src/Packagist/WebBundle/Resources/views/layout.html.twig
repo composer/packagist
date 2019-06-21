@@ -215,6 +215,7 @@
         <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@2.7.4/dist/instantsearch.min.js"></script>
         <script src="{{ asset('bundles/packagistweb/js/search.js') }}"></script>
 
+        {%- block analytics %}
         {%- if not app.debug and google_analytics.ga_key %}
         <script>
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -227,6 +228,7 @@
             ga('send', 'pageview');
         </script>
         {%- endif %}
+        {%- endblock %}
 
         {% block scripts %}{% endblock %}
     </body>

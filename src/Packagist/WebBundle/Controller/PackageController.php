@@ -77,9 +77,11 @@ class PackageController extends Controller
      */
     public function updatedSinceAction(Request $req)
     {
+        $lastDumpTime = $this->get('snc_redis.default_client')->get('last_metadata_dump_time') ?: (time() - 60);
+
         $since = $req->query->get('since');
         if (!$since) {
-            return new JsonResponse(['error' => 'Missing "since" query parameter with the latest timestamp you got from this endpoint'], 400);
+            return new JsonResponse(['error' => 'Missing "since" query parameter with the latest timestamp you got from this endpoint', 'timestamp' => $lastDumpTime], 400);
         }
 
         try {
@@ -92,8 +94,6 @@ class PackageController extends Controller
         $repo = $this->getDoctrine()->getRepository(Package::class);
 
         $names = $repo->getPackageNamesUpdatedSince($since);
-
-        $lastDumpTime = $this->get('snc_redis.default_client')->get('last_metadata_dump_time') ?: (time() - 60);
 
         return new JsonResponse(['packageNames' => $names, 'timestamp' => $lastDumpTime]);
     }
