@@ -289,6 +289,17 @@ class WebController extends Controller
     }
 
     /**
+     * @Route("/statistics.json", name="stats_json", defaults={"_format"="json"}, methods={"GET"})
+     */
+    public function statsTotalsAction()
+    {
+        $downloads = $this->get('snc_redis.default_client')->get('downloads') ?: 0;
+        $totals = ['downloads' => $downloads];
+
+        return new JsonResponse(['totals' => $totals], 200);
+    }
+
+    /**
      * @param Request $req
      *
      * @return array
