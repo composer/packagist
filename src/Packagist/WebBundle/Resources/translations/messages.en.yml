@@ -138,6 +138,7 @@ api_doc:
     by_name: By name
     by_type: By type
     by_tag: By tag
+    get_statistics: Get statistics
     list_by_organization: List packages by organization
     list_by_type: List packages by type
     searching: Searching for packages
