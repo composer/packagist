@@ -1021,7 +1021,7 @@ class PackageController extends Controller
             foreach ($values as $valueKey) {
                 $value += $dlData[$valueKey] ?? 0;
             }
-            $datePoints[$label] = $value;
+            $datePoints[$label] = ceil($value / count($values));
         }
 
         $datePoints = array(
@@ -1030,17 +1030,6 @@ class PackageController extends Controller
         );
 
         $datePoints['average'] = $average;
-
-        if ($average !== 'daily') {
-            $dividers = [
-                'monthly' => 30.41,
-                'weekly' => 7,
-            ];
-            $divider = $dividers[$average];
-            $datePoints['values'] = array_map(function ($val) use ($divider) {
-                return ceil($val / $divider);
-            }, $datePoints['values']);
-        }
 
         if (empty($datePoints['labels']) && empty($datePoints['values'])) {
             $datePoints['labels'][] = date('Y-m-d');
@@ -1138,13 +1127,15 @@ class PackageController extends Controller
         $dateKey = 'Ymd';
         $dateFormat = $average === 'monthly' ? 'Y-m' : 'Y-m-d';
         $dateJump = '+1day';
-        if ($average === 'monthly') {
-            $from = new DateTimeImmutable('first day of ' . $from->format('Y-m'));
-            $to = new DateTimeImmutable('last day of ' . $to->format('Y-m'));
-        }
 
         $nextDataPointLabel = $from->format($dateFormat);
-        $nextDataPoint = $from->modify($interval);
+
+        if ($average === 'monthly') {
+            $nextDataPoint = new DateTimeImmutable('first day of ' . $from->format('Y-m'));
+            $nextDataPoint = $nextDataPoint->modify($interval);
+        } else {
+            $nextDataPoint = $from->modify($interval);
+        }
 
         $datePoints = [];
         while ($from <= $to) {
