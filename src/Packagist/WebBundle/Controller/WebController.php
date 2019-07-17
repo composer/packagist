@@ -62,28 +62,28 @@ class WebController extends Controller
      */
     public function searchAction(Request $req)
     {
-        $form = $this->createForm(SearchQueryType::class, new SearchQuery());
-
-        $filteredOrderBys = $this->getFilteredOrderedBys($req);
-
-        $this->computeSearchQuery($req, $filteredOrderBys);
-
-        $typeFilter = str_replace('%type%', '', $req->query->get('type'));
-        $tagsFilter = $req->query->get('tags');
-
         if ($req->getRequestFormat() !== 'json') {
             return $this->render('PackagistWebBundle:web:search.html.twig', [
                 'packages' => [],
             ]);
         }
 
+        $typeFilter = str_replace('%type%', '', $req->query->get('type'));
+        $tagsFilter = $req->query->get('tags');
+
+        $indexName = $this->container->getParameter('algolia.index_name');
         if (!$req->query->has('search_query') && !$typeFilter && !$tagsFilter) {
             return JsonResponse::create(array(
                 'error' => 'Missing search query, example: ?q=example'
             ), 400)->setCallback($req->query->get('callback'));
         }
 
-        $indexName = $this->container->getParameter('algolia.index_name');
+        $form = $this->createForm(SearchQueryType::class, new SearchQuery());
+
+        $filteredOrderBys = $this->getFilteredOrderedBys($req);
+
+        $this->computeSearchQuery($req, $filteredOrderBys);
+
         $algolia = $this->get('packagist.algolia.client');
         $index = $algolia->initIndex($indexName);
         $query = '';
