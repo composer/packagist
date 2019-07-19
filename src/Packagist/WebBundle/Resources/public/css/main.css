@@ -537,6 +537,10 @@ button {
     font-family: 'Open Sans', sans-serif;
 }
 
+.form-group {
+    clear: left;
+}
+
 .form-control {
     min-height: 20px;
     padding: 7px 11px 6px 9px;

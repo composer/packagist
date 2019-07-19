@@ -166,7 +166,7 @@ services:
     packagist.profile.form.type:
         public: true
         class: Packagist\WebBundle\Form\Type\ProfileFormType
-        arguments: ['%fos_user.model.user.class%', '@security.context']
+        arguments: ['%fos_user.model.user.class%']
         tags:
             - { name: form.type, alias: packagist_user_profile }
 

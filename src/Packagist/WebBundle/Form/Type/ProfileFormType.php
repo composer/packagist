@@ -18,6 +18,8 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Security\Core\Validator\Constraints\UserPassword;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -28,16 +30,27 @@ class ProfileFormType extends BaseType
     {
         $this->buildUserForm($builder, $options);
 
-        $builder->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event)
-        {
-            if ( ! ($user = $event->getData())) { return; }
+        $builder->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event) {
+            if (!($user = $event->getData())) {
+                return;
+            }
 
-            if ( ! $user->getGithubId()) {
-                $event->getForm()->add('current_password', LegacyFormHelper::getType('Symfony\Component\Form\Extension\Core\Type\PasswordType'), array(
+            if (!$user->getGithubId()) {
+                $constraintsOptions = array(
+                    'message' => 'fos_user.current_password.invalid',
+                );
+
+                $event->getForm()->add('current_password', PasswordType::class, array(
                     'label' => 'form.current_password',
                     'translation_domain' => 'FOSUserBundle',
                     'mapped' => false,
-                    'constraints' => new UserPassword(),
+                    'constraints' => array(
+                        new NotBlank(),
+                        new UserPassword($constraintsOptions),
+                    ),
+                    'attr' => array(
+                        'autocomplete' => 'current-password',
+                    ),
                 ));
             }
         });
