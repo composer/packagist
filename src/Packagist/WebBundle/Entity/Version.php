@@ -109,6 +109,8 @@ class Version
     private $license;
 
     /**
+     * Deprecated relation table, use the authorJson property instead
+     *
      * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Author", inversedBy="versions")
      * @ORM\JoinTable(name="version_author",
      *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
@@ -178,6 +180,11 @@ class Version
     private $support;
 
     /**
+     * @ORM\Column(name="authors", type="json", nullable=true)
+     */
+    private $authorJson;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -223,13 +230,17 @@ class Version
             }
         }
 
-        if (isset($versionData[$this->id]['authors'])) {
-            $authors = $versionData[$this->id]['authors'];
+        if (!is_null($this->getAuthorJson())) {
+            $authors = $this->getAuthorJson();
         } else {
-            $authors = array();
-            foreach ($this->getAuthors() as $author) {
-                /** @var $author Author */
-                $authors[] = $author->toArray();
+            if (isset($versionData[$this->id]['authors'])) {
+                $authors = $versionData[$this->id]['authors'];
+            } else {
+                $authors = array();
+                foreach ($this->getAuthors() as $author) {
+                    /** @var $author Author */
+                    $authors[] = $author->toArray();
+                }
             }
         }
 
@@ -713,6 +724,40 @@ class Version
     public function getAuthors()
     {
         return $this->authors;
+    }
+
+    public function getAuthorJson(): ?array
+    {
+        return $this->authorJson;
+    }
+
+    public function setAuthorJson(?array $authors): void
+    {
+        $this->authorJson = $authors ?: [];
+    }
+
+    /**
+     * Get authors
+     *
+     * @return array[]
+     */
+    public function getAuthorData(): array
+    {
+        if (!is_null($this->getAuthorJson())) {
+            return $this->getAuthorJson();
+        }
+
+        $authors = [];
+        foreach ($this->getAuthors() as $author) {
+            $authors[] = array_filter([
+                'name' => $author->getName(),
+                'homepage' => $author->getHomepage(),
+                'email' => $author->getEmail(),
+                'role' => $author->getRole(),
+            ]);
+        }
+
+        return $authors;
     }
 
     /**
