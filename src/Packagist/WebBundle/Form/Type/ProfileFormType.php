@@ -13,7 +13,11 @@
 namespace Packagist\WebBundle\Form\Type;
 
 use FOS\UserBundle\Form\Type\ProfileFormType as BaseType;
+use FOS\UserBundle\Util\LegacyFormHelper;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvents;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Security\Core\Validator\Constraints\UserPassword;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -22,11 +26,23 @@ class ProfileFormType extends BaseType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        parent::buildForm($builder, $options);
+        $this->buildUserForm($builder, $options);
 
-        $builder->add('failureNotifications', null, array(
-            'required' => false,
-        ));
+        $builder->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event)
+        {
+            if ( ! ($user = $event->getData())) { return; }
+
+            if ( ! $user->getGithubId()) {
+                $event->getForm()->add('current_password', LegacyFormHelper::getType('Symfony\Component\Form\Extension\Core\Type\PasswordType'), array(
+                    'label' => 'form.current_password',
+                    'translation_domain' => 'FOSUserBundle',
+                    'mapped' => false,
+                    'constraints' => new UserPassword(),
+                ));
+            }
+        });
+
+        $builder->add('failureNotifications', null, array('required' => false, 'label' => 'Notify me of package update failures'));
     }
 
     /**
