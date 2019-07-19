@@ -275,6 +275,7 @@ class Updater
                 $version = $versionRepo->findOneById($existingVersion['id']);
 
                 $version->setAuthorJson($version->getAuthorData());
+                $version->getAuthors()->clear();
 
                 return ['updated' => true, 'id' => $version->getId(), 'version' => strtolower($normVersion), 'object' => $version];
             } else {
