@@ -22,5 +22,6 @@ Installation
 5. Run `app/console assets:install web` to deploy the assets on the web dir.
 6. Run `app/console cache:warmup --env=prod` and `app/console cache:warmup --env=prod` to warmup cache
 7. Make a VirtualHost with DocumentRoot pointing to web/
+8. Run a CRON job `app/console packagist:run-workers`
 
 You should now be able to access the site, create a user, etc.
