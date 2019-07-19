@@ -57,7 +57,7 @@ packages:
     maintained_by: "Packages maintained by %user%"
     my_favorites: My favorite packages
     users_favorites: "%user%'s favorite packages"
-    dependent_title: Dependent Packages
+    dependant_title: Dependant Packages
     dependents: dependents
     providers_title: "The following packages provide %name%"
     suggesters: suggesters

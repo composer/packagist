@@ -360,7 +360,7 @@ class PackageRepository extends EntityRepository
         return $result;
     }
 
-    public function getDependentCount($name)
+    public function getDependantCount($name)
     {
         $sql = 'SELECT COUNT(*) count FROM (
                 SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name

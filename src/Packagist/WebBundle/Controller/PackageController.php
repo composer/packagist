@@ -375,7 +375,7 @@ class PackageController extends Controller
 
         if ('json' === $req->getRequestFormat()) {
             $data = $package->toArray($this->getDoctrine()->getRepository(Version::class));
-            $data['dependents'] = $repo->getDependentCount($package->getName());
+            $data['dependents'] = $repo->getDependantCount($package->getName());
             $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
             try {
@@ -444,7 +444,7 @@ class PackageController extends Controller
         } catch (ConnectionException $e) {
         }
 
-        $data['dependents'] = $repo->getDependentCount($package->getName());
+        $data['dependents'] = $repo->getDependantCount($package->getName());
         $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
@@ -940,7 +940,7 @@ class PackageController extends Controller
 
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
-        $depCount = $repo->getDependentCount($name);
+        $depCount = $repo->getDependantCount($name);
         $packages = $repo->getDependents($name, ($page - 1) * 15, 15);
 
         $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
