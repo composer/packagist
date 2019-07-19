@@ -293,7 +293,7 @@ class WebController extends Controller
      */
     public function statsTotalsAction()
     {
-        $downloads = $this->get('snc_redis.default_client')->get('downloads') ?: 0;
+        $downloads = (int) ($this->get('snc_redis.default_client')->get('downloads') ?: 0);
         $packages = (int) $this->getDoctrine()
             ->getConnection()
             ->fetchColumn('SELECT COUNT(*) count FROM `package`');
