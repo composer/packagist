@@ -33,6 +33,10 @@ class MetadataDirCheck extends AbstractCheck
 
     public function check()
     {
+        if (empty($this->awsMeta)) {
+            return new Success('No AWS metadata given');
+        }
+
         if ($this->awsMeta['primary']) {
             if ($this->awsMeta['has_instance_store']) {
                 if (!self::isMetadataStoreMounted($this->awsMeta)) {
