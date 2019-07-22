@@ -71,7 +71,10 @@ class WebController extends Controller
         $typeFilter = str_replace('%type%', '', $req->query->get('type'));
         $tagsFilter = $req->query->get('tags');
 
-        $indexName = $this->container->getParameter('algolia.index_name');
+        $filteredOrderBys = $this->getFilteredOrderedBys($req);
+
+        $this->computeSearchQuery($req, $filteredOrderBys);
+
         if (!$req->query->has('search_query') && !$typeFilter && !$tagsFilter) {
             return JsonResponse::create(array(
                 'error' => 'Missing search query, example: ?q=example'
@@ -80,11 +83,8 @@ class WebController extends Controller
 
         $form = $this->createForm(SearchQueryType::class, new SearchQuery());
 
-        $filteredOrderBys = $this->getFilteredOrderedBys($req);
-
-        $this->computeSearchQuery($req, $filteredOrderBys);
-
         $algolia = $this->get('packagist.algolia.client');
+        $indexName = $this->container->getParameter('algolia.index_name');
         $index = $algolia->initIndex($indexName);
         $query = '';
         $queryParams = [];
