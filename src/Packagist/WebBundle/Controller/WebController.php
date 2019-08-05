@@ -116,7 +116,7 @@ class WebController extends Controller
             $query = $form->getData()->getQuery();
         }
 
-        $perPage = $req->query->getInt('per_page', 15);
+        $perPage = max(1, (int) $req->query->getInt('per_page', 15));
         if ($perPage <= 0 || $perPage > 100) {
            if ($req->getRequestFormat() === 'json') {
                 return JsonResponse::create(array(
@@ -132,7 +132,7 @@ class WebController extends Controller
             $queryParams['filters'] = implode(' AND ', $queryParams['filters']);
         }
         $queryParams['hitsPerPage'] = $perPage;
-        $queryParams['page'] = $req->query->get('page', 1) - 1;
+        $queryParams['page'] = max(1, (int) $req->query->get('page', 1)) - 1;
 
         try {
             $results = $index->search($query, $queryParams);
