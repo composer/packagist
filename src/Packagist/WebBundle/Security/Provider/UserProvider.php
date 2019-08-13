@@ -55,6 +55,9 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     public function connect($user, UserResponseInterface $response)
     {
         $username = $response->getUsername();
+        if (!$username || $username <= 0) {
+            throw new \LogicException('Failed to load info from GitHub');
+        }
 
         /** @var User $previousUser */
         $previousUser = $this->userManager->findUserBy(array('githubId' => $username));
@@ -87,11 +90,19 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
     public function loadUserByOAuthUserResponse(UserResponseInterface $response)
     {
         $username = $response->getUsername();
+        if (!$username || $username <= 0) {
+            throw new \LogicException('Failed to load info from GitHub');
+        }
+
         /** @var User $user */
         $user = $this->userManager->findUserBy(array('githubId' => $username));
 
         if (!$user) {
             throw new AccountNotLinkedException(sprintf('No user with github username "%s" was found.', $username));
+        }
+
+        if ($user->getGithubId() !== (string) $response->getUsername()) {
+            throw new \LogicException('This really should not happen but checking just in case');
         }
 
         if ($user->getGithubToken() !== $response->getAccessToken()) {
