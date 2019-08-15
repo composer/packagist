@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "35167d88e0cf8bedad8b6820e3c5946e",
+    "content-hash": "bb9e56d2f9c92be63842385864ff2290",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -1538,6 +1538,63 @@
                 "User management"
             ],
             "time": "2018-03-08T08:59:27+00:00"
+        },
+        {
+            "name": "graze/dog-statsd",
+            "version": "0.4.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/graze/dog-statsd.git",
+                "reference": "94fe0c0d649384f13527eff556136726f6c9803e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/graze/dog-statsd/zipball/94fe0c0d649384f13527eff556136726f6c9803e",
+                "reference": "94fe0c0d649384f13527eff556136726f6c9803e",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.5|^7.0"
+            },
+            "require-dev": {
+                "graze/standards": "^2",
+                "johnkary/phpunit-speedtrap": "^1|^2|^3",
+                "phpunit/phpunit": "^5.7.21|^6|^7",
+                "squizlabs/php_codesniffer": "^3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Graze\\DogStatsD\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Harry Bragg",
+                    "role": "Developer",
+                    "email": "harry.bragg@graze.com"
+                },
+                {
+                    "name": "Graze Developers",
+                    "role": "Development Team",
+                    "email": "developers@graze.com",
+                    "homepage": "http://www.graze.com"
+                }
+            ],
+            "description": "DataDog StatsD Client",
+            "homepage": "https://github.com/graze/dog-statsd",
+            "keywords": [
+                "DataDog",
+                "dog-statsd",
+                "dogstatsd",
+                "graze",
+                "statsd"
+            ],
+            "time": "2019-07-29T16:45:12+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",

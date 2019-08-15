@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
+use Packagist\WebBundle\Util\UserAgentParser;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -226,6 +227,16 @@ class ApiController extends Controller
 
         if ($jobs) {
             $this->get('packagist.download_manager')->addDownloads($jobs);
+
+            $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
+            $this->get('Graze\DogStatsD\Client')->increment('installs', 1, 1, [
+                'os' => $uaParser->getOs() ?: 'unknown',
+                'composer' => $uaParser->getComposerVersion() ?: 'unknown',
+                'php_minor' => preg_replace('{^(\d+\.\d+).*}', '$1', $uaParser->getPhpVersion()) ?: 'unknown',
+                'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
+                'http' => $uaParser->getHttpVersion() ?: 'unknown',
+                'ci' => $uaParser->getCI() ? 'true' : 'false',
+            ]);
         }
 
         if ($failed) {

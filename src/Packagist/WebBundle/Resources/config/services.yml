@@ -32,6 +32,9 @@ services:
         tags:
             - { name: twig.extension }
 
+    Graze\DogStatsD\Client:
+        public: true
+
     twig.extension.text:
         public: true
         class: Twig_Extensions_Extension_Text

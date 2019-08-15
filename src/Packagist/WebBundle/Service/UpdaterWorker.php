@@ -71,10 +71,11 @@ class UpdaterWorker
         }
 
         $packageName = $package->getName();
+        $packageVendor = $package->getVendor();
 
         $lockAcquired = $this->locker->lockPackageUpdate($id);
         if (!$lockAcquired) {
-            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+5 seconds')];
+            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+5 seconds'), 'vendor' => $packageVendor];
         }
 
         $this->logger->info('Updating '.$packageName);
@@ -156,6 +157,7 @@ class UpdaterWorker
                     'message' => 'Update of '.$packageName.' failed, package appears to be gone',
                     'details' => '<pre>'.$output.'</pre>',
                     'exception' => $e,
+                    'vendor' => $packageVendor,
                 ];
             }
 
@@ -168,6 +170,7 @@ class UpdaterWorker
                     'message' => 'Update of '.$packageName.' failed, invalid composer.json metadata',
                     'details' => '<pre>'.$output.'</pre>',
                     'exception' => $e,
+                    'vendor' => $packageVendor,
                 ];
             }
 
@@ -210,6 +213,7 @@ class UpdaterWorker
                     'message' => 'Update of '.$packageName.' failed, package appears to be 404/gone and has been marked as crawled for 1year',
                     'details' => '<pre>'.$output.'</pre>',
                     'exception' => $e,
+                    'vendor' => $packageVendor,
                 ];
             }
 
@@ -218,7 +222,8 @@ class UpdaterWorker
                 return [
                     'status' => Job::STATUS_FAILED,
                     'message' => 'Package data of '.$packageName.' could not be downloaded. Could not reach remote VCS server. Please try again later.',
-                    'exception' => $e
+                    'exception' => $e,
+                    'vendor' => $packageVendor,
                 ];
             }
 
@@ -227,7 +232,8 @@ class UpdaterWorker
                 return [
                     'status' => Job::STATUS_FAILED,
                     'message' => 'Package data of '.$packageName.' could not be downloaded.',
-                    'exception' => $e
+                    'exception' => $e,
+                    'vendor' => $packageVendor,
                 ];
             }
 
@@ -242,7 +248,8 @@ class UpdaterWorker
         return [
             'status' => Job::STATUS_COMPLETED,
             'message' => 'Update of '.$packageName.' complete',
-            'details' => '<pre>'.$this->cleanupOutput($io->getOutput()).'</pre>'
+            'details' => '<pre>'.$this->cleanupOutput($io->getOutput()).'</pre>',
+            'vendor' => $packageVendor,
         ];
     }
 
@@ -275,6 +282,7 @@ class UpdaterWorker
                             'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been deleted',
                             'details' => '<pre>'.$output.'</pre>',
                             'exception' => $e,
+                            'vendor' => $package->getVendor()
                         ];
                     }
                 } catch (\Throwable $e) {

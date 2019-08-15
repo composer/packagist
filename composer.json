@@ -56,7 +56,8 @@
         "seld/signal-handler": "^1.1",
         "php-http/httplug-bundle": "^1.11",
         "php-http/guzzle6-adapter": "^1.1",
-        "zendframework/zenddiagnostics": "^1.4"
+        "zendframework/zenddiagnostics": "^1.4",
+        "graze/dog-statsd": "^0.4.2"
     },
     "require-dev": {
         "symfony/phpunit-bridge": "^4.2",
