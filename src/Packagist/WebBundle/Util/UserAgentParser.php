@@ -23,7 +23,7 @@ class UserAgentParser
             }
             $this->composerVersion = preg_replace('{\+[a-f0-9]{40}}', '', $matches['composer']);
             $this->phpVersion = $matches['php'];
-            $this->os = $matches['os'];
+            $this->os = preg_replace('{^cygwin_nt-.*}', 'cygwin', $matches['os']);
             $this->httpVersion = $matches['http'] ?? null;
             $this->ci = (bool) ($matches['ci'] ?? null);
         }
