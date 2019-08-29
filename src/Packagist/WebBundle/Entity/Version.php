@@ -243,6 +243,10 @@ class Version
                 }
             }
         }
+        foreach ($authors as &$author) {
+            uksort($author, [$this, 'sortAuthorKeys']);
+        }
+        unset($author);
 
         $data = array(
             'name' => $this->getName(),
@@ -1023,5 +1027,17 @@ class Version
     public function __toString()
     {
         return $this->name.' '.$this->version.' ('.$this->normalizedVersion.')';
+    }
+
+    private function sortAuthorKeys($a, $b)
+    {
+        static $order = ['name' => 1, 'email' => 2, 'homepage' => 3, 'role' => 4];
+        $aIndex = $order[$a] ?? 5;
+        $bIndex = $order[$b] ?? 5;
+        if ($aIndex === $bIndex) {
+            return $a <=> $b;
+        }
+
+        return $aIndex <=> $bIndex;
     }
 }
