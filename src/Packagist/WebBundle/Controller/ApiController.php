@@ -143,7 +143,8 @@ class ApiController extends Controller
         }
 
         $package->setRepository($payload['repository']);
-        $errors = $this->get('validator')->validate($package, array("Update"));
+
+        $errors = $this->get('validator')->validate($package, null, array("Update"));
         if (count($errors) > 0) {
             $errorArray = array();
             foreach ($errors as $error) {
