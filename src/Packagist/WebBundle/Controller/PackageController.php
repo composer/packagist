@@ -313,7 +313,7 @@ class PackageController extends Controller
             throw new NotFoundHttpException();
         }
 
-        $page = $req->query->get('page', 1);
+        $page = max(1, (int) $req->query->get('page', 1));
 
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
@@ -936,7 +936,7 @@ class PackageController extends Controller
      */
     public function dependentsAction(Request $req, $name)
     {
-        $page = $req->query->get('page', 1);
+        $page = max(1, (int) $req->query->get('page', 1));
 
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
@@ -965,7 +965,7 @@ class PackageController extends Controller
      */
     public function suggestersAction(Request $req, $name)
     {
-        $page = $req->query->get('page', 1);
+        $page = max(1, (int) $req->query->get('page', 1));
 
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
