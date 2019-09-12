@@ -132,11 +132,11 @@ class QueueWorker
         $this->statsd->increment('worker.queue.processed', 1, 1, [
             'jobType' => $job->getType(),
             'status' => $result['status'],
-        ] + (!empty($result['vendor']) ? ['vendor' => $result['vendor']] : []));
+        ]);
 
         $this->statsd->timing('worker.queue.processtime', round((microtime(true) - $start) * 1000, 4), [
             'jobType' => $job->getType(),
-        ] + (!empty($result['vendor']) ? ['vendor' => $result['vendor']] : []));
+        ]);
 
         // If an exception is thrown during a transaction the EntityManager is closed
         // and we won't be able to update the job or handle future jobs
