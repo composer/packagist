@@ -4,6 +4,12 @@
 
 {% set isActualUser = app.user and app.user.username is same as(user.username) %}
 
+{% block head_additions %}
+    {% if user.hasRole('ROLE_SPAMMER') %}
+        <meta name="robots" content="noindex, nofollow">
+    {% endif %}
+{% endblock %}
+
 {% block content %}
 <h2 class="title">
     {{ user.username }}
