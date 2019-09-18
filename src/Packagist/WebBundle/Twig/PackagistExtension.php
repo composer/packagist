@@ -34,6 +34,7 @@ class PackagistExtension extends \Twig\Extension\AbstractExtension
         return array(
             new \Twig_SimpleFilter('prettify_source_reference', [$this, 'prettifySourceReference']),
             new \Twig_SimpleFilter('gravatar_hash', [$this, 'generateGravatarHash']),
+            new \Twig_SimpleFilter('vendor', [$this, 'getVendor']),
         );
     }
 
@@ -47,6 +48,11 @@ class PackagistExtension extends \Twig\Extension\AbstractExtension
     public function getName()
     {
         return 'packagist';
+    }
+
+    public function getVendor(string $packageName): string
+    {
+        return preg_replace('{/.*$}', '', $packageName);
     }
 
     public function numericTest($val)

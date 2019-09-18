@@ -9,6 +9,7 @@ use Packagist\WebBundle\Entity\Download;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\PackageRepository;
 use Packagist\WebBundle\Entity\Version;
+use Packagist\WebBundle\Entity\Vendor;
 use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Form\Model\MaintainerRequest;
 use Packagist\WebBundle\Form\Type\AbandonedType;
@@ -327,8 +328,38 @@ class PackageController extends Controller
         $data['packages'] = $paginator;
         $data['count'] = $count;
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['markSafeCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('mark_safe');
 
         return $this->render('PackagistWebBundle:package:spam.html.twig', $data);
+    }
+
+    /**
+     * @Route(
+     *     "/spam/nospam",
+     *     name="mark_nospam",
+     *     defaults={"_format"="html"},
+     *     methods={"POST"}
+     * )
+     */
+    public function markSafeAction(Request $req)
+    {
+        if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
+            throw new NotFoundHttpException();
+        }
+
+        $expectedToken = $this->get('security.csrf.token_manager')->getToken('mark_safe')->getValue();
+
+        $vendors = array_filter((array) $req->request->get('vendor'));
+        if (!hash_equals($expectedToken, $req->request->get('token'))) {
+            throw new BadRequestHttpException('Invalid CSRF token');
+        }
+
+        $repo = $this->getDoctrine()->getRepository(Vendor::class);
+        foreach ($vendors as $vendor) {
+            $repo->verify($vendor);
+        }
+
+        return $this->redirectToRoute('view_spam');
     }
 
     /**
@@ -434,8 +465,11 @@ class PackageController extends Controller
             $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package, null, true);
 
             if (!$package->isSuspect() && ($data['downloads']['total'] ?? 0) <= 10 && ($data['downloads']['views'] ?? 0) >= 100) {
-                $package->setSuspect('Too many views');
-                $repo->markPackageSuspect($package);
+                $vendorRepo = $this->getDoctrine()->getRepository(Vendor::class);
+                if (!$vendorRepo->isVerified($package->getVendor())) {
+                    $package->setSuspect('Too many views');
+                    $repo->markPackageSuspect($package);
+                }
             }
 
             if ($this->getUser()) {
@@ -461,6 +495,9 @@ class PackageController extends Controller
                 || $package->getMaintainers()->contains($this->getUser())
             )) {
             $data['deleteVersionCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('delete_version');
+        }
+        if ($this->isGranted('ROLE_ANTISPAM')) {
+            $data['markSafeCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('mark_safe');
         }
 
         return $data;
