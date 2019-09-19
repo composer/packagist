@@ -20,7 +20,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\LockHandler;
 use Doctrine\DBAL\Connection;
 
 class IndexPackagesCommand extends ContainerAwareCommand
@@ -60,6 +59,16 @@ class IndexPackagesCommand extends ContainerAwareCommand
             return;
         }
 
+        $locker = $this->getContainer()->get('locker');
+
+        $lockAcquired = $locker->lockCommand($this->getName());
+        if (!$lockAcquired) {
+            if ($input->getOption('verbose')) {
+                $output->writeln('Aborting, another task is running already');
+            }
+            return;
+        }
+
         $doctrine = $this->getContainer()->get('doctrine');
         $algolia = $this->getContainer()->get('packagist.algolia.client');
         $index = $algolia->initIndex($indexName);
@@ -67,16 +76,6 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $redis = $this->getContainer()->get('snc_redis.default');
         $downloadManager = $this->getContainer()->get('packagist.download_manager');
         $favoriteManager = $this->getContainer()->get('packagist.favorite_manager');
-
-        $lock = new LockHandler('packagist_algolia_indexer');
-
-        // another dumper is still active
-        if (!$lock->lock()) {
-            if ($verbose) {
-                $output->writeln('Aborting, another indexer is still active');
-            }
-            return;
-        }
 
         if ($package) {
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
@@ -164,7 +163,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $this->updateIndexedAt($idsToUpdate, $doctrine, $indexTime->format('Y-m-d H:i:s'));
         }
 
-        $lock->release();
+        $locker->unlockCommand($this->getName());
     }
 
     private function packageToSearchableArray(
