@@ -22,6 +22,7 @@ use Packagist\WebBundle\Entity\Package;
 use Doctrine\DBAL\Connection;
 use Packagist\WebBundle\HealthCheck\MetadataDirCheck;
 use Predis\Client;
+use Graze\DogStatsD\Client as StatsDClient;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -118,6 +119,11 @@ class SymlinkDumper
     private $awsMeta;
 
     /**
+     * @var StatsDClient
+     */
+    private $statsd;
+
+    /**
      * Constructor
      *
      * @param RegistryInterface     $doctrine
@@ -127,7 +133,7 @@ class SymlinkDumper
      * @param string                $targetDir
      * @param int                   $compress
      */
-    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress, $awsMetadata)
+    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress, $awsMetadata, StatsDClient $statsd)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
@@ -138,6 +144,7 @@ class SymlinkDumper
         $this->compress = $compress;
         $this->redis = $redis;
         $this->awsMeta = $awsMetadata;
+        $this->statsd = $statsd;
     }
 
     /**
@@ -506,6 +513,8 @@ class SymlinkDumper
                 sleep(1);
             }
         }
+
+        $this->statsd->increment('packagist.metadata_dump');
 
         // TODO when a package is deleted, it should be removed from provider files, or marked for removal at least
         return true;
