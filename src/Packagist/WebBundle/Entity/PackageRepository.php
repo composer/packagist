@@ -295,6 +295,8 @@ class PackageRepository extends EntityRepository
             $qb->leftJoin('v.tags', 't');
         }
 
+        $qb->andWhere('(p.replacementPackage IS NULL OR p.replacementPackage != \'spam/spam\')');
+
         $qb->orderBy('p.abandoned');
         if (true === $orderByName) {
             $qb->addOrderBy('p.name');
