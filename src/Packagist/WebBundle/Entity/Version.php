@@ -218,7 +218,7 @@ class Version
         $this->updatedAt = new \DateTime;
     }
 
-    public function toArray(array $versionData)
+    public function toArray(array $versionData, bool $serializeForApi = false)
     {
         if (isset($versionData[$this->id]['tags'])) {
             $tags = $versionData[$this->id]['tags'];
@@ -262,6 +262,9 @@ class Version
             'type' => $this->getType(),
         );
 
+        if ($serializeForApi && $this->getSupport()) {
+            $data['support'] = $this->getSupport();
+        }
         if ($this->getReleasedAt()) {
             $data['time'] = $this->getReleasedAt()->format('Y-m-d\TH:i:sP');
         }

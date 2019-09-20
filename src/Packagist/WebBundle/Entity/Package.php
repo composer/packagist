@@ -193,7 +193,7 @@ class Package
         $this->createdAt = new \DateTime;
     }
 
-    public function toArray(VersionRepository $versionRepo)
+    public function toArray(VersionRepository $versionRepo, bool $serializeForApi = false)
     {
         $versions = array();
         $partialVersions = $this->getVersions()->toArray();
@@ -202,7 +202,7 @@ class Package
             $slice = array_splice($partialVersions, 0, 100);
             $fullVersions = $versionRepo->refreshVersions($slice);
             $versionData = $versionRepo->getVersionData(array_map(function ($v) { return $v->getId(); }, $fullVersions));
-            $versions = array_merge($versions, $versionRepo->detachToArray($fullVersions, $versionData));
+            $versions = array_merge($versions, $versionRepo->detachToArray($fullVersions, $versionData, $serializeForApi));
         }
 
         $maintainers = array();

@@ -405,7 +405,7 @@ class PackageController extends Controller
         }
 
         if ('json' === $req->getRequestFormat()) {
-            $data = $package->toArray($this->getDoctrine()->getRepository(Version::class));
+            $data = $package->toArray($this->getDoctrine()->getRepository(Version::class), true);
             $data['dependents'] = $repo->getDependantCount($package->getName());
             $data['suggesters'] = $repo->getSuggestCount($package->getName());
 

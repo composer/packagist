@@ -82,12 +82,12 @@ class VersionRepository extends EntityRepository
     /**
      * @param Version[] $versions
      */
-    public function detachToArray(array $versions, array $versionData): array
+    public function detachToArray(array $versions, array $versionData, bool $serializeForApi = false): array
     {
         $res = [];
         $em = $this->getEntityManager();
         foreach ($versions as $version) {
-            $res[$version->getVersion()] = $version->toArray($versionData);
+            $res[$version->getVersion()] = $version->toArray($versionData, $serializeForApi);
             $em->detach($version);
         }
 
