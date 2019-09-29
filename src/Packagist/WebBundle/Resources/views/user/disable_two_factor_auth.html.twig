@@ -7,14 +7,24 @@
 {% block content %}
     <h2 class="title">
         {{ user.username }}
+        <small>
+            {%- if not isActualUser %}
+                member since: {{ user.createdAt|date('M d, Y') }}
+                {%- if is_granted('ROLE_ADMIN') %}
+                    <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+                {%- endif %}
+            {%- endif %}
+        </small>
     </h2>
 
     <section class="row">
-        <section class="col-md-3">
-            {{ knp_menu_render('profile_menu', {currentClass: 'active', allow_safe_labels: true}) }}
-        </section>
+        {% if isActualUser %}
+            <section class="col-md-3">
+                {{ knp_menu_render('profile_menu', {currentClass: 'active', allow_safe_labels: true}) }}
+            </section>
+        {% endif %}
 
-        <section class="col-md-9">
+        <section class="{{ isActualUser ? 'col-md-9' : 'col-md-12' }}">
             <h3 class="text-danger">Are you sure you wish to disable two-factor authentication?</h3>
 
             <p>Your account is more secure when you need a password and a verification code to sign in. If you remove this extra layer of security, you will only be asked for a password when you sign in. It might be easier for someone to break into your account.</p>
