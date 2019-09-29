@@ -14,6 +14,9 @@ namespace Packagist\WebBundle\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Symfony\Component\Validator\Constraints as Assert;
 use FOS\UserBundle\Model\User as BaseUser;
 
@@ -53,7 +56,7 @@ use FOS\UserBundle\Model\User as BaseUser;
  *     )
  * })
  */
-class User extends BaseUser
+class User extends BaseUser implements TwoFactorInterface
 {
     /**
      * @ORM\Id
@@ -119,6 +122,12 @@ class User extends BaseUser
      * @var string
      */
     private $failureNotifications = true;
+
+    /**
+     * @ORM\Column(name="totpSecret", type="string", nullable=true)
+     * @var string|null
+     */
+    private $totpSecret;
 
     public function __construct()
     {
@@ -317,5 +326,25 @@ class User extends BaseUser
     public function getGravatarUrl()
     {
         return 'https://www.gravatar.com/avatar/'.md5(strtolower($this->getEmail())).'?d=identicon';
+    }
+
+    public function setTotpSecret(?string $secret)
+    {
+        $this->totpSecret = $secret;
+    }
+
+    public function isTotpAuthenticationEnabled(): bool
+    {
+        return $this->totpSecret ? true : false;
+    }
+
+    public function getTotpAuthenticationUsername(): string
+    {
+        return $this->username;
+    }
+
+    public function getTotpAuthenticationConfiguration(): TotpConfigurationInterface
+    {
+        return new TotpConfiguration($this->totpSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
     }
 }

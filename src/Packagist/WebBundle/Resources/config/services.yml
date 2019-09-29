@@ -206,6 +206,16 @@ services:
             - 'package:updates': '@updater_worker'
               'githubuser:migrate': '@github_user_migration_worker'
 
+    Packagist\WebBundle\Security\TwoFactorAuthManager:
+        public: true
+        class: Packagist\WebBundle\Security\TwoFactorAuthManager
+        arguments:
+            - '@doctrine'
+            - '@mailer'
+            - '@twig'
+            - '@logger'
+            - { from: '%mailer_from_email%', fromName: '%mailer_from_name%' }
+
     scheduler:
         public: true
         class: Packagist\WebBundle\Service\Scheduler

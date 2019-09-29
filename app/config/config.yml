@@ -135,6 +135,13 @@ hwi_oauth:
             options:
                 csrf: true
 
+scheb_two_factor:
+    totp:
+        enabled: true
+        server_name: '%packagist_host%'
+        issuer: Packagist
+        window: 1
+
 nelmio_cors:
     defaults:
         allow_origin: ['*']
@@ -162,3 +169,6 @@ httplug:
 
 sensio_framework_extra:
     router: { annotations: false }
+
+endroid_qr_code:
+    background_color: { r: 250, g: 250, b: 250 }

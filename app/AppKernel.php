@@ -24,6 +24,8 @@ class AppKernel extends Kernel
             new Nelmio\SecurityBundle\NelmioSecurityBundle(),
             new Knp\Bundle\MenuBundle\KnpMenuBundle(),
             new Nelmio\CorsBundle\NelmioCorsBundle(),
+            new Scheb\TwoFactorBundle\SchebTwoFactorBundle(),
+            new Endroid\QrCodeBundle\EndroidQrCodeBundle(),
             new Packagist\WebBundle\PackagistWebBundle(),
         );
 

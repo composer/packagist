@@ -21,6 +21,7 @@ menu:
     sign_in: Sign in
     settings: Settings
     change_password: Change password
+    configure_2fa: Two-factor auth
     my_packages: My packages
     my_favorites: My favorites
 
