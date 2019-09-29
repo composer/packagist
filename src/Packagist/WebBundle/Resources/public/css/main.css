@@ -1665,6 +1665,7 @@ svg.chart {
 .icon-chart:before { content: '📈'; } /* '\1f4c8' */
 .icon-megaphone:before { content: '📣'; } /* '\1f4e3' */
 .icon-newspaper:before { content: '📰'; } /* '\1f4f0' */
+.icon-mobile:before { content: '📱'; } /* '\1f4f1' */
 .icon-key:before { content: '🔑'; } /* '\1f511' */
 .icon-lock:before { content: '🔒'; } /* '\1f512' */
 .icon-lock-open:before { content: '🔓'; } /* '\1f513' */

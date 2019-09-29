@@ -167,6 +167,12 @@
       "css": "rocket",
       "code": 128640,
       "src": "entypo"
+    },
+    {
+      "uid": "767fede84586366cd7d6c835be745454",
+      "css": "mobile",
+      "code": 128241,
+      "src": "entypo"
     }
   ]
 }
