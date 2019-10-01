@@ -5,6 +5,13 @@
 {% set isActualUser = app.user and app.user.username is same as(user.username) %}
 
 {% block content %}
+    {% if backup_code %}
+        <div class="alert alert-info">
+            <p>If you lose your phone or otherwise can't get codes via your authenticator app, you can this one-time backup code to sign in: <code>{{ backup_code }}</code></p>
+            <p><strong>Take a moment to record this in a safe place. This code will not be shown again!</strong></p>
+        </div>
+    {% endif %}
+
     <h2 class="title">
         {{ user.username }}
         <small>

@@ -136,6 +136,10 @@ hwi_oauth:
                 csrf: true
 
 scheb_two_factor:
+    backup_codes:
+        enabled: true
+        manager: Packagist\WebBundle\Security\TwoFactorAuthManager
+
     totp:
         enabled: true
         server_name: '%packagist_host%'

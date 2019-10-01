@@ -285,7 +285,11 @@ class UserController extends Controller
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        return array('user' => $user);
+        if ($backupCode = $this->get('session')->get('backup_code')) {
+            $this->get('session')->remove('backup_code');
+        }
+
+        return array('user' => $user, 'backup_code' => $backupCode);
     }
 
     /**
@@ -317,9 +321,12 @@ class UserController extends Controller
             }
 
             if ($form->isValid()) {
-                $this->get(TwoFactorAuthManager::class)->enableTwoFactorAuth($user, $enableRequest->getSecret());
+                $authManager = $this->get(TwoFactorAuthManager::class);
+                $authManager->enableTwoFactorAuth($user, $enableRequest->getSecret());
+                $backupCode = $authManager->generateAndSaveNewBackupCode($user);
 
                 $this->addFlash('success', 'Two-factor authentication has been enabled.');
+                $this->get('session')->set('backup_code', $backupCode);
 
                 return $this->redirectToRoute('user_2fa_configure', array('name' => $user->getUsername()));
             }
@@ -341,7 +348,7 @@ class UserController extends Controller
 
         $token = $this->get('security.csrf.token_manager')->getToken('disable_2fa')->getValue();
         if (hash_equals($token, $req->query->get('token', ''))) {
-            $this->get(TwoFactorAuthManager::class)->disableTwoFactorAuth($user);
+            $this->get(TwoFactorAuthManager::class)->disableTwoFactorAuth($user, 'Manually disabled');
 
             $this->addFlash('success', 'Two-factor authentication has been disabled.');
 

@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
@@ -56,7 +57,7 @@ use FOS\UserBundle\Model\User as BaseUser;
  *     )
  * })
  */
-class User extends BaseUser implements TwoFactorInterface
+class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface
 {
     /**
      * @ORM\Id
@@ -128,6 +129,12 @@ class User extends BaseUser implements TwoFactorInterface
      * @var string|null
      */
     private $totpSecret;
+
+    /**
+     * @ORM\Column(type="string", length=8, nullable=true)
+     * @var string|null
+     */
+    private $backupCode;
 
     public function __construct()
     {
@@ -346,5 +353,25 @@ class User extends BaseUser implements TwoFactorInterface
     public function getTotpAuthenticationConfiguration(): TotpConfigurationInterface
     {
         return new TotpConfiguration($this->totpSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
+    }
+
+    public function isBackupCode(string $code): bool
+    {
+        return $this->backupCode !== null && hash_equals($this->backupCode, $code);
+    }
+
+    public function invalidateBackupCode(string $code): void
+    {
+        $this->backupCode = null;
+    }
+
+    public function invalidateAllBackupCodes(): void
+    {
+        $this->backupCode = null;
+    }
+
+    public function setBackupCode(string $code): void
+    {
+        $this->backupCode = $code;
     }
 }
