@@ -136,6 +136,10 @@ hwi_oauth:
                 csrf: true
 
 scheb_two_factor:
+    security_tokens:
+        - Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken
+        - HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken
+
     backup_codes:
         enabled: true
         manager: Packagist\WebBundle\Security\TwoFactorAuthManager
