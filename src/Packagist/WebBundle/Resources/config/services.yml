@@ -217,6 +217,13 @@ services:
             - '@session.flash_bag'
             - { from: '%mailer_from_email%', fromName: '%mailer_from_name%' }
 
+    Packagist\WebBundle\Security\TwoFactorAuthRateLimiter:
+        class: Packagist\WebBundle\Security\TwoFactorAuthRateLimiter
+        arguments:
+            - "@snc_redis.cache_client"
+        tags:
+            - { name: kernel.event_subscriber }
+
     scheduler:
         public: true
         class: Packagist\WebBundle\Service\Scheduler
