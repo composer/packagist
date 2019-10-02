@@ -146,6 +146,10 @@ scheb_two_factor:
         issuer: Packagist
         window: 1
 
+    trusted_device:
+        enabled: true
+        lifetime: 2592000 # 30 days
+
 nelmio_cors:
     defaults:
         allow_origin: ['*']

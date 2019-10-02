@@ -22,7 +22,7 @@
                 </div>
 
                 {% if displayTrustedOption %}
-                    <p class="widget"><label for="_trusted"><input id="_trusted" type="checkbox" name="{{ trustedParameterName }}" /> {{ "trusted"|trans({}, 'SchebTwoFactorBundle') }}</label></p>
+                    <div class="checkbox"><label for="_trusted"><input id="_trusted" type="checkbox" name="{{ trustedParameterName }}" /> Trust this computer for 30 days</label></div>
                 {% endif %}
 
                 <input type="submit" class="btn btn-block btn-primary btn-lg" value="{{ "login"|trans({}, 'SchebTwoFactorBundle') }}" />
