@@ -231,7 +231,6 @@ class ApiController extends Controller
 
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
             $this->get('Graze\DogStatsD\Client')->increment('installs', 1, 1, [
-                'os' => $uaParser->getOs() ?: 'unknown',
                 'composer' => $uaParser->getComposerVersion() ?: 'unknown',
                 'php_minor' => preg_replace('{^(\d+\.\d+).*}', '$1', $uaParser->getPhpVersion()) ?: 'unknown',
                 'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
