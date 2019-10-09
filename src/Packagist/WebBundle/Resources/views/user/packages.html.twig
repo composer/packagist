@@ -7,14 +7,14 @@
 {% set isActualUser = app.user and app.user.username is same as(user.username) %}
 <h2 class="title">
     {{ user.username }}
-    <small>
-        {%- if not isActualUser %}
+    {%- if not isActualUser %}
+        <small>
             member since: {{ user.createdAt|date('M d, Y') }}
             {%- if is_granted('ROLE_ADMIN') %}
                 <a href="mailto:{{ user.email }}">{{ user.email }}</a>
             {%- endif %}
-        {%- endif %}
-    </small>
+        </small>
+    {%- endif %}
 </h2>
 
 <section class="row">
