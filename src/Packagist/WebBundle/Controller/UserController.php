@@ -285,11 +285,11 @@ class UserController extends Controller
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        if ($backupCode = $this->get('session')->get('backup_code')) {
-            $this->get('session')->remove('backup_code');
+        if ($user->getId() === $this->getUser()->getId()) {
+            $backupCode = $this->get('session')->remove('backup_code');
         }
 
-        return array('user' => $user, 'backup_code' => $backupCode);
+        return array('user' => $user, 'backup_code' => $backupCode ?? null);
     }
 
     /**
