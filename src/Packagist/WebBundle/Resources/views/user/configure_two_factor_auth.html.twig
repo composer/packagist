@@ -2,9 +2,9 @@
 
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
-{% set isActualUser = app.user and app.user.username is same as(user.username) %}
-
 {% block content %}
+    {% set isActualUser = app.user and app.user.username is same as(user.username) %}
+
     {% if backup_code %}
         <div class="alert alert-info">
             <p>If you lose your phone or otherwise can't get codes via your authenticator app, you can this one-time backup code to sign in: <code>{{ backup_code }}</code></p>
@@ -14,14 +14,14 @@
 
     <h2 class="title">
         {{ user.username }}
-        <small>
-            {%- if not isActualUser %}
+        {%- if not isActualUser %}
+            <small>
                 member since: {{ user.createdAt|date('M d, Y') }}
                 {%- if is_granted('ROLE_ADMIN') %}
                     <a href="mailto:{{ user.email }}">{{ user.email }}</a>
                 {%- endif %}
-            {%- endif %}
-        </small>
+            </small>
+        {%- endif %}
     </h2>
 
     <section class="row">
