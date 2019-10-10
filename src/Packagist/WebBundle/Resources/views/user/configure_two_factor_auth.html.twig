@@ -40,7 +40,7 @@
 
                 <p>Two-factor authentication is an extra layer of security for your Packagist account designed to ensure that you're the only person who can access your account, even if someone knows your password.</p>
 
-                <a href="{{ path('user_2fa_disable', {name: user.username}) }}" class="btn btn-block btn-danger">Disable two-factor authentication</a>
+                <a href="{{ path('user_2fa_disable', {name: user.username}) }}" class="text-danger">Disable two-factor authentication</a>
             {% else %}
                 <p class="alert alert-warning">
                     <span class="icon-unlock"></span>
