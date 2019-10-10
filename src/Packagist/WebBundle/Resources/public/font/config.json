@@ -173,6 +173,12 @@
       "css": "mobile",
       "code": 128241,
       "src": "entypo"
+    },
+    {
+      "uid": "dd6c6b221a1088ff8a9b9cd32d0b3dd5",
+      "css": "check",
+      "code": 9745,
+      "src": "fontawesome"
     }
   ]
 }

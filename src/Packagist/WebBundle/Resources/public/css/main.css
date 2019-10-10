@@ -1630,6 +1630,9 @@ svg.chart {
     text-align: center;
     overflow-wrap: break-word;
 }
+.two-factor-backup-code {
+    font-size: 3em;
+}
 
 
 [class^="icon-"]:before,
@@ -1648,6 +1651,7 @@ svg.chart {
     speak: none;
 }
 
+.icon-check:before { content: '\2611'; } /* '☑' */
 .icon-tools:before { content: '\2692'; } /* '⚒' */
 .icon-cogs:before { content: '\26ef'; } /* '⛯' */
 .icon-mail:before { content: '\2709'; } /* '✉' */

@@ -329,11 +329,31 @@ class UserController extends Controller
                 $this->addFlash('success', 'Two-factor authentication has been enabled.');
                 $this->get('session')->set('backup_code', $backupCode);
 
-                return $this->redirectToRoute('user_2fa_configure', array('name' => $user->getUsername()));
+                return $this->redirectToRoute('user_2fa_confirm', array('name' => $user->getUsername()));
             }
         }
 
         return array('user' => $user, 'provisioningUri' => $authenticator->getQRContent($user), 'secret' => $enableRequest->getSecret(), 'form' => $form->createView());
+    }
+
+    /**
+     * @Template()
+     * @Route("/users/{name}/2fa/confirm", name="user_2fa_confirm", methods={"GET"})
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     */
+    public function confirmTwoFactorAuthAction(User $user)
+    {
+        if ($user->getId() !== $this->getUser()->getId()) {
+            throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
+        }
+
+        $backupCode = $this->get('session')->remove('backup_code');
+
+        if (empty($backupCode)) {
+            return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
+        }
+
+        return array('user' => $user, 'backup_code' => $backupCode);
     }
 
     /**
