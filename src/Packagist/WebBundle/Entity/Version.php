@@ -317,7 +317,8 @@ class Version
     {
         $array = $this->toArray($versionData);
 
-        unset($array['keywords'], $array['authors']);
+        $array['support'] = $this->getSupport();
+        ksort($array['support']);
 
         return $array;
     }
