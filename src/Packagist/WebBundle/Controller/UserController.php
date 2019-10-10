@@ -299,7 +299,6 @@ class UserController extends Controller
      */
     public function enableTwoFactorAuthAction(Request $req, User $user)
     {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         if ($user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
@@ -363,7 +362,6 @@ class UserController extends Controller
      */
     public function disableTwoFactorAuthAction(Request $req, User $user)
     {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         if (!($this->isGranted('ROLE_DISABLE_2FA') || $user->getId() === $this->getUser()->getId())) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
