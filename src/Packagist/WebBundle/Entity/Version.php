@@ -317,8 +317,10 @@ class Version
     {
         $array = $this->toArray($versionData);
 
-        $array['support'] = $this->getSupport();
-        ksort($array['support']);
+        if ($this->getSupport()) {
+            $array['support'] = $this->getSupport();
+            ksort($array['support']);
+        }
 
         return $array;
     }
