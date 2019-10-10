@@ -881,6 +881,7 @@ class PackageController extends Controller
             $package->setIndexedAt(null);
             $package->setCrawledAt(new \DateTime());
             $package->setUpdatedAt(new \DateTime());
+            $package->setDumpedAt(null);
 
             $em = $this->getDoctrine()->getManager();
             $em->flush();
@@ -912,6 +913,7 @@ class PackageController extends Controller
         $package->setIndexedAt(null);
         $package->setCrawledAt(new \DateTime());
         $package->setUpdatedAt(new \DateTime());
+        $package->setDumpedAt(null);
 
         $em = $this->getDoctrine()->getManager();
         $em->flush();
