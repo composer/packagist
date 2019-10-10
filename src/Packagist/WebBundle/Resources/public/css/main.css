@@ -1625,6 +1625,12 @@ svg.chart {
   position: relative;
 }
 
+.two-factor-key {
+    max-width: 200px;
+    text-align: center;
+    overflow-wrap: break-word;
+}
+
 
 [class^="icon-"]:before,
 [class*=" icon-"]:before {

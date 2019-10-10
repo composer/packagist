@@ -333,7 +333,7 @@ class UserController extends Controller
             }
         }
 
-        return array('user' => $user, 'provisioningUri' => $authenticator->getQRContent($user), 'form' => $form->createView());
+        return array('user' => $user, 'provisioningUri' => $authenticator->getQRContent($user), 'secret' => $enableRequest->getSecret(), 'form' => $form->createView());
     }
 
     /**
