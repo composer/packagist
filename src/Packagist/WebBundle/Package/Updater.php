@@ -105,7 +105,7 @@ class Updater
 
         if ($repository instanceof VcsRepository) {
             $cfg = $repository->getRepoConfig();
-            if (isset($cfg['url']) && preg_match('{\bgithub\.com\b}', $cfg['url'])) {
+            if (isset($cfg['url']) && preg_match('{\bgithub\.com\b}i', $cfg['url'])) {
                 foreach ($package->getMaintainers() as $maintainer) {
                     if (!($newGithubToken = $maintainer->getGithubToken())) {
                         continue;
