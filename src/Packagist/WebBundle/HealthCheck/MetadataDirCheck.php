@@ -20,7 +20,7 @@ class MetadataDirCheck extends AbstractCheck
 
     public static function isMetadataStoreMounted(array $awsMeta): bool
     {
-        if (empty($this->awsMeta)) {
+        if (empty($awsMeta)) {
             return true;
         }
 
