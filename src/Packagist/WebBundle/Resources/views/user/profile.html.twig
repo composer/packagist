@@ -2,8 +2,6 @@
 
 {% import "PackagistWebBundle::macros.html.twig" as macros %}
 
-{% set isActualUser = app.user and app.user.username is same as(user.username) %}
-
 {% block head_additions %}
     {% if user.hasRole('ROLE_SPAMMER') %}
         <meta name="robots" content="noindex, nofollow">
@@ -11,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+{% set isActualUser = app.user and app.user.username is same as(user.username) %}
 <h2 class="title">
     {{ user.username }}
     <small>
