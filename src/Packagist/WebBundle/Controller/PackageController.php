@@ -464,7 +464,11 @@ class PackageController extends Controller
         try {
             $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package, null, true);
 
-            if (!$package->isSuspect() && ($data['downloads']['total'] ?? 0) <= 10 && ($data['downloads']['views'] ?? 0) >= 100) {
+            if (
+                !$package->isSuspect()
+                && ($data['downloads']['total'] ?? 0) <= 10 && ($data['downloads']['views'] ?? 0) >= 100
+                && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
+            ) {
                 $vendorRepo = $this->getDoctrine()->getRepository(Vendor::class);
                 if (!$vendorRepo->isVerified($package->getVendor())) {
                     $package->setSuspect('Too many views');
