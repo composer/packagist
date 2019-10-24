@@ -2,10 +2,16 @@
 
 namespace Packagist\WebBundle\Entity;
 
-use Doctrine\ORM\EntityRepository;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
-class JobRepository extends EntityRepository
+class JobRepository extends ServiceEntityRepository
 {
+    public function __construct(RegistryInterface $registry)
+    {
+        parent::__construct($registry, Job::class);
+    }
+
     public function start(string $jobId): bool
     {
         $conn = $this->getEntityManager()->getConnection();

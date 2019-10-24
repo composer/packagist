@@ -6,6 +6,7 @@ services:
         bind:
             # services
             $redis: '@snc_redis.default_client'
+            $redisCache: '@snc_redis.cache_client'
             #$instantMailer: '@swiftmailer.mailer.instant'
 
             # params
@@ -24,6 +25,9 @@ services:
     Packagist\WebBundle\Controller\:
         resource: '../../Controller/*'
         tags: ['controller.service_arguments']
+
+    Packagist\WebBundle\Entity\:
+        resource: '../../Entity/*Repository.php'
 
     packagist.twig.extension:
         public: true
@@ -77,26 +81,6 @@ services:
         class: Packagist\WebBundle\Security\Provider\UserProvider
         arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email', '@scheduler']
 
-    packagist.user_repository:
-        public: true
-        class: Packagist\WebBundle\Entity\UserRepository
-        factory: ['@doctrine', getRepository]
-        arguments: ['Packagist\WebBundle\Entity\User']
-
-    packagist.package_repository:
-        public: true
-        class: Packagist\WebBundle\Entity\PackageRepository
-        factory: ['@doctrine', getRepository]
-        arguments: ['Packagist\WebBundle\Entity\Package']
-
-    packagist.version_repository:
-        public: true
-        class: Packagist\WebBundle\Entity\VersionRepository
-        factory: ['@doctrine', getRepository]
-        arguments: ['Packagist\WebBundle\Entity\Version']
-        calls:
-            - [ setRedis, [ '@snc_redis.cache_client' ]]
-
     packagist.package_updater:
         public: true
         class: Packagist\WebBundle\Package\Updater
@@ -137,17 +121,10 @@ services:
     packagist.provider_manager:
         public: true
         class: Packagist\WebBundle\Model\ProviderManager
-        arguments:
-            - '@snc_redis.default_client'
-            - '@packagist.package_repository'
 
     packagist.favorite_manager:
         public: true
         class: Packagist\WebBundle\Model\FavoriteManager
-        arguments:
-            - '@snc_redis.default_client'
-            - '@packagist.package_repository'
-            - '@packagist.user_repository'
 
     packagist.package_manager:
         public: true

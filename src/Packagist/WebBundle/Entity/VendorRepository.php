@@ -12,13 +12,19 @@
 
 namespace Packagist\WebBundle\Entity;
 
-use Doctrine\ORM\EntityRepository;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class VendorRepository extends EntityRepository
+class VendorRepository extends ServiceEntityRepository
 {
+    public function __construct(RegistryInterface $registry)
+    {
+        parent::__construct($registry, Vendor::class);
+    }
+
     public function isVerified(string $vendor): bool
     {
         $result = $this->getEntityManager()->getConnection()->fetchColumn('SELECT verified FROM vendor WHERE name = :vendor', ['vendor' => $vendor]);

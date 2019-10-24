@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Controller;
 
 use Doctrine\DBAL\ConnectionException;
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\PackageRepository;
 use Packagist\WebBundle\Entity\VersionRepository;
 use Pagerfanta\Adapter\FixedAdapter;
@@ -39,7 +40,7 @@ class ExploreController extends Controller
         /** @var PackageRepository $pkgRepo */
         $pkgRepo = $this->getDoctrine()->getRepository(Package::class);
         /** @var VersionRepository $verRepo */
-        $verRepo = $this->get('packagist.version_repository');
+        $verRepo = $this->getDoctrine()->getRepository(Version::class);
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
             ->getQuery()->useResultCache(true, 60)->getResult();
         $newReleases = $verRepo->getLatestReleases(10);

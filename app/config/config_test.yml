@@ -16,3 +16,9 @@ web_profiler:
 
 swiftmailer:
     disable_delivery: true
+
+services:
+
+    test.user_repo:
+        alias: Packagist\WebBundle\Entity\UserRepository
+        public: true

@@ -2,10 +2,16 @@
 
 namespace Packagist\WebBundle\Entity;
 
-use Doctrine\ORM\EntityRepository;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
-class DownloadRepository extends EntityRepository
+class DownloadRepository extends ServiceEntityRepository
 {
+    public function __construct(RegistryInterface $registry)
+    {
+        parent::__construct($registry, Download::class);
+    }
+
     public function deletePackageDownloads(Package $package)
     {
         $conn = $this->getEntityManager()->getConnection();

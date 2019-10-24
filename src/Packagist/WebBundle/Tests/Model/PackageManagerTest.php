@@ -29,7 +29,7 @@ class PackageManagerTest extends TestCase
             ->with($this->equalTo(array('username' => 'test', 'apiToken' => 'token')))
             ->will($this->returnValue($user));
 
-        static::$kernel->getContainer()->set('packagist.user_repository', $repo);
+        static::$kernel->getContainer()->set('test.user_repo', $repo);
         static::$kernel->getContainer()->set('doctrine.orm.entity_manager', $em);
         static::$kernel->getContainer()->set('packagist.package_updater', $updater);
 

@@ -12,14 +12,15 @@
 
 namespace Packagist\WebBundle\Entity;
 
-use Doctrine\ORM\EntityRepository;
 use Doctrine\DBAL\Connection;
 use Predis\Client;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class VersionRepository extends EntityRepository
+class VersionRepository extends ServiceEntityRepository
 {
     private $redis;
 
@@ -32,9 +33,11 @@ class VersionRepository extends EntityRepository
         'suggest',
     );
 
-    public function setRedis(Client $client)
+    public function __construct(RegistryInterface $registry, Client $redisCache)
     {
-        $this->redis = $client;
+        parent::__construct($registry, Version::class);
+
+        $this->redis = $redisCache;
     }
 
     public function remove(Version $version)

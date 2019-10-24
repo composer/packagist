@@ -288,7 +288,7 @@ class ApiController extends Controller
         if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature')) {
             $username = $request->query->get('username');
             $sig = $request->headers->get('X-Hub-Signature');
-            $user = $this->get('packagist.user_repository')->findOneByUsername($username);
+            $user = $this->getDoctrine()->getRepository(User::class)->findOneByUsername($username);
             if ($sig && $user && $user->isEnabled()) {
                 list($algo, $sig) = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
@@ -370,7 +370,7 @@ class ApiController extends Controller
             return null;
         }
 
-        $user = $this->get('packagist.user_repository')
+        $user = $this->getDoctrine()->getRepository(User::class)
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 
         if ($user && !$user->isEnabled()) {
