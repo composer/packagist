@@ -9,6 +9,7 @@ use Packagist\WebBundle\Entity\Download;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\PackageRepository;
 use Packagist\WebBundle\Entity\Version;
+use Packagist\WebBundle\Entity\Vendor;
 use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Form\Model\MaintainerRequest;
 use Packagist\WebBundle\Form\Type\AbandonedType;
@@ -313,7 +314,7 @@ class PackageController extends Controller
             throw new NotFoundHttpException();
         }
 
-        $page = $req->query->get('page', 1);
+        $page = max(1, (int) $req->query->get('page', 1));
 
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
@@ -327,8 +328,38 @@ class PackageController extends Controller
         $data['packages'] = $paginator;
         $data['count'] = $count;
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['markSafeCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('mark_safe');
 
         return $this->render('PackagistWebBundle:package:spam.html.twig', $data);
+    }
+
+    /**
+     * @Route(
+     *     "/spam/nospam",
+     *     name="mark_nospam",
+     *     defaults={"_format"="html"},
+     *     methods={"POST"}
+     * )
+     */
+    public function markSafeAction(Request $req)
+    {
+        if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
+            throw new NotFoundHttpException();
+        }
+
+        $expectedToken = $this->get('security.csrf.token_manager')->getToken('mark_safe')->getValue();
+
+        $vendors = array_filter((array) $req->request->get('vendor'));
+        if (!hash_equals($expectedToken, $req->request->get('token'))) {
+            throw new BadRequestHttpException('Invalid CSRF token');
+        }
+
+        $repo = $this->getDoctrine()->getRepository(Vendor::class);
+        foreach ($vendors as $vendor) {
+            $repo->verify($vendor);
+        }
+
+        return $this->redirectToRoute('view_spam');
     }
 
     /**
@@ -374,8 +405,8 @@ class PackageController extends Controller
         }
 
         if ('json' === $req->getRequestFormat()) {
-            $data = $package->toArray($this->getDoctrine()->getRepository(Version::class));
-            $data['dependents'] = $repo->getDependentCount($package->getName());
+            $data = $package->toArray($this->getDoctrine()->getRepository(Version::class), true);
+            $data['dependents'] = $repo->getDependantCount($package->getName());
             $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
             try {
@@ -433,9 +464,16 @@ class PackageController extends Controller
         try {
             $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package, null, true);
 
-            if (!$package->isSuspect() && ($data['downloads']['total'] ?? 0) <= 10 && ($data['downloads']['views'] ?? 0) >= 100) {
-                $package->setSuspect('Too many views');
-                $repo->markPackageSuspect($package);
+            if (
+                !$package->isSuspect()
+                && ($data['downloads']['total'] ?? 0) <= 10 && ($data['downloads']['views'] ?? 0) >= 100
+                && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
+            ) {
+                $vendorRepo = $this->getDoctrine()->getRepository(Vendor::class);
+                if (!$vendorRepo->isVerified($package->getVendor())) {
+                    $package->setSuspect('Too many views');
+                    $repo->markPackageSuspect($package);
+                }
             }
 
             if ($this->getUser()) {
@@ -444,7 +482,7 @@ class PackageController extends Controller
         } catch (ConnectionException $e) {
         }
 
-        $data['dependents'] = $repo->getDependentCount($package->getName());
+        $data['dependents'] = $repo->getDependantCount($package->getName());
         $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
@@ -461,6 +499,9 @@ class PackageController extends Controller
                 || $package->getMaintainers()->contains($this->getUser())
             )) {
             $data['deleteVersionCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('delete_version');
+        }
+        if ($this->isGranted('ROLE_ANTISPAM')) {
+            $data['markSafeCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('mark_safe');
         }
 
         return $data;
@@ -844,6 +885,7 @@ class PackageController extends Controller
             $package->setIndexedAt(null);
             $package->setCrawledAt(new \DateTime());
             $package->setUpdatedAt(new \DateTime());
+            $package->setDumpedAt(null);
 
             $em = $this->getDoctrine()->getManager();
             $em->flush();
@@ -875,6 +917,7 @@ class PackageController extends Controller
         $package->setIndexedAt(null);
         $package->setCrawledAt(new \DateTime());
         $package->setUpdatedAt(new \DateTime());
+        $package->setDumpedAt(null);
 
         $em = $this->getDoctrine()->getManager();
         $em->flush();
@@ -936,11 +979,11 @@ class PackageController extends Controller
      */
     public function dependentsAction(Request $req, $name)
     {
-        $page = $req->query->get('page', 1);
+        $page = max(1, (int) $req->query->get('page', 1));
 
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
-        $depCount = $repo->getDependentCount($name);
+        $depCount = $repo->getDependantCount($name);
         $packages = $repo->getDependents($name, ($page - 1) * 15, 15);
 
         $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
@@ -965,7 +1008,7 @@ class PackageController extends Controller
      */
     public function suggestersAction(Request $req, $name)
     {
-        $page = $req->query->get('page', 1);
+        $page = max(1, (int) $req->query->get('page', 1));
 
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
@@ -1021,7 +1064,7 @@ class PackageController extends Controller
             foreach ($values as $valueKey) {
                 $value += $dlData[$valueKey] ?? 0;
             }
-            $datePoints[$label] = $value;
+            $datePoints[$label] = ceil($value / count($values));
         }
 
         $datePoints = array(
@@ -1030,17 +1073,6 @@ class PackageController extends Controller
         );
 
         $datePoints['average'] = $average;
-
-        if ($average !== 'daily') {
-            $dividers = [
-                'monthly' => 30.41,
-                'weekly' => 7,
-            ];
-            $divider = $dividers[$average];
-            $datePoints['values'] = array_map(function ($val) use ($divider) {
-                return ceil($val / $divider);
-            }, $datePoints['values']);
-        }
 
         if (empty($datePoints['labels']) && empty($datePoints['values'])) {
             $datePoints['labels'][] = date('Y-m-d');
@@ -1138,13 +1170,15 @@ class PackageController extends Controller
         $dateKey = 'Ymd';
         $dateFormat = $average === 'monthly' ? 'Y-m' : 'Y-m-d';
         $dateJump = '+1day';
-        if ($average === 'monthly') {
-            $from = new DateTimeImmutable('first day of ' . $from->format('Y-m'));
-            $to = new DateTimeImmutable('last day of ' . $to->format('Y-m'));
-        }
 
         $nextDataPointLabel = $from->format($dateFormat);
-        $nextDataPoint = $from->modify($interval);
+
+        if ($average === 'monthly') {
+            $nextDataPoint = new DateTimeImmutable('first day of ' . $from->format('Y-m'));
+            $nextDataPoint = $nextDataPoint->modify($interval);
+        } else {
+            $nextDataPoint = $from->modify($interval);
+        }
 
         $datePoints = [];
         while ($from <= $to) {

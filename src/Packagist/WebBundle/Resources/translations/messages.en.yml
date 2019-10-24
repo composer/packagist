@@ -57,7 +57,7 @@ packages:
     maintained_by: "Packages maintained by %user%"
     my_favorites: My favorite packages
     users_favorites: "%user%'s favorite packages"
-    dependent_title: Dependent Packages
+    dependant_title: Dependant Packages
     dependents: dependents
     providers_title: "The following packages provide %name%"
     suggesters: suggesters
@@ -107,8 +107,8 @@ stats:
     installs: Installs
     overall: Overall
     lastmonth: Last 30 days
-    today: Today
-    since_midnight: "since midnight, UTC"
+    today: Last 24h
+    rolling_avg: "rolling average, approx."
     daily: Daily installs
     daily_per_version: Daily installs per version
     averaged: "averaged %avg%"
@@ -138,6 +138,7 @@ api_doc:
     by_name: By name
     by_type: By type
     by_tag: By tag
+    get_statistics: Get statistics
     list_by_organization: List packages by organization
     list_by_type: List packages by type
     searching: Searching for packages

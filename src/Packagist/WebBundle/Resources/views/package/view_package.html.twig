@@ -29,7 +29,7 @@
     {{ package.description|truncate(300) }}
 {%- endblock %}
 
-{% set hasActions = is_granted('ROLE_EDIT_PACKAGES') or is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
+{% set hasActions = is_granted('ROLE_EDIT_PACKAGES') or is_granted('ROLE_ANTISPAM') or is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
 
 {% block content %}
     <div class="row">
@@ -115,6 +115,13 @@
                             {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
                                 <form class="action" action="{{ path("edit_package", {name: package.name}) }}">
                                     <input class="btn btn-primary" type="submit" value="Edit" />
+                                </form>
+                            {% endif %}
+                            {% if is_granted('ROLE_ANTISPAM') and package.isSuspect() %}
+                                <form class="action" action="{{ path("mark_nospam") }}" method="POST">
+                                    <input type="hidden" name="vendor" value="{{ package.vendor }}" />
+                                    <input type="hidden" name="token" value="{{ markSafeCsrfToken }}" />
+                                    <input class="btn btn-danger" type="submit" value="Mark Not Spam" />
                                 </form>
                             {% endif %}
                         </div>

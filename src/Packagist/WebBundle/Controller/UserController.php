@@ -225,7 +225,7 @@ class UserController extends Controller
         );
 
         $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage($req->query->get('page', 1), false, true);
+        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)), false, true);
 
         return array('packages' => $paginator, 'user' => $user);
     }
@@ -283,7 +283,7 @@ class UserController extends Controller
 
         $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
         $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage($req->query->get('page', 1), false, true);
+        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)), false, true);
 
         return $paginator;
     }

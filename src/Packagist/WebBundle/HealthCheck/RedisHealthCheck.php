@@ -27,7 +27,7 @@ class RedisHealthCheck extends AbstractCheck
             }
 
             // only warn for fragmented memory when amount of memory is above 256MB
-            if ($info['Memory']['used_memory'] > 256*1024*1024 && $info['Memory']['mem_fragmentation_ratio'] > 1.6) {
+            if ($info['Memory']['used_memory'] > 256*1024*1024 && $info['Memory']['mem_fragmentation_ratio'] > 3) {
                 return new Warning('Redis memory fragmentation ratio is pretty high, maybe redis instances should be restarted', $info['Memory']);
             }
 

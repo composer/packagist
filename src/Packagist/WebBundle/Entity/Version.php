@@ -109,6 +109,8 @@ class Version
     private $license;
 
     /**
+     * Deprecated relation table, use the authorJson property instead
+     *
      * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Author", inversedBy="versions")
      * @ORM\JoinTable(name="version_author",
      *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
@@ -178,6 +180,11 @@ class Version
     private $support;
 
     /**
+     * @ORM\Column(name="authors", type="json", nullable=true)
+     */
+    private $authorJson;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -211,7 +218,7 @@ class Version
         $this->updatedAt = new \DateTime;
     }
 
-    public function toArray(array $versionData)
+    public function toArray(array $versionData, bool $serializeForApi = false)
     {
         if (isset($versionData[$this->id]['tags'])) {
             $tags = $versionData[$this->id]['tags'];
@@ -223,15 +230,23 @@ class Version
             }
         }
 
-        if (isset($versionData[$this->id]['authors'])) {
-            $authors = $versionData[$this->id]['authors'];
+        if (!is_null($this->getAuthorJson())) {
+            $authors = $this->getAuthorJson();
         } else {
-            $authors = array();
-            foreach ($this->getAuthors() as $author) {
-                /** @var $author Author */
-                $authors[] = $author->toArray();
+            if (isset($versionData[$this->id]['authors'])) {
+                $authors = $versionData[$this->id]['authors'];
+            } else {
+                $authors = array();
+                foreach ($this->getAuthors() as $author) {
+                    /** @var $author Author */
+                    $authors[] = $author->toArray();
+                }
             }
         }
+        foreach ($authors as &$author) {
+            uksort($author, [$this, 'sortAuthorKeys']);
+        }
+        unset($author);
 
         $data = array(
             'name' => $this->getName(),
@@ -247,6 +262,9 @@ class Version
             'type' => $this->getType(),
         );
 
+        if ($serializeForApi && $this->getSupport()) {
+            $data['support'] = $this->getSupport();
+        }
         if ($this->getReleasedAt()) {
             $data['time'] = $this->getReleasedAt()->format('Y-m-d\TH:i:sP');
         }
@@ -299,7 +317,10 @@ class Version
     {
         $array = $this->toArray($versionData);
 
-        unset($array['keywords'], $array['authors']);
+        if ($this->getSupport()) {
+            $array['support'] = $this->getSupport();
+            ksort($array['support']);
+        }
 
         return $array;
     }
@@ -715,6 +736,40 @@ class Version
         return $this->authors;
     }
 
+    public function getAuthorJson(): ?array
+    {
+        return $this->authorJson;
+    }
+
+    public function setAuthorJson(?array $authors): void
+    {
+        $this->authorJson = $authors ?: [];
+    }
+
+    /**
+     * Get authors
+     *
+     * @return array[]
+     */
+    public function getAuthorData(): array
+    {
+        if (!is_null($this->getAuthorJson())) {
+            return $this->getAuthorJson();
+        }
+
+        $authors = [];
+        foreach ($this->getAuthors() as $author) {
+            $authors[] = array_filter([
+                'name' => $author->getName(),
+                'homepage' => $author->getHomepage(),
+                'email' => $author->getEmail(),
+                'role' => $author->getRole(),
+            ]);
+        }
+
+        return $authors;
+    }
+
     /**
      * Set type
      *
@@ -978,5 +1033,17 @@ class Version
     public function __toString()
     {
         return $this->name.' '.$this->version.' ('.$this->normalizedVersion.')';
+    }
+
+    private function sortAuthorKeys($a, $b)
+    {
+        static $order = ['name' => 1, 'email' => 2, 'homepage' => 3, 'role' => 4];
+        $aIndex = $order[$a] ?? 5;
+        $bIndex = $order[$b] ?? 5;
+        if ($aIndex === $bIndex) {
+            return $a <=> $b;
+        }
+
+        return $aIndex <=> $bIndex;
     }
 }

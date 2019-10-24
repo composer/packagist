@@ -264,11 +264,10 @@ class FeedController extends Controller
         $entry->setDateModified($version->getReleasedAt());
         $entry->setDateCreated($version->getReleasedAt());
 
-        foreach ($version->getAuthors() as $author) {
-            /** @var $author \Packagist\WebBundle\Entity\Author */
-            if ($author->getName()) {
+        foreach ($version->getAuthorData() as $author) {
+            if (!empty($author['name'])) {
                 $entry->addAuthor(array(
-                    'name' => $author->getName()
+                    'name' => $author['name']
                 ));
             }
         }

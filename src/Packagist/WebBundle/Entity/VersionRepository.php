@@ -82,12 +82,12 @@ class VersionRepository extends EntityRepository
     /**
      * @param Version[] $versions
      */
-    public function detachToArray(array $versions, array $versionData): array
+    public function detachToArray(array $versions, array $versionData, bool $serializeForApi = false): array
     {
         $res = [];
         $em = $this->getEntityManager();
         foreach ($versions as $version) {
-            $res[$version->getVersion()] = $version->toArray($versionData);
+            $res[$version->getVersion()] = $version->toArray($versionData, $serializeForApi);
             $em->detach($version);
         }
 
@@ -157,7 +157,7 @@ class VersionRepository extends EntityRepository
     public function getVersionMetadataForUpdate(Package $package)
     {
         $rows = $this->getEntityManager()->getConnection()->fetchAll(
-            'SELECT id, version, normalizedVersion, source, softDeletedAt FROM package_version v WHERE v.package_id = :id',
+            'SELECT id, version, normalizedVersion, source, softDeletedAt, `authors` IS NULL as needs_author_migration FROM package_version v WHERE v.package_id = :id',
             ['id' => $package->getId()]
         );
 
@@ -166,6 +166,7 @@ class VersionRepository extends EntityRepository
             if ($row['source']) {
                 $row['source'] = json_decode($row['source'], true);
             }
+            $row['needs_author_migration'] = (int) $row['needs_author_migration'];
             $versions[strtolower($row['normalizedVersion'])] = $row;
         }
 

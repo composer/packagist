@@ -105,7 +105,7 @@ class Updater
 
         if ($repository instanceof VcsRepository) {
             $cfg = $repository->getRepoConfig();
-            if (isset($cfg['url']) && preg_match('{\bgithub\.com\b}', $cfg['url'])) {
+            if (isset($cfg['url']) && preg_match('{\bgithub\.com\b}i', $cfg['url'])) {
                 foreach ($package->getMaintainers() as $maintainer) {
                     if (!($newGithubToken = $maintainer->getGithubToken())) {
                         continue;
@@ -271,6 +271,13 @@ class Updater
             // update if the right flag is set, or the source reference has changed (re-tag or new commit on branch)
             if ($source['reference'] !== $data->getSourceReference() || ($flags & self::UPDATE_EQUAL_REFS)) {
                 $version = $versionRepo->findOneById($existingVersion['id']);
+            } elseif ($existingVersion['needs_author_migration']) {
+                $version = $versionRepo->findOneById($existingVersion['id']);
+
+                $version->setAuthorJson($version->getAuthorData());
+                $version->getAuthors()->clear();
+
+                return ['updated' => true, 'id' => $version->getId(), 'version' => strtolower($normVersion), 'object' => $version];
             } else {
                 return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
             }
@@ -363,21 +370,19 @@ class Updater
             $version->getTags()->clear();
         }
 
-        $authorRepository = $this->doctrine->getRepository('PackagistWebBundle:Author');
-
         $version->getAuthors()->clear();
+        $version->setAuthorJson([]);
         if ($data->getAuthors()) {
+            $authors = [];
             foreach ($data->getAuthors() as $authorData) {
-                $author = null;
+                $author = [];
 
                 foreach (array('email', 'name', 'homepage', 'role') as $field) {
                     if (isset($authorData[$field])) {
-                        $authorData[$field] = trim($authorData[$field]);
-                        if ('' === $authorData[$field]) {
-                            $authorData[$field] = null;
+                        $author[$field] = trim($authorData[$field]);
+                        if ('' === $author[$field]) {
+                            unset($author[$field]);
                         }
-                    } else {
-                        $authorData[$field] = null;
                     }
                 }
 
@@ -386,32 +391,9 @@ class Updater
                     continue;
                 }
 
-                $author = $authorRepository->findOneBy(array(
-                    'email' => $authorData['email'],
-                    'name' => $authorData['name'],
-                    'homepage' => $authorData['homepage'],
-                    'role' => $authorData['role'],
-                ));
-
-                if (!$author) {
-                    $author = new Author();
-                    $em->persist($author);
-                }
-
-                foreach (array('email', 'name', 'homepage', 'role') as $field) {
-                    if (isset($authorData[$field])) {
-                        $author->{'set'.$field}($authorData[$field]);
-                    }
-                }
-
-                // only update the author timestamp once a month at most as the value is kinda unused
-                if ($author->getUpdatedAt() === null || $author->getUpdatedAt()->getTimestamp() < time() - 86400 * 30) {
-                    $author->setUpdatedAt(new \DateTime);
-                }
-                if (!$version->getAuthors()->contains($author)) {
-                    $version->addAuthor($author);
-                }
+                $authors[] = $author;
             }
+            $version->setAuthorJson($authors);
         }
 
         // handle links

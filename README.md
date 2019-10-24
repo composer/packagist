@@ -41,5 +41,6 @@ These steps are provided for development purposes only.
    ```bash
    symfony serve
    ```
+6. Run a CRON job `app/console packagist:run-workers` to make sure packages update.
 
 You should now be able to access the site, create a user, etc.

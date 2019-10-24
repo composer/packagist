@@ -57,6 +57,7 @@
         "php-http/httplug-bundle": "^1.11",
         "php-http/guzzle6-adapter": "^1.1",
         "zendframework/zenddiagnostics": "^1.4",
+        "graze/dog-statsd": "^0.4.2",
         "incenteev/composer-parameter-handler": "^2.1"
     },
     "require-dev": {

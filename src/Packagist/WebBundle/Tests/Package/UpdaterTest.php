@@ -58,7 +58,6 @@ class UpdaterTest extends TestCase
 
         $registryMock->expects($this->any())->method('getManager')->willReturn($emMock);
         $registryMock->expects($this->at(1))->method('getRepository')->with('PackagistWebBundle:Version')->willReturn($versionRepoMock);
-        $registryMock->expects($this->at(3))->method('getRepository')->with('PackagistWebBundle:Author')->willReturn($authorRepoMock);
         $this->repositoryMock->expects($this->any())->method('getPackages')->willReturn([
             $packageMock
         ]);

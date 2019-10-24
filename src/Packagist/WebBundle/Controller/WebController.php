@@ -62,20 +62,18 @@ class WebController extends Controller
      */
     public function searchAction(Request $req)
     {
-        $form = $this->createForm(SearchQueryType::class, new SearchQuery());
-
-        $filteredOrderBys = $this->getFilteredOrderedBys($req);
-
-        $this->computeSearchQuery($req, $filteredOrderBys);
-
-        $typeFilter = str_replace('%type%', '', $req->query->get('type'));
-        $tagsFilter = $req->query->get('tags');
-
         if ($req->getRequestFormat() !== 'json') {
             return $this->render('PackagistWebBundle:web:search.html.twig', [
                 'packages' => [],
             ]);
         }
+
+        $typeFilter = str_replace('%type%', '', $req->query->get('type'));
+        $tagsFilter = $req->query->get('tags');
+
+        $filteredOrderBys = $this->getFilteredOrderedBys($req);
+
+        $this->computeSearchQuery($req, $filteredOrderBys);
 
         if (!$req->query->has('search_query') && !$typeFilter && !$tagsFilter) {
             return JsonResponse::create(array(
@@ -83,8 +81,10 @@ class WebController extends Controller
             ), 400)->setCallback($req->query->get('callback'));
         }
 
-        $indexName = $this->container->getParameter('algolia.index_name');
+        $form = $this->createForm(SearchQueryType::class, new SearchQuery());
+
         $algolia = $this->get('packagist.algolia.client');
+        $indexName = $this->container->getParameter('algolia.index_name');
         $index = $algolia->initIndex($indexName);
         $query = '';
         $queryParams = [];
@@ -116,7 +116,7 @@ class WebController extends Controller
             $query = $form->getData()->getQuery();
         }
 
-        $perPage = $req->query->getInt('per_page', 15);
+        $perPage = max(1, (int) $req->query->getInt('per_page', 15));
         if ($perPage <= 0 || $perPage > 100) {
            if ($req->getRequestFormat() === 'json') {
                 return JsonResponse::create(array(
@@ -132,7 +132,7 @@ class WebController extends Controller
             $queryParams['filters'] = implode(' AND ', $queryParams['filters']);
         }
         $queryParams['hitsPerPage'] = $perPage;
-        $queryParams['page'] = $req->query->get('page', 1) - 1;
+        $queryParams['page'] = max(1, (int) $req->query->get('page', 1)) - 1;
 
         try {
             $results = $index->search($query, $queryParams);
@@ -286,6 +286,29 @@ class WebController extends Controller
             'maxMonthlyDownloads' => !empty($dlChartMonthly) ? max($dlChartMonthly['values']) : null,
             'downloadsStartDate' => $downloadsStartDate,
         );
+    }
+
+    /**
+     * @Route("/statistics.json", name="stats_json", defaults={"_format"="json"}, methods={"GET"})
+     */
+    public function statsTotalsAction()
+    {
+        $downloads = (int) ($this->get('snc_redis.default_client')->get('downloads') ?: 0);
+        $packages = (int) $this->getDoctrine()
+            ->getConnection()
+            ->fetchColumn('SELECT COUNT(*) count FROM `package`');
+
+        $versions = (int) $this->getDoctrine()
+            ->getConnection()
+            ->fetchColumn('SELECT COUNT(*) count FROM `package_version`');
+
+        $totals = [
+            'downloads' => $downloads,
+            'packages' => $packages,
+            'versions' => $versions,
+        ];
+
+        return new JsonResponse(['totals' => $totals], 200);
     }
 
     /**

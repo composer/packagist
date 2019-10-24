@@ -7,6 +7,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Packagist\WebBundle\Entity\Job;
 use Seld\Signal\SignalHandler;
+use Graze\DogStatsD\Client as StatsDClient;
 
 class QueueWorker
 {
@@ -16,13 +17,16 @@ class QueueWorker
     private $doctrine;
     private $jobWorkers;
     private $processedJobs = 0;
+    /** @var StatsDClient */
+    private $statsd;
 
-    public function __construct(Redis $redis, RegistryInterface $doctrine, LoggerInterface $logger, array $jobWorkers)
+    public function __construct(Redis $redis, RegistryInterface $doctrine, LoggerInterface $logger, array $jobWorkers, StatsDClient $statsd)
     {
         $this->redis = $redis;
         $this->logger = $logger;
         $this->doctrine = $doctrine;
         $this->jobWorkers = $jobWorkers;
+        $this->statsd = $statsd;
     }
 
     /**
@@ -104,6 +108,12 @@ class QueueWorker
             return $record;
         });
 
+        $expectedStart = $job->getExecuteAfter() ?: $job->getCreatedAt();
+        $start = microtime(true);
+        $this->statsd->timing('worker.queue.waittime', round(($start - $expectedStart->getTimestamp()) * 1000, 4), [
+            'jobType' => $job->getType(),
+        ]);
+
         $processor = $this->jobWorkers[$job->getType()];
 
         $this->logger->reset();
@@ -118,6 +128,15 @@ class QueueWorker
                 'exception' => $e,
             ];
         }
+
+        $this->statsd->increment('worker.queue.processed', 1, 1, [
+            'jobType' => $job->getType(),
+            'status' => $result['status'],
+        ]);
+
+        $this->statsd->timing('worker.queue.processtime', round((microtime(true) - $start) * 1000, 4), [
+            'jobType' => $job->getType(),
+        ]);
 
         // If an exception is thrown during a transaction the EntityManager is closed
         // and we won't be able to update the job or handle future jobs

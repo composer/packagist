@@ -86,11 +86,6 @@ class User extends BaseUser
     private $packages;
 
     /**
-     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Author", mappedBy="owner")
-     */
-    private $authors;
-
-    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -128,7 +123,6 @@ class User extends BaseUser
     public function __construct()
     {
         $this->packages = new ArrayCollection();
-        $this->authors = new ArrayCollection();
         $this->createdAt = new \DateTime();
         parent::__construct();
     }
@@ -159,26 +153,6 @@ class User extends BaseUser
     public function getPackages()
     {
         return $this->packages;
-    }
-
-    /**
-     * Add authors
-     *
-     * @param Author $authors
-     */
-    public function addAuthors(Author $authors)
-    {
-        $this->authors[] = $authors;
-    }
-
-    /**
-     * Get authors
-     *
-     * @return Author[]
-     */
-    public function getAuthors()
-    {
-        return $this->authors;
     }
 
     /**

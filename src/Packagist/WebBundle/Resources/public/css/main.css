@@ -537,6 +537,10 @@ button {
     font-family: 'Open Sans', sans-serif;
 }
 
+.form-group {
+    clear: left;
+}
+
 .form-control {
     min-height: 20px;
     padding: 7px 11px 6px 9px;
@@ -1505,30 +1509,44 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .alert {
-    background: none;
-    border: none;
     border-left: 4px solid #000;
     box-shadow: none;
     border-radius: 0;
     padding: 5px 0 5px 10px;
 }
+.flash-container .alert {
+    margin-bottom: 5px;
+}
+.flash-container .alert:last-child {
+    margin-bottom: 0;
+}
 .alert p {
   margin: 0;
-}
-.flash-container .alert {
-  margin-bottom: 0;
 }
 .alert-warning {
     border-left-color: #F28D1A;
     color: #2d2d32;
+    background-image: linear-gradient(to bottom,#fcf8e3 0,#f8efc0 100%);
+}
+.alert-warning::before {
+    content: "Warning: ";
+    float: left;
+    padding-right: 5px;
 }
 .alert-danger, .alert-error {
     border-left-color: #cd3729;
     color: #2d2d32;
+    background-image: linear-gradient(to bottom,#f2dede 0,#e7c3c3 100%);
+}
+.alert-error::before {
+    content: "Error: ";
+    float: left;
+    padding-right: 5px;
 }
 .alert-success {
     border-left-color: #69AD21;
     color: #2d2d32;
+    background-image: linear-gradient(to bottom,#dff0d8 0,#c8e5bc 100%);
 }
 
 

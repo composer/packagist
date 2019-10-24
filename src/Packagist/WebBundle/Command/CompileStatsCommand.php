@@ -43,6 +43,16 @@ class CompileStatsCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $locker = $this->getContainer()->get('locker');
+
+        $lockAcquired = $locker->lockCommand($this->getName());
+        if (!$lockAcquired) {
+            if ($input->getOption('verbose')) {
+                $output->writeln('Aborting, another task is running already');
+            }
+            return;
+        }
+
         $verbose = $input->getOption('verbose');
 
         $doctrine = $this->getContainer()->get('doctrine');
@@ -76,6 +86,8 @@ class CompileStatsCommand extends ContainerAwareCommand
 
         $redis->rename('downloads:trending:new', 'downloads:trending');
         $redis->rename('downloads:absolute:new', 'downloads:absolute');
+
+        $locker->unlockCommand($this->getName());
     }
 
     protected function sumLastNDays($days, $id, \DateTime $yesterday, $conn)

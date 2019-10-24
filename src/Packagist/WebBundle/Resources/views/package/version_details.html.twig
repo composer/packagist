@@ -36,17 +36,17 @@
 <div class="metadata">
     <p class="license"><i class="glyphicon glyphicon-copyright-mark" title="License"></i> {% if not version.license %}<span class="unknown">{% endif %}{{ version.license ? version.license|join(', ') : 'Unknown License' }}{% if not version.license %}</span>{% endif %} <span class="source-reference"><i class="glyphicon glyphicon-bookmark" title="Source Reference"></i> {{ version.source.reference }}</span></p>
 
-    {% if version.authors|length %}
+    {% if version.authorData|length %}
         <i class="glyphicon glyphicon-user" title="Authors"></i>
         <ul class="authors">
-            {% for author in version.authors %}
+            {% for author in version.authorData %}
                 <li>
-                    {%- if author.homepage -%}
+                    {%- if author.homepage|default(false) -%}
                         <a rel="nofollow noopener external noindex" href="{{ author.homepage }}">{{ author.name }}</a>
                     {%- else -%}
                         {{ author.name }}
                     {%- endif -%}
-                    {% if author.email %}
+                    {% if author.email|default(false) %}
                         <span class="visible-sm-inline visible-md-inline visible-lg-inline">&lt;{{ author.email|split('@', 2)[0] }}<span style="display:none">.woop</span>@{{ author.email|split('@', 2)[1] }}&gt;</span>
                     {%- endif -%}
                 </li>

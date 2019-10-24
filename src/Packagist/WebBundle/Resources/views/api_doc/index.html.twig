@@ -19,6 +19,7 @@
     </ul>
   </li>
   <li><a href="#get-package-data">{{ 'api_doc.get_package_data'|trans }}</a></li>
+  <li><a href="#get-statistics">{{ 'api_doc.get_statistics'|trans }}</a></li>
 </ul>
 
 
@@ -202,6 +203,26 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package].json
 }
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/monolog/monolog.json">https://{{ packagist_host }}/packages/monolog/monolog.json</a></code></p>
+
+</section>
+
+<section class="col-d-12">
+<h3 id="get-statistics">{{ 'api_doc.get_statistics'|trans }}</h3>
+
+<h4 id="get-package-by-name">{{ 'api_doc.get_statistics'|trans }}</h4>
+
+<p>This endpoint provides basic some statistics.</p>
+
+<pre>
+GET https://{{ packagist_host }}/statistics.json
+<code>
+{
+  "totals": {
+    "downloads": [numbers of download]
+  }
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/statistics.json">https://{{ packagist_host }}/statistics.json</a></code></p>
 
 </section>
 

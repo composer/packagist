@@ -16,7 +16,6 @@ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\LockHandler;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -54,12 +53,12 @@ class DumpPackagesCommand extends ContainerAwareCommand
         }
 
         // another dumper is still active
-        $lock = new LockHandler('packagist_package_dumper');
-        if (!$lock->lock()) {
+        $locker = $this->getContainer()->get('locker');
+        if (!$locker->lockCommand($this->getName())) {
             if ($verbose) {
-                $output->writeln('Aborting, another dumper is still active');
+                $output->writeln('Aborting, another task is running already');
             }
-            return;
+            return 0;
         }
 
         $doctrine = $this->getContainer()->get('doctrine');
@@ -85,9 +84,9 @@ class DumpPackagesCommand extends ContainerAwareCommand
         gc_enable();
 
         try {
-             $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
+            $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
         } finally {
-             $lock->release();
+            $locker->unlockCommand($this->getName());
         }
 
         return $result ? 0 : 1;
