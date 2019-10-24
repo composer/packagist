@@ -57,27 +57,34 @@
         "php-http/httplug-bundle": "^1.11",
         "php-http/guzzle6-adapter": "^1.1",
         "zendframework/zenddiagnostics": "^1.4",
-        "graze/dog-statsd": "^0.4.2"
+        "graze/dog-statsd": "^0.4.2",
+        "incenteev/composer-parameter-handler": "^2.1"
     },
     "require-dev": {
         "symfony/phpunit-bridge": "^4.2",
         "phpunit/phpunit": "^8.0"
     },
     "scripts": {
-        "post-install-cmd": [
+        "symfony-scripts": [
+            "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters",
             "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
             "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
             "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets"
         ],
+        "post-install-cmd": [
+            "@symfony-scripts"
+        ],
         "post-update-cmd": [
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets"
+            "@symfony-scripts"
         ]
     },
     "extra": {
         "symfony-app-dir": "app",
-        "symfony-web-dir": "web"
+        "symfony-web-dir": "web",
+        "symfony-assets-install": "relative",
+        "incenteev-parameters": {
+            "file": "app/config/parameters.yml"
+        }
     },
     "config": {
         "platform": {
