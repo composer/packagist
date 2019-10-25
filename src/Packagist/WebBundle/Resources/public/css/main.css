@@ -1625,6 +1625,15 @@ svg.chart {
   position: relative;
 }
 
+.two-factor-key {
+    max-width: 200px;
+    text-align: center;
+    overflow-wrap: break-word;
+}
+.two-factor-backup-code {
+    font-size: 3em;
+}
+
 
 [class^="icon-"]:before,
 [class*=" icon-"]:before {
@@ -1642,6 +1651,7 @@ svg.chart {
     speak: none;
 }
 
+.icon-check:before { content: '\2611'; } /* '☑' */
 .icon-tools:before { content: '\2692'; } /* '⚒' */
 .icon-cogs:before { content: '\26ef'; } /* '⛯' */
 .icon-mail:before { content: '\2709'; } /* '✉' */
@@ -1665,6 +1675,7 @@ svg.chart {
 .icon-chart:before { content: '📈'; } /* '\1f4c8' */
 .icon-megaphone:before { content: '📣'; } /* '\1f4e3' */
 .icon-newspaper:before { content: '📰'; } /* '\1f4f0' */
+.icon-mobile:before { content: '📱'; } /* '\1f4f1' */
 .icon-key:before { content: '🔑'; } /* '\1f511' */
 .icon-lock:before { content: '🔒'; } /* '\1f512' */
 .icon-lock-open:before { content: '🔓'; } /* '\1f513' */

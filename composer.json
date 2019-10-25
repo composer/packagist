@@ -40,6 +40,8 @@
         "composer/composer": "^1.8@dev",
         "friendsofsymfony/user-bundle": "^2.0",
         "hwi/oauth-bundle": "^0.6",
+        "scheb/two-factor-bundle": "^4.7",
+        "endroid/qr-code-bundle": "^3.3",
         "nelmio/security-bundle": "^2.4",
         "predis/predis": "^1.0",
         "snc/redis-bundle": "^2.0",

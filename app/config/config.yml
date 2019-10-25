@@ -135,6 +135,25 @@ hwi_oauth:
             options:
                 csrf: true
 
+scheb_two_factor:
+    security_tokens:
+        - Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken
+        - HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken
+
+    backup_codes:
+        enabled: true
+        manager: Packagist\WebBundle\Security\TwoFactorAuthManager
+
+    totp:
+        enabled: true
+        server_name: '%packagist_host%'
+        issuer: Packagist
+        window: 1
+
+    trusted_device:
+        enabled: true
+        lifetime: 2592000 # 30 days
+
 nelmio_cors:
     defaults:
         allow_origin: ['*']
@@ -162,3 +181,6 @@ httplug:
 
 sensio_framework_extra:
     router: { annotations: false }
+
+endroid_qr_code:
+    background_color: { r: 250, g: 250, b: 250 }

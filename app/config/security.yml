@@ -34,6 +34,10 @@ security:
                 failure_path:      /login
                 oauth_user_provider:
                     service: packagist.user_provider
+            two_factor:
+                auth_form_path: 2fa_login
+                check_path: 2fa_login_check
+                csrf_token_generator: security.csrf.token_manager
             switch_user:
                 provider: packagist
 
@@ -48,6 +52,10 @@ security:
         - { path: ^/login$, role: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/register, role: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/resetting, role: IS_AUTHENTICATED_ANONYMOUSLY }
+        # This makes the logout route available during two-factor authentication, allows the user to cancel
+        - { path: ^/logout, role: IS_AUTHENTICATED_ANONYMOUSLY }
+        # This ensures that the form can only be accessed when two-factor authentication is in progress
+        - { path: ^/2fa, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
         # Secured part of the site
         # This config requires being logged for the whole site and having the admin role for the admin part.
         # Change these rules to adapt them to your needs
@@ -60,6 +68,7 @@ security:
         ROLE_EDIT_PACKAGES: ~
         ROLE_ANTISPAM: ~
         ROLE_SPAMMER: ~
+        ROLE_DISABLE_2FA: ~
 
-        ROLE_ADMIN:       [ ROLE_USER, ROLE_UPDATE_PACKAGES, ROLE_EDIT_PACKAGES, ROLE_DELETE_PACKAGES, ROLE_ANTISPAM ]
+        ROLE_ADMIN:       [ ROLE_USER, ROLE_UPDATE_PACKAGES, ROLE_EDIT_PACKAGES, ROLE_DELETE_PACKAGES, ROLE_ANTISPAM, ROLE_DISABLE_2FA ]
         ROLE_SUPERADMIN:  [ ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH ]

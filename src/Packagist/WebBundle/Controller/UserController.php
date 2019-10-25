@@ -19,11 +19,15 @@ use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\User;
 use Packagist\WebBundle\Entity\VersionRepository;
+use Packagist\WebBundle\Form\Model\EnableTwoFactorRequest;
+use Packagist\WebBundle\Form\Type\EnableTwoFactorAuthType;
 use Packagist\WebBundle\Model\RedisAdapter;
+use Packagist\WebBundle\Security\TwoFactorAuthManager;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Pagerfanta;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -268,6 +272,110 @@ class UserController extends Controller
         $this->get('packagist.favorite_manager')->removeFavorite($user, $package);
 
         return new Response('{"status": "success"}', 204);
+    }
+
+    /**
+     * @Template()
+     * @Route("/users/{name}/2fa/", name="user_2fa_configure", methods={"GET"})
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     */
+    public function configureTwoFactorAuthAction(User $user)
+    {
+        if (!($this->isGranted('ROLE_DISABLE_2FA') || $user->getId() === $this->getUser()->getId())) {
+            throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
+        }
+
+        if ($user->getId() === $this->getUser()->getId()) {
+            $backupCode = $this->get('session')->remove('backup_code');
+        }
+
+        return array('user' => $user, 'backup_code' => $backupCode ?? null);
+    }
+
+    /**
+     * @Template()
+     * @Route("/users/{name}/2fa/enable", name="user_2fa_enable", methods={"GET", "POST"})
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     */
+    public function enableTwoFactorAuthAction(Request $req, User $user)
+    {
+        if ($user->getId() !== $this->getUser()->getId()) {
+            throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
+        }
+
+        $authenticator = $this->get("scheb_two_factor.security.totp_authenticator");
+
+        $enableRequest = new EnableTwoFactorRequest($authenticator->generateSecret());
+        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest);
+        $form->handleRequest($req);
+
+        // Temporarily store this code on the user, as we'll need it there to generate the
+        // QR code and to check the confirmation code.  We won't actually save this change
+        // until we've confirmed the code
+        $user->setTotpSecret($enableRequest->getSecret());
+
+        if ($form->isSubmitted()) {
+            // Validate the code using the secret that was submitted in the form
+            if (!$authenticator->checkCode($user, $enableRequest->getCode())) {
+                $form->get('code')->addError(new FormError('Invalid authenticator code'));
+            }
+
+            if ($form->isValid()) {
+                $authManager = $this->get(TwoFactorAuthManager::class);
+                $authManager->enableTwoFactorAuth($user, $enableRequest->getSecret());
+                $backupCode = $authManager->generateAndSaveNewBackupCode($user);
+
+                $this->addFlash('success', 'Two-factor authentication has been enabled.');
+                $this->get('session')->set('backup_code', $backupCode);
+
+                return $this->redirectToRoute('user_2fa_confirm', array('name' => $user->getUsername()));
+            }
+        }
+
+        return array('user' => $user, 'provisioningUri' => $authenticator->getQRContent($user), 'secret' => $enableRequest->getSecret(), 'form' => $form->createView());
+    }
+
+    /**
+     * @Template()
+     * @Route("/users/{name}/2fa/confirm", name="user_2fa_confirm", methods={"GET"})
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     */
+    public function confirmTwoFactorAuthAction(User $user)
+    {
+        if ($user->getId() !== $this->getUser()->getId()) {
+            throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
+        }
+
+        $backupCode = $this->get('session')->remove('backup_code');
+
+        if (empty($backupCode)) {
+            return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
+        }
+
+        return array('user' => $user, 'backup_code' => $backupCode);
+    }
+
+    /**
+     * @Template()
+     * @Route("/users/{name}/2fa/disable", name="user_2fa_disable", methods={"GET"})
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     */
+    public function disableTwoFactorAuthAction(Request $req, User $user)
+    {
+        if (!($this->isGranted('ROLE_DISABLE_2FA') || $user->getId() === $this->getUser()->getId())) {
+            throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
+        }
+
+        $token = $this->get('security.csrf.token_manager')->getToken('disable_2fa')->getValue();
+        if (hash_equals($token, $req->query->get('token', ''))) {
+            $this->get(TwoFactorAuthManager::class)->disableTwoFactorAuth($user, 'Manually disabled');
+
+            $this->addFlash('success', 'Two-factor authentication has been disabled.');
+
+            return $this->redirectToRoute('user_2fa_configure', array('name' => $user->getUsername()));
+        }
+
+        return array('user' => $user);
     }
 
     /**
