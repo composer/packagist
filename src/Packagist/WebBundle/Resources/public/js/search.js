@@ -133,7 +133,7 @@ search.addWidget(
         <div class="col-sm-3 col-lg-2">
             {{#meta}}
                 <p class="metadata">
-                    <span class="metadata-block"><i class="glyphicon glyphicon-arrow-down"></i> {{ meta.downloads_formatted }}</span>
+                    <span class="metadata-block"><i class="glyphicon glyphicon-download"></i> {{ meta.downloads_formatted }}</span>
                     <span class="metadata-block"><i class="glyphicon glyphicon-star"></i> {{ meta.favers_formatted }}</span>
                 </p>
             {{/meta}}
