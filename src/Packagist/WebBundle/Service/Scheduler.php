@@ -61,6 +61,11 @@ class Scheduler
         return $this->createJob('githubuser:migrate', ['id' => $userId, 'old_scope' => $oldScope, 'new_scope' => $newScope], $userId);
     }
 
+    public function scheduleSecurityAdvisory(string $source, \DateTimeInterface $executeAfter = null): Job
+    {
+        return $this->createJob('security:advisory', ['source' => $source], null, $executeAfter);
+    }
+
     private function getPendingUpdateJob(int $packageId, $updateEqualRefs = false, $deleteBefore = false)
     {
         $result = $this->doctrine->getManager()->getConnection()->fetchAssoc(

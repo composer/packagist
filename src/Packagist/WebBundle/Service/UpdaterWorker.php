@@ -2,6 +2,7 @@
 
 namespace Packagist\WebBundle\Service;
 
+use Packagist\WebBundle\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Packagist\WebBundle\Service\Scheduler;
 use Psr\Log\LoggerInterface;
 use Composer\Package\Loader\ArrayLoader;
@@ -243,6 +244,10 @@ class UpdaterWorker
             throw $e;
         } finally {
             $this->locker->unlockPackageUpdate($id);
+        }
+
+        if ($packageName === FriendsOfPhpSecurityAdvisoriesSource::SECURITY_PACKAGE) {
+            $this->scheduler->scheduleSecurityAdvisory(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
         }
 
         return [
