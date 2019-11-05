@@ -6,7 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Packagist\WebBundle\SecurityAdvisory\RemoteSecurityAdvisory;
 
 /**
- * @ORM\Entity()
+ * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\SecurityAdvisoryRepository")
  * @ORM\Table(
  *     name="security_advisory",
  *     uniqueConstraints={@ORM\UniqueConstraint(name="source_packagename_idx", columns={"source","packageName"})},

@@ -10,6 +10,10 @@
                     {% endif -%}
                 </a>
 
+                {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
+                    <i class="glyphicon glyphicon-alert advisory-alert" title="Version has security advisories"></i>
+                {% endif %}
+
                 {% if deleteVersionCsrfToken is defined and deleteVersionCsrfToken is not empty %}
                 <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="DELETE">
                     <input type="hidden" name="_token" value="{{ deleteVersionCsrfToken }}" />

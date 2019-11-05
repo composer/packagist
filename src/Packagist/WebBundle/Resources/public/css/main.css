@@ -1100,6 +1100,10 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .package-aside i:hover {
   color: #a5aab0;
 }
+.package .package-aside i.advisory-alert {
+    color: #ff4533;
+    margin-left: -20px;
+}
 
 .package .details-toggler.open, .package .details-toggler.open a, .package .details-toggler.open i {
   background: #f28d1a;
