@@ -319,10 +319,10 @@ class PackageController extends Controller
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
         $count = $repo->getSuspectPackageCount();
-        $packages = $repo->getSuspectPackages(($page - 1) * 15, 15);
+        $packages = $repo->getSuspectPackages(($page - 1) * 50, 50);
 
         $paginator = new Pagerfanta(new FixedAdapter($count, $packages));
-        $paginator->setMaxPerPage(15);
+        $paginator->setMaxPerPage(50);
         $paginator->setCurrentPage($page, false, true);
 
         $data['packages'] = $paginator;
