@@ -868,7 +868,7 @@ class SymlinkDumper
         file_put_contents($path, $contents);
 
         if (is_array($this->writeLog)) {
-            $this->writeLog[$path] = array($contents, $mtime);
+            $this->writeLog[$path] = array($contents, null);
         }
     }
 
