@@ -240,7 +240,7 @@ class UserController extends Controller
      */
     public function postFavoriteAction(Request $req, User $user)
     {
-        if ($user->getId() !== $this->getUser()->getId()) {
+        if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You can only change your own favorites');
         }
 
@@ -265,7 +265,7 @@ class UserController extends Controller
      */
     public function deleteFavoriteAction(User $user, Package $package)
     {
-        if ($user->getId() !== $this->getUser()->getId()) {
+        if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You can only change your own favorites');
         }
 
@@ -281,7 +281,7 @@ class UserController extends Controller
      */
     public function configureTwoFactorAuthAction(User $user)
     {
-        if (!($this->isGranted('ROLE_DISABLE_2FA') || $user->getId() === $this->getUser()->getId())) {
+        if (!($this->isGranted('ROLE_DISABLE_2FA') || ($this->getUser() && $user->getId() === $this->getUser()->getId()))) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
@@ -299,7 +299,7 @@ class UserController extends Controller
      */
     public function enableTwoFactorAuthAction(Request $req, User $user)
     {
-        if ($user->getId() !== $this->getUser()->getId()) {
+        if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
@@ -342,7 +342,7 @@ class UserController extends Controller
      */
     public function confirmTwoFactorAuthAction(User $user)
     {
-        if ($user->getId() !== $this->getUser()->getId()) {
+        if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
@@ -362,7 +362,7 @@ class UserController extends Controller
      */
     public function disableTwoFactorAuthAction(Request $req, User $user)
     {
-        if (!($this->isGranted('ROLE_DISABLE_2FA') || $user->getId() === $this->getUser()->getId())) {
+        if (!($this->isGranted('ROLE_DISABLE_2FA') || ($this->getUser() && $user->getId() === $this->getUser()->getId()))) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
