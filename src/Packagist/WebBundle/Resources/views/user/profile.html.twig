@@ -20,6 +20,12 @@
         {%- if is_granted('ROLE_ADMIN') %}
             <a href="mailto:{{ user.email }}">{{ user.email }}</a>
         {%- endif %}
+        {%- if deleteForm is defined and (is_granted('ROLE_ADMIN') or isActualUser) %}
+            <form class="delete action" action="{{ path('user_delete', {name: user.username}) }}" method="POST">
+                {{ form_widget(deleteForm._token) }}
+                <input class="btn btn-danger" type="submit" value="Delete Account Permanently" onclick="return confirm('Are you sure? There is no way back..');" />
+            </form>
+        {%- endif %}
         {%- if is_granted('ROLE_ANTISPAM') %}
             <form class="delete action" action="{{ path('mark_spammer', {name: user.username}) }}" method="POST">
                 {{ form_widget(spammerForm._token) }}

@@ -45,5 +45,12 @@
             <h3 class="font-normal">{{ 'packages.yours'|trans }}</h3>
         {% endblock %}
     {% endembed %}
+
+    {%- if deleteForm is defined %}
+        <form class="delete action" action="{{ path('user_delete', {name: user.username}) }}" method="POST">
+            {{ form_widget(deleteForm._token) }}
+            <input class="btn btn-danger" type="submit" value="Delete Account Permanently" onclick="return confirm('Are you sure? There is no way back..');" />
+        </form>
+    {%- endif %}
 </section>
 {% endblock %}

@@ -152,14 +152,20 @@ class UserController extends Controller
         $packages = $this->getUserPackages($req, $user);
         $lastGithubSync = $this->getDoctrine()->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
 
+        $data = array(
+            'packages' => $packages,
+            'meta' => $this->getPackagesMetadata($packages),
+            'user' => $user,
+            'githubSync' => $lastGithubSync,
+        );
+
+        if (!count($packages)) {
+            $data['deleteForm'] = $this->createFormBuilder(array())->getForm()->createView();
+        }
+
         return $this->container->get('templating')->renderResponse(
             'FOSUserBundle:Profile:show.html.twig',
-            array(
-                'packages' => $packages,
-                'meta' => $this->getPackagesMetadata($packages),
-                'user' => $user,
-                'githubSync' => $lastGithubSync,
-            )
+            $data
         );
     }
 
@@ -180,6 +186,9 @@ class UserController extends Controller
 
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['spammerForm'] = $this->createFormBuilder(array())->getForm()->createView();
+        }
+        if (!count($packages) && ($this->isGranted('ROLE_ADMIN') || ($this->getUser() && $this->getUser()->getId() === $user->getId()))) {
+            $data['deleteForm'] = $this->createFormBuilder(array())->getForm()->createView();
         }
 
         return $data;
@@ -272,6 +281,36 @@ class UserController extends Controller
         $this->get('packagist.favorite_manager')->removeFavorite($user, $package);
 
         return new Response('{"status": "success"}', 204);
+    }
+
+    /**
+     * @Route("/users/{name}/delete", name="user_delete", defaults={"_format" = "json"}, methods={"POST"})
+     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     */
+    public function deleteUserAction(User $user, Request $req)
+    {
+        if (!($this->isGranted('ROLE_ADMIN') || ($this->getUser() && $user->getId() === $this->getUser()->getId()))) {
+            throw new AccessDeniedException('You cannot delete this user');
+        }
+
+        if (count($user->getPackages()) > 0) {
+            throw new AccessDeniedException('The user has packages so it can not be deleted');
+        }
+
+        $form = $this->createFormBuilder(array())->getForm();
+
+        $form->submit($req->request->get('form'));
+        if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $em->remove($user);
+            $em->flush();
+
+            $this->container->get('security.token_storage')->setToken(null);
+
+            return $this->redirectToRoute('home');
+        }
+
+        return $this->redirectToRoute('user_profile', ['name' => $user->getName()]);
     }
 
     /**
