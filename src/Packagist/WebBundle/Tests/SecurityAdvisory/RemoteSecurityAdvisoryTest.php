@@ -28,7 +28,5 @@ class RemoteSecurityAdvisoryTest extends TestCase
         $this->assertNull($advisory->getCve());
         $this->assertSame('<1.2', $advisory->getAffectedVersions());
         $this->assertSame('3f/pygmentize', $advisory->getPackageName());
-
-
     }
 }

@@ -200,7 +200,7 @@
                             {% if securityAdvisories is defined %}
                                 <p>
                                     <span>
-                                        <a href="{{ path('view_package_security_advisories', {name: package.name}) }}" rel="nofollow">Security Advisories</a>:
+                                        <a href="{{ path('view_package_advisories', {name: package.name}) }}" rel="nofollow">Security</a>:
                                     </span>
                                     {{ securityAdvisories|number_format(0, '.', '&#8201;')|raw }}
                                 </p>

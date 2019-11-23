@@ -1129,8 +1129,8 @@ class PackageController extends Controller
 
     /**
      * @Route(
-     *      "/packages/{name}/security_advisories",
-     *      name="view_package_security_advisories",
+     *      "/packages/{name}/advisories",
+     *      name="view_package_advisories",
      *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"}
      * )
      */

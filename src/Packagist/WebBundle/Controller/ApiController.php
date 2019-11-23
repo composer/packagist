@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\SecurityAdvisory;
 use Packagist\WebBundle\Entity\User;
 use Packagist\WebBundle\Util\UserAgentParser;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -244,6 +245,32 @@ class ApiController extends Controller
         }
 
         return new JsonResponse(array('status' => 'success'), 201);
+    }
+
+    /**
+     * @Route(
+     *     "/api/security-advisories/",
+     *     name="api_security_adivosries",
+     *     defaults={"_format" = "json"},
+     *     methods={"GET", "POST"}
+     * )
+     */
+    public function securityAdvisoryAction(Request $request)
+    {
+        $packageNames = array_values(array_filter(array_map(function (string $packageName) {
+            return trim($packageName);
+        }, explode(',', $request->get('packages')))));
+        $updatedSince = $request->query->get('updatedSince', 0);
+
+        /** @var array[] $advisories */
+        $advisories = $this->getDoctrine()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
+
+        $response = [];
+        foreach ($advisories as $advisory) {
+            $response[$advisory['packageName']][] = $advisory;
+        }
+
+        return new JsonResponse($response, 200);
     }
 
     /**

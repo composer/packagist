@@ -17,7 +17,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
 {
-    public const SOURCE_NAME = self::SECURITY_PACKAGE;
+    public const SOURCE_NAME = 'FriendsOfPHP/security-advisories';
     public const SECURITY_PACKAGE = 'sensiolabs/security-advisories';
 
     /** @var RegistryInterface */
@@ -50,7 +50,7 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
             $rfs = Factory::createRemoteFilesystem($io, $config, []);
             $downloader = new ZipDownloader($io, $config, null, null, null, $rfs);
             $downloader->setOutputProgress(false);
-            $localDir = sys_get_temp_dir() . '/' . uniqid('friends-of-php-advisories', true);
+            $localDir = sys_get_temp_dir() . '/' . uniqid(self::SOURCE_NAME, true);
             $downloader->download($composerPackage, $localDir);
 
             $finder = new Finder();
@@ -62,7 +62,7 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
                 $advisories[] = RemoteSecurityAdvisory::createFromFriendsOfPhp($file->getRelativePathname(), $content);
             }
         } catch (TransportException $e) {
-            $this->logger->error('Failed to download "sensiolabs/security-advisories" zip file', [
+            $this->logger->error(sprintf('Failed to download "%s" zip file', self::SECURITY_PACKAGE), [
                 'exception' => $e,
             ]);
         } finally {
