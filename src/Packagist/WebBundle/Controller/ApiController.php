@@ -255,12 +255,12 @@ class ApiController extends Controller
      *     methods={"GET", "POST"}
      * )
      */
-    public function securityAdvisoryAction(Request $request)
+    public function securityAdvisoryAction(Request $request): JsonResponse
     {
         $packageNames = array_values(array_filter(array_map(function (string $packageName) {
             return trim($packageName);
         }, explode(',', $request->get('packages')))));
-        $updatedSince = $request->query->get('updatedSince', 0);
+        $updatedSince = $request->query->getInt('updatedSince', 0);
 
         /** @var array[] $advisories */
         $advisories = $this->getDoctrine()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);

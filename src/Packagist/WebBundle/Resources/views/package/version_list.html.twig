@@ -11,7 +11,9 @@
                 </a>
 
                 {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
-                    <i class="glyphicon glyphicon-alert advisory-alert" title="Version has security advisories"></i>
+                    <a class="advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
+                        <i class="glyphicon glyphicon-alert " title="Version has security advisories"></i>
+                    </a>
                 {% endif %}
 
                 {% if deleteVersionCsrfToken is defined and deleteVersionCsrfToken is not empty %}

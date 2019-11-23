@@ -23,7 +23,7 @@
             {% if securityAdvisories|length %}
                 <ul class="packages list-unstyled">
                     {% for advisory in securityAdvisories %}
-                        <li class="row">
+                        <li class="row {% if advisory.id in matchingAdvisories %}selected{% endif %}">
                             <div class="col-xs-12 package-item">
                                 <div class="row">
                                     <div class="col-sm-8 col-lg-9">

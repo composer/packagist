@@ -1134,22 +1134,34 @@ class PackageController extends Controller
      *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"}
      * )
      */
-    public function securityAdvisoriesAction(Request $req, $name)
+    public function securityAdvisoriesAction(Request $request, $name)
     {
-        $page = max(1, (int) $req->query->get('page', 1));
-
         /** @var SecurityAdvisoryRepository $repo */
         $repo = $this->getDoctrine()->getRepository(SecurityAdvisory::class);
         $securityAdvisories = $repo->getPackageSecurityAdvisories($name);
         $advisoryCount = count($securityAdvisories);
 
         $paginator = new Pagerfanta(new FixedAdapter($advisoryCount, $securityAdvisories));
-        $paginator->setMaxPerPage(100);
-        $paginator->setCurrentPage($page, false, true);
-
         $data['securityAdvisories'] = $paginator;
         $data['count'] = $advisoryCount;
         $data['name'] = $name;
+
+        $data['matchingAdvisories'] = [];
+        if ($versionId = $request->query->getInt('version')) {
+            $version = $this->getDoctrine()->getRepository(Version::class)->findOneBy([
+                'name' => $name,
+                'id' => $versionId,
+            ]);
+            if ($version) {
+                foreach ($securityAdvisories as $advisory) {
+                    $versionParser = new VersionParser();
+                    $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
+                    if (!isset($data['hasVersionSecurityAdvisories'][$version->getId()]) && $affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
+                        $data['matchingAdvisories'] = $advisory['id'];
+                    }
+                }
+            }
+        }
 
         return $this->render('PackagistWebBundle:package:security_advisories.html.twig', $data);
     }

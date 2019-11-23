@@ -1100,9 +1100,17 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .package-aside i:hover {
   color: #a5aab0;
 }
-.package .package-aside i.advisory-alert {
-    color: #ff4533;
+.package .package-aside a.advisory-alert {
     margin-left: -20px;
+}
+.package .package-aside a.advisory-alert:hover, .package .package-aside a.advisory-alert:active {
+    text-decoration: none;
+}
+.package .package-aside a.advisory-alert i {
+    color: #ff4533;
+}
+.package .package-aside a.advisory-alert:hover i {
+    color: #cd3729;
 }
 
 .package .details-toggler.open, .package .details-toggler.open a, .package .details-toggler.open i {
