@@ -125,6 +125,13 @@
                                 </form>
                             {% endif %}
                         </div>
+                    {% elseif app.user and not package.wasUpdatedInTheLast24Hours() %}
+                        <div class="btn-group btn-group-xs">
+                                <form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
+                                    <input type="hidden" name="update" value="1" />
+                                    <input class="btn btn-success" type="submit" value="Update" />
+                                </form>
+                        </div>
                     {% endif %}
                 </div>
 

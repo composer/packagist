@@ -659,7 +659,8 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
         }
 
-        if ($package->getMaintainers()->contains($user) || $this->isGranted('ROLE_UPDATE_PACKAGES')) {
+        $canUpdatePackage = $package->getMaintainers()->contains($user) || $this->isGranted('ROLE_UPDATE_PACKAGES');
+        if ($canUpdatePackage || !$package->wasUpdatedInTheLast24Hours()) {
             if (null !== $autoUpdated) {
                 $package->setAutoUpdated($autoUpdated ? Package::AUTO_MANUAL_HOOK : 0);
                 $doctrine->getManager()->flush();
@@ -672,6 +673,10 @@ class PackageController extends Controller
             }
 
             return new JsonResponse(['status' => 'success'], 202);
+        }
+
+        if (!$canUpdatePackage && $package->wasUpdatedInTheLast24Hours()) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours',], 404);
         }
 
         return new JsonResponse(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',), 404);
