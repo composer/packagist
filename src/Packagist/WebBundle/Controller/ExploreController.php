@@ -125,11 +125,13 @@ class ExploreController extends Controller
             /** @var Package $package */
             foreach ($packages as $package) {
                 $url = $this->generateUrl('view_package', array('name' => $package->getName()), UrlGeneratorInterface::ABSOLUTE_URL);
+                $apiUrl = $this->generateUrl('view_package', array('name' => $package->getName(), '_format' => 'json'), UrlGeneratorInterface::ABSOLUTE_URL);
 
                 $result['packages'][] = array(
                     'name' => $package->getName(),
                     'description' => $package->getDescription() ?: '',
                     'url' => $url,
+                    'api_url' => $apiUrl,
                     'downloads' => $data['meta']['downloads'][$package->getId()],
                     'favers' => $data['meta']['favers'][$package->getId()],
                 );
