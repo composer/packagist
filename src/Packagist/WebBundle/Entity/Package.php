@@ -78,6 +78,11 @@ class Package
     private $readme;
 
     /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $funding;
+
+    /**
      * @ORM\Column(type="integer", nullable=true, name="github_stars")
      */
     private $gitHubStars;
@@ -493,6 +498,22 @@ class Package
     public function getReadme()
     {
         return $this->readme;
+    }
+
+    /**
+     * @param array|null $funding
+     */
+    public function setFunding($funding)
+    {
+        $this->funding = $funding ? json_encode($funding) : null;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getFunding()
+    {
+        return json_decode($this->funding, true);
     }
 
     /**

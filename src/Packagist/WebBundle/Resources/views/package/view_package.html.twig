@@ -172,6 +172,14 @@
                             {% if version and version.support.docs is defined %}
                                 <p><a rel="nofollow noopener external noindex" href="{{ version.support.docs }}">Documentation</a></p>
                             {% endif %}
+                            {% if package.funding != null and (not package.isSuspect() or hasActions) %}
+                                <p>
+                                    Fund this package on
+                                    {% for fundingOption in package.funding %}
+                                        <a rel="nofollow noopener external noindex" href="{{ fundingOption.url }}">{{ fundingOption.type }}</a>
+                                    {% endfor %}
+                                </p>
+                            {% endif %}
                         </div>
 
                         <div class="facts col-xs-12 col-sm-6 col-md-12">

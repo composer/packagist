@@ -31,6 +31,8 @@ use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Entity\SuggestLink;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Doctrine\DBAL\Connection;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -544,6 +546,22 @@ class Updater
             $package->setReadme($this->prepareReadme($readme, true, $owner, $repo));
         }
 
+        try {
+            $opts = ['http' => ['header' => ['Accept: application/vnd.github.v3.raw']]];
+            $fundingRaw = $rfs->getContents('github.com', $baseApiUrl.'/contents/.github/FUNDING.yml', false, $opts);
+            $funding = Yaml::parse($fundingRaw);
+
+            if (!empty($funding)) {
+                $package->setFunding($this->prepareFunding($funding, true, $owner, $repo));
+            }
+        } catch (\Exception $e) {
+            if ((!$e instanceof \Composer\Downloader\TransportException || $e->getCode() !== 404) && (!$e instanceof ParseException)) {
+                return;
+            }
+            // 404s just mean no readme present so we proceed with the rest
+            // for now we also ignore yaml parse exceptions, but should tell users somehow in the long run
+        }
+
         if (!empty($repoData['language'])) {
             $package->setLanguage($repoData['language']);
         }
@@ -559,6 +577,108 @@ class Updater
         if (isset($repoData['open_issues_count'])) {
             $package->setGitHubOpenIssues($repoData['open_issues_count']);
         }
+    }
+
+    private function prepareFunding($fundingFile)
+    {
+        $funding = array();
+        foreach ($fundingFile as $type => $username) {
+            switch ($type) {
+                case 'community_bridge':
+                    $funding[] = array(
+                        'type' => $type,
+                        'url' => 'https://funding.communitybridge.org/projects/'.preg_replace('#\W+#', '', (string) $username),
+                    );
+                    break;
+                case 'github':
+                    if (!is_array($username)) {
+                        $username = array($username);
+                    }
+                    foreach ($username as $user) {
+                        $funding[] = array(
+                            'type' => $type,
+                            'url' => 'https://github.com/sponsors/'.preg_replace('#\W+#', '', (string) $username),
+                        );
+                    }
+                    break;
+                case 'issuehunt':
+                    $funding[] = array(
+                        'type' => $type,
+                        'url' => 'https://issuehunt.io/u/'.preg_replace('#\W+#', '', (string) $username),
+                    );
+                    break;
+                case 'ko_fi':
+                    $funding[] = array(
+                        'type' => $type,
+                        'url' => 'https://ko-fi.com/'.preg_replace('#\W+#', '', (string) $username),
+                    );
+                    break;
+                case 'liberapay':
+                    $funding[] = array(
+                        'type'  => $type,
+                        'url' => 'https://liberapay.com/'.preg_replace('#\W+#', '', (string) $username),
+                    );
+                    break;
+                case 'open_collective':
+                    $funding[] = array(
+                        'type' => $type,
+                        'url' => 'https://opencollective.com/'.preg_replace('#\W+#', '', (string) $username),
+                    );
+                    break;
+                case 'otechie':
+                    $funding[] = array(
+                        'type' => $type,
+                        'url' => 'https://otechie.com/'.preg_replace('#\W+#', '', (string) $username),
+                    );
+                    break;
+                case 'patreon':
+                    $funding[] = array(
+                        'type' => $type,
+                        'url' => 'https://patreon.com/'.preg_replace('#\W+#', '', (string) $username),
+                    );
+                    break;
+                case 'tidelift':
+                    $funding[] = array(
+                        'type' => $type,
+                        'url' => 'https://tidelift.com/subscription/pkg/'.str_replace('/', '-', preg_replace('#[\W/]+#', '', (string) $username)),
+                    );
+                    break;
+                case 'custom':
+                    if (!array($username)) {
+                        $username = array($username);
+                    }
+
+                    foreach ($username as $url) {
+                        $funding[] = array(
+                            'type' => $type,
+                            'url' => $this->filterUrl($url),
+                        );
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        return $funding;
+    }
+
+    private function filterUrl($value, array $schemes = array('http', 'https'))
+    {
+        if ($value === '') {
+            return true;
+        }
+
+        $bits = parse_url($value);
+        if (empty($bits['scheme']) || empty($bits['host'])) {
+            return false;
+        }
+
+        if (!in_array($bits['scheme'], $schemes, true)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
