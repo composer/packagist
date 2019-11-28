@@ -642,7 +642,7 @@ class Version
      */
     public function getFunding()
     {
-        return json_decode($this->funding, true);
+        return $this->funding ? json_decode($this->funding, true) : null;
     }
 
     /**
