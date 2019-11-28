@@ -180,6 +180,11 @@ class Version
     private $support;
 
     /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $funding;
+
+    /**
      * @ORM\Column(name="authors", type="json", nullable=true)
      */
     private $authorJson;
@@ -265,6 +270,9 @@ class Version
         if ($serializeForApi && $this->getSupport()) {
             $data['support'] = $this->getSupport();
         }
+        if ($serializeForApi && $this->getFunding()) {
+            $data['funding'] = $this->getFunding();
+        }
         if ($this->getReleasedAt()) {
             $data['time'] = $this->getReleasedAt()->format('Y-m-d\TH:i:sP');
         }
@@ -321,6 +329,7 @@ class Version
             $array['support'] = $this->getSupport();
             ksort($array['support']);
         }
+        // TODO do we need to do something for funding here? sort by type/url?
 
         return $array;
     }
@@ -614,6 +623,26 @@ class Version
     public function getSupport()
     {
         return json_decode($this->support, true);
+    }
+
+    /**
+     * Set Funding
+     *
+     * @param array $funding
+     */
+    public function setFunding($funding)
+    {
+        $this->funding = $funding ? json_encode($funding) : null;
+    }
+
+    /**
+     * Get funding
+     *
+     * @return array|null
+     */
+    public function getFunding()
+    {
+        return json_decode($this->funding, true);
     }
 
     /**
