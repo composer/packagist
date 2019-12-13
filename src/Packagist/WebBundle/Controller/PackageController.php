@@ -322,10 +322,10 @@ class PackageController extends Controller
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
         $count = $repo->getSuspectPackageCount();
-        $packages = $repo->getSuspectPackages(($page - 1) * 15, 15);
+        $packages = $repo->getSuspectPackages(($page - 1) * 50, 50);
 
         $paginator = new Pagerfanta(new FixedAdapter($count, $packages));
-        $paginator->setMaxPerPage(15);
+        $paginator->setMaxPerPage(50);
         $paginator->setCurrentPage($page, false, true);
 
         $data['packages'] = $paginator;
@@ -677,7 +677,14 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
         }
 
-        if ($package->getMaintainers()->contains($user) || $this->isGranted('ROLE_UPDATE_PACKAGES')) {
+        $canUpdatePackage = $package->getMaintainers()->contains($user) || $this->isGranted('ROLE_UPDATE_PACKAGES');
+        if ($canUpdatePackage || !$package->wasUpdatedInTheLast24Hours()) {
+            // do not let non-maintainers execute update with those flags
+            if (!$canUpdatePackage) {
+                $autoUpdated = null;
+                $updateEqualRefs = false;
+            }
+
             if (null !== $autoUpdated) {
                 $package->setAutoUpdated($autoUpdated ? Package::AUTO_MANUAL_HOOK : 0);
                 $doctrine->getManager()->flush();
@@ -690,6 +697,10 @@ class PackageController extends Controller
             }
 
             return new JsonResponse(['status' => 'success'], 202);
+        }
+
+        if (!$canUpdatePackage && $package->wasUpdatedInTheLast24Hours()) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours',], 404);
         }
 
         return new JsonResponse(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',), 404);

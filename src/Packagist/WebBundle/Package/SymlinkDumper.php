@@ -306,7 +306,7 @@ class SymlinkDumper
 
                     // store affected files to clean up properly in the next update
                     $this->fs->mkdir(dirname($buildDir.'/'.$name));
-                    $this->writeFile($buildDir.'/'.$name.'.files', json_encode(array_keys($affectedFiles)));
+                    $this->writeFileNonAtomic($buildDir.'/'.$name.'.files', json_encode(array_keys($affectedFiles)));
 
                     $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
                 }
@@ -613,14 +613,6 @@ class SymlinkDumper
             ksort($this->rootFile['packages'][$package]);
         }
 
-        if (file_exists($file)) {
-            $timedFile = $file.'-'.time();
-            rename($file, $timedFile);
-            if (file_exists($file.'.gz')) {
-                rename($file.'.gz', $timedFile.'.gz');
-            }
-        }
-
         $json = json_encode($this->rootFile, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
         $time = time();
 
@@ -860,13 +852,23 @@ class SymlinkDumper
 
     private function writeFile($path, $contents, $mtime = null)
     {
-        file_put_contents($path, $contents);
+        file_put_contents($path.'.tmp', $contents);
         if ($mtime !== null) {
-            touch($path, $mtime);
+            touch($path.'.tmp', $mtime);
         }
+        rename($path.'.tmp', $path);
 
         if (is_array($this->writeLog)) {
             $this->writeLog[$path] = array($contents, $mtime);
+        }
+    }
+
+    private function writeFileNonAtomic($path, $contents)
+    {
+        file_put_contents($path, $contents);
+
+        if (is_array($this->writeLog)) {
+            $this->writeLog[$path] = array($contents, null);
         }
     }
 

@@ -90,6 +90,10 @@ strong {
     font-weight: 600;
 }
 
+.no-padding {
+    padding: 0;
+}
+
 .navbar-wrapper {
     left: 0;
     right: 0;
@@ -938,6 +942,16 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     margin-bottom: -1px !important;
     position: relative;
 }
+.package .force-update-trigger {
+    cursor: pointer;
+}
+.package .force-update-trigger.loading:after {
+    content: "";
+    background-position: 7px center;
+    background-image: url("../img/loader-white.gif");
+    background-repeat: no-repeat;
+    padding-left: 30px;
+}
 .package .action input.loading, .package .action input.loading:hover, .package .action input.loading:active {
   background-position: 10px center;
   background-image: url("../img/loader.gif");
@@ -1121,6 +1135,19 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .package-aside.versions-wrapper, .package .version-details {
   margin-top: 20px;
 }
+.package .last-update {
+    padding: 15px;
+}
+.package .last-update p, .package .last-update a {
+    font-size: 75%;
+}
+.package .last-update .auto-update-success {
+    color: #69AD21;
+}
+.package .last-update .auto-update-alert {
+    color: #cd3729;
+}
+
 .package .version-details .title {
   border-top: 1px solid #f28d1a;
   padding-top: 10px;
