@@ -20,16 +20,8 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             WHERE s.packageName = :name
             ORDER BY s.id DESC';
 
-        $stmt = $this->getEntityManager()->getConnection()
-            ->executeQuery(
-                $sql,
-                ['name' => $name],
-                []
-            );
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
-
-        return $result;
+        return $this->getEntityManager()->getConnection()
+            ->fetchAll($sql, ['name' => $name]);
     }
 
     public function searchSecurityAdvisories(array $packageNames, int $updatedSince): array
@@ -40,18 +32,14 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             (count($packageNames) > 0 ? ' AND s.packageName IN (:packageNames)' : '')
             .' ORDER BY s.id DESC';
 
-        $stmt = $this->getEntityManager()->getConnection()
-            ->executeQuery(
+        return $this->getEntityManager()->getConnection()
+            ->fetchAll(
                 $sql,
                 [
                     'packageNames' => $packageNames,
-                    'updatedSince' => (new \DateTime('@' . $updatedSince))->format('Y-m-d H:i:s'),
+                    'updatedSince' => date('Y-m-d H:i:s', $updatedSince),
                 ],
                 ['packageNames' => Connection::PARAM_STR_ARRAY]
             );
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
-
-        return $result;
     }
 }
