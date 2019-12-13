@@ -661,6 +661,12 @@ class PackageController extends Controller
 
         $canUpdatePackage = $package->getMaintainers()->contains($user) || $this->isGranted('ROLE_UPDATE_PACKAGES');
         if ($canUpdatePackage || !$package->wasUpdatedInTheLast24Hours()) {
+            // do not let non-maintainers execute update with those flags
+            if (!$canUpdatePackage) {
+                $autoUpdated = null;
+                $updateEqualRefs = false;
+            }
+
             if (null !== $autoUpdated) {
                 $package->setAutoUpdated($autoUpdated ? Package::AUTO_MANUAL_HOOK : 0);
                 $doctrine->getManager()->flush();

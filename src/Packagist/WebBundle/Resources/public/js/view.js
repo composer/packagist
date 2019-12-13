@@ -69,7 +69,7 @@
     }
 
     function forceUpdatePackage(e, updateAll) {
-        var submit = $('input[type=submit]', '.package .force-update'), data;
+        var submit = $('input[type=submit], .force-update-trigger', '.package .force-update'), data;
         var showOutput = e && e.shiftKey;
         if (e) {
             e.preventDefault();
