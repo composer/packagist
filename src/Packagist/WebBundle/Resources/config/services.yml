@@ -236,7 +236,7 @@ services:
             - "@locker"
             - "@logger"
             - "@doctrine"
-            - 'sensiolabs/security-advisories': "@Packagist\\WebBundle\\SecurityAdvisory\\FriendsOfPhpSecurityAdvisoriesSource"
+            - 'FriendsOfPHP/security-advisories': "@Packagist\\WebBundle\\SecurityAdvisory\\FriendsOfPhpSecurityAdvisoriesSource"
 
 parameters:
     security.exception_listener.class: Packagist\WebBundle\Security\ExceptionListener
