@@ -1152,8 +1152,8 @@ class PackageController extends Controller
         $securityAdvisories = $repo->getPackageSecurityAdvisories($name);
         $advisoryCount = count($securityAdvisories);
 
-        $paginator = new Pagerfanta(new FixedAdapter($advisoryCount, $securityAdvisories));
-        $data['securityAdvisories'] = $paginator;
+        $data = [];
+        $data['securityAdvisories'] = $securityAdvisories;
         $data['count'] = $advisoryCount;
         $data['name'] = $name;
 
@@ -1164,11 +1164,11 @@ class PackageController extends Controller
                 'id' => $versionId,
             ]);
             if ($version) {
+                $versionParser = new VersionParser();
                 foreach ($securityAdvisories as $advisory) {
-                    $versionParser = new VersionParser();
                     $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
-                    if (!isset($data['hasVersionSecurityAdvisories'][$version->getId()]) && $affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
-                        $data['matchingAdvisories'] = $advisory['id'];
+                    if ($affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
+                        $data['matchingAdvisories'][] = $advisory['id'];
                     }
                 }
             }
