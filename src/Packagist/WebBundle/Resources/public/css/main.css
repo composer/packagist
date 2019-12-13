@@ -1132,7 +1132,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .last-update .auto-update-success {
     color: #69AD21;
 }
-.package .last-update .auto-update-alert {
+.package .last-update .auto-update-danger {
     color: #cd3729;
 }
 

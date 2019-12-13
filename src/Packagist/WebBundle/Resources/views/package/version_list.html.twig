@@ -27,7 +27,7 @@
 
     {% if showUpdated is defined and showUpdated and package.getUpdatedAt() %}
         <div class="last-update">
-            {% if ("github.com" in package.repository and package.getAutoUpdated() == 1) or not package.isAutoUpdated() %}
+            {% if not package.isAutoUpdated() %}
                 <p class="auto-update-danger">This package is <strong>not</strong> auto-updated.</p>
             {% else %}
                 <p class="auto-update-success">This package is auto-updated.</p>
