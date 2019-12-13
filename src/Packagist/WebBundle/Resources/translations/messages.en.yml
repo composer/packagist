@@ -64,6 +64,8 @@ packages:
     suggesters: suggesters
     suggesters_title: Suggesters Packages
     from: "Packages from %vendor%"
+    security_advisory_title: Security Advisories
+    security_advisories: Security Advisories
 
 browse:
     packages: Packages

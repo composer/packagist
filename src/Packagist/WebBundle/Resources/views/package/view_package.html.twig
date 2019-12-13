@@ -194,6 +194,14 @@
                                     {{ suggesters|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
+                            {% if securityAdvisories is defined %}
+                                <p>
+                                    <span>
+                                        <a href="{{ path('view_package_advisories', {name: package.name}) }}" rel="nofollow">Security</a>:
+                                    </span>
+                                    {{ securityAdvisories|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
                             {% if package.gitHubStars is not null %}
                                 <p>
                                     <span>
@@ -283,7 +291,15 @@
                             {% include 'PackagistWebBundle:package:version_details.html.twig' with {version: expandedVersion} %}
                         {% endif %}
                     </div>
-                    {% include 'PackagistWebBundle:package:version_list.html.twig' with {versions: versions, expandedId: expandedVersion.id, deleteVersionCsrfToken: deleteVersionCsrfToken|default(null), package: package, showUpdated: true, showUpdateButton: not hasActions and app.user and not package.wasUpdatedInTheLast24Hours()} %}
+                    {% include 'PackagistWebBundle:package:version_list.html.twig' with {
+                        versions: versions,
+                        expandedId: expandedVersion.id,
+                        deleteVersionCsrfToken: deleteVersionCsrfToken|default(null),
+                        package: package,
+                        showUpdated: true,
+                        showUpdateButton: not hasActions and app.user and not package.wasUpdatedInTheLast24Hours(),
+                        hasVersionSecurityAdvisories: hasVersionSecurityAdvisories
+                    } %}
                 </div>
             {% elseif package.crawledAt is null %}
                 <p class="col-xs-12">This package has not been crawled yet, some information is missing.</p>

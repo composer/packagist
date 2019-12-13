@@ -29,6 +29,9 @@ services:
     Packagist\WebBundle\Entity\:
         resource: '../../Entity/*Repository.php'
 
+    Packagist\WebBundle\SecurityAdvisory\:
+        resource: '../../SecurityAdvisory/*.php'
+
     packagist.twig.extension:
         public: true
         class: Packagist\WebBundle\Twig\PackagistExtension
@@ -182,6 +185,7 @@ services:
             - "@logger"
             - 'package:updates': '@updater_worker'
               'githubuser:migrate': '@github_user_migration_worker'
+              'security:advisory': '@security_advisory_worker'
 
     Packagist\WebBundle\Security\TwoFactorAuthManager:
         public: true
@@ -200,6 +204,10 @@ services:
             - "@snc_redis.cache_client"
         tags:
             - { name: kernel.event_subscriber }
+
+    Packagist\WebBundle\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource:
+        class: Packagist\WebBundle\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource
+        arguments: ["@doctrine"]
 
     scheduler:
         public: true
@@ -220,6 +228,15 @@ services:
         public: true
         class: Packagist\WebBundle\Service\GitHubUserMigrationWorker
         arguments: ["@logger", "@doctrine", "@guzzle_client", "%github.webhook_secret%"]
+
+    security_advisory_worker:
+        public: true
+        class: Packagist\WebBundle\Service\SecurityAdvisoryWorker
+        arguments:
+            - "@locker"
+            - "@logger"
+            - "@doctrine"
+            - 'FriendsOfPHP/security-advisories': "@Packagist\\WebBundle\\SecurityAdvisory\\FriendsOfPhpSecurityAdvisoriesSource"
 
 parameters:
     security.exception_listener.class: Packagist\WebBundle\Security\ExceptionListener

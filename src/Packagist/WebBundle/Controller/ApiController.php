@@ -13,6 +13,7 @@
 namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\SecurityAdvisory;
 use Packagist\WebBundle\Entity\User;
 use Packagist\WebBundle\Util\UserAgentParser;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -244,6 +245,34 @@ class ApiController extends Controller
         }
 
         return new JsonResponse(array('status' => 'success'), 201);
+    }
+
+    /**
+     * @Route(
+     *     "/api/security-advisories/",
+     *     name="api_security_adivosries",
+     *     defaults={"_format" = "json"},
+     *     methods={"GET", "POST"}
+     * )
+     */
+    public function securityAdvisoryAction(Request $request): JsonResponse
+    {
+        $packageNames = array_filter((array) $request->get('packages'));
+        if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);
+        }
+
+        $updatedSince = $request->query->getInt('updatedSince', 0);
+
+        /** @var array[] $advisories */
+        $advisories = $this->getDoctrine()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
+
+        $response = ['advisories' => []];
+        foreach ($advisories as $advisory) {
+            $response['advisories'][$advisory['packageName']][] = $advisory;
+        }
+
+        return new JsonResponse($response, 200);
     }
 
     /**

@@ -3,11 +3,14 @@
 namespace Packagist\WebBundle\Controller;
 
 use Composer\Package\Version\VersionParser;
+use Composer\Semver\Constraint\Constraint;
 use DateTimeImmutable;
 use Doctrine\ORM\NoResultException;
 use Packagist\WebBundle\Entity\Download;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\PackageRepository;
+use Packagist\WebBundle\Entity\SecurityAdvisory;
+use Packagist\WebBundle\Entity\SecurityAdvisoryRepository;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\Vendor;
 use Packagist\WebBundle\Entity\VersionRepository;
@@ -484,6 +487,21 @@ class PackageController extends Controller
 
         $data['dependents'] = $repo->getDependantCount($package->getName());
         $data['suggesters'] = $repo->getSuggestCount($package->getName());
+
+        /** @var SecurityAdvisoryRepository $securityAdvisoryRepository */
+        $securityAdvisoryRepository = $this->getDoctrine()->getRepository(SecurityAdvisory::class);
+        $securityAdvisories = $securityAdvisoryRepository->getPackageSecurityAdvisories($package->getName());
+        $data['securityAdvisories'] = count($securityAdvisories);
+        $data['hasVersionSecurityAdvisories'] = [];
+        foreach ($securityAdvisories as $advisory) {
+            $versionParser = new VersionParser();
+            $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
+            foreach ($versions as $version) {
+                if (!isset($data['hasVersionSecurityAdvisories'][$version->getId()]) && $affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
+                    $data['hasVersionSecurityAdvisories'][$version->getId()] = true;
+                }
+            }
+        }
 
         if ($maintainerForm = $this->createAddMaintainerForm($package)) {
             $data['addMaintainerForm'] = $maintainerForm->createView();
@@ -1118,6 +1136,49 @@ class PackageController extends Controller
         }
 
         return $this->overallStatsAction($req, $package, $version);
+    }
+
+    /**
+     * @Route(
+     *      "/packages/{name}/advisories",
+     *      name="view_package_advisories",
+     *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"}
+     * )
+     */
+    public function securityAdvisoriesAction(Request $request, $name)
+    {
+        /** @var SecurityAdvisoryRepository $repo */
+        $repo = $this->getDoctrine()->getRepository(SecurityAdvisory::class);
+        $securityAdvisories = $repo->getPackageSecurityAdvisories($name);
+
+        $data = [];
+        $data['name'] = $name;
+
+        $data['matchingAdvisories'] = [];
+        if ($versionId = $request->query->getInt('version')) {
+            $version = $this->getDoctrine()->getRepository(Version::class)->findOneBy([
+                'name' => $name,
+                'id' => $versionId,
+            ]);
+            if ($version) {
+                $versionSecurityAdvisories = [];
+                $versionParser = new VersionParser();
+                foreach ($securityAdvisories as $advisory) {
+                    $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
+                    if ($affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
+                        $versionSecurityAdvisories[] = $advisory;
+                    }
+                }
+
+                $data['version'] = $version->getVersion();
+                $securityAdvisories = $versionSecurityAdvisories;
+            }
+        }
+
+        $data['securityAdvisories'] = $securityAdvisories;
+        $data['count'] = count($securityAdvisories);
+
+        return $this->render('PackagistWebBundle:package:security_advisories.html.twig', $data);
     }
 
     private function createAddMaintainerForm(Package $package)
