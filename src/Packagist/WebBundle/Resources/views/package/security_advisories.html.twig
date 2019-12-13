@@ -11,7 +11,11 @@
         <div class="col-xs-12 package">
             <div class="package-header">
                 <h2 class="title">
-                    <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a> {{ 'packages.security_advisories'|trans }}
+                    <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a>
+                    {{ 'packages.security_advisories'|trans }}
+                    {% if version is defined %}
+                        for {{ version }}
+                    {% endif %}
                     <small>({{ count }})</small>
                 </h2>
             </div>
@@ -23,7 +27,7 @@
             {% if securityAdvisories|length %}
                 <ul class="packages list-unstyled">
                     {% for advisory in securityAdvisories %}
-                        <li class="row {% if advisory.id in matchingAdvisories %}selected{% endif %}">
+                        <li class="row">
                             <div class="col-xs-12 package-item">
                                 <div class="row">
                                     <div class="col-sm-8 col-lg-9">

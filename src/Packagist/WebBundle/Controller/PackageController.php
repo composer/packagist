@@ -1150,11 +1150,8 @@ class PackageController extends Controller
         /** @var SecurityAdvisoryRepository $repo */
         $repo = $this->getDoctrine()->getRepository(SecurityAdvisory::class);
         $securityAdvisories = $repo->getPackageSecurityAdvisories($name);
-        $advisoryCount = count($securityAdvisories);
 
         $data = [];
-        $data['securityAdvisories'] = $securityAdvisories;
-        $data['count'] = $advisoryCount;
         $data['name'] = $name;
 
         $data['matchingAdvisories'] = [];
@@ -1164,15 +1161,22 @@ class PackageController extends Controller
                 'id' => $versionId,
             ]);
             if ($version) {
+                $versionSecurityAdvisories = [];
                 $versionParser = new VersionParser();
                 foreach ($securityAdvisories as $advisory) {
                     $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
                     if ($affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
-                        $data['matchingAdvisories'][] = $advisory['id'];
+                        $versionSecurityAdvisories[] = $advisory;
                     }
                 }
+
+                $data['version'] = $version->getVersion();
+                $securityAdvisories = $versionSecurityAdvisories;
             }
         }
+
+        $data['securityAdvisories'] = $securityAdvisories;
+        $data['count'] = count($securityAdvisories);
 
         return $this->render('PackagistWebBundle:package:security_advisories.html.twig', $data);
     }
