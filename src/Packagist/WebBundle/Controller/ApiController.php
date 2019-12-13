@@ -267,9 +267,9 @@ class ApiController extends Controller
         /** @var array[] $advisories */
         $advisories = $this->getDoctrine()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
 
-        $response = [];
+        $response = ['advisories' => []];
         foreach ($advisories as $advisory) {
-            $response[$advisory['packageName']][] = $advisory;
+            $response['advisories'][$advisory['packageName']][] = $advisory;
         }
 
         return new JsonResponse($response, 200);
