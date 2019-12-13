@@ -258,7 +258,7 @@ class ApiController extends Controller
     public function securityAdvisoryAction(Request $request): JsonResponse
     {
         $packageNames = array_filter((array) $request->get('packages'));
-        if (!$packageNames) {
+        if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);
         }
 
