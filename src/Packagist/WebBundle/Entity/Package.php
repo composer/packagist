@@ -721,6 +721,11 @@ class Package
         return $this->updatedAt;
     }
 
+    public function wasUpdatedInTheLast24Hours(): bool
+    {
+        return $this->updatedAt > new \DateTime('-24 hours');
+    }
+
     /**
      * Set crawledAt
      *
