@@ -257,9 +257,11 @@ class ApiController extends Controller
      */
     public function securityAdvisoryAction(Request $request): JsonResponse
     {
-        $packageNames = array_values(array_filter(array_map(function (string $packageName) {
-            return trim($packageName);
-        }, explode(',', $request->get('packages')))));
+        $packageNames = array_filter((array) $request->get('packages'));
+        if (!$packageNames) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);
+        }
+
         $updatedSince = $request->query->getInt('updatedSince', 0);
 
         /** @var array[] $advisories */
