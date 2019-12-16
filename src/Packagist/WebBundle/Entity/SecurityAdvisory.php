@@ -51,7 +51,7 @@ class SecurityAdvisory
     private $cve;
 
     /**
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="text")
      */
     private $affectedVersions;
 
@@ -59,6 +59,11 @@ class SecurityAdvisory
      * @ORM\Column(type="string")
      */
     private $source;
+
+    /**
+     * @ORM\Column(type="datetime")
+     */
+    private $reportedAt;
 
     /**
      * @ORM\Column(type="datetime")
@@ -79,9 +84,11 @@ class SecurityAdvisory
             $this->title !== $advisory->getTitle() ||
             $this->link !== $advisory->getLink() ||
             $this->cve !== $advisory->getCve() ||
-            $this->affectedVersions !== $advisory->getAffectedVersions()
+            $this->affectedVersions !== $advisory->getAffectedVersions() ||
+            $this->reportedAt !== $advisory->getDate()
         ) {
             $this->updatedAt = new \DateTime();
+            $this->reportedAt = $advisory->getDate();
         }
 
         $this->remoteId = $advisory->getId();

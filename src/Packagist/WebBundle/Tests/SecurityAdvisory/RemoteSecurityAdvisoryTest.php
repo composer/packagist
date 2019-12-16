@@ -15,7 +15,7 @@ class RemoteSecurityAdvisoryTest extends TestCase
             'cve' => null,
             'branches' => [
                 '1.x' => [
-                    'time' => '2017-05-15 09:09:00',
+                    'time' => 1494806400,
                     'versions' => ['<1.2'],
                 ],
             ],
@@ -28,5 +28,6 @@ class RemoteSecurityAdvisoryTest extends TestCase
         $this->assertNull($advisory->getCve());
         $this->assertSame('<1.2', $advisory->getAffectedVersions());
         $this->assertSame('3f/pygmentize', $advisory->getPackageName());
+        $this->assertSame('2017-05-15 00:00:00', $advisory->getDate()->format('Y-m-d H:i:s'));
     }
 }
