@@ -38,19 +38,19 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
             return [];
         }
 
-        $config = Factory::createConfig($io);
-
         $loader = new ArrayLoader(null, true);
         /** @var CompletePackage $composerPackage */
         $composerPackage = $loader->load($version->toArray([]), CompletePackage::class);
 
-        $localDir = null;
+        $localCwdDir = null;
         $advisories = null;
         try {
+            $localCwdDir = sys_get_temp_dir() . '/' . uniqid(self::SOURCE_NAME, true);
+            $localDir = $localCwdDir . '/' . self::SOURCE_NAME;
+            $config = Factory::createConfig($io, $localCwdDir);
             $rfs = Factory::createRemoteFilesystem($io, $config, []);
             $downloader = new ZipDownloader($io, $config, null, null, null, $rfs);
             $downloader->setOutputProgress(false);
-            $localDir = sys_get_temp_dir() . '/' . uniqid(self::SOURCE_NAME, true);
             $downloader->download($composerPackage, $localDir);
 
             $finder = new Finder();
@@ -66,9 +66,9 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
                 'exception' => $e,
             ]);
         } finally {
-            if ($localDir) {
+            if ($localCwdDir) {
                 $filesystem = new Filesystem();
-                $filesystem->remove($localDir);
+                $filesystem->remove($localCwdDir);
             }
         }
 
