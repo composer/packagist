@@ -18,7 +18,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
         $sql = 'SELECT s.*
             FROM security_advisory s
             WHERE s.packageName = :name
-            ORDER BY s.reportedAt DESC';
+            ORDER BY s.reportedAt DESC, s.id DESC';
 
         return $this->getEntityManager()->getConnection()
             ->fetchAll($sql, ['name' => $name]);
@@ -26,7 +26,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
     public function searchSecurityAdvisories(array $packageNames, int $updatedSince): array
     {
-        $sql = 'SELECT s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt
+        $sql = 'SELECT s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository
             FROM security_advisory s
             WHERE s.updatedAt >= :updatedSince ' .
             (count($packageNames) > 0 ? ' AND s.packageName IN (:packageNames)' : '')

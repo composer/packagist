@@ -18,6 +18,8 @@ use Packagist\WebBundle\SecurityAdvisory\RemoteSecurityAdvisory;
  */
 class SecurityAdvisory
 {
+    public const PACKAGIST_ORG = 'https://packagist.org';
+
     /**
      * @ORM\Id
      * @ORM\Column(type="integer")
@@ -70,6 +72,11 @@ class SecurityAdvisory
      */
     private $updatedAt;
 
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $composerRepository;
+
     public function __construct(RemoteSecurityAdvisory $advisory, string $source)
     {
         $this->source = $source;
@@ -85,7 +92,8 @@ class SecurityAdvisory
             $this->link !== $advisory->getLink() ||
             $this->cve !== $advisory->getCve() ||
             $this->affectedVersions !== $advisory->getAffectedVersions() ||
-            $this->reportedAt !== $advisory->getDate()
+            $this->reportedAt != $advisory->getDate() ||
+            $this->composerRepository !== $advisory->getComposerRepository()
         ) {
             $this->updatedAt = new \DateTime();
             $this->reportedAt = $advisory->getDate();
@@ -97,6 +105,7 @@ class SecurityAdvisory
         $this->link = $advisory->getLink();
         $this->cve = $advisory->getCve();
         $this->affectedVersions = $advisory->getAffectedVersions();
+        $this->composerRepository = $advisory->getComposerRepository();
     }
 
     public function getRemoteId(): string

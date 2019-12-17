@@ -2,6 +2,8 @@
 
 namespace Packagist\WebBundle\SecurityAdvisory;
 
+use Packagist\WebBundle\Entity\SecurityAdvisory;
+
 class RemoteSecurityAdvisory
 {
     /** @var string */
@@ -18,8 +20,10 @@ class RemoteSecurityAdvisory
     private $cve;
     /** @var \DateTime */
     private $date;
+    /** @var string|null */
+    private $composerRepository;
 
-    public function __construct(string $id, string $title, string $packageName, string $affectedVersions, string $link, $cve, \DateTime $date)
+    public function __construct(string $id, string $title, string $packageName, string $affectedVersions, string $link, $cve, \DateTime $date, ?string $composerRepository)
     {
         $this->id = $id;
         $this->title = $title;
@@ -28,6 +32,7 @@ class RemoteSecurityAdvisory
         $this->link = $link;
         $this->cve = $cve;
         $this->date = $date;
+        $this->composerRepository = $composerRepository;
     }
 
     public function getId(): string
@@ -65,6 +70,11 @@ class RemoteSecurityAdvisory
         return $this->date;
     }
 
+    public function getComposerRepository(): ?string
+    {
+        return $this->composerRepository;
+    }
+
     public static function createFromFriendsOfPhp(string $fileNameWithPath, array $info): RemoteSecurityAdvisory
     {
         $date = null;
@@ -92,6 +102,16 @@ class RemoteSecurityAdvisory
             }
         }
 
+        // If the value is not set then the default value is https://packagist.org
+        $composerRepository = SecurityAdvisory::PACKAGIST_ORG;
+        if (isset($info['composer-repository'])) {
+            if ($info['composer-repository'] === false) {
+                $composerRepository = null;
+            } else {
+                $composerRepository = $info['composer-repository'];
+            }
+        }
+
         return new RemoteSecurityAdvisory(
             $fileNameWithPath,
             $info['title'],
@@ -99,7 +119,8 @@ class RemoteSecurityAdvisory
             implode('|', $affectedVersions),
             $info['link'],
             $info['cve'] ?? null,
-            $date
+            $date,
+            $composerRepository
         );
     }
 }

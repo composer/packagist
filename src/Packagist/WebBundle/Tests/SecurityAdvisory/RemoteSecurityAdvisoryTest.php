@@ -2,6 +2,7 @@
 
 namespace Packagist\WebBundle\Tests\SecurityAdvisory;
 
+use Packagist\WebBundle\Entity\SecurityAdvisory;
 use Packagist\WebBundle\SecurityAdvisory\RemoteSecurityAdvisory;
 use PHPUnit\Framework\TestCase;
 
@@ -29,5 +30,6 @@ class RemoteSecurityAdvisoryTest extends TestCase
         $this->assertSame('<1.2', $advisory->getAffectedVersions());
         $this->assertSame('3f/pygmentize', $advisory->getPackageName());
         $this->assertSame('2017-05-15 00:00:00', $advisory->getDate()->format('Y-m-d H:i:s'));
+        $this->assertSame(SecurityAdvisory::PACKAGIST_ORG, $advisory->getComposerRepository());
     }
 }
