@@ -18,6 +18,8 @@ use Packagist\WebBundle\SecurityAdvisory\RemoteSecurityAdvisory;
  */
 class SecurityAdvisory
 {
+    public const PACKAGIST_ORG = 'https://packagist.org';
+
     /**
      * @ORM\Id
      * @ORM\Column(type="integer")
@@ -51,7 +53,7 @@ class SecurityAdvisory
     private $cve;
 
     /**
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="text")
      */
     private $affectedVersions;
 
@@ -63,7 +65,17 @@ class SecurityAdvisory
     /**
      * @ORM\Column(type="datetime")
      */
+    private $reportedAt;
+
+    /**
+     * @ORM\Column(type="datetime")
+     */
     private $updatedAt;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $composerRepository;
 
     public function __construct(RemoteSecurityAdvisory $advisory, string $source)
     {
@@ -79,9 +91,12 @@ class SecurityAdvisory
             $this->title !== $advisory->getTitle() ||
             $this->link !== $advisory->getLink() ||
             $this->cve !== $advisory->getCve() ||
-            $this->affectedVersions !== $advisory->getAffectedVersions()
+            $this->affectedVersions !== $advisory->getAffectedVersions() ||
+            $this->reportedAt != $advisory->getDate() ||
+            $this->composerRepository !== $advisory->getComposerRepository()
         ) {
             $this->updatedAt = new \DateTime();
+            $this->reportedAt = $advisory->getDate();
         }
 
         $this->remoteId = $advisory->getId();
@@ -90,6 +105,7 @@ class SecurityAdvisory
         $this->link = $advisory->getLink();
         $this->cve = $advisory->getCve();
         $this->affectedVersions = $advisory->getAffectedVersions();
+        $this->composerRepository = $advisory->getComposerRepository();
     }
 
     public function getRemoteId(): string
