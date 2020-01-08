@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Controller;
 
 use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
+use Packagist\WebBundle\Entity\Package;
 use Predis\Connection\ConnectionException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
@@ -31,8 +32,12 @@ class WebController extends Controller
      * @Template()
      * @Route("/", name="home")
      */
-    public function indexAction()
+    public function indexAction(Request $req)
     {
+        if ($resp = $this->checkForQueryMatch($req)) {
+            return $resp;
+        }
+
         return array('page' => 'home');
     }
 
@@ -56,12 +61,27 @@ class WebController extends Controller
         ));
     }
 
+    private function checkForQueryMatch(Request $req)
+    {
+        $q = $req->query->get('query');
+        if ($q) {
+            $package = $this->getDoctrine()->getRepository(Package::class)->findOneByName($q);
+            if ($package) {
+                return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+            }
+        }
+    }
+
     /**
      * @Route("/search/", name="search.ajax", methods={"GET"})
      * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"}, methods={"GET"})
      */
     public function searchAction(Request $req)
     {
+        if ($resp = $this->checkForQueryMatch($req)) {
+            return $resp;
+        }
+
         if ($req->getRequestFormat() !== 'json') {
             return $this->render('PackagistWebBundle:web:search.html.twig', [
                 'packages' => [],
