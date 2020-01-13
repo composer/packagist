@@ -329,12 +329,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "46657a8a7f7f8f606466fe5cc9b853f650e716b0"
+                "reference": "7e87b56324cc7e85217ff2422a8b858718f683bd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/46657a8a7f7f8f606466fe5cc9b853f650e716b0",
-                "reference": "46657a8a7f7f8f606466fe5cc9b853f650e716b0",
+                "url": "https://api.github.com/repos/composer/composer/zipball/7e87b56324cc7e85217ff2422a8b858718f683bd",
+                "reference": "7e87b56324cc7e85217ff2422a8b858718f683bd",
                 "shasum": ""
             },
             "require": {
@@ -347,10 +347,10 @@
                 "psr/log": "^1.0",
                 "seld/jsonlint": "^1.4",
                 "seld/phar-utils": "^1.0",
-                "symfony/console": "^2.7 || ^3.0 || ^4.0",
-                "symfony/filesystem": "^2.7 || ^3.0 || ^4.0",
-                "symfony/finder": "^2.7 || ^3.0 || ^4.0",
-                "symfony/process": "^2.7 || ^3.0 || ^4.0"
+                "symfony/console": "^2.7 || ^3.0 || ^4.0 || ^5.0",
+                "symfony/filesystem": "^2.7 || ^3.0 || ^4.0 || ^5.0",
+                "symfony/finder": "^2.7 || ^3.0 || ^4.0 || ^5.0",
+                "symfony/process": "^2.7 || ^3.0 || ^4.0 || ^5.0"
             },
             "conflict": {
                 "symfony/console": "2.8.38"
@@ -401,12 +401,7 @@
                 "dependency",
                 "package"
             ],
-            "support": {
-                "irc": "irc://irc.freenode.org/composer",
-                "issues": "https://github.com/composer/composer/issues",
-                "source": "https://github.com/composer/composer/tree/master"
-            },
-            "time": "2019-10-24T13:26:55+00:00"
+            "time": "2020-01-13T14:58:56+00:00"
         },
         {
             "name": "composer/semver",
@@ -603,6 +598,7 @@
             ],
             "description": "Promoting the interoperability of container objects (DIC, SL, etc.)",
             "homepage": "https://github.com/container-interop/container-interop",
+            "abandoned": "psr/container",
             "time": "2017-02-14T19:40:03+00:00"
         },
         {
@@ -5409,6 +5405,7 @@
                 "BSD-3-Clause"
             ],
             "description": "Securely and safely escape HTML, HTML attributes, JavaScript, CSS, and URLs",
+            "abandoned": "laminas/laminas-escaper",
             "time": "2019-09-05T20:03:20+00:00"
         },
         {
@@ -5472,6 +5469,7 @@
                 "feed",
                 "zf"
             ],
+            "abandoned": "laminas/laminas-feed",
             "time": "2019-03-05T20:08:49+00:00"
         },
         {
@@ -5524,6 +5522,7 @@
                 "servicemanager",
                 "zf2"
             ],
+            "abandoned": "laminas/laminas-servicemanager",
             "time": "2018-06-22T14:49:54+00:00"
         },
         {
@@ -5570,6 +5569,7 @@
                 "stdlib",
                 "zf"
             ],
+            "abandoned": "laminas/laminas-stdlib",
             "time": "2018-08-28T21:34:05+00:00"
         },
         {
@@ -5612,6 +5612,7 @@
                 "BSD-3-Clause"
             ],
             "description": "A component that aids in manipulating and validating » Uniform Resource Identifiers (URIs)",
+            "abandoned": "laminas/laminas-uri",
             "time": "2019-10-07T13:35:33+00:00"
         },
         {
@@ -5693,6 +5694,7 @@
                 "rss": "https://github.com/zendframework/zend-validator/releases.atom",
                 "source": "https://github.com/zendframework/zend-validator"
             },
+            "abandoned": "laminas/laminas-validator",
             "time": "2019-10-12T12:17:57+00:00"
         },
         {
@@ -5764,6 +5766,7 @@
                 "test",
                 "zf"
             ],
+            "abandoned": "laminas/laminas-diagnostics",
             "time": "2019-03-26T15:50:07+00:00"
         }
     ],
