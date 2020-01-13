@@ -13,6 +13,11 @@
                 <h2 class="title">
                     <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a> {{ 'packages.dependents'|trans }}
                     <small>({{ count }})</small>
+                    <small>
+                        Order by:
+                        {% if order_by == 'name' %}name{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'name'}) }}">name</a>{% endif %} |
+                        {% if order_by == 'downloads' %}downloads{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'downloads'}) }}">downloads</a>{% endif %}
+                    </small>
                 </h2>
             </div>
         </div>

@@ -1001,52 +1001,102 @@ class PackageController extends Controller
 
     /**
      * @Route(
-     *      "/packages/{name}/dependents",
+     *      "/packages/{name}/dependents.{_format}",
      *      name="view_package_dependents",
-     *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"}
+     *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"},
+     *      defaults={"_format"="html"}
      * )
      */
     public function dependentsAction(Request $req, $name)
     {
         $page = max(1, (int) $req->query->get('page', 1));
+        $perPage = 15;
+        $orderBy = $req->query->get('order_by', 'name');
+
+        if ($req->getRequestFormat() === 'json') {
+            $perPage = 100;
+        }
 
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
         $depCount = $repo->getDependantCount($name);
-        $packages = $repo->getDependents($name, ($page - 1) * 15, 15);
+        $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy);
 
         $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
-        $paginator->setMaxPerPage(15);
+        $paginator->setMaxPerPage($perPage);
         $paginator->setCurrentPage($page, false, true);
+
+        if ($req->getRequestFormat() === 'json') {
+            $data = [
+                'packages' => $paginator->getCurrentPageResults(),
+            ];
+            $meta = $this->getPackagesMetadata($data['packages']);
+            foreach ($data['packages'] as $index => $package) {
+                $data['packages'][$index]['downloads'] = $meta['downloads'][$package['id']];
+                $data['packages'][$index]['favers'] = $meta['favers'][$package['id']];
+            }
+
+            if ($paginator->hasNextPage()) {
+                $data['next'] = $this->generateUrl('view_package_dependents', ['name' => $name, 'page' => $page + 1, '_format' => 'json', 'order_by' => $orderBy], UrlGeneratorInterface::ABSOLUTE_URL);
+            }
+            $data['ordered_by_name'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'name'], UrlGeneratorInterface::ABSOLUTE_URL);
+            $data['ordered_by_downloads'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'downloads'], UrlGeneratorInterface::ABSOLUTE_URL);
+
+            return new JsonResponse($data);
+        }
 
         $data['packages'] = $paginator;
         $data['count'] = $depCount;
 
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['name'] = $name;
+        $data['order_by'] = $orderBy;
 
         return $this->render('PackagistWebBundle:package:dependents.html.twig', $data);
     }
 
     /**
      * @Route(
-     *      "/packages/{name}/suggesters",
+     *      "/packages/{name}/suggesters.{_format}",
      *      name="view_package_suggesters",
-     *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"}
+     *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"},
+     *      defaults={"_format"="html"}
      * )
      */
     public function suggestersAction(Request $req, $name)
     {
         $page = max(1, (int) $req->query->get('page', 1));
+        $perPage = 15;
+
+        if ($req->getRequestFormat() === 'json') {
+            $perPage = 100;
+        }
 
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
         $suggestCount = $repo->getSuggestCount($name);
-        $packages = $repo->getSuggests($name, ($page - 1) * 15, 15);
+        $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
 
         $paginator = new Pagerfanta(new FixedAdapter($suggestCount, $packages));
-        $paginator->setMaxPerPage(15);
+        $paginator->setMaxPerPage($perPage);
         $paginator->setCurrentPage($page, false, true);
+
+        if ($req->getRequestFormat() === 'json') {
+            $data = [
+                'packages' => $paginator->getCurrentPageResults(),
+            ];
+            $meta = $this->getPackagesMetadata($data['packages']);
+            foreach ($data['packages'] as $index => $package) {
+                $data['packages'][$index]['downloads'] = $meta['downloads'][$package['id']];
+                $data['packages'][$index]['favers'] = $meta['favers'][$package['id']];
+            }
+
+            if ($paginator->hasNextPage()) {
+                $data['next'] = $this->generateUrl('view_package_suggesters', ['name' => $name, 'page' => $page + 1, '_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL);
+            }
+
+            return new JsonResponse($data);
+        }
 
         $data['packages'] = $paginator;
         $data['count'] = $suggestCount;

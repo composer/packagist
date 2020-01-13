@@ -384,21 +384,30 @@ class PackageRepository extends ServiceEntityRepository
         return (int) $result[0]['count'];
     }
 
-    public function getDependents($name, $offset = 0, $limit = 15)
+    public function getDependents($name, $offset = 0, $limit = 15, $orderBy = 'name')
     {
+        $orderByField = 'p.name ASC';
+        $join = '';
+        if ($orderBy === 'downloads') {
+            $orderByField = 'd.total DESC';
+            $join = 'LEFT JOIN download d ON d.id = p.id AND d.type = '.Download::TYPE_PACKAGE;
+        } else {
+            $orderBy = 'name';
+        }
+
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
                 UNION
                 SELECT pv.package_id FROM link_require_dev r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
-            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+            ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
 
         $stmt = $this->getEntityManager()->getConnection()
             ->executeCacheQuery(
                 $sql,
                 ['name' => $name],
                 [],
-                new QueryCacheProfile(7*86400, 'dependents_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+                new QueryCacheProfile(7*86400, 'dependents_'.$name.'_'.$offset.'_'.$limit.'_'.$orderBy, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
             );
         $result = $stmt->fetchAll();
         $stmt->closeCursor();

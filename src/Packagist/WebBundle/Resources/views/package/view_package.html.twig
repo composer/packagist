@@ -181,7 +181,7 @@
                             {% if dependents is defined %}
                                 <p>
                                     <span>
-                                        <a href="{{ path('view_package_dependents', {name: package.name}) }}" rel="nofollow">Dependents</a>:
+                                        <a href="{{ path('view_package_dependents', {name: package.name, order_by: 'downloads'}) }}" rel="nofollow">Dependents</a>:
                                     </span>
                                     {{ dependents|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
