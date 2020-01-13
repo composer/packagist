@@ -4,8 +4,6 @@ namespace Packagist\WebBundle\Tests\Controller;
 
 use Exception;
 use Packagist\WebBundle\Entity\Package;
-use Packagist\WebBundle\Model\DownloadManager;
-use Packagist\WebBundle\Model\FavoriteManager;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -26,8 +24,8 @@ class WebControllerTest extends WebTestCase
         $this->initializePackages($client->getContainer());
 
         //we expect at least one package
-        $crawler = $client->request('GET', '/packages/');
-        $this->assertTrue($crawler->filter('.packages li')->count() > 0);
+        $crawler = $client->request('GET', '/explore/');
+        $this->assertGreaterThan(0, $crawler->filter('.packages-short li')->count());
     }
 
     public function testPackage()
@@ -37,268 +35,21 @@ class WebControllerTest extends WebTestCase
         $this->initializePackages($client->getContainer());
 
         //we expect package to be clickable and showing at least 'package' div
-        $crawler = $client->request('GET', '/packages/');
-        $link = $crawler->filter('.packages li a')->first()->attr('href');
+        $crawler = $client->request('GET', '/explore/');
+        $link = $crawler->filter('.packages-short li a')->first()->attr('href');
 
         $crawler = $client->request('GET', $link);
-        $this->assertTrue($crawler->filter('.package')->count() > 0);
-    }
-
-    /**
-     * @covers ::nothing
-     */
-    public function testSearchNoOrderBysAction()
-    {
-        $json = $this->commonTestSearchActionOrderBysDownloads();
-
-        $this->assertSame(
-            $this->getJsonResults(
-                array(
-                    $this->getJsonResult('twig/twig', 25, 0),
-                    $this->getJsonResult('composer/packagist', 12, 0),
-                    $this->getJsonResult('symfony/symfony', 42, 0),
-                )
-            ),
-            $json
-        );
-    }
-
-    /**
-     * @covers ::nothing
-     */
-    public function testSearchOrderByDownloadsAscAction()
-    {
-        $json = $this->commonTestSearchActionOrderBysDownloads(
-            array(
-                array(
-                    'sort' => 'downloads',
-                    'order' => 'asc',
-                ),
-            )
-        );
-
-        $this->assertSame(
-            $this->getJsonResults(
-                array(
-                    $this->getJsonResult('composer/packagist', 12, 0),
-                    $this->getJsonResult('twig/twig', 25, 0),
-                    $this->getJsonResult('symfony/symfony', 42, 0),
-                )
-            ),
-            $json
-        );
-    }
-
-    /**
-     * @covers ::nothing
-     */
-    public function testSearchOrderByDownloadsDescAction()
-    {
-        $json = $this->commonTestSearchActionOrderBysDownloads(
-            array(
-                array(
-                    'sort' => 'downloads',
-                    'order' => 'desc',
-                ),
-            )
-        );
-
-        $this->assertSame(
-            $this->getJsonResults(
-                array(
-                    $this->getJsonResult('symfony/symfony', 42, 0),
-                    $this->getJsonResult('twig/twig', 25, 0),
-                    $this->getJsonResult('composer/packagist', 12, 0),
-                )
-            ),
-            $json
-        );
-    }
-
-    /**
-     * @covers ::nothing
-     */
-    public function testSearchOrderByFaversAscAction()
-    {
-        $json = $this->commonTestSearchActionOrderBysFavers(
-            array(
-                array(
-                    'sort' => 'favers',
-                    'order' => 'asc',
-                ),
-            )
-        );
-
-        $this->assertSame(
-            $this->getJsonResults(
-                array(
-                    $this->getJsonResult('composer/packagist', 0, 1),
-                    $this->getJsonResult('twig/twig', 0, 2),
-                    $this->getJsonResult('symfony/symfony', 0, 3),
-                )
-            ),
-            $json
-        );
-    }
-
-    /**
-     * @covers ::nothing
-     */
-    public function testSearchOrderByFaversDescAction()
-    {
-        $json = $this->commonTestSearchActionOrderBysFavers(
-            array(
-                array(
-                    'sort' => 'favers',
-                    'order' => 'desc',
-                ),
-            )
-        );
-
-        $this->assertSame(
-            $this->getJsonResults(
-                array(
-                    $this->getJsonResult('symfony/symfony', 0, 3),
-                    $this->getJsonResult('twig/twig', 0, 2),
-                    $this->getJsonResult('composer/packagist', 0, 1),
-                )
-            ),
-            $json
-        );
-    }
-
-    /**
-     * @covers ::nothing
-     */
-    public function testSearchOrderBysCombinationAction()
-    {
-        $userMock = $this->createMock('Packagist\WebBundle\Entity\User');
-        $userMock1 = $this->createMock('Packagist\WebBundle\Entity\User');
-        $userMock2 = $this->createMock('Packagist\WebBundle\Entity\User');
-
-        $userMock->method('getId')->will($this->returnValue(1));
-        $userMock1->method('getId')->will($this->returnValue(2));
-        $userMock2->method('getId')->will($this->returnValue(3));
-
-        $json = $this->commonTestSearchActionOrderBysAction(
-            function (
-                ContainerInterface $container,
-                Package $twigPackage,
-                Package $packagistPackage,
-                Package $symfonyPackage
-            ) use (
-                $userMock,
-                $userMock1,
-                $userMock2
-            ) {
-                $downloadManager = $container->get('packagist.download_manager');
-
-                /* @var $downloadManager DownloadManager */
-
-                for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $twigPackage->getId(), 'vid' => 25, 'ip' => '127.0.0.'.random_int(0,255)]]);
-                }
-                for ($i = 0; $i < 12; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $packagistPackage->getId(), 'vid' => 12, 'ip' => '127.0.0.'.random_int(0,255)]]);
-                }
-                for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $symfonyPackage->getId(), 'vid' => 42, 'ip' => '127.0.0.'.random_int(0,255)]]);
-                }
-
-                $favoriteManager = $container->get('packagist.favorite_manager');
-
-                /* @var $favoriteManager FavoriteManager */
-
-                $favoriteManager->markFavorite($userMock, $packagistPackage);
-
-                $favoriteManager->markFavorite($userMock, $symfonyPackage);
-                $favoriteManager->markFavorite($userMock1, $symfonyPackage);
-                $favoriteManager->markFavorite($userMock2, $symfonyPackage);
-            },
-            array(
-                array(
-                    'sort' => 'downloads',
-                    'order' => 'desc',
-                ),
-                array(
-                    'sort' => 'favers',
-                    'order' => 'desc',
-                ),
-            )
-        );
-
-        $this->assertSame(
-            $this->getJsonResults(
-                array(
-                    $this->getJsonResult('symfony/symfony', 25, 3),
-                    $this->getJsonResult('twig/twig', 25, 0),
-                    $this->getJsonResult('composer/packagist', 12, 1),
-                )
-            ),
-            $json
-        );
-    }
-
-    /**
-     * @param callable $onBeforeIndex
-     * @param array $orderBys
-     *
-     * @return array
-     */
-    protected function commonTestSearchActionOrderBysAction(
-        callable $onBeforeIndex,
-        array $orderBys = array()
-    ) {
-        $client = self::createClient();
-
-        $container = $client->getContainer();
-
-        $kernelRootDir = $container->getParameter('kernel.root_dir');
-
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:drop --env=test --force', false);
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:schema:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console redis:flushall --env=test -n');
-
-        $lock = $container->getParameter('kernel.cache_dir').'/composer-indexer.lock';
-
-        $this->executeCommand('rm -f ' . $lock);
-
-        list($twigPackage, $packagistPackage, $symfonyPackage) = $this->initializePackages($container);
-
-        if (!empty($orderBys)) {
-            $orderBysQryStrPart = '&' . http_build_query(
-                array(
-                    'orderBys' => $orderBys
-                )
-            );
-        } else {
-            $orderBysQryStrPart = '';
-        }
-
-        $onBeforeIndex($container, $twigPackage, $packagistPackage, $symfonyPackage);
-
-        $this->executeCommand('php '.$kernelRootDir . '/console packagist:index --env=test --force');
-
-        $client->request('GET', '/search.json?q=' . $orderBysQryStrPart);
-
-        $response = $client->getResponse();
-
-        $content = $client->getResponse()->getContent();
-
-        $this->assertSame(200, $response->getStatusCode(), $content);
-
-        return json_decode($content, true);
+        $this->assertGreaterThan(0, $crawler->filter('.package')->count());
     }
 
     protected function initializePackages(ContainerInterface $container)
     {
         $kernelRootDir = $container->getParameter('kernel.root_dir');
 
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:drop --env=test --force', false);
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:schema:create --env=test');
-        $this->executeCommand('php '.$kernelRootDir . '/console redis:flushall --env=test -n');
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:drop --env=test --force -q', false);
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:database:create --env=test -q');
+        $this->executeCommand('php '.$kernelRootDir . '/console doctrine:schema:create --env=test -q');
+        $this->executeCommand('php '.$kernelRootDir . '/console redis:flushall --env=test -n -q');
 
         $em = $container->get('doctrine')->getManager();
 
@@ -324,83 +75,6 @@ class WebControllerTest extends WebTestCase
         $em->flush();
 
         return [$twigPackage, $packagistPackage, $symfonyPackage];
-    }
-
-    /**
-     * @param array $orderBys
-     *
-     * @return array
-     */
-    protected function commonTestSearchActionOrderBysDownloads(
-        array $orderBys = array()
-    ) {
-        return $this->commonTestSearchActionOrderBysAction(
-            function (
-                ContainerInterface $container,
-                Package $twigPackage,
-                Package $packagistPackage,
-                Package $symfonyPackage
-            ) {
-                $downloadManager = $container->get('packagist.download_manager');
-
-                /* @var $downloadManager DownloadManager */
-
-                for ($i = 0; $i < 25; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $twigPackage->getId(), 'vid' => 25, 'ip' => '127.0.0.'.random_int(0,255)]]);
-                }
-                for ($i = 0; $i < 12; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $packagistPackage->getId(), 'vid' => 12, 'ip' => '127.0.0.'.random_int(0,255)]]);
-                }
-                for ($i = 0; $i < 42; $i += 1) {
-                    $downloadManager->addDownloads([['id' => $symfonyPackage->getId(), 'vid' => 42, 'ip' => '127.0.0.'.random_int(0,255)]]);
-                }
-            },
-            $orderBys
-        );
-    }
-
-    /**
-     * @param array $orderBys
-     *
-     * @return array
-     */
-    protected function commonTestSearchActionOrderBysFavers(
-        array $orderBys = array()
-    ) {
-        $userMock = $this->createMock('Packagist\WebBundle\Entity\User');
-        $userMock1 = $this->createMock('Packagist\WebBundle\Entity\User');
-        $userMock2 = $this->createMock('Packagist\WebBundle\Entity\User');
-
-        $userMock->method('getId')->will($this->returnValue(1));
-        $userMock1->method('getId')->will($this->returnValue(2));
-        $userMock2->method('getId')->will($this->returnValue(3));
-
-        return $this->commonTestSearchActionOrderBysAction(
-            function (
-                ContainerInterface $container,
-                Package $twigPackage,
-                Package $packagistPackage,
-                Package $symfonyPackage
-            ) use (
-                $userMock,
-                $userMock1,
-                $userMock2
-            ) {
-                $favoriteManager = $container->get('packagist.favorite_manager');
-
-                /* @var $favoriteManager FavoriteManager */
-
-                $favoriteManager->markFavorite($userMock, $twigPackage);
-                $favoriteManager->markFavorite($userMock1, $twigPackage);
-
-                $favoriteManager->markFavorite($userMock, $packagistPackage);
-
-                $favoriteManager->markFavorite($userMock, $symfonyPackage);
-                $favoriteManager->markFavorite($userMock1, $symfonyPackage);
-                $favoriteManager->markFavorite($userMock2, $symfonyPackage);
-            },
-            $orderBys
-        );
     }
 
     /**

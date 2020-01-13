@@ -1,0 +1,12 @@
+{% autoescape false -%}
+
+Two-factor authentication has been disabled on your Packagist account.
+
+-------------------------------
+Time: {{ 'now'|date('c') }}
+Reason: {{ reason }}
+-------------------------------
+
+You can re-enable this at any time from your account page: {{ url('user_2fa_configure', { 'name': username }) }}
+
+{%- endautoescape %}

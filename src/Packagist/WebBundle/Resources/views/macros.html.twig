@@ -1,6 +1,6 @@
 {% macro listPackages(packages, paginate, showAutoUpdateWarning, meta) %}
     <ul class="packages list-unstyled">
-        {% for package in packages %}
+        {% for package in packages|filter(package => package.replacementPackage|default('') != 'spam/spam') %}
             {% if package.id is numeric %}
                 {% set packageUrl = path('view_package', { 'name' : package.name }) %}
             {% else %}
@@ -16,14 +16,20 @@
                                 {% if package.id is not numeric %}
                                     <small>(Virtual Package)</small>
                                 {% endif %}
-                                {% if showAutoUpdateWarning and not package.autoUpdated %}
-                                    <small>(Not Auto-Updated)</small>
+                                {% if not package.abandoned|default(false) %}
+                                    {% if showAutoUpdateWarning and '://github.com/' in package.repository and package.getAutoUpdated() == 1 %}
+                                        <small>(Legacy Auto-Update, Needs Attention)</small>
+                                    {% elseif showAutoUpdateWarning and '://github.com/' in package.repository and package.getAutoUpdated() == 0 %}
+                                        <small>(Not Auto-Updated, Needs Attention)</small>
+                                    {% elseif showAutoUpdateWarning and not package.isAutoUpdated() %}
+                                        <small>(Not Auto-Updated)</small>
+                                    {% endif %}
                                 {% endif %}
                             </h4>
                             {% if package.description is defined and package.description %}
                                 <p>{{ package.description }}</p>
                             {% endif %}
-                            {% if package.abandoned is defined and package.abandoned %}
+                            {% if package.abandoned|default(false) %}
                                 <p class="abandoned">
                                     <i class="glyphicon glyphicon-exclamation-sign"></i> Abandoned! {% if package.replacementPackage %}See <a href="{{ '://' in package.replacementPackage ? package.replacementPackage : path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a>{% endif %}
                                 </p>
@@ -32,7 +38,7 @@
                         <div class="col-sm-3 col-lg-2">
                             {% if meta %}
                                 <p class="metadata">
-                                    <span class="metadata-block"><i class="glyphicon glyphicon-arrow-down"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', '&#8201;')|raw }}</span>
+                                    <span class="metadata-block"><i class="glyphicon glyphicon-download"></i> {{ meta.downloads[package.id]|default(0)|number_format(0, '.', '&#8201;')|raw }}</span>
                                     <span class="metadata-block"><i class="glyphicon glyphicon-star"></i> {{ meta.favers[package.id]|default(0)|number_format(0, '.', '&#8201;')|raw }}</span>
                                 </p>
                             {% endif %}
@@ -41,11 +47,11 @@
                 </div>
             </li>
         {% endfor %}
-
-        {% if paginate is defined and paginate and packages.haveToPaginate() %}
-            {{ pagerfanta(packages, 'twitter_bootstrap', {'proximity': 2}) }}
-        {% endif %}
     </ul>
+
+    {% if paginate is defined and paginate and packages.haveToPaginate() %}
+        {{ pagerfanta(packages, 'twitter_bootstrap', {'proximity': 2}) }}
+    {% endif %}
 {% endmacro %}
 
 {% macro listPackagesShort(packages, showVersion, showMoreUrl) %}

@@ -12,8 +12,11 @@ use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\EntityManager;
+use Doctrine\DBAL\Connection;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Package\Updater;
+use Packagist\WebBundle\Entity\VersionRepository;
+use Packagist\WebBundle\Entity\AuthorRepository;
 use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_MockObject;
 
@@ -32,7 +35,7 @@ class UpdaterTest extends TestCase
     /** @var VcsDriverInterface|PHPUnit_Framework_MockObject_MockObject */
     private $driverMock;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -43,10 +46,18 @@ class UpdaterTest extends TestCase
         $this->repositoryMock = $this->getMockBuilder(VcsRepository::class)->disableOriginalConstructor()->getMock();
         $registryMock         = $this->getMockBuilder(Registry::class)->disableOriginalConstructor()->getMock();
         $emMock               = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
+        $connectionMock       = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
         $packageMock          = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
         $this->driverMock     = $this->getMockBuilder(GitDriver::class)->disableOriginalConstructor()->getMock();
+        $versionRepoMock      = $this->getMockBuilder(VersionRepository::class)->disableOriginalConstructor()->getMock();
+        $authorRepoMock      = $this->getMockBuilder(AuthorRepository::class)->disableOriginalConstructor()->getMock();
+
+        $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn(array());
+        $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
+        $emMock->expects($this->any())->method('merge')->will($this->returnCallback(function ($package) { return $package; }));
 
         $registryMock->expects($this->any())->method('getManager')->willReturn($emMock);
+        $registryMock->expects($this->at(1))->method('getRepository')->with('PackagistWebBundle:Version')->willReturn($versionRepoMock);
         $this->repositoryMock->expects($this->any())->method('getPackages')->willReturn([
             $packageMock
         ]);
@@ -70,7 +81,7 @@ class UpdaterTest extends TestCase
 
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
 
-        self::assertContains('This is the readme', $this->package->getReadme());
+        $this->assertStringContainsString('This is the readme', $this->package->getReadme());
     }
 
     public function testConvertsMarkdownForReadme()
@@ -91,6 +102,34 @@ EOR;
 <li>no overhead</li>
 <li>minimal requirements</li>
 </ul>
+EOR;
+
+        $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->expects($this->any())->method('getComposerInformation')
+                         ->willReturn(['readme' => 'README.md']);
+        $this->driverMock->expects($this->once())->method('getFileContent')->with('README.md', 'master')
+                         ->willReturn($readme);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        self::assertSame($readmeHtml, $this->package->getReadme());
+    }
+
+    /**
+     * When <h1> or <h2> titles are not the first element of the README contents,
+     * they should not be removed.
+     */
+    public function testNoUsefulTitlesAreRemovedForReadme()
+    {
+        $readme = <<<EOR
+Lorem ipsum dolor sit amet.
+
+# some title
+
+EOR;
+        $readmeHtml = <<<EOR
+<p>Lorem ipsum dolor sit amet.</p>
+<h1>some title</h1>
 EOR;
 
         $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');

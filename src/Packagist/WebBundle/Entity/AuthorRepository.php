@@ -12,13 +12,19 @@
 
 namespace Packagist\WebBundle\Entity;
 
-use Doctrine\ORM\EntityRepository;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class AuthorRepository extends EntityRepository
+class AuthorRepository extends ServiceEntityRepository
 {
+    public function __construct(RegistryInterface $registry)
+    {
+        parent::__construct($registry, Author::class);
+    }
+
     public function findOneByNameAndPackage($author, Package $package)
     {
         $qb = $this->createQueryBuilder('a');

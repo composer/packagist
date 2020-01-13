@@ -2,8 +2,6 @@
 
 {% block content %}
 {% if app.user is null %}
-    {{ block('fos_user_header') }}
-
     <section class="row">
         {{ block('fos_user_content') }}
     </section>

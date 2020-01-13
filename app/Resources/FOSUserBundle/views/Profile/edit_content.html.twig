@@ -1,4 +1,4 @@
-<form action="{{ path('fos_user_profile_edit') }}" {{ form_enctype(form) }} method="POST" class="fos_user_profile_edit col-md-6">
+{{ form_start(form, { 'action': path('fos_user_profile_edit'), 'attr': { 'class': 'fos_user_profile_edit col-md-6' } }) }}
     {{ form_errors(form) }}
 
     <div class="form-group clearfix">
@@ -19,6 +19,7 @@
         </div>
     </div>
 
+    {% if not app.user.githubId %}
     <div class="form-group clearfix">
         {{ form_label(form.current_password) }}
         <div class="input-group">
@@ -27,6 +28,7 @@
             <span class="input-group-addon"><span class="icon-lock"></span></span>
         </div>
     </div>
+    {% endif %}
 
     <div class="notifications form-group">
         {{ form_errors(form.failureNotifications) }}
@@ -46,9 +48,17 @@
 
     <a href="{{ app.user.githubId ? '#' : hwi_oauth_login_url('github') }}" class="btn btn-block btn-github btn-lg {{ app.user.githubId ? 'disabled' : 'btn-primary' }}">
         <span class="icon-github"></span>
-        {{ (app.user.githubId ? 'profile.accounts_connected' : 'profile.connect_accounts')|trans }}
+        {% set ghUser = app.user.githubUsername %}
+        {{ (app.user.githubId ? 'profile.accounts_connected' : 'profile.connect_accounts')|trans({"%user%": ghUser|default('unknown')}) }}
     </a>
-</form>
+    {% if app.user.githubId %}
+        {% if ghUser == false %}
+            <p>Unknown GitHub user, token is missing, logout and login again via GitHub to fix it, or <a href="{{ path('user_github_disconnect', {token: csrf_token('unlink_github')}) }}">disconnect your GitHub account</a> entirely to connect another one.</p>
+        {% else %}
+            <p><a href="{{ path('user_github_disconnect', {token: csrf_token('unlink_github')}) }}">Disconnect your GitHub account</a> to connect another one.</p>
+        {% endif %}
+    {% endif %}
+{{ form_end(form) }}
 
 <div class="col-md-2">
 </div>

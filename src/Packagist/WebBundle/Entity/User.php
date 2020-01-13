@@ -14,6 +14,11 @@ namespace Packagist\WebBundle\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
+use Symfony\Component\Validator\Constraints as Assert;
 use FOS\UserBundle\Model\User as BaseUser;
 
 /**
@@ -52,7 +57,7 @@ use FOS\UserBundle\Model\User as BaseUser;
  *     )
  * })
  */
-class User extends BaseUser
+class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface
 {
     /**
      * @ORM\Id
@@ -62,14 +67,27 @@ class User extends BaseUser
     protected $id;
 
     /**
+     * @Assert\Length(
+     *     min=2,
+     *     max=180,
+     *     groups={"Profile", "Registration"}
+     * )
+     * @Assert\Regex(
+     *     pattern="{^[^/""\r\n><#\[\]]{2,100}$}",
+     *     message="Username invalid, /""\r\n><#[] are not allowed",
+     *     groups={"Profile", "Registration"}
+     * )
+     * @Assert\NotBlank(
+     *     message="fos_user.username.blank",
+     *     groups={"Profile", "Registration"}
+     * )
+     */
+    protected $username;
+
+    /**
      * @ORM\ManyToMany(targetEntity="Package", mappedBy="maintainers")
      */
     private $packages;
-
-    /**
-     * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Author", mappedBy="owner")
-     */
-    private $authors;
 
     /**
      * @ORM\Column(type="datetime")
@@ -95,15 +113,32 @@ class User extends BaseUser
     private $githubToken;
 
     /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     * @var string
+     */
+    private $githubScope;
+
+    /**
      * @ORM\Column(type="boolean", options={"default"=true})
      * @var string
      */
     private $failureNotifications = true;
 
+    /**
+     * @ORM\Column(name="totpSecret", type="string", nullable=true)
+     * @var string|null
+     */
+    private $totpSecret;
+
+    /**
+     * @ORM\Column(type="string", length=8, nullable=true)
+     * @var string|null
+     */
+    private $backupCode;
+
     public function __construct()
     {
         $this->packages = new ArrayCollection();
-        $this->authors = new ArrayCollection();
         $this->createdAt = new \DateTime();
         parent::__construct();
     }
@@ -134,26 +169,6 @@ class User extends BaseUser
     public function getPackages()
     {
         return $this->packages;
-    }
-
-    /**
-     * Add authors
-     *
-     * @param Author $authors
-     */
-    public function addAuthors(Author $authors)
-    {
-        $this->authors[] = $authors;
-    }
-
-    /**
-     * Get authors
-     *
-     * @return Author[]
-     */
-    public function getAuthors()
-    {
-        return $this->authors;
     }
 
     /**
@@ -207,6 +222,30 @@ class User extends BaseUser
     }
 
     /**
+     * Get githubId.
+     *
+     * @return string
+     */
+    public function getGithubUsername()
+    {
+        if ($this->githubId) {
+            if (!$this->githubToken) {
+                return false;
+            }
+
+            $ctxt = ['http' => ['header' => ['User-Agent: packagist.org']]];
+            $res = @file_get_contents('https://api.github.com/user?access_token='.$this->githubToken, false, stream_context_create($ctxt));
+            if (!$res || !($res = json_decode($res, true))) {
+                return false;
+            }
+
+            return $res['login'];
+        }
+
+        return false;
+    }
+
+    /**
      * Set githubId.
      *
      * @param string $githubId
@@ -217,7 +256,7 @@ class User extends BaseUser
     }
 
     /**
-     * Get githubId.
+     * Get githubToken.
      *
      * @return string
      */
@@ -234,6 +273,26 @@ class User extends BaseUser
     public function setGithubToken($githubToken)
     {
         $this->githubToken = $githubToken;
+    }
+
+    /**
+     * Get githubScope.
+     *
+     * @return string
+     */
+    public function getGithubScope()
+    {
+        return $this->githubScope;
+    }
+
+    /**
+     * Set githubScope.
+     *
+     * @param string $githubScope
+     */
+    public function setGithubScope($githubScope)
+    {
+        $this->githubScope = $githubScope;
     }
 
     /**
@@ -274,5 +333,45 @@ class User extends BaseUser
     public function getGravatarUrl()
     {
         return 'https://www.gravatar.com/avatar/'.md5(strtolower($this->getEmail())).'?d=identicon';
+    }
+
+    public function setTotpSecret(?string $secret)
+    {
+        $this->totpSecret = $secret;
+    }
+
+    public function isTotpAuthenticationEnabled(): bool
+    {
+        return $this->totpSecret ? true : false;
+    }
+
+    public function getTotpAuthenticationUsername(): string
+    {
+        return $this->username;
+    }
+
+    public function getTotpAuthenticationConfiguration(): TotpConfigurationInterface
+    {
+        return new TotpConfiguration($this->totpSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
+    }
+
+    public function isBackupCode(string $code): bool
+    {
+        return $this->backupCode !== null && hash_equals($this->backupCode, $code);
+    }
+
+    public function invalidateBackupCode(string $code): void
+    {
+        $this->backupCode = null;
+    }
+
+    public function invalidateAllBackupCodes(): void
+    {
+        $this->backupCode = null;
+    }
+
+    public function setBackupCode(string $code): void
+    {
+        $this->backupCode = $code;
     }
 }

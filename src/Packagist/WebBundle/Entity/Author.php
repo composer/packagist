@@ -57,7 +57,7 @@ class Author
     private $versions;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\User", inversedBy="authors")
+     * @ORM\ManyToOne(targetEntity="Packagist\WebBundle\Entity\User")
      */
     private $owner;
 

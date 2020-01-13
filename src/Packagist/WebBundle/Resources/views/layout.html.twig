@@ -6,6 +6,7 @@
         <title>{% block title %}Packagist{% endblock %}</title>
         <meta name="description" content="{% block description %}The PHP Package Repository{% endblock %}" />
         <meta name="author" content="Jordi Boggiano" />
+        {% block head_canonical %}<meta name="canonical" href="{{ app.request.uri }}" />{% endblock %}
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -92,7 +93,7 @@
 
                                             <div class="signin-box-buttons">
                                                 <a href="{{ hwi_oauth_login_url('github') }}" class="pull-right btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
-                                                <button type="submit" class="btn btn-success" id="_submit" name="_submit">{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}</button>
+                                                <button type="submit" class="btn btn-success" id="_submit_mini" name="_submit">{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}</button>
                                             </div>
                                         </form>
 
@@ -109,13 +110,13 @@
             </nav>
         </header>
 
-        {{ include("PackagistWebBundle:Web:searchSection.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
+        {{ include("PackagistWebBundle:web:search_section.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
 
         {% block flashMessages %}
-            {%- if app.session.flashbag.peekAll()|length > 0 %}
+            {%- if app.request.hasPreviousSession and app.session.flashbag.peekAll()|length > 0 %}
             <section class="wrapper wrapper-white">
                 <div class="container flash-container">
-                {%- for type, flashMessages in app.session.flashbag.all() %}
+                {%- for type, flashMessages in app.flashes() %}
                     {%- for flashMessage in flashMessages %}
                         {%- if 'fos_user_' in type %}
                             <div class="alert alert-{{ type|replace({'fos_user_': ''}) }}">
@@ -138,8 +139,27 @@
         <section class="wrapper">
             <section class="container content" role="main">
                 {% block search_results %}
-                    <div class="row hidden">
-                        <div class="search-list col-md-12"></div>
+                    <div id="search-container" class="hidden">
+                        <div class="row">
+                            <div class="search-list col-md-9"></div>
+
+                            <div class="search-facets col-md-3">
+                                <div class="search-facets-active-filters"></div>
+                                <div class="search-facets-type"></div>
+                                <div class="search-facets-tags"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-9">
+                                <div id="powered-by">
+                                    Search by <a href="https://www.algolia.com/"><img src="{{ asset('bundles/packagistweb/img/algolia-logo-light.svg') }}"></a>
+                                </div>
+                                <div id="pagination-container">
+                                    <div class="pagination"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 {% endblock %}
 
@@ -159,13 +179,13 @@
 
                     <ul class="col-xs-4 col-md-2">
                         <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
-                        <li><a href="{{ path('feeds') }}">{{ 'menu.rss_feeds'|trans }}</a></li>
+                        <li><a href="{{ path('feeds') }}" rel="nofollow">{{ 'menu.rss_feeds'|trans }}</a></li>
                     </ul>
 
                     <div class="clearfix visible-xs-block"></div>
 
                     <ul class="col-xs-3 col-md-2">
-                        <li><a href="{{ path('stats') }}">{{ 'menu.stats'|trans }}</a></li>
+                        <li><a href="{{ path('stats') }}" rel="nofollow">{{ 'menu.stats'|trans }}</a></li>
                         <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
                     </ul>
 
@@ -173,30 +193,42 @@
 
                     <ul class="col-xs-3 col-md-2">
                         <li><a href="{{ path('api_doc') }}">{{ 'menu.api_doc'|trans }}</a></li>
+                        <li><a href="{{ path('mirrors') }}">{{ 'menu.mirrors'|trans }}</a></li>
                     </ul>
 
                 </div>
 
                 <div class="row">
-                    <p class="toran col-xs-12">Packagist maintenance and hosting is supported by <a href="https://packagist.com/">Private Packagist</a></p>
+                    <p class="toran col-xs-12">Packagist maintenance and hosting is provided by <a href="https://packagist.com/">Private Packagist</a></p>
                 </div>
             </nav>
         </footer>
 
+        <script>
+            var algoliaConfig = {{ algolia|json_encode|raw }};
+        </script>
+
         <script src="{{ asset('libs/jquery-2.1.4.min.js') }}"></script>
         <script src="{{ asset('libs/humane-3.2.2.min.js') }}"></script>
         <script src="{{ asset('bundles/packagistweb/js/layout.js') }}"></script>
-        <script src="{{ asset('bundles/packagistweb/js/search.js')}}"></script>
         <script src="{{ asset('libs/bootstrap-3.3.5/js/bootstrap.min.js')}}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@2.7.4/dist/instantsearch.min.js"></script>
+        <script src="{{ asset('bundles/packagistweb/js/search.js') }}"></script>
 
+        {%- block analytics %}
         {%- if not app.debug and google_analytics.ga_key %}
         <script>
-            var _gaq=[['_setAccount','{{ google_analytics.ga_key }}'],['_trackPageview']];
-            (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];g.async=1;
-            g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
-            s.parentNode.insertBefore(g,s)}(document,'script'));
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('set', 'anonymizeIp', true);
+            ga('create', '{{ google_analytics.ga_key }}', 'auto');
+            ga('send', 'pageview');
         </script>
         {%- endif %}
+        {%- endblock %}
 
         {% block scripts %}{% endblock %}
     </body>

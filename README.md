@@ -1,47 +1,46 @@
 Packagist
 =========
 
-Package Repository Website for Composer, see the [about page](http://packagist.org/about) on [packagist.org](http://packagist.org/) for more.
+Package Repository Website for Composer, see the [about page](https://packagist.org/about) on [packagist.org](https://packagist.org/) for more.
 
-Requirements
+**This project is not meant for re-use.**
+
+It is open source to make it easy to contribute. We provide no support if you want to run your own, and will do breaking changes without notice.
+
+Check out [Private Packagist](https://packagist.com/) if you want to host your own packages.
+
+Development
 ------------
 
-- MySQL for the main data store
-- Redis for some functionality (favorites, download statistics)
-- Solr for search
-- git/svn/hg depending on which repositories you want to support
+These steps are provided for development purposes only.
 
-Installation
-------------
+### Requirements
+
+- **PHP** for the web app
+- **[Symfony CLI](https://symfony.com/download)** to run the web server
+- **MySQL** for the main data store
+- **Redis** for some functionality (favorites, download statistics)
+- **git / svn / hg** depending on which repositories you want to support
+
+### Installation
 
 1. Clone the repository
-2. Edit `app/config/parameters.yml` and change the relevant values for your setup.
-3. Install dependencies: `php composer.phar install`
-4. Run `app/console doctrine:schema:create` to setup the DB.
-5. Run `app/console assets:install web` to deploy the assets on the web dir.
-6. Make a VirtualHost with DocumentRoot pointing to web/
+2. Create 2 databases:
+    - `packagist` - for the web app
+    - `packagist_test` - for running the tests
+3. Install dependencies:
+   ```bash
+   composer install
+   ```
+   The composer install will prompt you for the database connection details on first install.
+4. Setup the database:
+   ```bash
+   app/console doctrine:schema:create
+   ```
+5. Start the web server:
+   ```bash
+   symfony serve
+   ```
+6. Run a CRON job `app/console packagist:run-workers` to make sure packages update.
 
 You should now be able to access the site, create a user, etc.
-
-Setting up search
------------------
-
-The search index uses [Solr](http://lucene.apache.org/solr/) 3.6, so you will have to install that on your server.
-If you are running it on a non-standard host or port, you will have to adjust the configuration. See the
-[NelmioSolariumBundle](https://github.com/nelmio/NelmioSolariumBundle) for more details.
-
-You will also have to configure Solr. Use the `schema.xml` provided in the doc/ directory for that.
-
-To index packages, just run `app/console packagist:index`. It is recommended to set up a cron job for
-this command, and have it run every few minutes.
-
-Day-to-Day Operation
---------------------
-
-There are a few commands you should run periodically (ideally set up a cron job running every minute or so):
-
-    app/console packagist:update --no-debug --env=prod
-    app/console packagist:dump --no-debug --env=prod
-    app/console packagist:index --no-debug --env=prod
-
-The latter is optional and only required if you are running a solr server.

@@ -15,6 +15,7 @@ namespace Packagist\WebBundle\Command;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -32,6 +33,7 @@ class ClearVersionsCommand extends ContainerAwareCommand
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force execution, by default it runs in dry-run mode'),
                 new InputOption('filter', null, InputOption::VALUE_NONE, 'Filter (regex) against "<version name> <version number>"'),
+                new InputArgument('package', InputArgument::OPTIONAL, 'Package id to clear versions for'),
             ))
             ->setDescription('Clears all versions from the databases')
             ->setHelp(<<<EOF
@@ -52,10 +54,14 @@ EOF
 
         $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
 
-        $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
-        $ids = array();
-        foreach ($packages as $package) {
-            $ids[] = $package['id'];
+        if ($id = $input->getArgument('package')) {
+            $ids = [$id];
+        } else {
+            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $ids = array();
+            foreach ($packages as $package) {
+                $ids[] = $package['id'];
+            }
         }
 
         $packageNames = array();

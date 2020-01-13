@@ -109,6 +109,8 @@ class Version
     private $license;
 
     /**
+     * Deprecated relation table, use the authorJson property instead
+     *
      * @ORM\ManyToMany(targetEntity="Packagist\WebBundle\Entity\Author", inversedBy="versions")
      * @ORM\JoinTable(name="version_author",
      *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
@@ -178,9 +180,19 @@ class Version
     private $support;
 
     /**
+     * @ORM\Column(name="authors", type="json", nullable=true)
+     */
+    private $authorJson;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $softDeletedAt;
 
     /**
      * @ORM\Column(type="datetime")
@@ -206,23 +218,35 @@ class Version
         $this->updatedAt = new \DateTime;
     }
 
-    public function toArray(array $versionData)
+    public function toArray(array $versionData, bool $serializeForApi = false)
     {
-        $tags = array();
-        foreach ($this->getTags() as $tag) {
-            /** @var $tag Tag */
-            $tags[] = $tag->getName();
-        }
-
-        if (isset($versionData[$this->id]['authors'])) {
-            $authors = $versionData[$this->id]['authors'];
+        if (isset($versionData[$this->id]['tags'])) {
+            $tags = $versionData[$this->id]['tags'];
         } else {
-            $authors = array();
-            foreach ($this->getAuthors() as $author) {
-                /** @var $author Author */
-                $authors[] = $author->toArray();
+            $tags = array();
+            foreach ($this->getTags() as $tag) {
+                /** @var $tag Tag */
+                $tags[] = $tag->getName();
             }
         }
+
+        if (!is_null($this->getAuthorJson())) {
+            $authors = $this->getAuthorJson();
+        } else {
+            if (isset($versionData[$this->id]['authors'])) {
+                $authors = $versionData[$this->id]['authors'];
+            } else {
+                $authors = array();
+                foreach ($this->getAuthors() as $author) {
+                    /** @var $author Author */
+                    $authors[] = $author->toArray();
+                }
+            }
+        }
+        foreach ($authors as &$author) {
+            uksort($author, [$this, 'sortAuthorKeys']);
+        }
+        unset($author);
 
         $data = array(
             'name' => $this->getName(),
@@ -238,6 +262,9 @@ class Version
             'type' => $this->getType(),
         );
 
+        if ($serializeForApi && $this->getSupport()) {
+            $data['support'] = $this->getSupport();
+        }
         if ($this->getReleasedAt()) {
             $data['time'] = $this->getReleasedAt()->format('Y-m-d\TH:i:sP');
         }
@@ -286,6 +313,18 @@ class Version
         return $data;
     }
 
+    public function toV2Array(array $versionData)
+    {
+        $array = $this->toArray($versionData);
+
+        if ($this->getSupport()) {
+            $array['support'] = $this->getSupport();
+            ksort($array['support']);
+        }
+
+        return $array;
+    }
+
     public function equals(Version $version)
     {
         return strtolower($version->getName()) === strtolower($this->getName())
@@ -322,18 +361,28 @@ class Version
         return $this->name;
     }
 
-    public function getNames()
+    public function getNames(array $versionData = null)
     {
         $names = array(
             strtolower($this->name) => true
         );
 
-        foreach ($this->getReplace() as $link) {
-            $names[strtolower($link->getPackageName())] = true;
-        }
+        if (isset($versionData[$this->id])) {
+            foreach (($versionData[$this->id]['replace'] ?? []) as $link) {
+                $names[strtolower($link['name'])] = true;
+            }
 
-        foreach ($this->getProvide() as $link) {
-            $names[strtolower($link->getPackageName())] = true;
+            foreach (($versionData[$this->id]['provide'] ?? []) as $link) {
+                $names[strtolower($link['name'])] = true;
+            }
+        } else {
+            foreach ($this->getReplace() as $link) {
+                $names[strtolower($link->getPackageName())] = true;
+            }
+
+            foreach ($this->getProvide() as $link) {
+                $names[strtolower($link->getPackageName())] = true;
+            }
         }
 
         return array_keys($names);
@@ -658,6 +707,26 @@ class Version
     }
 
     /**
+     * Set softDeletedAt
+     *
+     * @param \DateTime|null $softDeletedAt
+     */
+    public function setSoftDeletedAt($softDeletedAt)
+    {
+        $this->softDeletedAt = $softDeletedAt;
+    }
+
+    /**
+     * Get softDeletedAt
+     *
+     * @return \DateTime|null $softDeletedAt
+     */
+    public function getSoftDeletedAt()
+    {
+        return $this->softDeletedAt;
+    }
+
+    /**
      * Get authors
      *
      * @return Author[]
@@ -665,6 +734,40 @@ class Version
     public function getAuthors()
     {
         return $this->authors;
+    }
+
+    public function getAuthorJson(): ?array
+    {
+        return $this->authorJson;
+    }
+
+    public function setAuthorJson(?array $authors): void
+    {
+        $this->authorJson = $authors ?: [];
+    }
+
+    /**
+     * Get authors
+     *
+     * @return array[]
+     */
+    public function getAuthorData(): array
+    {
+        if (!is_null($this->getAuthorJson())) {
+            return $this->getAuthorJson();
+        }
+
+        $authors = [];
+        foreach ($this->getAuthors() as $author) {
+            $authors[] = array_filter([
+                'name' => $author->getName(),
+                'homepage' => $author->getHomepage(),
+                'email' => $author->getEmail(),
+                'role' => $author->getRole(),
+            ]);
+        }
+
+        return $authors;
     }
 
     /**
@@ -930,5 +1033,17 @@ class Version
     public function __toString()
     {
         return $this->name.' '.$this->version.' ('.$this->normalizedVersion.')';
+    }
+
+    private function sortAuthorKeys($a, $b)
+    {
+        static $order = ['name' => 1, 'email' => 2, 'homepage' => 3, 'role' => 4];
+        $aIndex = $order[$a] ?? 5;
+        $bIndex = $order[$b] ?? 5;
+        if ($aIndex === $bIndex) {
+            return $a <=> $b;
+        }
+
+        return $aIndex <=> $bIndex;
     }
 }

@@ -8,7 +8,7 @@ fos_user_profile:
 
 fos_user_profile_show:
     path: /profile/
-    defaults: { _controller: PackagistWebBundle:User:myProfile }
+    defaults: { _controller: PackagistWebBundle:User:viewProfile }
     methods: [GET]
 
 fos_user_register:
@@ -44,3 +44,11 @@ logout:
 
 login_check:
     path: /login_check
+
+2fa_login:
+    path: /2fa
+    defaults:
+        _controller: "scheb_two_factor.form_controller:form"
+
+2fa_login_check:
+    path: /2fa-check

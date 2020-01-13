@@ -13,11 +13,9 @@
 namespace Packagist\WebBundle\Command;
 
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\LockHandler;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -54,10 +52,19 @@ class DumpPackagesCommand extends ContainerAwareCommand
             return;
         }
 
+        // another dumper is still active
+        $locker = $this->getContainer()->get('locker');
+        if (!$locker->lockCommand($this->getName())) {
+            if ($verbose) {
+                $output->writeln('Aborting, another task is running already');
+            }
+            return 0;
+        }
+
         $doctrine = $this->getContainer()->get('doctrine');
 
         if ($force) {
-            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForDumping();
         }
@@ -73,23 +80,13 @@ class DumpPackagesCommand extends ContainerAwareCommand
             return 0;
         }
 
-        $lock = new LockHandler('packagist_package_dumper');
-
         ini_set('memory_limit', -1);
         gc_enable();
 
-        // another dumper is still active
-        if (!$lock->lock()) {
-            if ($verbose) {
-                $output->writeln('Aborting, another dumper is still active');
-            }
-            return;
-        }
-
         try {
-             $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
+            $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
         } finally {
-             $lock->release();
+            $locker->unlockCommand($this->getName());
         }
 
         return $result ? 0 : 1;

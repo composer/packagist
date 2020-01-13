@@ -12,15 +12,21 @@
 
 namespace Packagist\WebBundle\Entity;
 
-use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class PackageRepository extends EntityRepository
+class PackageRepository extends ServiceEntityRepository
 {
+    public function __construct(RegistryInterface $registry)
+    {
+        parent::__construct($registry, Package::class);
+    }
+
     public function findProviders($name)
     {
         $query = $this->createQueryBuilder('p')
@@ -34,6 +40,20 @@ class PackageRepository extends EntityRepository
             ->setParameters(array('name' => $name));
 
         return $query->getResult();
+    }
+
+    public function getPackageNamesUpdatedSince(\DateTimeInterface $date)
+    {
+        $query = $this->getEntityManager()
+            ->createQuery("
+                SELECT p.name FROM Packagist\WebBundle\Entity\Package p
+                WHERE p.dumpedAt >= :date AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')
+            ")
+            ->setParameters(['date' => $date]);
+
+        $names = $this->getPackageNamesForQuery($query);
+
+        return array_map('strtolower', $names);
     }
 
     public function getPackageNames()
@@ -63,7 +83,7 @@ class PackageRepository extends EntityRepository
     public function getPackageNamesByType($type)
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.type = :type")
+            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.type = :type AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
             ->setParameters(array('type' => $type));
 
         return $this->getPackageNamesForQuery($query);
@@ -72,10 +92,24 @@ class PackageRepository extends EntityRepository
     public function getPackageNamesByVendor($vendor)
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.name LIKE :vendor")
+            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.name LIKE :vendor AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
             ->setParameters(array('vendor' => $vendor.'/%'));
 
         return $this->getPackageNamesForQuery($query);
+    }
+
+    public function getGitHubPackagesByMaintainer(int $userId)
+    {
+        $query = $this->createQueryBuilder('p')
+            ->select('p')
+            ->leftJoin('p.maintainers', 'm')
+            ->where('m.id = :userId')
+            ->andWhere('p.repository LIKE :repoUrl')
+            ->orderBy('p.autoUpdated', 'ASC')
+            ->getQuery()
+            ->setParameters(['userId' => $userId, 'repoUrl' => 'https://github.com/%']);
+
+        return $query->getResult();
     }
 
     public function getPackagesWithFields($filters, $fields)
@@ -84,15 +118,13 @@ class PackageRepository extends EntityRepository
         foreach ($fields as $field) {
             $selector .= ', p.'.$field;
         }
-        $where = '';
+        $where = 'p.replacementPackage != :replacement';
         foreach ($filters as $filter => $val) {
-            $where .= 'p.'.$filter.' = :'.$filter;
+            $where .= ' AND p.'.$filter.' = :'.$filter;
         }
-        if ($where) {
-            $where = 'WHERE '.$where;
-        }
+        $filters['replacement'] = "spam/spam";
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name $selector  FROM Packagist\WebBundle\Entity\Package p $where")
+            ->createQuery("SELECT p.name $selector  FROM Packagist\WebBundle\Entity\Package p WHERE $where")
             ->setParameters($filters);
 
         $result = array();
@@ -130,12 +162,18 @@ class PackageRepository extends EntityRepository
             WHERE p.abandoned = false
             AND (
                 p.crawledAt IS NULL
+                OR (p.autoUpdated = 0 AND p.crawledAt < :recent AND p.createdAt >= :yesterday)
                 OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
                 OR (p.crawledAt < :autocrawled)
             )
             ORDER BY p.id ASC',
             array(
-                'crawled' => date('Y-m-d H:i:s', strtotime('-1week')),
+                // crawl new packages every 3h for the first day so that dummy packages get deleted ASAP
+                'recent' => date('Y-m-d H:i:s', strtotime('-3hour')),
+                'yesterday' => date('Y-m-d H:i:s', strtotime('-1day')),
+                // crawl packages without auto-update once every 2week
+                'crawled' => date('Y-m-d H:i:s', strtotime('-2week')),
+                // crawl all packages including auto-updated once a month just in case
                 'autocrawled' => date('Y-m-d H:i:s', strtotime('-1month')),
             )
         );
@@ -152,15 +190,62 @@ class PackageRepository extends EntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAt IS NULL OR p.dumpedAt <= p.crawledAt  ORDER BY p.id ASC');
+        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAt IS NULL OR p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW() ORDER BY p.id ASC');
     }
 
-    public function findOneByName($name)
+    public function iterateStaleDownloadCountPackageIds()
     {
-        $qb = $this->getBaseQueryBuilder()
+        $qb = $this->createQueryBuilder('p');
+        $res = $qb
+            ->select('p.id, d.lastUpdated, p.createdAt')
+            ->leftJoin('p.downloads', 'd')
+            ->where('((d.type = :type AND d.lastUpdated < :time) OR d.lastUpdated IS NULL)')
+            ->setParameters(['type' => Download::TYPE_PACKAGE, 'time' => new \DateTime('-20hours')])
+            ->getQuery()
+            ->getResult();
+
+        foreach ($res as $row) {
+            yield ['id' => $row['id'], 'lastUpdated' => is_null($row['lastUpdated']) ? new \DateTimeImmutable($row['createdAt']->format('r')) : new \DateTimeImmutable($row['lastUpdated']->format('r'))];
+        }
+    }
+
+    public function getPartialPackageByNameWithVersions($name)
+    {
+        // first fetch a partial package including joined versions/maintainers, that way
+        // the join is cheap and heavy data (description, readme) is not duplicated for each joined row
+        //
+        // fetching everything partial here to avoid fetching tons of data,
+        // this helps for packages like https://packagist.org/packages/ccxt/ccxt
+        // with huge amounts of versions
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('partial p.{id}', 'partial v.{id, version, normalizedVersion, development, releasedAt, extra}', 'partial m.{id, username, email}')
+            ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->leftJoin('p.versions', 'v')
+            ->leftJoin('p.maintainers', 'm')
+            ->orderBy('v.development', 'DESC')
+            ->addOrderBy('v.releasedAt', 'DESC')
             ->where('p.name = ?0')
             ->setParameters(array($name));
-        return $qb->getQuery()->getSingleResult();
+
+        $pkg = $qb->getQuery()->getSingleResult();
+
+        if ($pkg) {
+            // then refresh the package to complete its data and inject the previously fetched versions/maintainers to
+            // get a complete package
+            $versions = $pkg->getVersions();
+            $maintainers = $pkg->getMaintainers();
+            $this->getEntityManager()->refresh($pkg);
+
+            $prop = new \ReflectionProperty($pkg, 'versions');
+            $prop->setAccessible(true);
+            $prop->setValue($pkg, $versions);
+
+            $prop = new \ReflectionProperty($pkg, 'maintainers');
+            $prop->setAccessible(true);
+            $prop->setValue($pkg, $maintainers);
+        }
+
+        return $pkg;
     }
 
     public function getPackageByName($name)
@@ -216,6 +301,8 @@ class PackageRepository extends EntityRepository
             $qb->leftJoin('v.tags', 't');
         }
 
+        $qb->andWhere('(p.replacementPackage IS NULL OR p.replacementPackage != \'spam/spam\')');
+
         $qb->orderBy('p.abandoned');
         if (true === $orderByName) {
             $qb->addOrderBy('p.name');
@@ -252,7 +339,36 @@ class PackageRepository extends EntityRepository
         return true;
     }
 
-    public function getDependentCount($name)
+    public function markPackageSuspect(Package $package)
+    {
+        $sql = 'UPDATE package SET suspect = :suspect WHERE id = :id';
+        $this->getEntityManager()->getConnection()->executeUpdate($sql, ['suspect' => $package->getSuspect(), 'id' => $package->getId()]);
+    }
+
+    public function getSuspectPackageCount()
+    {
+        $sql = 'SELECT COUNT(*) count FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam")';
+
+        $stmt = $this->getEntityManager()->getConnection()->executeQuery($sql);
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return (int) $result[0]['count'];
+    }
+
+    public function getSuspectPackages($offset = 0, $limit = 15)
+    {
+        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+            FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam") ORDER BY p.createdAt DESC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+
+        $stmt = $this->getEntityManager()->getConnection()->executeQuery($sql);
+        $result = $stmt->fetchAll();
+        $stmt->closeCursor();
+
+        return $result;
+    }
+
+    public function getDependantCount($name)
     {
         $sql = 'SELECT COUNT(*) count FROM (
                 SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
@@ -358,20 +474,6 @@ class PackageRepository extends EntityRepository
         }
     }
 
-    public function getBaseQueryBuilder()
-    {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p', 'v', 't', 'm')
-            ->from('Packagist\WebBundle\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
-            ->leftJoin('p.maintainers', 'm')
-            ->leftJoin('v.tags', 't')
-            ->orderBy('v.development', 'DESC')
-            ->addOrderBy('v.releasedAt', 'DESC');
-
-        return $qb;
-    }
-
     /**
      * Gets the most recent packages created
      *
@@ -382,6 +484,7 @@ class PackageRepository extends EntityRepository
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
+            ->where('p.abandoned = false')
             ->orderBy('p.id', 'DESC');
 
         return $qb;

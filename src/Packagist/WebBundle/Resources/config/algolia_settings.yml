@@ -1,0 +1,35 @@
+searchableAttributes:
+    - "unordered(package_name)"
+    - "unordered(tags)"
+    - "unordered(package_organisation)"
+    - "unordered(description)"
+    - "unordered(name)"
+
+ranking:
+    - "typo"
+    - "geo"
+    - "words"
+    - "filters"
+    - "desc(popularity)"
+    - "attribute"
+    - "proximity"
+    - "exact"
+    - "custom"
+
+customRanking:
+    - "asc(abandoned)"
+
+attributesToHighlight:
+    - "name"
+    - "package_name"
+    - "package_organisation"
+    - "description"
+
+ignorePlurals: true
+advancedSyntax: true
+separatorsToIndex:
+    - '/'
+
+attributesForFaceting:
+    - "type"
+    - "searchable(tags)"

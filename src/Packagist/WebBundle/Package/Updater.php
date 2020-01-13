@@ -21,15 +21,16 @@ use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Util\ErrorHandler;
 use Composer\Util\RemoteFilesystem;
-use Composer\Json\JsonFile;
 use Composer\Config;
 use Composer\IO\IOInterface;
 use Packagist\WebBundle\Entity\Author;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Version;
+use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Entity\SuggestLink;
 use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\DBAL\Connection;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -90,25 +91,21 @@ class Updater
      * @param \Packagist\WebBundle\Entity\Package $package
      * @param RepositoryInterface $repository the repository instance used to update from
      * @param int $flags a few of the constants of this class
-     * @param \DateTime $start
      */
-    public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, \DateTime $start = null)
+    public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, array $existingVersions = null): Package
     {
         $rfs = new RemoteFilesystem($io, $config);
-        $blacklist = '{^symfony/symfony (2.0.[456]|dev-charset|dev-console)}i';
 
-        if (null === $start) {
-            $start = new \DateTime();
-        }
-        $pruneDate = clone $start;
-        $pruneDate->modify('-1min');
+        $deleteDate = new \DateTime();
+        $deleteDate->modify('-1day');
 
         $em = $this->doctrine->getManager();
         $apc = extension_loaded('apcu');
+        $rootIdentifier = null;
 
         if ($repository instanceof VcsRepository) {
             $cfg = $repository->getRepoConfig();
-            if (isset($cfg['url']) && preg_match('{\bgithub\.com\b}', $cfg['url'])) {
+            if (isset($cfg['url']) && preg_match('{\bgithub\.com\b}i', $cfg['url'])) {
                 foreach ($package->getMaintainers() as $maintainer) {
                     if (!($newGithubToken = $maintainer->getGithubToken())) {
                         continue;
@@ -138,10 +135,15 @@ class Updater
                     break;
                 }
             }
+
+            if (!$repository->getDriver()) {
+                throw new \RuntimeException('Driver could not be established for package '.$package->getName().' ('.$package->getRepository().')');
+            }
+
+            $rootIdentifier = $repository->getDriver()->getRootIdentifier();
         }
 
         $versions = $repository->getPackages();
-
         usort($versions, function ($a, $b) {
             $aVersion = $a->getVersion();
             $bVersion = $b->getVersion();
@@ -179,37 +181,57 @@ class Updater
             $em->refresh($package);
         }
 
-        $lastUpdated = true;
+        if (!$existingVersions) {
+            $existingVersions = $versionRepository->getVersionMetadataForUpdate($package);
+        }
+
+        $processedVersions = [];
         $lastProcessed = null;
+        $idsToMarkUpdated = [];
         foreach ($versions as $version) {
             if ($version instanceof AliasPackage) {
                 continue;
             }
 
-            if (preg_match($blacklist, $version->getName().' '.$version->getPrettyVersion())) {
+            if (isset($processedVersions[strtolower($version->getVersion())])) {
+                $io->write('Skipping version '.$version->getPrettyVersion().' (duplicate of '.$processedVersions[strtolower($version->getVersion())]->getPrettyVersion().')', true, IOInterface::VERBOSE);
                 continue;
             }
+            $processedVersions[strtolower($version->getVersion())] = $version;
 
-            if ($lastProcessed && $lastProcessed->getVersion() === $version->getVersion()) {
-                $io->write('Skipping version '.$version->getPrettyVersion().' (duplicate of '.$lastProcessed->getPrettyVersion().')', true, IOInterface::VERBOSE);
-                continue;
-            }
-            $lastProcessed = $version;
+            $result = $this->updateInformation($versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
+            $lastUpdated = $result['updated'];
 
-            $lastUpdated = $this->updateInformation($package, $version, $flags);
             if ($lastUpdated) {
                 $em->flush();
+                $em->clear();
+                $package = $em->merge($package);
+            } else {
+                $idsToMarkUpdated[] = $result['id'];
             }
+
+            // mark the version processed so we can prune leftover ones
+            unset($existingVersions[$result['version']]);
         }
 
-        if (!$lastUpdated) {
-            $em->flush();
-        }
+        // mark versions that did not update as updated to avoid them being pruned
+        $em->getConnection()->executeUpdate(
+            'UPDATE package_version SET updatedAt = :now, softDeletedAt = NULL WHERE id IN (:ids)',
+            ['now' => date('Y-m-d H:i:s'), 'ids' => $idsToMarkUpdated],
+            ['ids' => Connection::PARAM_INT_ARRAY]
+        );
 
         // remove outdated versions
-        foreach ($package->getVersions() as $version) {
-            if ($version->getUpdatedAt() < $pruneDate) {
-                $versionRepository->remove($version);
+        foreach ($existingVersions as $version) {
+            if (!is_null($version['softDeletedAt']) && new \DateTime($version['softDeletedAt']) < $deleteDate) {
+                $versionRepository->remove($versionRepository->findOneById($version['id']));
+            } else {
+                // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
+                // version is still missing it will be really removed
+                $em->getConnection()->executeUpdate(
+                    'UPDATE package_version SET softDeletedAt = :now WHERE id = :id',
+                    ['now' => date('Y-m-d H:i:s'), 'id' => $version['id']]
+                );
             }
         }
 
@@ -225,26 +247,39 @@ class Updater
         if ($repository->hadInvalidBranches()) {
             throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
         }
+
+        return $package;
     }
 
-    private function updateInformation(Package $package, PackageInterface $data, $flags)
+    /**
+     * @return array with keys:
+     *                    - updated (whether the version was updated or needs to be marked as updated)
+     *                    - id (version id, can be null for newly created versions)
+     *                    - version (normalized version from the composer package)
+     *                    - object (Version instance if it was updated)
+     */
+    private function updateInformation(VersionRepository $versionRepo, Package $package, array $existingVersions, PackageInterface $data, $flags, $rootIdentifier)
     {
         $em = $this->doctrine->getManager();
         $version = new Version();
 
         $normVersion = $data->getVersion();
 
-        $existingVersion = $package->getVersion($normVersion);
+        $existingVersion = $existingVersions[strtolower($normVersion)] ?? null;
         if ($existingVersion) {
-            $source = $existingVersion->getSource();
+            $source = $existingVersion['source'];
             // update if the right flag is set, or the source reference has changed (re-tag or new commit on branch)
             if ($source['reference'] !== $data->getSourceReference() || ($flags & self::UPDATE_EQUAL_REFS)) {
-                $version = $existingVersion;
-            } else {
-                // mark it updated to avoid it being pruned
-                $existingVersion->setUpdatedAt(new \DateTime);
+                $version = $versionRepo->findOneById($existingVersion['id']);
+            } elseif ($existingVersion['needs_author_migration']) {
+                $version = $versionRepo->findOneById($existingVersion['id']);
 
-                return false;
+                $version->setAuthorJson($version->getAuthorData());
+                $version->getAuthors()->clear();
+
+                return ['updated' => true, 'id' => $version->getId(), 'version' => strtolower($normVersion), 'object' => $version];
+            } else {
+                return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
             }
         }
 
@@ -257,12 +292,18 @@ class Updater
 
         $descr = $this->sanitize($data->getDescription());
         $version->setDescription($descr);
-        $package->setDescription($descr);
+
+        // update the package description only for the default branch
+        if ($rootIdentifier === null || preg_replace('{dev-|(\.x)?-dev}', '', $version->getVersion()) === $rootIdentifier) {
+            $package->setDescription($descr);
+        }
+
         $version->setHomepage($data->getHomepage());
         $version->setLicense($data->getLicense() ?: array());
 
         $version->setPackage($package);
         $version->setUpdatedAt(new \DateTime);
+        $version->setSoftDeletedAt(null);
         $version->setReleasedAt($data->getReleaseDate());
 
         if ($data->getSourceType()) {
@@ -329,21 +370,19 @@ class Updater
             $version->getTags()->clear();
         }
 
-        $authorRepository = $this->doctrine->getRepository('PackagistWebBundle:Author');
-
         $version->getAuthors()->clear();
+        $version->setAuthorJson([]);
         if ($data->getAuthors()) {
+            $authors = [];
             foreach ($data->getAuthors() as $authorData) {
-                $author = null;
+                $author = [];
 
                 foreach (array('email', 'name', 'homepage', 'role') as $field) {
                     if (isset($authorData[$field])) {
-                        $authorData[$field] = trim($authorData[$field]);
-                        if ('' === $authorData[$field]) {
-                            $authorData[$field] = null;
+                        $author[$field] = trim($authorData[$field]);
+                        if ('' === $author[$field]) {
+                            unset($author[$field]);
                         }
-                    } else {
-                        $authorData[$field] = null;
                     }
                 }
 
@@ -352,35 +391,9 @@ class Updater
                     continue;
                 }
 
-                $author = $authorRepository->findOneBy(array(
-                    'email' => $authorData['email'],
-                    'name' => $authorData['name'],
-                    'homepage' => $authorData['homepage'],
-                    'role' => $authorData['role'],
-                ));
-
-                if (!$author) {
-                    $author = new Author();
-                    $em->persist($author);
-                }
-
-                foreach (array('email', 'name', 'homepage', 'role') as $field) {
-                    if (isset($authorData[$field])) {
-                        $author->{'set'.$field}($authorData[$field]);
-                    }
-                }
-
-                // only update the author timestamp once a month at most as the value is kinda unused
-                if ($author->getUpdatedAt() === null || $author->getUpdatedAt()->getTimestamp() < time() - 86400 * 30) {
-                    $author->setUpdatedAt(new \DateTime);
-                }
-                if (!$version->getAuthors()->contains($author)) {
-                    $version->addAuthor($author);
-                }
-                if (!$author->getVersions()->contains($version)) {
-                    $author->addVersion($version);
-                }
+                $authors[] = $author;
             }
+            $version->setAuthorJson($authors);
         }
 
         // handle links
@@ -452,11 +465,7 @@ class Updater
             $version->getSuggest()->clear();
         }
 
-        if (!$package->getVersions()->contains($version)) {
-            $package->addVersions($version);
-        }
-
-        return true;
+        return ['updated' => true, 'id' => $version->getId(), 'version' => strtolower($normVersion), 'object' => $version];
     }
 
     /**
@@ -580,30 +589,49 @@ class Updater
             'table', 'thead', 'tbody', 'th', 'tr', 'td',
             'a', 'span',
             'img',
+            'details', 'summary',
         );
 
         $attributes = array(
             'img.src', 'img.title', 'img.alt', 'img.width', 'img.height', 'img.style',
             'a.href', 'a.target', 'a.rel', 'a.id',
             'td.colspan', 'td.rowspan', 'th.colspan', 'th.rowspan',
-            '*.class'
+            '*.class', 'details.open'
         );
+
+        // detect base path if the github readme is located in a subfolder like docs/README.md
+        $basePath = '';
+        if ($isGithub && preg_match('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
+            $basePath = dirname($match[1]);
+        }
+        if ($basePath) {
+            $basePath .= '/';
+        }
 
         $config = \HTMLPurifier_Config::createDefault();
         $config->set('HTML.AllowedElements', implode(',', $elements));
         $config->set('HTML.AllowedAttributes', implode(',', $attributes));
         $config->set('Attr.EnableID', true);
         $config->set('Attr.AllowedFrameTargets', ['_blank']);
+
+        // add custom HTML tag definitions
+        $def = $config->getHTMLDefinition(true);
+        $def->addElement('details', 'Block', 'Flow', 'Common', array(
+          'open' => 'Bool#open',
+        ));
+        $def->addElement('summary', 'Inline', 'Inline', 'Common');
+
         $purifier = new \HTMLPurifier($config);
         $readme = $purifier->purify($readme);
 
+        libxml_use_internal_errors(true);
         $dom = new \DOMDocument();
         $dom->loadHTML('<?xml encoding="UTF-8">' . $readme);
 
         // Links can not be trusted, mark them nofollow and convert relative to absolute links
         $links = $dom->getElementsByTagName('a');
         foreach ($links as $link) {
-            $link->setAttribute('rel', 'nofollow noopener external');
+            $link->setAttribute('rel', 'nofollow noindex noopener external');
             if ('#' === substr($link->getAttribute('href'), 0, 1)) {
                 $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
             } elseif ('mailto:' === substr($link->getAttribute('href'), 0, 7)) {
@@ -611,7 +639,7 @@ class Updater
             } elseif ($isGithub && false === strpos($link->getAttribute('href'), '//')) {
                 $link->setAttribute(
                     'href',
-                    'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$link->getAttribute('href')
+                    'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$basePath.$link->getAttribute('href')
                 );
             }
         }
@@ -623,24 +651,29 @@ class Updater
                 if (false === strpos($img->getAttribute('src'), '//')) {
                     $img->setAttribute(
                         'src',
-                        'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$img->getAttribute('src')
+                        'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$basePath.$img->getAttribute('src')
                     );
                 }
             }
         }
 
-        // remove first title as it's usually the project name which we don't need
-        if ($dom->getElementsByTagName('h1')->length) {
-            $first = $dom->getElementsByTagName('h1')->item(0);
-            $first->parentNode->removeChild($first);
-        } elseif ($dom->getElementsByTagName('h2')->length) {
-            $first = $dom->getElementsByTagName('h2')->item(0);
+        // remove first page element if it's a <h1> or <h2>, because it's usually
+        // the project name or the `README` string which we don't need
+        $first = $dom->getElementsByTagName('body')->item(0);
+        if ($first) {
+            $first = $first->childNodes->item(0);
+        }
+
+        if ($first && ('h1' === $first->nodeName || 'h2' === $first->nodeName)) {
             $first->parentNode->removeChild($first);
         }
 
         $readme = $dom->saveHTML();
         $readme = substr($readme, strpos($readme, '<body>')+6);
         $readme = substr($readme, 0, strrpos($readme, '</body>'));
+
+        libxml_use_internal_errors(false);
+        libxml_clear_errors();
 
         return str_replace("\r\n", "\n", $readme);
     }

@@ -69,7 +69,8 @@
     }
 
     function forceUpdatePackage(e, updateAll) {
-        var submit = $('input[type=submit]', '.package .force-update'), data;
+        var submit = $('input[type=submit], .force-update-trigger', '.package .force-update'), data;
+        var showOutput = e && e.shiftKey;
         if (e) {
             e.preventDefault();
         }
@@ -80,20 +81,56 @@
         if (updateAll) {
             data.push({name: 'updateAll', value: '1'});
         }
-        if (e && e.shiftKey) {
-            data.push({name: 'showOutput', value: '1'});
-        }
+
         $.ajax({
             url: $('.package .force-update').attr('action'),
             dataType: 'json',
             cache: false,
             data: data,
             type: $('.package .force-update').attr('method'),
-            success: function () {
-                document.location.reload(true);
+            success: function (data) {
+                if (data.job) {
+                    var checkJobStatus = function () {
+                        $.ajax({
+                            url: '/jobs/' + data.job,
+                            cache: false,
+                            success: function (data) {
+                                if (data.status == 'completed' || data.status == 'errored' || data.status == 'failed' || data.status == 'package_deleted') {
+                                    humane.remove();
+
+                                    var message = data.message;
+                                    var details = '';
+                                    if (data.status !== 'completed') {
+                                        message += ' [' + data.exceptionClass + '] ' + data.exceptionMsg;
+                                        details = data.details;
+                                    } else if (showOutput) {
+                                        details = data.details;
+                                    }
+
+                                    if (details) {
+                                        humane.log([message, details], {timeout: 0, clickToClose: false});
+                                    } else {
+                                        humane.log(message, {timeout: 2, clickToClose: true});
+                                        setTimeout(function () {
+                                            document.location.reload(true);
+                                        }, 700);
+                                    }
+
+                                    submit.removeClass('loading');
+
+                                    return;
+                                }
+
+                                setTimeout(checkJobStatus, 1000);
+                            }
+                        });
+                    };
+
+                    setTimeout(checkJobStatus, 1000);
+                }
             },
             context: $('.package .force-update')[0]
-        }).complete(function () { submit.removeClass('loading'); });
+        });
         submit.addClass('loading');
     }
     $('.package .force-update').on('submit', forceUpdatePackage);

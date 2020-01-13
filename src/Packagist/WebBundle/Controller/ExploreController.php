@@ -14,15 +14,16 @@ namespace Packagist\WebBundle\Controller;
 
 use Doctrine\DBAL\ConnectionException;
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\PackageRepository;
 use Packagist\WebBundle\Entity\VersionRepository;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
@@ -37,14 +38,17 @@ class ExploreController extends Controller
     public function exploreAction()
     {
         /** @var PackageRepository $pkgRepo */
-        $pkgRepo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $pkgRepo = $this->getDoctrine()->getRepository(Package::class);
         /** @var VersionRepository $verRepo */
-        $verRepo = $this->get('packagist.version_repository');
+        $verRepo = $this->getDoctrine()->getRepository(Version::class);
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
-            ->getQuery()->useResultCache(true, 900)->getResult();
+            ->getQuery()->useResultCache(true, 60)->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
-        $randomIds = $this->getDoctrine()->getConnection()->fetchAll('SELECT id FROM package ORDER BY RAND() LIMIT 10');
-        $random = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $randomIds)->getQuery()->getResult();
+        $maxId = $this->getDoctrine()->getConnection()->fetchColumn('SELECT max(id) FROM package');
+        $random = $pkgRepo
+            ->createQueryBuilder('p')->where('p.id >= :randId')->andWhere('p.abandoned = 0')
+            ->setParameter('randId', rand(1, $maxId))->setMaxResults(10)
+            ->getQuery()->getResult();
         try {
             $popular = array();
             $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);
@@ -59,14 +63,12 @@ class ExploreController extends Controller
             $popular = array();
         }
 
-        $data = array(
+        return array(
             'newlySubmitted' => $newSubmitted,
             'newlyReleased' => $newReleases,
             'random' => $random,
             'popular' => $popular,
         );
-
-        return $data;
     }
 
     /**
@@ -92,10 +94,10 @@ class ExploreController extends Controller
 
             $popularIds = $redis->zrevrange(
                 'downloads:trending',
-                ($req->get('page', 1) - 1) * $perPage,
-                $req->get('page', 1) * $perPage - 1
+                (max(1, (int) $req->get('page', 1)) - 1) * $perPage,
+                max(1, (int) $req->get('page', 1)) * $perPage - 1
             );
-            $popular = $this->getDoctrine()->getRepository('PackagistWebBundle:Package')
+            $popular = $this->getDoctrine()->getRepository(Package::class)
                 ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
                 ->getQuery()->useResultCache(true, 900)->getResult();
             usort($popular, function ($a, $b) use ($popularIds) {

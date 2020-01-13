@@ -1,160 +1,208 @@
-/*jslint browser: true */
-/*global jQuery: true */
-(function ($) {
-    "use strict";
-
-    var list = $('.search-list'),
-        form = $('form#search-form'),
-        showResults,
-        doSearch,
-        searching = false,
-        searchQueued = false,
-        previousQuery = form.serialize(),
-        firstQuery = true;
-
-    showResults = function (page) {
-        var newList = $(page);
-
-        list.html(newList.html());
-        list.parent().removeClass('hidden');
-        list.find('ul.packages li:first').addClass('selected');
-        $('.order-by-group').attr('href', function (index, current) {
-            return current.replace(/q=.*?&/, 'q=' + encodeURIComponent($('input[type="search"]', form).val()) + '&')
-        });
-        $('.js-search-field-wrapper').removeClass('col-xs-12').addClass('col-xs-8');
-        $('#order-bys-wrapper').removeClass('hidden');
-
-        searching = false;
-
-        if (searchQueued) {
-            doSearch();
-            searchQueued = false;
-        }
-    };
-
-    doSearch = function () {
-        var currentQuery,
-            q,
-            pathname,
-            urlPrefix,
-            url,
-            title;
-
-        if (searching) {
-            searchQueued = true;
-            return;
-        }
-
-        if ($('#search_query_query').val().match(/^\s*$/) !== null) {
-            if (!firstQuery) {
-                list.parent().addClass('hidden');
-                $('#order-bys-wrapper').addClass('hidden');
-            }
-            return;
-        }
-
-        currentQuery = form.serialize();
-
-        if (previousQuery === currentQuery) {
-            return;
-        }
-
-        $('.order-by-group .active').removeClass('active');
-
-        if (window.history.pushState) {
-            q = encodeURIComponent($('input[type="search"]', form).val());
-
-            pathname = window.location.pathname;
-
-            if (pathname.indexOf('/app_dev.php') === 0) {
-                urlPrefix = '/app_dev.php';
-            } else if (pathname.indexOf('/app.php') === 0) {
-                urlPrefix = '/app.php';
-            } else {
-                urlPrefix = '';
-            }
-
-            url = urlPrefix + '/search/?q=' + q;
-            title = 'Search';
-
-            if (firstQuery) {
-                window.history.pushState(null, title, url);
-                firstQuery = false;
-            } else {
-                window.history.replaceState(null, title, url);
-            }
-        }
-
-        $.ajax({
-            url: form.attr('action'),
-            data: currentQuery,
-            success: showResults
-        });
-
-        searching = true;
-        previousQuery = currentQuery;
-    };
-
-    form.bind('keyup search', doSearch);
-
-    form.bind('keydown', function (event) {
-        var keymap,
-            currentSelected,
-            nextSelected;
-
-        keymap = {
-            enter: 13,
-            left: 37,
-            up: 38,
-            right: 39,
-            down: 40
-        };
-
-        if (keymap.up !== event.which && keymap.down !== event.which && keymap.enter !== event.which) {
-            return;
-        }
-
-        if ($('#search_query_query').val().match(/^\s*$/) !== null) {
-            document.activeElement.blur();
-            return;
-        }
-
-        event.preventDefault();
-
-        currentSelected = list.find('ul.packages li.selected');
-        nextSelected = (keymap.down === event.which) ? currentSelected.next('li') : currentSelected.prev('li');
-
-        if (currentSelected.length === 0 && keymap.down === event.which) {
-            currentSelected = list.find('ul.packages li:first').addClass('selected');
-        }
-
-        if (keymap.enter === event.which && currentSelected.data('url')) {
-            var url = currentSelected.data('url');
-            if (event.ctrlKey) {
-                window.open(url);
-                return;
-            }
-
-            window.location = url;
-            return;
-        }
-
-        if (nextSelected.length > 0) {
-            currentSelected.removeClass('selected');
-            nextSelected.addClass('selected');
-
-            nextSelected.get(0).scrollIntoView(false);
-        }
-    });
-
-    // handle pressing S to focus the search
-    $(document.body).bind('keyup', function (event) {
-        if (event.which === 83 && (!document.activeElement || -1 === ['INPUT','SELECT','TEXTAREA'].indexOf(document.activeElement.tagName))) {
-            $('#search_query_query').focus();
-        }
-    });
-
-    if ($(document).width() >= 992) {
-        $('#search_query_query').focus();
+document.getElementById('search_query_query').addEventListener('keydown', function (e) {
+    if (e.keyCode === 13) {
+        e.preventDefault();
     }
-}(jQuery));
+});
+
+var searchParameters = {};
+
+if (decodeURI(location.search).match(/[<>]/)) {
+    location.replace(location.pathname);
+}
+
+var searchThrottle = null;
+var search = instantsearch({
+    appId: algoliaConfig.app_id,
+    apiKey: algoliaConfig.search_key,
+    indexName: algoliaConfig.index_name,
+    routing: {
+        stateMapping: {
+            stateToRoute: function (uiState) {
+                return {
+                    query: uiState.query,
+                    type: uiState.menu && uiState.menu.type,
+                    tags: uiState.refinementList && uiState.refinementList.tags && uiState.refinementList.tags.join('~'),
+                    page: uiState.page,
+                };
+            },
+            routeToState: function (routeState) {
+                if (routeState.q) {
+                    routeState.query = routeState.q;
+                }
+
+                if (
+                    (routeState.query === undefined || routeState.query === '')
+                    && (routeState.type === undefined || routeState.type === '')
+                    && (routeState.tags === undefined || routeState.tags === '')
+                ) {
+                    return {};
+                }
+
+                return {
+                    query: routeState.query || '',
+                    menu: {
+                        type: routeState.type
+                    },
+                    refinementList: {
+                        tags: routeState.tags && routeState.tags.split('~'),
+                    },
+                    page: routeState.page
+                };
+            },
+        },
+    },
+    searchFunction: function(helper) {
+        var searchResults = $('#search-container');
+
+        if (helper.state.query === ''
+            && helper.state.hierarchicalFacetsRefinements.type === undefined
+            && (helper.state.disjunctiveFacetsRefinements.tags === undefined || helper.state.disjunctiveFacetsRefinements.tags.length === 0)
+        ) {
+            searchResults.addClass('hidden');
+        } else {
+            searchResults.removeClass('hidden');
+        }
+
+        if (searchThrottle) {
+            clearTimeout(searchThrottle);
+        }
+
+        searchThrottle = setTimeout(function () {
+            helper.search();
+        }, 300);
+    },
+    searchParameters: searchParameters
+});
+
+var autofocus = false;
+if (location.pathname == "/" || location.pathname == "/app_dev.php/") {
+    autofocus = true;
+}
+search.addWidget(
+    instantsearch.widgets.searchBox({
+        container: '#search_query_query',
+        magnifier: false,
+        reset: false,
+        wrapInput: false,
+        autofocus: autofocus
+    })
+);
+
+search.addWidget(
+    instantsearch.widgets.hits({
+        container: '.search-list',
+        transformData: function (hit) {
+            hit.url = '/packages/' + hit.name;
+            if (hit.type === 'virtual-package') {
+                hit.virtual = true;
+                hit.url = '/providers/' + hit.name;
+            }
+
+            if (hit._highlightResult && hit._highlightResult.description.value && hit._highlightResult.description.value.length > 200) {
+                hit._highlightResult.description.value = hit._highlightResult.description.value.substring(0, 200).replace(/<[a-z ]+$/, '');
+            }
+
+            return hit;
+        },
+        templates: {
+            empty: 'No packages found.',
+            item: `
+<div data-url="{{ url }}" class="col-xs-12 package-item">
+    <div class="row">
+        <div class="col-sm-9 col-lg-10">
+            <p class="pull-right language">{{ language }}</p>
+            <h4 class="font-bold">
+                <a href="{{ url }}" tabindex="2">{{{ _highlightResult.name.value }}}</a>
+                {{#virtual}}
+                    <small>(Virtual Package)</small>
+                {{/virtual}}
+            </h4>
+
+            <p>{{{ _highlightResult.description.value }}}</p>
+
+            {{#abandoned}}
+            <p class="abandoned">
+                <i class="glyphicon glyphicon-exclamation-sign"></i> Abandoned!
+                {{#replacementPackage}}
+                    See <a href="/packages/{{ replacementPackage }}">{{ replacementPackage }}</a>
+                {{/replacementPackage}}
+            </p>
+            {{/abandoned}}
+        </div>
+
+        <div class="col-sm-3 col-lg-2">
+            {{#meta}}
+                <p class="metadata">
+                    <span class="metadata-block"><i class="glyphicon glyphicon-download"></i> {{ meta.downloads_formatted }}</span>
+                    <span class="metadata-block"><i class="glyphicon glyphicon-star"></i> {{ meta.favers_formatted }}</span>
+                </p>
+            {{/meta}}
+        </div>
+    </div>
+</div>
+`
+        },
+        cssClasses: {
+            root: 'packages',
+            item: 'row'
+        }
+    })
+);
+
+search.addWidget(
+    instantsearch.widgets.pagination({
+        container: '.pagination',
+        maxPages: 200,
+        scrollTo: document.getElementById('search_query_query'),
+        showFirstLast: false,
+    })
+);
+
+search.addWidget(
+    instantsearch.widgets.currentRefinedValues({
+        container: '.search-facets-active-filters',
+        clearAll: 'before',
+        clearsQuery: false,
+        cssClasses: {
+            clearAll: 'pull-right'
+        },
+        templates: {
+            header: 'Active filters',
+            item: function (filter) {
+                if ('tags' == filter.attributeName) {
+                    return 'tag: ' + filter.name
+                } else {
+                    return filter.attributeName + ': ' + filter.name
+                }
+            }
+        },
+        onlyListedAttributes: true,
+    })
+);
+
+search.addWidget(
+    instantsearch.widgets.menu({
+        container: '.search-facets-type',
+        attributeName: 'type',
+        limit: 15,
+        showMore: true,
+        templates: {
+            header: 'Package type'
+        }
+    })
+);
+
+search.addWidget(
+    instantsearch.widgets.refinementList({
+        container: '.search-facets-tags',
+        attributeName: 'tags',
+        limit: 15,
+        showMore: true,
+        templates: {
+            header: 'Tags'
+        },
+        searchForFacetValues:true
+    })
+);
+
+search.start();

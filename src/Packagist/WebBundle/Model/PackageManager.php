@@ -12,28 +12,115 @@
 
 namespace Packagist\WebBundle\Model;
 
-use Doctrine\ORM\EntityManager;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Packagist\WebBundle\Entity\Package;
 use Psr\Log\LoggerInterface;
+use Algolia\AlgoliaSearch\SearchClient;
+use Predis\Client;
+use Packagist\WebBundle\Service\GitHubUserMigrationWorker;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class PackageManager
 {
-    protected $em;
+    protected $doctrine;
     protected $mailer;
+    protected $instantMailer;
     protected $twig;
     protected $logger;
     protected $options;
+    protected $providerManager;
+    protected $algoliaClient;
+    protected $algoliaIndexName;
+    protected $githubWorker;
+    protected $metadataDir;
 
-    public function __construct(EntityManager $em, \Swift_Mailer $mailer, \Twig_Environment $twig, LoggerInterface $logger, array $options)
+    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Swift_Mailer $instantMailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir, Client $redis)
     {
-        $this->em = $em;
+        $this->doctrine = $doctrine;
         $this->mailer = $mailer;
+        $this->instantMailer = $instantMailer;
         $this->twig = $twig;
         $this->logger = $logger;
         $this->options = $options;
+        $this->providerManager = $providerManager;
+        $this->algoliaClient = $algoliaClient;
+        $this->algoliaIndexName  = $algoliaIndexName;
+        $this->githubWorker  = $githubWorker;
+        $this->metadataDir  = $metadataDir;
+        $this->redis = $redis;
+    }
+
+    public function deletePackage(Package $package)
+    {
+        /** @var VersionRepository $versionRepo */
+        $versionRepo = $this->doctrine->getRepository('PackagistWebBundle:Version');
+        foreach ($package->getVersions() as $version) {
+            $versionRepo->remove($version);
+        }
+
+        if ($package->getAutoUpdated() === Package::AUTO_GITHUB_HOOK) {
+            foreach ($package->getMaintainers() as $maintainer) {
+                $token = $maintainer->getGithubToken();
+                try {
+                    if ($token && $this->githubWorker->deleteWebHook($token, $package)) {
+                        break;
+                    }
+                } catch (\GuzzleHttp\Exception\TransferException $e) {
+                    // ignore
+                }
+            }
+        }
+
+        $em = $this->doctrine->getManager();
+
+        $downloadRepo = $this->doctrine->getRepository('PackagistWebBundle:Download');
+        $downloadRepo->deletePackageDownloads($package);
+
+        $emptyRefRepo = $this->doctrine->getRepository('PackagistWebBundle:EmptyReferenceCache');
+        $emptyRef = $emptyRefRepo->findOneBy(['package' => $package]);
+        if ($emptyRef) {
+            $em->remove($emptyRef);
+            $em->flush();
+        }
+
+        $this->providerManager->deletePackage($package);
+        $packageId = $package->getId();
+        $packageName = $package->getName();
+
+        $em->remove($package);
+        $em->flush();
+
+        $metadataV2 = $this->metadataDir.'/p2/'.strtolower($packageName).'.json';
+        if (file_exists($metadataV2)) {
+            @unlink($metadataV2);
+        }
+        if (file_exists($metadataV2.'.gz')) {
+            @unlink($metadataV2.'.gz');
+        }
+        $metadataV2Dev = $this->metadataDir.'/p2/'.strtolower($packageName).'~dev.json';
+        if (file_exists($metadataV2Dev)) {
+            @unlink($metadataV2Dev);
+        }
+        if (file_exists($metadataV2Dev.'.gz')) {
+            @unlink($metadataV2Dev.'.gz');
+        }
+
+        // delete redis stats
+        try {
+            $this->redis->del('views:'.$packageId);
+        } catch (\Predis\Connection\ConnectionException $e) {
+        }
+
+        // attempt search index cleanup
+        try {
+            $indexName = $this->algoliaIndexName;
+            $algolia = $this->algoliaClient;
+            $index = $algolia->initIndex($indexName);
+            $index->deleteObject($packageName);
+        } catch (\AlgoliaSearch\AlgoliaException $e) {
+        }
     }
 
     public function notifyUpdateFailure(Package $package, \Exception $e, $details = null)
@@ -47,14 +134,14 @@ class PackageManager
             }
 
             if ($recipients) {
-                $body = $this->twig->render('PackagistWebBundle:Email:update_failed.txt.twig', array(
+                $body = $this->twig->render('PackagistWebBundle:email:update_failed.txt.twig', array(
                     'package' => $package,
                     'exception' => get_class($e),
                     'exceptionMessage' => $e->getMessage(),
                     'details' => strip_tags($details),
                 ));
 
-                $message = \Swift_Message::newInstance()
+                $message = (new \Swift_Message)
                     ->setSubject($package->getName().' failed to update, invalid composer.json data')
                     ->setFrom($this->options['from'], $this->options['fromName'])
                     ->setTo($recipients)
@@ -62,7 +149,7 @@ class PackageManager
                 ;
 
                 try {
-                    $this->mailer->send($message);
+                    $this->instantMailer->send($message);
                 } catch (\Swift_TransportException $e) {
                     $this->logger->error('['.get_class($e).'] '.$e->getMessage());
 
@@ -71,7 +158,7 @@ class PackageManager
             }
 
             $package->setUpdateFailureNotified(true);
-            $this->em->flush();
+            $this->doctrine->getEntityManager()->flush();
         }
 
         return true;
@@ -79,11 +166,11 @@ class PackageManager
 
     public function notifyNewMaintainer($user, $package)
     {
-        $body = $this->twig->render('PackagistWebBundle:Email:maintainer_added.txt.twig', array(
+        $body = $this->twig->render('PackagistWebBundle:email:maintainer_added.txt.twig', array(
             'package_name' => $package->getName()
         ));
 
-        $message = \Swift_Message::newInstance()
+        $message = (new \Swift_Message)
             ->setSubject('You have been added to ' . $package->getName() . ' as a maintainer')
             ->setFrom($this->options['from'], $this->options['fromName'])
             ->setTo($user->getEmail())

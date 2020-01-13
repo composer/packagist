@@ -1,7 +1,6 @@
 <?php
 
 use Symfony\Component\Config\Loader\LoaderInterface;
-use Symfony\Component\Debug\ErrorHandler;
 use Symfony\Component\HttpKernel\Kernel;
 
 class AppKernel extends Kernel
@@ -18,13 +17,15 @@ class AppKernel extends Kernel
             new Doctrine\Bundle\DoctrineCacheBundle\DoctrineCacheBundle(),
             new Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle(),
             new FOS\UserBundle\FOSUserBundle(),
+            new Http\HttplugBundle\HttplugBundle(),
             new HWI\Bundle\OAuthBundle\HWIOAuthBundle(),
             new Snc\RedisBundle\SncRedisBundle(),
             new WhiteOctober\PagerfantaBundle\WhiteOctoberPagerfantaBundle(),
-            new Nelmio\SolariumBundle\NelmioSolariumBundle(),
             new Nelmio\SecurityBundle\NelmioSecurityBundle(),
             new Knp\Bundle\MenuBundle\KnpMenuBundle(),
             new Nelmio\CorsBundle\NelmioCorsBundle(),
+            new Scheb\TwoFactorBundle\SchebTwoFactorBundle(),
+            new Endroid\QrCodeBundle\EndroidQrCodeBundle(),
             new Packagist\WebBundle\PackagistWebBundle(),
         );
 

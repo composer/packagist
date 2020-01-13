@@ -41,7 +41,6 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages, or if a package name is given forces an update of all versions'),
                 new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all versions before an update'),
-                new InputOption('notify-failures', null, InputOption::VALUE_NONE, 'Notify failures to maintainers by email'),
                 new InputOption('update-equal-refs', null, InputOption::VALUE_NONE, 'Force update of all versions even when they already exist'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
             ))
@@ -59,78 +58,59 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $package = $input->getArgument('package');
 
         $doctrine = $this->getContainer()->get('doctrine');
-        $router = $this->getContainer()->get('router');
+        $deleteBefore = false;
+        $updateEqualRefs = false;
+        $randomTimes = true;
 
-        $flags = 0;
+        $locker = $this->getContainer()->get('locker');
+        if (!$locker->lockCommand($this->getName())) {
+            if ($verbose) {
+                $output->writeln('Aborting, another task is running already');
+            }
+            return 0;
+        }
 
         if ($package) {
             $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
-            $flags = $force ? Updater::UPDATE_EQUAL_REFS : 0;
+            if ($force) {
+                $updateEqualRefs = true;
+            }
+            $randomTimes = false;
         } elseif ($force) {
             $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
-            $flags = Updater::UPDATE_EQUAL_REFS;
+            $updateEqualRefs = true;
         } else {
             $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
         }
 
         $ids = array();
         foreach ($packages as $package) {
-            $ids[] = $package['id'];
+            $ids[] = (int) $package['id'];
         }
 
         if ($input->getOption('delete-before')) {
-            $flags = Updater::DELETE_BEFORE;
-        } elseif ($input->getOption('update-equal-refs')) {
-            $flags = Updater::UPDATE_EQUAL_REFS;
+            $deleteBefore = true;
+        }
+        if ($input->getOption('update-equal-refs')) {
+            $updateEqualRefs = true;
         }
 
-        $updater = $this->getContainer()->get('packagist.package_updater');
-        $start = new \DateTime();
-
-        if ($verbose && $input->getOption('notify-failures')) {
-            throw new \LogicException('Failures can not be notified in verbose mode since the output is piped to the CLI');
-        }
-
-        $input->setInteractive(false);
-        $config = Factory::createConfig();
-        $io = $verbose ? new ConsoleIO($input, $output, $this->getApplication()->getHelperSet()) : new BufferIO('');
-        $io->loadConfiguration($config);
-        $loader = new ValidatingArrayLoader(new ArrayLoader());
-        $auths = $io->getAuthentications();
+        $scheduler = $this->getContainer()->get('scheduler');
 
         while ($ids) {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getPackagesWithVersions(array_splice($ids, 0, 50));
+            $idsGroup = array_splice($ids, 0, 100);
 
-            foreach ($packages as $package) {
+            foreach ($idsGroup as $id) {
+                $job = $scheduler->scheduleUpdate($id, $updateEqualRefs, $deleteBefore, $randomTimes ? new \DateTime('+'.rand(1, 600).'seconds') : null);
                 if ($verbose) {
-                    $output->writeln('Importing '.$package->getRepository());
+                    $output->writeln('Scheduled update job '.$job->getId().' for package '.$id);
                 }
-                try {
-                    if (null === $io || $io instanceof BufferIO) {
-                        $io = new BufferIO('');
-                        $io->loadConfiguration($config);
-                    } else {
-                        foreach ($auths as $domain => $auth) {
-                            $io->setAuthentication($domain, $auth['username'], $auth['password']);
-                        }
-                    }
-                    $repository = new VcsRepository(array('url' => $package->getRepository()), $io, $config);
-                    $repository->setLoader($loader);
-                    $updater->update($io, $config, $package, $repository, $flags, $start);
-                } catch (InvalidRepositoryException $e) {
-                    $output->writeln('<error>Broken repository in '.$router->generate('view_package', array('name' => $package->getName()), true).': '.$e->getMessage().'</error>');
-                    if ($input->getOption('notify-failures')) {
-                        if (!$this->getContainer()->get('packagist.package_manager')->notifyUpdateFailure($package, $e, $io->getOutput())) {
-                            $output->writeln('<error>Failed to notify maintainers</error>');
-                        }
-                    }
-                } catch (\Exception $e) {
-                    $output->writeln('<error>Error updating '.$router->generate('view_package', array('name' => $package->getName()), true).' ['.get_class($e).']: '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().'</error>');
-                }
+                $doctrine->getManager()->detach($job);
             }
 
             $doctrine->getManager()->clear();
-            unset($packages);
         }
+
+        $locker->unlockCommand($this->getName());
     }
 }

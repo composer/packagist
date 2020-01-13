@@ -1,0 +1,50 @@
+<div class="col-md-3 no-padding">
+    <div class="package-aside versions-wrapper">
+        <ul class="versions">
+            {% for version in versions %}
+                {% set expanded = version.id == expandedId|default(false) %}
+                <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
+                    <a href="#{{ version.version }}" class="version-number">
+                        {{- version.version -}}
+                        {% if version.hasVersionAlias() %}
+                            / {{ version.versionAlias }}
+                        {% endif -%}
+                    </a>
+
+                    {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
+                        <a class="advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
+                            <i class="glyphicon glyphicon-alert " title="Version has security advisories"></i>
+                        </a>
+                    {% endif %}
+
+                    {% if deleteVersionCsrfToken is defined and deleteVersionCsrfToken is not empty %}
+                    <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="DELETE">
+                        <input type="hidden" name="_token" value="{{ deleteVersionCsrfToken }}" />
+                        <i class="submit glyphicon glyphicon-remove"></i>
+                    </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        <div class="hidden versions-expander">
+            <i class="glyphicon glyphicon-chevron-down"></i>
+        </div>
+    </div>
+
+    {% if showUpdated is defined and showUpdated and package.getUpdatedAt() %}
+        <div class="last-update">
+            {% if not package.isAutoUpdated() %}
+                <p class="auto-update-danger">This package is <strong>not</strong> auto-updated.</p>
+            {% else %}
+                <p class="auto-update-success">This package is auto-updated.</p>
+            {% endif %}
+            <p>Last update: {{ package.getUpdatedAt()|date('Y-m-d H:i:s') }} UTC</p>
+            {% if showUpdateButton %}
+                <form class="force-update action" action="{{ path('update_package', {name: package.name, type: 'public_update'}) }}" method="PUT">
+                    <input type="hidden" name="update" value="1" />
+                    <a class="force-update-trigger">Update Now</a>
+                </form>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>

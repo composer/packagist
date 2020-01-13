@@ -15,13 +15,10 @@ namespace Packagist\WebBundle\Controller;
 use Doctrine\ORM\QueryBuilder;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
-use Pagerfanta\Adapter\DoctrineORMAdapter;
-use Pagerfanta\Pagerfanta;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Zend\Feed\Writer\Entry;
 use Zend\Feed\Writer\Feed;
@@ -46,14 +43,14 @@ class FeedController extends Controller
      * @Route(
      *     "/packages.{_format}",
      *     name="feed_packages",
-     *     requirements={"_format"="(rss|atom)"}
+     *     requirements={"_format"="(rss|atom)"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function packagesAction(Request $req)
     {
         /** @var $repo \Packagist\WebBundle\Entity\PackageRepository */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Package');
+        $repo = $this->getDoctrine()->getRepository(Package::class);
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForNewestPackages()
         );
@@ -73,14 +70,14 @@ class FeedController extends Controller
      * @Route(
      *     "/releases.{_format}",
      *     name="feed_releases",
-     *     requirements={"_format"="(rss|atom)"}
+     *     requirements={"_format"="(rss|atom)"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function releasesAction(Request $req)
     {
         /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $repo = $this->getDoctrine()->getRepository(Version::class);
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForLatestVersionWithPackage()
         );
@@ -100,14 +97,14 @@ class FeedController extends Controller
      * @Route(
      *     "/vendor.{vendor}.{_format}",
      *     name="feed_vendor",
-     *     requirements={"_format"="(rss|atom)", "vendor"="[A-Za-z0-9_.-]+"}
+     *     requirements={"_format"="(rss|atom)", "vendor"="[A-Za-z0-9_.-]+"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function vendorAction(Request $req, $vendor)
     {
         /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $repo = $this->getDoctrine()->getRepository(Version::class);
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForLatestVersionWithPackage($vendor)
         );
@@ -127,14 +124,14 @@ class FeedController extends Controller
      * @Route(
      *     "/package.{package}.{_format}",
      *     name="feed_package",
-     *     requirements={"_format"="(rss|atom)", "package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}
+     *     requirements={"_format"="(rss|atom)", "package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"},
+     *     methods={"GET"}
      * )
-     * @Method({"GET"})
      */
     public function packageAction(Request $req, $package)
     {
         /** @var $repo \Packagist\WebBundle\Entity\VersionRepository */
-        $repo = $this->getDoctrine()->getRepository('PackagistWebBundle:Version');
+        $repo = $this->getDoctrine()->getRepository(Version::class);
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForLatestVersionWithPackage(null, $package)
         );
@@ -147,7 +144,14 @@ class FeedController extends Controller
             $packages
         );
 
-        return $this->buildResponse($req, $feed);
+        $response = $this->buildResponse($req, $feed);
+
+        $first = reset($packages);
+        if (false !== $first) {
+            $response->setDate($first->getReleasedAt());
+        }
+
+        return $response;
     }
 
     /**
@@ -159,13 +163,13 @@ class FeedController extends Controller
      */
     protected function getLimitedResults(QueryBuilder $queryBuilder)
     {
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($queryBuilder));
-        $paginator->setMaxPerPage(
-            $this->container->getParameter('packagist_web.rss_max_items')
-        );
-        $paginator->setCurrentPage(1);
+        $query = $queryBuilder
+            ->getQuery()
+            ->setMaxResults(
+                $this->container->getParameter('packagist_web.rss_max_items')
+            );
 
-        return $paginator->getCurrentPageResults();
+        return $query->getResult();
     }
 
     /**
@@ -260,11 +264,10 @@ class FeedController extends Controller
         $entry->setDateModified($version->getReleasedAt());
         $entry->setDateCreated($version->getReleasedAt());
 
-        foreach ($version->getAuthors() as $author) {
-            /** @var $author \Packagist\WebBundle\Entity\Author */
-            if ($author->getName()) {
+        foreach ($version->getAuthorData() as $author) {
+            if (!empty($author['name'])) {
                 $entry->addAuthor(array(
-                    'name' => $author->getName()
+                    'name' => $author['name']
                 ));
             }
         }
