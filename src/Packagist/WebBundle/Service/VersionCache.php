@@ -40,4 +40,14 @@ class VersionCache implements VersionCacheInterface
 
         return null;
     }
+
+    public function clearVersion($version)
+    {
+        foreach (array_keys($this->versionCache) as $v) {
+            if (preg_replace('{dev-|(\.x)?-dev}', '', $v) === $version) {
+                unset($this->versionCache[$v]);
+                break;
+            }
+        }
+    }
 }

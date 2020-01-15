@@ -31,6 +31,7 @@ use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Entity\SuggestLink;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Doctrine\DBAL\Connection;
+use Packagist\WebBundle\Service\VersionCache;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -92,7 +93,7 @@ class Updater
      * @param RepositoryInterface $repository the repository instance used to update from
      * @param int $flags a few of the constants of this class
      */
-    public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, array $existingVersions = null): Package
+    public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, array $existingVersions = null, VersionCache $versionCache = null): Package
     {
         $rfs = new RemoteFilesystem($io, $config);
 
@@ -141,6 +142,13 @@ class Updater
             }
 
             $rootIdentifier = $repository->getDriver()->getRootIdentifier();
+        }
+
+        // always update the master branch / root identifier, as in case a package gets archived
+        // we want to mark it abandoned automatically, but there will not be a new commit to trigger
+        // an update
+        if ($rootIdentifier && $versionCache) {
+            $versionCache->clearVersion($rootIdentifier);
         }
 
         $versions = $repository->getPackages();
@@ -273,6 +281,8 @@ class Updater
                 $source['reference'] !== $data->getSourceReference()
                 // or if the right flag is set
                 || ($flags & self::UPDATE_EQUAL_REFS)
+                // or if the package must be marked abandoned from composer.json
+                || ($data->isAbandoned() && !$package->isAbandoned())
             ) {
                 $version = $versionRepo->findOneById($existingVersion['id']);
             } elseif ($existingVersion['needs_author_migration']) {
