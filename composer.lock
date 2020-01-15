@@ -329,12 +329,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "7e87b56324cc7e85217ff2422a8b858718f683bd"
+                "reference": "dbcf592ea22553d90cf27e81501fe279345473f6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/7e87b56324cc7e85217ff2422a8b858718f683bd",
-                "reference": "7e87b56324cc7e85217ff2422a8b858718f683bd",
+                "url": "https://api.github.com/repos/composer/composer/zipball/dbcf592ea22553d90cf27e81501fe279345473f6",
+                "reference": "dbcf592ea22553d90cf27e81501fe279345473f6",
                 "shasum": ""
             },
             "require": {
@@ -401,7 +401,12 @@
                 "dependency",
                 "package"
             ],
-            "time": "2020-01-13T14:58:56+00:00"
+            "support": {
+                "irc": "irc://irc.freenode.org/composer",
+                "issues": "https://github.com/composer/composer/issues",
+                "source": "https://github.com/composer/composer/tree/master"
+            },
+            "time": "2020-01-14T15:33:39+00:00"
         },
         {
             "name": "composer/semver",

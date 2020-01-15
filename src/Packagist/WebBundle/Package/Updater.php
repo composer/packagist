@@ -199,7 +199,7 @@ class Updater
             }
             $processedVersions[strtolower($version->getVersion())] = $version;
 
-            $result = $this->updateInformation($versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
+            $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
             $lastUpdated = $result['updated'];
 
             if ($lastUpdated) {
@@ -258,7 +258,7 @@ class Updater
      *                    - version (normalized version from the composer package)
      *                    - object (Version instance if it was updated)
      */
-    private function updateInformation(VersionRepository $versionRepo, Package $package, array $existingVersions, PackageInterface $data, $flags, $rootIdentifier)
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, PackageInterface $data, $flags, $rootIdentifier)
     {
         $em = $this->doctrine->getManager();
         $version = new Version();
@@ -268,8 +268,12 @@ class Updater
         $existingVersion = $existingVersions[strtolower($normVersion)] ?? null;
         if ($existingVersion) {
             $source = $existingVersion['source'];
-            // update if the right flag is set, or the source reference has changed (re-tag or new commit on branch)
-            if ($source['reference'] !== $data->getSourceReference() || ($flags & self::UPDATE_EQUAL_REFS)) {
+            if (
+                // update if the source reference has changed (re-tag or new commit on branch)
+                $source['reference'] !== $data->getSourceReference()
+                // or if the right flag is set
+                || ($flags & self::UPDATE_EQUAL_REFS)
+            ) {
                 $version = $versionRepo->findOneById($existingVersion['id']);
             } elseif ($existingVersion['needs_author_migration']) {
                 $version = $versionRepo->findOneById($existingVersion['id']);
@@ -296,6 +300,13 @@ class Updater
         // update the package description only for the default branch
         if ($rootIdentifier === null || preg_replace('{dev-|(\.x)?-dev}', '', $version->getVersion()) === $rootIdentifier) {
             $package->setDescription($descr);
+            if ($data->isAbandoned() && !$package->isAbandoned()) {
+                $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
+                $package->setAbandoned(true);
+                if ($data->getReplacementPackage()) {
+                    $package->setReplacementPackage($data->getReplacementPackage());
+                }
+            }
         }
 
         $version->setHomepage($data->getHomepage());
