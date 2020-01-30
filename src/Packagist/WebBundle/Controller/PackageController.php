@@ -259,19 +259,23 @@ class PackageController extends Controller
 
     /**
      * @Route(
-     *     "/providers/{name}",
+     *     "/providers/{name}.{_format}",
      *     name="view_providers",
-     *     requirements={"name"="[A-Za-z0-9/_.-]+?"},
+     *     requirements={"name"="[A-Za-z0-9/_.-]+?", "_format"="(json)"},
      *     defaults={"_format"="html"},
      *     methods={"GET"}
      * )
      */
-    public function viewProvidersAction($name)
+    public function viewProvidersAction(Request $req, $name)
     {
         /** @var PackageRepository $repo */
         $repo = $this->getDoctrine()->getRepository(Package::class);
         $providers = $repo->findProviders($name);
         if (!$providers) {
+            if ($req->getRequestFormat() === 'json') {
+                return new JsonResponse(['providers' => []]);
+            }
+
             return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
         }
 
@@ -294,6 +298,19 @@ class PackageController extends Controller
                 return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? -1 : 1;
             });
         } catch (ConnectionException $e) {}
+
+        if ($req->getRequestFormat() === 'json') {
+            foreach ($providers as $index => $package) {
+                $providers[$index] = [
+                    'name' => $package->getName(),
+                    'description' => $package->getDescription(),
+                    'type' => $package->getType(),
+                    'repository' => $package->getRepository(),
+                ];
+            }
+
+            return new JsonResponse(['providers' => $providers]);
+        }
 
         return $this->render('PackagistWebBundle:package:providers.html.twig', array(
             'name' => $name,
