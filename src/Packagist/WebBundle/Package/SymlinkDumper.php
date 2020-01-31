@@ -96,12 +96,6 @@ class SymlinkDumper
     private $individualFilesMtime = array();
 
     /**
-     * Modified times of individual files V2
-     * @var array
-     */
-    private $individualFilesV2Mtime = array();
-
-    /**
      * Stores all the disk writes to be replicated in the second build dir after the symlink has been swapped
      * @var array
      */
@@ -709,11 +703,10 @@ class SymlinkDumper
             $this->fs->mkdir(dirname($path));
 
             $json = json_encode($data, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
-            $this->writeFile($path, $json, $this->individualFilesV2Mtime[$key]);
+            $this->writeV2File($path, $json);
         }
 
         $this->individualFilesV2 = array();
-        $this->individualFilesV2Mtime = array();
     }
 
     private function dumpPackageToV2File(Package $package, $versionData, string $packageKey, string $packageKeyDev)
@@ -742,12 +735,9 @@ class SymlinkDumper
     private function dumpVersionsToV2File(Package $package, $versions, $versionData, string $packageKey)
     {
         $minifiedVersions = [];
-        $mtime = 0;
-
         $lastKnownVersionData = null;
         foreach ($versions as $version) {
             $versionArray = $version->toV2Array($versionData);
-            $mtime = max($mtime, $version->getReleasedAt() ? $version->getReleasedAt()->getTimestamp() : time());
 
             if (!$lastKnownVersionData) {
                 $lastKnownVersionData = $versionArray;
@@ -778,7 +768,6 @@ class SymlinkDumper
 
         $this->individualFilesV2[$packageKey]['packages'][strtolower($package->getName())] = $minifiedVersions;
         $this->individualFilesV2[$packageKey]['minified'] = 'composer/2.0';
-        $this->individualFilesV2Mtime[$packageKey] = $mtime;
     }
 
     private function clearDirectory($path)
@@ -862,6 +851,16 @@ class SymlinkDumper
         if (is_array($this->writeLog)) {
             $this->writeLog[$path] = array($contents, $mtime);
         }
+    }
+
+    private function writeV2File($path, $contents)
+    {
+        if (file_exists($path) && file_get_contents($path) === $contents) {
+            return;
+        }
+
+        file_put_contents($path.'.tmp', $contents);
+        rename($path.'.tmp', $path);
     }
 
     private function writeFileNonAtomic($path, $contents)
