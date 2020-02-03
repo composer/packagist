@@ -291,15 +291,17 @@
                             {% include 'PackagistWebBundle:package:version_details.html.twig' with {version: expandedVersion} %}
                         {% endif %}
                     </div>
-                    {% include 'PackagistWebBundle:package:version_list.html.twig' with {
-                        versions: versions,
-                        expandedId: expandedVersion.id,
-                        deleteVersionCsrfToken: deleteVersionCsrfToken|default(null),
-                        package: package,
-                        showUpdated: true,
-                        showUpdateButton: not hasActions and app.user and not package.wasUpdatedInTheLast24Hours(),
-                        hasVersionSecurityAdvisories: hasVersionSecurityAdvisories
-                    } %}
+                    <div class="col-md-3 no-padding">
+                        {% include 'PackagistWebBundle:package:version_list.html.twig' with {
+                            versions: versions,
+                            expandedId: expandedVersion.id,
+                            deleteVersionCsrfToken: deleteVersionCsrfToken|default(null),
+                            package: package,
+                            showUpdated: true,
+                            showUpdateButton: not hasActions and app.user and not package.wasUpdatedInTheLast24Hours(),
+                            hasVersionSecurityAdvisories: hasVersionSecurityAdvisories
+                        } %}
+                    </div>
                 </div>
             {% elseif package.crawledAt is null %}
                 <p class="col-xs-12">This package has not been crawled yet, some information is missing.</p>

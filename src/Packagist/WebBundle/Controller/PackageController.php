@@ -982,6 +982,7 @@ class PackageController extends Controller
      */
     public function statsAction(Request $req, Package $package)
     {
+        /** @var Version[] $versions */
         $versions = $package->getVersions()->toArray();
         usort($versions, Package::class.'::sortVersions');
         $date = $this->guessStatsStartDate($package);
@@ -1004,13 +1005,18 @@ class PackageController extends Controller
         $data['package'] = $package;
 
         $expandedVersion = reset($versions);
+        $majorVersions = [];
+        $foundExpandedVersion = false;
         foreach ($versions as $v) {
-            /** @var Version $v */
             if (!$v->isDevelopment()) {
-                $expandedVersion = $v;
-                break;
+                $majorVersions[] = $v->getMajorVersion();
+                if (!$foundExpandedVersion) {
+                    $expandedVersion = $v;
+                    $foundExpandedVersion = true;
+                }
             }
         }
+        $data['majorVersions'] = array_unique($majorVersions);
         $data['expandedId'] = $expandedVersion ? $expandedVersion->getId() : false;
 
         return $data;
@@ -1132,7 +1138,7 @@ class PackageController extends Controller
      * )
      * @ParamConverter("version", options={"exclude": {"name"}})
      */
-    public function overallStatsAction(Request $req, Package $package, Version $version = null)
+    public function overallStatsAction(Request $req, Package $package, Version $version = null, int $majorVersion = null)
     {
         if ($from = $req->query->get('from')) {
             $from = new DateTimeImmutable($from);
@@ -1146,19 +1152,25 @@ class PackageController extends Controller
         }
         $average = $req->query->get('average', $this->guessStatsAverage($from, $to));
 
-        if ($version) {
+        $dlData = [];
+        if ($majorVersion) {
+            $dlData = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findDataByMajorVersion($package, $majorVersion);
+        } elseif ($version) {
             $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
+            $dlData[] = $downloads ? $downloads->getData() : [];
         } else {
             $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
+            $dlData[] = $downloads ? $downloads->getData() : [];
         }
 
         $datePoints = $this->createDatePoints($from, $to, $average);
-        $dlData = $downloads ? $downloads->getData() : [];
 
         foreach ($datePoints as $label => $values) {
             $value = 0;
             foreach ($values as $valueKey) {
-                $value += $dlData[$valueKey] ?? 0;
+                foreach ($dlData as $data) {
+                    $value += $data[$valueKey] ?? 0;
+                }
             }
             $datePoints[$label] = ceil($value / count($values));
         }
@@ -1179,6 +1191,18 @@ class PackageController extends Controller
         $response->setSharedMaxAge(1800);
 
         return $response;
+    }
+
+    /**
+     * @Route(
+     *      "/packages/{name}/stats/major/{majorVersion}.json",
+     *      name="major_version_stats",
+     *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "majorVersion"="[0-9]+?"}
+     * )
+     */
+    public function majorVersionStatsAction(Request $req, Package $package, $majorVersion)
+    {
+        return $this->overallStatsAction($req, $package, null, $majorVersion);
     }
 
     /**

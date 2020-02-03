@@ -1663,6 +1663,16 @@ svg.chart {
   margin-right: 5%;
   position: relative;
 }
+.stats-toggle-wrapper {
+    display: flex;
+}
+.stats-toggle-wrapper a {
+    flex: 1;
+    padding: 2px 15px 2px 15px;
+}
+.stats-toggle-wrapper a.open {
+    color: #000;
+}
 
 .two-factor-key {
     max-width: 200px;

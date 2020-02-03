@@ -1046,4 +1046,9 @@ class Version
 
         return $aIndex <=> $bIndex;
     }
+
+    public function getMajorVersion(): int
+    {
+        return (int) explode('.', $this->normalizedVersion, 2)[0];
+    }
 }

@@ -119,6 +119,14 @@
             });
         }
 
+        function toggleStatsType(statsType) {
+            $('.package .stats-toggler.open').removeClass('open');
+            $('.package .stats-toggler[data-stats-type=' + statsType + ']').addClass('open');
+
+            $('.package .stats-wrapper').hide();
+            $('.package .stats-wrapper[data-stats-type=' + statsType + ']').show();
+        }
+
         // initializer for #<version-id> present on page load
         if (hash.length > 1) {
             hash = hash.substring(1);
@@ -126,12 +134,24 @@
             if (match.length) {
                 $('.package .details-toggler.open').removeClass('open');
                 match.addClass('open');
+
+                toggleStatsType(match.closest('[data-stats-type]').attr('data-stats-type'));
             }
+        } else {
+            match = $('.package .details-toggler.open');
+            toggleStatsType(match.closest('[data-stats-type]').attr('data-stats-type'));
         }
 
         if ($('.package .details-toggler.open').length) {
             loadVersionChart($('.package .details-toggler.open').attr('data-version-id'));
         }
+
+        $('.package .stats-toggler').on('click', function () {
+            var target = $(this);
+            toggleStatsType($(this).attr('data-stats-type'));
+
+            $('.package .details-toggler[data-version-id="' + target.attr('href').substr(1) + '"]').trigger('click');
+        });
 
         $('.package .details-toggler').on('click', function () {
             var res, target = $(this), versionId = target.attr('data-version-id');

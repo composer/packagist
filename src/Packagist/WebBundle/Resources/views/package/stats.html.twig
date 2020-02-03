@@ -61,7 +61,36 @@
                         </svg>
                     </div>
                 </div>
-                {% include 'PackagistWebBundle:package:version_list.html.twig' with {versions: versions, expandedId: expandedId} %}
+                <div class="col-md-3 no-padding">
+                    <div class="stats-toggle-wrapper">
+                        {% if versions|length > 0 and majorVersions|length > 0 %}
+                            <a class="stats-toggler" href="#{{ versions[0].version }}" data-stats-type="version">Versions</a>
+                            <a class="stats-toggler" href="#major/{{ majorVersions[0] }}" data-stats-type="major">Major Versions</a>
+                        {% endif %}
+                    </div>
+                    <div class="stats-wrapper" data-stats-type="version">
+                        {% include 'PackagistWebBundle:package:version_list.html.twig' with {versions: versions, expandedId: expandedId} %}
+                    </div>
+                    {% if majorVersions|length > 0 %}
+                        <div class="stats-wrapper" data-stats-type="major">
+                            <div class="package-aside versions-wrapper">
+                                <ul class="versions">
+                                    {% for majorVersion in majorVersions %}
+                                        {% set expanded = majorVersion == expandedId|default(false) %}
+                                        <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="major/{{ majorVersion }}">
+                                            <a href="#major/{{ majorVersion }}" class="version-number">
+                                                {{- majorVersion -}}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <div class="hidden versions-expander">
+                                    <i class="glyphicon glyphicon-chevron-down"></i>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </section>
