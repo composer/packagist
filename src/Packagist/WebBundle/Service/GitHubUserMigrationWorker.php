@@ -213,14 +213,8 @@ class GitHubUserMigrationWorker
 
     private function request(string $token, string $method, string $url, array $json = null): Response
     {
-        if (strpos($url, '?')) {
-            $url .= '&access_token='.$token;
-        } else {
-            $url .= '?access_token='.$token;
-        }
-
         $opts = [
-            'headers' => ['Accept' => 'application/vnd.github.v3+json'],
+            'headers' => ['Accept' => 'application/vnd.github.v3+json', 'Authorization: token '.$token],
         ];
 
         if ($json) {

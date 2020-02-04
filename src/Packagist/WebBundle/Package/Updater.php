@@ -118,8 +118,8 @@ class Updater
                     }
 
                     if (true !== $valid) {
-                        $context = stream_context_create(['http' => ['header' => 'User-agent: packagist-token-check']]);
-                        $rate = json_decode(@file_get_contents('https://api.github.com/rate_limit?access_token='.$newGithubToken, false, $context), true);
+                        $context = stream_context_create(['http' => ['header' => ['User-agent: packagist-token-check', 'Authorization: token '.$newGithubToken]]]);
+                        $rate = json_decode(@file_get_contents('https://api.github.com/rate_limit', false, $context), true);
                         // invalid/outdated token, wipe it so we don't try it again
                         if (!$rate && (strpos($http_response_header[0], '403') || strpos($http_response_header[0], '401'))) {
                             $maintainer->setGithubToken(null);
