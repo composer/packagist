@@ -329,12 +329,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "dbcf592ea22553d90cf27e81501fe279345473f6"
+                "reference": "fb93036a70c9520cab99b46723ebc8f2e6fd82a6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/dbcf592ea22553d90cf27e81501fe279345473f6",
-                "reference": "dbcf592ea22553d90cf27e81501fe279345473f6",
+                "url": "https://api.github.com/repos/composer/composer/zipball/fb93036a70c9520cab99b46723ebc8f2e6fd82a6",
+                "reference": "fb93036a70c9520cab99b46723ebc8f2e6fd82a6",
                 "shasum": ""
             },
             "require": {
@@ -406,7 +406,7 @@
                 "issues": "https://github.com/composer/composer/issues",
                 "source": "https://github.com/composer/composer/tree/master"
             },
-            "time": "2020-01-14T15:33:39+00:00"
+            "time": "2020-01-28T13:22:11+00:00"
         },
         {
             "name": "composer/semver",
@@ -4983,16 +4983,16 @@
         },
         {
             "name": "symfony/symfony",
-            "version": "v3.4.36",
+            "version": "v3.4.37",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/symfony.git",
-                "reference": "0a6fccb5772ad2467253e6849d589bd09d9eb195"
+                "reference": "1bd873459b36cf505c7b515ba6e0e2ee40890b8a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/symfony/zipball/0a6fccb5772ad2467253e6849d589bd09d9eb195",
-                "reference": "0a6fccb5772ad2467253e6849d589bd09d9eb195",
+                "url": "https://api.github.com/repos/symfony/symfony/zipball/1bd873459b36cf505c7b515ba6e0e2ee40890b8a",
+                "reference": "1bd873459b36cf505c7b515ba6e0e2ee40890b8a",
                 "shasum": ""
             },
             "require": {
@@ -5137,9 +5137,9 @@
             ],
             "support": {
                 "issues": "https://github.com/symfony/symfony/issues",
-                "source": "https://github.com/symfony/symfony/tree/v3.4.36"
+                "source": "https://github.com/symfony/symfony/tree/3.4"
             },
-            "time": "2019-12-01T13:50:53+00:00"
+            "time": "2020-01-21T12:30:09+00:00"
         },
         {
             "name": "twig/extensions",
