@@ -233,8 +233,8 @@ class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface
                 return false;
             }
 
-            $ctxt = ['http' => ['header' => ['User-Agent: packagist.org']]];
-            $res = @file_get_contents('https://api.github.com/user?access_token='.$this->githubToken, false, stream_context_create($ctxt));
+            $ctxt = ['http' => ['header' => ['User-Agent: packagist.org', 'Authorization: token '.$this->githubToken]]];
+            $res = @file_get_contents('https://api.github.com/user', false, stream_context_create($ctxt));
             if (!$res || !($res = json_decode($res, true))) {
                 return false;
             }
