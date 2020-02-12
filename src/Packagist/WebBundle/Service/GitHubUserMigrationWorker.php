@@ -214,7 +214,7 @@ class GitHubUserMigrationWorker
     private function request(string $token, string $method, string $url, array $json = null): Response
     {
         $opts = [
-            'headers' => ['Accept' => 'application/vnd.github.v3+json', 'Authorization: token '.$token],
+            'headers' => ['Accept' => 'application/vnd.github.v3+json', 'Authorization' => 'token '.$token],
         ];
 
         if ($json) {
