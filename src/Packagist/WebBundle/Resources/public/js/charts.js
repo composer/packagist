@@ -118,7 +118,10 @@
             }
 
             series.sort(function (a, b) {
-                return b.name.localeCompare(a.name);
+                if (a.name.indexOf('.')) {
+                    return b.name.replace(/^\d+\./, '').localeCompare(a.name.replace(/^\d+\./, ''), undefined, {numeric: true});
+                }
+                return b.name.localeCompare(a.name, undefined, {numeric: true});
             })
 
             initPackagistChart(

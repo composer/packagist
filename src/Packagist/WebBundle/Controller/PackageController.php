@@ -1160,7 +1160,7 @@ class PackageController extends Controller
                 if (!is_numeric($majorVersion)) {
                     throw new BadRequestHttpException('Major version should be an int or "all"');
                 }
-                $dlData[$majorVersion] = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findDataByMajorVersion($package, (int) $majorVersion);
+                $dlData = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findDataByMajorVersion($package, (int) $majorVersion);
             }
         } elseif ($version) {
             $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);

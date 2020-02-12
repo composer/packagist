@@ -22,10 +22,10 @@ class DownloadRepository extends ServiceEntityRepository
     public function findDataByMajorVersion(Package $package, int $majorVersion)
     {
         $sql = '
-            SELECT d.data
+            SELECT v.normalizedVersion, d.data
             FROM package_version v
             INNER JOIN download d ON d.id=v.id AND d.type = :versionType
-            WHERE v.package_id = :package AND v.normalizedVersion LIKE :majorVersion
+            WHERE v.package_id = :package AND v.development = 0 AND v.normalizedVersion LIKE :majorVersion
         ';
 
         $stmt = $this->getEntityManager()->getConnection()
@@ -36,9 +36,13 @@ class DownloadRepository extends ServiceEntityRepository
         $result = $stmt->fetchAll();
         $stmt->closeCursor();
 
-        return array_map(function (array $row) {
-            return $row['data'] ? json_decode($row['data'], true) : [];
-        }, $result);
+        $series = [];
+        foreach ($result as $row) {
+            $name = preg_replace('{^(\d+\.\d+)(\.|$).*}', '$1', $row['normalizedVersion']);
+            $series[$name][] = $row['data'] ? json_decode($row['data'], true) : [];
+        }
+
+        return $series;
     }
 
     public function findDataByMajorVersions(Package $package)
@@ -48,7 +52,6 @@ class DownloadRepository extends ServiceEntityRepository
             FROM package_version v
             INNER JOIN download d ON d.id=v.id AND d.type = :versionType
             WHERE v.package_id = :package AND v.development = 0 AND v.normalizedVersion REGEXP "^[0-9]+"
-            ORDER BY v.normalizedVersion DESC
         ';
 
         $stmt = $this->getEntityManager()->getConnection()
