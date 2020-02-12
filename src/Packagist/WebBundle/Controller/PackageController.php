@@ -1016,8 +1016,8 @@ class PackageController extends Controller
                 }
             }
         }
-        $data['majorVersions'] = array_unique($majorVersions);
-        $data['expandedId'] = $expandedVersion ? $expandedVersion->getId() : false;
+        $data['majorVersions'] = $majorVersions ? array_merge(['all'], array_unique($majorVersions)) : [];
+        $data['expandedId'] = $majorVersions ? 'major/all' : ($expandedVersion ? $expandedVersion->getId() : false);
 
         return $data;
     }
@@ -1138,7 +1138,7 @@ class PackageController extends Controller
      * )
      * @ParamConverter("version", options={"exclude": {"name"}})
      */
-    public function overallStatsAction(Request $req, Package $package, Version $version = null, int $majorVersion = null)
+    public function overallStatsAction(Request $req, Package $package, Version $version = null, $majorVersion = null)
     {
         if ($from = $req->query->get('from')) {
             $from = new DateTimeImmutable($from);
@@ -1154,37 +1154,47 @@ class PackageController extends Controller
 
         $dlData = [];
         if ($majorVersion) {
-            $dlData = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findDataByMajorVersion($package, $majorVersion);
+            if ($majorVersion === 'all') {
+                $dlData = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findDataByMajorVersions($package);
+            } else {
+                if (!is_numeric($majorVersion)) {
+                    throw new BadRequestHttpException('Major version should be an int or "all"');
+                }
+                $dlData[$majorVersion] = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findDataByMajorVersion($package, (int) $majorVersion);
+            }
         } elseif ($version) {
             $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
-            $dlData[] = $downloads ? $downloads->getData() : [];
+            $dlData[$version->getVersion()] = [$downloads ? $downloads->getData() : []];
         } else {
             $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
-            $dlData[] = $downloads ? $downloads->getData() : [];
+            $dlData[$package->getName()] = [$downloads ? $downloads->getData() : []];
         }
 
         $datePoints = $this->createDatePoints($from, $to, $average);
+        $series = [];
 
         foreach ($datePoints as $label => $values) {
-            $value = 0;
-            foreach ($values as $valueKey) {
-                foreach ($dlData as $data) {
-                    $value += $data[$valueKey] ?? 0;
+            foreach ($dlData as $seriesName => $seriesData) {
+                $value = 0;
+                foreach ($values as $valueKey) {
+                    foreach ($seriesData as $data) {
+                        $value += $data[$valueKey] ?? 0;
+                    }
                 }
+                $series[$seriesName][] = ceil($value / count($values));
             }
-            $datePoints[$label] = ceil($value / count($values));
         }
 
         $datePoints = array(
             'labels' => array_keys($datePoints),
-            'values' => array_values($datePoints),
+            'values' => $series,
         );
 
         $datePoints['average'] = $average;
 
         if (empty($datePoints['labels']) && empty($datePoints['values'])) {
             $datePoints['labels'][] = date('Y-m-d');
-            $datePoints['values'][] = 0;
+            $datePoints['values'][] = [0];
         }
 
         $response = new JsonResponse($datePoints);
@@ -1197,7 +1207,7 @@ class PackageController extends Controller
      * @Route(
      *      "/packages/{name}/stats/major/{majorVersion}.json",
      *      name="major_version_stats",
-     *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "majorVersion"="[0-9]+?"}
+     *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "majorVersion"="(all|[0-9]+?)"}
      * )
      */
     public function majorVersionStatsAction(Request $req, Package $package, $majorVersion)

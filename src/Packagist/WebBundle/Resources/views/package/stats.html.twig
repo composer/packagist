@@ -76,7 +76,7 @@
                             <div class="package-aside versions-wrapper">
                                 <ul class="versions">
                                     {% for majorVersion in majorVersions %}
-                                        {% set expanded = majorVersion == expandedId|default(false) %}
+                                        {% set expanded = ('major/' ~ majorVersion) == expandedId|default(false) %}
                                         <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="major/{{ majorVersion }}">
                                             <a href="#major/{{ majorVersion }}" class="version-number">
                                                 {{- majorVersion -}}

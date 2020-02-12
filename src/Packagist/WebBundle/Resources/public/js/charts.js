@@ -87,16 +87,44 @@
     });
 
     window.initPackageStats = function (average, date, versions, statsUrl, versionStatsUrl) {
+        colors = [
+            '#f28d1a',
+            '#1765f4',
+            '#ed1f96',
+            '#ee1e23',
+            '#b817f4',
+            '#c4f516',
+            '#804040',
+            '#ff8040',
+            '#008080',
+            '#004080',
+            '#8080ff',
+            '#800040',
+            '#800000',
+        ];
+
         var match,
             hash = document.location.hash,
             versionCache = {},
             ongoingRequest = false;
 
         function initChart(type, res) {
+            var key, series = [];
+
+            for (key in res.values) {
+                if (res.values.hasOwnProperty(key)) {
+                    series.push({name: key, values: res.values[key]});
+                }
+            }
+
+            series.sort(function (a, b) {
+                return b.name.localeCompare(a.name);
+            })
+
             initPackagistChart(
                 $('.js-'+type+'-dls')[0],
                 res.labels,
-                [{name: 'Daily Downloads', values: res.values}],
+                series,
                 true
             );
         }
@@ -125,6 +153,20 @@
 
             $('.package .stats-wrapper').hide();
             $('.package .stats-wrapper[data-stats-type=' + statsType + ']').show();
+
+            initializeVersionListExpander();
+        }
+
+        function initializeVersionListExpander() {
+            var versionsList = $('.package .versions')[0];
+            if (versionsList.offsetHeight < versionsList.scrollHeight) {
+                $('.package .versions-expander').removeClass('hidden').on('click', function () {
+                    $(this).addClass('hidden');
+                    $(versionsList).css('max-height', 'inherit');
+                });
+            } else {
+                $('.package .versions-expander').addClass('hidden')
+            }
         }
 
         // initializer for #<version-id> present on page load
@@ -177,13 +219,6 @@
             $('.version-stats-chart').css('top', Math.max(0, Math.min(footerPadding, window.scrollY - basePos + headerPadding)) + 'px');
         });
 
-        // initialize version list expander
-        var versionsList = $('.package .versions')[0];
-        if (versionsList.offsetHeight < versionsList.scrollHeight) {
-            $('.package .versions-expander').removeClass('hidden').on('click', function () {
-                $(this).addClass('hidden');
-                $(versionsList).css('max-height', 'inherit');
-            });
-        }
+        initializeVersionListExpander();
     };
 })(jQuery);
