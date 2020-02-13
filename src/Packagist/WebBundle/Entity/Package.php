@@ -30,7 +30,8 @@ use Composer\Repository\Vcs\GitHubDriver;
  *         @ORM\Index(name="indexed_idx",columns={"indexedAt"}),
  *         @ORM\Index(name="crawled_idx",columns={"crawledAt"}),
  *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"}),
- *         @ORM\Index(name="repository_idx",columns={"repository"})
+ *         @ORM\Index(name="repository_idx",columns={"repository"}),
+ *         @ORM\Index(name="remoteid_idx",columns={"remoteId"})
  *     }
  * )
  * @Assert\Callback(callback="isPackageUnique")
@@ -145,6 +146,11 @@ class Package
      * @ORM\OneToMany(targetEntity="Packagist\WebBundle\Entity\Download", mappedBy="package")
      */
     private $downloads;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $remoteId;
 
     /**
      * @ORM\Column(type="smallint")
@@ -611,6 +617,7 @@ class Package
         $repoUrl = preg_replace_callback('{^(https?|git|svn)://}i', function ($match) { return strtolower($match[1]) . '://'; }, $repoUrl);
 
         $this->repository = $repoUrl;
+        $this->remoteId = null;
 
         // avoid user@host URLs
         if (preg_match('{https?://.+@}', $repoUrl)) {
@@ -636,6 +643,9 @@ class Package
             }
             if ($driver instanceof GitHubDriver) {
                 $this->repository = $driver->getRepositoryUrl();
+                if ($repoData = $driver->getRepoData()) {
+                    $this->remoteId = parse_url($this->repository, PHP_URL_HOST).'/'.$repoData['id'];
+                }
             }
         } catch (\Exception $e) {
             $this->vcsDriverError = '['.get_class($e).'] '.$e->getMessage();
@@ -824,6 +834,16 @@ class Package
     public function getType()
     {
         return $this->type;
+    }
+
+    public function setRemoteId(?string $remoteId)
+    {
+        $this->remoteId = $remoteId;
+    }
+
+    public function getRemoteId(): ?string
+    {
+        return $this->remoteId;
     }
 
     /**

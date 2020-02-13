@@ -112,6 +112,19 @@ class PackageRepository extends ServiceEntityRepository
         return $query->getResult();
     }
 
+    public function isPackageMaintainedBy(Package $package, int $userId)
+    {
+        $query = $this->createQueryBuilder('p')
+            ->select('p.id')
+            ->join('p.maintainers', 'm')
+            ->where('m.id = :userId')
+            ->andWhere('p.id = :package')
+            ->getQuery()
+            ->setParameters(['userId' => $userId, 'package' => $package]);
+
+        return (bool) $query->getOneOrNullResult();
+    }
+
     public function getPackagesWithFields($filters, $fields)
     {
         $selector = '';
