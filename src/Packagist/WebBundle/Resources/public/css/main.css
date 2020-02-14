@@ -1114,6 +1114,10 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .package-aside i:hover {
   color: #a5aab0;
 }
+.package .package-aside .facts i, .package .package-aside .facts i:hover {
+  color: #2d2d32;
+  margin-right: 4px;
+}
 .package .package-aside a.advisory-alert {
     margin-left: -20px;
 }

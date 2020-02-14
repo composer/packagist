@@ -171,15 +171,24 @@
                             {% endif %}
                         </div>
 
-                        <div class="facts col-xs-12 col-sm-6 col-md-12">
-                            {% if version and version.funding is defined and version.funding|length > 0 %}
+                        {% if version and version.funding and version.funding|length > 0 %}
+                            <div class="facts funding col-xs-12 col-sm-6 col-md-12">
                                 <p>
                                     Fund package maintenance!
                                     {% for fundingOption in version.funding %}
-                                        <br>&raquo; <a rel="nofollow noopener external noindex" href="{{ fundingOption.url }}">{{ fundingOption.type == 'custom' ? fundingOption.url : fundingOption.type }}</a>
+                                        <br><a rel="nofollow noopener external noindex" href="{{ fundingOption.url }}">
+                                            {% set fundingType = fundingOption.type|default('custom') %}
+                                            {% if fundingType == 'custom' %}
+                                                <i class="glyphicon glyphicon-link"></i>{{ fundingOption.url|replace({'http://': '', 'https://': ''})|trim('/') }}
+                                            {% elseif fundingType == 'github' %}
+                                                <i class="glyphicon glyphicon-user"></i>{{ fundingOption.url|replace({'https://github.com/sponsors/': '', 'https://github.com/': ''}) }}
+                                            {% else %}
+                                                <i class="glyphicon glyphicon-link"></i>{{ fundingType|replace({'_': ' '})|title }}
+                                            {% endif %}
+                                        </a>
                                     {% endfor %}
-                            {% endif %}
-                        </div>
+                            </div>
+                        {% endif %}
 
                         <div class="facts col-xs-12 col-sm-6 col-md-12">
                             <p>
