@@ -360,6 +360,7 @@ class Updater
         $version->setBinaries($data->getBinaries());
         $version->setIncludePaths($data->getIncludePaths());
         $version->setSupport($data->getSupport());
+        $version->setFunding($data->getFunding());
 
         if ($data->getKeywords()) {
             $keywords = array();

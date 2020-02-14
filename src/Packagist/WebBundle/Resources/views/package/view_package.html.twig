@@ -172,6 +172,16 @@
                         </div>
 
                         <div class="facts col-xs-12 col-sm-6 col-md-12">
+                            {% if version and version.funding is defined and version.funding|length > 0 %}
+                                <p>
+                                    Fund package maintenance!
+                                    {% for fundingOption in version.funding %}
+                                        <br>&raquo; <a rel="nofollow noopener external noindex" href="{{ fundingOption.url }}">{{ fundingOption.type == 'custom' ? fundingOption.url : fundingOption.type }}</a>
+                                    {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="facts col-xs-12 col-sm-6 col-md-12">
                             <p>
                                 <span>
                                     <a href="{{ path('view_package_stats', {name: package.name}) }}" rel="nofollow">Installs</a>:
