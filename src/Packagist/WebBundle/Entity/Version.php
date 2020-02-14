@@ -180,7 +180,7 @@ class Version
     private $support;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(type="json", nullable=true)
      */
     private $funding;
 
@@ -270,7 +270,7 @@ class Version
         if ($serializeForApi && $this->getSupport()) {
             $data['support'] = $this->getSupport();
         }
-        if ($serializeForApi && $this->getFunding()) {
+        if ($this->getFunding()) {
             $data['funding'] = $this->getFunding();
         }
         if ($this->getReleasedAt()) {
@@ -329,7 +329,6 @@ class Version
             $array['support'] = $this->getSupport();
             ksort($array['support']);
         }
-        // TODO do we need to do something for funding here? sort by type/url?
 
         return $array;
     }
@@ -632,7 +631,17 @@ class Version
      */
     public function setFunding($funding)
     {
-        $this->funding = $funding ? json_encode($funding) : null;
+        // sort records when storing so to help the V2 metadata compression algo
+        if ($funding) {
+            usort($funding, function ($a, $b) {
+                $keyA = ($a['type'] ?? '') . ($a['url'] ?? '');
+                $keyB = ($b['type'] ?? '') . ($b['url'] ?? '');
+                
+                return $keyA <=> $keyB;
+            });
+        }
+
+        $this->funding = $funding;
     }
 
     /**
@@ -642,7 +651,7 @@ class Version
      */
     public function getFunding()
     {
-        return $this->funding ? json_decode($this->funding, true) : null;
+        return $this->funding;
     }
 
     /**
