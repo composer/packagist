@@ -334,12 +334,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "c4f19e51d843533c88d3e3ded92bc00f4f966560"
+                "reference": "05737a46fb612634f7ce1a1b89c8c6facd686dd6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/c4f19e51d843533c88d3e3ded92bc00f4f966560",
-                "reference": "c4f19e51d843533c88d3e3ded92bc00f4f966560",
+                "url": "https://api.github.com/repos/composer/composer/zipball/05737a46fb612634f7ce1a1b89c8c6facd686dd6",
+                "reference": "05737a46fb612634f7ce1a1b89c8c6facd686dd6",
                 "shasum": ""
             },
             "require": {
@@ -406,7 +406,18 @@
                 "dependency",
                 "package"
             ],
-            "time": "2020-02-28T08:09:23+00:00"
+            "support": {
+                "irc": "irc://irc.freenode.org/composer",
+                "issues": "https://github.com/composer/composer/issues",
+                "source": "https://github.com/composer/composer/tree/master"
+            },
+            "funding": [
+                {
+                    "url": "https://packagist.com",
+                    "type": "custom"
+                }
+            ],
+            "time": "2020-02-28T13:52:29+00:00"
         },
         {
             "name": "composer/semver",
@@ -7323,5 +7334,6 @@
     "platform-dev": [],
     "platform-overrides": {
         "php": "7.3.2"
-    }
+    },
+    "plugin-api-version": "2.0.0"
 }

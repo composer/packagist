@@ -286,8 +286,6 @@ class Updater
                 || ($flags & self::UPDATE_EQUAL_REFS)
                 // or if the package must be marked abandoned from composer.json
                 || ($data->isAbandoned() && !$package->isAbandoned())
-                // or if the funding info got updated in composer.json
-                || ($data->getFunding() && !$version->getFunding())
             ) {
                 $version = $versionRepo->findOneById($existingVersion['id']);
             } elseif ($existingVersion['needs_author_migration']) {
