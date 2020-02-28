@@ -334,12 +334,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "4f59162827f7bb928d9e91b67da3f625d2e9c493"
+                "reference": "c4f19e51d843533c88d3e3ded92bc00f4f966560"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/4f59162827f7bb928d9e91b67da3f625d2e9c493",
-                "reference": "4f59162827f7bb928d9e91b67da3f625d2e9c493",
+                "url": "https://api.github.com/repos/composer/composer/zipball/c4f19e51d843533c88d3e3ded92bc00f4f966560",
+                "reference": "c4f19e51d843533c88d3e3ded92bc00f4f966560",
                 "shasum": ""
             },
             "require": {
@@ -406,12 +406,7 @@
                 "dependency",
                 "package"
             ],
-            "support": {
-                "irc": "irc://irc.freenode.org/composer",
-                "issues": "https://github.com/composer/composer/issues",
-                "source": "https://github.com/composer/composer/tree/master"
-            },
-            "time": "2020-02-14T16:03:22+00:00"
+            "time": "2020-02-28T08:09:23+00:00"
         },
         {
             "name": "composer/semver",
@@ -4112,6 +4107,7 @@
                 }
             ],
             "description": "This bundle generates code for you",
+            "abandoned": "symfony/maker-bundle",
             "time": "2017-12-07T15:36:41+00:00"
         },
         {
