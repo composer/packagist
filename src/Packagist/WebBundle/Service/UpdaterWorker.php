@@ -199,8 +199,8 @@ class UpdaterWorker
                 // random git clone failures
                 $found404 = true;
             } elseif ($e instanceof \RuntimeException && (
-                preg_match('{fatal: could not read Username for  \'[^\']+\': No such device or address\n}i', $e->getMessage())
-                || preg_match('{fatal: unable to access  \'[^\']+\': Could not resolve host: }i', $e->getMessage())
+                preg_match('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
+                || preg_match('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
                 || preg_match('{Can\'t connect to host \'[^\']+\': Connection timed out}i', $e->getMessage())
             )) {
                 // unreachable host, skip for a week as this may be a temporary failure
