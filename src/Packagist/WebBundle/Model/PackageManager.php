@@ -158,12 +158,13 @@ class PackageManager
             }
 
             $package->setUpdateFailureNotified(true);
-            // make sure the package crawl time is updated so we avoid retrying failing packages more often than working ones
-            if (!$package->getCrawledAt() || $package->getCrawledAt() < new \DateTime()) {
-                $package->setCrawledAt(new \DateTime);
-            }
-            $this->doctrine->getEntityManager()->flush();
         }
+
+        // make sure the package crawl time is updated so we avoid retrying failing packages more often than working ones
+        if (!$package->getCrawledAt() || $package->getCrawledAt() < new \DateTime()) {
+            $package->setCrawledAt(new \DateTime);
+        }
+        $this->doctrine->getEntityManager()->flush();
 
         return true;
     }
