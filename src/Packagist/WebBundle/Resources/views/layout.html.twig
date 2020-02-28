@@ -61,6 +61,11 @@
                                     </section>
                                 </section>
                             </li>
+                            <li class="nav-user visible-xs-block">
+                                <section>
+                                    <a href="{{ path('logout') }}">Logout</a>
+                                </section>
+                            </li>
                         {%- else %}
                             <li>
                                 <a href="{{ path('fos_user_registration_register') }}">{{ 'menu.create_account'|trans }}</a>

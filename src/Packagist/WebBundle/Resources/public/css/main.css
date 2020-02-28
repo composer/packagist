@@ -1143,13 +1143,13 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     padding: 15px;
 }
 .package .last-update p, .package .last-update a {
-    font-size: 75%;
+    font-size: 10px;
 }
 .package .last-update .auto-update-success {
     color: #69AD21;
 }
 .package .last-update .auto-update-danger {
-    color: #cd3729;
+    color: #ff002f;
 }
 
 .package .version-details .title {

@@ -33,7 +33,7 @@
 {% if showUpdated is defined and showUpdated and package.getUpdatedAt() %}
     <div class="last-update">
         {% if not package.isAutoUpdated() %}
-            <p class="auto-update-danger">This package is <strong>not</strong> auto-updated.</p>
+            <p class="auto-update-danger">This package is <strong>not</strong> <a href="{{ path('about') ~ '#how-to-update-packages' }}">auto-updated</a>.</p>
         {% else %}
             <p class="auto-update-success">This package is auto-updated.</p>
         {% endif %}
