@@ -195,6 +195,16 @@ class UpdaterWorker
             } elseif ($e instanceof TransportException && preg_match('{https://api.bitbucket.org/2.0/repositories/[^/]+/.+?\?fields=-project}i', $e->getMessage()) && $e->getStatusCode() == 404) {
                 // bitbucket api root returns a 404
                 $found404 = true;
+            } elseif ($e instanceof \RuntimeException && preg_match('{fatal: repository \'[^\']+\' not found\n}i', $e->getMessage())) {
+                // random git clone failures
+                $found404 = true;
+            } elseif ($e instanceof \RuntimeException && (
+                preg_match('{fatal: could not read Username for  \'[^\']+\': No such device or address\n}i', $e->getMessage())
+                || preg_match('{fatal: unable to access  \'[^\']+\': Could not resolve host: }i', $e->getMessage())
+                || preg_match('{Can\'t connect to host \'[^\']+\': Connection timed out}i', $e->getMessage())
+            )) {
+                // unreachable host, skip for a week as this may be a temporary failure
+                $found404 = new \DateTime('+7 days');
             }
 
             // github 404'ed, check through API whether the package still exists and delete if not
@@ -206,7 +216,7 @@ class UpdaterWorker
 
             // detected a 404 so mark the package as gone and prevent updates for 1y
             if ($found404) {
-                $package->setCrawledAt(new \DateTime('+1 year'));
+                $package->setCrawledAt($found404 === true ? new \DateTime('+1 year') : $found404);
                 $this->doctrine->getEntityManager()->flush($package);
 
                 return [
