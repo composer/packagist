@@ -146,28 +146,28 @@
                             </p>
 
                             {% if version and version.homepage %}
-                                <p><a rel="nofollow noopener external noindex" href="{{ version.homepage }}">Homepage</a></p>
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.homepage }}">Homepage</a></p>
                             {% endif %}
                             {% if version.support.source is defined %}
-                                <p><a rel="nofollow noopener external noindex" href="{{ version.support.source }}">Source</a></p>
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.source }}">Source</a></p>
                             {% endif %}
                             {% if version and version.support.issues is defined %}
-                                <p><a rel="nofollow noopener external noindex" href="{{ version.support.issues }}">Issues</a></p>
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.issues }}">Issues</a></p>
                             {% endif %}
                             {% if version and version.support.irc is defined %}
-                                <p><a rel="nofollow noopener external noindex" href="{{ version.support.irc }}">IRC</a></p>
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.irc }}">IRC</a></p>
                             {% endif %}
                             {% if version and version.support.chat is defined %}
-                                <p><a rel="nofollow noopener external noindex" href="{{ version.support.chat }}">Chat</a></p>
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.chat }}">Chat</a></p>
                             {% endif %}
                             {% if version and version.support.forum is defined %}
-                                <p><a rel="nofollow noopener external noindex" href="{{ version.support.forum }}">Forum</a></p>
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.forum }}">Forum</a></p>
                             {% endif %}
                             {% if version and version.support.wiki is defined %}
-                                <p><a rel="nofollow noopener external noindex" href="{{ version.support.wiki }}">Wiki</a></p>
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.wiki }}">Wiki</a></p>
                             {% endif %}
                             {% if version and version.support.docs is defined %}
-                                <p><a rel="nofollow noopener external noindex" href="{{ version.support.docs }}">Documentation</a></p>
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.docs }}">Documentation</a></p>
                             {% endif %}
                         </div>
 
@@ -176,7 +176,7 @@
                                 <p>
                                     Fund package maintenance!
                                     {% for fundingOption in version.funding %}
-                                        <br><a rel="nofollow noopener external noindex" href="{{ fundingOption.url }}">
+                                        <br><a rel="nofollow noopener external noindex ugc" href="{{ fundingOption.url }}">
                                             {% set fundingType = fundingOption.type|default('custom') %}
                                             {% if fundingType == 'custom' %}
                                                 <i class="glyphicon glyphicon-link"></i>{{ fundingOption.url|replace({'http://': '', 'https://': ''})|trim('/') }}
@@ -247,7 +247,7 @@
                             {% if version and version.support is not null and version.support.issues is defined and version.support.issues starts with 'https://github.com/' and version.support.issues starts with repoUrl %}
                                 <p>
                                     <span>
-                                        <a rel="nofollow noopener external noindex" href="{{ version.support.issues }}">Open Issues</a>:
+                                        <a rel="nofollow noopener external noindex ugc" href="{{ version.support.issues }}">Open Issues</a>:
                                     </span>
                                     {{ package.gitHubOpenIssues|number_format(0, '.', '&#8201;')|raw }}
                                 </p>

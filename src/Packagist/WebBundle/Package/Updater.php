@@ -656,7 +656,7 @@ class Updater
         // Links can not be trusted, mark them nofollow and convert relative to absolute links
         $links = $dom->getElementsByTagName('a');
         foreach ($links as $link) {
-            $link->setAttribute('rel', 'nofollow noindex noopener external');
+            $link->setAttribute('rel', 'nofollow noindex noopener external ugc');
             if ('#' === substr($link->getAttribute('href'), 0, 1)) {
                 $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
             } elseif ('mailto:' === substr($link->getAttribute('href'), 0, 7)) {
