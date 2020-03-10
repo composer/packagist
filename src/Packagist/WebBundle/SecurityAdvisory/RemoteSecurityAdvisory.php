@@ -78,8 +78,11 @@ class RemoteSecurityAdvisory
     public static function createFromFriendsOfPhp(string $fileNameWithPath, array $info): RemoteSecurityAdvisory
     {
         $date = null;
+        $fallbackYearDate = null;
         if (preg_match('#(\d{4}-\d{2}-\d{2})#', basename($fileNameWithPath), $matches)) {
             $date = new \DateTime($matches[1] . ' 00:00:00');
+        } elseif (preg_match('#CVE-(2\d{3})-\d#', basename($fileNameWithPath), $matches)) {
+            $fallbackYearDate = new \DateTime($matches[1] . '-01-01 00:00:00');
         }
 
         $affectedVersions = [];
@@ -97,6 +100,8 @@ class RemoteSecurityAdvisory
         if (!$date) {
             if ($lowestBranchDate) {
                 $date = $lowestBranchDate;
+            } elseif ($fallbackYearDate) {
+                $date = $fallbackYearDate;
             } else {
                 $date = (new \DateTime())->setTime(0, 0, 0);
             }
