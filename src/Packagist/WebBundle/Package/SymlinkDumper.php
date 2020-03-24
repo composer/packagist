@@ -859,8 +859,15 @@ class SymlinkDumper
             return;
         }
 
+        // get time before file_put_contents to be sure we return a time at least as old as the filemtime, if it is older it doesn't matter
+        $timestamp = round(microtime(true)*10000);
         file_put_contents($path.'.tmp', $contents);
         rename($path.'.tmp', $path);
+
+        if (!preg_match('{/([^/]+/[^/]+)(~dev)?\.json}', $path, $match)) {
+            throw new \LogicException('Could not match package name from '.$path);
+        }
+        $this->redis->zadd('metadata-dumps', $timestamp, $match[1]);
     }
 
     private function writeFileNonAtomic($path, $contents)

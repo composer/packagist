@@ -113,6 +113,8 @@ class PackageManager
         } catch (\Predis\Connection\ConnectionException $e) {
         }
 
+        $this->redis->zadd('metadata-deletes', round(microtime(true)*10000), strtolower($packageName));
+
         // attempt search index cleanup
         try {
             $indexName = $this->algoliaIndexName;
