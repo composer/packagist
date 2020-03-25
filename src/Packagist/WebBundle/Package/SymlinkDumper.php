@@ -545,6 +545,11 @@ class SymlinkDumper
 
     private function cleanOldFiles($buildDir, $oldBuildDir, $safeFiles)
     {
+        $time = (time() - 86400) * 10000;
+        $this->redis->set('metadata-oldest', $time);
+        $this->redis->zremrangebyscore('metadata-dumps', 0, $time-1);
+        $this->redis->zremrangebyscore('metadata-deletes', 0, $time-1);
+
         $finder = Finder::create()->directories()->ignoreVCS(true)->in($buildDir);
         foreach ($finder as $vendorDir) {
             $vendorFiles = Finder::create()->files()->ignoreVCS(true)
@@ -864,7 +869,7 @@ class SymlinkDumper
         file_put_contents($path.'.tmp', $contents);
         rename($path.'.tmp', $path);
 
-        if (!preg_match('{/([^/]+/[^/]+)(~dev)?\.json}', $path, $match)) {
+        if (!preg_match('{/([^/]+/[^/]+?)(~dev)?\.json$}', $path, $match)) {
             throw new \LogicException('Could not match package name from '.$path);
         }
         $this->redis->zadd('metadata-dumps', $timestamp, $match[1]);

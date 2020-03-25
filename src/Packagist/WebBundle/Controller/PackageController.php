@@ -118,10 +118,10 @@ class PackageController extends Controller
 
         $since = $req->query->getInt('since');
         if (!$since || $since < 15850612240000) {
-            return new JsonResponse(['error' => 'Invalid or missing "since" query parameter, make sure you store the timestamp (as `microtime(true) * 10000`) at the initial point you started mirroring, then send that to begin receiving changes, e.g. '.$this->generateUrl('metadata_changes', ['since' => $now], UrlGeneratorInterface::ABSOLUTE_URL).' for example.'], 400);
+            return new JsonResponse(['error' => 'Invalid or missing "since" query parameter, make sure you store the timestamp at the initial point you started mirroring, then send that to begin receiving changes, e.g. '.$this->generateUrl('metadata_changes', ['since' => $now], UrlGeneratorInterface::ABSOLUTE_URL).' for example.', 'timestamp' => $now], 400);
         }
         if ($since < $oldestSyncPoint) {
-            return new JsonResponse(['actions' => ['type' => 'resync', 'time' => $now, 'package' => '*'], 'timestamp' => $now]);
+            return new JsonResponse(['actions' => ['type' => 'resync', 'time' => floor($now / 10000), 'package' => '*'], 'timestamp' => $now]);
         }
 
         // fetch changes from $since (inclusive) up to $now (non inclusive so -1)
@@ -130,14 +130,14 @@ class PackageController extends Controller
 
         $actions = [];
         foreach ($dumps as $package => $time) {
-            $actions[$package] = ['type' => 'update', 'package' => $package, 'time' => (int) $time];
+            $actions[$package] = ['type' => 'update', 'package' => $package, 'time' => floor($time / 10000)];
         }
         foreach ($deletes as $package => $time) {
             // if a package is dumped then deleted then dumped again because it gets re-added, we want to keep the update action
             // but if it is deleted and marked as dumped within 10 seconds of the deletion, it probably was a race condition between
             // dumped job and deletion, so let's replace it by a delete job anyway
             if (!isset($actions[$package]) || $actions[$package]['time'] < $time - (10 * 10000)) {
-                $actions[$package] = ['type' => 'delete', 'package' => $package, 'time' => (int) $time];
+                $actions[$package] = ['type' => 'delete', 'package' => $package, 'time' => floor($time / 10000)];
             }
         }
 
