@@ -59,7 +59,7 @@ class PackageRepository extends ServiceEntityRepository
     public function getPackageNames()
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p");
+            ->createQuery("SELECT p.name FROM Packagist\WebBundle\Entity\Package p WHERE p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam'");
 
         $names = $this->getPackageNamesForQuery($query);
 
