@@ -136,8 +136,10 @@ class PackageController extends Controller
             // if a package is dumped then deleted then dumped again because it gets re-added, we want to keep the update action
             // but if it is deleted and marked as dumped within 10 seconds of the deletion, it probably was a race condition between
             // dumped job and deletion, so let's replace it by a delete job anyway
-            if (!isset($actions[$package]) || $actions[$package]['time'] < $time - (10 * 10000)) {
+            $newestUpdate = max($actions[$package]['time'] ?? 0, $actions[$package.'~dev']['time'] ?? 0);
+            if ($newestUpdate < $time + (10 * 10000)) {
                 $actions[$package] = ['type' => 'delete', 'package' => $package, 'time' => floor($time / 10000)];
+                unset($actions[$package.'~dev']);
             }
         }
 

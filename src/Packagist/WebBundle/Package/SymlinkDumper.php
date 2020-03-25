@@ -869,9 +869,10 @@ class SymlinkDumper
         file_put_contents($path.'.tmp', $contents);
         rename($path.'.tmp', $path);
 
-        if (!preg_match('{/([^/]+/[^/]+?)(~dev)?\.json$}', $path, $match)) {
+        if (!preg_match('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
             throw new \LogicException('Could not match package name from '.$path);
         }
+
         $this->redis->zadd('metadata-dumps', $timestamp, $match[1]);
     }
 
