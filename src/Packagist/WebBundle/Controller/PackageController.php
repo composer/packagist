@@ -125,8 +125,8 @@ class PackageController extends Controller
         }
 
         // fetch changes from $since (inclusive) up to $now (non inclusive so -1)
-        $dumps = $redis->zrangebyscore('metadata-dumps', $now - 1, $since, ['WITHSCORES' => true]);
-        $deletes = $redis->zrangebyscore('metadata-deletes', $now - 1, $since, ['WITHSCORES' => true]);
+        $dumps = $redis->zrangebyscore('metadata-dumps', $since, $now - 1, ['WITHSCORES' => true]);
+        $deletes = $redis->zrangebyscore('metadata-deletes', $since, $now - 1, ['WITHSCORES' => true]);
 
         $actions = [];
         foreach ($dumps as $package => $time) {
