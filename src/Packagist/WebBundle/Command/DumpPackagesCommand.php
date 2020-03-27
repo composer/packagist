@@ -31,6 +31,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
             ->setName('packagist:dump')
             ->setDefinition(array(
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a dump of all packages'),
+                new InputOption('gc', null, InputOption::VALUE_NONE, 'Runs garbage collection of old files'),
             ))
             ->setDescription('Dumps the packages into a packages.json + included files')
         ;
@@ -41,8 +42,9 @@ class DumpPackagesCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $force = (Boolean) $input->getOption('force');
-        $verbose = (Boolean) $input->getOption('verbose');
+        $force = (bool) $input->getOption('force');
+        $gc = (bool) $input->getOption('gc');
+        $verbose = (bool) $input->getOption('verbose');
 
         $deployLock = $this->getContainer()->getParameter('kernel.cache_dir').'/deploy.globallock';
         if (file_exists($deployLock)) {
@@ -53,8 +55,12 @@ class DumpPackagesCommand extends ContainerAwareCommand
         }
 
         // another dumper is still active
+        $lockName = $this->getName();
+        if ($gc) {
+            $lockName .= '-gc';
+        }
         $locker = $this->getContainer()->get('locker');
-        if (!$locker->lockCommand($this->getName())) {
+        if (!$locker->lockCommand($lockName)) {
             if ($verbose) {
                 $output->writeln('Aborting, another task is running already');
             }
@@ -62,6 +68,16 @@ class DumpPackagesCommand extends ContainerAwareCommand
         }
 
         $doctrine = $this->getContainer()->get('doctrine');
+        $dumper = $this->getContainer()->get('packagist.package_dumper');
+
+        if ($gc) {
+            try {
+                $dumper->gc();
+            } finally {
+                $locker->unlockCommand($lockName);
+            }
+            return 0;
+        }
 
         if ($force) {
             $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
@@ -84,9 +100,9 @@ class DumpPackagesCommand extends ContainerAwareCommand
         gc_enable();
 
         try {
-            $result = $this->getContainer()->get('packagist.package_dumper')->dump($ids, $force, $verbose);
+            $result = $dumper->dump($ids, $force, $verbose);
         } finally {
-            $locker->unlockCommand($this->getName());
+            $locker->unlockCommand($lockName);
         }
 
         return $result ? 0 : 1;
