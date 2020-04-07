@@ -352,7 +352,6 @@ class PackageController extends Controller
                     'name' => $package->getName(),
                     'description' => $package->getDescription(),
                     'type' => $package->getType(),
-                    'repository' => $package->getRepository(),
                 ];
             }
 
