@@ -1007,7 +1007,8 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   font-size: 35px;
   margin-top: 5px;
 }
-.package .details .canonical {
+.package .details .canonical,
+.package .funding p {
   text-overflow: ellipsis;
   overflow: hidden;
   width: 100%;
