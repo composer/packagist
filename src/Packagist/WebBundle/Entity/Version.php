@@ -271,7 +271,7 @@ class Version
             $data['support'] = $this->getSupport();
         }
         if ($this->getFunding()) {
-            $data['funding'] = $this->getFunding();
+            $data['funding'] = $this->getFundingSorted();
         }
         if ($this->getReleasedAt()) {
             $data['time'] = $this->getReleasedAt()->format('Y-m-d\TH:i:sP');
@@ -631,16 +631,6 @@ class Version
      */
     public function setFunding($funding)
     {
-        // sort records when storing so to help the V2 metadata compression algo
-        if ($funding) {
-            usort($funding, function ($a, $b) {
-                $keyA = ($a['type'] ?? '') . ($a['url'] ?? '');
-                $keyB = ($b['type'] ?? '') . ($b['url'] ?? '');
-                
-                return $keyA <=> $keyB;
-            });
-        }
-
         $this->funding = $funding;
     }
 
@@ -652,6 +642,23 @@ class Version
     public function getFunding()
     {
         return $this->funding;
+    }
+
+    /**
+     * Get funding, sorted to help the V2 metadata compression algo
+     */
+    public function getFundingSorted()
+    {
+        if ($this->funding === null) {
+            return null;
+        }
+
+        return usort($this->funding, function ($a, $b) {
+            $keyA = ($a['type'] ?? '') . ($a['url'] ?? '');
+            $keyB = ($b['type'] ?? '') . ($b['url'] ?? '');
+
+            return $keyA <=> $keyB;
+        });
     }
 
     /**
