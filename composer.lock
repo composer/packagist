@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "14008ad1f434e6913d590ac6eb386d90",
+    "content-hash": "3c7d82fe75c83017f0ff392df4238b80",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -347,16 +347,16 @@
         },
         {
             "name": "composer/composer",
-            "version": "dev-master",
+            "version": "1.10.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "548505f103d4e55a4044bedcd17bd93eba2fe68b"
+                "reference": "19902ba6a9fdb1b46e3feca4cf333e91af469067"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/548505f103d4e55a4044bedcd17bd93eba2fe68b",
-                "reference": "548505f103d4e55a4044bedcd17bd93eba2fe68b",
+                "url": "https://api.github.com/repos/composer/composer/zipball/19902ba6a9fdb1b46e3feca4cf333e91af469067",
+                "reference": "19902ba6a9fdb1b46e3feca4cf333e91af469067",
                 "shasum": ""
             },
             "require": {
@@ -423,22 +423,7 @@
                 "dependency",
                 "package"
             ],
-            "support": {
-                "irc": "irc://irc.freenode.org/composer",
-                "issues": "https://github.com/composer/composer/issues",
-                "source": "https://github.com/composer/composer/tree/master"
-            },
-            "funding": [
-                {
-                    "url": "https://packagist.com",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/composer/composer",
-                    "type": "tidelift"
-                }
-            ],
-            "time": "2020-03-10T12:56:45+00:00"
+            "time": "2020-04-13T10:41:02+00:00"
         },
         {
             "name": "composer/semver",
@@ -8598,7 +8583,7 @@
     },
     "platform-dev": [],
     "platform-overrides": {
-        "php": "7.3.2"
+        "php": "7.3.16"
     },
     "plugin-api-version": "1.1.0"
 }
