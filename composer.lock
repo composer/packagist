@@ -2756,16 +2756,16 @@
         },
         {
             "name": "khanamiryan/qrcode-detector-decoder",
-            "version": "1.0.2",
+            "version": "1.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/khanamiryan/php-qrcode-detector-decoder.git",
-                "reference": "a75482d3bc804e3f6702332bfda6cccbb0dfaa76"
+                "reference": "89b57f2d9939dd57394b83f6ccbd3e1a74659e34"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/khanamiryan/php-qrcode-detector-decoder/zipball/a75482d3bc804e3f6702332bfda6cccbb0dfaa76",
-                "reference": "a75482d3bc804e3f6702332bfda6cccbb0dfaa76",
+                "url": "https://api.github.com/repos/khanamiryan/php-qrcode-detector-decoder/zipball/89b57f2d9939dd57394b83f6ccbd3e1a74659e34",
+                "reference": "89b57f2d9939dd57394b83f6ccbd3e1a74659e34",
                 "shasum": ""
             },
             "require": {
@@ -2787,9 +2787,22 @@
             "license": [
                 "MIT"
             ],
+            "authors": [
+                {
+                    "name": "Ashot Khanamiryan",
+                    "email": "a.khanamiryan@gmail.com",
+                    "homepage": "https://github.com/khanamiryan",
+                    "role": "Developer"
+                }
+            ],
             "description": "QR code decoder / reader",
             "homepage": "https://github.com/khanamiryan/php-qrcode-detector-decoder/",
-            "time": "2018-04-26T11:41:33+00:00"
+            "keywords": [
+                "barcode",
+                "qr",
+                "zxing"
+            ],
+            "time": "2020-04-19T16:18:51+00:00"
         },
         {
             "name": "knplabs/knp-menu",
