@@ -150,6 +150,8 @@ class PackageManager
                     ->setBody($body)
                 ;
 
+                $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
+
                 try {
                     $this->instantMailer->send($message);
                 } catch (\Swift_TransportException $e) {
@@ -183,6 +185,8 @@ class PackageManager
             ->setTo($user->getEmail())
             ->setBody($body)
         ;
+
+        $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
 
         try {
             $this->mailer->send($message);
