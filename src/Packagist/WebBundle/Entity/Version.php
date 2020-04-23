@@ -653,12 +653,15 @@ class Version
             return null;
         }
 
-        return usort($this->funding, function ($a, $b) {
+        $funding = $this->funding;
+        usort($funding, function ($a, $b) {
             $keyA = ($a['type'] ?? '') . ($a['url'] ?? '');
             $keyB = ($b['type'] ?? '') . ($b['url'] ?? '');
 
             return $keyA <=> $keyB;
         });
+
+        return $funding;
     }
 
     /**
