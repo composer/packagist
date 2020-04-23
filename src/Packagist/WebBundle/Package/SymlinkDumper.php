@@ -901,7 +901,12 @@ class SymlinkDumper
 
     private function writeV2File($path, $contents)
     {
-        if (file_exists($path) && file_get_contents($path) === $contents) {
+        if (
+            file_exists($path)
+            && file_get_contents($path) === $contents
+            // files dumped before then are susceptible to be out of sync, so force them all to be dumped once more at least
+            && filemtime($path) >= 1587654540
+        ) {
             return;
         }
 
