@@ -540,19 +540,15 @@ class SymlinkDumper
         // clean up v2 files for deleted packages
         if (is_dir($this->buildDir.'/p2')) {
             $finder = Finder::create()->directories()->ignoreVCS(true)->in($this->buildDir.'/p2');
-            $packageNames = $this->providerManager->getPackageNames();
+            $packageNames = array_flip($this->providerManager->getPackageNames());
 
             foreach ($finder as $vendorDir) {
-                $vendorFiles = Finder::create()->files()->ignoreVCS(true)
-                    ->name('/\.json$/')
-                    ->in((string) $vendorDir);
-
-                foreach ($vendorFiles as $file) {
+                foreach (glob(((string) $vendorDir).'/*.json') as $file) {
                     if (!preg_match('{/([^/]+/[^/]+?)(~dev)?\.json$}', strtr($file, '\\', '/'), $match)) {
                         throw new \LogicException('Could not match package name from '.$path);
                     }
 
-                    if (!in_array($match[1], $packageNames, true)) {
+                    if (!isset($packageNames[$match[1]])) {
                         unlink((string) $file);
                     }
                 }
