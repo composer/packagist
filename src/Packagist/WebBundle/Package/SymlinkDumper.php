@@ -19,6 +19,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Finder\Finder;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Model\ProviderManager;
 use Doctrine\DBAL\Connection;
 use Packagist\WebBundle\HealthCheck\MetadataDirCheck;
 use Predis\Client;
@@ -118,6 +119,11 @@ class SymlinkDumper
     private $statsd;
 
     /**
+     * @var ProviderManager
+     */
+    private $providerManager;
+
+    /**
      * Constructor
      *
      * @param RegistryInterface     $doctrine
@@ -127,7 +133,7 @@ class SymlinkDumper
      * @param string                $targetDir
      * @param int                   $compress
      */
-    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress, $awsMetadata, StatsDClient $statsd)
+    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress, $awsMetadata, StatsDClient $statsd, ProviderManager $providerManager)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
@@ -139,6 +145,7 @@ class SymlinkDumper
         $this->redis = $redis;
         $this->awsMeta = $awsMetadata;
         $this->statsd = $statsd;
+        $this->providerManager = $providerManager;
     }
 
     /**
@@ -530,6 +537,28 @@ class SymlinkDumper
 
     public function gc()
     {
+        // clean up v2 files for deleted packages
+        if (is_dir($this->buildDir.'/p2')) {
+            $finder = Finder::create()->directories()->ignoreVCS(true)->in($this->buildDir.'/p2');
+            $packageNames = $this->providerManager->getPackageNames();
+
+            foreach ($finder as $vendorDir) {
+                $vendorFiles = Finder::create()->files()->ignoreVCS(true)
+                    ->name('/\.json$/')
+                    ->in((string) $vendorDir);
+
+                foreach ($vendorFiles as $file) {
+                    if (!preg_match('{/([^/]+/[^/]+?)(~dev)?\.json$}', strtr($file, '\\', '/'), $match)) {
+                        throw new \LogicException('Could not match package name from '.$path);
+                    }
+
+                    if (!in_array($match[1], $packageNames, true)) {
+                        unlink((string) $file);
+                    }
+                }
+            }
+        }
+
         // build up array of safe files
         $safeFiles = [];
 
