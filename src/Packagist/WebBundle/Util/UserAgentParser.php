@@ -34,6 +34,19 @@ class UserAgentParser
         return $this->composerVersion;
     }
 
+    public function getComposerMajorVersion(): ?string
+    {
+        if (!$this->composerVersion) {
+            return null;
+        }
+
+        if ($this->composerVersion === 'pre-1.8.5') {
+            return '1';
+        }
+
+        return substr($this->composerVersion, 0, 1);
+    }
+
     public function getPhpVersion(): ?string
     {
         return $this->phpVersion;
