@@ -138,7 +138,7 @@ hwi_oauth:
 
 scheb_two_factor:
     security_tokens:
-        - Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken
+        - Symfony\Component\Security\Guard\Token\PostAuthenticationGuardToken
         - HWI\Bundle\OAuthBundle\Security\Core\Authentication\Token\OAuthToken
 
     backup_codes:
