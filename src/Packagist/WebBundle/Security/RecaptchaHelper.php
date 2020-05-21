@@ -30,7 +30,7 @@ class RecaptchaHelper
 
         $keys = [self::LOGIN_BASE_KEY_IP . $ip];
         if ($username) {
-            $keys[] = self::LOGIN_BASE_KEY_USER . $username;
+            $keys[] = self::LOGIN_BASE_KEY_USER . strtolower($username);
         }
 
         $result = $this->redis->mget($keys);
@@ -49,7 +49,7 @@ class RecaptchaHelper
             $this->redis->getProfile()->defineCommand('incrFailedLoginCounter', FailedLoginCounter::class);
 
             $ipKey = self::LOGIN_BASE_KEY_IP . $request->getClientIp();
-            $userKey = self::LOGIN_BASE_KEY_USER . $request->get('_username');
+            $userKey = self::LOGIN_BASE_KEY_USER . strtolower($request->get('_username'));
             $this->redis->incrFailedLoginCounter($ipKey, $userKey);
         }
     }
@@ -57,7 +57,7 @@ class RecaptchaHelper
     public function clearCounter(Request $request): void
     {
         if ($this->recaptchaEnabled) {
-            $userKey = self::LOGIN_BASE_KEY_USER . $request->get('_username');
+            $userKey = self::LOGIN_BASE_KEY_USER . strtolower($request->get('_username'));
             $this->redis->del([$userKey]);
         }
     }
