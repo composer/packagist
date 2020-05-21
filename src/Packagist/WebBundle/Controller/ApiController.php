@@ -244,16 +244,16 @@ class ApiController extends Controller
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
             if (!$uaParser->getComposerVersion()) {
                 $this->get('logger')->error('Could not parse UA: '.$_SERVER['HTTP_USER_AGENT'].' with '.$request->getContent().' from '.$request->getClientIp());
+            } else {
+                $this->get('Graze\DogStatsD\Client')->increment('installs', 1, 1, [
+                    'composer' => $uaParser->getComposerVersion() ?: 'unknown',
+                    'composer_major' => $uaParser->getComposerMajorVersion() ?: 'unknown',
+                    'php_minor' => $uaParser->getPhpMinorVersion() ?: 'unknown',
+                    'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
+                    'http' => $uaParser->getHttpVersion() ?: 'unknown',
+                    'ci' => $uaParser->getCI() ? 'true' : 'false',
+                ]);
             }
-
-            $this->get('Graze\DogStatsD\Client')->increment('installs', 1, 1, [
-                'composer' => $uaParser->getComposerVersion() ?: 'unknown',
-                'composer_major' => $uaParser->getComposerMajorVersion() ?: 'unknown',
-                'php_minor' => $uaParser->getPhpMinorVersion() ?: 'unknown',
-                'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
-                'http' => $uaParser->getHttpVersion() ?: 'unknown',
-                'ci' => $uaParser->getCI() ? 'true' : 'false',
-            ]);
         }
 
         if ($failed) {
