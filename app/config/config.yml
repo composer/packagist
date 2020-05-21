@@ -34,6 +34,7 @@ twig:
     globals:
         google_analytics: '%google_analytics%'
         packagist_host: '%packagist_host%'
+        recaptcha_site_key: '%recaptcha_site_key%'
         algolia:
           app_id: '%algolia.app_id%'
           search_key: '%algolia.search_key%'
@@ -184,3 +185,8 @@ sensio_framework_extra:
 
 endroid_qr_code:
     background_color: { r: 250, g: 250, b: 250 }
+
+beelab_recaptcha2:
+    enabled: '%recaptcha_enabled%'
+    site_key: '%recaptcha_site_key%'
+    secret: '%recaptcha_secret%'

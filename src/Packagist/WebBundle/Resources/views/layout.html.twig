@@ -25,6 +25,31 @@
 
         <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist" />
 
+        {% if not app.user and requires_recaptcha(lastUsername|default) %}
+            <script src="https://www.google.com/recaptcha/api.js?render=explicit&onload=onloadRecaptchaCallback" async defer></script>
+
+            <script type="text/javascript">
+                var onloadRecaptchaCallback = function() {
+                    if (document.getElementById('_submit')) {
+                        grecaptcha.render('_submit', {
+                            'sitekey' : '{{ recaptcha_site_key }}',
+                            'callback' : onPageLoginSubmit
+                        });
+                    }
+                    grecaptcha.render('_submit_mini', {
+                        'sitekey' : '{{ recaptcha_site_key }}',
+                        'callback' : onNavLoginSubmit
+                    });
+                };
+                function onNavLoginSubmit(token) {
+                    document.getElementById('nav_login').submit();
+                }
+                function onPageLoginSubmit(token) {
+                    document.getElementById('page_login').submit();
+                }
+            </script>
+        {% endif %}
+
         {% block head_additions %}{% endblock %}
     </head>
 
@@ -75,7 +100,7 @@
                                     <a href="{{ path('hwi_oauth_connect') }}">{{ 'menu.sign_in'|trans }}</a>
 
                                     <section class="signin-box">
-                                        <form action="{{ path('login_check') }}" method="POST">
+                                        <form action="{{ path('login') }}" method="POST" id="nav_login">
                                             <div class="input-group">
                                                 <input class="form-control" type="text" id="_username" name="_username" placeholder="{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}">
                                                 <span class="input-group-addon"><span class="icon-user"></span></span>

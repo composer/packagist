@@ -205,6 +205,17 @@ services:
         tags:
             - { name: kernel.event_subscriber }
 
+    Packagist\WebBundle\Security\BruteForceLoginFormAuthenticator:
+        class: Packagist\WebBundle\Security\BruteForceLoginFormAuthenticator
+        arguments:
+            $recaptchaVerifier: "@beelab_recaptcha2.verifier"
+
+    Packagist\WebBundle\Security\RecaptchaHelper:
+        class: Packagist\WebBundle\Security\RecaptchaHelper
+        arguments:
+            $redis: "@snc_redis.cache_client"
+            $recaptchaEnabled: "%recaptcha_enabled%"
+
     Packagist\WebBundle\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource:
         class: Packagist\WebBundle\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource
         arguments: ["@doctrine"]

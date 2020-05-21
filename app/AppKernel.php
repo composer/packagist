@@ -26,6 +26,7 @@ class AppKernel extends Kernel
             new Nelmio\CorsBundle\NelmioCorsBundle(),
             new Scheb\TwoFactorBundle\SchebTwoFactorBundle(),
             new Endroid\QrCodeBundle\EndroidQrCodeBundle(),
+            new Beelab\Recaptcha2Bundle\BeelabRecaptcha2Bundle(),
             new Packagist\WebBundle\PackagistWebBundle(),
         );
 

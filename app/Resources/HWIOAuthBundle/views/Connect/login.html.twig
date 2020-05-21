@@ -18,15 +18,19 @@
             <div class="col-md-6">
                 {% if error is defined and error is not empty %}
                     <div class="alert alert-warning">
+                    {% if error.messageKey is defined %}
+                        {{ error.messageKey|trans(error.messageData) }}
+                    {% else %}
                         {{ error }}
+                    {% endif %}
                     </div>
                 {% endif %}
 
-                <form action="{{ path('login_check') }}" method="POST">
+                <form action="{{ path('login') }}" method="POST" id="page_login">
                     <div class="form-group clearfix">
                         <label for="username">{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}</label>
                         <div class="input-group clearfix">
-                            <input class="form-control" type="text" id="username" name="_username">
+                            <input class="form-control" type="text" id="username" name="_username" value="{{ lastUsername|default('') }}">
                             <span class="input-group-addon"><span class="icon-user"></span></span>
                         </div>
                     </div>

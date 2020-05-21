@@ -12,12 +12,10 @@ security:
     firewalls:
         main:
             pattern:      .*
-            form_login:
-                provider:       packagist
-                login_path:     /login
-                use_forward:    false
-                check_path:     /login_check
-                failure_path:   null
+            guard:
+                provider: packagist
+                authenticators:
+                    - Packagist\WebBundle\Security\BruteForceLoginFormAuthenticator
             remember_me:
                 secret: '%remember_me.secret%'
                 user_providers: packagist

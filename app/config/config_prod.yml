@@ -88,6 +88,8 @@ nelmio_security:
                 - 'unsafe-eval'
                 - 'https://cdn.jsdelivr.net/'
                 - 'https://www.google-analytics.com/'
+                - 'https://www.google.com/recaptcha/api.js'
+                - 'https://www.gstatic.com/recaptcha/'
             connect-src:
                 - 'self'
                 - '*.algolia.net'
@@ -105,4 +107,6 @@ nelmio_security:
             font-src:
                 - 'self'
                 - 'https://fonts.gstatic.com/'
+            frame-src:
+                - 'https://www.google.com/recaptcha/'
             block-all-mixed-content: true # defaults to false, blocks HTTP content over HTTPS transport

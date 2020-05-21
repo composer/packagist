@@ -42,9 +42,6 @@ github_check:
 logout:
     path: /logout
 
-login_check:
-    path: /login_check
-
 2fa_login:
     path: /2fa
     defaults:
