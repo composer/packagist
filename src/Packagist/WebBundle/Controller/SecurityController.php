@@ -10,6 +10,7 @@ class SecurityController extends Controller
 {
     /**
      * @Route("/login/", name="login")
+     * @Route("/login/", name="fos_user_security_login")
      */
     public function loginAction(AuthenticationUtils $authenticationUtils): Response
     {
