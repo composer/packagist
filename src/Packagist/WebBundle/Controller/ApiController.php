@@ -228,17 +228,28 @@ class ApiController extends Controller
                 continue;
             }
 
-            $jobs[] = ['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $ip];
+            $jobs[$result['id']] = ['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $ip];
         }
+        $jobs = array_values($jobs);
 
         if ($jobs) {
+            if (!$request->headers->get('User-Agent')) {
+                $this->get('logger')->error('Missing UA for '.$request->getContent().' (from '.$request->getClientIp().')');
+
+                return new JsonResponse(array('status' => 'success'), 201);
+            }
+
             $this->get('packagist.download_manager')->addDownloads($jobs);
 
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
+            if (!$uaParser->getComposerVersion()) {
+                $this->get('logger')->error('Could not parse UA: '.$_SERVER['HTTP_USER_AGENT'].' with '.$request->getContent().' from '.$request->getClientIp());
+            }
+
             $this->get('Graze\DogStatsD\Client')->increment('installs', 1, 1, [
                 'composer' => $uaParser->getComposerVersion() ?: 'unknown',
                 'composer_major' => $uaParser->getComposerMajorVersion() ?: 'unknown',
-                'php_minor' => preg_replace('{^(\d+\.\d+).*}', '$1', $uaParser->getPhpVersion()) ?: 'unknown',
+                'php_minor' => $uaParser->getPhpMinorVersion() ?: 'unknown',
                 'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
                 'http' => $uaParser->getHttpVersion() ?: 'unknown',
                 'ci' => $uaParser->getCI() ? 'true' : 'false',

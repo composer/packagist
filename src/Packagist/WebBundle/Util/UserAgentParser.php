@@ -17,12 +17,12 @@ class UserAgentParser
 
     public function __construct(?string $userAgent)
     {
-        if ($userAgent && preg_match('#^Composer/(?P<composer>[a-z0-9.+-]+) \((?P<os>\S+).*?; PHP (?P<php>[0-9.]+)[^;]*(?:; (?P<http>streams|curl \d+\.\d+)[^;]*)?(?P<ci>; CI)?#i', $userAgent, $matches)) {
+        if ($userAgent && preg_match('#^Composer/(?P<composer>[a-z0-9.+-]+) \((?P<os>\S+).*?; (?P<engine>HHVM|PHP) (?P<php>[0-9.]+)[^;]*(?:; (?P<http>streams|curl \d+\.\d+)[^;]*)?(?P<ci>; CI)?#i', $userAgent, $matches)) {
             if ($matches['composer'] === 'source' || preg_match('{^[a-f0-9]{40}$}', $matches['composer'])) {
                 $matches['composer'] = 'pre-1.8.5';
             }
             $this->composerVersion = preg_replace('{\+[a-f0-9]{40}}', '', $matches['composer']);
-            $this->phpVersion = $matches['php'];
+            $this->phpVersion = (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['php'];
             $this->os = preg_replace('{^cygwin_nt-.*}', 'cygwin', strtolower($matches['os']));
             $this->httpVersion = $matches['http'] ?? null;
             $this->ci = (bool) ($matches['ci'] ?? null);
@@ -50,6 +50,15 @@ class UserAgentParser
     public function getPhpVersion(): ?string
     {
         return $this->phpVersion;
+    }
+
+    public function getPhpMinorVersion(): ?string
+    {
+        if (substr($this->phpVersion, 0, 5) === 'hhvm-') {
+            return 'hhvm';
+        }
+
+        return preg_replace('{^(\d+\.\d+).*}', '$1', $this->phpVersion);
     }
 
     public function getOs(): ?string
