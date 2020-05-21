@@ -1199,7 +1199,7 @@ class PackageController extends Controller
         $average = $req->query->get('average', $this->guessStatsAverage($from, $to));
 
         $dlData = [];
-        if ($majorVersion) {
+        if (null !== $majorVersion) {
             if ($majorVersion === 'all') {
                 $dlData = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findDataByMajorVersions($package);
             } else {
