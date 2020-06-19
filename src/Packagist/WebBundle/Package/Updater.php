@@ -20,7 +20,7 @@ use Composer\Repository\VcsRepository;
 use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Util\ErrorHandler;
-use Composer\Util\RemoteFilesystem;
+use Composer\Util\HttpDownloader;
 use Composer\Config;
 use Composer\IO\IOInterface;
 use Packagist\WebBundle\Entity\Author;
@@ -95,7 +95,7 @@ class Updater
      */
     public function update(IOInterface $io, Config $config, Package $package, RepositoryInterface $repository, $flags = 0, array $existingVersions = null, VersionCache $versionCache = null): Package
     {
-        $rfs = new RemoteFilesystem($io, $config);
+        $httpDownloader = new HttpDownloader($io, $config);
 
         $deleteDate = new \DateTime();
         $deleteDate->modify('-1day');
@@ -152,6 +152,12 @@ class Updater
         // an update
         if ($rootIdentifier && $versionCache) {
             $versionCache->clearVersion($rootIdentifier);
+        }
+        // migrate old packages to the new metadata storage for v2
+        if ($versionCache && ($package->getUpdatedAt() === null || $package->getUpdatedAt() < new \DateTime('2020-06-20 00:00:00'))) {
+            $versionCache->clearVersion('master');
+            $versionCache->clearVersion('default');
+            $versionCache->clearVersion('trunk');
         }
 
         $versions = $repository->getPackages();
@@ -236,6 +242,9 @@ class Updater
         foreach ($existingVersions as $version) {
             if (!is_null($version['softDeletedAt']) && new \DateTime($version['softDeletedAt']) < $deleteDate) {
                 $versionRepository->remove($versionRepository->findOneById($version['id']));
+            } elseif ($version['normalizedVersion'] === '9999999-dev') {
+                // removed v1 normalized versions of dev-master/trunk/default immediately as they have been recreated as dev-master/trunk/default in a non-normalized way
+                $versionRepository->remove($versionRepository->findOneById($version['id']));
             } else {
                 // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
                 // version is still missing it will be really removed
@@ -247,7 +256,7 @@ class Updater
         }
 
         if (preg_match('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match) && $repository instanceof VcsRepository) {
-            $this->updateGitHubInfo($rfs, $package, $match[1], $match[2], $repository);
+            $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $repository);
         } else {
             $this->updateReadme($io, $package, $repository);
         }
@@ -286,6 +295,8 @@ class Updater
                 || ($flags & self::UPDATE_EQUAL_REFS)
                 // or if the package must be marked abandoned from composer.json
                 || ($data->isAbandoned() && !$package->isAbandoned())
+                // or if the version default branch state has changed
+                || ($data->isDefaultBranch() !== $version->isDefaultBranch())
             ) {
                 $version = $versionRepo->findOneById($existingVersion['id']);
             } elseif ($existingVersion['needs_author_migration']) {
@@ -309,9 +320,10 @@ class Updater
 
         $descr = $this->sanitize($data->getDescription());
         $version->setDescription($descr);
+        $version->setIsDefaultBranch($data->isDefaultBranch());
 
         // update the package description only for the default branch
-        if ($rootIdentifier === null || preg_replace('{dev-|(\.x)?-dev}', '', $version->getVersion()) === $rootIdentifier) {
+        if ($rootIdentifier === null || $data->isDefaultBranch()) {
             $package->setDescription($descr);
             if ($data->isAbandoned() && !$package->isAbandoned()) {
                 $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
@@ -544,7 +556,7 @@ class Updater
         }
     }
 
-    private function updateGitHubInfo(RemoteFilesystem $rfs, Package $package, $owner, $repo, VcsRepository $repository)
+    private function updateGitHubInfo(HttpDownloader $httpDownloader, Package $package, $owner, $repo, VcsRepository $repository)
     {
         $baseApiUrl = 'https://api.github.com/repos/'.$owner.'/'.$repo;
 
@@ -557,7 +569,7 @@ class Updater
 
         try {
             $opts = ['http' => ['header' => ['Accept: application/vnd.github.v3.html']]];
-            $readme = $rfs->getContents('github.com', $baseApiUrl.'/readme', false, $opts);
+            $readme = $httpDownloader->get($baseApiUrl.'/readme', $opts)->getBody();
         } catch (\Exception $e) {
             if (!$e instanceof \Composer\Downloader\TransportException || $e->getCode() !== 404) {
                 return;

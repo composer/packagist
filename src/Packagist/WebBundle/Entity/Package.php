@@ -20,6 +20,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Composer\Repository\Vcs\GitHubDriver;
+use Composer\Util\HttpDownloader;
 
 /**
  * @ORM\Entity(repositoryClass="Packagist\WebBundle\Entity\PackageRepository")
@@ -628,7 +629,8 @@ class Package
             $io = new NullIO();
             $config = Factory::createConfig();
             $io->loadConfiguration($config);
-            $repository = new VcsRepository(array('url' => $this->repository), $io, $config);
+            $httpDownloader = new HttpDownloader($io, $config);
+            $repository = new VcsRepository(array('url' => $this->repository), $io, $config, $httpDownloader);
 
             $driver = $this->vcsDriver = $repository->getDriver();
             if (!$driver) {
@@ -945,6 +947,14 @@ class Package
 
     public static function sortVersions($a, $b)
     {
+        // sort default branch first
+        if ($a->isDefaultBranch()) {
+            return -1;
+        }
+        if ($b->isDefaultBranch()) {
+            return 1;
+        }
+
         $aVersion = $a->getNormalizedVersion();
         $bVersion = $b->getNormalizedVersion();
         $aVersion = preg_replace('{^dev-.*}', '0.0.0-alpha', $aVersion);

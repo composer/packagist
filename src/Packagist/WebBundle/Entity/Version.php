@@ -190,6 +190,11 @@ class Version
     private $authorJson;
 
     /**
+     * @ORM\Column(name="defaultBranch", type="boolean", options={"default": false})
+     */
+    private $isDefaultBranch = false;
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $createdAt;
@@ -300,6 +305,10 @@ class Version
             'provide'    => 'provide',
             'replace'    => 'replace',
         );
+
+        if ($this->isDefaultBranch()) {
+            $data['default_branch'] = true;
+        }
 
         foreach ($supportedLinkTypes as $method => $linkType) {
             if (isset($versionData[$this->id][$method])) {
@@ -792,6 +801,16 @@ class Version
     public function setAuthorJson(?array $authors): void
     {
         $this->authorJson = $authors ?: [];
+    }
+
+    public function isDefaultBranch(): bool
+    {
+        return $this->isDefaultBranch;
+    }
+
+    public function setIsDefaultBranch(bool $isDefaultBranch): void
+    {
+        $this->isDefaultBranch = $isDefaultBranch;
     }
 
     /**

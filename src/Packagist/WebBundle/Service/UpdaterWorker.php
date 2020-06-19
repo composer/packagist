@@ -27,7 +27,7 @@ use Packagist\WebBundle\Model\DownloadManager;
 use Seld\Signal\SignalHandler;
 use Composer\Factory;
 use Composer\Downloader\TransportException;
-use Composer\Util\RemoteFilesystem;
+use Composer\Util\HttpDownloader;
 
 class UpdaterWorker
 {
@@ -85,6 +85,8 @@ class UpdaterWorker
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
         $io->loadConfiguration($config);
 
+        $httpDownloader = new HttpDownloader($io, $config);
+
         try {
             $flags = 0;
             $useVersionCache = true;
@@ -122,6 +124,8 @@ class UpdaterWorker
                 ['url' => $package->getRepository(), 'options' => ['retry-auth-failure' => false]],
                 $io,
                 $config,
+                $httpDownloader,
+                null,
                 null,
                 null,
                 $versionCache
@@ -137,7 +141,7 @@ class UpdaterWorker
 
             // github update downgraded to a git clone, this should not happen, so check through API whether the package still exists
             if (preg_match('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository(), $match) && 0 === strpos($repository->getDriver()->getUrl(), 'git@')) {
-                if ($result = $this->checkForDeadGitHubPackage($package, $match, $io, $io->getOutput())) {
+                if ($result = $this->checkForDeadGitHubPackage($package, $match, $httpDownloader, $io->getOutput())) {
                     return $result;
                 }
             }
@@ -209,7 +213,7 @@ class UpdaterWorker
 
             // github 404'ed, check through API whether the package still exists and delete if not
             if ($found404 && preg_match('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository(), $match)) {
-                if ($result = $this->checkForDeadGitHubPackage($package, $match, $io, $output)) {
+                if ($result = $this->checkForDeadGitHubPackage($package, $match, $httpDownloader, $output)) {
                     return $result;
                 }
             }
@@ -276,17 +280,16 @@ class UpdaterWorker
         }x', '$5', $str);
     }
 
-    private function checkForDeadGitHubPackage(Package $package, $match, $io, $output)
+    private function checkForDeadGitHubPackage(Package $package, $match, $httpDownloader, $output)
     {
-        $rfs = new RemoteFilesystem($io);
         try {
-            $rfs->getContents('github.com', 'https://api.github.com/repos/'.$match[1], false, ['retry-auth-failure' => false]);
+            $httpDownloader->get('https://api.github.com/repos/'.$match[1], ['retry-auth-failure' => false]);
         } catch (\Throwable $e) {
             if ($e instanceof TransportException && $e->getStatusCode() === 404) {
                 try {
                     if (
                         // check composer repo is visible to make sure it's not github or something else glitching
-                        $rfs->getContents('github.com', 'https://api.github.com/repos/composer/composer', false, ['retry-auth-failure' => false])
+                        $downloader->getContents('github.com', 'https://api.github.com/repos/composer/composer', false, ['retry-auth-failure' => false])
                         // remove packages with very low downloads and that are 404
                         && $this->downloadManager->getTotalDownloads($package) <= 100
                     ) {

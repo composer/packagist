@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Package;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Composer\Util\Filesystem as ComposerFilesystem;
+use Composer\Util\MetadataMinifier;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Finder\Finder;
@@ -730,6 +731,9 @@ class SymlinkDumper
         $this->loadIndividualFile($file, $key);
         $data = $version->toArray($versionData);
         $data['uid'] = $version->getId();
+        if (in_array($data['version_normalized'], ['dev-master', 'dev-default', 'dev-trunk'], true)) {
+            $data['version_normalized'] = '9999999-dev';
+        }
         $this->individualFiles[$key]['packages'][strtolower($version->getName())][$version->getVersion()] = $data;
         $timestamp = $version->getReleasedAt() ? $version->getReleasedAt()->getTimestamp() : time();
         if (!isset($this->individualFilesMtime[$key]) || $this->individualFilesMtime[$key] < $timestamp) {
@@ -776,37 +780,12 @@ class SymlinkDumper
 
     private function dumpVersionsToV2File(Package $package, $versions, $versionData, string $packageKey)
     {
-        $minifiedVersions = [];
-        $lastKnownVersionData = null;
+        $versionArrays = [];
         foreach ($versions as $version) {
-            $versionArray = $version->toV2Array($versionData);
-
-            if (!$lastKnownVersionData) {
-                $lastKnownVersionData = $versionArray;
-                $minifiedVersions[] = $versionArray;
-                continue;
-            }
-
-            $minifiedVersion = [];
-
-            // add any changes from the previous version
-            foreach ($versionArray as $key => $val) {
-                if (!isset($lastKnownVersionData[$key]) || $lastKnownVersionData[$key] !== $val) {
-                    $minifiedVersion[$key] = $val;
-                    $lastKnownVersionData[$key] = $val;
-                }
-            }
-
-            // store any deletions from the previous version for keys missing in current one
-            foreach ($lastKnownVersionData as $key => $val) {
-                if (!isset($versionArray[$key])) {
-                    $minifiedVersion[$key] = "__unset";
-                    unset($lastKnownVersionData[$key]);
-                }
-            }
-
-            $minifiedVersions[] = $minifiedVersion;
+            $versionArrays[] = $version->toV2Array($versionData);
         }
+
+        $minifiedVersions = MetadataMinifier::minify($versionArrays);
 
         $this->individualFilesV2[$packageKey]['packages'][strtolower($package->getName())] = $minifiedVersions;
         $this->individualFilesV2[$packageKey]['minified'] = 'composer/2.0';

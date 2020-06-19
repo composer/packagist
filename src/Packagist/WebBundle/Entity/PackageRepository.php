@@ -231,7 +231,7 @@ class PackageRepository extends ServiceEntityRepository
         // this helps for packages like https://packagist.org/packages/ccxt/ccxt
         // with huge amounts of versions
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('partial p.{id}', 'partial v.{id, version, normalizedVersion, development, releasedAt, extra}', 'partial m.{id, username, email}')
+        $qb->select('partial p.{id}', 'partial v.{id, version, normalizedVersion, development, releasedAt, extra, isDefaultBranch}', 'partial m.{id, username, email}')
             ->from('Packagist\WebBundle\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
             ->leftJoin('p.maintainers', 'm')
