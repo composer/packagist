@@ -307,7 +307,7 @@ class Version
         );
 
         if ($this->isDefaultBranch()) {
-            $data['default_branch'] = true;
+            $data['default-branch'] = true;
         }
 
         foreach ($supportedLinkTypes as $method => $linkType) {
