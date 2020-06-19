@@ -67,6 +67,7 @@ class UpdaterTest extends TestCase
         $packageMock->expects($this->any())->method('getProvides')->willReturn([]);
         $packageMock->expects($this->any())->method('getReplaces')->willReturn([]);
         $packageMock->expects($this->any())->method('getDevRequires')->willReturn([]);
+        $packageMock->expects($this->any())->method('isDefaultBranch')->willReturn(false);
 
         $this->updater = new Updater($registryMock);
     }
