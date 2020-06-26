@@ -298,6 +298,19 @@ class ApiController extends Controller
      */
     protected function getPackageAndVersionId($name, $version)
     {
+        // support legacy composer v1 normalized default branches
+        if ($version === '9999999-dev') {
+            return $this->get('doctrine.dbal.default_connection')->fetchAssoc(
+                'SELECT p.id, v.id vid
+                FROM package p
+                LEFT JOIN package_version v ON p.id = v.package_id
+                WHERE p.name = ?
+                AND v.defaultBranch = true
+                LIMIT 1',
+                array($name)
+            );
+        }
+
         return $this->get('doctrine.dbal.default_connection')->fetchAssoc(
             'SELECT p.id, v.id vid
             FROM package p
