@@ -73,6 +73,17 @@ class PackageController extends Controller
             $names = $this->get('packagist.provider_manager')->getPackageNames();
         }
 
+        if ($req->query->get('filter')) {
+            $packageFilter = '{^'.str_replace('\\*', '.*?', preg_quote($req->query->get('filter'))).'$}i';
+            $filtered = [];
+            foreach ($names as $name) {
+                if (preg_match($packageFilter, $name)) {
+                    $filtered[] = $name;
+                }
+            }
+            $names = $filtered;
+        }
+
         return new JsonResponse(array('packageNames' => $names));
     }
 
