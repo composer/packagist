@@ -947,18 +947,27 @@ class Package
 
     public static function sortVersions($a, $b)
     {
-        // sort default branch first
-        if ($a->isDefaultBranch()) {
-            return -1;
-        }
-        if ($b->isDefaultBranch()) {
-            return 1;
-        }
-
         $aVersion = $a->getNormalizedVersion();
         $bVersion = $b->getNormalizedVersion();
+
+        // use branch alias for sorting if one is provided
+        if (isset($a->getExtra()['branch-alias'][$aVersion])) {
+            $aVersion = preg_replace('{(.x)?-dev$}', '.9999999-dev', $a->getExtra()['branch-alias'][$aVersion]);
+        }
+        if (isset($b->getExtra()['branch-alias'][$bVersion])) {
+            $bVersion = preg_replace('{(.x)?-dev$}', '.9999999-dev', $b->getExtra()['branch-alias'][$bVersion]);
+        }
+
         $aVersion = preg_replace('{^dev-.*}', '0.0.0-alpha', $aVersion);
         $bVersion = preg_replace('{^dev-.*}', '0.0.0-alpha', $bVersion);
+
+        // sort default branch first if it is non numeric
+        if ($aVersion === '0.0.0-alpha' && $a->isDefaultBranch()) {
+            return -1;
+        }
+        if ($bVersion === '0.0.0-alpha' && $b->isDefaultBranch()) {
+            return 1;
+        }
 
         // equal versions are sorted by date
         if ($aVersion === $bVersion) {
