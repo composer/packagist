@@ -88,7 +88,7 @@ class WebController extends Controller
             ]);
         }
 
-        $blockList = ['2400:6180:100:d0::83b:b001'];
+        $blockList = ['2400:6180:100:d0::83b:b001', '34.235.38.170'];
         if (in_array($req->getClientIp(), $blockList, true)) {
             return JsonResponse::create(array(
                 'error' => 'Too many requests, reach out to contact@packagist.org'
