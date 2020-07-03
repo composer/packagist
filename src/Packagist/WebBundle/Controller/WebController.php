@@ -88,6 +88,13 @@ class WebController extends Controller
             ]);
         }
 
+        $blockList = ['2400:6180:100:d0::83b:b001'];
+        if (in_array($req->getClientIp(), $blockList, true)) {
+            return JsonResponse::create(array(
+                'error' => 'Too many requests, reach out to contact@packagist.org'
+            ), 400)->setCallback($req->query->get('callback'));
+        }
+
         $typeFilter = str_replace('%type%', '', $req->query->get('type'));
         $tagsFilter = $req->query->get('tags');
 
@@ -211,7 +218,10 @@ class WebController extends Controller
             $result['next'] = $this->generateUrl('search', $params, UrlGeneratorInterface::ABSOLUTE_URL);
         }
 
-        return JsonResponse::create($result)->setCallback($req->query->get('callback'));
+        $response = JsonResponse::create($result)->setCallback($req->query->get('callback'));
+        $response->setSharedMaxAge(300);
+
+        return $response;
     }
 
     /**
