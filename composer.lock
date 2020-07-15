@@ -416,12 +416,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "6d2b5c1950bbf9b761dc84357490f381f7eccb74"
+                "reference": "92ef4396663577a99de883fec8b95efb9b41fc5a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/6d2b5c1950bbf9b761dc84357490f381f7eccb74",
-                "reference": "6d2b5c1950bbf9b761dc84357490f381f7eccb74",
+                "url": "https://api.github.com/repos/composer/composer/zipball/92ef4396663577a99de883fec8b95efb9b41fc5a",
+                "reference": "92ef4396663577a99de883fec8b95efb9b41fc5a",
                 "shasum": ""
             },
             "require": {
@@ -449,6 +449,7 @@
                 "ext-zip": "Enabling the zip extension allows you to unzip archives",
                 "ext-zlib": "Allow gzip compression of HTTP requests"
             },
+            "default-branch": true,
             "bin": [
                 "bin/composer"
             ],
@@ -505,7 +506,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-06-19T15:58:21+00:00"
+            "time": "2020-07-07T19:12:27+00:00"
         },
         {
             "name": "composer/package-versions-deprecated",
