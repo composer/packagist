@@ -3,12 +3,14 @@
 namespace Packagist\WebBundle\SecurityAdvisory;
 
 use Composer\Downloader\TransportException;
-use Composer\Downloader\ZipDownloader;
 use Composer\Factory;
 use Composer\IO\ConsoleIO;
 use Composer\Package\CompletePackage;
 use Composer\Package\Loader\ArrayLoader;
+use Composer\Util\Loop;
+use Composer\Util\ProcessExecutor;
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\Version;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -34,8 +36,8 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
     {
         /** @var Package $package */
         $package = $this->doctrine->getRepository(Package::class)->findOneBy(['name' => self::SECURITY_PACKAGE]);
-        if (!$package || !($version = $package->getVersion('9999999-dev'))) {
-            return [];
+        if (!$package || !($version = $this->doctrine->getRepository(Version::class)->findOneBy(['package' => $package->getId(), 'isDefaultBranch' => true]))) {
+            return null;
         }
 
         $loader = new ArrayLoader(null, true);
@@ -48,10 +50,20 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
             $localCwdDir = sys_get_temp_dir() . '/' . uniqid(self::SOURCE_NAME, true);
             $localDir = $localCwdDir . '/' . self::SOURCE_NAME;
             $config = Factory::createConfig($io, $localCwdDir);
-            $rfs = Factory::createRemoteFilesystem($io, $config, []);
-            $downloader = new ZipDownloader($io, $config, null, null, null, $rfs);
-            $downloader->setOutputProgress(false);
-            $downloader->download($composerPackage, $localDir);
+            $process = new ProcessExecutor();
+            $factory = new Factory();
+            $httpDownloader = $factory->createHttpDownloader($io, $config);
+            $loop = new Loop($httpDownloader, $process);
+            $downloadManager = $factory->createDownloadManager($io, $config, $httpDownloader, $process);
+            $downloader = $downloadManager->getDownloader('zip');
+            $promise = $downloader->download($composerPackage, $localDir);
+            if ($promise) {
+                $loop->wait([$promise]);
+            }
+            $promise = $downloader->install($composerPackage, $localDir);
+            if ($promise) {
+                $loop->wait([$promise]);
+            }
 
             $finder = new Finder();
             $finder->name('*.yaml');
