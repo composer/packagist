@@ -151,6 +151,7 @@ api_doc:
     search_by_type: Search packages by type
     get_by_name: Get a package by name
     get_package_data: Getting package data
+    list_security_advisory: List security advisories
 
 mirrors:
     title: Mirrors of the Packagist.org Metadata
