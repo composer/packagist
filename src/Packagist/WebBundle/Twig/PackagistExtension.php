@@ -6,6 +6,7 @@ use Packagist\WebBundle\Model\ProviderManager;
 use Packagist\WebBundle\Security\RecaptchaHelper;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Composer\Repository\PlatformRepository;
 
 class PackagistExtension extends \Twig\Extension\AbstractExtension
 {
@@ -20,7 +21,7 @@ class PackagistExtension extends \Twig\Extension\AbstractExtension
     /** @var RequestStack */
     private $requestStack;
 
-    public function __construct(ProviderManager $providerManager, CsrfTokenManagerInterface$csrfTokenManager, RecaptchaHelper $recaptchaHelper, RequestStack $requestStack)
+    public function __construct(ProviderManager $providerManager, CsrfTokenManagerInterface $csrfTokenManager, RecaptchaHelper $recaptchaHelper, RequestStack $requestStack)
     {
         $this->providerManager = $providerManager;
         $this->csrfTokenManager = $csrfTokenManager;
@@ -43,6 +44,7 @@ class PackagistExtension extends \Twig\Extension\AbstractExtension
             new \Twig_SimpleFilter('prettify_source_reference', [$this, 'prettifySourceReference']),
             new \Twig_SimpleFilter('gravatar_hash', [$this, 'generateGravatarHash']),
             new \Twig_SimpleFilter('vendor', [$this, 'getVendor']),
+            new \Twig_SimpleFilter('sort_links', [$this, 'sortLinks']),
         );
     }
 
@@ -95,6 +97,29 @@ class PackagistExtension extends \Twig\Extension\AbstractExtension
     public function generateGravatarHash($email)
     {
         return md5(strtolower($email));
+    }
+
+    public function sortLinks(array $links)
+    {
+        usort($links, function ($a, $b) {
+            $aPlatform = preg_match(PlatformRepository::PLATFORM_PACKAGE_REGEX, $a->getPackageName());
+            $bPlatform = preg_match(PlatformRepository::PLATFORM_PACKAGE_REGEX, $b->getPackageName());
+
+            if ($aPlatform !== $bPlatform) {
+                return $aPlatform ? -1 : 1;
+            }
+
+            if (preg_match('{^php(?:-64bit|-ipv6|-zts|-debug)?$}iD', $a->getPackageName())) {
+                return -1;
+            }
+            if (preg_match('{^php(?:-64bit|-ipv6|-zts|-debug)?$}iD', $b->getPackageName())) {
+                return 1;
+            }
+
+            return $a->getPackageName() <=> $b->getPackageName();
+        });
+
+        return $links;
     }
 
     public function getCsrfToken($name)

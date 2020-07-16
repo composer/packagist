@@ -20,8 +20,8 @@
                     <p class="link-type">{{ ('link_type.' ~ type)|trans }}</p>
                     {% if attribute(version, type)|length %}
                         <ul>
-                            {%- for link in attribute(version, type) -%}
-                                <li>{{ packagist.packageLink(link.packageName, type) }}: {{ link.packageVersion == 'self.version' ? version.version : link.packageVersion }}</li>
+                            {%- for link in attribute(version, type).toArray()|sort_links -%}
+                                <li>{{ packagist.packageLink(link.packageName, type) }}{% if link.packageVersion is not empty %}: {{ link.packageVersion == 'self.version' ? version.version : link.packageVersion }}{% endif %}</li>
                             {%- endfor -%}
                         </ul>
                     {% else %}
