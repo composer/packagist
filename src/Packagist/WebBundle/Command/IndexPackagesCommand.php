@@ -265,9 +265,9 @@ class IndexPackagesCommand extends ContainerAwareCommand
             $tags[$idx] = $tag['name'];
         }
 
-        return array_map(function ($tag) {
+        return array_values(array_unique(array_map(function ($tag) {
             return preg_replace('{[\s-]+}u', ' ', mb_strtolower(preg_replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8'));
-        }, $tags);
+        }, $tags)));
     }
 
     private function updateIndexedAt(array $idsToUpdate, $doctrine, string $time)
