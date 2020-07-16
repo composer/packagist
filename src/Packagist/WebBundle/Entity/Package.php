@@ -379,12 +379,13 @@ class Package
         try {
             $vendor = $this->getVendor();
             if ($vendor && $this->entityRepository->isVendorTaken($vendor, reset($this->maintainers))) {
-                $context->buildViolation('The vendor is already taken by someone else. '
+                $context->buildViolation('The vendor name "'.$vendor.'" was already claimed by someone else on Packagist.org. '
                         . 'You may ask them to add your package and give you maintainership access. '
                         . 'If they add you as a maintainer on any package in that vendor namespace, '
                         . 'you will then be able to add new packages in that namespace. '
                         . 'The packages already in that vendor namespace can be found at '
-                        . '<a href="'.$this->router->generate('view_vendor', array('vendor' => $vendor)).'">'.$vendor.'</a>')
+                        . '<a href="'.$this->router->generate('view_vendor', array('vendor' => $vendor)).'">'.$vendor.'</a>.'
+                        . 'If those packages belong to you but were submitted by someone else, you can <a href="mailto:contact@packagist.org">contact us</a> to resolve the issue.')
                     ->atPath('repository')
                     ->addViolation()
                 ;
