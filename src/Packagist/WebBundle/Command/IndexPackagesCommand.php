@@ -266,7 +266,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
         }
 
         return array_map(function ($tag) {
-            return mb_strtolower(preg_replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8');
+            return preg_replace('{[\s-]+}u', ' ', mb_strtolower(preg_replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8'));
         }, $tags);
     }
 

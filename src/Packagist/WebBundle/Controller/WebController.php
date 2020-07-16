@@ -123,10 +123,13 @@ class WebController extends Controller
 
         // filter by tags
         if ($tagsFilter) {
-
             $tags = array();
             foreach ((array) $tagsFilter as $tag) {
-                $tags[] = 'tags:'.$tag;
+                $tag = strtr($tag, '-', ' ');
+                $tags[] = 'tags:"'.$tag.'"';
+                if (false !== strpos($tag, ' ')) {
+                    $tags[] = 'tags:"'.strtr($tag, ' ', '-').'"';
+                }
             }
             $queryParams['filters'][] = '(' . implode(' OR ', $tags) . ')';
         }
