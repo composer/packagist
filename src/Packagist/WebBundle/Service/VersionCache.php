@@ -44,9 +44,8 @@ class VersionCache implements VersionCacheInterface
     public function clearVersion($version)
     {
         foreach (array_keys($this->versionCache) as $v) {
-            if (preg_replace('{^dev-|(\.x)?-dev$}', '', $v) === $version || preg_replace('{-dev$}', '', $v) === $version) {
+            if (preg_replace('{^dev-|(\.x)?-dev$}', '', $v) === $version || preg_replace('{-dev$}', '', $v) === $version || preg_replace('{^dev-}', '', $v) === $version) {
                 unset($this->versionCache[$v]);
-                break;
             }
         }
     }
