@@ -25,7 +25,7 @@
         "exclude-from-classmap": [ "src/Packagist/WebBundle/Tests/" ]
     },
     "require": {
-        "php": ">=7.3",
+        "php": ">=7.4",
         "symfony/symfony": "^3.4",
         "doctrine/orm": "^2.4",
         "doctrine/doctrine-bundle": "^1.2",
@@ -38,7 +38,6 @@
         "sensio/generator-bundle": "^3.0",
 
         "composer/composer": "^2.0@dev",
-        "composer/package-versions-deprecated": "^1.8",
         "friendsofsymfony/user-bundle": "^2.0",
         "hwi/oauth-bundle": "^0.6",
         "scheb/two-factor-bundle": "^4.7",
@@ -92,7 +91,7 @@
     },
     "config": {
         "platform": {
-            "php": "7.3.16"
+            "php": "7.4.9"
         }
     }
 }
