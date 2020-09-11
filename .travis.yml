@@ -16,7 +16,7 @@ services:
 
 
 php:
-  - 7.3
+  - 7.4
 
 matrix:
   fast_finish: true
@@ -25,6 +25,7 @@ before_install:
     - cp app/config/parameters.yml.dist app/config/parameters.yml
     - 'echo "    github.client_id: $GH_CLIENT_ID" >> app/config/parameters.yml'
     - 'echo "    github.client_secret: $GH_CLIENT_SECRET" >> app/config/parameters.yml'
+    - composer self-update --2
 
 install:
     - composer install
