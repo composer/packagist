@@ -161,7 +161,7 @@
         }
 
         function initializeVersionListExpander() {
-            var versionsList = $('.package .versions')[0];
+            var versionsList = $('.package .versions:visible')[0];
             if (versionsList.offsetHeight < versionsList.scrollHeight) {
                 $('.package .versions-expander').removeClass('hidden').on('click', function () {
                     $(this).addClass('hidden');
