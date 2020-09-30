@@ -1,4 +1,4 @@
-Packagist
+Packagist - An Amazing Project
 =========
 
 Package Repository Website for Composer, see the [about page](https://packagist.org/about) on [packagist.org](https://packagist.org/) for more.
