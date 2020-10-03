@@ -21,6 +21,7 @@
   <li><a href="#get-package-data">{{ 'api_doc.get_package_data'|trans }}</a></li>
   <li><a href="#get-statistics">{{ 'api_doc.get_statistics'|trans }}</a></li>
   <li><a href="#list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</a></li>
+  <li><a href="#create-package">{{ 'api_doc.api_create_package'|trans }}</a></li>
 </ul>
 
 
@@ -259,5 +260,22 @@ GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestam
 
 </section>
 
+<section class="col-d-12">
+  <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }}</h3>
+
+  <h4 id="create-package-by-url">{{ 'api_doc.api_create_package'|trans }}</h4>
+
+    <p>This interface creates a package for a specific repo. Parameters <code>username</code> and <code>apiToken</code> are required. Only <code>POST</code> method is allowed.</p>
+
+    <pre>
+POST https://{{ packagist_host }}/api/create-package?username=[username]&apiToken=[apiToken] -d '{"repository":{"url":"[url]"}}'
+<code>
+{
+  "status": "success"
+}
+</code></pre>
+    <p>Working example: <code>curl -X POST 'https://{{ packagist_host }}/api/create-package?username=zqfan&apiToken=********' -d '{"repository":{"url":"https://github.com/tencentcloud/tencentcloud-sdk-php"}}'</code></p>
+
+</section>
 
 {% endblock %}

@@ -152,6 +152,7 @@ api_doc:
     get_by_name: Get a package by name
     get_package_data: Getting package data
     list_security_advisory: List security advisories
+    api_create_package: Create a package
 
 mirrors:
     title: Mirrors of the Packagist.org Metadata
