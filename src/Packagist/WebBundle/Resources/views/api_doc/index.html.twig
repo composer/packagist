@@ -265,7 +265,7 @@ GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestam
 
   <h4 id="create-package-by-url">{{ 'api_doc.api_create_package'|trans }}</h4>
 
-    <p>This interface creates a package for a specific repo. Parameters <code>username</code> and <code>apiToken</code> are required. Only <code>POST</code> method is allowed.</p>
+    <p>This endpoint creates a package for a specific repo. Parameters <code>username</code> and <code>apiToken</code> are required. Only <code>POST</code> method is allowed.</p>
 
     <pre>
 POST https://{{ packagist_host }}/api/create-package?username=[username]&apiToken=[apiToken] -d '{"repository":{"url":"[url]"}}'
@@ -274,7 +274,7 @@ POST https://{{ packagist_host }}/api/create-package?username=[username]&apiToke
   "status": "success"
 }
 </code></pre>
-    <p>Working example: <code>curl -X POST 'https://{{ packagist_host }}/api/create-package?username=zqfan&apiToken=********' -d '{"repository":{"url":"https://github.com/tencentcloud/tencentcloud-sdk-php"}}'</code></p>
+    <p>Working example: <code>curl -X POST 'https://{{ packagist_host }}/api/create-package?username=zqfan&apiToken=********' -d '{"repository":{"url":"https://github.com/monolog/monolog"}}'</code></p>
 
 </section>
 
