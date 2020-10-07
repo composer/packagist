@@ -676,3 +676,7 @@
 .markdown-body hr {
   border-bottom-color: #eee;
 }
+
+.markdown-body details summary {
+  cursor: pointer;
+}
