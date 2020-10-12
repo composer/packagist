@@ -1734,7 +1734,3 @@ svg.chart {
 .icon-lock:before { content: '🔒'; } /* '\1f512' */
 .icon-lock-open:before { content: '🔓'; } /* '\1f513' */
 .icon-rocket:before { content: '🚀'; } /* '\1f680' */
-
-.markdown-body details summary {
-    cursor: pointer;
-}
