@@ -57,14 +57,16 @@
   content: ' ';
   display: inline-block;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' version='1.1' width='16' height='16' aria-hidden='true'%3E%3Cpath fill-rule='evenodd' d='M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z'%3E%3C/path%3E%3C/svg%3E");
-}.markdown-body {
-   -ms-text-size-adjust: 100%;
+}
+
+.markdown-body {
+/*REMOVED   -ms-text-size-adjust: 100%;
    -webkit-text-size-adjust: 100%;
    line-height: 1.5;
    color: #24292e;
    font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji;
    font-size: 16px;
-   line-height: 1.5;
+   line-height: 1.5;*/
    word-wrap: break-word;
  }
 
@@ -137,7 +139,7 @@
 }
 
 .markdown-body a {
-  color: #0366d6;
+/*REMOVED  color: #0366d6;*/
   text-decoration: none;
 }
 
@@ -683,7 +685,7 @@
 .markdown-body h1,
 .markdown-body h2 {
   padding-bottom: .3em;
-  border-bottom: 1px solid #eaecef;
+/*REMOVED  border-bottom: 1px solid #eaecef;*/
 }
 
 .markdown-body h2 {
@@ -793,7 +795,7 @@
   margin: 0;
   font-size: 85%;
   background-color: rgba(27,31,35,.05);
-  border-radius: 3px;
+/*REMOVED  border-radius: 3px;*/
 }
 
 .markdown-body pre {
@@ -826,7 +828,7 @@
   font-size: 85%;
   line-height: 1.45;
   background-color: #f6f8fa;
-  border-radius: 3px;
+/*REMOVED  border-radius: 3px;*/
 }
 
 .markdown-body pre code {
