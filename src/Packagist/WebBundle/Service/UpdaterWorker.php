@@ -3,7 +3,6 @@
 namespace Packagist\WebBundle\Service;
 
 use Packagist\WebBundle\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
-use Packagist\WebBundle\Service\Scheduler;
 use Psr\Log\LoggerInterface;
 use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
@@ -11,12 +10,8 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
 use Composer\Console\HtmlOutputFormatter;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Repository\VcsRepository;
-use Composer\IO\ConsoleIO;
 use Composer\IO\BufferIO;
-use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\HelperSet;
-use Monolog\Handler\StreamHandler;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Package\Updater;
@@ -280,7 +275,7 @@ class UpdaterWorker
         }x', '$5', $str);
     }
 
-    private function checkForDeadGitHubPackage(Package $package, $match, $httpDownloader, $output)
+    private function checkForDeadGitHubPackage(Package $package, $match, HttpDownloader $httpDownloader, $output)
     {
         try {
             $httpDownloader->get('https://api.github.com/repos/'.$match[1], ['retry-auth-failure' => false]);
@@ -289,7 +284,7 @@ class UpdaterWorker
                 try {
                     if (
                         // check composer repo is visible to make sure it's not github or something else glitching
-                        $downloader->getContents('github.com', 'https://api.github.com/repos/composer/composer', false, ['retry-auth-failure' => false])
+                        $httpDownloader->get('https://api.github.com/repos/composer/composer', ['retry-auth-failure' => false])
                         // remove packages with very low downloads and that are 404
                         && $this->downloadManager->getTotalDownloads($package) <= 100
                     ) {
