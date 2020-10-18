@@ -124,7 +124,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                         $index->deleteObject($package->getName());
                         $idsToUpdate[] = $package->getId();
                         continue;
-                    } catch (\AlgoliaSearch\AlgoliaException $e) {
+                    } catch (\Algolia\AlgoliaSearch\Exceptions\AlgoliaException $e) {
                     }
                 }
 
