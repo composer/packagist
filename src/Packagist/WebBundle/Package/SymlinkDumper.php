@@ -360,7 +360,7 @@ class SymlinkDumper
             $this->rootFile['search'] = $this->router->generate('search', ['_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL) . '?q=%query%&type=%type%';
             $this->rootFile['list'] = $this->router->generate('list', [], UrlGeneratorInterface::ABSOLUTE_URL);
             $this->rootFile['providers-api'] = str_replace('VND/PKG', '%package%', $this->router->generate('view_providers', ['name' => 'VND/PKG', '_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL));
-            $this->rootFile['warning'] = 'You are using an outdated version of Composer. Composer 2.0 is about to be released and the older 1.x releases will self-update directly to it once it is released. To avoid surprises update now to the latest 1.x version which will prompt you before self-updating to 2.x.';
+            $this->rootFile['warning'] = 'You are using an outdated version of Composer. Composer 2.0 is now available and you should upgrade. See https://getcomposer.org/2';
             $this->rootFile['warning-versions'] = '<1.10.10';
 
             if ($verbose) {
