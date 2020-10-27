@@ -18,6 +18,7 @@ use Psr\Log\LoggerInterface;
 use Algolia\AlgoliaSearch\SearchClient;
 use Predis\Client;
 use Packagist\WebBundle\Service\GitHubUserMigrationWorker;
+use Twig\Environment;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -36,7 +37,7 @@ class PackageManager
     protected $githubWorker;
     protected $metadataDir;
 
-    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Swift_Mailer $instantMailer, \Twig_Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir, Client $redis)
+    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Swift_Mailer $instantMailer, Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir, Client $redis)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;
