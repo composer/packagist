@@ -6,16 +6,16 @@
 {% endblock textarea_widget %}
 
 {% block form_widget_simple %}
-{% filter spaceless %}
+{% apply spaceless %}
     {% set attr = attr|merge({'class': attr.class|default('') ~ ' form-control'}) %}
     {% set type = type|default('text') %}
 
     {{ parent() }}
-{% endfilter %}
+{% endapply %}
 {% endblock form_widget_simple %}
 
 {% block form_row %}
-{% filter spaceless %}
+{% apply spaceless %}
     <div class="form-group{% if errors|length > 0 %} has-error{% endif %}">
         {{ form_label(form) }}
 
@@ -31,15 +31,15 @@
             </span>
         {% endfor %}
     </div>
-{% endfilter %}
+{% endapply %}
 {% endblock form_row %}
 
 {% block form_errors %}
-{% filter spaceless %}
+{% apply spaceless %}
     {% if errors|length > 0 %}
         {% for error in errors %}
             <div class="alert alert-danger">{{ error.message }}</div>
         {% endfor %}
     {% endif %}
-{% endfilter %}
+{% endapply %}
 {% endblock form_errors %}
