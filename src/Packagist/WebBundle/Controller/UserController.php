@@ -23,7 +23,7 @@ use Packagist\WebBundle\Form\Model\EnableTwoFactorRequest;
 use Packagist\WebBundle\Form\Type\EnableTwoFactorAuthType;
 use Packagist\WebBundle\Model\RedisAdapter;
 use Packagist\WebBundle\Security\TwoFactorAuthManager;
-use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
@@ -237,8 +237,9 @@ class UserController extends Controller
             new RedisAdapter($this->get('packagist.favorite_manager'), $user, 'getFavorites', 'getFavoriteCount')
         );
 
+        $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)), false, true);
+        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)));
 
         return array('packages' => $paginator, 'user' => $user);
     }
@@ -428,9 +429,10 @@ class UserController extends Controller
             ->getRepository(Package::class)
             ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true);
 
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($packages, true));
+        $paginator = new Pagerfanta(new QueryAdapter($packages, true));
+        $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)), false, true);
+        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)));
 
         return $paginator;
     }

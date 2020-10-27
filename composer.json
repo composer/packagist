@@ -48,7 +48,7 @@
         "zendframework/zend-feed": "^2.0",
         "zendframework/zend-servicemanager": "^2.0",
         "zendframework/zend-uri": "^2.0",
-        "pagerfanta/pagerfanta": "^2.0",
+        "pagerfanta/pagerfanta": "^2.4",
         "knplabs/knp-menu-bundle": "^2.1",
         "ezyang/htmlpurifier": "^4.6",
         "nelmio/cors-bundle": "^1.4",

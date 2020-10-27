@@ -13,7 +13,7 @@
 namespace Packagist\WebBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller as BaseController;
-use Pagerfanta\Adapter\DoctrineORMAdapter;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Packagist\WebBundle\Entity\Package;
 
@@ -74,9 +74,10 @@ class Controller extends BaseController
      */
     protected function setupPager($query, $page)
     {
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($query, true));
+        $paginator = new Pagerfanta(new QueryAdapter($query, true));
+        $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage($page, false, true);
+        $paginator->setCurrentPage($page);
 
         return $paginator;
     }
