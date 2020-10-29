@@ -76,6 +76,11 @@ class ApiController extends Controller
             $em = $this->getDoctrine()->getManager();
             $em->persist($package);
             $em->flush();
+
+            $this->get('packagist.provider_manager')->insertPackage($package);
+            if ($user->getGithubToken()) {
+                $this->get('github_user_migration_worker')->setupWebHook($user->getGithubToken(), $package);
+            }
         } catch (\Exception $e) {
             $this->get('logger')->critical($e->getMessage(), array('exception', $e));
             return new JsonResponse(array('status' => 'error', 'message' => 'Error saving package'), 500);

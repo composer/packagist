@@ -29,6 +29,7 @@ use Packagist\WebBundle\Entity\Tag;
 use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Entity\SuggestLink;
+use Packagist\WebBundle\Model\ProviderManager;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Doctrine\DBAL\Connection;
 use Packagist\WebBundle\Service\VersionCache;
@@ -46,6 +47,10 @@ class Updater
      * @var RegistryInterface
      */
     protected $doctrine;
+    /**
+     * @var ProviderManager
+     */
+    protected $providerManager;
 
     /**
      * Supported link types
@@ -79,9 +84,10 @@ class Updater
      *
      * @param RegistryInterface $doctrine
      */
-    public function __construct(RegistryInterface $doctrine)
+    public function __construct(RegistryInterface $doctrine, ProviderManager $providerManager)
     {
         $this->doctrine = $doctrine;
+        $this->providerManager = $providerManager;
 
         ErrorHandler::register();
     }
@@ -259,6 +265,11 @@ class Updater
             $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $repository);
         } else {
             $this->updateReadme($io, $package, $repository);
+        }
+
+        // make sure the package exists in the package list if for some reason adding it on submit failed
+        if ($package->getReplacementPackage() !== 'spam/spam' && !$this->providerManager->packageExists($package->getName())) {
+            $this->providerManager->insertPackage($package);
         }
 
         $package->setUpdatedAt(new \DateTime);
