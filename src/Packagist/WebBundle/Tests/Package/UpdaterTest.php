@@ -17,6 +17,7 @@ use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Package\Updater;
 use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Entity\AuthorRepository;
+use Packagist\WebBundle\Model\ProviderManager;
 use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_MockObject;
 
@@ -45,6 +46,7 @@ class UpdaterTest extends TestCase
         $this->ioMock         = $this->getMockBuilder(NullIO::class)->disableOriginalConstructor()->getMock();
         $this->repositoryMock = $this->getMockBuilder(VcsRepository::class)->disableOriginalConstructor()->getMock();
         $registryMock         = $this->getMockBuilder(Registry::class)->disableOriginalConstructor()->getMock();
+        $providerManagerMock  = $this->getMockBuilder(ProviderManager::class)->disableOriginalConstructor()->getMock();
         $emMock               = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
         $connectionMock       = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
         $packageMock          = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
@@ -69,7 +71,7 @@ class UpdaterTest extends TestCase
         $packageMock->expects($this->any())->method('getDevRequires')->willReturn([]);
         $packageMock->expects($this->any())->method('isDefaultBranch')->willReturn(false);
 
-        $this->updater = new Updater($registryMock);
+        $this->updater = new Updater($registryMock, $providerManagerMock);
     }
 
     public function testUpdatesTheReadme()
