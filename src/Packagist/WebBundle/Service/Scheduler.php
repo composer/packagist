@@ -19,7 +19,7 @@ class Scheduler
         $this->redis = $redis;
     }
 
-    public function scheduleUpdate($packageOrId, $updateEqualRefs = false, $deleteBefore = false, $executeAfter = null): Job
+    public function scheduleUpdate($packageOrId, $updateEqualRefs = false, $deleteBefore = false, $executeAfter = null, $forceDump = false): Job
     {
         $updateEqualRefs = (bool) $updateEqualRefs;
         $deleteBefore = (bool) $deleteBefore;
@@ -53,7 +53,7 @@ class Scheduler
             $this->doctrine->getManager()->flush($pendingJob);
         }
 
-        return $this->createJob('package:updates', ['id' => $packageOrId, 'update_equal_refs' => $updateEqualRefs, 'delete_before' => $deleteBefore], $packageOrId, $executeAfter);
+        return $this->createJob('package:updates', ['id' => $packageOrId, 'update_equal_refs' => $updateEqualRefs, 'delete_before' => $deleteBefore, 'force_dump' => $forceDump], $packageOrId, $executeAfter);
     }
 
     public function scheduleUserScopeMigration(int $userId, string $oldScope, string $newScope): Job

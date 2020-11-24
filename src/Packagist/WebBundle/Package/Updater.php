@@ -41,6 +41,7 @@ class Updater
 {
     const UPDATE_EQUAL_REFS = 1;
     const DELETE_BEFORE = 2;
+    const FORCE_DUMP = 4;
 
     /**
      * Doctrine
@@ -274,6 +275,11 @@ class Updater
 
         $package->setUpdatedAt(new \DateTime);
         $package->setCrawledAt(new \DateTime);
+
+        if ($flags & self::FORCE_DUMP) {
+            $package->setDumpedAt(null);
+        }
+
         $em->flush();
         if ($repository->hadInvalidBranches()) {
             throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');

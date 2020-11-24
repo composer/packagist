@@ -300,7 +300,8 @@ class SymlinkDumper
                     // dump v2 format
                     $key = $name.'.json';
                     $keyDev = $name.'~dev.json';
-                    $this->dumpPackageToV2File($package, $versionData, $key, $keyDev);
+                    $forceDump = $package->getDumpedAt() === null;
+                    $this->dumpPackageToV2File($package, $versionData, $key, $keyDev, $forceDump);
                     $modifiedV2Files[$key] = true;
                     $modifiedV2Files[$keyDev] = true;
 
@@ -751,14 +752,14 @@ class SymlinkDumper
             $path = $dir . '/' . $key;
             $this->fs->mkdir(dirname($path));
 
-            $json = json_encode($data, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
-            $this->writeV2File($path, $json);
+            $json = json_encode($data['metadata'], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+            $this->writeV2File($path, $json, $data['force_dump']);
         }
 
         $this->individualFilesV2 = array();
     }
 
-    private function dumpPackageToV2File(Package $package, $versionData, string $packageKey, string $packageKeyDev)
+    private function dumpPackageToV2File(Package $package, $versionData, string $packageKey, string $packageKeyDev, bool $forceDump)
     {
         $versions = $package->getVersions();
         if (is_object($versions)) {
@@ -777,11 +778,11 @@ class SymlinkDumper
             }
         }
 
-        $this->dumpVersionsToV2File($package, $tags, $versionData, $packageKey);
-        $this->dumpVersionsToV2File($package, $branches, $versionData, $packageKeyDev);
+        $this->dumpVersionsToV2File($package, $tags, $versionData, $packageKey, $forceDump);
+        $this->dumpVersionsToV2File($package, $branches, $versionData, $packageKeyDev, $forceDump);
     }
 
-    private function dumpVersionsToV2File(Package $package, $versions, $versionData, string $packageKey)
+    private function dumpVersionsToV2File(Package $package, $versions, $versionData, string $packageKey, bool $forceDump)
     {
         $versionArrays = [];
         foreach ($versions as $version) {
@@ -790,8 +791,15 @@ class SymlinkDumper
 
         $minifiedVersions = MetadataMinifier::minify($versionArrays);
 
-        $this->individualFilesV2[$packageKey]['packages'][strtolower($package->getName())] = $minifiedVersions;
-        $this->individualFilesV2[$packageKey]['minified'] = 'composer/2.0';
+        $this->individualFilesV2[$packageKey] = [
+            'force_dump' => $forceDump,
+            'metadata' => [
+                'packages' => [
+                    strtolower($package->getName()) => $minifiedVersions
+                ],
+                'minified' => 'composer/2.0',
+            ]
+        ];
     }
 
     private function clearDirectory($path)
@@ -877,13 +885,14 @@ class SymlinkDumper
         }
     }
 
-    private function writeV2File($path, $contents)
+    private function writeV2File($path, $contents, $forceDump = false)
     {
         if (
-            file_exists($path)
+            !$forceDump
+            && file_exists($path)
             && file_get_contents($path) === $contents
             // files dumped before then are susceptible to be out of sync, so force them all to be dumped once more at least
-            && filemtime($path) >= 1587654540
+            && filemtime($path) >= 1606210609
         ) {
             return;
         }

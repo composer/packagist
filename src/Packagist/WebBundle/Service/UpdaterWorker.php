@@ -93,6 +93,9 @@ class UpdaterWorker
                 $flags = Updater::DELETE_BEFORE;
                 $useVersionCache = false;
             }
+            if (($job->getPayload()['force_dump'] ?? false) === true) {
+                $flags |= Updater::FORCE_DUMP;
+            }
 
             // prepare dependencies
             $loader = new ValidatingArrayLoader(new ArrayLoader());

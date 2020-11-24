@@ -81,6 +81,7 @@
         if (updateAll) {
             data.push({name: 'updateAll', value: '1'});
         }
+        data.push({name: 'manualUpdate', value: '1'});
 
         $.ajax({
             url: $('.package .force-update').attr('action'),

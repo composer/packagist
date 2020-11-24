@@ -743,6 +743,7 @@ class PackageController extends Controller
         $update = $req->request->get('update', $req->query->get('update'));
         $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
         $updateEqualRefs = (bool) $req->request->get('updateAll', $req->query->get('updateAll'));
+        $manualUpdate = (bool) $req->request->get('manualUpdate', $req->query->get('manualUpdate'));
 
         $user = $this->getUser() ?: $doctrine
             ->getRepository('PackagistWebBundle:User')
@@ -758,6 +759,7 @@ class PackageController extends Controller
             if (!$canUpdatePackage) {
                 $autoUpdated = null;
                 $updateEqualRefs = false;
+                $manualUpdate = false;
             }
 
             if (null !== $autoUpdated) {
@@ -766,7 +768,7 @@ class PackageController extends Controller
             }
 
             if ($update) {
-                $job = $this->get('scheduler')->scheduleUpdate($package, $updateEqualRefs);
+                $job = $this->get('scheduler')->scheduleUpdate($package, $updateEqualRefs, false, null, $manualUpdate);
 
                 return new JsonResponse(['status' => 'success', 'job' => $job->getId()], 202);
             }
