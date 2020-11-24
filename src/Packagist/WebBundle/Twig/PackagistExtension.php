@@ -7,8 +7,12 @@ use Packagist\WebBundle\Security\RecaptchaHelper;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Composer\Repository\PlatformRepository;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFilter;
+use Twig\TwigFunction;
+use Twig\TwigTest;
 
-class PackagistExtension extends \Twig\Extension\AbstractExtension
+class PackagistExtension extends AbstractExtension
 {
     /**
      * @var ProviderManager
@@ -32,27 +36,27 @@ class PackagistExtension extends \Twig\Extension\AbstractExtension
     public function getTests()
     {
         return array(
-            new \Twig_SimpleTest('existing_package', [$this, 'packageExistsTest']),
-            new \Twig_SimpleTest('existing_provider', [$this, 'providerExistsTest']),
-            new \Twig_SimpleTest('numeric', [$this, 'numericTest']),
+            new TwigTest('existing_package', [$this, 'packageExistsTest']),
+            new TwigTest('existing_provider', [$this, 'providerExistsTest']),
+            new TwigTest('numeric', [$this, 'numericTest']),
         );
     }
 
     public function getFilters()
     {
         return array(
-            new \Twig_SimpleFilter('prettify_source_reference', [$this, 'prettifySourceReference']),
-            new \Twig_SimpleFilter('gravatar_hash', [$this, 'generateGravatarHash']),
-            new \Twig_SimpleFilter('vendor', [$this, 'getVendor']),
-            new \Twig_SimpleFilter('sort_links', [$this, 'sortLinks']),
+            new TwigFilter('prettify_source_reference', [$this, 'prettifySourceReference']),
+            new TwigFilter('gravatar_hash', [$this, 'generateGravatarHash']),
+            new TwigFilter('vendor', [$this, 'getVendor']),
+            new TwigFilter('sort_links', [$this, 'sortLinks']),
         );
     }
 
     public function getFunctions()
     {
         return array(
-            new \Twig_SimpleFunction('csrf_token', [$this, 'getCsrfToken']),
-            new \Twig_SimpleFunction('requires_recaptcha', [$this, 'requiresRecaptcha']),
+            new TwigFunction('csrf_token', [$this, 'getCsrfToken']),
+            new TwigFunction('requires_recaptcha', [$this, 'requiresRecaptcha']),
         );
     }
 
