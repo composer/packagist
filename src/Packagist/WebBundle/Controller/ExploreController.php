@@ -105,8 +105,9 @@ class ExploreController extends Controller
             });
 
             $packages = new Pagerfanta(new FixedAdapter($redis->zcard('downloads:trending'), $popular));
+            $packages->setNormalizeOutOfRangePages(true);
             $packages->setMaxPerPage($perPage);
-            $packages->setCurrentPage($req->get('page', 1), false, true);
+            $packages->setCurrentPage($req->get('page', 1));
         } catch (ConnectionException $e) {
             $packages = new Pagerfanta(new FixedAdapter(0, array()));
         }

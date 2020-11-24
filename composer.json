@@ -45,11 +45,10 @@
         "nelmio/security-bundle": "^2.4",
         "predis/predis": "^1.0",
         "snc/redis-bundle": "^2.0",
-        "white-october/pagerfanta-bundle": "^1.0",
         "zendframework/zend-feed": "^2.0",
         "zendframework/zend-servicemanager": "^2.0",
         "zendframework/zend-uri": "^2.0",
-        "pagerfanta/pagerfanta": "^2.0",
+        "pagerfanta/pagerfanta": "^2.4",
         "knplabs/knp-menu-bundle": "^2.1",
         "ezyang/htmlpurifier": "^4.6",
         "nelmio/cors-bundle": "^1.4",
@@ -61,7 +60,8 @@
         "zendframework/zenddiagnostics": "^1.4",
         "graze/dog-statsd": "^0.4.2",
         "incenteev/composer-parameter-handler": "^2.1",
-        "beelab/recaptcha2-bundle": "^2.3"
+        "beelab/recaptcha2-bundle": "^2.3",
+        "babdev/pagerfanta-bundle": "^2.7"
     },
     "require-dev": {
         "symfony/phpunit-bridge": "^4.2",

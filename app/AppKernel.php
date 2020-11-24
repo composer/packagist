@@ -20,7 +20,7 @@ class AppKernel extends Kernel
             new Http\HttplugBundle\HttplugBundle(),
             new HWI\Bundle\OAuthBundle\HWIOAuthBundle(),
             new Snc\RedisBundle\SncRedisBundle(),
-            new WhiteOctober\PagerfantaBundle\WhiteOctoberPagerfantaBundle(),
+            new BabDev\PagerfantaBundle\BabDevPagerfantaBundle(),
             new Nelmio\SecurityBundle\NelmioSecurityBundle(),
             new Knp\Bundle\MenuBundle\KnpMenuBundle(),
             new Nelmio\CorsBundle\NelmioCorsBundle(),

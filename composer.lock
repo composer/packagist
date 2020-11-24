@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0bd7688572ba51407de6fdd8a10bad18",
+    "content-hash": "e664e1bc09b8aad0af6cfd6193621b95",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -79,6 +79,89 @@
                 "source": "https://github.com/algolia/algoliasearch-client-php/tree/master"
             },
             "time": "2020-06-25T08:47:13+00:00"
+        },
+        {
+            "name": "babdev/pagerfanta-bundle",
+            "version": "v2.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/BabDev/PagerfantaBundle.git",
+                "reference": "1f3078a9134d7073cdba73343ad3cf9401086a8a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/BabDev/PagerfantaBundle/zipball/1f3078a9134d7073cdba73343ad3cf9401086a8a",
+                "reference": "1f3078a9134d7073cdba73343ad3cf9401086a8a",
+                "shasum": ""
+            },
+            "require": {
+                "pagerfanta/pagerfanta": "^2.4",
+                "php": "^7.2",
+                "symfony/config": "^3.4 || ^4.4 || ^5.1",
+                "symfony/dependency-injection": "^3.4 || ^4.4 || ^5.1",
+                "symfony/deprecation-contracts": "^2.1",
+                "symfony/http-foundation": "^3.4 || ^4.4 || ^5.1",
+                "symfony/http-kernel": "^3.4 || ^4.4 || ^5.1",
+                "symfony/property-access": "^3.4 || ^4.4 || ^5.1",
+                "symfony/routing": "^3.4 || ^4.4 || ^5.1"
+            },
+            "conflict": {
+                "twig/twig": "<1.35 || >=2.0,<2.5",
+                "white-october/pagerfanta-bundle": "*"
+            },
+            "require-dev": {
+                "doctrine/annotations": "^1.8",
+                "friendsofphp/php-cs-fixer": "^2.16",
+                "jms/serializer": "^3.0",
+                "jms/serializer-bundle": "^3.0",
+                "matthiasnoback/symfony-dependency-injection-test": "^4.1",
+                "phpstan/extension-installer": "^1.0.3",
+                "phpstan/phpstan": "^0.12.37",
+                "phpstan/phpstan-phpunit": "^0.12.16",
+                "phpstan/phpstan-symfony": "^0.12.7",
+                "phpunit/phpunit": "^8.5 || ^9.0",
+                "symfony/serializer": "^3.4 || ^4.4 || ^5.1",
+                "symfony/translation": "^3.4 || ^4.4 || ^5.1",
+                "symfony/twig-bridge": "^3.4 || ^4.4 || ^5.1",
+                "symfony/twig-bundle": "^3.4 || ^4.4 || ^5.1",
+                "twig/twig": "^1.35 || ^2.5 || ^3.0"
+            },
+            "suggest": {
+                "jms/serializer-bundle": "To use the Pagerfanta class with the JMS Serializer",
+                "symfony/serializer": "To use the Pagerfanta class with the Symfony Serializer",
+                "symfony/translation": "To use the Pagerfanta views with translation support",
+                "twig/twig": "To integrate Pagerfanta with Twig through extensions"
+            },
+            "type": "symfony-bundle",
+            "autoload": {
+                "psr-4": {
+                    "BabDev\\PagerfantaBundle\\": ""
+                },
+                "exclude-from-classmap": [
+                    "Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Bundle integrating Pagerfanta with Symfony",
+            "keywords": [
+                "pagerfanta",
+                "pagination",
+                "symfony"
+            ],
+            "support": {
+                "issues": "https://github.com/BabDev/PagerfantaBundle/issues",
+                "source": "https://github.com/BabDev/PagerfantaBundle/tree/v2.7.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/mbabker",
+                    "type": "github"
+                }
+            ],
+            "time": "2020-10-14T22:45:11+00:00"
         },
         {
             "name": "bacon/bacon-qr-code",
@@ -8002,72 +8085,6 @@
                 "source": "https://github.com/ua-parser/uap-php/tree/v3.9.13"
             },
             "time": "2020-08-05T22:13:41+00:00"
-        },
-        {
-            "name": "white-october/pagerfanta-bundle",
-            "version": "v1.3.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/whiteoctober/WhiteOctoberPagerfantaBundle.git",
-                "reference": "6df560869b5e09a3acf920890ab40598998b30ae"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/whiteoctober/WhiteOctoberPagerfantaBundle/zipball/6df560869b5e09a3acf920890ab40598998b30ae",
-                "reference": "6df560869b5e09a3acf920890ab40598998b30ae",
-                "shasum": ""
-            },
-            "require": {
-                "pagerfanta/pagerfanta": "^1.1.0|^2.0.0",
-                "php": ">=5.3.3",
-                "symfony/framework-bundle": "~2.3|~3.0|~4.0",
-                "symfony/property-access": "~2.3|~3.0|~4.0",
-                "symfony/translation": "~2.3|~3.0|~4.0",
-                "symfony/twig-bundle": "~2.3|~3.0|~4.0"
-            },
-            "conflict": {
-                "twig/twig": "<1.34|>=2.0,<2.4"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~3.7|~4.0|^5.0",
-                "symfony/symfony": "~2.3|~3.0|~4.0"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "WhiteOctober\\PagerfantaBundle\\": ""
-                },
-                "exclude-from-classmap": [
-                    "Tests/",
-                    "TestsProject/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Pablo Díez",
-                    "email": "pablodip@gmail.com"
-                }
-            ],
-            "description": "Bundle to use Pagerfanta with Symfony2",
-            "keywords": [
-                "page",
-                "paging"
-            ],
-            "support": {
-                "issues": "https://github.com/whiteoctober/WhiteOctoberPagerfantaBundle/issues",
-                "source": "https://github.com/whiteoctober/WhiteOctoberPagerfantaBundle/tree/v1.3.2"
-            },
-            "abandoned": "babdev/pagerfanta-bundle",
-            "time": "2019-12-02T14:19:37+00:00"
         },
         {
             "name": "zendframework/zend-escaper",

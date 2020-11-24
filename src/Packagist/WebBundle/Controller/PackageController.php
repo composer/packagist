@@ -399,8 +399,9 @@ class PackageController extends Controller
         $packages = $repo->getSuspectPackages(($page - 1) * 50, 50);
 
         $paginator = new Pagerfanta(new FixedAdapter($count, $packages));
+        $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage(50);
-        $paginator->setCurrentPage($page, false, true);
+        $paginator->setCurrentPage($page);
 
         $data['packages'] = $paginator;
         $data['count'] = $count;
@@ -1103,8 +1104,9 @@ class PackageController extends Controller
         $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy);
 
         $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
+        $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage($perPage);
-        $paginator->setCurrentPage($page, false, true);
+        $paginator->setCurrentPage($page);
 
         if ($req->getRequestFormat() === 'json') {
             $data = [
@@ -1158,8 +1160,9 @@ class PackageController extends Controller
         $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
 
         $paginator = new Pagerfanta(new FixedAdapter($suggestCount, $packages));
+        $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage($perPage);
-        $paginator->setCurrentPage($page, false, true);
+        $paginator->setCurrentPage($page);
 
         if ($req->getRequestFormat() === 'json') {
             $data = [
