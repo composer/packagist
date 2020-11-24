@@ -2,17 +2,18 @@
 
 namespace Packagist\WebBundle\Command;
 
+use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\LockHandler;
 use Symfony\Component\Console\Command\Command;
-use Seld\Signal\SignalHandler;
 use Packagist\WebBundle\Service\QueueWorker;
 use Psr\Log\LoggerInterface;
 
 class RunWorkersCommand extends Command
 {
+    use LockableTrait;
+
     private $logger;
     private $worker;
 
@@ -38,11 +39,10 @@ class RunWorkersCommand extends Command
     {
         \Monolog\ErrorHandler::register($this->logger);
 
-        $lock = new LockHandler('packagist_run_' . $input->getOption('worker-id'));
         ini_set('memory_limit', '1G');
 
         // another dumper is still active
-        if (!$lock->lock()) {
+        if (!$this->lock('packagist_run_' . $input->getOption('worker-id'))) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another of the same worker is still active');
             }
@@ -57,7 +57,7 @@ class RunWorkersCommand extends Command
 
             $this->logger->notice('Worker exiting successfully');
         } finally {
-            $lock->release();
+            $this->release();
         }
     }
 }
