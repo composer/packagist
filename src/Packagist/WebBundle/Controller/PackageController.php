@@ -408,6 +408,21 @@ class PackageController extends Controller
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['markSafeCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('mark_safe');
 
+        $vendorRepo = $this->getDoctrine()->getRepository(Vendor::class);
+        $verified = [];
+        foreach ($packages as $pkg) {
+            $dls = $data['meta'][$pkg->getId()] ?? 0;
+            if ($dls > 10 && !in_array($pkg->getVendor(), $verified, true)) {
+                $vendorRepo->verify($pkg->getVendor());
+                $this->get('session')->getFlashBag()->add('success', 'Marked '.$pkg->getVendor().' with '.$dls.' downloads.');
+                $verified[] = $pkg->getVendor();
+            }
+        }
+
+        if ($verified) {
+            return $this->redirectToRoute('view_spam');
+        }
+
         return $this->render('PackagistWebBundle:package:spam.html.twig', $data);
     }
 
