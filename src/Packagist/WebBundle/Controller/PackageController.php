@@ -149,7 +149,7 @@ class PackageController extends Controller
             // but if it is deleted and marked as dumped within 10 seconds of the deletion, it probably was a race condition between
             // dumped job and deletion, so let's replace it by a delete job anyway
             $newestUpdate = max($actions[$package]['time'] ?? 0, $actions[$package.'~dev']['time'] ?? 0);
-            if ($newestUpdate < $time + 10) {
+            if ($newestUpdate < $time / 10000 + 10) {
                 $actions[$package] = ['type' => 'delete', 'package' => $package, 'time' => floor(($time - 2000) / 10000)];
                 unset($actions[$package.'~dev']);
             }
