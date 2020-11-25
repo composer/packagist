@@ -369,7 +369,7 @@ class PackageRepository extends ServiceEntityRepository
         return (int) $result[0]['count'];
     }
 
-    public function getSuspectPackages($offset = 0, $limit = 15)
+    public function getSuspectPackages($offset = 0, $limit = 15): array
     {
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam") ORDER BY p.createdAt DESC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);

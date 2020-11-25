@@ -411,11 +411,12 @@ class PackageController extends Controller
         $vendorRepo = $this->getDoctrine()->getRepository(Vendor::class);
         $verified = [];
         foreach ($packages as $pkg) {
-            $dls = $data['meta'][$pkg->getId()] ?? 0;
-            if ($dls > 10 && !in_array($pkg->getVendor(), $verified, true)) {
-                $vendorRepo->verify($pkg->getVendor());
-                $this->get('session')->getFlashBag()->add('success', 'Marked '.$pkg->getVendor().' with '.$dls.' downloads.');
-                $verified[] = $pkg->getVendor();
+            $dls = $data['meta']['downloads'][$pkg['id']] ?? 0;
+            $vendor = preg_replace('{/.*$}', '', $pkg['name']);
+            if ($dls > 10 && !in_array($vendor, $verified, true)) {
+                $vendorRepo->verify($vendor);
+                $this->get('session')->getFlashBag()->add('success', 'Marked '.$vendor.' with '.$dls.' downloads.');
+                $verified[] = $vendor;
             }
         }
 
