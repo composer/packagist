@@ -17,9 +17,12 @@ use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
 use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
 use Packagist\WebBundle\Entity\User;
+use Packagist\WebBundle\Security\AccountEmailExistsWithoutGitHubException;
+use Packagist\WebBundle\Security\AccountUsernameExistsWithoutGitHubException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Packagist\WebBundle\Service\Scheduler;
+use FOS\UserBundle\Util\TokenGenerator;
 
 class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInterface
 {
@@ -37,16 +40,21 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      * @var Scheduler
      */
     private $scheduler;
+    /**
+     * @var TokenGenerator
+     */
+    private $tokenGenerator;
 
     /**
      * @param UserManagerInterface  $userManager
      * @param UserProviderInterface $userProvider
      */
-    public function __construct(UserManagerInterface $userManager, UserProviderInterface $userProvider, Scheduler $scheduler)
+    public function __construct(UserManagerInterface $userManager, UserProviderInterface $userProvider, Scheduler $scheduler, TokenGenerator $tokenGenerator)
     {
         $this->userManager = $userManager;
         $this->userProvider = $userProvider;
         $this->scheduler = $scheduler;
+        $this->tokenGenerator = $tokenGenerator;
     }
 
     /**
@@ -98,7 +106,30 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         $user = $this->userManager->findUserBy(array('githubId' => $username));
 
         if (!$user) {
-            throw new AccountNotLinkedException(sprintf('No user with github username "%s" was found.', $username));
+            $tryByEmail = $this->userManager->findUserByEmail($response->getEmail());
+            if ($tryByEmail) {
+                throw new AccountEmailExistsWithoutGitHubException();
+            }
+            $tryByUsername = $this->userManager->findUserByUsername($response->getNickname());
+            if ($tryByUsername) {
+                throw new AccountUsernameExistsWithoutGitHubException();
+            }
+
+            // if null just create new user and set it properties
+            $user = new User();
+            $user->setUsername($response->getNickname());
+            $user->setPlainPassword(random_bytes(40));
+            $user->setEmail($response->getEmail());
+            $user->setGithubId($username);
+            $user->setGithubToken($response->getAccessToken());
+            $user->setGithubScope($response->getOAuthToken()->getRawToken()['scope']);
+            $apiToken = substr($this->tokenGenerator->generateToken(), 0, 20);
+            $user->setApiToken($apiToken);
+            $user->setEnabled(true);
+
+            $this->userManager->updateUser($user);
+
+            return $user;
         }
 
         if ($user->getGithubId() !== (string) $response->getUsername()) {
