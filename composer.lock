@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
-            "version": "2.7.1",
+            "version": "2.7.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/algolia/algoliasearch-client-php.git",
-                "reference": "19c0a6c1ef44c0aafaf6c6238c1509ebde2d1a35"
+                "reference": "a915109c76d5f4af67f10cd21855ea2d4c9aec9f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/algolia/algoliasearch-client-php/zipball/19c0a6c1ef44c0aafaf6c6238c1509ebde2d1a35",
-                "reference": "19c0a6c1ef44c0aafaf6c6238c1509ebde2d1a35",
+                "url": "https://api.github.com/repos/algolia/algoliasearch-client-php/zipball/a915109c76d5f4af67f10cd21855ea2d4c9aec9f",
+                "reference": "a915109c76d5f4af67f10cd21855ea2d4c9aec9f",
                 "shasum": ""
             },
             "require": {
@@ -76,9 +76,9 @@
             ],
             "support": {
                 "issues": "https://github.com/algolia/algoliasearch-client-php/issues",
-                "source": "https://github.com/algolia/algoliasearch-client-php/tree/2.7.1"
+                "source": "https://github.com/algolia/algoliasearch-client-php/tree/2.7.2"
             },
-            "time": "2020-11-12T13:52:28+00:00"
+            "time": "2020-11-24T10:16:46+00:00"
         },
         {
             "name": "babdev/pagerfanta-bundle",
@@ -556,12 +556,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "47672a73c0662c899d0216d3e915243a55538707"
+                "reference": "1fb6b03e036c2ee44133de81da5ea0a653e8d0e6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/47672a73c0662c899d0216d3e915243a55538707",
-                "reference": "47672a73c0662c899d0216d3e915243a55538707",
+                "url": "https://api.github.com/repos/composer/composer/zipball/1fb6b03e036c2ee44133de81da5ea0a653e8d0e6",
+                "reference": "1fb6b03e036c2ee44133de81da5ea0a653e8d0e6",
                 "shasum": ""
             },
             "require": {
@@ -646,7 +646,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-11-24T08:41:54+00:00"
+            "time": "2020-11-26T15:03:38+00:00"
         },
         {
             "name": "composer/package-versions-deprecated",
@@ -3618,16 +3618,16 @@
         },
         {
             "name": "lcobucci/jwt",
-            "version": "3.3.3",
+            "version": "3.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lcobucci/jwt.git",
-                "reference": "c1123697f6a2ec29162b82f170dd4a491f524773"
+                "reference": "320b9f05741b24acbbaf1106ed267ff3817fd74d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lcobucci/jwt/zipball/c1123697f6a2ec29162b82f170dd4a491f524773",
-                "reference": "c1123697f6a2ec29162b82f170dd4a491f524773",
+                "url": "https://api.github.com/repos/lcobucci/jwt/zipball/320b9f05741b24acbbaf1106ed267ff3817fd74d",
+                "reference": "320b9f05741b24acbbaf1106ed267ff3817fd74d",
                 "shasum": ""
             },
             "require": {
@@ -3642,6 +3642,9 @@
                 "phpunit/phpunit": "^5.7 || ^7.3",
                 "squizlabs/php_codesniffer": "~2.3"
             },
+            "suggest": {
+                "lcobucci/clock": "*"
+            },
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -3651,7 +3654,12 @@
             "autoload": {
                 "psr-4": {
                     "Lcobucci\\JWT\\": "src"
-                }
+                },
+                "files": [
+                    "compat/class-aliases.php",
+                    "compat/json-exception-polyfill.php",
+                    "compat/lcobucci-clock-polyfill.php"
+                ]
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
@@ -3671,7 +3679,7 @@
             ],
             "support": {
                 "issues": "https://github.com/lcobucci/jwt/issues",
-                "source": "https://github.com/lcobucci/jwt/tree/3.3.3"
+                "source": "https://github.com/lcobucci/jwt/tree/3.4.0"
             },
             "funding": [
                 {
@@ -3683,7 +3691,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2020-08-20T13:22:28+00:00"
+            "time": "2020-11-25T01:46:26+00:00"
         },
         {
             "name": "monolog/monolog",
