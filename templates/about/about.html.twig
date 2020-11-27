@@ -1,0 +1,147 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+    <h2 class="title">What is Packagist?</h2>
+    <p>Packagist is the default Composer package repository. It lets you find packages and lets Composer know where to get the code from. You can use Composer to manage your project or libraries' dependencies - read more about it on the <a href="https://getcomposer.org/">Composer website</a>.</p>
+    <p>You can find the packagist.org source on <a href="https://github.com/composer/packagist">GitHub</a>.</p>
+
+    <section class="row">
+        <div class="clearfix"></div>
+
+        <section class="col-md-6">
+            <h3 id="community">Community</h3>
+            <p>If you have questions about composer or want to help out, come and join us in the <em><a href="irc://irc.freenode.net/composer">#composer</a></em> channel on irc.freenode.net. You can find more community resources in the <a href="https://getcomposer.org/doc/08-community.md">Composer documentation</a>.</p>
+        </section>
+
+        <section class="col-md-6">
+            <h3 id="community">Contributing / Donating</h3>
+            <p>To report issues or contribute code you can find the source repository on <a href="https://github.com/composer/packagist">GitHub</a>.</p>
+            <p>If you would like to financially support the hosting and maintenance of the project, the best way is to check out and use <a href="https://packagist.com">Private Packagist</a>. It can help you install packages fast and reliably, provides you with a private package repository, and the money goes towards Composer and Packagist maintenance!</p>
+        </section>
+    </section>
+
+    <h2 class="title" id="how-to-submit-packages">How to submit packages?</h2>
+    <section class="row">
+        <section class="col-md-6">
+            <h3 id="naming-your-package">Naming your package</h3>
+            <p>First of all, you must pick a package name. This is a very important step since it can not change and it should be unique enough to avoid conflicts in the future.</p>
+            <p>The package name consists of a vendor name and a project name joined by a <code>/</code>. The vendor name exists to prevent naming conflicts. For example, by including a vendor name both <code>igorw</code> and <code>seldaek</code> can have a library named <code>json</code> by naming their packages <code>igorw/json</code> and <code>seldaek/json</code>.</p>
+            <p>In some cases the vendor name and the package name may be identical. An example of this would be `monolog/monolog`. For projects with a unique name this is recommended. It also allows adding more related projects under the same vendor later on. If you are maintaining a library, this would make it really easy to split it up into smaller decoupled parts.</p>
+            <p>Here is a list of typical package names for reference:</p>
+            <pre><code>// Monolog is a library, so the vendor name and package name are the same.
+monolog/monolog
+
+// That could be the name of a drupal module (maintained/provided by monolog,
+// if the drupal team did it, the vendor would be drupal).
+monolog/monolog-drupal-module
+
+// Acme is a company or person here, they can name their package with a common name (Email).
+// As long as it's in their own vendor namespace it does not conflict with anyone else.
+acme/email</code></pre>
+            <p>Vendor names on packagist are protected once a package with that name has been published. That means you can not publish packages with a vendor name that already exists on packagist without permission. To be able to publish packages for an already existing vendor name you need to be maintainer of at least one package within that vendor.</p>
+        </section>
+
+        <section class="col-md-6">
+            <h3 id="creating-a-composerjson-file">Creating a composer.json file</h3>
+            <p>The composer.json file should reside at the top of your package's git/svn/.. repository, and is the way you describe your package to both packagist and composer.</p>
+            <p>A typical composer.json file looks like this:</p>
+            <pre><code>{
+    "name": "monolog/monolog",
+    "type": "library",
+    "description": "Logging for PHP 5.3",
+    "keywords": ["log","logging"],
+    "homepage": "https://github.com/Seldaek/monolog",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jordi Boggiano",
+            "email": "j.boggiano@seld.be",
+            "homepage": "http://seld.be",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "Monolog": "src"
+        }
+    }
+}</code></pre>
+            <p>Most of this information is obvious, keywords are tags, require are list of dependencies that your package has. This can of course be packages, not only a php version. You can use ext-foo to require php extensions (e.g. ext-curl). Note that most extensions don't expose version information, so unless you know for sure it does, it's safer to use <code>"ext-curl": "*"</code> to allow any version of it. Finally the type field is in this case indicating that this is a library. If you do plugins for frameworks etc, and if they integrate composer, they may have a custom package type for their plugins that you can use to install the package with their own installer. In the absence of custom type, you can omit it or use "library".</p>
+            <p>Once you have this file committed in your repository root, you can <a href="{{ path('submit') }}">submit the package</a> to Packagist by entering the public repository URL.</p>
+        </section>
+
+        <section class="col-md-6">
+            <h3 id="managing-package-versions">Managing package versions</h3>
+            <p>New versions of your package are automatically fetched from tags you create in your VCS repository.</p>
+            <p>The easiest way to manage versioning is to just omit the version field from the composer.json file. The version numbers will then be parsed from the tag and branch names.</p>
+            <p>Tag/version names should match 'X.Y.Z', or 'vX.Y.Z', with an optional suffix for RC, beta, alpha or patch versions. Here are a few examples of valid tag names:</p>
+            <pre><code>1.0.0
+v1.0.0
+1.10.5-RC1
+v4.4.4beta2
+v2.0.0-alpha
+v2.0.4-p1</code></pre>
+            <p>Branches will automatically appear as "dev" versions that are easily installable by anyone that wants to try your library's latest and greatest, but that does not mean you should not tag releases. The use of <a href="http://semver.org/">Semantic Versioning</a> is strongly encouraged.</p>
+        </section>
+
+        <section class="col-md-6">
+            <h3 id="update-schedule">Update Schedule</h3>
+            <p>New packages will be crawled <strong>immediately</strong> after submission if you have JS enabled.</p>
+            <p>Existing packages without auto-updating (GitHub/BitBucket hook) will be crawled <strong>once a week</strong> for updates. When a hook is enabled packages are crawled whenever you push, or at least once a month in case the crawl failed. You can also trigger a manual update on your package page if you are logged-in as a maintainer.</p>
+            <p>It is highly recommended to set up the <strong>GitHub/BitBucket service hook</strong> for all your packages. This reduces the load on our side, and ensures your package is updated almost instantly. Check the how-to <a href="#how-to-update-packages">below</a>.</p>
+            <p>The search index is updated <strong>every five minutes</strong>. It will index (or reindex) any package that has been crawled since the last time the search indexer ran.</p>
+        </section>
+    </section>
+
+    <div class="clearfix"></div>
+
+    <h2 class="title" id="how-to-update-packages">How to update packages?</h2>
+    <section class="row">
+        <section class="col-md-6">
+            <h3>GitHub Hook</h3>
+            <p>Enabling the Packagist service hook ensures that your package will always be updated instantly when you push to GitHub.</p>
+            <p>To do so you can:</p>
+            <ul>
+                <li>Make sure you login via GitHub (if you already have an account not connected to GitHub, you can <a href="https://packagist.org/profile/edit">connect it on your profile</a>). If you are logged in already, log out first then login via GitHub again to make sure you grant us the required permissions.</li>
+                <li>Make sure <a href="https://github.com/settings/connections/applications/a059f127e1c09c04aa5a">the Packagist application</a> has access to all the GitHub organizations you need to publish packages from.</li>
+                <li>Check <a href="https://packagist.org/profile/">your package list</a> to see if any has a warning about not being automatically synced.</li>
+                <li>If you still need to setup sync on some packages, try <a rel="nofollow noindex" href="{{ path('user_github_sync') }}">triggering a manual account sync</a> to have Packagist try to set up hooks on your account again. Note that archived repositories can not be setup as they are readonly in GitHub's API.</li>
+            </ul>
+            <h4>Do not want to log in via GitHub and grant us webhook configuration access?</h4>
+            <p>You can configure a GitHub webhook manually by using the following values:</p>
+            <ul>
+                <li>Payload URL: <code>https://packagist.org/api/github?username={{ app.user.username|default('PACKAGIST_USERNAME') }}</code></li>
+                <li>Content Type: <code>application/json</code></li>
+                <li>Secret: your <a href="{{ path('fos_user_profile_show') }}">Packagist API Token</a></li>
+                <li>Which events? Just the <code>push</code> event is enough.</li>
+            </ul>
+        </section>
+
+        <section class="col-md-6">
+            <h3>Bitbucket Webhooks</h3>
+            <p>To enable the Bitbucket web hook, go to your BitBucket repository, open the settings and select "Webhooks" in the menu. Add a new hook. You have to enter the Packagist endpoint, containing both your username and API token. Enter <code>https://packagist.org/api/bitbucket?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> as URL. Save your changes and you're done.</p>
+        </section>
+
+        <div class="clearfix"></div>
+        <section class="col-md-6">
+            <h3>GitLab Service</h3>
+            <p>To enable the GitLab service integration, go to your GitLab repository, open the Settings > Integrations page from the menu. Search for Packagist in the list of Project Services. Check the "Active" box, enter your packagist.org username and API token. Save your changes and you're done.</p>
+        </section>
+
+        <section class="col-md-6">
+            <h3>Manual hook setup</h3>
+            <p>If you do not use Bitbucket or GitHub there is a generic endpoint you can call manually from a git post-receive hook or similar. You have to do a <code>POST</code> request to <code>https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> with a request body looking like this: <code>{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}</code></p>
+            <p>You can do this using curl for example:</p>
+            <pre>curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN' -d'{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}'</pre>
+        </section>
+
+        <div class="clearfix"></div>
+        <section class="col-md-6">
+            <h3>API Token</h3>
+            <p>You can find your API token on <a href="{{ path('fos_user_profile_show') }}">your profile page</a>.</p>
+        </section>
+    </section>
+{% endblock %}

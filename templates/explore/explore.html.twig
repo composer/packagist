@@ -1,0 +1,36 @@
+{% extends "layout.html.twig" %}
+
+{% import "macros.html.twig" as macros %}
+
+{% block content %}
+    {% block content_title %}<h2 class="title">{{ 'explore.title'|trans }}</h2>{% endblock %}
+    {% block lists %}
+    <section class="row">
+        <section class="packages-short col-lg-6">
+            <h3>{{ 'explore.newreleases'|trans }} <a href="{{ url('feed_releases', {_format: 'rss'}) }}">RSS</a></h3>
+
+            {{ macros.listPackagesShort(newlyReleased, true) }}
+        </section>
+
+        <section class="packages-short col-lg-6">
+            <h3>{{ 'explore.newpackages'|trans }} <a href="{{ url('feed_packages', {_format: 'rss'}) }}">RSS</a></h3>
+
+            {{ macros.listPackagesShort(newlySubmitted) }}
+        </section>
+
+        <div class="clearfix visible-lg-block"></div>
+
+        <section class="packages-short col-lg-6">
+            <h3>{{ 'explore.popularpackages'|trans }} <a href="{{ path('browse_popular') }}">{{ 'listing.viewall'|trans }}</a></h3>
+
+            {{ macros.listPackagesShort(popular, false, true) }}
+        </section>
+
+        <section class="packages-short col-lg-6">
+            <h3>{{ 'explore.randompackages'|trans }}</h3>
+
+            {{ macros.listPackagesShort(random) }}
+        </section>
+    </section>
+    {% endblock %}
+{% endblock %}

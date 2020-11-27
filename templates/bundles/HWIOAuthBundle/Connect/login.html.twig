@@ -1,0 +1,74 @@
+{% extends "@FOSUser/layout.html.twig" %}
+
+{% trans_default_domain 'FOSUserBundle' %}
+
+{% block fos_user_header %}
+{% endblock %}
+
+{% block fos_user_content %}
+    {# HWIOAuthBundle uses the same template for the login and the connect functionality currently
+       so we need to check if the user is already authenticated. #}
+
+        {% if not app.user %}
+            <div class="col-xs-12">
+                <h2 class="title">
+                    Sign in
+                </h2>
+            </div>
+            <div class="col-md-6">
+                {% if error is defined and error is not empty %}
+                    <div class="alert alert-warning">
+                    {% if error.messageKey is defined %}
+                        {{ error.messageKey|trans(error.messageData) }}
+                    {% else %}
+                        {{ error }}
+                    {% endif %}
+                    </div>
+                {% endif %}
+
+                <form action="{{ path('login') }}" method="POST" id="page_login">
+                    <div class="form-group clearfix">
+                        <label for="username">{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}</label>
+                        <div class="input-group clearfix">
+                            <input class="form-control" type="text" id="username" name="_username" value="{{ lastUsername|default('') }}">
+                            <span class="input-group-addon"><span class="icon-user"></span></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group clearfix">
+                        <label for="password">{{ 'security.login.password'|trans({}, 'FOSUserBundle') }}</label>
+                        <div class="input-group clearfix">
+                            <input class="form-control" type="password" id="password" name="_password">
+                            <span class="input-group-addon"><span class="icon-lock"></span></span>
+                        </div>
+                    </div>
+
+                    <div class="checkbox">
+                        <a class="pull-right" href="{{ path('fos_user_resetting_request') }}">Forgot password?</a>
+
+                        <label for="remember_me">
+                            <input type="checkbox" id="remember_me" name="_remember_me" value="on" checked="checked" />
+                            {{- 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}
+                        </label>
+                    </div>
+
+                    {% if packagist_host and packagist_host in app.request.headers.get('Referer') %}
+                        <input type="hidden" name="_target_path" value="{{ app.request.headers.get('Referer') }}" />
+                    {% endif %}
+
+                    <input class="btn btn-block btn-success btn-lg" type="submit" id="_submit" name="_submit" value="{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}" />
+                </form>
+
+                <hr>
+            </div>
+        {% endif %}
+
+        {% for owner in hwi_oauth_resource_owners() %}
+            {% if not app.user %}
+                <div class="clearfix"></div>
+            {% endif %}
+            <div class="col-md-6">
+                <a class="btn btn-block btn-{{ owner }} btn-primary btn-lg" href="{{ hwi_oauth_login_url(owner) }}"><span class="icon-{{ owner }}"></span>Login with {{ owner | trans({}, 'HWIOAuthBundle') }}</a>{% if not loop.last %}<br />{% endif %}
+            </div>
+        {% endfor %}
+{% endblock %}

@@ -1,0 +1,15 @@
+twig:
+    default_path: '%kernel.project_dir%/templates'
+    debug: '%kernel.debug%'
+    strict_variables: '%kernel.debug%'
+    exception_controller: null
+    form_themes:
+        - 'forms.html.twig'
+    globals:
+        google_analytics: '%google_analytics%'
+        packagist_host: '%env(APP_HOSTNAME)%'
+        # TODO recaptcha_site_key: '%recaptcha_site_key%'
+        algolia:
+          app_id: '%env(ALGOLIA_APP_ID)%'
+          search_key: '%env(ALGOLIA_SEARCH_KEY)%'
+          index_name: '%env(ALGOLIA_INDEX_NAME)%'

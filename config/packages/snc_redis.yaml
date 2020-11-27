@@ -1,0 +1,20 @@
+snc_redis:
+    clients:
+        default:
+            type: predis
+            alias: default
+            dsn: '%env(REDIS_URL)%'
+            options:
+                profile: 3.2
+                connection_timeout: 1
+        cache:
+            type: predis
+            alias: cache
+            dsn: '%env(REDIS_CACHE_URL)%'
+            options:
+                profile: 3.2
+                connection_timeout: 1
+    session:
+        client: cache
+        prefix: 'sess:'
+        ttl: 3600

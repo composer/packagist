@@ -1,0 +1,15 @@
+{% extends 'layout.html.twig' %}
+
+{% block content %}
+<section class="wrapper">
+    <section class="container error">
+        <div class="row">
+            <h2 class="title">Oh noes, 404!</h2>
+            <h3 class="font-normal">It looks like you requested a page that was not found.</h3>
+            <h4>Go back to the <a href="{{ path('home') }}">homepage</a> or use the search above to find the package you want.</h4>
+        </div>
+    </section>
+</section>
+{% endblock %}
+
+{% block analytics %}{% endblock %}

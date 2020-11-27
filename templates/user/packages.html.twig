@@ -1,0 +1,35 @@
+{% extends "layout.html.twig" %}
+
+{% import "macros.html.twig" as macros %}
+
+
+{% block content %}
+{% set isActualUser = app.user and app.user.username is same as(user.username) %}
+<h2 class="title">
+    {{ user.username }}
+    {%- if not isActualUser %}
+        <small>
+            member since: {{ user.createdAt|date('M d, Y') }}
+            {%- if is_granted('ROLE_ADMIN') %}
+                <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+            {%- endif %}
+        </small>
+    {%- endif %}
+</h2>
+
+<section class="row">
+    {% if isActualUser %}
+        <section class="col-md-3">
+            {{ knp_menu_render('profile_menu', {'currentClass': 'active', 'allow_safe_labels': true}) }}
+        </section>
+    {% endif %}
+
+    <section class="{{ isActualUser ? 'col-md-9' : 'col-md-12' }}">
+        {% embed "web/list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
+            {% block content_title %}
+                <h3 class="font-normal profile-title">{{ (isActualUser ? 'packages.mine' : 'packages.maintained_by')|trans({ '%user%': user.username }) }}</h3>
+            {% endblock %}
+        {% endembed %}
+    </section>
+</section>
+{% endblock %}

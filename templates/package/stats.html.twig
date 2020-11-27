@@ -1,0 +1,116 @@
+{% extends "layout.html.twig" %}
+
+{% set showSearchDesc = 'hide' %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block title %}{{ 'stats.title'|trans }} - {{ package.name }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-xs-12 package">
+            <div class="package-header">
+                <h2 class="title">
+                    <a href="{{ path("view_package", {name: package.name}) }}">{{ package.name }}</a> {{ 'stats.subtitle'|trans }}
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <section class="row package-installs">
+        <div class="col-lg-12">
+            <h3>{{ 'stats.installs'|trans }}</h3>
+
+            <div class="row">
+                <div class="col-md-4 col-xs-12">
+                    <dl class="dl-horizontal">
+                        <dt class="font-normal">{{ 'stats.overall'|trans }}</dt>
+                        <dd class="font-normal">{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-4 col-xs-12">
+                    <dl class="dl-horizontal">
+                        <dt class="font-normal">{{ 'stats.lastmonth'|trans }}</dt>
+                        <dd class="font-normal">{{ downloads.monthly|number_format(0, '.', '&#8201;')|raw }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-4 col-xs-12">
+                    <dl class="dl-horizontal">
+                        <dt class="font-normal">{{ 'stats.today'|trans }}<br><small>({{ 'stats.rolling_avg'|trans }})</small></dt>
+                        <dd class="font-normal">{{ downloads.daily|number_format(0, '.', '&#8201;')|raw }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <h3>{{ 'stats.daily'|trans }}{% if average != 'daily' %}, {{ 'stats.averaged'|trans({ '%avg%':average }) }}{% endif %}</h3>
+            <div class="row">
+                <div class="col-xs-12">
+                    <svg class="chart js-all-dls" width="500" height="200">
+                        Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                    </svg>
+                </div>
+            </div>
+
+            <br>
+            <h3>{{ 'stats.daily_per_version'|trans }}{% if average != 'daily' %}, {{ 'stats.averaged'|trans({ '%avg%':average }) }}{% endif %}</h3>
+            <div class="row package version-stats">
+                <div class="col-xs-12 col-md-9 version-stats-chart">
+                    <div style="position: relative">
+                        <svg class="chart js-version-dls" width="500" height="200">
+                            Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                        </svg>
+                    </div>
+                </div>
+                <div class="col-md-3 no-padding">
+                    <div class="stats-toggle-wrapper">
+                        {% if versions|length > 0 and majorVersions|length > 0 %}
+                            <a class="stats-toggler" href="#{{ versions[0].version }}" data-stats-type="version">Versions</a>
+                            <a class="stats-toggler" href="#major/{{ majorVersions[0] }}" data-stats-type="major">Major Versions</a>
+                        {% endif %}
+                    </div>
+                    <div class="stats-wrapper" data-stats-type="version">
+                        {% include 'package/version_list.html.twig' with {versions: versions, expandedId: expandedId} %}
+                    </div>
+                    {% if majorVersions|length > 0 %}
+                        <div class="stats-wrapper" data-stats-type="major">
+                            <div class="package-aside versions-wrapper">
+                                <ul class="versions">
+                                    {% for majorVersion in majorVersions %}
+                                        {% set expanded = ('major/' ~ majorVersion) == expandedId|default(false) %}
+                                        <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="major/{{ majorVersion }}">
+                                            <a href="#major/{{ majorVersion }}" class="version-number">
+                                                {{- majorVersion -}}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <div class="hidden versions-expander">
+                                    <i class="glyphicon glyphicon-chevron-down"></i>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block stylesheets %}
+    <link href="https://cdn.jsdelivr.net/npm/nvd3@1.8.6/build/nv.d3.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/d3@3.5.17/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nvd3@1.8.6/build/nv.d3.min.js"></script>
+    <script src="{{ asset('js/charts.js') }}"></script>
+    <script>
+        (function () {
+            var average = {{ average|json_encode|raw }};
+            var date = {{ date|json_encode|raw }};
+            var versions = {{ versions|json_encode|raw }};
+
+            initPackageStats(average, date, versions, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }});
+        }());
+    </script>
+{% endblock %}

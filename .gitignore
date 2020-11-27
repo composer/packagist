@@ -1,18 +1,28 @@
-web/bundles/
 web/packages*.json
 web/providers-*.json
 web/p/
-app/config/parameters.yml
-app/bootstrap*
-app/cache/*
-app/logs/*
-bin/
-build/
-vendor/
+web/p2/
+/config/parameters.yml
 /.settings
 /.buildpath
 /.project
 /.idea
-composer.phar
+/composer.phar
 /nbproject
-.php_cs.cache
+/.php_cs.cache
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/web/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> symfony/phpunit-bridge ###
+.phpunit
+.phpunit.result.cache
+/phpunit.xml
+###< symfony/phpunit-bridge ###

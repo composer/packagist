@@ -1,9 +1,0 @@
-{% extends 'HWIOAuthBundle::layout.html.twig' %}
-
-{% block hwi_oauth_content %}
-    <div class="col-xs-12">
-        <h2 class="title">GitHub Login</h2>
-        <p>{{ 'header.success' | trans({'%name%': userInformation.realName}, 'HWIOAuthBundle') }}</p>
-        <p>Continue to <a href="{{ path('fos_user_profile_show') }}">your profile</a>.</p>
-    </div>
-{% endblock hwi_oauth_content %}

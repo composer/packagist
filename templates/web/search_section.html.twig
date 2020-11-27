@@ -1,0 +1,14 @@
+<section class="wrapper wrapper-search">
+    <div class="container {% if showSearchDesc == 'show' %}with-description{% endif %}">
+        {{ render(controller('App\\Controller\\WebController::searchFormAction', { req: app.request })) }}
+
+        {%- if showSearchDesc == 'show' %}
+        <div class="row">
+            <div class="col-sm-9 hidden-xs">
+                <img src="{{ asset('img/logo-small.png') }}" class="logo">
+                <p>{{ 'search.claim_html'|trans|raw }}</p>
+            </div>
+        </div>
+        {%- endif %}
+    </div>
+</section>

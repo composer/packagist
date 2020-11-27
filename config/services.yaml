@@ -1,0 +1,201 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+    security.exception_listener.class: App\Security\ExceptionListener
+
+    # default params which can be overriden by config/parameters.yaml
+    force_ssl: false
+    forced_ssl_hosts: []
+    aws_metadata: []
+    packagist_metadata_dir: '%kernel.cache_dir%/composer-packages-build'
+    packagist_dumper_compress: 0
+    trusted_ip_header: ''
+    github.webhook_secret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
+    google_analytics: null
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            # services
+            $redis: '@snc_redis.default_client'
+            $redisCache: '@snc_redis.cache_client'
+            $instantMailer: '@swiftmailer.mailer.instant'
+
+            # params
+            $dbUrl: '%env(DATABASE_URL)%'
+            $awsMetadata: '%aws_metadata%'
+            $cacheDir: '%kernel.cache_dir%'
+            $webDir: '%kernel.root_dir%/../web/'
+            $rootDir: '%kernel.root_dir%'
+            $metadataDir: '%packagist_metadata_dir%'
+            $trustedIpHeader: '%trusted_ip_header%'
+            $algoliaIndexName: '%env(ALGOLIA_INDEX_NAME)%'
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Tests/'
+
+    # controllers are imported separately to make sure services can be injected
+    # as action arguments even if you don't extend any base controller class
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+
+#    App\Command\:
+#        resource: '../../Command/*'
+#        tags: ['console.command']
+
+    App\Entity\:
+        resource: '../src/Entity/*Repository.php'
+
+ #   App\Service\:
+ #       resource: '../../Service/*'
+
+#    App\SecurityAdvisory\:
+#        resource: '../../SecurityAdvisory/*.php'
+
+    App\Twig\PackagistExtension:
+        tags:
+            - { name: twig.extension }
+
+    Graze\DogStatsD\Client: ~
+
+    GuzzleHttp\Client:
+        arguments: [{timeout: 3}]
+
+    App\EventListener\CacheListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.response, method: onResponse }
+
+    App\EventListener\LoggedInUserCannotRegisterListener:
+        arguments:
+            - '@security.authorization_checker'
+            - '@router'
+        tags:
+            - { name: kernel.event_subscriber }
+
+    App\EventListener\RegistrationListener:
+        arguments: [ '@fos_user.util.token_generator' ]
+        tags:
+            - { name: kernel.event_subscriber }
+
+    App\Package\SymlinkDumper:
+        arguments: [ '@doctrine', '@filesystem', '@router', '@snc_redis.default_client', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%', '%aws_metadata%', '@Graze\DogStatsD\Client' ]
+
+    App\Security\Provider\UserProvider:
+        class: App\Security\Provider\UserProvider
+        arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email']
+
+    App\Package\Updater:
+        public: true
+
+    fos_user.util.user_manipulator:
+        public: true
+        class: App\Util\UserManipulator
+        arguments:
+            - '@fos_user.user_manager'
+            - '@fos_user.util.token_generator'
+            - '@event_dispatcher'
+            - '@request_stack'
+
+    App\Form\Handler\OAuthRegistrationFormHandler:
+        public: true
+        class: App\Form\Handler\OAuthRegistrationFormHandler
+        arguments: ['@fos_user.user_manager', '@fos_user.util.token_generator']
+
+    App\Form\Type\OAuthRegistrationFormType:
+        tags:
+            - { name: form.type, alias: packagist_oauth_user_registration }
+
+    packagist.oauth.registration_form:
+        public: true
+        factory: ['@form.factory', create]
+        class: Symfony\Component\Form\Form
+        arguments:
+            - 'App\Form\Type\OAuthRegistrationFormType'
+
+    App\Model\PackageManager:
+        bind:
+            $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
+
+    packagist.profile.form.type:
+        public: true
+        class: App\Form\Type\ProfileFormType
+        arguments: ['%fos_user.model.user.class%']
+        tags:
+            - { name: form.type, alias: packagist_user_profile }
+
+    App\Menu\MenuBuilder:
+        arguments: ['@knp_menu.factory', '@security.token_storage', '@translator']
+
+    packagist.menu.user:
+        class: Knp\Menu\MenuItem
+        factory: ['@App\Menu\MenuBuilder', createUserMenu]
+        tags:
+            - { name: knp_menu.menu, alias: user_menu }
+
+    packagist.menu.profile:
+        class: Knp\Menu\MenuItem
+        factory: ['@App\Menu\MenuBuilder', createProfileMenu]
+        tags:
+            - { name: knp_menu.menu, alias: profile_menu }
+
+    Algolia\AlgoliaSearch\SearchClient:
+        arguments: ['%env(ALGOLIA_APP_ID)%', '%env(ALGOLIA_ADMIN_KEY)%']
+        factory: ['Algolia\AlgoliaSearch\SearchClient', create]
+
+    App\Service\QueueWorker:
+        arguments:
+            - "@snc_redis.default_client"
+            - "@doctrine"
+            - "@logger"
+            - 'package:updates': '@App\Service\UpdaterWorker'
+              'githubuser:migrate': '@App\Service\GitHubUserMigrationWorker'
+              'security:advisory': '@App\Service\SecurityAdvisoryWorker'
+
+    App\Security\TwoFactorAuthManager:
+        public: true
+        class: App\Security\TwoFactorAuthManager
+        arguments:
+            - '@doctrine'
+            - '@mailer'
+            - '@twig'
+            - '@logger'
+            - '@session.flash_bag'
+            - { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
+
+    App\Security\TwoFactorAuthRateLimiter:
+        tags:
+            - { name: kernel.event_subscriber }
+
+    App\Security\BruteForceLoginFormAuthenticator:
+        bind:
+            $recaptchaVerifier: "@beelab_recaptcha2.verifier"
+
+    App\Security\RecaptchaHelper:
+        bind:
+            $recaptchaEnabled: "%env(bool:APP_RECAPTCHA_ENABLED)%"
+
+    App\Service\GitHubUserMigrationWorker:
+        bind:
+            $webhookSecret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
+    App\Service\SecurityAdvisoryWorker:
+        bind:
+            $sources:
+                'FriendsOfPHP/security-advisories': '@App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource'

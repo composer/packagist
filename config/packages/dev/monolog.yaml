@@ -1,0 +1,24 @@
+monolog:
+    handlers:
+        main:
+            type:  stream
+            path:  '%kernel.logs_dir%/%kernel.environment%.log'
+            level: debug
+            channels: ['!event']
+        console:
+            type:   console
+            process_psr_3_messages: false
+            bubble: false
+            verbosity_levels:
+                VERBOSITY_VERBOSE: INFO
+                VERBOSITY_VERY_VERBOSE: DEBUG
+            channels: ["!event", "!doctrine", "!console"]
+        console_debug:
+            type:   console
+            process_psr_3_messages: false
+            bubble: false
+            verbosity_levels:
+                VERBOSITY_VERBOSE: NOTICE
+                VERBOSITY_VERY_VERBOSE: NOTICE
+                VERBOSITY_DEBUG: DEBUG
+            channels: ["doctrine", "event", "console"]

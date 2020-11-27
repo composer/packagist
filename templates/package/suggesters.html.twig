@@ -1,0 +1,29 @@
+{% extends "layout.html.twig" %}
+
+{% set showSearchDesc = 'hide' %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block title %}{{ 'packages.suggesters_title'|trans }} - {{ name }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-xs-12 package">
+            <div class="package-header">
+                <h2 class="title">
+                    <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a> {{ 'packages.suggesters'|trans }}
+                    <small>({{ count }})</small>
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <section class="row">
+        <section class="col-md-12">
+            {% embed "web/list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: false} %}
+                {% block content_title %}
+                {% endblock %}
+            {% endembed %}
+        </section>
+    </section>
+{% endblock %}

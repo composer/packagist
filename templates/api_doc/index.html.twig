@@ -1,0 +1,281 @@
+{% extends "layout.html.twig" %}
+{% block content %}
+
+<h2 class="title">{{ 'api_doc.title'|trans }}</h2>
+
+<ul class="toc">
+  <li><a href="#list-packages">{{ 'api_doc.listing_names'|trans }}</a>
+    <ul>
+      <li><a href="#list-packages-all">{{ 'api_doc.all_packages'|trans }}</a></li>
+      <li><a href="#list-packages-by-organization">{{ 'api_doc.by_organization'|trans }}</a></li>
+      <li><a href="#list-packages-by-type">{{ 'api_doc.by_type'|trans }}</a></li>
+    </ul>
+  </li>
+  <li><a href="#search-packages">{{ 'api_doc.searching'|trans }}</a>
+    <ul>
+      <li><a href="#search-packages-by-tag">{{ 'api_doc.by_tag'|trans }}</a></li>
+      <li><a href="#search-packages-by-name">{{ 'api_doc.by_name'|trans }}</a></li>
+      <li><a href="#search-packages-by-type">{{ 'api_doc.by_type'|trans }}</a></li>
+    </ul>
+  </li>
+  <li><a href="#get-package-data">{{ 'api_doc.get_package_data'|trans }}</a></li>
+  <li><a href="#get-statistics">{{ 'api_doc.get_statistics'|trans }}</a></li>
+  <li><a href="#list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</a></li>
+  <li><a href="#create-package">{{ 'api_doc.api_create_package'|trans }}</a></li>
+</ul>
+
+
+<section class="col-d-12">
+<h3 id="list-packages">{{ 'api_doc.listing_names'|trans }}</h3>
+<h4 id="list-packages-all">{{ 'api_doc.all_packages'|trans }}</h4>
+<pre>
+GET https://{{ packagist_host }}/packages/list.json
+<code>
+{
+  "packageNames": [
+    "[vendor]/[package]",
+    ...
+  ]
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json">https://{{ packagist_host }}/packages/list.json</a></code></p>
+
+<h4 id="list-packages-by-organization">{{ 'api_doc.list_by_organization'|trans }}</h4>
+<pre>
+GET https://{{ packagist_host }}/packages/list.json?vendor=[vendor]
+<code>
+{
+  "packageNames": [
+    "[vendor]/[package]",
+    ...
+  ]
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?vendor=composer">https://{{ packagist_host }}/packages/list.json?vendor=composer</a></code></p>
+
+<h4 id="list-packages-by-type">{{ 'api_doc.list_by_type'|trans }}</h4>
+<pre>
+GET https://{{ packagist_host }}/packages/list.json?type=[type]
+<code>
+{
+  "packageNames": [
+    "[vendor]/[package]",
+    ...
+  ]
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?type=composer-plugin">https://{{ packagist_host }}/packages/list.json?type=composer-plugin</a></code></p>
+
+</section>
+
+
+<section class="col-d-12">
+<h3 id="search-packages">{{ 'api_doc.searching'|trans }}</h3>
+
+<p>Search results are paginated and you can change the pagination step by using the per_page parameter. For example <code>https://{{ packagist_host }}/search.json?q=[query]&amp;per_page=5</code></p>
+
+<h4 id="search-packages-by-name">{{ 'api_doc.search_by_name'|trans }}</h4>
+<pre>
+GET https://{{ packagist_host }}/search.json?q=[query]
+<code>
+{
+  "results" : [
+    {
+      "name": "[vendor]/[package]",
+      "description": "[description]",
+      "url": "https://{{ packagist_host }}/packages/[vendor]/[package]",
+      "repository": [repository url],
+      "downloads": [number of downloads],
+      "favers": [number of favers]
+    },
+    ...
+  ],
+  "total": [number of results],
+  "next": "https://{{ packagist_host }}/search.json?q=[query]&amp;page=[next page number]"
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/search.json?q=monolog">https://{{ packagist_host }}/search.json?q=monolog</a></code></p>
+
+<h4 id="search-packages-by-tag">{{ 'api_doc.search_by_tag'|trans }}</h4>
+<pre>
+GET https://{{ packagist_host }}/search.json?tags=[tag]
+<code>
+{
+  "results": [
+    {
+      "name": "[vendor]/[package]",
+      "description": "[description]",
+      "url": "https://{{ packagist_host }}/packages/[vendor]/[package]",
+      "repository": "[repository url]",
+      "downloads": [number of downloads],
+      "favers": [number of favers]
+    }
+    ...
+  ],
+  "total": [numbers of results]
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/search.json?q=monolog&amp;tags=psr-3">https://{{ packagist_host }}/search.json?q=monolog&amp;tags=psr-3</a></code></p>
+
+<h4 id="search-packages-by-type">{{ 'api_doc.search_by_type'|trans }}</h4>
+<pre>
+GET https://{{ packagist_host }}/search.json?q=[query]&amp;type=symfony-bundle
+<code>
+{
+  "results" : [
+    {
+      "name": "[vendor]/[package]",
+      "description": "[description]",
+      "url": "https://{{ packagist_host }}/packages/[vendor]/[package]",
+      "repository": [repository url],
+      "downloads": [number of downloads],
+      "favers": [number of favers]
+    },
+    ...
+  ],
+  "total": [number of results],
+  "next": "https://{{ packagist_host }}/search.json?q=[query]&amp;page=[next page number]"
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/search.json?q=monolog&amp;type=symfony-bundle">https://{{ packagist_host }}/search.json?q=monolog&amp;type=symfony-bundle</a></code></p>
+</section>
+
+
+<section class="col-d-12">
+<h3 id="get-package-data">{{ 'api_doc.get_package_data'|trans }}</h3>
+
+<h4 id="get-package-by-name">Using the Composer metadata</h4>
+
+<p>This is the preferred way to access the data as it is always up to date, and dumped to static files so it is very efficient on our end.</p>
+
+<p>You can also send If-Modified-Since headers to limit your bandwidth usage and cache the files on your end with the proper filemtime set according to our Last-Modified header.</p>
+
+<p>There are a few gotchas though with using this method:
+
+<ul>
+  <li>It only provides you with the package metadata but not information about the maintainers, download stats or github info.</li>
+  <li>It contains providers information which must be ignored but can appear confusing at first. This will disappear in the future though.</li>
+</ul>
+</p>
+
+<pre>
+GET https://repo.{{ packagist_host }}/p/[vendor]/[package].json
+<code>
+{
+  "packages": {
+    "[vendor]/[package]": {
+      "[version1]": {
+        "name": "[vendor]/[package],
+        "description": [description],
+        // ...
+      },
+      "[version2]": {
+        // ...
+      }
+      // ...
+    }
+  }
+}
+</code></pre>
+<p>Working example: <code><a href="https://repo.{{ packagist_host }}/p/monolog/monolog.json">https://repo.{{ packagist_host }}/p/monolog/monolog.json</a></code></p>
+
+<h4 id="get-package-by-name">Using the API</h4>
+
+<p>The JSON API for packages gives you all the infos we have including downloads, dependents count, github info, etc. However it is generated dynamically so for performance reason we cache the responses for twelve hours. As such if the static file endpoint described above is enough please use it instead.</p>
+
+<pre>
+GET https://{{ packagist_host }}/packages/[vendor]/[package].json
+<code>
+{
+  "package": {
+    "name": "[vendor]/[package],
+    "description": [description],
+    "time": [packagist package creation datetime],
+    "maintainers": [list of maintainers],
+    "versions": [list of versions and their dependencies, the same data of <a href="https://getcomposer.org/doc/01-basic-usage.md#package-versions">composer.json</a>]
+    "type": [package type],
+    "repository": [repository url],
+    "downloads": {
+      "total": [numbers of download],
+      "monthly": [numbers of download per month],
+      "daily": [numbers of download per day]
+    },
+    "favers": [number of favers]
+  }
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/monolog/monolog.json">https://{{ packagist_host }}/packages/monolog/monolog.json</a></code></p>
+
+</section>
+
+<section class="col-d-12">
+<h3 id="get-statistics">{{ 'api_doc.get_statistics'|trans }}</h3>
+
+<h4 id="get-package-by-name">{{ 'api_doc.get_statistics'|trans }}</h4>
+
+<p>This endpoint provides basic some statistics.</p>
+
+<pre>
+GET https://{{ packagist_host }}/statistics.json
+<code>
+{
+  "totals": {
+    "downloads": [numbers of download]
+  }
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/statistics.json">https://{{ packagist_host }}/statistics.json</a></code></p>
+
+</section>
+
+<section class="col-d-12">
+  <h3 id="list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</h3>
+
+  <h4 id="list-security-advisories-by-package">{{ 'api_doc.list_security_advisory'|trans }}</h4>
+
+    <p>This endpoint provides a list of security advisories. Either a list of packages as query or request parameter or a timestamp as updatedSince query parameter need to be passed.</p>
+
+    <pre>
+GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestamp]&amp;packages[]=[vendor/package]
+<code>
+{
+  "advisories": {
+    "[vendor]/[package]": [
+      {
+        "packageName": "[vendor]/[package]",
+        "remoteId": "[unique id per source]",
+        "title": "[title]",
+        "link": "[url to issue disclosure]",
+        "cve": "[cve if available]",
+        "affectedVersions": [affected version in form of a composer constraint]",
+        "source": "[source where the issue was found]",
+        "reportedAt": "[date the issue was reported]",
+        "composerRepository": "[composer repository the package can be found in]"
+      }
+    ]
+  }
+}
+</code></pre>
+    <p>Working example: <code><a href="https://{{ packagist_host }}/api/security-advisories/?packages[]=monolog/monolog">https://{{ packagist_host }}/api/security-advisories/?packages[]=monolog/monolog</a></code></p>
+
+</section>
+
+<section class="col-d-12">
+  <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }}</h3>
+
+  <h4 id="create-package-by-url">{{ 'api_doc.api_create_package'|trans }}</h4>
+
+    <p>This endpoint creates a package for a specific repo. Parameters <code>username</code> and <code>apiToken</code> are required. Only <code>POST</code> method is allowed.</p>
+
+    <pre>
+POST https://{{ packagist_host }}/api/create-package?username=[username]&amp;apiToken=[apiToken] -d '{"repository":{"url":"[url]"}}'
+<code>
+{
+  "status": "success"
+}
+</code></pre>
+    <p>Working example: <code>curl -X POST 'https://{{ packagist_host }}/api/create-package?username=zqfan&amp;apiToken=********' -d '{"repository":{"url":"https://github.com/monolog/monolog"}}'</code></p>
+
+</section>
+
+{% endblock %}

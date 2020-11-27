@@ -1,0 +1,18 @@
+hwi_oauth:
+    firewall_names: [main]
+    connect:
+        account_connector: App\Security\Provider\UserProvider
+        registration_form_handler: App\Form\Handler\OAuthRegistrationFormHandler
+        registration_form: packagist.oauth.registration_form
+    fosub:
+        username_iterations: 30
+        properties:
+            github: githubId
+    resource_owners:
+        github:
+            type:          github
+            client_id:     '%env(APP_GITHUB_CLIENT_ID)%'
+            client_secret: '%env(APP_GITHUB_CLIENT_SECRET)%'
+            scope: admin:repo_hook,read:org
+            options:
+                csrf: true

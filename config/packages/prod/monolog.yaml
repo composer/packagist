@@ -1,0 +1,22 @@
+monolog:
+    handlers:
+        main:
+            type: fingers_crossed
+            action_level: error
+            handler: nested
+            excluded_http_codes: [404, 405]
+            buffer_size: 100 # How many messages should be saved? Prevent memory leaks
+        nested:
+            type: stream
+            path: "%kernel.logs_dir%/%kernel.environment%.log"
+            level: debug
+            include_stacktraces: true
+        console_debug:
+            type:   console
+            process_psr_3_messages: false
+            include_stacktraces: true
+            verbosity_levels:
+                VERBOSITY_NORMAL: EMERGENCY
+                VERBOSITY_VERBOSE: INFO
+                VERBOSITY_VERY_VERBOSE: NOTICE
+                VERBOSITY_DEBUG: DEBUG

@@ -1,0 +1,16 @@
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+        options:
+            # PDO::ATTR_TIMEOUT
+            2: 1.3
+    orm:
+        auto_generate_proxy_classes: true
+        auto_mapping: true
+        mappings:
+            App:
+                is_bundle: false
+                type: annotation
+                dir: '%kernel.project_dir%/src/Entity'
+                prefix: 'App\Entity'
+                alias: App

@@ -1,0 +1,46 @@
+nelmio_security:
+    clickjacking:
+        paths:
+            '^/.*': DENY
+    forced_ssl:
+        enabled: '%force_ssl%'
+        hosts: '%forced_ssl_hosts%'
+        hsts_max_age: 31104000 # 1y
+    csp:
+        enabled: true
+        report_logger_service: logger
+        hosts: []
+        content_types: []
+        enforce:
+            browser_adaptive:
+                enabled: false
+            default-src:
+                - 'self'
+            script-src:
+                - 'self'
+                - 'unsafe-inline'
+                - 'unsafe-eval'
+                - 'https://cdn.jsdelivr.net/'
+                - 'https://www.google-analytics.com/'
+                - 'https://www.google.com/recaptcha/api.js'
+                - 'https://www.gstatic.com/recaptcha/'
+            connect-src:
+                - 'self'
+                - '*.algolia.net'
+                - '*.algolianet.com'
+            img-src:
+                - 'self'
+                - 'https:'
+                - 'data:'
+                - 'http://www.google-analytics.com/'
+            style-src:
+                - 'self'
+                - 'unsafe-inline'
+                - 'https://cdn.jsdelivr.net/'
+                - 'https://fonts.googleapis.com/'
+            font-src:
+                - 'self'
+                - 'https://fonts.gstatic.com/'
+            frame-src:
+                - 'https://www.google.com/recaptcha/'
+            block-all-mixed-content: true # defaults to false, blocks HTTP content over HTTPS transport

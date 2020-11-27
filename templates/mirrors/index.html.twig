@@ -1,0 +1,38 @@
+{% extends "layout.html.twig" %}
+{% block content %}
+
+<h2 class="title">{{ 'mirrors.title'|trans }}</h2>
+
+<section class="col-d-12">
+<h3 id="list-packages">{{ 'mirrors.caution'|trans }}</h3>
+<p>Packagist.org tries to provide our own mirrors globally and to scale bandwidth availaibility as required to meet demand from the Composer user base. That said, we can not host in every country and given bandwidth/latency constraint in certain areas of the world it makes sense for people to use more local mirrors.</p>
+<p>These mirrors are unafiliated with us, community run and as such they might be considered an additional security risk as the metadata that Composer downloads tells it where to download code from.</p>
+
+<h3 id="list-packages">{{ 'mirrors.mirror_list'|trans }}</h3>
+<p>Packagist currently provides mirrors in Europe, North America (Montreal), and Asia (Singapore).</p>
+<p>On top of this, we are aware of the following list of third-party-run mirrors, please refer to their website to see how to use them:</p>
+<ul>
+  <li>Africa, South Africa <a href="https://packagist.co.za">packagist.co.za</a></li>
+  <li>Asia, China <a href="https://mirrors.huaweicloud.com/repository/php">mirrors.huaweicloud.com/repository/php</a></li>
+  <li>Asia, China <a href="https://developer.aliyun.com/composer">developer.aliyun.com/composer</a></li>
+  <li>Asia, China <a href="https://php.cnpkg.org">php.cnpkg.org</a></li>
+  <li>Asia, China <a href="https://packagist.phpcomposer.com">packagist.phpcomposer.com</a></li>
+  <li>Asia, China <a href="https://packagist.mirrors.sjtug.sjtu.edu.cn">packagist.mirrors.sjtug.sjtu.edu.cn</a></li>
+  <li>Asia, China <a href="https://mirrors.cloud.tencent.com/help/composer.html">mirrors.cloud.tencent.com/help/composer.html</a></li>
+  <li>Asia, India <a href="https://packagist.in">packagist.in</a></li>
+  <li>Asia, Indonesia <a href="https://packagist.phpindonesia.id">packagist.phpindonesia.id</a></li>
+  <li>Asia, Japan <a href="https://packagist.jp">packagist.jp</a></li>
+  <li>Asia, South Korea <a href="https://packagist.kr">packagist.kr</a></li>
+  <li>Asia, Thailand <a href="https://packagist.mycools.in.th/">packagist.mycools.in.th/</a></li>
+  <li>Asia, Taiwan <a href="https://packagist.tw/">packagist.tw/</a></li>
+  <li>Europe, Finland <a href="https://packagist.fi">packagist.fi</a></li>
+  <li>Europe, Germany <a href="https://packagist.hesse.im">packagist.hesse.im</a></li>
+  <li>South America, Brazil <a href="https://packagist.com.br">packagist.com.br</a></li>
+</ul>
+
+<h3 id="list-packages-all">{{ 'mirrors.running_your_own'|trans }}</h3>
+<p>If you are interested in running your own mirror, we recommend using <a href="https://github.com/Webysther/packagist-mirror">Webysther's mirror code</a> to avoid duplicating efforts and then sending us a pull request to get your mirror added to the list above.</p>
+
+</section>
+
+{% endblock %}

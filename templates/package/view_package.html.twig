@@ -1,0 +1,340 @@
+{% extends "layout.html.twig" %}
+
+{% set showSearchDesc = 'hide' %}
+
+{% block title %}{{ package.name }} - {{ parent() }}{% endblock %}
+
+{% block head_feeds %}
+    <link rel="alternate" type="application/rss+xml" title="New Releases - {{ package.name }}" href="{{ url('feed_package', {package: package.name, _format: 'rss'}) }}" />
+    <link rel="alternate" type="application/rss+xml" title="New Releases - {{ package.vendor }}" href="{{ url('feed_vendor', {vendor: package.vendor, _format: 'rss'}) }}" />
+    {{ parent() }}
+{% endblock %}
+
+{% block head_canonical %}
+    <link rel="canonical" href="{{ url('view_package', {name: package.name}) }}" />
+{% endblock %}
+
+{% block head_additions %}
+    <link rel="stylesheet" href="{{ asset('css/github/markdown.css') }}">
+    {% if package.isSuspect() %}
+        <meta name="robots" content="noindex, nofollow">
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('js/view.js')}}"></script>
+{% endblock %}
+
+{% block description -%}
+    {{ package.description|truncate(300) }}
+{%- endblock %}
+
+{% set hasActions = is_granted('ROLE_EDIT_PACKAGES') or is_granted('ROLE_ANTISPAM') or is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %} data-force-crawl="true"{% endif %}>
+            <div class="package-header">
+
+                <div class="row">
+                    <div class="col-md-9">
+                        <h2 class="title">
+                            {% if is_favorite is defined %}
+                                <i class="mark-favorite glyphicon glyphicon-star {% if is_favorite %}is-starred{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></i>
+                            {% endif %}
+                            <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
+                        </h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="composer {% if package.type == 'project' %}create-project{% else %}require{% endif %} {{ "#{package.vendor}/#{package.packageName}" }}" /></p>
+
+                    {% if not package.isAutoUpdated() and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
+                        {% if "github.com" in package.repository %}
+                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">GitHub Hook</a> for Packagist so that it gets updated whenever you push!</div>
+                        {% elseif "bitbucket.org" in package.repository %}
+                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">BitBucket Webhooks</a> for Packagist so that it gets updated whenever you push!</div>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if package.abandoned %}
+                        <div class="alert alert-danger">
+                            This package is <strong>abandoned</strong> and no longer maintained.
+                            {% if package.replacementPackage is not empty %}
+                                The author suggests using the <a href="{{ '://' in package.replacementPackage ? package.replacementPackage : path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
+                            {% else %}
+                                No replacement package was suggested.
+                                {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %}
+                                    <a href="{{ path('abandon_package', {name: package.name}) }}">Suggest a replacement.</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% if package.updateFailureNotified
+                        and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES'))
+                    %}
+                        <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Update" below to see details.</div>
+                    {% endif %}
+
+                    {% if expandedVersion and not expandedVersion.license %}
+                        <div class="alert alert-danger">There is no license information available for the latest version ({{ expandedVersion.version }}) of this package.</div>
+                    {% endif %}
+
+                    <p class="description">{{ package.description|truncate(300) }}</p>
+
+                    {% if hasActions %}
+                        <div class="btn-group btn-group-xs">
+                            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and not package.abandoned %}
+                                <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
+                                    <input class="btn btn-warning" type="submit" value="Abandon" />
+                                </form>
+                            {% endif %}
+                            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and package.abandoned %}
+                                <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
+                                    <input class="btn btn-default" type="submit" value="Un-abandon" />
+                                </form>
+                            {% endif %}
+                            {% if deleteForm is defined %}
+                                <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE">
+                                    {{ form_widget(deleteForm._token) }}
+                                    <input class="btn btn-danger" type="submit" value="Delete" />
+                                </form>
+                            {% endif %}
+                            {% if is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
+                                <form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
+                                    <input type="hidden" name="update" value="1" />
+                                    <input class="btn btn-success" type="submit" value="Update" />
+                                </form>
+                            {% endif %}
+                            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
+                                <form class="action" action="{{ path("edit_package", {name: package.name}) }}">
+                                    <input class="btn btn-primary" type="submit" value="Edit" />
+                                </form>
+                            {% endif %}
+                            {% if is_granted('ROLE_ANTISPAM') and package.isSuspect() %}
+                                <form class="action" action="{{ path("mark_nospam") }}" method="POST">
+                                    <input type="hidden" name="vendor" value="{{ package.vendor }}" />
+                                    <input type="hidden" name="token" value="{{ markSafeCsrfToken }}" />
+                                    <input class="btn btn-danger" type="submit" value="Mark Not Spam" />
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-offset-1 col-md-3">
+                    <div class="row package-aside">
+                        <div class="details col-xs-12 col-sm-6 col-md-12">
+                            <h5>Maintainers</h5>
+                            <p class="maintainers">
+                                {% for maintainer in package.maintainers -%}
+                                    <a href="{{ path('user_profile', {'name': maintainer.username}) }}"><img width="48" height="48" title="{{ maintainer.username }}" src="https://www.gravatar.com/avatar/{{ maintainer.email|gravatar_hash }}?s=48&amp;d=identicon" srcset="https://www.gravatar.com/avatar/{{ maintainer.email|gravatar_hash }}?s=96&amp;d=identicon 2x"></a>
+                                {% endfor %}
+                                {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
+                                    {% if removeMaintainerForm is defined %}<a title="Remove Maintainer" id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
+                                    {% if addMaintainerForm is defined %}<a title="Add Maintainer" id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
+                                {% endif %}
+                            </p>
+
+                            <h5>Details</h5>
+                            {% set repoUrl = package.browsableRepository %}
+                            <p class="canonical">
+                                <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
+                            </p>
+
+                            {% if version and version.homepage %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.homepage }}">Homepage</a></p>
+                            {% endif %}
+                            {% if version.support.source is defined %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.source }}">Source</a></p>
+                            {% endif %}
+                            {% if version and version.support.issues is defined %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.issues }}">Issues</a></p>
+                            {% endif %}
+                            {% if version and version.support.irc is defined %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.irc }}">IRC</a></p>
+                            {% endif %}
+                            {% if version and version.support.chat is defined %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.chat }}">Chat</a></p>
+                            {% endif %}
+                            {% if version and version.support.forum is defined %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.forum }}">Forum</a></p>
+                            {% endif %}
+                            {% if version and version.support.wiki is defined %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.wiki }}">Wiki</a></p>
+                            {% endif %}
+                            {% if version and version.support.docs is defined %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.docs }}">Documentation</a></p>
+                            {% endif %}
+                        </div>
+
+                        {% if version and version.funding and version.funding|length > 0 %}
+                            <div class="facts funding col-xs-12 col-sm-6 col-md-12">
+                                <p>
+                                    Fund package maintenance!
+                                    {% for fundingOption in version.funding %}
+                                        <br><a rel="nofollow noopener external noindex ugc" href="{{ fundingOption.url }}">
+                                            {% set fundingType = fundingOption.type|default('custom') %}
+                                            {% if fundingType == 'custom' %}
+                                                <i class="glyphicon glyphicon-link"></i>{{ fundingOption.url|replace({'http://': '', 'https://': ''})|trim('/') }}
+                                            {% elseif fundingType == 'github' %}
+                                                <i class="glyphicon glyphicon-user"></i>{{ fundingOption.url|replace({'https://github.com/sponsors/': '', 'https://github.com/': ''}) }}
+                                            {% else %}
+                                                <i class="glyphicon glyphicon-link"></i>{{ fundingType|replace({'_': ' '})|title }}
+                                            {% endif %}
+                                        </a>
+                                    {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="facts col-xs-12 col-sm-6 col-md-12">
+                            <p>
+                                <span>
+                                    <a href="{{ path('view_package_stats', {name: package.name}) }}" rel="nofollow">Installs</a>:
+                                </span>
+                                {% if downloads.total is defined %}{{ downloads.total|number_format(0, '.', '&#8201;')|raw }}{% else %}N/A{% endif %}
+                            </p>
+                            {% if dependents is defined %}
+                                <p>
+                                    <span>
+                                        <a href="{{ path('view_package_dependents', {name: package.name, order_by: 'downloads'}) }}" rel="nofollow">Dependents</a>:
+                                    </span>
+                                    {{ dependents|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if suggesters is defined %}
+                                <p>
+                                    <span>
+                                        <a href="{{ path('view_package_suggesters', {name: package.name}) }}" rel="nofollow">Suggesters</a>:
+                                    </span>
+                                    {{ suggesters|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if securityAdvisories is defined %}
+                                <p>
+                                    <span>
+                                        <a href="{{ path('view_package_advisories', {name: package.name}) }}" rel="nofollow">Security</a>:
+                                    </span>
+                                    {{ securityAdvisories|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if package.gitHubStars is not null %}
+                                <p>
+                                    <span>
+                                        <a href="{{ repoUrl }}/stargazers">Stars</a>:
+                                    </span>
+                                    {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if package.gitHubWatches is not null %}
+                                <p>
+                                    <span>
+                                        <a href="{{ repoUrl }}/watchers">Watchers</a>:
+                                    </span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if package.gitHubForks is not null %}
+                                <p>
+                                    <span>
+                                        <a href="{{ repoUrl }}/network">Forks</a>:
+                                    </span>
+                                    {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if version and version.support is not null and version.support.issues is defined and version.support.issues starts with 'https://github.com/' and version.support.issues starts with repoUrl %}
+                                <p>
+                                    <span>
+                                        <a rel="nofollow noopener external noindex ugc" href="{{ version.support.issues }}">Open Issues</a>:
+                                    </span>
+                                    {{ package.gitHubOpenIssues|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if package.language is not empty and package.language != 'PHP' %}
+                                <p><span>Language:</span>{{ package.language }}</p>
+                            {% endif %}
+                            {% if package.type is not empty and package.type != 'library' %}
+                                <p><span>Type:</span>{{ package.type }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
+                <div class="row">
+                    {% if addMaintainerForm is defined %}
+                        {{ form_start(addMaintainerForm, {
+                            attr: { id: 'add-maintainer-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_add_maintainer_form|default(false) ? '': 'hidden') },
+                            action: path('add_maintainer', { 'name': package.name })
+                        }) }}
+                            <div>
+                                <h4>Add Maintainer</h4>
+                                <p>
+                                    {{ form_label(addMaintainerForm.user, "Username") }}
+                                    {{ form_errors(addMaintainerForm.user) }}
+                                    {{ form_widget(addMaintainerForm.user) }}
+                                </p>
+                                {{ form_rest(addMaintainerForm) }}
+                                <input class="btn btn-block btn-success btn-lg" type="submit" value="Add Maintainer" />
+                            </div>
+                        {{ form_end(addMaintainerForm) }}
+                    {% endif %}
+
+                    {% if removeMaintainerForm is defined %}
+                        {{ form_start(removeMaintainerForm, {
+                            attr: { id: 'remove-maintainer-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_remove_maintainer_form|default(false) ? '': 'hidden') },
+                            action: path('remove_maintainer', { 'name': package.name })
+                        }) }}
+                            <div>
+                                <h4>Remove Maintainer</h4>
+                                <p>
+                                    {{ form_label(removeMaintainerForm.user, "Username") }}
+                                    {{ form_errors(removeMaintainerForm.user) }}
+                                    {{ form_widget(removeMaintainerForm.user) }}
+                                </p>
+                                {{ form_rest(removeMaintainerForm) }}
+                                <input class="btn btn-block btn-danger btn-lg" type="submit" value="Remove Maintainer" />
+                            </div>
+                        {{ form_end(removeMaintainerForm) }}
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if versions|length %}
+                <div class="row versions-section">
+                    <div class="version-details col-md-9">
+                        {% if expandedVersion %}
+                            {% include 'package/version_details.html.twig' with {version: expandedVersion} %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 no-padding">
+                        {% include 'package/version_list.html.twig' with {
+                            versions: versions,
+                            expandedId: expandedVersion.id,
+                            deleteVersionCsrfToken: deleteVersionCsrfToken|default(null),
+                            package: package,
+                            showUpdated: true,
+                            showUpdateButton: not hasActions and app.user and not package.wasUpdatedInTheLast24Hours(),
+                            hasVersionSecurityAdvisories: hasVersionSecurityAdvisories
+                        } %}
+                    </div>
+                </div>
+            {% elseif package.crawledAt is null %}
+                <p class="col-xs-12">This package has not been crawled yet, some information is missing.</p>
+            {% else %}
+                <p class="col-xs-12">This package has no released version yet, and little information is available.</p>
+            {% endif %}
+
+            {% if package.readme != null and (not package.isSuspect() or hasActions) %}
+                <hr class="clearfix">
+                <div class="readme markdown-body">
+                    <h1>README</h1>
+                    {{ package.optimizedReadme|raw }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

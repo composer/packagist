@@ -1,0 +1,5 @@
+framework:
+    mailer:
+        envelope:
+            # TODO this does not seem to work
+            recipients: ['%env(APP_DEV_EMAIL_RECIPIENT)%']

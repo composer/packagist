@@ -1,0 +1,25 @@
+httplug:
+    plugins:
+        retry:
+            retry: 1
+
+    discovery:
+        client: 'auto'
+
+    clients:
+        app:
+            http_methods_client: true
+            plugins:
+                - 'httplug.plugin.content_length'
+                - 'httplug.plugin.redirect'
+# TODO old config, try and get rid of it in favor of http-client
+# httplug:
+#     plugins:
+#         logger: ~
+#
+#     clients:
+#         app:
+#             factory: 'httplug.factory.guzzle6'
+#             plugins: ['httplug.plugin.logger']
+#             config:
+#                 timeout: 2

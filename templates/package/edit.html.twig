@@ -1,0 +1,17 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}
+    {{ 'edit.page_title'|trans({ '%name%':package.name }) }}
+{% endblock %}
+
+{% block content %}
+<h2 class="title">{{ 'edit.title'|trans({ '%name%':package.name }) }}</h2>
+
+<section class="row">
+    {{ form_start(form, { attr: { class: 'col-md-6' } }) }}
+        {{ form_widget(form) }}
+
+        <input class="btn btn-block btn-primary btn-lg" id="submit" type="submit" value="{{ 'edit.submit'|trans }}" />
+    {{ form_end(form) }}
+</section>
+{% endblock %}
