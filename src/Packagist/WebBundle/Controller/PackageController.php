@@ -19,6 +19,8 @@ use Packagist\WebBundle\Form\Type\AbandonedType;
 use Packagist\WebBundle\Form\Type\AddMaintainerRequestType;
 use Packagist\WebBundle\Form\Type\PackageType;
 use Packagist\WebBundle\Form\Type\RemoveMaintainerRequestType;
+use Packagist\WebBundle\Model\PackageManager;
+use Packagist\WebBundle\Model\ProviderManager;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Connection\ConnectionException;
@@ -35,9 +37,26 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Packagist\WebBundle\Service\GitHubUserMigrationWorker;
+use Packagist\WebBundle\Service\Scheduler;
+use Symfony\Component\Routing\RouterInterface;
+use Predis\Client as RedisClient;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 class PackageController extends Controller
 {
+    private ProviderManager $providerManager;
+    private PackageManager $packageManager;
+    private Scheduler $scheduler;
+
+    public function __construct(ProviderManager $providerManager, PackageManager $packageManager, Scheduler $scheduler)
+    {
+        $this->providerManager = $providerManager;
+        $this->packageManager = $packageManager;
+        $this->scheduler = $scheduler;
+    }
+
     /**
      * @Route("/packages/", name="allPackages")
      */
@@ -53,7 +72,7 @@ class PackageController extends Controller
     public function listAction(Request $req)
     {
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository(Package::class);
+        $repo = $this->doctrine->getRepository(Package::class);
         $fields = (array) $req->query->get('fields', array());
         $fields = array_intersect($fields, array('repository', 'type'));
 
@@ -70,7 +89,7 @@ class PackageController extends Controller
         } elseif ($req->query->get('vendor')) {
             $names = $repo->getPackageNamesByVendor($req->query->get('vendor'));
         } else {
-            $names = $this->get('packagist.provider_manager')->getPackageNames();
+            $names = $this->providerManager->getPackageNames();
         }
 
         if ($req->query->get('filter')) {
@@ -92,9 +111,9 @@ class PackageController extends Controller
      *
      * @Route("/packages/updated.json", name="updated_packages", defaults={"_format"="json"}, methods={"GET"})
      */
-    public function updatedSinceAction(Request $req)
+    public function updatedSinceAction(Request $req, RedisClient $redis)
     {
-        $lastDumpTime = $this->get('snc_redis.default_client')->get('last_metadata_dump_time') ?: (time() - 60);
+        $lastDumpTime = $redis->get('last_metadata_dump_time') ?: (time() - 60);
 
         $since = $req->query->get('since');
         if (!$since) {
@@ -108,7 +127,7 @@ class PackageController extends Controller
         }
 
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository(Package::class);
+        $repo = $this->doctrine->getRepository(Package::class);
 
         $names = $repo->getPackageNamesUpdatedSince($since);
 
@@ -118,10 +137,8 @@ class PackageController extends Controller
     /**
      * @Route("/metadata/changes.json", name="metadata_changes", defaults={"_format"="json"}, methods={"GET"})
      */
-    public function metadataChangesAction(Request $req)
+    public function metadataChangesAction(Request $req, RedisClient $redis)
     {
-        $redis = $this->get('snc_redis.default_client');
-
         $topDump = $redis->zrevrange('metadata-dumps', 0, 0, ['WITHSCORES' => true]) ?: ['foo' => 0];
         $topDelete = $redis->zrevrange('metadata-deletes', 0, 0, ['WITHSCORES' => true]) ?: ['foo' => 0];
         $oldestSyncPoint = (int) $redis->get('metadata-oldest') ?: 15850612240000;
@@ -162,7 +179,7 @@ class PackageController extends Controller
      * @Template()
      * @Route("/packages/submit", name="submit")
      */
-    public function submitPackageAction(Request $req)
+    public function submitPackageAction(Request $req, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, LoggerInterface $logger)
     {
         $user = $this->getUser();
         if (!$user->isEnabled()) {
@@ -170,8 +187,8 @@ class PackageController extends Controller
         }
 
         $package = new Package;
-        $package->setEntityRepository($this->getDoctrine()->getRepository(Package::class));
-        $package->setRouter($this->get('router'));
+        $package->setEntityRepository($this->doctrine->getRepository(Package::class));
+        $package->setRouter($router);
         $form = $this->createForm(PackageType::class, $package, [
             'action' => $this->generateUrl('submit'),
         ]);
@@ -180,21 +197,21 @@ class PackageController extends Controller
         $form->handleRequest($req);
         if ($form->isValid()) {
             try {
-                $em = $this->getDoctrine()->getManager();
+                $em = $this->doctrine->getManager();
                 $em->persist($package);
                 $em->flush();
 
-                $this->get('packagist.provider_manager')->insertPackage($package);
+                $this->providerManager->insertPackage($package);
                 if ($user->getGithubToken()) {
-                    $this->get('github_user_migration_worker')->setupWebHook($user->getGithubToken(), $package);
+                    $githubUserMigrationWorker->setupWebHook($user->getGithubToken(), $package);
                 }
 
-                $this->get('session')->getFlashBag()->set('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
+                $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
 
                 return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
             } catch (\Exception $e) {
-                $this->get('logger')->critical($e->getMessage(), array('exception', $e));
-                $this->get('session')->getFlashBag()->set('error', $package->getName().' could not be saved.');
+                $logger->critical($e->getMessage(), array('exception', $e));
+                $this->addFlash('error', $package->getName().' could not be saved.');
             }
         }
 
@@ -204,11 +221,11 @@ class PackageController extends Controller
     /**
      * @Route("/packages/fetch-info", name="submit.fetch_info", defaults={"_format"="json"})
      */
-    public function fetchInfoAction(Request $req)
+    public function fetchInfoAction(Request $req, RouterInterface $router)
     {
         $package = new Package;
-        $package->setEntityRepository($this->getDoctrine()->getRepository(Package::class));
-        $package->setRouter($this->get('router'));
+        $package->setEntityRepository($this->doctrine->getRepository(Package::class));
+        $package->setRouter($router);
         $form = $this->createForm(PackageType::class, $package);
         $user = $this->getUser();
         $package->addMaintainer($user);
@@ -217,7 +234,7 @@ class PackageController extends Controller
         if ($form->isValid()) {
             list(, $name) = explode('/', $package->getName(), 2);
 
-            $existingPackages = $this->getDoctrine()
+            $existingPackages = $this->doctrine
                 ->getConnection()
                 ->fetchAll(
                     'SELECT name FROM package WHERE name LIKE :query',
@@ -263,7 +280,7 @@ class PackageController extends Controller
      */
     public function viewVendorAction($vendor)
     {
-        $packages = $this->getDoctrine()
+        $packages = $this->doctrine
             ->getRepository(Package::class)
             ->getFilteredQueryBuilder(['vendor' => $vendor.'/%'], true)
             ->getQuery()
@@ -322,10 +339,10 @@ class PackageController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function viewProvidersAction(Request $req, $name)
+    public function viewProvidersAction(Request $req, string $name, RedisClient $redis)
     {
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository(Package::class);
+        $repo = $this->doctrine->getRepository(Package::class);
         $providers = $repo->findProviders($name);
         if (!$providers) {
             if ($req->getRequestFormat() === 'json') {
@@ -343,7 +360,6 @@ class PackageController extends Controller
         }
 
         try {
-            $redis = $this->get('snc_redis.default_client');
             $trendiness = array();
             foreach ($providers as $package) {
                 /** @var Package $package */
@@ -385,7 +401,7 @@ class PackageController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function viewSpamAction(Request $req)
+    public function viewSpamAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager)
     {
         if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
             throw new NotFoundHttpException();
@@ -394,7 +410,7 @@ class PackageController extends Controller
         $page = max(1, (int) $req->query->get('page', 1));
 
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository(Package::class);
+        $repo = $this->doctrine->getRepository(Package::class);
         $count = $repo->getSuspectPackageCount();
         $packages = $repo->getSuspectPackages(($page - 1) * 50, 50);
 
@@ -406,16 +422,16 @@ class PackageController extends Controller
         $data['packages'] = $paginator;
         $data['count'] = $count;
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
-        $data['markSafeCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('mark_safe');
+        $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
 
-        $vendorRepo = $this->getDoctrine()->getRepository(Vendor::class);
+        $vendorRepo = $this->doctrine->getRepository(Vendor::class);
         $verified = [];
         foreach ($packages as $pkg) {
             $dls = $data['meta']['downloads'][$pkg['id']] ?? 0;
             $vendor = preg_replace('{/.*$}', '', $pkg['name']);
             if ($dls > 10 && !in_array($vendor, $verified, true)) {
                 $vendorRepo->verify($vendor);
-                $this->get('session')->getFlashBag()->add('success', 'Marked '.$vendor.' with '.$dls.' downloads.');
+                $this->addFlash('success', 'Marked '.$vendor.' with '.$dls.' downloads.');
                 $verified[] = $vendor;
             }
         }
@@ -435,20 +451,20 @@ class PackageController extends Controller
      *     methods={"POST"}
      * )
      */
-    public function markSafeAction(Request $req)
+    public function markSafeAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager)
     {
         if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
             throw new NotFoundHttpException();
         }
 
-        $expectedToken = $this->get('security.csrf.token_manager')->getToken('mark_safe')->getValue();
+        $expectedToken = $csrfTokenManager->getToken('mark_safe')->getValue();
 
         $vendors = array_filter((array) $req->request->get('vendor'));
         if (!hash_equals($expectedToken, $req->request->get('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
         }
 
-        $repo = $this->getDoctrine()->getRepository(Vendor::class);
+        $repo = $this->doctrine->getRepository(Vendor::class);
         foreach ($vendors as $vendor) {
             $repo->verify($vendor);
         }
@@ -466,7 +482,7 @@ class PackageController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function viewPackageAction(Request $req, $name)
+    public function viewPackageAction(Request $req, $name, CsrfTokenManagerInterface $csrfTokenManager)
     {
         if ($req->getSession()->isStarted()) {
             $req->getSession()->save();
@@ -477,7 +493,7 @@ class PackageController extends Controller
         }
 
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository(Package::class);
+        $repo = $this->doctrine->getRepository(Package::class);
 
         try {
             /** @var Package $package */
@@ -499,13 +515,13 @@ class PackageController extends Controller
         }
 
         if ('json' === $req->getRequestFormat()) {
-            $data = $package->toArray($this->getDoctrine()->getRepository(Version::class), true);
+            $data = $package->toArray($this->doctrine->getRepository(Version::class), true);
             $data['dependents'] = $repo->getDependantCount($package->getName());
             $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
             try {
-                $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package);
-                $data['favers'] = $this->get('packagist.favorite_manager')->getFaverCount($package);
+                $data['downloads'] = $this->downloadManager->getDownloads($package);
+                $data['favers'] = $this->favoriteManager->getFaverCount($package);
             } catch (ConnectionException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
@@ -532,8 +548,8 @@ class PackageController extends Controller
 
         if (count($versions)) {
             /** @var VersionRepository $versionRepo */
-            $versionRepo = $this->getDoctrine()->getRepository(Version::class);
-            $this->getDoctrine()->getManager()->refresh(reset($versions));
+            $versionRepo = $this->doctrine->getRepository(Version::class);
+            $this->doctrine->getManager()->refresh(reset($versions));
             $version = $versionRepo->getFullVersion(reset($versions)->getId());
 
             $expandedVersion = reset($versions);
@@ -544,7 +560,7 @@ class PackageController extends Controller
                 }
             }
 
-            $this->getDoctrine()->getManager()->refresh($expandedVersion);
+            $this->doctrine->getManager()->refresh($expandedVersion);
             $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
         }
 
@@ -556,14 +572,14 @@ class PackageController extends Controller
         );
 
         try {
-            $data['downloads'] = $this->get('packagist.download_manager')->getDownloads($package, null, true);
+            $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
 
             if (
                 !$package->isSuspect()
                 && ($data['downloads']['total'] ?? 0) <= 10 && ($data['downloads']['views'] ?? 0) >= 100
                 && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
             ) {
-                $vendorRepo = $this->getDoctrine()->getRepository(Vendor::class);
+                $vendorRepo = $this->doctrine->getRepository(Vendor::class);
                 if (!$vendorRepo->isVerified($package->getVendor())) {
                     $package->setSuspect('Too many views');
                     $repo->markPackageSuspect($package);
@@ -571,7 +587,7 @@ class PackageController extends Controller
             }
 
             if ($this->getUser()) {
-                $data['is_favorite'] = $this->get('packagist.favorite_manager')->isMarked($this->getUser(), $package);
+                $data['is_favorite'] = $this->favoriteManager->isMarked($this->getUser(), $package);
             }
         } catch (ConnectionException $e) {
         }
@@ -580,7 +596,7 @@ class PackageController extends Controller
         $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
         /** @var SecurityAdvisoryRepository $securityAdvisoryRepository */
-        $securityAdvisoryRepository = $this->getDoctrine()->getRepository(SecurityAdvisory::class);
+        $securityAdvisoryRepository = $this->doctrine->getRepository(SecurityAdvisory::class);
         $securityAdvisories = $securityAdvisoryRepository->getPackageSecurityAdvisories($package->getName());
         $data['securityAdvisories'] = count($securityAdvisories);
         $data['hasVersionSecurityAdvisories'] = [];
@@ -607,10 +623,10 @@ class PackageController extends Controller
                 $this->isGranted('ROLE_DELETE_PACKAGES')
                 || $package->getMaintainers()->contains($this->getUser())
             )) {
-            $data['deleteVersionCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('delete_version');
+            $data['deleteVersionCsrfToken'] = $csrfTokenManager->getToken('delete_version');
         }
         if ($this->isGranted('ROLE_ANTISPAM')) {
-            $data['markSafeCsrfToken'] = $this->get('security.csrf.token_manager')->getToken('mark_safe');
+            $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
         }
 
         return $data;
@@ -627,7 +643,7 @@ class PackageController extends Controller
     public function viewPackageDownloadsAction(Request $req, $name)
     {
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository(Package::class);
+        $repo = $this->doctrine->getRepository(Package::class);
 
         try {
             /** @var $package Package */
@@ -650,8 +666,8 @@ class PackageController extends Controller
         );
 
         try {
-            $data['downloads']['total'] = $this->get('packagist.download_manager')->getDownloads($package);
-            $data['favers'] = $this->get('packagist.favorite_manager')->getFaverCount($package);
+            $data['downloads']['total'] = $this->downloadManager->getDownloads($package);
+            $data['favers'] = $this->favoriteManager->getFaverCount($package);
         } catch (ConnectionException $e) {
             $data['downloads']['total'] = null;
             $data['favers'] = null;
@@ -659,7 +675,7 @@ class PackageController extends Controller
 
         foreach ($versions as $version) {
             try {
-                $data['downloads']['versions'][$version->getVersion()] = $this->get('packagist.download_manager')->getDownloads($package, $version);
+                $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version);
             } catch (ConnectionException $e) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
@@ -686,7 +702,7 @@ class PackageController extends Controller
         }
 
         /** @var VersionRepository $repo  */
-        $repo = $this->getDoctrine()->getRepository(Version::class);
+        $repo = $this->doctrine->getRepository(Version::class);
 
         $html = $this->renderView(
             'PackagistWebBundle:package:version_details.html.twig',
@@ -707,7 +723,7 @@ class PackageController extends Controller
     public function deletePackageVersionAction(Request $req, $versionId)
     {
         /** @var VersionRepository $repo  */
-        $repo = $this->getDoctrine()->getRepository(Version::class);
+        $repo = $this->doctrine->getRepository(Version::class);
 
         /** @var Version $version  */
         $version = $repo->getFullVersion($versionId);
@@ -722,8 +738,8 @@ class PackageController extends Controller
         }
 
         $repo->remove($version);
-        $this->getDoctrine()->getManager()->flush();
-        $this->getDoctrine()->getManager()->clear();
+        $this->doctrine->getManager()->flush();
+        $this->doctrine->getManager()->clear();
 
         return new Response('', 204);
     }
@@ -733,7 +749,7 @@ class PackageController extends Controller
      */
     public function updatePackageAction(Request $req, $name)
     {
-        $doctrine = $this->getDoctrine();
+        $doctrine = $this->doctrine;
 
         try {
             /** @var Package $package */
@@ -784,7 +800,7 @@ class PackageController extends Controller
             }
 
             if ($update) {
-                $job = $this->get('scheduler')->scheduleUpdate($package, $updateEqualRefs, false, null, $manualUpdate);
+                $job = $this->scheduler->scheduleUpdate($package, $updateEqualRefs, false, null, $manualUpdate);
 
                 return new JsonResponse(['status' => 'success', 'job' => $job->getId()], 202);
             }
@@ -804,7 +820,7 @@ class PackageController extends Controller
      */
     public function deletePackageAction(Request $req, $name)
     {
-        $doctrine = $this->getDoctrine();
+        $doctrine = $this->doctrine;
 
         try {
             /** @var Package $package */
@@ -824,7 +840,7 @@ class PackageController extends Controller
                 $req->getSession()->save();
             }
 
-            $this->get('packagist.package_manager')->deletePackage($package);
+            $this->packageManager->deletePackage($package);
 
             return new Response('', 204);
         }
@@ -836,10 +852,10 @@ class PackageController extends Controller
      * @Template("PackagistWebBundle:package:view_package.html.twig")
      * @Route("/packages/{name}/maintainers/", name="add_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
-    public function createMaintainerAction(Request $req, $name)
+    public function createMaintainerAction(Request $req, $name, LoggerInterface $logger)
     {
         /** @var $package Package */
-        $package = $this->getDoctrine()
+        $package = $this->doctrine
             ->getRepository(Package::class)
             ->findOneByName($name);
 
@@ -863,26 +879,26 @@ class PackageController extends Controller
         $form->handleRequest($req);
         if ($form->isValid()) {
             try {
-                $em = $this->getDoctrine()->getManager();
+                $em = $this->doctrine->getManager();
                 $user = $form->getData()->getUser();
 
                 if (!empty($user)) {
                     if (!$package->getMaintainers()->contains($user)) {
                         $package->addMaintainer($user);
-                        $this->get('packagist.package_manager')->notifyNewMaintainer($user, $package);
+                        $this->packageManager->notifyNewMaintainer($user, $package);
                     }
 
                     $em->persist($package);
                     $em->flush();
 
-                    $this->get('session')->getFlashBag()->set('success', $user->getUsername().' is now a '.$package->getName().' maintainer.');
+                    $this->addFlash('success', $user->getUsername().' is now a '.$package->getName().' maintainer.');
 
                     return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
                 }
-                $this->get('session')->getFlashBag()->set('error', 'The user could not be found.');
+                $this->addFlash('error', 'The user could not be found.');
             } catch (\Exception $e) {
-                $this->get('logger')->critical($e->getMessage(), array('exception', $e));
-                $this->get('session')->getFlashBag()->set('error', 'The maintainer could not be added.');
+                $logger->critical($e->getMessage(), array('exception', $e));
+                $this->addFlash('error', 'The maintainer could not be added.');
             }
         }
 
@@ -893,10 +909,10 @@ class PackageController extends Controller
      * @Template("PackagistWebBundle:package:view_package.html.twig")
      * @Route("/packages/{name}/maintainers/delete", name="remove_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
-    public function removeMaintainerAction(Request $req, $name)
+    public function removeMaintainerAction(Request $req, $name, LoggerInterface $logger)
     {
-        /** @var $package Package */
-        $package = $this->getDoctrine()
+        /** @var Package $package */
+        $package = $this->doctrine
             ->getRepository(Package::class)
             ->findOneByName($name);
 
@@ -919,7 +935,7 @@ class PackageController extends Controller
         $removeMaintainerForm->handleRequest($req);
         if ($removeMaintainerForm->isValid()) {
             try {
-                $em = $this->getDoctrine()->getManager();
+                $em = $this->doctrine->getManager();
                 $user = $removeMaintainerForm->getData()->getUser();
 
                 if (!empty($user)) {
@@ -930,14 +946,14 @@ class PackageController extends Controller
                     $em->persist($package);
                     $em->flush();
 
-                    $this->get('session')->getFlashBag()->set('success', $user->getUsername().' is no longer a '.$package->getName().' maintainer.');
+                    $this->addFlash('success', $user->getUsername().' is no longer a '.$package->getName().' maintainer.');
 
                     return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
                 }
-                $this->get('session')->getFlashBag()->set('error', 'The user could not be found.');
+                $this->addFlash('error', 'The user could not be found.');
             } catch (\Exception $e) {
-                $this->get('logger')->critical($e->getMessage(), array('exception', $e));
-                $this->get('session')->getFlashBag()->set('error', 'The maintainer could not be removed.');
+                $logger->critical($e->getMessage(), array('exception', $e));
+                $this->addFlash('error', 'The maintainer could not be removed.');
             }
         }
 
@@ -969,7 +985,7 @@ class PackageController extends Controller
             // Force updating of packages once the package is viewed after the redirect.
             $package->setCrawledAt(null);
 
-            $em = $this->getDoctrine()->getManager();
+            $em = $this->doctrine->getManager();
             $em->persist($package);
             $em->flush();
 
@@ -1009,7 +1025,7 @@ class PackageController extends Controller
             $package->setUpdatedAt(new \DateTime());
             $package->setDumpedAt(null);
 
-            $em = $this->getDoctrine()->getManager();
+            $em = $this->doctrine->getManager();
             $em->flush();
 
             return $this->redirect($this->generateUrl('view_package', array('name' => $package->getName())));
@@ -1041,7 +1057,7 @@ class PackageController extends Controller
         $package->setUpdatedAt(new \DateTime());
         $package->setDumpedAt(null);
 
-        $em = $this->getDoctrine()->getManager();
+        $em = $this->doctrine->getManager();
         $em->flush();
 
         return $this->redirect($this->generateUrl('view_package', array('name' => $package->getName())));
@@ -1063,7 +1079,7 @@ class PackageController extends Controller
         usort($versions, Package::class.'::sortVersions');
         $date = $this->guessStatsStartDate($package);
         $data = [
-            'downloads' => $this->get('packagist.download_manager')->getDownloads($package),
+            'downloads' => $this->downloadManager->getDownloads($package),
             'versions' => $versions,
             'average' => $this->guessStatsAverage($date),
             'date' => $date->format('Y-m-d'),
@@ -1117,7 +1133,7 @@ class PackageController extends Controller
         }
 
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository(Package::class);
+        $repo = $this->doctrine->getRepository(Package::class);
         $depCount = $repo->getDependantCount($name);
         $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy);
 
@@ -1173,7 +1189,7 @@ class PackageController extends Controller
         }
 
         /** @var PackageRepository $repo */
-        $repo = $this->getDoctrine()->getRepository(Package::class);
+        $repo = $this->doctrine->getRepository(Package::class);
         $suggestCount = $repo->getSuggestCount($name);
         $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
 
@@ -1233,18 +1249,18 @@ class PackageController extends Controller
         $dlData = [];
         if (null !== $majorVersion) {
             if ($majorVersion === 'all') {
-                $dlData = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findDataByMajorVersions($package);
+                $dlData = $this->doctrine->getRepository('PackagistWebBundle:Download')->findDataByMajorVersions($package);
             } else {
                 if (!is_numeric($majorVersion)) {
                     throw new BadRequestHttpException('Major version should be an int or "all"');
                 }
-                $dlData = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findDataByMajorVersion($package, (int) $majorVersion);
+                $dlData = $this->doctrine->getRepository('PackagistWebBundle:Download')->findDataByMajorVersion($package, (int) $majorVersion);
             }
         } elseif ($version) {
-            $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
+            $downloads = $this->doctrine->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
             $dlData[$version->getVersion()] = [$downloads ? $downloads->getData() : []];
         } else {
-            $downloads = $this->getDoctrine()->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
+            $downloads = $this->doctrine->getRepository('PackagistWebBundle:Download')->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
             $dlData[$package->getName()] = [$downloads ? $downloads->getData() : []];
         }
 
@@ -1305,7 +1321,7 @@ class PackageController extends Controller
         $normalizer = new VersionParser;
         $normVersion = $normalizer->normalize($version);
 
-        $version = $this->getDoctrine()->getRepository(Version::class)->findOneBy([
+        $version = $this->doctrine->getRepository(Version::class)->findOneBy([
             'package' => $package,
             'normalizedVersion' => $normVersion
         ]);
@@ -1327,7 +1343,7 @@ class PackageController extends Controller
     public function securityAdvisoriesAction(Request $request, $name)
     {
         /** @var SecurityAdvisoryRepository $repo */
-        $repo = $this->getDoctrine()->getRepository(SecurityAdvisory::class);
+        $repo = $this->doctrine->getRepository(SecurityAdvisory::class);
         $securityAdvisories = $repo->getPackageSecurityAdvisories($name);
 
         $data = [];
@@ -1335,7 +1351,7 @@ class PackageController extends Controller
 
         $data['matchingAdvisories'] = [];
         if ($versionId = $request->query->getInt('version')) {
-            $version = $this->getDoctrine()->getRepository(Version::class)->findOneBy([
+            $version = $this->doctrine->getRepository(Version::class)->findOneBy([
                 'name' => $name,
                 'id' => $versionId,
             ]);
@@ -1400,7 +1416,7 @@ class PackageController extends Controller
             }
 
             try {
-                $downloads = $this->get('packagist.download_manager')->getTotalDownloads($package);
+                $downloads = $this->downloadManager->getTotalDownloads($package);
             } catch (ConnectionException $e) {
                 return;
             }

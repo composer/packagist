@@ -31,7 +31,7 @@ class PackageManagerTest extends TestCase
 
         static::$kernel->getContainer()->set('test.user_repo', $repo);
         static::$kernel->getContainer()->set('doctrine.orm.entity_manager', $em);
-        static::$kernel->getContainer()->set('packagist.package_updater', $updater);
+        static::$kernel->getContainer()->set('Packagist\WebBundle\Package\Updater', $updater);
 
         $payload = json_encode(array('repository' => array('url' => 'git://github.com/composer/composer')));
         $client->request('POST', '/api/github?username=test&apiToken=token', array('payload' => $payload));

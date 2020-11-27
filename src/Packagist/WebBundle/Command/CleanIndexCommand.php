@@ -12,18 +12,32 @@
 
 namespace Packagist\WebBundle\Command;
 
-use Packagist\WebBundle\Entity\Package;
-use Packagist\WebBundle\Model\DownloadManager;
-use Packagist\WebBundle\Model\FavoriteManager;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Input\InputArgument;
+use Algolia\AlgoliaSearch\SearchClient;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Doctrine\DBAL\Connection;
+use Doctrine\Persistence\ManagerRegistry;
+use Packagist\WebBundle\Service\Locker;
+use Symfony\Component\Console\Command\Command;
 
-class CleanIndexCommand extends ContainerAwareCommand
+class CleanIndexCommand extends Command
 {
+    private SearchClient $algolia;
+    private Locker $locker;
+    private ManagerRegistry $doctrine;
+    private string $algoliaIndexName;
+    private string $cacheDir;
+
+    public function __construct(SearchClient $algolia, Locker $locker, ManagerRegistry $doctrine, string $algoliaIndexName, string $cacheDir)
+    {
+        $this->algolia = $algolia;
+        $this->locker = $locker;
+        $this->doctrine = $doctrine;
+        $this->algoliaIndexName = $algoliaIndexName;
+        $this->cacheDir = $cacheDir;
+
+        parent::__construct();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -43,9 +57,8 @@ class CleanIndexCommand extends ContainerAwareCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $verbose = $input->getOption('verbose');
-        $indexName = $this->getContainer()->getParameter('algolia.index_name');
 
-        $deployLock = $this->getContainer()->getParameter('kernel.cache_dir').'/deploy.globallock';
+        $deployLock = $this->cacheDir.'/deploy.globallock';
         if (file_exists($deployLock)) {
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
@@ -53,9 +66,7 @@ class CleanIndexCommand extends ContainerAwareCommand
             return;
         }
 
-        $locker = $this->getContainer()->get('locker');
-
-        $lockAcquired = $locker->lockCommand($this->getName());
+        $lockAcquired = $this->locker->lockCommand($this->getName());
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
@@ -63,9 +74,7 @@ class CleanIndexCommand extends ContainerAwareCommand
             return;
         }
 
-        $doctrine = $this->getContainer()->get('doctrine');
-        $algolia = $this->getContainer()->get('packagist.algolia.client');
-        $index = $algolia->initIndex($indexName);
+        $index = $this->algolia->initIndex($this->algoliaIndexName);
 
         $page = 0;
         $perPage = 100;
@@ -83,7 +92,7 @@ class CleanIndexCommand extends ContainerAwareCommand
                     }
                 }
 
-                if (!$this->hasProviders($doctrine, $result['name'])) {
+                if (!$this->hasProviders($this->doctrine, $result['name'])) {
                     if ($verbose) {
                         $output->writeln('Deleting '.$result['objectID'].' which has no provider anymore');
                     }
@@ -93,12 +102,12 @@ class CleanIndexCommand extends ContainerAwareCommand
             $page++;
         } while (count($results['hits']) >= $perPage);
 
-        $locker->unlockCommand($this->getName());
+        $this->locker->unlockCommand($this->getName());
 
         return 0;
     }
 
-    private function hasProviders($doctrine, string $provided): bool
+    private function hasProviders(ManagerRegistry $doctrine, string $provided): bool
     {
         return (bool) $doctrine->getManager()->getConnection()->fetchColumn(
             'SELECT COUNT(p.id) as count

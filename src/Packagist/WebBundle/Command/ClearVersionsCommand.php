@@ -12,7 +12,10 @@
 
 namespace Packagist\WebBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Doctrine\Persistence\ManagerRegistry;
+use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Entity\Version;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
@@ -21,8 +24,16 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class ClearVersionsCommand extends ContainerAwareCommand
+class ClearVersionsCommand extends Command
 {
+    private ManagerRegistry $doctrine;
+
+    public function __construct(ManagerRegistry $doctrine)
+    {
+        $this->doctrine = $doctrine;
+        parent::__construct();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -50,9 +61,8 @@ EOF
     {
         $force = $input->getOption('force');
         $versionIds = $input->getOption('ids');
-        $doctrine = $this->getContainer()->get('doctrine');
 
-        $versionRepo = $doctrine->getRepository('PackagistWebBundle:Version');
+        $versionRepo = $this->doctrine->getRepository(Version::class);
 
         $packageNames = array();
 
@@ -74,15 +84,15 @@ EOF
                     }
                 }
 
-                $doctrine->getManager()->flush();
-                $doctrine->getManager()->clear();
+                $this->doctrine->getManager()->flush();
+                $this->doctrine->getManager()->clear();
                 unset($versions);
             }
         } else {
             if ($id = $input->getArgument('package')) {
                 $ids = [$id];
             } else {
-                $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+                $packages = $this->doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
                 $ids = array();
                 foreach ($packages as $package) {
                     $ids[] = $package['id'];
@@ -106,21 +116,21 @@ EOF
                     }
                 }
 
-                $doctrine->getManager()->flush();
-                $doctrine->getManager()->clear();
+                $this->doctrine->getManager()->flush();
+                $this->doctrine->getManager()->clear();
                 unset($versions);
             }
         }
 
         if ($force) {
             // mark packages as recently crawled so that they get updated
-            $packageRepo = $doctrine->getRepository('PackagistWebBundle:Package');
+            $packageRepo = $this->doctrine->getRepository(Package::class);
             foreach ($packageNames as $name) {
                 $package = $packageRepo->findOneByName($name);
                 $package->setCrawledAt(new \DateTime);
             }
 
-            $doctrine->getManager()->flush();
+            $this->doctrine->getManager()->flush();
         }
     }
 }

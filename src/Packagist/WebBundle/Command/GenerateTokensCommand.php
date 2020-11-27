@@ -12,15 +12,28 @@
 
 namespace Packagist\WebBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Doctrine\Persistence\ManagerRegistry;
+use FOS\UserBundle\Util\TokenGeneratorInterface;
+use Packagist\WebBundle\Entity\User;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class GenerateTokensCommand extends ContainerAwareCommand
+class GenerateTokensCommand extends Command
 {
+    private TokenGeneratorInterface $tokenGenerator;
+    private ManagerRegistry $doctrine;
+
+    public function __construct(TokenGeneratorInterface $tokenGenerator, ManagerRegistry $doctrine)
+    {
+        $this->tokenGenerator = $tokenGenerator;
+        $this->doctrine = $doctrine;
+        parent::__construct();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -37,15 +50,13 @@ class GenerateTokensCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $doctrine = $this->getContainer()->get('doctrine');
-        $userRepo = $doctrine->getRepository('PackagistWebBundle:User');
-        $tokenGenerator = $this->getContainer()->get('fos_user.util.token_generator');
+        $userRepo = $this->doctrine->getRepository(User::class);
 
         $users = $userRepo->findUsersMissingApiToken();
         foreach ($users as $user) {
-            $apiToken = substr($tokenGenerator->generateToken(), 0, 20);
+            $apiToken = substr($this->tokenGenerator->generateToken(), 0, 20);
             $user->setApiToken($apiToken);
         }
-        $doctrine->getManager()->flush();
+        $this->doctrine->getManager()->flush();
     }
 }

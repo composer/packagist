@@ -12,6 +12,7 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Algolia\AlgoliaSearch\SearchClient;
 use Packagist\WebBundle\Form\Model\SearchQuery;
 use Packagist\WebBundle\Form\Type\SearchQueryType;
 use Packagist\WebBundle\Entity\Package;
@@ -22,6 +23,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Predis\Client as RedisClient;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -65,7 +67,7 @@ class WebController extends Controller
     {
         $q = $req->query->get('query');
         if ($q) {
-            $package = $this->getDoctrine()->getRepository(Package::class)->findOneByName($q);
+            $package = $this->doctrine->getRepository(Package::class)->findOneByName($q);
             if ($package) {
                 return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
             }
@@ -76,7 +78,7 @@ class WebController extends Controller
      * @Route("/search/", name="search.ajax", methods={"GET"})
      * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"}, methods={"GET"})
      */
-    public function searchAction(Request $req)
+    public function searchAction(Request $req, SearchClient $algolia, string $algoliaIndexName)
     {
         if ($resp = $this->checkForQueryMatch($req)) {
             return $resp;
@@ -110,9 +112,7 @@ class WebController extends Controller
 
         $form = $this->createForm(SearchQueryType::class, new SearchQuery());
 
-        $algolia = $this->get('packagist.algolia.client');
-        $indexName = $this->container->getParameter('algolia.index_name');
-        $index = $algolia->initIndex($indexName);
+        $index = $algolia->initIndex($algoliaIndexName);
         $query = '';
         $queryParams = [];
 
@@ -232,13 +232,13 @@ class WebController extends Controller
      * @Template
      * @Cache(smaxage=5)
      */
-    public function statsAction()
+    public function statsAction(RedisClient $redis)
     {
-        $packages = $this->getDoctrine()
+        $packages = $this->doctrine
             ->getConnection()
             ->fetchAll('SELECT COUNT(*) count, YEAR(createdAt) year, MONTH(createdAt) month FROM `package` GROUP BY year, month');
 
-        $versions = $this->getDoctrine()
+        $versions = $this->doctrine
             ->getConnection()
             ->fetchAll('SELECT COUNT(*) count, YEAR(releasedAt) year, MONTH(releasedAt) month FROM `package_version` GROUP BY year, month');
 
@@ -279,7 +279,6 @@ class WebController extends Controller
         $downloadsStartDate = '2012-04-13';
 
         try {
-            $redis = $this->get('snc_redis.default');
             $downloads = $redis->get('downloads') ?: 0;
 
             $date = new \DateTime($downloadsStartDate.' 00:00:00');
@@ -324,14 +323,14 @@ class WebController extends Controller
     /**
      * @Route("/statistics.json", name="stats_json", defaults={"_format"="json"}, methods={"GET"})
      */
-    public function statsTotalsAction()
+    public function statsTotalsAction(RedisClient $redis)
     {
-        $downloads = (int) ($this->get('snc_redis.default_client')->get('downloads') ?: 0);
-        $packages = (int) $this->getDoctrine()
+        $downloads = (int) ($redis->get('downloads') ?: 0);
+        $packages = (int) $this->doctrine
             ->getConnection()
             ->fetchColumn('SELECT COUNT(*) count FROM `package`');
 
-        $versions = (int) $this->getDoctrine()
+        $versions = (int) $this->doctrine
             ->getConnection()
             ->fetchColumn('SELECT COUNT(*) count FROM `package_version`');
 

@@ -12,18 +12,31 @@
 
 namespace Packagist\WebBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Packagist\WebBundle\Entity\Download;
+use Packagist\WebBundle\Service\Locker;
+use Predis\Client;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class CompileStatsCommand extends ContainerAwareCommand
+class CompileStatsCommand extends Command
 {
-    protected $redis;
+    private Client $redis;
+    private Locker $locker;
+    private ManagerRegistry $doctrine;
+
+    public function __construct(Client $redis, Locker $locker, ManagerRegistry $doctrine)
+    {
+        $this->redis = $redis;
+        $this->locker = $locker;
+        $this->doctrine = $doctrine;
+        parent::__construct();
+    }
 
     /**
      * {@inheritdoc}
@@ -43,9 +56,7 @@ class CompileStatsCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $locker = $this->getContainer()->get('locker');
-
-        $lockAcquired = $locker->lockCommand($this->getName());
+        $lockAcquired = $this->locker->lockCommand($this->getName());
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
@@ -55,9 +66,7 @@ class CompileStatsCommand extends ContainerAwareCommand
 
         $verbose = $input->getOption('verbose');
 
-        $doctrine = $this->getContainer()->get('doctrine');
-        $conn = $doctrine->getManager()->getConnection();
-        $this->redis = $redis = $this->getContainer()->get('snc_redis.default');
+        $conn = $this->doctrine->getManager()->getConnection();
 
         $yesterday = new \DateTime('yesterday 00:00:00');
 
@@ -73,21 +82,21 @@ class CompileStatsCommand extends ContainerAwareCommand
         }
 
         while ($id = array_shift($ids)) {
-            $total = (int) $redis->get('dl:'.$id);
+            $total = (int) $this->redis->get('dl:'.$id);
             if ($total > 10) {
                 $trendiness = $this->sumLastNDays(7, $id, $yesterday, $conn);
             } else {
                 $trendiness = 0;
             }
 
-            $redis->zadd('downloads:trending:new', $trendiness, $id);
-            $redis->zadd('downloads:absolute:new', $total, $id);
+            $this->redis->zadd('downloads:trending:new', $trendiness, $id);
+            $this->redis->zadd('downloads:absolute:new', $total, $id);
         }
 
-        $redis->rename('downloads:trending:new', 'downloads:trending');
-        $redis->rename('downloads:absolute:new', 'downloads:absolute');
+        $this->redis->rename('downloads:trending:new', 'downloads:trending');
+        $this->redis->rename('downloads:absolute:new', 'downloads:absolute');
 
-        $locker->unlockCommand($this->getName());
+        $this->locker->unlockCommand($this->getName());
     }
 
     protected function sumLastNDays($days, $id, \DateTime $yesterday, $conn)

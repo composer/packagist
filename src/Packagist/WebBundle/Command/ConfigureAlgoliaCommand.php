@@ -12,13 +12,24 @@
 
 namespace Packagist\WebBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Algolia\AlgoliaSearch\SearchClient;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Yaml\Yaml;
 
-class ConfigureAlgoliaCommand extends ContainerAwareCommand
+class ConfigureAlgoliaCommand extends Command
 {
+    private SearchClient $algolia;
+    private string $algoliaIndexName;
+
+    public function __construct(SearchClient $algolia, string $algoliaIndexName)
+    {
+        $this->algolia = $algolia;
+        $this->algoliaIndexName = $algoliaIndexName;
+        parent::__construct();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -35,13 +46,11 @@ class ConfigureAlgoliaCommand extends ContainerAwareCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $index_name = $this->getContainer()->getParameter('algolia.index_name');
         $settings = Yaml::parse(
             file_get_contents(__DIR__.'/../Resources/config/algolia_settings.yml')
         );
 
-        $algolia = $this->getContainer()->get('packagist.algolia.client');
-        $index = $algolia->initIndex($index_name);
+        $index = $this->algolia->initIndex($this->algoliaIndexName);
 
         $index->setSettings($settings);
     }

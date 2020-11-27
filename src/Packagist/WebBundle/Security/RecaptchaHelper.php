@@ -12,13 +12,13 @@ class RecaptchaHelper
     private const LOGIN_BASE_KEY_USER = 'bf:login:user:';
 
     /** @var Client */
-    private $redis;
+    private $redisCache;
     /** @var bool */
     private $recaptchaEnabled;
 
-    public function __construct(Client $redis, bool $recaptchaEnabled)
+    public function __construct(Client $redisCache, bool $recaptchaEnabled)
     {
-        $this->redis = $redis;
+        $this->redisCache = $redisCache;
         $this->recaptchaEnabled = $recaptchaEnabled;
     }
 
@@ -33,7 +33,7 @@ class RecaptchaHelper
             $keys[] = self::LOGIN_BASE_KEY_USER . strtolower($username);
         }
 
-        $result = $this->redis->mget($keys);
+        $result = $this->redisCache->mget($keys);
         foreach ($result as $count) {
             if ($count >= 3) {
                 return true;
@@ -46,11 +46,11 @@ class RecaptchaHelper
     public function increaseCounter(Request $request): void
     {
         if ($this->recaptchaEnabled) {
-            $this->redis->getProfile()->defineCommand('incrFailedLoginCounter', FailedLoginCounter::class);
+            $this->redisCache->getProfile()->defineCommand('incrFailedLoginCounter', FailedLoginCounter::class);
 
             $ipKey = self::LOGIN_BASE_KEY_IP . $request->getClientIp();
             $userKey = self::LOGIN_BASE_KEY_USER . strtolower((string) $request->get('_username'));
-            $this->redis->incrFailedLoginCounter($ipKey, $userKey);
+            $this->redisCache->incrFailedLoginCounter($ipKey, $userKey);
         }
     }
 
@@ -58,7 +58,7 @@ class RecaptchaHelper
     {
         if ($this->recaptchaEnabled) {
             $userKey = self::LOGIN_BASE_KEY_USER . strtolower((string) $request->get('_username'));
-            $this->redis->del([$userKey]);
+            $this->redisCache->del([$userKey]);
         }
     }
 }

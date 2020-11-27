@@ -15,6 +15,9 @@ namespace Packagist\WebBundle\Controller;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\SecurityAdvisory;
 use Packagist\WebBundle\Entity\User;
+use Packagist\WebBundle\Model\ProviderManager;
+use Packagist\WebBundle\Service\GitHubUserMigrationWorker;
+use Packagist\WebBundle\Service\Scheduler;
 use Packagist\WebBundle\Util\UserAgentParser;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -22,28 +25,41 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Graze\DogStatsD\Client as StatsDClient;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class ApiController extends Controller
 {
+    private Scheduler $scheduler;
+    private LoggerInterface $logger;
+
+    public function __construct(Scheduler $scheduler, LoggerInterface $logger)
+    {
+        $this->scheduler = $scheduler;
+        $this->logger = $logger;
+    }
+
     /**
      * @Route("/packages.json", name="packages", defaults={"_format" = "json"}, methods={"GET"})
      */
     public function packagesAction()
     {
         // fallback if any of the dumped files exist
-        $rootJson = $this->container->getParameter('kernel.root_dir').'/../web/packages_root.json';
+        $rootJson = $this->getParameter('kernel.root_dir').'/../web/packages_root.json';
         if (file_exists($rootJson)) {
             return new Response(file_get_contents($rootJson));
         }
-        $rootJson = $this->container->getParameter('kernel.root_dir').'/../web/packages.json';
+        $rootJson = $this->getParameter('kernel.root_dir').'/../web/packages.json';
         if (file_exists($rootJson)) {
             return new Response(file_get_contents($rootJson));
         }
 
-        $this->get('logger')->alert('packages.json is missing and the fallback controller is being hit, you need to use app/console packagist:dump');
+        $this->logger->alert('packages.json is missing and the fallback controller is being hit, you need to use app/console packagist:dump');
 
         return new Response('Horrible misconfiguration or the dumper script messed up, you need to use app/console packagist:dump', 404);
     }
@@ -51,7 +67,7 @@ class ApiController extends Controller
     /**
      * @Route("/api/create-package", name="generic_create", defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function createPackageAction(Request $request)
+    public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator)
     {
         $payload = json_decode($request->getContent(), true);
         if (!$payload) {
@@ -59,12 +75,12 @@ class ApiController extends Controller
         }
         $url = $payload['repository']['url'];
         $package = new Package;
-        $package->setEntityRepository($this->getDoctrine()->getRepository(Package::class));
-        $package->setRouter($this->get('router'));
+        $package->setEntityRepository($this->doctrine->getRepository(Package::class));
+        $package->setRouter($router);
         $user = $this->findUser($request);
         $package->addMaintainer($user);
         $package->setRepository($url);
-        $errors = $this->get('validator')->validate($package);
+        $errors = $validator->validate($package);
         if (count($errors) > 0) {
             $errorArray = array();
             foreach ($errors as $error) {
@@ -73,16 +89,16 @@ class ApiController extends Controller
             return new JsonResponse(array('status' => 'error', 'message' => $errorArray), 406);
         }
         try {
-            $em = $this->getDoctrine()->getManager();
+            $em = $this->doctrine->getManager();
             $em->persist($package);
             $em->flush();
 
-            $this->get('packagist.provider_manager')->insertPackage($package);
+            $providerManager->insertPackage($package);
             if ($user->getGithubToken()) {
-                $this->get('github_user_migration_worker')->setupWebHook($user->getGithubToken(), $package);
+                $githubUserMigrationWorker->setupWebHook($user->getGithubToken(), $package);
             }
         } catch (\Exception $e) {
-            $this->get('logger')->critical($e->getMessage(), array('exception', $e));
+            $this->logger->critical($e->getMessage(), array('exception', $e));
             return new JsonResponse(array('status' => 'error', 'message' => 'Error saving package'), 500);
         }
 
@@ -140,7 +156,7 @@ class ApiController extends Controller
      * )
      * @ParamConverter("package", options={"mapping": {"package": "name"}})
      */
-    public function editPackageAction(Request $request, Package $package)
+    public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator)
     {
         $user = $this->findUser($request);
         if (!$package->getMaintainers()->contains($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
@@ -154,7 +170,7 @@ class ApiController extends Controller
 
         $package->setRepository($payload['repository']);
 
-        $errors = $this->get('validator')->validate($package, null, array("Update"));
+        $errors = $validator->validate($package, null, array("Update"));
         if (count($errors) > 0) {
             $errorArray = array();
             foreach ($errors as $error) {
@@ -165,7 +181,7 @@ class ApiController extends Controller
 
         $package->setCrawledAt(null);
 
-        $em = $this->getDoctrine()->getManager();
+        $em = $this->doctrine->getManager();
         $em->persist($package);
         $em->flush();
 
@@ -183,7 +199,7 @@ class ApiController extends Controller
             return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 200);
         }
 
-        $this->get('packagist.download_manager')->addDownloads([['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $request->getClientIp()]]);
+        $this->downloadManager->addDownloads([['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $request->getClientIp()]]);
 
         return new JsonResponse(array('status' => 'success'), 201);
     }
@@ -193,7 +209,7 @@ class ApiController extends Controller
      */
     public function getJobAction(string $id)
     {
-        return new JsonResponse($this->get('scheduler')->getJobStatus($id), 200);
+        return new JsonResponse($this->scheduler->getJobStatus($id), 200);
     }
 
     /**
@@ -210,7 +226,7 @@ class ApiController extends Controller
      *
      * @Route("/downloads/", name="track_download_batch", defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function trackDownloadsAction(Request $request)
+    public function trackDownloadsAction(Request $request, StatsDClient $statsd)
     {
         $contents = json_decode($request->getContent(), true);
         if (empty($contents['downloads']) || !is_array($contents['downloads'])) {
@@ -239,18 +255,18 @@ class ApiController extends Controller
 
         if ($jobs) {
             if (!$request->headers->get('User-Agent')) {
-                $this->get('logger')->error('Missing UA for '.$request->getContent().' (from '.$request->getClientIp().')');
+                $this->logger->error('Missing UA for '.$request->getContent().' (from '.$request->getClientIp().')');
 
                 return new JsonResponse(array('status' => 'success'), 201);
             }
 
-            $this->get('packagist.download_manager')->addDownloads($jobs);
+            $this->downloadManager->addDownloads($jobs);
 
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
             if (!$uaParser->getComposerVersion()) {
-                $this->get('logger')->error('Could not parse UA: '.$_SERVER['HTTP_USER_AGENT'].' with '.$request->getContent().' from '.$request->getClientIp());
+                $this->logger->error('Could not parse UA: '.$_SERVER['HTTP_USER_AGENT'].' with '.$request->getContent().' from '.$request->getClientIp());
             } else {
-                $this->get('Graze\DogStatsD\Client')->increment('installs', 1, 1, [
+                $statsd->increment('installs', 1, 1, [
                     'composer' => $uaParser->getComposerVersion() ?: 'unknown',
                     'composer_major' => $uaParser->getComposerMajorVersion() ?: 'unknown',
                     'php_minor' => $uaParser->getPhpMinorVersion() ?: 'unknown',
@@ -286,7 +302,7 @@ class ApiController extends Controller
         $updatedSince = $request->query->getInt('updatedSince', 0);
 
         /** @var array[] $advisories */
-        $advisories = $this->getDoctrine()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
+        $advisories = $this->doctrine->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
 
         $response = ['advisories' => []];
         foreach ($advisories as $advisory) {
@@ -305,7 +321,7 @@ class ApiController extends Controller
     {
         // support legacy composer v1 normalized default branches
         if ($version === '9999999-dev') {
-            return $this->get('doctrine.dbal.default_connection')->fetchAssoc(
+            return $this->doctrine->getManager()->getConnection()->fetchAssoc(
                 'SELECT p.id, v.id vid
                 FROM package p
                 LEFT JOIN package_version v ON p.id = v.package_id
@@ -316,7 +332,7 @@ class ApiController extends Controller
             );
         }
 
-        return $this->get('doctrine.dbal.default_connection')->fetchAssoc(
+        return $this->doctrine->getManager()->getConnection()->fetchAssoc(
             'SELECT p.id, v.id vid
             FROM package p
             LEFT JOIN package_version v ON p.id = v.package_id
@@ -355,7 +371,7 @@ class ApiController extends Controller
         if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature')) {
             $username = $request->query->get('username');
             $sig = $request->headers->get('X-Hub-Signature');
-            $user = $this->getDoctrine()->getRepository(User::class)->findOneByUsername($username);
+            $user = $this->doctrine->getRepository(User::class)->findOneByUsername($username);
             if ($sig && $user && $user->isEnabled()) {
                 list($algo, $sig) = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
@@ -402,18 +418,17 @@ class ApiController extends Controller
             return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)')), 404);
         }
 
-        $em = $this->get('doctrine.orm.entity_manager');
         $jobs = [];
 
         /** @var Package $package */
         foreach ($packages as $package) {
             $package->setAutoUpdated($autoUpdated);
 
-            $job = $this->get('scheduler')->scheduleUpdate($package);
+            $job = $this->scheduler->scheduleUpdate($package);
             $jobs[] = $job->getId();
         }
 
-        $em->flush();
+        $this->doctrine->getManager()->flush();
 
         return new JsonResponse(['status' => 'success', 'jobs' => $jobs, 'type' => $receiveType], 202);
     }
@@ -438,7 +453,7 @@ class ApiController extends Controller
             return null;
         }
 
-        $user = $this->getDoctrine()->getRepository(User::class)
+        $user = $this->doctrine->getRepository(User::class)
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 
         if ($user && !$user->isEnabled()) {
@@ -488,7 +503,7 @@ class ApiController extends Controller
      */
     protected function findPackagesByRepository(string $url, $remoteId, User $user = null): array
     {
-        $packageRepo = $this->getDoctrine()->getRepository(Package::class);
+        $packageRepo = $this->doctrine->getRepository(Package::class);
         $packages = $packageRepo->findBy(['repository' => $url]);
         $updateUrl = false;
 

@@ -19,8 +19,12 @@ use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Repository\VcsRepository;
+use Doctrine\Persistence\ManagerRegistry;
+use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Package\Updater;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Packagist\WebBundle\Service\Locker;
+use Packagist\WebBundle\Service\Scheduler;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -29,8 +33,20 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class UpdatePackagesCommand extends ContainerAwareCommand
+class UpdatePackagesCommand extends Command
 {
+    private Scheduler $scheduler;
+    private Locker $locker;
+    private ManagerRegistry $doctrine;
+
+    public function __construct(Scheduler $scheduler, Locker $locker, ManagerRegistry $doctrine)
+    {
+        $this->scheduler = $scheduler;
+        $this->locker = $locker;
+        $this->doctrine = $doctrine;
+        parent::__construct();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -57,13 +73,11 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         $force = $input->getOption('force');
         $package = $input->getArgument('package');
 
-        $doctrine = $this->getContainer()->get('doctrine');
         $deleteBefore = false;
         $updateEqualRefs = false;
         $randomTimes = true;
 
-        $locker = $this->getContainer()->get('locker');
-        if (!$locker->lockCommand($this->getName())) {
+        if (!$this->locker->lockCommand($this->getName())) {
             if ($verbose) {
                 $output->writeln('Aborting, another task is running already');
             }
@@ -71,16 +85,16 @@ class UpdatePackagesCommand extends ContainerAwareCommand
         }
 
         if ($package) {
-            $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
+            $packages = array(array('id' => $this->doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
             if ($force) {
                 $updateEqualRefs = true;
             }
             $randomTimes = false;
         } elseif ($force) {
-            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $packages = $this->doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
             $updateEqualRefs = true;
         } else {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackages();
+            $packages = $this->doctrine->getRepository(Package::class)->getStalePackages();
         }
 
         $ids = array();
@@ -95,22 +109,19 @@ class UpdatePackagesCommand extends ContainerAwareCommand
             $updateEqualRefs = true;
         }
 
-        $scheduler = $this->getContainer()->get('scheduler');
-
         while ($ids) {
             $idsGroup = array_splice($ids, 0, 100);
 
             foreach ($idsGroup as $id) {
-                $job = $scheduler->scheduleUpdate($id, $updateEqualRefs, $deleteBefore, $randomTimes ? new \DateTime('+'.rand(1, 600).'seconds') : null);
+                $job = $this->scheduler->scheduleUpdate($id, $updateEqualRefs, $deleteBefore, $randomTimes ? new \DateTime('+'.rand(1, 600).'seconds') : null);
                 if ($verbose) {
                     $output->writeln('Scheduled update job '.$job->getId().' for package '.$id);
                 }
-                $doctrine->getManager()->detach($job);
-            }
 
-            $doctrine->getManager()->clear();
+                $this->doctrine->getManager()->clear();
+            }
         }
 
-        $locker->unlockCommand($this->getName());
+        $this->locker->unlockCommand($this->getName());
     }
 }

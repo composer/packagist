@@ -120,8 +120,8 @@ fos_user:
 hwi_oauth:
     firewall_names: [main]
     connect:
-        account_connector: packagist.user_provider
-        registration_form_handler: packagist.oauth.registration_form_handler
+        account_connector: Packagist\WebBundle\Security\Provider\UserProvider
+        registration_form_handler: Packagist\WebBundle\Form\Handler\OAuthRegistrationFormHandler
         registration_form: packagist.oauth.registration_form
     fosub:
         username_iterations: 30

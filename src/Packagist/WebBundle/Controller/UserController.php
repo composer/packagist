@@ -14,6 +14,7 @@ namespace Packagist\WebBundle\Controller;
 
 use Doctrine\ORM\NoResultException;
 use FOS\UserBundle\Model\UserInterface;
+use FOS\UserBundle\Model\UserManagerInterface;
 use Packagist\WebBundle\Entity\Job;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
@@ -21,10 +22,13 @@ use Packagist\WebBundle\Entity\User;
 use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Form\Model\EnableTwoFactorRequest;
 use Packagist\WebBundle\Form\Type\EnableTwoFactorAuthType;
+use Packagist\WebBundle\Model\ProviderManager;
 use Packagist\WebBundle\Model\RedisAdapter;
 use Packagist\WebBundle\Security\TwoFactorAuthManager;
+use Packagist\WebBundle\Service\Scheduler;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
+use Psr\Log\LoggerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Form\FormError;
@@ -33,12 +37,23 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Predis\Client as RedisClient;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class UserController extends Controller
 {
+    private ProviderManager $providerManager;
+    private Scheduler $scheduler;
+
+    public function __construct(ProviderManager $providerManager, Scheduler $scheduler)
+    {
+        $this->providerManager = $providerManager;
+        $this->scheduler = $scheduler;
+    }
+
     /**
      * @Template()
      * @Route("/users/{name}/packages/", name="user_packages")
@@ -66,22 +81,22 @@ class UserController extends Controller
         }
 
         if (!$user->getGithubToken()) {
-            $this->get('session')->getFlashBag()->set('error', 'You must connect your user account to github to sync packages.');
+            $this->addFlash('error', 'You must connect your user account to github to sync packages.');
 
             return $this->redirectToRoute('fos_user_profile_show');
         }
 
         if (!$user->getGithubScope()) {
-            $this->get('session')->getFlashBag()->set('error', 'Please log out and log in with GitHub again to make sure the correct GitHub permissions are granted.');
+            $this->addFlash('error', 'Please log out and log in with GitHub again to make sure the correct GitHub permissions are granted.');
 
             return $this->redirectToRoute('fos_user_profile_show');
         }
 
-        $this->get('scheduler')->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
+        $this->scheduler->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
 
         sleep(5);
 
-        $this->get('session')->getFlashBag()->set('success', 'User sync scheduled. It might take a few seconds to run through, make sure you refresh then to check if any packages still need sync.');
+        $this->addFlash('success', 'User sync scheduled. It might take a few seconds to run through, make sure you refresh then to check if any packages still need sync.');
 
         return $this->redirectToRoute('fos_user_profile_show');
     }
@@ -90,7 +105,7 @@ class UserController extends Controller
      * @Route("/spammers/{name}/", name="mark_spammer", methods={"POST"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function markSpammerAction(Request $req, User $user)
+    public function markSpammerAction(Request $req, User $user, UserManagerInterface $userManager)
     {
         if (!$this->isGranted('ROLE_ANTISPAM')) {
             throw new AccessDeniedException('This user can not mark others as spammers');
@@ -102,8 +117,8 @@ class UserController extends Controller
         if ($form->isValid()) {
             $user->addRole('ROLE_SPAMMER');
             $user->setEnabled(false);
-            $this->get('fos_user.user_manager')->updateUser($user);
-            $doctrine = $this->getDoctrine();
+            $userManager->updateUser($user);
+            $doctrine = $this->doctrine;
 
             $doctrine->getConnection()->executeUpdate(
                 'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id
@@ -119,18 +134,17 @@ class UserController extends Controller
                 ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true)
                 ->getQuery()->getResult();
 
-            $providerManager = $this->get('packagist.provider_manager');
             foreach ($packages as $package) {
                 foreach ($package->getVersions() as $version) {
                     $versionRepo->remove($version);
                 }
 
-                $providerManager->deletePackage($package);
+                $this->providerManager->deletePackage($package);
             }
 
-            $this->getDoctrine()->getManager()->flush();
+            $this->doctrine->getManager()->flush();
 
-            $this->get('session')->getFlashBag()->set('success', $user->getUsername().' has been marked as a spammer');
+            $this->addFlash('success', $user->getUsername().' has been marked as a spammer');
         }
 
         return $this->redirect(
@@ -150,7 +164,7 @@ class UserController extends Controller
         }
 
         $packages = $this->getUserPackages($req, $user);
-        $lastGithubSync = $this->getDoctrine()->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
+        $lastGithubSync = $this->doctrine->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
 
         $data = array(
             'packages' => $packages,
@@ -197,10 +211,10 @@ class UserController extends Controller
     /**
      * @Route("/oauth/github/disconnect", name="user_github_disconnect")
      */
-    public function disconnectGitHubAction(Request $req)
+    public function disconnectGitHubAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager)
     {
         $user = $this->getUser();
-        $token = $this->get('security.csrf.token_manager')->getToken('unlink_github')->getValue();
+        $token = $csrfTokenManager->getToken('unlink_github')->getValue();
         if (!hash_equals($token, $req->query->get('token', '')) || !$user) {
             throw new AccessDeniedException('Invalid CSRF token');
         }
@@ -209,7 +223,7 @@ class UserController extends Controller
             $user->setGithubId(null);
             $user->setGithubToken(null);
             $user->setGithubScope(null);
-            $this->getDoctrine()->getEntityManager()->flush();
+            $this->doctrine->getEntityManager()->flush();
         }
 
         return $this->redirectToRoute('fos_user_profile_edit');
@@ -220,21 +234,21 @@ class UserController extends Controller
      * @Route("/users/{name}/favorites/", name="user_favorites", methods={"GET"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function favoritesAction(Request $req, User $user)
+    public function favoritesAction(Request $req, User $user, LoggerInterface $logger, RedisClient $redis)
     {
         try {
-            if (!$this->get('snc_redis.default')->isConnected()) {
-                $this->get('snc_redis.default')->connect();
+            if (!$redis->isConnected()) {
+                $redis->connect();
             }
         } catch (\Exception $e) {
-            $this->get('session')->getFlashBag()->set('error', 'Could not connect to the Redis database.');
-            $this->get('logger')->notice($e->getMessage(), array('exception' => $e));
+            $this->addFlash('error', 'Could not connect to the Redis database.');
+            $logger->notice($e->getMessage(), array('exception' => $e));
 
             return array('user' => $user, 'packages' => array());
         }
 
         $paginator = new Pagerfanta(
-            new RedisAdapter($this->get('packagist.favorite_manager'), $user, 'getFavorites', 'getFavoriteCount')
+            new RedisAdapter($this->favoriteManager, $user, 'getFavorites', 'getFavoriteCount')
         );
 
         $paginator->setNormalizeOutOfRangePages(true);
@@ -256,14 +270,14 @@ class UserController extends Controller
 
         $package = $req->request->get('package');
         try {
-            $package = $this->getDoctrine()
+            $package = $this->doctrine
                 ->getRepository(Package::class)
                 ->findOneByName($package);
         } catch (NoResultException $e) {
             throw new NotFoundHttpException('The given package "'.$package.'" was not found.');
         }
 
-        $this->get('packagist.favorite_manager')->markFavorite($user, $package);
+        $this->favoriteManager->markFavorite($user, $package);
 
         return new Response('{"status": "success"}', 201);
     }
@@ -279,7 +293,7 @@ class UserController extends Controller
             throw new AccessDeniedException('You can only change your own favorites');
         }
 
-        $this->get('packagist.favorite_manager')->removeFavorite($user, $package);
+        $this->favoriteManager->removeFavorite($user, $package);
 
         return new Response('{"status": "success"}', 204);
     }
@@ -302,7 +316,7 @@ class UserController extends Controller
 
         $form->submit($req->request->get('form'));
         if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
+            $em = $this->doctrine->getManager();
             $em->remove($user);
             $em->flush();
 
@@ -319,14 +333,14 @@ class UserController extends Controller
      * @Route("/users/{name}/2fa/", name="user_2fa_configure", methods={"GET"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function configureTwoFactorAuthAction(User $user)
+    public function configureTwoFactorAuthAction(User $user, Request $req)
     {
         if (!($this->isGranted('ROLE_DISABLE_2FA') || ($this->getUser() && $user->getId() === $this->getUser()->getId()))) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
         if ($user->getId() === $this->getUser()->getId()) {
-            $backupCode = $this->get('session')->remove('backup_code');
+            $backupCode = $req->getSession()->remove('backup_code');
         }
 
         return array('user' => $user, 'backup_code' => $backupCode ?? null);
@@ -366,7 +380,7 @@ class UserController extends Controller
                 $backupCode = $authManager->generateAndSaveNewBackupCode($user);
 
                 $this->addFlash('success', 'Two-factor authentication has been enabled.');
-                $this->get('session')->set('backup_code', $backupCode);
+                $req->getSession()->set('backup_code', $backupCode);
 
                 return $this->redirectToRoute('user_2fa_confirm', array('name' => $user->getUsername()));
             }
@@ -380,13 +394,13 @@ class UserController extends Controller
      * @Route("/users/{name}/2fa/confirm", name="user_2fa_confirm", methods={"GET"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function confirmTwoFactorAuthAction(User $user)
+    public function confirmTwoFactorAuthAction(User $user, Request $req)
     {
         if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        $backupCode = $this->get('session')->remove('backup_code');
+        $backupCode = $req->getSession()->remove('backup_code');
 
         if (empty($backupCode)) {
             return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
@@ -400,13 +414,13 @@ class UserController extends Controller
      * @Route("/users/{name}/2fa/disable", name="user_2fa_disable", methods={"GET"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function disableTwoFactorAuthAction(Request $req, User $user)
+    public function disableTwoFactorAuthAction(Request $req, User $user, CsrfTokenManagerInterface $csrfTokenManager)
     {
         if (!($this->isGranted('ROLE_DISABLE_2FA') || ($this->getUser() && $user->getId() === $this->getUser()->getId()))) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        $token = $this->get('security.csrf.token_manager')->getToken('disable_2fa')->getValue();
+        $token = $csrfTokenManager->getToken('disable_2fa')->getValue();
         if (hash_equals($token, $req->query->get('token', ''))) {
             $this->get(TwoFactorAuthManager::class)->disableTwoFactorAuth($user, 'Manually disabled');
 
@@ -425,7 +439,7 @@ class UserController extends Controller
      */
     protected function getUserPackages($req, $user)
     {
-        $packages = $this->getDoctrine()
+        $packages = $this->doctrine
             ->getRepository(Package::class)
             ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true);
 

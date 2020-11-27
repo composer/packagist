@@ -27,17 +27,17 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
     const RATE_LIMIT_DURATION = 15; // in minutes
 
     /** @var Client */
-    protected $redis;
+    protected $redisCache;
 
-    public function __construct(Client $redis)
+    public function __construct(Client $redisCache)
     {
-        $this->redis = $redis;
+        $this->redisCache = $redisCache;
     }
 
     public function onAuthAttempt(TwoFactorAuthenticationEvent $event)
     {
         $key = '2fa-failures:'.$event->getToken()->getUsername();
-        $count = (int)$this->redis->get($key);
+        $count = (int)$this->redisCache->get($key);
 
         if ($count >= self::MAX_ATTEMPTS) {
             throw new CustomUserMessageAuthenticationException(sprintf('Too many authentication failures. Try again in %d minutes.', self::RATE_LIMIT_DURATION));
@@ -48,10 +48,10 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
     {
         $key = '2fa-failures:'.$event->getToken()->getUsername();
 
-        $this->redis->multi();
-        $this->redis->incr($key);
-        $this->redis->expire($key, self::RATE_LIMIT_DURATION * 60);
-        $this->redis->exec();
+        $this->redisCache->multi();
+        $this->redisCache->incr($key);
+        $this->redisCache->expire($key, self::RATE_LIMIT_DURATION * 60);
+        $this->redisCache->exec();
     }
 
     /**

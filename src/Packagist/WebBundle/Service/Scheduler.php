@@ -2,16 +2,15 @@
 
 namespace Packagist\WebBundle\Service;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client as RedisClient;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Job;
 
 class Scheduler
 {
-    /** @var ManagerRegistry */
-    private $doctrine;
-    private $redis;
+    private ManagerRegistry $doctrine;
+    private RedisClient $redis;
 
     public function __construct(RedisClient $redis, ManagerRegistry $doctrine)
     {
@@ -19,7 +18,7 @@ class Scheduler
         $this->redis = $redis;
     }
 
-    public function scheduleUpdate($packageOrId, $updateEqualRefs = false, $deleteBefore = false, $executeAfter = null, $forceDump = false): Job
+    public function scheduleUpdate($packageOrId, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeInterface $executeAfter = null, bool $forceDump = false): Job
     {
         $updateEqualRefs = (bool) $updateEqualRefs;
         $deleteBefore = (bool) $deleteBefore;
@@ -61,7 +60,7 @@ class Scheduler
         return $this->createJob('githubuser:migrate', ['id' => $userId, 'old_scope' => $oldScope, 'new_scope' => $newScope], $userId);
     }
 
-    public function scheduleSecurityAdvisory(string $source, \DateTimeInterface $executeAfter = null): Job
+    public function scheduleSecurityAdvisory(string $source, ?\DateTimeInterface $executeAfter = null): Job
     {
         return $this->createJob('security:advisory', ['source' => $source], null, $executeAfter);
     }

@@ -25,6 +25,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Predis\Client as RedisClient;
 
 /**
  * @Route("/explore")
@@ -35,23 +36,23 @@ class ExploreController extends Controller
      * @Template()
      * @Route("/", name="browse")
      */
-    public function exploreAction()
+    public function exploreAction(RedisClient $redis)
     {
         /** @var PackageRepository $pkgRepo */
-        $pkgRepo = $this->getDoctrine()->getRepository(Package::class);
+        $pkgRepo = $this->doctrine->getRepository(Package::class);
         /** @var VersionRepository $verRepo */
-        $verRepo = $this->getDoctrine()->getRepository(Version::class);
+        $verRepo = $this->doctrine->getRepository(Version::class);
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
             ->getQuery()->useResultCache(true, 60)->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
-        $maxId = $this->getDoctrine()->getConnection()->fetchColumn('SELECT max(id) FROM package');
+        $maxId = $this->doctrine->getConnection()->fetchColumn('SELECT max(id) FROM package');
         $random = $pkgRepo
             ->createQueryBuilder('p')->where('p.id >= :randId')->andWhere('p.abandoned = 0')
             ->setParameter('randId', rand(1, $maxId))->setMaxResults(10)
             ->getQuery()->getResult();
         try {
             $popular = array();
-            $popularIds = $this->get('snc_redis.default')->zrevrange('downloads:trending', 0, 9);
+            $popularIds = $redis->zrevrange('downloads:trending', 0, 9);
             if ($popularIds) {
                 $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
                     ->getQuery()->useResultCache(true, 900)->getResult();
@@ -76,10 +77,9 @@ class ExploreController extends Controller
      * @Route("/popular.{_format}", name="browse_popular", defaults={"_format"="html"})
      * @Cache(smaxage=900)
      */
-    public function popularAction(Request $req)
+    public function popularAction(Request $req, RedisClient $redis)
     {
         try {
-            $redis = $this->get('snc_redis.default');
             $perPage = $req->query->getInt('per_page', 15);
             if ($perPage <= 0 || $perPage > 100) {
                 if ($req->getRequestFormat() === 'json') {
@@ -97,7 +97,7 @@ class ExploreController extends Controller
                 (max(1, (int) $req->get('page', 1)) - 1) * $perPage,
                 max(1, (int) $req->get('page', 1)) * $perPage - 1
             );
-            $popular = $this->getDoctrine()->getRepository(Package::class)
+            $popular = $this->doctrine->getRepository(Package::class)
                 ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
                 ->getQuery()->useResultCache(true, 900)->getResult();
             usort($popular, function ($a, $b) use ($popularIds) {

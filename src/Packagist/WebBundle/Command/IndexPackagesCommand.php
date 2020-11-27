@@ -12,18 +12,44 @@
 
 namespace Packagist\WebBundle\Command;
 
+use Algolia\AlgoliaSearch\SearchClient;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Model\DownloadManager;
 use Packagist\WebBundle\Model\FavoriteManager;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Doctrine\DBAL\Connection;
+use Doctrine\Persistence\ManagerRegistry;
+use Packagist\WebBundle\Service\Locker;
+use Predis\Client;
+use Symfony\Component\Console\Command\Command;
 
-class IndexPackagesCommand extends ContainerAwareCommand
+class IndexPackagesCommand extends Command
 {
+    private SearchClient $algolia;
+    private Locker $locker;
+    private ManagerRegistry $doctrine;
+    private Client $redis;
+    private DownloadManager $downloadManager;
+    private FavoriteManager $favoriteManager;
+    private string $algoliaIndexName;
+    private string $cacheDir;
+
+    public function __construct(SearchClient $algolia, Locker $locker, ManagerRegistry $doctrine, Client $redis, DownloadManager $downloadManager, FavoriteManager $favoriteManager, string $algoliaIndexName, string $cacheDir)
+    {
+        $this->algolia = $algolia;
+        $this->locker = $locker;
+        $this->doctrine = $doctrine;
+        $this->redis = $redis;
+        $this->downloadManager = $downloadManager;
+        $this->favoriteManager = $favoriteManager;
+        $this->algoliaIndexName = $algoliaIndexName;
+        $this->cacheDir = $cacheDir;
+        parent::__construct();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -49,9 +75,8 @@ class IndexPackagesCommand extends ContainerAwareCommand
         $force = $input->getOption('force');
         $indexAll = $input->getOption('all');
         $package = $input->getArgument('package');
-        $indexName = $this->getContainer()->getParameter('algolia.index_name');
 
-        $deployLock = $this->getContainer()->getParameter('kernel.cache_dir').'/deploy.globallock';
+        $deployLock = $this->cacheDir.'/deploy.globallock';
         if (file_exists($deployLock)) {
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
@@ -59,9 +84,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
             return;
         }
 
-        $locker = $this->getContainer()->get('locker');
-
-        $lockAcquired = $locker->lockCommand($this->getName());
+        $lockAcquired = $this->locker->lockCommand($this->getName());
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
@@ -69,21 +92,15 @@ class IndexPackagesCommand extends ContainerAwareCommand
             return;
         }
 
-        $doctrine = $this->getContainer()->get('doctrine');
-        $algolia = $this->getContainer()->get('packagist.algolia.client');
-        $index = $algolia->initIndex($indexName);
-
-        $redis = $this->getContainer()->get('snc_redis.default');
-        $downloadManager = $this->getContainer()->get('packagist.download_manager');
-        $favoriteManager = $this->getContainer()->get('packagist.favorite_manager');
+        $index = $this->algolia->initIndex($this->algoliaIndexName);
 
         if ($package) {
-            $packages = array(array('id' => $doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
+            $packages = array(array('id' => $this->doctrine->getRepository('PackagistWebBundle:Package')->findOneByName($package)->getId()));
         } elseif ($force || $indexAll) {
-            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
-            $doctrine->getManager()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
+            $packages = $this->doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $this->doctrine->getManager()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
         } else {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForIndexing();
+            $packages = $this->doctrine->getRepository(Package::class)->getStalePackagesForIndexing();
         }
 
         $ids = array();
@@ -107,7 +124,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
         while ($ids) {
             $indexTime = new \DateTime;
             $idsSlice = array_splice($ids, 0, 50);
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->findById($idsSlice);
+            $packages = $this->doctrine->getRepository(Package::class)->findById($idsSlice);
 
             $idsToUpdate = [];
             $records = [];
@@ -129,9 +146,9 @@ class IndexPackagesCommand extends ContainerAwareCommand
                 }
 
                 try {
-                    $tags = $this->getTags($doctrine, $package);
+                    $tags = $this->getTags($this->doctrine, $package);
 
-                    $records[] = $this->packageToSearchableArray($package, $tags, $redis, $downloadManager, $favoriteManager);
+                    $records[] = $this->packageToSearchableArray($package, $tags);
 
                     $idsToUpdate[] = $package->getId();
                 } catch (\Exception $e) {
@@ -140,7 +157,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
                     continue;
                 }
 
-                $providers = $this->getProviders($doctrine, $package);
+                $providers = $this->getProviders($this->doctrine, $package);
                 foreach ($providers as $provided) {
                     $records[] = $this->createSearchableProvider($provided['packageName']);
                 }
@@ -153,32 +170,27 @@ class IndexPackagesCommand extends ContainerAwareCommand
                 continue;
             }
 
-            $doctrine->getManager()->clear();
+            $this->doctrine->getManager()->clear();
             unset($packages);
 
             if ($verbose) {
                 $output->writeln('Updating package indexedAt column');
             }
 
-            $this->updateIndexedAt($idsToUpdate, $doctrine, $indexTime->format('Y-m-d H:i:s'));
+            $this->updateIndexedAt($idsToUpdate, $this->doctrine, $indexTime->format('Y-m-d H:i:s'));
         }
 
-        $locker->unlockCommand($this->getName());
+        $this->locker->unlockCommand($this->getName());
     }
 
-    private function packageToSearchableArray(
-        Package $package,
-        array $tags,
-        $redis,
-        DownloadManager $downloadManager,
-        FavoriteManager $favoriteManager
-    ) {
-        $faversCount = $favoriteManager->getFaverCount($package);
-        $downloads = $downloadManager->getDownloads($package);
+    private function packageToSearchableArray(Package $package, array $tags)
+    {
+        $faversCount = $this->favoriteManager->getFaverCount($package);
+        $downloads = $this->downloadManager->getDownloads($package);
         $downloadsLog = $downloads['monthly'] > 0 ? log($downloads['monthly'], 10) : 0;
         $starsLog = $package->getGitHubStars() > 0 ? log($package->getGitHubStars(), 10) : 0;
         $popularity = round($downloadsLog + $starsLog);
-        $trendiness = $redis->zscore('downloads:trending', $package->getId());
+        $trendiness = $this->redis->zscore('downloads:trending', $package->getId());
 
         $record = [
             'id' => $package->getId(),
@@ -235,7 +247,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
         ];
     }
 
-    private function getProviders($doctrine, Package $package)
+    private function getProviders(ManagerRegistry $doctrine, Package $package): array
     {
         return $doctrine->getManager()->getConnection()->fetchAll(
             'SELECT lp.packageName
@@ -249,7 +261,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
         );
     }
 
-    private function getTags($doctrine, Package $package)
+    private function getTags(ManagerRegistry $doctrine, Package $package): array
     {
         $tags = $doctrine->getManager()->getConnection()->fetchAll(
             'SELECT t.name FROM package p
@@ -270,7 +282,7 @@ class IndexPackagesCommand extends ContainerAwareCommand
         }, $tags)));
     }
 
-    private function updateIndexedAt(array $idsToUpdate, $doctrine, string $time)
+    private function updateIndexedAt(array $idsToUpdate, ManagerRegistry $doctrine, string $time)
     {
         $retries = 5;
         // retry loop in case of a lock timeout

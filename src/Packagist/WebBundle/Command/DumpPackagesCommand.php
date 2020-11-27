@@ -12,7 +12,11 @@
 
 namespace Packagist\WebBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Doctrine\Persistence\ManagerRegistry;
+use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Package\SymlinkDumper;
+use Packagist\WebBundle\Service\Locker;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -20,8 +24,22 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class DumpPackagesCommand extends ContainerAwareCommand
+class DumpPackagesCommand extends Command
 {
+    private SymlinkDumper $dumper;
+    private Locker $locker;
+    private ManagerRegistry $doctrine;
+    private string $cacheDir;
+
+    public function __construct(SymlinkDumper $dumper, Locker $locker, ManagerRegistry $doctrine, string $cacheDir)
+    {
+        $this->dumper = $dumper;
+        $this->locker = $locker;
+        $this->doctrine = $doctrine;
+        $this->cacheDir = $cacheDir;
+        parent::__construct();
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -46,7 +64,7 @@ class DumpPackagesCommand extends ContainerAwareCommand
         $gc = (bool) $input->getOption('gc');
         $verbose = (bool) $input->getOption('verbose');
 
-        $deployLock = $this->getContainer()->getParameter('kernel.cache_dir').'/deploy.globallock';
+        $deployLock = $this->cacheDir.'/deploy.globallock';
         if (file_exists($deployLock)) {
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
@@ -59,30 +77,26 @@ class DumpPackagesCommand extends ContainerAwareCommand
         if ($gc) {
             $lockName .= '-gc';
         }
-        $locker = $this->getContainer()->get('locker');
-        if (!$locker->lockCommand($lockName)) {
+        if (!$this->locker->lockCommand($lockName)) {
             if ($verbose) {
                 $output->writeln('Aborting, another task is running already');
             }
             return 0;
         }
 
-        $doctrine = $this->getContainer()->get('doctrine');
-        $dumper = $this->getContainer()->get('packagist.package_dumper');
-
         if ($gc) {
             try {
-                $dumper->gc();
+                $this->dumper->gc();
             } finally {
-                $locker->unlockCommand($lockName);
+                $this->locker->unlockCommand($lockName);
             }
             return 0;
         }
 
         if ($force) {
-            $packages = $doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
+            $packages = $this->doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
         } else {
-            $packages = $doctrine->getRepository('PackagistWebBundle:Package')->getStalePackagesForDumping();
+            $packages = $this->doctrine->getRepository(Package::class)->getStalePackagesForDumping();
         }
 
         $ids = array();
@@ -100,9 +114,9 @@ class DumpPackagesCommand extends ContainerAwareCommand
         gc_enable();
 
         try {
-            $result = $dumper->dump($ids, $force, $verbose);
+            $result = $this->dumper->dump($ids, $force, $verbose);
         } finally {
-            $locker->unlockCommand($lockName);
+            $this->locker->unlockCommand($lockName);
         }
 
         return $result ? 0 : 1;

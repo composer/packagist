@@ -12,21 +12,35 @@
 
 namespace Packagist\WebBundle\Controller;
 
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller as BaseController;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Model\DownloadManager;
+use Packagist\WebBundle\Model\FavoriteManager;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Controller extends BaseController
 {
+    protected FavoriteManager $favoriteManager;
+    protected DownloadManager $downloadManager;
+    protected ManagerRegistry $doctrine;
+
+    /**
+     * @required
+     */
+    public function setDeps(FavoriteManager $favMgr, DownloadManager $dlMgr, ManagerRegistry $doctrine)
+    {
+        $this->favoriteManager = $favMgr;
+        $this->downloadManager = $dlMgr;
+        $this->doctrine = $doctrine;
+    }
+
     protected function getPackagesMetadata($packages)
     {
-        $favMgr = $this->get('packagist.favorite_manager');
-        $dlMgr = $this->get('packagist.download_manager');
-
         try {
             $ids = array();
 
@@ -35,31 +49,28 @@ class Controller extends BaseController
             }
 
             $favs = array();
-            $solarium = false;
+            $search = false;
             foreach ($packages as $package) {
-                if ($package instanceof \Solarium_Document_ReadOnly) {
-                    $solarium = true;
-                    $ids[] = $package->id;
-                } elseif ($package instanceof Package) {
+                if ($package instanceof Package) {
                     $ids[] = $package->getId();
-                    $favs[$package->getId()] = $favMgr->getFaverCount($package);
+                    $favs[$package->getId()] = $this->favoriteManager->getFaverCount($package);
                 } elseif (is_array($package)) {
-                    $solarium = true;
+                    $search = true;
                     $ids[] = $package['id'];
                 } else {
                     throw new \LogicException('Got invalid package entity');
                 }
             }
 
-            if ($solarium) {
+            if ($search) {
                 return array(
-                    'downloads' => $dlMgr->getPackagesDownloads($ids),
-                    'favers' => $favMgr->getFaverCounts($ids),
+                    'downloads' => $this->downloadManager->getPackagesDownloads($ids),
+                    'favers' => $this->favoriteManager->getFaverCounts($ids),
                 );
             }
 
             return array(
-                'downloads' => $dlMgr->getPackagesDownloads($ids),
+                'downloads' => $this->downloadManager->getPackagesDownloads($ids),
                 'favers' => $favs,
             );
         } catch (\Predis\Connection\ConnectionException $e) {}

@@ -2,15 +2,36 @@
 
 namespace Packagist\WebBundle\Command;
 
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Seld\Signal\SignalHandler;
 use Packagist\WebBundle\Entity\Package;
+use Packagist\WebBundle\Model\DownloadManager;
+use Packagist\WebBundle\Service\Locker;
+use Predis\Client;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Command\Command;
 
-class MigrateDownloadCountsCommand extends ContainerAwareCommand
+class MigrateDownloadCountsCommand extends Command
 {
+    private LoggerInterface $logger;
+    private Locker $locker;
+    private DownloadManager $downloadManager;
+    private Client $redis;
+    private ManagerRegistry $doctrine;
+
+    public function __construct(LoggerInterface $logger, Locker $locker, ManagerRegistry $doctrine, DownloadManager $downloadManager, Client $redis)
+    {
+        $this->logger = $logger;
+        $this->locker = $locker;
+        $this->doctrine = $doctrine;
+        $this->redis = $redis;
+        $this->downloadManager = $downloadManager;
+        parent::__construct();
+    }
+
     protected function configure()
     {
         $this
@@ -21,11 +42,8 @@ class MigrateDownloadCountsCommand extends ContainerAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $locker = $this->getContainer()->get('locker');
-        $logger = $this->getContainer()->get('logger');
-
         // another migrate command is still active
-        $lockAcquired = $locker->lockCommand($this->getName());
+        $lockAcquired = $this->locker->lockCommand($this->getName());
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
@@ -33,18 +51,15 @@ class MigrateDownloadCountsCommand extends ContainerAwareCommand
             return;
         }
 
-        $signal = SignalHandler::create(null, $logger);
-        $downloadManager = $this->getContainer()->get('packagist.download_manager');
-        $doctrine = $this->getContainer()->get('doctrine');
+        $signal = SignalHandler::create(null, $this->logger);
 
         try {
             // might be a large-ish dataset coming through here
             ini_set('memory_limit', '1G');
 
-            $redis = $this->getContainer()->get('snc_redis.default_client');
             $now = new \DateTimeImmutable();
             $todaySuffix = ':'.$now->format('Ymd');
-            $keysToUpdate = $redis->keys('dl:*:*');
+            $keysToUpdate = $this->redis->keys('dl:*:*');
 
             // skip today datapoints as we will store that to the DB tomorrow
             $keysToUpdate = array_filter($keysToUpdate, function ($key) use ($todaySuffix) {
@@ -70,18 +85,18 @@ class MigrateDownloadCountsCommand extends ContainerAwareCommand
             while ($keysToUpdate) {
                 $key = array_shift($keysToUpdate);
                 if (!preg_match('{^dl:(\d+)}', $key, $m)) {
-                    $logger->error('Invalid dl key found: '.$key);
+                    $this->logger->error('Invalid dl key found: '.$key);
                     continue;
                 }
 
                 $packageId = (int) $m[1];
 
                 if ($lastPackageId && $lastPackageId !== $packageId) {
-                    $logger->debug('Processing package #'.$lastPackageId);
-                    $downloadManager->transferDownloadsToDb($lastPackageId, $buffer, $now);
+                    $this->logger->debug('Processing package #'.$lastPackageId);
+                    $this->downloadManager->transferDownloadsToDb($lastPackageId, $buffer, $now);
                     $buffer = [];
 
-                    $doctrine->getManager()->clear();
+                    $this->doctrine->getManager()->clear();
 
                     if ($signal->isTriggered()) {
                         break;
@@ -94,10 +109,10 @@ class MigrateDownloadCountsCommand extends ContainerAwareCommand
 
             // process last package
             if ($buffer) {
-                $downloadManager->transferDownloadsToDb($lastPackageId, $buffer, $now);
+                $this->downloadManager->transferDownloadsToDb($lastPackageId, $buffer, $now);
             }
         } finally {
-            $locker->unlockCommand($this->getName());
+            $this->locker->unlockCommand($this->getName());
         }
     }
 }
