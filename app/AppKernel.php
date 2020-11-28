@@ -41,4 +41,24 @@ class AppKernel extends Kernel
     {
         $loader->load(__DIR__.'/config/config_'.$this->getEnvironment().'.yml');
     }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @note Overridden path is to retain the pre-existing path structure and can be removed if moving to Symfony defaults
+     */
+    public function getCacheDir()
+    {
+        return $this->getProjectDir().'/app/cache/'.$this->environment;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @note Overridden path is to retain the pre-existing path structure and can be removed if moving to Symfony defaults
+     */
+    public function getLogDir()
+    {
+        return $this->getProjectDir().'/app/logs';
+    }
 }
