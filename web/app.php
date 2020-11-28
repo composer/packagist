@@ -3,7 +3,7 @@
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * @var \Symfony\Component\ClassLoader\ClassLoader
+ * @var \Composer\Autoload\ClassLoader
  */
 $loader = require __DIR__.'/../app/autoload.php';
 $kernel = new AppKernel('prod', false);
