@@ -12,7 +12,7 @@
 
 namespace Packagist\WebBundle\Model;
 
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Packagist\WebBundle\Entity\Package;
 use Psr\Log\LoggerInterface;
 use Algolia\AlgoliaSearch\SearchClient;
@@ -37,7 +37,7 @@ class PackageManager
     protected $githubWorker;
     protected $metadataDir;
 
-    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, \Swift_Mailer $instantMailer, Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir, Client $redis)
+    public function __construct(ManagerRegistry $doctrine, \Swift_Mailer $mailer, \Swift_Mailer $instantMailer, Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir, Client $redis)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;

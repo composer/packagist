@@ -12,7 +12,7 @@ use Composer\Util\ProcessExecutor;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
 use Psr\Log\LoggerInterface;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
@@ -22,12 +22,12 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
     public const SOURCE_NAME = 'FriendsOfPHP/security-advisories';
     public const SECURITY_PACKAGE = 'sensiolabs/security-advisories';
 
-    /** @var RegistryInterface */
+    /** @var ManagerRegistry */
     private $doctrine;
     /** @var LoggerInterface */
     private $logger;
 
-    public function __construct(RegistryInterface $doctrine)
+    public function __construct(ManagerRegistry $doctrine)
     {
         $this->doctrine = $doctrine;
     }

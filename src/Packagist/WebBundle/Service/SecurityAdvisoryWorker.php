@@ -10,7 +10,7 @@ use Packagist\WebBundle\Entity\SecurityAdvisory;
 use Packagist\WebBundle\SecurityAdvisory\SecurityAdvisorySourceInterface;
 use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class SecurityAdvisoryWorker
@@ -19,12 +19,12 @@ class SecurityAdvisoryWorker
     private $locker;
     /** @var LoggerInterface */
     private $logger;
-    /** @var RegistryInterface */
+    /** @var ManagerRegistry */
     private $doctrine;
     /** @var SecurityAdvisorySourceInterface[] */
     private $sources;
 
-    public function __construct(Locker $locker, LoggerInterface $logger, RegistryInterface $doctrine, array $sources)
+    public function __construct(Locker $locker, LoggerInterface $logger, ManagerRegistry $doctrine, array $sources)
     {
         $this->locker = $locker;
         $this->sources = $sources;

@@ -16,7 +16,7 @@ use Packagist\WebBundle\Entity\User;
 use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Twig\Environment;
 
@@ -32,7 +32,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
     protected $flashBag;
     protected $options;
 
-    public function __construct(RegistryInterface $doctrine, \Swift_Mailer $mailer, Environment $twig, LoggerInterface $logger, FlashBagInterface $flashBag, array $options)
+    public function __construct(ManagerRegistry $doctrine, \Swift_Mailer $mailer, Environment $twig, LoggerInterface $logger, FlashBagInterface $flashBag, array $options)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;

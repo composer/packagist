@@ -30,7 +30,7 @@ use Packagist\WebBundle\Entity\Version;
 use Packagist\WebBundle\Entity\VersionRepository;
 use Packagist\WebBundle\Entity\SuggestLink;
 use Packagist\WebBundle\Model\ProviderManager;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use Packagist\WebBundle\Service\VersionCache;
 
@@ -45,7 +45,7 @@ class Updater
 
     /**
      * Doctrine
-     * @var RegistryInterface
+     * @var ManagerRegistry
      */
     protected $doctrine;
     /**
@@ -83,9 +83,9 @@ class Updater
     /**
      * Constructor
      *
-     * @param RegistryInterface $doctrine
+     * @param ManagerRegistry $doctrine
      */
-    public function __construct(RegistryInterface $doctrine, ProviderManager $providerManager)
+    public function __construct(ManagerRegistry $doctrine, ProviderManager $providerManager)
     {
         $this->doctrine = $doctrine;
         $this->providerManager = $providerManager;

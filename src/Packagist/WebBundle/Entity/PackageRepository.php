@@ -15,14 +15,14 @@ namespace Packagist\WebBundle\Entity;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class PackageRepository extends ServiceEntityRepository
 {
-    public function __construct(RegistryInterface $registry)
+    public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Package::class);
     }

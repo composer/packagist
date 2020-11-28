@@ -15,7 +15,7 @@ namespace Packagist\WebBundle\Package;
 use Symfony\Component\Filesystem\Filesystem;
 use Composer\Util\Filesystem as ComposerFilesystem;
 use Composer\Util\MetadataMinifier;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Finder\Finder;
 use Packagist\WebBundle\Entity\Version;
@@ -33,7 +33,7 @@ class SymlinkDumper
 {
     /**
      * Doctrine
-     * @var RegistryInterface
+     * @var ManagerRegistry
      */
     protected $doctrine;
 
@@ -127,14 +127,14 @@ class SymlinkDumper
     /**
      * Constructor
      *
-     * @param RegistryInterface     $doctrine
+     * @param ManagerRegistry       $doctrine
      * @param Filesystem            $filesystem
      * @param UrlGeneratorInterface $router
      * @param string                $webDir     web root
      * @param string                $targetDir
      * @param int                   $compress
      */
-    public function __construct(RegistryInterface $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress, $awsMetadata, StatsDClient $statsd, ProviderManager $providerManager)
+    public function __construct(ManagerRegistry $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress, $awsMetadata, StatsDClient $statsd, ProviderManager $providerManager)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;

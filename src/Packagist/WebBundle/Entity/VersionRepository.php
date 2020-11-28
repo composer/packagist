@@ -15,7 +15,7 @@ namespace Packagist\WebBundle\Entity;
 use Doctrine\DBAL\Connection;
 use Predis\Client;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -33,7 +33,7 @@ class VersionRepository extends ServiceEntityRepository
         'suggest',
     );
 
-    public function __construct(RegistryInterface $registry, Client $redisCache)
+    public function __construct(ManagerRegistry $registry, Client $redisCache)
     {
         parent::__construct($registry, Version::class);
 

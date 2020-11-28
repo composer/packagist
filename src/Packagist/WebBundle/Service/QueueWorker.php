@@ -4,7 +4,7 @@ namespace Packagist\WebBundle\Service;
 
 use Predis\Client as Redis;
 use Psr\Log\LoggerInterface;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Packagist\WebBundle\Entity\Job;
 use Seld\Signal\SignalHandler;
 use Graze\DogStatsD\Client as StatsDClient;
@@ -13,14 +13,14 @@ class QueueWorker
 {
     private $redis;
     private $logger;
-    /** @var RegistryInterface */
+    /** @var ManagerRegistry */
     private $doctrine;
     private $jobWorkers;
     private $processedJobs = 0;
     /** @var StatsDClient */
     private $statsd;
 
-    public function __construct(Redis $redis, RegistryInterface $doctrine, LoggerInterface $logger, array $jobWorkers, StatsDClient $statsd)
+    public function __construct(Redis $redis, ManagerRegistry $doctrine, LoggerInterface $logger, array $jobWorkers, StatsDClient $statsd)
     {
         $this->redis = $redis;
         $this->logger = $logger;

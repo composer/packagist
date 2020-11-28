@@ -6,7 +6,7 @@ use Packagist\WebBundle\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Psr\Log\LoggerInterface;
 use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Composer\Console\HtmlOutputFormatter;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Repository\VcsRepository;
@@ -37,7 +37,7 @@ class UpdaterWorker
 
     public function __construct(
         LoggerInterface $logger,
-        RegistryInterface $doctrine,
+        ManagerRegistry $doctrine,
         Updater $updater,
         Locker $locker,
         Scheduler $scheduler,

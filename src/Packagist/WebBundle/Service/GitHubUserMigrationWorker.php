@@ -3,7 +3,7 @@
 namespace Packagist\WebBundle\Service;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\User;
 use Packagist\WebBundle\Entity\Job;
@@ -21,7 +21,7 @@ class GitHubUserMigrationWorker
     private $guzzle;
     private $webhookSecret;
 
-    public function __construct(LoggerInterface $logger, RegistryInterface $doctrine, Client $guzzle, string $webhookSecret)
+    public function __construct(LoggerInterface $logger, ManagerRegistry $doctrine, Client $guzzle, string $webhookSecret)
     {
         $this->logger = $logger;
         $this->doctrine = $doctrine;

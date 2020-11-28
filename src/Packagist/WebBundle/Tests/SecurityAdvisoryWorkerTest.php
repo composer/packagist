@@ -13,7 +13,7 @@ use Packagist\WebBundle\Service\SecurityAdvisoryWorker;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Seld\Signal\SignalHandler;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 
 class SecurityAdvisoryWorkerTest extends TestCase
 {
@@ -30,7 +30,7 @@ class SecurityAdvisoryWorkerTest extends TestCase
     {
         $this->source = $this->getMockBuilder(SecurityAdvisorySourceInterface::class)->disableOriginalConstructor()->getMock();
         $locker = $this->getMockBuilder(Locker::class)->disableOriginalConstructor()->getMock();
-        $doctrine = $this->getMockBuilder(RegistryInterface::class)->disableOriginalConstructor()->getMock();
+        $doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
         $this->worker = new SecurityAdvisoryWorker($locker, new NullLogger(), $doctrine, ['test' => $this->source]);
 
         $this->em = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
