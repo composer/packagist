@@ -12,7 +12,7 @@
 
 namespace Packagist\WebBundle\Model;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use Packagist\WebBundle\Entity\Package;
 use Packagist\WebBundle\Entity\Version;
