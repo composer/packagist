@@ -8,7 +8,7 @@ fos_user_profile:
 
 fos_user_profile_show:
     path: /profile/
-    defaults: { _controller: PackagistWebBundle:User:viewProfile }
+    defaults: { _controller: 'Packagist\WebBundle\Controller\UserController::viewProfileAction' }
     methods: [GET]
 
 fos_user_register:
@@ -24,16 +24,16 @@ fos_user_change_password:
 
 
 hwi_oauth_connect:
-    resource: '@HWIOAuthBundle/Resources/config/routing/connect.xml'
+    resource: '@HWIOAuthBundle/Resources/config/routing/connect_41.xml'
     prefix:   /connect
 
 # overrides the fosub /login page
 hwi_oauth_login:
-    resource: '@HWIOAuthBundle/Resources/config/routing/login.xml'
+    resource: '@HWIOAuthBundle/Resources/config/routing/login_41.xml'
     prefix:   /login
 
 hwi_oauth_redirect:
-    resource: '@HWIOAuthBundle/Resources/config/routing/redirect.xml'
+    resource: '@HWIOAuthBundle/Resources/config/routing/redirect_41.xml'
     prefix:   /login
 
 github_check:
