@@ -5,7 +5,6 @@ namespace Packagist\WebBundle\Twig;
 use Packagist\WebBundle\Model\ProviderManager;
 use Packagist\WebBundle\Security\RecaptchaHelper;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Composer\Repository\PlatformRepository;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
@@ -18,17 +17,14 @@ class PackagistExtension extends AbstractExtension
      * @var ProviderManager
      */
     private $providerManager;
-    /** @var CsrfTokenManagerInterface */
-    private $csrfTokenManager;
     /** @var RecaptchaHelper */
     private $recaptchaHelper;
     /** @var RequestStack */
     private $requestStack;
 
-    public function __construct(ProviderManager $providerManager, CsrfTokenManagerInterface $csrfTokenManager, RecaptchaHelper $recaptchaHelper, RequestStack $requestStack)
+    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, RequestStack $requestStack)
     {
         $this->providerManager = $providerManager;
-        $this->csrfTokenManager = $csrfTokenManager;
         $this->recaptchaHelper = $recaptchaHelper;
         $this->requestStack = $requestStack;
     }
@@ -55,7 +51,6 @@ class PackagistExtension extends AbstractExtension
     public function getFunctions()
     {
         return array(
-            new TwigFunction('csrf_token', [$this, 'getCsrfToken']),
             new TwigFunction('requires_recaptcha', [$this, 'requiresRecaptcha']),
         );
     }
@@ -124,11 +119,6 @@ class PackagistExtension extends AbstractExtension
         });
 
         return $links;
-    }
-
-    public function getCsrfToken($name)
-    {
-        return $this->csrfTokenManager->getToken($name)->getValue();
     }
 
     public function requiresRecaptcha(?string $username): bool
