@@ -17,7 +17,7 @@
         }
     ],
     "support": {
-          "email": "contact@packagist.org"
+        "email": "contact@packagist.org"
     },
     "autoload": {
         "psr-4": { "Packagist\\": "src/Packagist/" },
@@ -33,7 +33,6 @@
         "twig/extensions": "^1.0",
         "symfony/swiftmailer-bundle": "^3.0",
         "symfony/monolog-bundle": "^3.1",
-        "sensio/distribution-bundle": "^5.0",
         "sensio/framework-extra-bundle": "^5.0",
 
         "composer/composer": "^2.0@dev",
@@ -67,17 +66,20 @@
         "phpunit/phpunit": "^8.0"
     },
     "scripts": {
+        "auto-scripts": [
+            "@php app/console cache:clear",
+            "@php app/console assets:install --symlink --relative web"
+        ],
         "symfony-scripts": [
-            "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters",
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
-            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets"
+            "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters"
         ],
         "post-install-cmd": [
-            "@symfony-scripts"
+            "@symfony-scripts",
+            "@auto-scripts"
         ],
         "post-update-cmd": [
-            "@symfony-scripts"
+            "@symfony-scripts",
+            "@auto-scripts"
         ]
     },
     "extra": {
