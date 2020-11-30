@@ -66,20 +66,16 @@
         "phpunit/phpunit": "^8.0"
     },
     "scripts": {
-        "auto-scripts": [
+        "symfony-scripts": [
+            "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters",
             "@php app/console cache:clear",
             "@php app/console assets:install --symlink --relative web"
         ],
-        "symfony-scripts": [
-            "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters"
-        ],
         "post-install-cmd": [
-            "@symfony-scripts",
-            "@auto-scripts"
+            "@symfony-scripts"
         ],
         "post-update-cmd": [
-            "@symfony-scripts",
-            "@auto-scripts"
+            "@symfony-scripts"
         ]
     },
     "extra": {
