@@ -19,6 +19,9 @@ services:
             $webDir: '%kernel.root_dir%/../web/'
             $metadataDir: '%packagist_metadata_dir%'
             $algoliaIndexName: '%algolia.index_name%'
+            $rssMaxItems: '%packagist_web.rss_max_items%'
+            $githubWebhookSecret: '%github.webhook_secret%'
+            $trustedIpHeader: '%trusted_ip_header%'
 
     Packagist\WebBundle\Command\:
         resource: '../../Command/*'

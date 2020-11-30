@@ -30,6 +30,13 @@ use Zend\Feed\Writer\Feed;
  */
 class FeedController extends Controller
 {
+    private int $rssMaxItems;
+
+    public function __construct(int $rssMaxItems)
+    {
+        $this->rssMaxItems = $rssMaxItems;
+    }
+
     /**
      * @Route("/", name="feeds")
      * @Template
@@ -166,7 +173,7 @@ class FeedController extends Controller
         $query = $queryBuilder
             ->getQuery()
             ->setMaxResults(
-                $this->container->getParameter('packagist_web.rss_max_items')
+                $this->rssMaxItems
             );
 
         return $query->getResult();
