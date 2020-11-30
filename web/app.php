@@ -2,10 +2,7 @@
 
 use Symfony\Component\HttpFoundation\Request;
 
-/**
- * @var \Composer\Autoload\ClassLoader
- */
-$loader = require __DIR__.'/../app/autoload.php';
+require __DIR__.'/../app/autoload.php';
 $kernel = new AppKernel('prod', false);
 
 if (PHP_VERSION_ID < 70100) {
