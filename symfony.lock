@@ -135,6 +135,9 @@
     "symfony/intl": {
         "version": "v4.4.16"
     },
+    "symfony/lock": {
+        "version": "v4.4.17"
+    },
     "symfony/mailer": {
         "version": "4.3",
         "recipe": {
