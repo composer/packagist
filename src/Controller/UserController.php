@@ -29,6 +29,7 @@ use App\Service\Scheduler;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Psr\Log\LoggerInterface;
+use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Form\FormError;
@@ -36,6 +37,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Predis\Client as RedisClient;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
@@ -158,7 +160,7 @@ class UserController extends Controller
      */
     public function viewProfileAction(Request $req)
     {
-        $user = $this->container->get('security.token_storage')->getToken()->getUser();
+        $user = $this->getUser();
         if (!is_object($user) || !$user instanceof UserInterface) {
             throw new AccessDeniedException('This user does not have access to this section.');
         }
@@ -177,7 +179,7 @@ class UserController extends Controller
             $data['deleteForm'] = $this->createFormBuilder(array())->getForm()->createView();
         }
 
-        return $this->container->get('templating')->renderResponse(
+        return $this->render(
             '@FOSUser/Profile/show.html.twig',
             $data
         );
@@ -302,7 +304,7 @@ class UserController extends Controller
      * @Route("/users/{name}/delete", name="user_delete", defaults={"_format" = "json"}, methods={"POST"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function deleteUserAction(User $user, Request $req)
+    public function deleteUserAction(User $user, Request $req, TokenStorageInterface $storage)
     {
         if (!($this->isGranted('ROLE_ADMIN') || ($this->getUser() && $user->getId() === $this->getUser()->getId()))) {
             throw new AccessDeniedException('You cannot delete this user');
@@ -320,7 +322,7 @@ class UserController extends Controller
             $em->remove($user);
             $em->flush();
 
-            $this->container->get('security.token_storage')->setToken(null);
+            $storage->setToken(null);
 
             return $this->redirectToRoute('home');
         }
@@ -351,13 +353,11 @@ class UserController extends Controller
      * @Route("/users/{name}/2fa/enable", name="user_2fa_enable", methods={"GET", "POST"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function enableTwoFactorAuthAction(Request $req, User $user)
+    public function enableTwoFactorAuthAction(Request $req, User $user, TotpAuthenticatorInterface $authenticator, TwoFactorAuthManager $authManager)
     {
         if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
-
-        $authenticator = $this->get("scheb_two_factor.security.totp_authenticator");
 
         $enableRequest = new EnableTwoFactorRequest($authenticator->generateSecret());
         $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest);
@@ -375,7 +375,6 @@ class UserController extends Controller
             }
 
             if ($form->isValid()) {
-                $authManager = $this->get(TwoFactorAuthManager::class);
                 $authManager->enableTwoFactorAuth($user, $enableRequest->getSecret());
                 $backupCode = $authManager->generateAndSaveNewBackupCode($user);
 
@@ -414,7 +413,7 @@ class UserController extends Controller
      * @Route("/users/{name}/2fa/disable", name="user_2fa_disable", methods={"GET"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function disableTwoFactorAuthAction(Request $req, User $user, CsrfTokenManagerInterface $csrfTokenManager)
+    public function disableTwoFactorAuthAction(Request $req, User $user, CsrfTokenManagerInterface $csrfTokenManager, TwoFactorAuthManager $authManager)
     {
         if (!($this->isGranted('ROLE_DISABLE_2FA') || ($this->getUser() && $user->getId() === $this->getUser()->getId()))) {
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
@@ -422,7 +421,7 @@ class UserController extends Controller
 
         $token = $csrfTokenManager->getToken('disable_2fa')->getValue();
         if (hash_equals($token, $req->query->get('token', ''))) {
-            $this->get(TwoFactorAuthManager::class)->disableTwoFactorAuth($user, 'Manually disabled');
+            $authManager->disableTwoFactorAuth($user, 'Manually disabled');
 
             $this->addFlash('success', 'Two-factor authentication has been disabled.');
 

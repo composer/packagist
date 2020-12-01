@@ -990,7 +990,7 @@ class PackageController extends Controller
             $em->persist($package);
             $em->flush();
 
-            $this->get("session")->getFlashBag()->set("success", "Changes saved.");
+            $this->addFlash("success", "Changes saved.");
 
             return $this->redirect(
                 $this->generateUrl("view_package", array("name" => $package->getName()))
