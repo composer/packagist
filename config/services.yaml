@@ -36,6 +36,7 @@ services:
             $metadataDir: '%packagist_metadata_dir%'
             $trustedIpHeader: '%trusted_ip_header%'
             $algoliaIndexName: '%env(ALGOLIA_INDEX_NAME)%'
+            $githubWebhookSecret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

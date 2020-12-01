@@ -110,7 +110,7 @@ class ApiController extends Controller
      * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"}, methods={"POST"})
      * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function updatePackageAction(Request $request)
+    public function updatePackageAction(Request $request, string $githubWebhookSecret)
     {
         // parse the payload
         $payload = json_decode($request->request->get('payload'), true);
@@ -143,7 +143,7 @@ class ApiController extends Controller
             return new JsonResponse(array('status' => 'error', 'message' => 'Missing or invalid payload'), 406);
         }
 
-        return $this->receivePost($request, $url, $urlRegex, $remoteId);
+        return $this->receivePost($request, $url, $urlRegex, $remoteId, $githubWebhookSecret);
     }
 
     /**
@@ -351,7 +351,7 @@ class ApiController extends Controller
      * @param string $urlRegex the regex used to split the user packages into domain and path
      * @return Response
      */
-    protected function receivePost(Request $request, $url, $urlRegex, $remoteId)
+    protected function receivePost(Request $request, $url, $urlRegex, $remoteId, string $githubWebhookSecret)
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!preg_match($urlRegex, $url, $match)) {
@@ -396,7 +396,7 @@ class ApiController extends Controller
             $sig = $request->headers->get('X-Hub-Signature');
             if ($sig) {
                 list($algo, $sig) = explode('=', $sig);
-                $expected = hash_hmac($algo, $request->getContent(), $this->container->getParameter('github.webhook_secret'));
+                $expected = hash_hmac($algo, $request->getContent(), $githubWebhookSecret);
                 if (hash_equals($expected, $sig)) {
                     $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], $remoteId);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
