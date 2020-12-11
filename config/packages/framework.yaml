@@ -21,5 +21,3 @@ framework:
     form:            true
     assets:
         version: 'v=%env(default::ASSETS_VERSION)%'
-    templating:
-        engines: ['twig']
