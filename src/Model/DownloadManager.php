@@ -12,7 +12,7 @@
 
 namespace App\Model;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Entity\Package;
 use App\Entity\Version;
