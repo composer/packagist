@@ -33,7 +33,6 @@ class PackageManager
 {
     protected $doctrine;
     protected $mailer;
-    protected $instantMailer;
     protected $twig;
     protected $logger;
     protected $options;

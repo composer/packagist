@@ -38,7 +38,6 @@
         "friendsofsymfony/user-bundle": "^2.0",
         "graze/dog-statsd": "^0.4.2",
         "hwi/oauth-bundle": "^0.6",
-        "incenteev/composer-parameter-handler": "^2.1",
         "knplabs/knp-menu-bundle": "^2.1",
         "nelmio/cors-bundle": "^1.4",
         "nelmio/security-bundle": "^2.4",
@@ -128,7 +127,8 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
-        ]
+        ],
+        "test": "bin/phpunit"
     },
     "conflict": {
         "symfony/symfony": "*"

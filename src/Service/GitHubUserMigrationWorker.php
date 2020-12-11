@@ -19,14 +19,14 @@ class GitHubUserMigrationWorker
     private $logger;
     private $doctrine;
     private $guzzle;
-    private $webhookSecret;
+    private $githubWebhookSecret;
 
-    public function __construct(LoggerInterface $logger, ManagerRegistry $doctrine, Client $guzzle, string $webhookSecret)
+    public function __construct(LoggerInterface $logger, ManagerRegistry $doctrine, Client $guzzle, string $githubWebhookSecret)
     {
         $this->logger = $logger;
         $this->doctrine = $doctrine;
         $this->guzzle = $guzzle;
-        $this->webhookSecret = $webhookSecret;
+        $this->githubWebhookSecret = $githubWebhookSecret;
     }
 
     public function process(Job $job, SignalHandler $signal): array
@@ -231,7 +231,7 @@ class GitHubUserMigrationWorker
             'config' => [
                 'url' => self::HOOK_URL,
                 'content_type' => 'json',
-                'secret' => $this->webhookSecret,
+                'secret' => $this->githubWebhookSecret,
                 'insecure_ssl' => 0,
             ],
             'events' => [

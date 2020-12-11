@@ -13,7 +13,7 @@
 namespace App\Controller;
 
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController as BaseController;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use App\Entity\Package;
@@ -23,7 +23,7 @@ use App\Model\FavoriteManager;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class Controller extends BaseController
+class Controller extends AbstractController
 {
     protected FavoriteManager $favoriteManager;
     protected DownloadManager $downloadManager;

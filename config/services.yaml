@@ -25,7 +25,7 @@ services:
             # services
             $redis: '@snc_redis.default_client'
             $redisCache: '@snc_redis.cache_client'
-            $instantMailer: '@swiftmailer.mailer.instant'
+            $recaptchaVerifier: "@beelab_recaptcha2.verifier"
 
             # params
             $dbUrl: '%env(DATABASE_URL)%'
@@ -37,6 +37,7 @@ services:
             $trustedIpHeader: '%trusted_ip_header%'
             $algoliaIndexName: '%env(ALGOLIA_INDEX_NAME)%'
             $githubWebhookSecret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
+            $recaptchaEnabled: "%env(bool:APP_RECAPTCHA_ENABLED)%"
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -46,7 +47,6 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
-            - '../src/Tests/'
 
     # controllers are imported separately to make sure services can be injected
     # as action arguments even if you don't extend any base controller class
@@ -57,23 +57,8 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
-
-#    App\Command\:
-#        resource: '../../Command/*'
-#        tags: ['console.command']
-
     App\Entity\:
         resource: '../src/Entity/*Repository.php'
-
- #   App\Service\:
- #       resource: '../../Service/*'
-
-#    App\SecurityAdvisory\:
-#        resource: '../../SecurityAdvisory/*.php'
-
-    App\Twig\PackagistExtension:
-        tags:
-            - { name: twig.extension }
 
     Graze\DogStatsD\Client: ~
 
@@ -85,22 +70,16 @@ services:
             - { name: kernel.event_listener, event: kernel.response, method: onResponse }
 
     App\EventListener\LoggedInUserCannotRegisterListener:
-        arguments:
-            - '@security.authorization_checker'
-            - '@router'
-        tags:
-            - { name: kernel.event_subscriber }
+        bind:
+            $authorizationChecker: '@security.authorization_checker'
 
     App\EventListener\RegistrationListener:
         arguments: [ '@fos_user.util.token_generator' ]
-        tags:
-            - { name: kernel.event_subscriber }
 
     App\Package\SymlinkDumper:
         arguments: [ '@doctrine', '@filesystem', '@router', '@snc_redis.default_client', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%', '%aws_metadata%', '@Graze\DogStatsD\Client' ]
 
     App\Security\Provider\UserProvider:
-        class: App\Security\Provider\UserProvider
         arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email']
 
     App\Package\Updater:
@@ -181,21 +160,6 @@ services:
             - '@session.flash_bag'
             - { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
 
-    App\Security\TwoFactorAuthRateLimiter:
-        tags:
-            - { name: kernel.event_subscriber }
-
-    App\Security\BruteForceLoginFormAuthenticator:
-        bind:
-            $recaptchaVerifier: "@beelab_recaptcha2.verifier"
-
-    App\Security\RecaptchaHelper:
-        bind:
-            $recaptchaEnabled: "%env(bool:APP_RECAPTCHA_ENABLED)%"
-
-    App\Service\GitHubUserMigrationWorker:
-        bind:
-            $webhookSecret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
     App\Service\SecurityAdvisoryWorker:
         bind:
             $sources:
