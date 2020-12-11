@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller;
 
+use Exception;
 use App\Entity\Package;
 use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -27,29 +28,38 @@ class ApiControllerTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $package = new Package;
-        $package->setRepository($url);
+        $projectDir = $client->getContainer()->getParameter('kernel.project_dir');
 
-        $ref = new \ReflectionProperty(Package::class, 'id');
-        $ref->setAccessible(true);
-        $ref->setValue($package, 1);
+        $this->executeCommand('php '.$projectDir . '/bin/console doctrine:database:drop --env=test --force -q', false);
+        $this->executeCommand('php '.$projectDir . '/bin/console doctrine:database:create --env=test -q');
+        $this->executeCommand('php '.$projectDir . '/bin/console doctrine:schema:create --env=test -q');
+        $this->executeCommand('php '.$projectDir . '/bin/console redis:flushall --env=test -n -q');
+
+        $package = new Package;
+        $package->setName('test/'.md5(uniqid()));
+        $package->setRepository($url);
 
         $user = new User;
         $user->addPackages($package);
         $user->setEnabled(true);
+        $user->setUsername('test');
+        $user->setEmail('test@example.org');
+        $user->setPassword('testtest');
+        $user->setApiToken('token');
 
-        $repo = $this->getMockBuilder('App\Entity\UserRepository')->disableOriginalConstructor()->getMock();
-        $em = $this->getMockBuilder('Doctrine\ORM\EntityManager')->disableOriginalConstructor()->getMock();
-        $updater = $this->getMockBuilder('App\Package\Updater')->disableOriginalConstructor()->getMock();
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $em->persist($package);
+        $em->persist($user);
+        $em->flush();
 
-        $repo->expects($this->once())
-            ->method('findOneBy')
-            ->with($this->equalTo(array('username' => 'test', 'apiToken' => 'token')))
-            ->will($this->returnValue($user));
+        $scheduler = $this->getMockBuilder('App\Service\Scheduler')->disableOriginalConstructor()->getMock();
 
-        static::$kernel->getContainer()->set('test.user_repo', $repo);
+        $scheduler->expects($this->once())
+            ->method('scheduleUpdate')
+            ->with($package);
+
         static::$kernel->getContainer()->set('doctrine.orm.entity_manager', $em);
-        static::$kernel->getContainer()->set('App\Package\Updater', $updater);
+        static::$kernel->getContainer()->set('App\Service\Scheduler', $scheduler);
 
         $payload = json_encode(array('repository' => array('url' => 'git://github.com/composer/composer')));
         $client->request('POST', '/api/github?username=test&apiToken=token', array('payload' => $payload));
@@ -131,5 +141,34 @@ class ApiControllerTest extends WebTestCase
             array('github', 'https://github.com', false),
             array('update-package', 'ssh://ghe.example.org/user/jjjjj.git', false),
         );
+    }
+
+    /**
+     * Executes a given command.
+     *
+     * @param string $command a command to execute
+     * @param bool $errorHandling
+     *
+     * @throws Exception when the return code is not 0.
+     */
+    protected function executeCommand(
+        $command,
+        $errorHandling = true
+    ) {
+        $output = array();
+
+        $returnCode = null;;
+
+        exec($command, $output, $returnCode);
+
+        if ($errorHandling && $returnCode !== 0) {
+            throw new Exception(
+                sprintf(
+                    'Error executing command "%s", return code was "%s".',
+                    $command,
+                    $returnCode
+                )
+            );
+        }
     }
 }

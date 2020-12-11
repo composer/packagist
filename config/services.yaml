@@ -82,9 +82,6 @@ services:
     App\Security\Provider\UserProvider:
         arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email']
 
-    App\Package\Updater:
-        public: true
-
     fos_user.util.user_manipulator:
         public: true
         class: App\Util\UserManipulator
