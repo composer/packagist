@@ -79,8 +79,8 @@ class ExploreController extends Controller
      */
     public function popularAction(Request $req, RedisClient $redis)
     {
+        $perPage = $req->query->getInt('per_page', 15);
         try {
-            $perPage = $req->query->getInt('per_page', 15);
             if ($perPage <= 0 || $perPage > 100) {
                 if ($req->getRequestFormat() === 'json') {
                     return new JsonResponse(array(

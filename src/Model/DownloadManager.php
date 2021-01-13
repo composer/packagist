@@ -160,6 +160,10 @@ class DownloadManager
 
         $args = ['downloads', 'downloads:'.$day, 'downloads:'.$month];
 
+        if (!$jobs) {
+            return;
+        }
+
         foreach ($jobs as $job) {
             $package = $job['id'];
             $version = $job['vid'];

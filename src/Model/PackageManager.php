@@ -12,6 +12,7 @@
 
 namespace App\Model;
 
+use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
 use App\Entity\Version;
@@ -31,16 +32,17 @@ use Symfony\Component\Mime\Email;
  */
 class PackageManager
 {
-    protected $doctrine;
-    protected $mailer;
-    protected $twig;
-    protected $logger;
-    protected $options;
-    protected $providerManager;
-    protected $algoliaClient;
-    protected $algoliaIndexName;
-    protected $githubWorker;
-    protected $metadataDir;
+    private ManagerRegistry $doctrine;
+    private MailerInterface $mailer;
+    private Environment $twig;
+    private LoggerInterface $logger;
+    private array $options;
+    private ProviderManager $providerManager;
+    private SearchClient $algoliaClient;
+    private string $algoliaIndexName;
+    private GitHubUserMigrationWorker $githubWorker;
+    private string $metadataDir;
+    private Client $redis;
 
     public function __construct(ManagerRegistry $doctrine, MailerInterface $mailer, Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir, Client $redis)
     {
@@ -126,7 +128,7 @@ class PackageManager
             $algolia = $this->algoliaClient;
             $index = $algolia->initIndex($indexName);
             $index->deleteObject($packageName);
-        } catch (\AlgoliaSearch\AlgoliaException $e) {
+        } catch (AlgoliaException $e) {
         }
     }
 

@@ -5,6 +5,9 @@
     "nikic/php-parser": {
         "version": "v4.10.2"
     },
+    "phpstan/phpstan": {
+        "version": "0.12.66"
+    },
     "symfony/asset": {
         "version": "v4.4.16"
     },

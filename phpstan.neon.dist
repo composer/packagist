@@ -1,0 +1,10 @@
+parameters:
+    level: 1
+
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+
+    paths:
+        - src/
+
+    ignoreErrors:
