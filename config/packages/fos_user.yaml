@@ -9,3 +9,5 @@ fos_user:
     profile:
         form:
             type: App\Form\Type\ProfileFormType
+    service:
+        mailer: App\FOSUB\Mailer
