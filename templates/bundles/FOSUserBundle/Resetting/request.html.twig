@@ -1,5 +1,6 @@
 {% extends "@FOSUser/layout.html.twig" %}
 
+{% set requiresRecaptcha = true %}
 {% trans_default_domain 'FOSUserBundle' %}
 
 {% block fos_user_header %}
@@ -9,7 +10,7 @@
 {% endblock %}
 
 {% block fos_user_content %}
-<form action="{{ path('fos_user_resetting_send_email') }}" method="POST" class="fos_user_resetting_request col-md-6">
+<form action="{{ path('fos_user_resetting_send_email') }}" method="POST" class="fos_user_resetting_request col-md-6" id="request_password">
     {% if invalid_username is defined %}
         <div class="alert alert-warning">
             <p>{{ 'resetting.request.invalid_username'|trans({'%username%': invalid_username}) }}</p>
@@ -24,6 +25,6 @@
         </div>
     </div>
 
-    <input type="submit" class="btn btn-block btn-inverse btn-lg" value="{{ 'resetting.request.submit'|trans }}" />
+    <input type="submit" class="btn btn-block btn-inverse btn-lg" id="_request_password_submit" value="{{ 'resetting.request.submit'|trans }}" />
 </form>
 {% endblock %}
