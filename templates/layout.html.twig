@@ -25,7 +25,7 @@
 
         <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist" />
 
-        {% if not app.user and requires_recaptcha(lastUsername|default) %}
+        {% if requiresRecaptcha|default(false) or (not app.user and requires_recaptcha(lastUsername|default)) %}
             <script src="https://www.google.com/recaptcha/api.js?render=explicit&onload=onloadRecaptchaCallback" async defer></script>
 
             <script type="text/javascript">
@@ -34,6 +34,12 @@
                         grecaptcha.render('_submit', {
                             'sitekey' : '{{ recaptcha_site_key }}',
                             'callback' : onPageLoginSubmit
+                        });
+                    }
+                    if (document.getElementById('_request_password_submit')) {
+                        grecaptcha.render('_request_password_submit', {
+                            'sitekey' : '{{ recaptcha_site_key }}',
+                            'callback' : onRequestPasswordSubmit
                         });
                     }
                     grecaptcha.render('_submit_mini', {
@@ -46,6 +52,9 @@
                 }
                 function onPageLoginSubmit(token) {
                     document.getElementById('page_login').submit();
+                }
+                function onRequestPasswordSubmit(token) {
+                    document.getElementById('request_password').submit();
                 }
             </script>
         {% endif %}
