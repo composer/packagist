@@ -8,7 +8,7 @@ twig:
     globals:
         google_analytics: '%google_analytics%'
         packagist_host: '%env(APP_HOSTNAME)%'
-        # TODO recaptcha_site_key: '%recaptcha_site_key%'
+        recaptcha_site_key: '%env(APP_RECAPTCHA_SITE_KEY)%'
         algolia:
           app_id: '%env(ALGOLIA_APP_ID)%'
           search_key: '%env(ALGOLIA_SEARCH_KEY)%'
