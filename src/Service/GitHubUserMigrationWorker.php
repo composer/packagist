@@ -117,6 +117,9 @@ class GitHubUserMigrationWorker
                     $this->logger->debug('Updating hook '.$hook['id']);
                     $this->request($token, 'PATCH', 'repos/'.$repoKey.'/hooks/'.$hook['id'], $hookData);
                     $changed = true;
+                } elseif (!$package->isAutoUpdated()) {
+                    // if the hook looks correct but package is not marked auto-updated, we do not mark it valid so it gets recreated below
+                    continue;
                 }
 
                 $hasValidHook = true;
