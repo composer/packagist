@@ -1,0 +1,59 @@
+name: "Continuous Integration"
+
+on:
+  - push
+  - pull_request
+
+env:
+  COMPOSER_FLAGS: "--ansi --no-interaction --no-progress --prefer-dist"
+  APP_ENV: test
+
+jobs:
+  tests:
+    name: "CI"
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v2"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "none"
+          extensions: "intl, zip, apcu"
+          php-version: "7.4"
+          tools: composer
+
+      - name: Get composer cache directory
+        id: composercache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composercache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: "Start MySQL"
+        run: |
+          sudo systemctl start mysql.service
+          echo 'DATABASE_URL="mysql://root:root@127.0.0.1:3306/packagist_test?serverVersion=8.0"' > .env.test.local
+
+      - name: "Install dependencies"
+        run: "composer install ${{ env.COMPOSER_FLAGS }}"
+
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: 6
+
+      - name: "Setup DB"
+        run: |
+          bin/console doctrine:database:create --env=test -n
+          bin/console doctrine:schema:create --env=test -n
+
+      - name: "Run tests"
+        run: "composer test"

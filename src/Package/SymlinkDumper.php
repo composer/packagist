@@ -550,7 +550,7 @@ class SymlinkDumper
             foreach ($finder as $vendorDir) {
                 foreach (glob(((string) $vendorDir).'/*.json') as $file) {
                     if (!preg_match('{/([^/]+/[^/]+?)(~dev)?\.json$}', strtr($file, '\\', '/'), $match)) {
-                        throw new \LogicException('Could not match package name from '.$path);
+                        throw new \LogicException('Could not match package name from '.$file);
                     }
 
                     if (!isset($packageNames[$match[1]])) {

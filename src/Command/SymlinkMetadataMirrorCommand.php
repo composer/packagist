@@ -23,6 +23,10 @@ use Symfony\Component\Filesystem\Filesystem;
  */
 class SymlinkMetadataMirrorCommand extends Command
 {
+    private string $webDir;
+    private string $buildDir;
+    private array $awsMeta;
+
     public function __construct(string $webDir, string $metadataDir, array $awsMetadata)
     {
         $this->webDir = realpath($webDir);

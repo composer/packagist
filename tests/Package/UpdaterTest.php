@@ -102,10 +102,12 @@ EOR;
         $readmeHtml = <<<EOR
 
 <p>Why you should use this package:</p>
-<ul><li>it is easy to use</li>
+<ul>
+<li>it is easy to use</li>
 <li>no overhead</li>
 <li>minimal requirements</li>
 </ul>
+
 EOR;
 
         $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
@@ -134,6 +136,7 @@ EOR;
         $readmeHtml = <<<EOR
 <p>Lorem ipsum dolor sit amet.</p>
 <h1>some title</h1>
+
 EOR;
 
         $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');

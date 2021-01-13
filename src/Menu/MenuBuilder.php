@@ -4,12 +4,13 @@ namespace App\Menu;
 
 use Knp\Menu\FactoryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\Translation\TranslatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class MenuBuilder
 {
-    private $factory;
-    private $username;
+    private FactoryInterface $factory;
+    private string $username;
+    private TranslatorInterface $translator;
 
     /**
      * @param FactoryInterface      $factory
