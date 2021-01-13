@@ -196,7 +196,7 @@ class PackageController extends Controller
         $package->addMaintainer($user);
 
         $form->handleRequest($req);
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $em = $this->doctrine->getManager();
                 $em->persist($package);
@@ -232,7 +232,7 @@ class PackageController extends Controller
         $package->addMaintainer($user);
 
         $form->handleRequest($req);
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             list(, $name) = explode('/', $package->getName(), 2);
 
             $existingPackages = $this->doctrine
@@ -836,7 +836,7 @@ class PackageController extends Controller
             throw new AccessDeniedException;
         }
         $form->submit($req->request->get('form'));
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             if ($req->getSession()->isStarted()) {
                 $req->getSession()->save();
             }
@@ -878,7 +878,7 @@ class PackageController extends Controller
         );
 
         $form->handleRequest($req);
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $em = $this->doctrine->getManager();
                 $user = $form->getData()->getUser();
@@ -934,7 +934,7 @@ class PackageController extends Controller
         );
 
         $removeMaintainerForm->handleRequest($req);
-        if ($removeMaintainerForm->isValid()) {
+        if ($removeMaintainerForm->isSubmitted() && $removeMaintainerForm->isValid()) {
             try {
                 $em = $this->doctrine->getManager();
                 $user = $removeMaintainerForm->getData()->getUser();
@@ -982,7 +982,7 @@ class PackageController extends Controller
             ->getForm();
 
         $form->handleRequest($req);
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             // Force updating of packages once the package is viewed after the redirect.
             $package->setCrawledAt(null);
 
@@ -1018,7 +1018,7 @@ class PackageController extends Controller
 
         $form = $this->createForm(AbandonedType::class);
         $form->handleRequest($request);
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $package->setAbandoned(true);
             $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', $form->get('replacement')->getData()));
             $package->setIndexedAt(null);

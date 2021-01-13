@@ -142,7 +142,7 @@ class WebController extends Controller
         }
 
         $form->handleRequest($req);
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $query = $form->getData()->getQuery();
         }
 

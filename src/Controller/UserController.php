@@ -116,7 +116,7 @@ class UserController extends Controller
         $form = $this->createFormBuilder(array())->getForm();
 
         $form->submit($req->request->get('form'));
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $user->addRole('ROLE_SPAMMER');
             $user->setEnabled(false);
             $userManager->updateUser($user);
@@ -317,7 +317,7 @@ class UserController extends Controller
         $form = $this->createFormBuilder(array())->getForm();
 
         $form->submit($req->request->get('form'));
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $em = $this->doctrine->getManager();
             $em->remove($user);
             $em->flush();
