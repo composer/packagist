@@ -31,7 +31,6 @@ class OrderByType extends AbstractType
                 'asc' => 'asc',
                 'desc' => 'desc'
             ),
-            'choices_as_values' => true,
         ));
     }
 
