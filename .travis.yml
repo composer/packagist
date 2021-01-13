@@ -22,10 +22,8 @@ matrix:
   fast_finish: true
 
 before_install:
-    - cp app/config/parameters.yml.dist app/config/parameters.yml
-    - 'echo "    github.client_id: $GH_CLIENT_ID" >> app/config/parameters.yml'
-    - 'echo "    github.client_secret: $GH_CLIENT_SECRET" >> app/config/parameters.yml'
-    - composer self-update --2
+    - 'echo "APP_GITHUB_CLIENT_ID=$GH_CLIENT_ID" >> .env.local'
+    - 'echo "APP_GITHUB_CLIENT_SECRET=$GH_CLIENT_SECRET" >> .env.local'
 
 install:
     - composer install
