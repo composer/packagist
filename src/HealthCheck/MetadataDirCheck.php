@@ -25,8 +25,7 @@ class MetadataDirCheck extends AbstractCheck
         }
 
         if ($awsMeta['primary'] && $awsMeta['has_instance_store']) {
-            // TODO in symfony4, use fromShellCommandline
-            $proc = new Process('lsblk -io NAME,TYPE,SIZE,MOUNTPOINT,FSTYPE,MODEL | grep Instance | grep sdeph');
+            $proc = Process::fromShellCommandline('lsblk -io NAME,TYPE,SIZE,MOUNTPOINT,FSTYPE,MODEL | grep Instance | grep sdeph');
             if (0 !== $proc->run()) {
                 return false;
             }
@@ -48,7 +47,7 @@ class MetadataDirCheck extends AbstractCheck
                 }
             }
 
-            $packagesJson = __DIR__ . '/../../../../web/packages.json';
+            $packagesJson = __DIR__ . '/../../web/packages.json';
 
             if (!file_exists($packagesJson)) {
                 return new Failure($packagesJson.' not found on primary server');
@@ -57,7 +56,7 @@ class MetadataDirCheck extends AbstractCheck
             return new Success('Primary server metadata has been dumped');
         }
 
-        $packagesJson = __DIR__ . '/../../../../web/packages.json';
+        $packagesJson = __DIR__ . '/../../web/packages.json';
         if (!file_exists($packagesJson)) {
             return new Failure($packagesJson.' not found');
         }
@@ -67,8 +66,8 @@ class MetadataDirCheck extends AbstractCheck
         if (substr(file_get_contents($packagesJson), 0, 1) !== '{') {
             return new Failure($packagesJson.' does not look like it has json in it');
         }
-        $metaDir = __DIR__ . '/../../../../web/p';
-        $metaV2Dir = __DIR__ . '/../../../../web/p2';
+        $metaDir = __DIR__ . '/../../web/p';
+        $metaV2Dir = __DIR__ . '/../../web/p2';
         if (!is_dir($metaDir)) {
             return new Failure($metaDir.' not found');
         }
