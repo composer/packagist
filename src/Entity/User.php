@@ -20,6 +20,8 @@ use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Symfony\Component\Validator\Constraints as Assert;
 use FOS\UserBundle\Model\User as BaseUser;
+use Symfony\Component\Security\Core\User\EquatableInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @ORM\Entity(repositoryClass="App\Entity\UserRepository")
@@ -57,7 +59,7 @@ use FOS\UserBundle\Model\User as BaseUser;
  *     )
  * })
  */
-class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface
+class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface, EquatableInterface
 {
     /**
      * @ORM\Id
@@ -373,5 +375,34 @@ class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface
     public function setBackupCode(string $code): void
     {
         $this->backupCode = $code;
+    }
+
+    public function isEqualTo(UserInterface $user)
+    {
+        if (!$user instanceof User) {
+            return false;
+        }
+
+        if ($this->getEmailCanonical() !== $user->getEmailCanonical()) {
+            return false;
+        }
+
+        if ($this->getUsername() !== $user->getUsername()) {
+            return false;
+        }
+
+        if ($this->getPassword() !== $user->getPassword()) {
+            return false;
+        }
+
+        if ($this->isEnabled() !== $user->isEnabled()) {
+            return false;
+        }
+
+        if ($this->getSalt() !== $user->getSalt()) {
+            return false;
+        }
+
+        return (!$this->getPassword() && !$user->getPassword()) || ($this->getPassword() && $user->getPassword() && hash_equals($this->getPassword(), $user->getPassword()));
     }
 }
