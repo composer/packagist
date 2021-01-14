@@ -167,7 +167,7 @@ class Package
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private ?string $replacementPackage;
+    private ?string $replacementPackage = null;
 
     /**
      * @ORM\Column(type="boolean", options={"default"=false})

@@ -99,22 +99,22 @@ class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface, 
     /**
      * @ORM\Column(type="string", length=20, nullable=true)
      */
-    private ?string $apiToken;
+    private ?string $apiToken = null;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private ?string $githubId;
+    private ?string $githubId = null;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private ?string $githubToken;
+    private ?string $githubToken = null;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private ?string $githubScope;
+    private ?string $githubScope = null;
 
     /**
      * @ORM\Column(type="boolean", options={"default"=true})
