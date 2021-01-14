@@ -224,7 +224,7 @@
                                     {{ securityAdvisories|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if package.gitHubStars is not null %}
+                            {% if 'github.com' in repoUrl and package.gitHubStars is not null %}
                                 <p>
                                     <span>
                                         <a href="{{ repoUrl }}/stargazers">Stars</a>:
@@ -232,14 +232,14 @@
                                     {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if package.gitHubWatches is not null %}
+                            {% if 'github.com' in repoUrl and package.gitHubWatches is not null %}
                                 <p>
                                     <span>
                                         <a href="{{ repoUrl }}/watchers">Watchers</a>:
                                     </span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if package.gitHubForks is not null %}
+                            {% if 'github.com' in repoUrl and package.gitHubForks is not null %}
                                 <p>
                                     <span>
                                         <a href="{{ repoUrl }}/network">Forks</a>:

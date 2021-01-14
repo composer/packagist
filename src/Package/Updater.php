@@ -531,6 +531,11 @@ class Updater
      */
     private function updateReadme(IOInterface $io, Package $package, VcsRepository $repository)
     {
+        $package->setGitHubStars(null);
+        $package->setGitHubWatches(null);
+        $package->setGitHubForks(null);
+        $package->setGitHubOpenIssues(null);
+
         try {
             $driver = $repository->getDriver();
             $composerInfo = $driver->getComposerInformation($driver->getRootIdentifier());
