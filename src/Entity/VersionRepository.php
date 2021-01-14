@@ -15,6 +15,7 @@ namespace App\Entity;
 use Doctrine\DBAL\Connection;
 use Predis\Client;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -32,6 +33,11 @@ class VersionRepository extends ServiceEntityRepository
         'devRequire',
         'suggest',
     );
+
+    public function getEntityManager(): EntityManager
+    {
+        return parent::getEntityManager();
+    }
 
     public function __construct(ManagerRegistry $registry, Client $redisCache)
     {
@@ -60,12 +66,15 @@ class VersionRepository extends ServiceEntityRepository
         $em->remove($version);
     }
 
-    public function refreshVersions($versions)
+    /**
+     * @param Version[] $versions
+     * @return Version[]
+     */
+    public function refreshVersions(array $versions): array
     {
         $versionIds = [];
         foreach ($versions as $version) {
             $versionIds[] = $version->getId();
-            $this->getEntityManager()->detach($version);
         }
 
         $refreshedVersions = $this->findBy(['id' => $versionIds]);
@@ -91,7 +100,6 @@ class VersionRepository extends ServiceEntityRepository
         $em = $this->getEntityManager();
         foreach ($versions as $version) {
             $res[$version->getVersion()] = $version->toArray($versionData, $serializeForApi);
-            $em->detach($version);
         }
 
         return $res;

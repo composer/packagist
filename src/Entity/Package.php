@@ -202,21 +202,23 @@ class Package
 
     public function toArray(VersionRepository $versionRepo, bool $serializeForApi = false)
     {
+        $maintainers = array();
+        foreach ($this->getMaintainers() as $maintainer) {
+            /** @var $maintainer User */
+            $maintainers[] = $maintainer->toArray();
+        }
+
         $versions = array();
         $partialVersions = $this->getVersions()->toArray();
-
         while ($partialVersions) {
+            $versionRepo->getEntityManager()->clear();
+
             $slice = array_splice($partialVersions, 0, 100);
             $fullVersions = $versionRepo->refreshVersions($slice);
             $versionData = $versionRepo->getVersionData(array_map(function ($v) { return $v->getId(); }, $fullVersions));
             $versions = array_merge($versions, $versionRepo->detachToArray($fullVersions, $versionData, $serializeForApi));
         }
 
-        $maintainers = array();
-        foreach ($this->getMaintainers() as $maintainer) {
-            /** @var $maintainer User */
-            $maintainers[] = $maintainer->toArray();
-        }
         $data = array(
             'name' => $this->getName(),
             'description' => $this->getDescription(),
