@@ -8,6 +8,9 @@
     "phpstan/phpstan": {
         "version": "0.12.66"
     },
+    "phpstan/phpstan-doctrine": {
+        "version": "0.12.27"
+    },
     "symfony/asset": {
         "version": "v4.4.16"
     },

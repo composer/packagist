@@ -88,6 +88,7 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^0.12.66",
+        "phpstan/phpstan-doctrine": "^0.12.27",
         "symfony/browser-kit": "^4.4",
         "symfony/css-selector": "^4.4",
         "symfony/debug-bundle": "^4.4",

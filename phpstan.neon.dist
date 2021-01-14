@@ -1,3 +1,9 @@
+# run with: bin/phpstan analyse
+
+includes:
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-doctrine/rules.neon
+
 parameters:
     level: 1
 
@@ -6,5 +12,8 @@ parameters:
 
     paths:
         - src/
+
+    doctrine:
+        objectManagerLoader: tests/object-manager.php
 
     ignoreErrors:
