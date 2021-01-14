@@ -222,7 +222,7 @@ class PackageRepository extends ServiceEntityRepository
         }
     }
 
-    public function getPartialPackageByNameWithVersions($name)
+    public function getPartialPackageByNameWithVersions($name): Package
     {
         // first fetch a partial package including joined versions/maintainers, that way
         // the join is cheap and heavy data (description, readme) is not duplicated for each joined row

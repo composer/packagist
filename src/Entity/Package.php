@@ -165,10 +165,9 @@ class Package
     private $abandoned = false;
 
     /**
-     * @var string
      * @ORM\Column(type="string", length=255, nullable=true)
      */
-    private $replacementPackage;
+    private ?string $replacementPackage;
 
     /**
      * @ORM\Column(type="boolean", options={"default"=false})
@@ -932,18 +931,12 @@ class Package
         $this->abandoned = $abandoned;
     }
 
-    /**
-     * @return string
-     */
-    public function getReplacementPackage()
+    public function getReplacementPackage(): ?string
     {
         return $this->replacementPackage;
     }
 
-    /**
-     * @param string $replacementPackage
-     */
-    public function setReplacementPackage($replacementPackage)
+    public function setReplacementPackage(?string $replacementPackage)
     {
         $this->replacementPackage = $replacementPackage;
     }

@@ -647,7 +647,6 @@ class PackageController extends Controller
         $repo = $this->doctrine->getRepository(Package::class);
 
         try {
-            /** @var $package Package */
             $package = $repo->getPartialPackageByNameWithVersions($name);
         } catch (NoResultException $e) {
             if ('json' === $req->getRequestFormat()) {
@@ -855,10 +854,10 @@ class PackageController extends Controller
      */
     public function createMaintainerAction(Request $req, $name, LoggerInterface $logger)
     {
-        /** @var $package Package */
+        /** @var Package $package */
         $package = $this->doctrine
             ->getRepository(Package::class)
-            ->findOneByName($name);
+            ->findOneBy(['name' => $name]);
 
         if (!$package) {
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
@@ -915,7 +914,7 @@ class PackageController extends Controller
         /** @var Package $package */
         $package = $this->doctrine
             ->getRepository(Package::class)
-            ->findOneByName($name);
+            ->findOneBy(['name' => $name]);
 
         if (!$package) {
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');

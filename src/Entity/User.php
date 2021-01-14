@@ -98,33 +98,28 @@ class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface, 
 
     /**
      * @ORM\Column(type="string", length=20, nullable=true)
-     * @var string
      */
-    private $apiToken;
+    private ?string $apiToken;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @var string
      */
-    private $githubId;
+    private ?string $githubId;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @var string
      */
-    private $githubToken;
+    private ?string $githubToken;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @var string
      */
-    private $githubScope;
+    private ?string $githubScope;
 
     /**
      * @ORM\Column(type="boolean", options={"default"=true})
-     * @var string
      */
-    private $failureNotifications = true;
+    private bool $failureNotifications = true;
 
     /**
      * @ORM\Column(name="totpSecret", type="string", nullable=true)

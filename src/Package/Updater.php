@@ -14,7 +14,6 @@ namespace App\Package;
 
 use cebe\markdown\GithubMarkdown;
 use Composer\Package\AliasPackage;
-use Composer\Package\PackageInterface;
 use Composer\Repository\RepositoryInterface;
 use Composer\Repository\VcsRepository;
 use Composer\Repository\Vcs\GitHubDriver;
@@ -33,6 +32,7 @@ use App\Model\ProviderManager;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Service\VersionCache;
+use Composer\Package\CompletePackageInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -295,7 +295,7 @@ class Updater
      *                    - version (normalized version from the composer package)
      *                    - object (Version instance if it was updated)
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, PackageInterface $data, $flags, $rootIdentifier)
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, $flags, $rootIdentifier)
     {
         $em = $this->doctrine->getManager();
         $version = new Version();

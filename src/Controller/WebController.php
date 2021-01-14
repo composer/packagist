@@ -67,7 +67,7 @@ class WebController extends Controller
     {
         $q = $req->query->get('query');
         if ($q) {
-            $package = $this->doctrine->getRepository(Package::class)->findOneByName($q);
+            $package = $this->doctrine->getRepository(Package::class)->findOneBy(['name' => $q]);
             if ($package) {
                 return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
             }

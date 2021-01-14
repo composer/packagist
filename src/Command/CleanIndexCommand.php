@@ -17,17 +17,18 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Service\Locker;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 
 class CleanIndexCommand extends Command
 {
     private SearchClient $algolia;
     private Locker $locker;
-    private ManagerRegistry $doctrine;
+    private EntityManagerInterface $doctrine;
     private string $algoliaIndexName;
     private string $cacheDir;
 
-    public function __construct(SearchClient $algolia, Locker $locker, ManagerRegistry $doctrine, string $algoliaIndexName, string $cacheDir)
+    public function __construct(SearchClient $algolia, Locker $locker, EntityManagerInterface $doctrine, string $algoliaIndexName, string $cacheDir)
     {
         $this->algolia = $algolia;
         $this->locker = $locker;
@@ -92,7 +93,7 @@ class CleanIndexCommand extends Command
                     }
                 }
 
-                if (!$this->hasProviders($this->doctrine, $result['name'])) {
+                if (!$this->hasProviders($result['name'])) {
                     if ($verbose) {
                         $output->writeln('Deleting '.$result['objectID'].' which has no provider anymore');
                     }
@@ -107,9 +108,9 @@ class CleanIndexCommand extends Command
         return 0;
     }
 
-    private function hasProviders(ManagerRegistry $doctrine, string $provided): bool
+    private function hasProviders(string $provided): bool
     {
-        return (bool) $doctrine->getManager()->getConnection()->fetchColumn(
+        return (bool) $this->doctrine->getConnection()->fetchOne(
             'SELECT COUNT(p.id) as count
                 FROM package p
                 JOIN package_version pv ON p.id = pv.package_id

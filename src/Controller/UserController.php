@@ -274,7 +274,7 @@ class UserController extends Controller
         try {
             $package = $this->doctrine
                 ->getRepository(Package::class)
-                ->findOneByName($package);
+                ->findOneBy(['name' => $package]);
         } catch (NoResultException $e) {
             throw new NotFoundHttpException('The given package "'.$package.'" was not found.');
         }

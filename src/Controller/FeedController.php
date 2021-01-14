@@ -49,7 +49,6 @@ class FeedController extends Controller
      */
     public function packagesAction(Request $req)
     {
-        /** @var $repo \App\Entity\PackageRepository */
         $repo = $this->doctrine->getRepository(Package::class);
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForNewestPackages()
@@ -76,7 +75,6 @@ class FeedController extends Controller
      */
     public function releasesAction(Request $req)
     {
-        /** @var $repo \App\Entity\VersionRepository */
         $repo = $this->doctrine->getRepository(Version::class);
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForLatestVersionWithPackage()
@@ -103,7 +101,6 @@ class FeedController extends Controller
      */
     public function vendorAction(Request $req, $vendor)
     {
-        /** @var $repo \App\Entity\VersionRepository */
         $repo = $this->doctrine->getRepository(Version::class);
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForLatestVersionWithPackage($vendor)
@@ -130,7 +127,6 @@ class FeedController extends Controller
      */
     public function packageAction(Request $req, $package)
     {
-        /** @var $repo \App\Entity\VersionRepository */
         $repo = $this->doctrine->getRepository(Version::class);
         $packages = $this->getLimitedResults(
             $repo->getQueryBuilderForLatestVersionWithPackage(null, $package)
