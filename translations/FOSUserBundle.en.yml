@@ -1,10 +1,11 @@
 # Password resetting
 resetting:
-    email: |
-        Reset Password
-        Hello %username%
+    email:
+        subject: Reset Password
+        message: |
+            Hello,
 
-        To reset your password - please visit %confirmationUrl%
+            To reset your password - please visit %confirmationUrl%
 
-        Regards,
-        The Packagist Team
+            Regards,
+            The Packagist Team
