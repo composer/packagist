@@ -7,6 +7,7 @@ use Composer\Semver\Constraint\Constraint;
 use DateTimeImmutable;
 use Doctrine\ORM\NoResultException;
 use App\Entity\Download;
+use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageRepository;
 use App\Entity\SecurityAdvisory;
@@ -625,6 +626,27 @@ class PackageController extends Controller
                 || $package->getMaintainers()->contains($this->getUser())
             )) {
             $data['deleteVersionCsrfToken'] = $csrfTokenManager->getToken('delete_version');
+            $lastJob = $this->doctrine->getRepository(Job::class)->findOneBy(['packageId' => $package->getId(), 'status' => [Job::STATUS_COMPLETED, Job::STATUS_ERRORED, Job::STATUS_FAILED], 'type' => 'package:updates'], ['createdAt' => 'DESC']);
+            $data['lastJobWarning'] = null;
+            $data['lastJobStatus'] = $lastJob ? $lastJob->getStatus() : null;
+            $data['lastJobMsg'] = $lastJob ? $lastJob->getResult()['message'] ?? '' : null;
+            $data['lastJobDetails'] = $lastJob ? $lastJob->getResult()['details'] ?? '' : null;
+            if ($lastJob) {
+                switch ($lastJob->getStatus()) {
+                    case Job::STATUS_COMPLETED:
+                        if (false !== strpos($data['lastJobDetails'], 'does not match version')) {
+                            $data['lastJobWarning'] = 'Some tags were ignored because of a version mismatch in composer.json, <a href="https://blog.packagist.com/tagged-a-new-release-for-composer-and-it-wont-show-up-on-packagist/">read more</a>.';
+                        }
+                        break;
+                    case Job::STATUS_FAILED:
+                        $data['lastJobWarning'] = 'The last update failed, see the log for more infos.';
+                        break;
+                    case Job::STATUS_ERRORED:
+                        $data['lastJobWarning'] = 'The last update failed in an unexpected way.';
+                        break;
+                }
+            }
+
         }
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');

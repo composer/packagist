@@ -37,7 +37,7 @@
         {% else %}
             <p class="auto-update-success">This package is auto-updated.</p>
         {% endif %}
-        <p>Last update: {{ package.getUpdatedAt()|date('Y-m-d H:i:s') }} UTC</p>
+        <p>Last update: {{ package.getUpdatedAt()|date('Y-m-d H:i:s') }} UTC {% if lastJobMsg is not empty %}<a href="#" data-msg="{{ lastJobMsg }}" data-details="{{ lastJobDetails }}" class="view-log">View Log</a>{% endif %}</p>
         {% if showUpdateButton %}
             <form class="force-update action" action="{{ path('update_package', {name: package.name, type: 'public_update'}) }}" method="PUT">
                 <input type="hidden" name="update" value="1" />

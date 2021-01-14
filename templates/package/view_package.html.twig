@@ -42,7 +42,7 @@
                             {% if is_favorite is defined %}
                                 <i class="mark-favorite glyphicon glyphicon-star {% if is_favorite %}is-starred{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></i>
                             {% endif %}
-                            <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}/</a>{{ package.packageName }}
+                            <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}<span class="hidden"> </span>/</a><span class="hidden"> </span>{{ package.packageName }}
                         </h2>
                     </div>
                 </div>
@@ -122,6 +122,9 @@
                                 </form>
                             {% endif %}
                         </div>
+                        {% if lastJobWarning is not empty %}
+                            <p class="alert alert-danger">{{ lastJobWarning|raw }} <br /> <a href="#" data-msg="{{ lastJobMsg }}" data-details="{{ lastJobDetails }}" class="view-log">View Last Update Log</a></p>
+                        {% endif %}
                     {% endif %}
                 </div>
 
@@ -318,7 +321,9 @@
                             package: package,
                             showUpdated: true,
                             showUpdateButton: not hasActions and app.user and not package.wasUpdatedInTheLast24Hours(),
-                            hasVersionSecurityAdvisories: hasVersionSecurityAdvisories
+                            hasVersionSecurityAdvisories: hasVersionSecurityAdvisories,
+                            lastJobMsg: lastJobMsg|default(null),
+                            lastJobDetails: lastJobDetails|default(null),
                         } %}
                     </div>
                 </div>

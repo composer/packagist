@@ -171,6 +171,12 @@
             }, 'request-sent');
         }
     });
+    $('.package .view-log').on('click', function (e) {
+        e.preventDefault();
+        const message = e.target.dataset.msg;
+        const details = e.target.dataset.details;
+        humane.log([message, details], {timeout: 0, clickToClose: true});
+    });
     $('.package .delete-version .submit').on('click', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
