@@ -11,6 +11,17 @@ monolog:
             path: "%kernel.logs_dir%/%kernel.environment%.log"
             level: debug
             include_stacktraces: true
+
+        deprecation_filter:
+            type: filter
+            handler: deprecation
+            max_level: info
+            channels: ["php"]
+            process_psr_3_messages: false
+        deprecation:
+            type: stream
+            path: "%kernel.logs_dir%/deprecations.log"
+
         console_debug:
             type:   console
             process_psr_3_messages: false

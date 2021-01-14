@@ -256,6 +256,7 @@ class ApiController extends Controller
         if ($jobs) {
             if (!$request->headers->get('User-Agent')) {
                 $this->logger->error('Missing UA for '.$request->getContent().' (from '.$request->getClientIp().')');
+                $statsd->increment('installs:missing-ua');
 
                 return new JsonResponse(array('status' => 'success'), 201);
             }
@@ -265,6 +266,7 @@ class ApiController extends Controller
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
             if (!$uaParser->getComposerVersion()) {
                 $this->logger->error('Could not parse UA: '.$_SERVER['HTTP_USER_AGENT'].' with '.$request->getContent().' from '.$request->getClientIp());
+                $statsd->increment('installs:invalid-ua');
             } else {
                 $statsd->increment('installs', 1, 1, [
                     'composer' => $uaParser->getComposerVersion() ?: 'unknown',
