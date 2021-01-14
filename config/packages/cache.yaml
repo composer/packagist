@@ -5,3 +5,4 @@ framework:
         default_redis_provider: snc_redis.cache
         pools:
             doctrine.cache: null
+        prefix_seed: packagist
