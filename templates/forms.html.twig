@@ -22,7 +22,7 @@
                 {{-
                 error.messagePluralization is null
                 ? error.messageTemplate|trans(error.messageParameters, 'validators')
-                : error.messageTemplate|transchoice(error.messagePluralization, error.messageParameters, 'validators')
+                : error.messageTemplate|trans(error.messagePluralization, error.messageParameters, 'validators')
                 -}}
             </span>
         {%- endfor -%}

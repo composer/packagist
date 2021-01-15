@@ -23,8 +23,8 @@ services:
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
             # services
-            $redis: '@snc_redis.default_client'
-            $redisCache: '@snc_redis.cache_client'
+            $redis: '@snc_redis.default'
+            $redisCache: '@snc_redis.cache'
             $recaptchaVerifier: "@beelab_recaptcha2.verifier"
 
             # params
@@ -77,7 +77,7 @@ services:
         arguments: [ '@fos_user.util.token_generator' ]
 
     App\Package\SymlinkDumper:
-        arguments: [ '@doctrine', '@filesystem', '@router', '@snc_redis.default_client', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%', '%aws_metadata%', '@Graze\DogStatsD\Client' ]
+        arguments: [ '@doctrine', '@filesystem', '@router', '@snc_redis.default', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%', '%aws_metadata%', '@Graze\DogStatsD\Client' ]
 
     App\Security\Provider\UserProvider:
         arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email']
@@ -139,7 +139,7 @@ services:
 
     App\Service\QueueWorker:
         arguments:
-            - "@snc_redis.default_client"
+            - "@snc_redis.default"
             - "@doctrine"
             - "@logger"
             - 'package:updates': '@App\Service\UpdaterWorker'
