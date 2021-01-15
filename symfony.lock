@@ -195,6 +195,9 @@
     "symfony/options-resolver": {
         "version": "v4.4.16"
     },
+    "symfony/polyfill-intl-grapheme": {
+        "version": "v1.22.0"
+    },
     "symfony/process": {
         "version": "v4.4.16"
     },
@@ -250,6 +253,9 @@
     },
     "symfony/stopwatch": {
         "version": "v4.4.16"
+    },
+    "symfony/string": {
+        "version": "v5.2.1"
     },
     "symfony/templating": {
         "version": "v4.4.16"
@@ -328,5 +334,8 @@
     },
     "twig/extra-bundle": {
         "version": "v3.1.1"
+    },
+    "twig/string-extra": {
+        "version": "v3.2.1"
     }
 }

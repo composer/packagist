@@ -45,6 +45,8 @@
         "graze/dog-statsd": "^0.4.2",
         "hwi/oauth-bundle": "^1",
         "knplabs/knp-menu-bundle": "^3",
+        "laminas/laminas-diagnostics": "^1.6",
+        "laminas/laminas-feed": "^2.13",
         "nelmio/cors-bundle": "^1.4",
         "nelmio/security-bundle": "^2.4",
         "pagerfanta/pagerfanta": "^2.4",
@@ -78,11 +80,9 @@
         "symfony/validator": "4.4.*",
         "symfony/web-link": "4.4.*",
         "symfony/yaml": "4.4.*",
-        "twig/extensions": "^1.0",
         "twig/extra-bundle": "^2.12|^3.0",
-        "twig/twig": "^2.12|^3.0",
-        "laminas/laminas-feed": "^2.13",
-        "laminas/laminas-diagnostics": "^1.6"
+        "twig/string-extra": "^3.2",
+        "twig/twig": "^2.12|^3.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^0.12.66",
