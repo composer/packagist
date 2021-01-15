@@ -5,7 +5,7 @@ services:
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
             # services
-            $redis: '@snc_redis.default_client'
+            $redis: '@snc_redis.default'
 
     App\Service\Scheduler:
         public: true
