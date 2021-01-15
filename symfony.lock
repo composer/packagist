@@ -11,17 +11,8 @@
     "laminas/laminas-feed": {
         "version": "2.12.3"
     },
-    "laminas/laminas-servicemanager": {
-        "version": "2.7.11"
-    },
     "laminas/laminas-stdlib": {
         "version": "3.3.1"
-    },
-    "laminas/laminas-uri": {
-        "version": "2.8.0"
-    },
-    "laminas/laminas-validator": {
-        "version": "2.14.0"
     },
     "laminas/laminas-zendframework-bridge": {
         "version": "1.1.1"

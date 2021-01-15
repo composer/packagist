@@ -82,8 +82,6 @@
         "twig/extra-bundle": "^2.12|^3.0",
         "twig/twig": "^2.12|^3.0",
         "laminas/laminas-feed": "^2.13",
-        "laminas/laminas-servicemanager": "^3.6",
-        "laminas/laminas-uri": "^2.0",
         "laminas/laminas-diagnostics": "^1.6"
     },
     "require-dev": {
