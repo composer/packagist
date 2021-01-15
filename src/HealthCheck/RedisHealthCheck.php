@@ -2,22 +2,27 @@
 
 namespace App\HealthCheck;
 
-use ZendDiagnostics\Check\AbstractCheck;
-use ZendDiagnostics\Result\Failure;
-use ZendDiagnostics\Result\Success;
-use ZendDiagnostics\Result\Warning;
+use Laminas\Diagnostics\Check\CheckInterface;
+use Laminas\Diagnostics\Result\Failure;
+use Laminas\Diagnostics\Result\ResultInterface;
+use Laminas\Diagnostics\Result\Success;
+use Laminas\Diagnostics\Result\Warning;
 
-class RedisHealthCheck extends AbstractCheck
+class RedisHealthCheck implements CheckInterface
 {
-    /** @var \Predis\Client */
-    private $redis;
+    private \Predis\Client $redis;
 
     public function __construct(\Predis\Client $redis)
     {
         $this->redis = $redis;
     }
 
-    public function check()
+    public function getLabel(): string
+    {
+        return 'Check if Redis has enough memory.';
+    }
+
+    public function check(): ResultInterface
     {
         try {
             $info = $this->redis->info();

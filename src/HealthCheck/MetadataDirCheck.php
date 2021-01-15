@@ -2,20 +2,24 @@
 
 namespace App\HealthCheck;
 
-use ZendDiagnostics\Check\AbstractCheck;
-use ZendDiagnostics\Result\Failure;
-use ZendDiagnostics\Result\Success;
-use ZendDiagnostics\Result\Warning;
+use Laminas\Diagnostics\Check\CheckInterface;
+use Laminas\Diagnostics\Result\Failure;
+use Laminas\Diagnostics\Result\ResultInterface;
+use Laminas\Diagnostics\Result\Success;
 use Symfony\Component\Process\Process;
 
-class MetadataDirCheck extends AbstractCheck
+class MetadataDirCheck implements CheckInterface
 {
-    /** @var array */
-    private $awsMeta;
+    private array $awsMeta;
 
     public function __construct(array $awsMetadata)
     {
         $this->awsMeta = $awsMetadata;
+    }
+
+    public function getLabel(): string
+    {
+        return 'Check if Packagist metadata dir is present.';
     }
 
     public static function isMetadataStoreMounted(array $awsMeta): bool
@@ -34,7 +38,7 @@ class MetadataDirCheck extends AbstractCheck
         return true;
     }
 
-    public function check()
+    public function check(): ResultInterface
     {
         if (empty($this->awsMeta)) {
             return new Success('No AWS metadata given');
