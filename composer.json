@@ -19,7 +19,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/jethrohicks/FOSUserBundle.git"
+            "url": "https://github.com/Seldaek/FOSUserBundle.git"
         }
     ],
     "support": {
@@ -36,12 +36,12 @@
         "composer/composer": "^2.0@dev",
         "composer/package-versions-deprecated": "1.11.99.1",
         "doctrine/annotations": "^1.0",
-        "doctrine/common": "^2.13",
+        "doctrine/common": "^3",
         "doctrine/doctrine-bundle": "^2.2",
         "doctrine/orm": "^2.7",
         "endroid/qr-code-bundle": "^3.3",
         "ezyang/htmlpurifier": "^4.6",
-        "friendsofsymfony/user-bundle": "dev-bugfix#637637ad99d07c3c59a11f4d030a08e514472c03 as 2.99",
+        "friendsofsymfony/user-bundle": "dev-bugfix as 2.99",
         "graze/dog-statsd": "^0.4.2",
         "hwi/oauth-bundle": "^1",
         "knplabs/knp-menu-bundle": "^3",
