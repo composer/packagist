@@ -20,8 +20,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Zend\Feed\Writer\Entry;
-use Zend\Feed\Writer\Feed;
+use Laminas\Feed\Writer\Entry;
+use Laminas\Feed\Writer\Feed;
 
 /**
  * @author Rafael Dohms <rafael@doh.ms>
@@ -47,7 +47,7 @@ class FeedController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function packagesAction(Request $req)
+    public function packagesAction(Request $req): Response
     {
         $repo = $this->doctrine->getRepository(Package::class);
         $packages = $this->getLimitedResults(
@@ -73,7 +73,7 @@ class FeedController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function releasesAction(Request $req)
+    public function releasesAction(Request $req): Response
     {
         $repo = $this->doctrine->getRepository(Version::class);
         $packages = $this->getLimitedResults(
@@ -99,7 +99,7 @@ class FeedController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function vendorAction(Request $req, $vendor)
+    public function vendorAction(Request $req, string $vendor): Response
     {
         $repo = $this->doctrine->getRepository(Version::class);
         $packages = $this->getLimitedResults(
@@ -125,7 +125,7 @@ class FeedController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function packageAction(Request $req, $package)
+    public function packageAction(Request $req, string $package): Response
     {
         $repo = $this->doctrine->getRepository(Version::class);
         $packages = $this->getLimitedResults(
@@ -153,8 +153,6 @@ class FeedController extends Controller
     /**
      * Limits a query to the desired number of results
      *
-     * @param \Doctrine\ORM\QueryBuilder $queryBuilder
-     *
      * @return array|\Traversable
      */
     protected function getLimitedResults(QueryBuilder $queryBuilder)
@@ -169,13 +167,9 @@ class FeedController extends Controller
     /**
      * Builds the desired feed
      *
-     * @param string $title
-     * @param string $description
-     * @param array  $items
-     *
-     * @return \Zend\Feed\Writer\Feed
+     * @param list<Package|Version> $items
      */
-    protected function buildFeed(Request $req, $title, $description, $url, $items)
+    protected function buildFeed(Request $req, string $title, string $description, string $url, array $items): Feed
     {
         $feed = new Feed();
         $feed->setTitle($title);
@@ -208,10 +202,9 @@ class FeedController extends Controller
     /**
      * Receives either a Package or a Version and populates a feed entry.
      *
-     * @param \Zend\Feed\Writer\Entry $entry
-     * @param Package|Version         $item
+     * @param Package|Version $item
      */
-    protected function populateEntry(Entry $entry, $item)
+    protected function populateEntry(Entry $entry, $item): void
     {
         if ($item instanceof Package) {
             $this->populatePackageData($entry, $item);
@@ -223,11 +216,8 @@ class FeedController extends Controller
 
     /**
      * Populates a feed entry with data coming from Package objects.
-     *
-     * @param \Zend\Feed\Writer\Entry $entry
-     * @param Package                 $package
      */
-    protected function populatePackageData(Entry $entry, Package $package)
+    protected function populatePackageData(Entry $entry, Package $package): void
     {
         $entry->setTitle($package->getName());
         $entry->setLink(
@@ -247,10 +237,9 @@ class FeedController extends Controller
     /**
      * Populates a feed entry with data coming from Version objects.
      *
-     * @param \Zend\Feed\Writer\Entry $entry
      * @param Version                 $version
      */
-    protected function populateVersionData(Entry $entry, Version $version)
+    protected function populateVersionData(Entry $entry, Version $version): void
     {
         $entry->setTitle($entry->getTitle()." ({$version->getVersion()})");
         $entry->setId($entry->getId().' '.$version->getVersion());
@@ -269,12 +258,8 @@ class FeedController extends Controller
 
     /**
      * Creates a HTTP Response and exports feed
-     *
-     * @param \Zend\Feed\Writer\Feed $feed
-     *
-     * @return \Symfony\Component\HttpFoundation\Response
      */
-    protected function buildResponse(Request $req, Feed $feed)
+    protected function buildResponse(Request $req, Feed $feed): Response
     {
         $content = $feed->export($req->getRequestFormat());
 
