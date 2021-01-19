@@ -138,7 +138,7 @@ class PackageManager
             $recipients = array();
             foreach ($package->getMaintainers() as $maintainer) {
                 if ($maintainer->isNotifiableForFailures()) {
-                    $recipients[$maintainer->getEmail()] = $maintainer->getUsername();
+                    $recipients[$maintainer->getEmail()] = new Address($maintainer->getEmail(), $maintainer->getUsername());
                 }
             }
 
@@ -153,7 +153,7 @@ class PackageManager
                 $message = (new Email())
                     ->subject($package->getName().' failed to update, invalid composer.json data')
                     ->from(new Address($this->options['from'], $this->options['fromName']))
-                    ->to($recipients)
+                    ->to(...array_values($recipients))
                     ->text($body)
                 ;
 
