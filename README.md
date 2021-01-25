@@ -35,12 +35,12 @@ These steps are provided for development purposes only.
    The composer install will prompt you for the database connection details on first install.
 4. Setup the database:
    ```bash
-   app/console doctrine:schema:create
+   bin/console doctrine:schema:create
    ```
 5. Start the web server:
    ```bash
    symfony serve
    ```
-6. Run a CRON job `app/console packagist:run-workers` to make sure packages update.
+6. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
 
 You should now be able to access the site, create a user, etc.
