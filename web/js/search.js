@@ -101,6 +101,12 @@ search.addWidget(
             if (hit._highlightResult && hit._highlightResult.description.value && hit._highlightResult.description.value.length > 200) {
                 hit._highlightResult.description.value = hit._highlightResult.description.value.substring(0, 200).replace(/<[a-z ]+$/, '');
             }
+            
+            hit.replacementPackageUrl = null
+            
+            if (hit.replacementPackage) {
+                hit.replacementPackageUrl = hit.replacementPackage.indexOf('://') !== -1 ? hit.replacementPackage : ('/packages/' + hit.replacementPackage)
+            }
 
             return hit;
         },
@@ -124,7 +130,7 @@ search.addWidget(
             <p class="abandoned">
                 <i class="glyphicon glyphicon-exclamation-sign"></i> Abandoned!
                 {{#replacementPackage}}
-                    See <a href="/packages/{{ replacementPackage }}">{{ replacementPackage }}</a>
+                    See <a href="{{ replacementPackageUrl }}">{{ replacementPackage }}</a>
                 {{/replacementPackage}}
             </p>
             {{/abandoned}}
