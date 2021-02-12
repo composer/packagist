@@ -25,6 +25,7 @@ use Doctrine\DBAL\Connection;
 use App\HealthCheck\MetadataDirCheck;
 use Predis\Client;
 use Graze\DogStatsD\Client as StatsDClient;
+use Monolog\Logger;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -126,6 +127,8 @@ class SymlinkDumper
      */
     private $providerManager;
 
+    private Logger $logger;
+
     /**
      * Constructor
      *
@@ -136,7 +139,7 @@ class SymlinkDumper
      * @param string                $targetDir
      * @param int                   $compress
      */
-    public function __construct(ManagerRegistry $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress, $awsMetadata, StatsDClient $statsd, ProviderManager $providerManager)
+    public function __construct(ManagerRegistry $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, Client $redis, $webDir, $targetDir, $compress, $awsMetadata, StatsDClient $statsd, ProviderManager $providerManager, Logger $logger)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
@@ -149,6 +152,7 @@ class SymlinkDumper
         $this->awsMeta = $awsMetadata;
         $this->statsd = $statsd;
         $this->providerManager = $providerManager;
+        $this->logger = $logger;
     }
 
     /**
@@ -316,6 +320,7 @@ class SymlinkDumper
 
                 unset($packages, $package, $version);
                 $this->getEM()->clear();
+                $this->logger->reset();
 
                 if ($current % 250 === 0 || !$packageIds) {
                     if ($verbose) {
