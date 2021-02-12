@@ -73,8 +73,7 @@ class PackageController extends Controller
      */
     public function listAction(Request $req)
     {
-        /** @var PackageRepository $repo */
-        $repo = $this->doctrine->getRepository(Package::class);
+        $repo = $this->getEM()->getRepository(Package::class);
         $fields = (array) $req->query->get('fields', array());
         $fields = array_intersect($fields, array('repository', 'type'));
 
@@ -128,8 +127,7 @@ class PackageController extends Controller
             return new JsonResponse(['error' => 'Invalid "since" query parameter, make sure you store the timestamp returned and re-use it in the next query. Use '.$this->generateUrl('updated_packages', ['since' => time() - 180], UrlGeneratorInterface::ABSOLUTE_URL).' to initialize it.'], 400);
         }
 
-        /** @var PackageRepository $repo */
-        $repo = $this->doctrine->getRepository(Package::class);
+        $repo = $this->getEM()->getRepository(Package::class);
 
         $names = $repo->getPackageNamesUpdatedSince($since);
 
@@ -189,7 +187,7 @@ class PackageController extends Controller
         }
 
         $package = new Package;
-        $package->setEntityRepository($this->doctrine->getRepository(Package::class));
+        $package->setEntityRepository($this->getEM()->getRepository(Package::class));
         $package->setRouter($router);
         $form = $this->createForm(PackageType::class, $package, [
             'action' => $this->generateUrl('submit'),
@@ -199,7 +197,7 @@ class PackageController extends Controller
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $em = $this->doctrine->getManager();
+                $em = $this->getEM();
                 $em->persist($package);
                 $em->flush();
 
@@ -226,7 +224,7 @@ class PackageController extends Controller
     public function fetchInfoAction(Request $req, RouterInterface $router)
     {
         $package = new Package;
-        $package->setEntityRepository($this->doctrine->getRepository(Package::class));
+        $package->setEntityRepository($this->getEM()->getRepository(Package::class));
         $package->setRouter($router);
         $form = $this->createForm(PackageType::class, $package);
         $user = $this->getUser();
@@ -236,7 +234,7 @@ class PackageController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             list(, $name) = explode('/', $package->getName(), 2);
 
-            $existingPackages = $this->doctrine
+            $existingPackages = $this->getEM()
                 ->getConnection()
                 ->fetchAll(
                     'SELECT name FROM package WHERE name LIKE :query',
@@ -282,7 +280,7 @@ class PackageController extends Controller
      */
     public function viewVendorAction($vendor)
     {
-        $packages = $this->doctrine
+        $packages = $this->getEM()
             ->getRepository(Package::class)
             ->getFilteredQueryBuilder(['vendor' => $vendor.'/%'], true)
             ->getQuery()
@@ -343,8 +341,7 @@ class PackageController extends Controller
      */
     public function viewProvidersAction(Request $req, string $name, RedisClient $redis)
     {
-        /** @var PackageRepository $repo */
-        $repo = $this->doctrine->getRepository(Package::class);
+        $repo = $this->getEM()->getRepository(Package::class);
         $providers = $repo->findProviders($name);
         if (!$providers) {
             if ($req->getRequestFormat() === 'json') {
@@ -411,8 +408,7 @@ class PackageController extends Controller
 
         $page = max(1, (int) $req->query->get('page', 1));
 
-        /** @var PackageRepository $repo */
-        $repo = $this->doctrine->getRepository(Package::class);
+        $repo = $this->getEM()->getRepository(Package::class);
         $count = $repo->getSuspectPackageCount();
         $packages = $repo->getSuspectPackages(($page - 1) * 50, 50);
 
@@ -426,7 +422,7 @@ class PackageController extends Controller
         $data['meta'] = $this->getPackagesMetadata($data['packages']);
         $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
 
-        $vendorRepo = $this->doctrine->getRepository(Vendor::class);
+        $vendorRepo = $this->getEM()->getRepository(Vendor::class);
         $verified = [];
         foreach ($packages as $pkg) {
             $dls = $data['meta']['downloads'][$pkg['id']] ?? 0;
@@ -466,7 +462,7 @@ class PackageController extends Controller
             throw new BadRequestHttpException('Invalid CSRF token');
         }
 
-        $repo = $this->doctrine->getRepository(Vendor::class);
+        $repo = $this->getEM()->getRepository(Vendor::class);
         foreach ($vendors as $vendor) {
             $repo->verify($vendor);
         }
@@ -494,8 +490,7 @@ class PackageController extends Controller
             return $this->{$match['method'].'Action'}($req, $match['pkg']);
         }
 
-        /** @var PackageRepository $repo */
-        $repo = $this->doctrine->getRepository(Package::class);
+        $repo = $this->getEM()->getRepository(Package::class);
 
         try {
             /** @var Package $package */
@@ -517,7 +512,7 @@ class PackageController extends Controller
         }
 
         if ('json' === $req->getRequestFormat()) {
-            $data = $package->toArray($this->doctrine->getRepository(Version::class), true);
+            $data = $package->toArray($this->getEM()->getRepository(Version::class), true);
             $data['dependents'] = $repo->getDependantCount($package->getName());
             $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
@@ -549,9 +544,8 @@ class PackageController extends Controller
         usort($versions, Package::class.'::sortVersions');
 
         if (count($versions)) {
-            /** @var VersionRepository $versionRepo */
-            $versionRepo = $this->doctrine->getRepository(Version::class);
-            $this->doctrine->getManager()->refresh(reset($versions));
+            $versionRepo = $this->getEM()->getRepository(Version::class);
+            $this->getEM()->refresh(reset($versions));
             $version = $versionRepo->getFullVersion(reset($versions)->getId());
 
             $expandedVersion = reset($versions);
@@ -562,7 +556,7 @@ class PackageController extends Controller
                 }
             }
 
-            $this->doctrine->getManager()->refresh($expandedVersion);
+            $this->getEM()->refresh($expandedVersion);
             $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
         }
 
@@ -581,7 +575,7 @@ class PackageController extends Controller
                 && ($data['downloads']['total'] ?? 0) <= 10 && ($data['downloads']['views'] ?? 0) >= 100
                 && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
             ) {
-                $vendorRepo = $this->doctrine->getRepository(Vendor::class);
+                $vendorRepo = $this->getEM()->getRepository(Vendor::class);
                 if (!$vendorRepo->isVerified($package->getVendor())) {
                     $package->setSuspect('Too many views');
                     $repo->markPackageSuspect($package);
@@ -597,8 +591,7 @@ class PackageController extends Controller
         $data['dependents'] = $repo->getDependantCount($package->getName());
         $data['suggesters'] = $repo->getSuggestCount($package->getName());
 
-        /** @var SecurityAdvisoryRepository $securityAdvisoryRepository */
-        $securityAdvisoryRepository = $this->doctrine->getRepository(SecurityAdvisory::class);
+        $securityAdvisoryRepository = $this->getEM()->getRepository(SecurityAdvisory::class);
         $securityAdvisories = $securityAdvisoryRepository->getPackageSecurityAdvisories($package->getName());
         $data['securityAdvisories'] = count($securityAdvisories);
         $data['hasVersionSecurityAdvisories'] = [];
@@ -626,7 +619,7 @@ class PackageController extends Controller
                 || $package->getMaintainers()->contains($this->getUser())
             )) {
             $data['deleteVersionCsrfToken'] = $csrfTokenManager->getToken('delete_version');
-            $lastJob = $this->doctrine->getRepository(Job::class)->findOneBy(['packageId' => $package->getId(), 'status' => [Job::STATUS_COMPLETED, Job::STATUS_ERRORED, Job::STATUS_FAILED], 'type' => 'package:updates'], ['createdAt' => 'DESC']);
+            $lastJob = $this->getEM()->getRepository(Job::class)->findOneBy(['packageId' => $package->getId(), 'status' => [Job::STATUS_COMPLETED, Job::STATUS_ERRORED, Job::STATUS_FAILED], 'type' => 'package:updates'], ['createdAt' => 'DESC']);
             $data['lastJobWarning'] = null;
             $data['lastJobStatus'] = $lastJob ? $lastJob->getStatus() : null;
             $data['lastJobMsg'] = $lastJob ? $lastJob->getResult()['message'] ?? '' : null;
@@ -665,8 +658,7 @@ class PackageController extends Controller
      */
     public function viewPackageDownloadsAction(Request $req, $name)
     {
-        /** @var PackageRepository $repo */
-        $repo = $this->doctrine->getRepository(Package::class);
+        $repo = $this->getEM()->getRepository(Package::class);
 
         try {
             $package = $repo->getPartialPackageByNameWithVersions($name);
@@ -723,8 +715,7 @@ class PackageController extends Controller
             $req->getSession()->save();
         }
 
-        /** @var VersionRepository $repo  */
-        $repo = $this->doctrine->getRepository(Version::class);
+        $repo = $this->getEM()->getRepository(Version::class);
 
         $html = $this->renderView(
             'package/version_details.html.twig',
@@ -744,8 +735,7 @@ class PackageController extends Controller
      */
     public function deletePackageVersionAction(Request $req, $versionId)
     {
-        /** @var VersionRepository $repo  */
-        $repo = $this->doctrine->getRepository(Version::class);
+        $repo = $this->getEM()->getRepository(Version::class);
 
         /** @var Version $version  */
         $version = $repo->getFullVersion($versionId);
@@ -760,8 +750,8 @@ class PackageController extends Controller
         }
 
         $repo->remove($version);
-        $this->doctrine->getManager()->flush();
-        $this->doctrine->getManager()->clear();
+        $this->getEM()->flush();
+        $this->getEM()->clear();
 
         return new Response('', 204);
     }
@@ -771,11 +761,8 @@ class PackageController extends Controller
      */
     public function updatePackageAction(Request $req, $name)
     {
-        $doctrine = $this->doctrine;
-
         try {
-            /** @var Package $package */
-            $package = $doctrine
+            $package = $this->getEM()
                 ->getRepository(Package::class)
                 ->getPackageByName($name);
         } catch (NoResultException $e) {
@@ -799,8 +786,7 @@ class PackageController extends Controller
         $updateEqualRefs = (bool) $req->request->get('updateAll', $req->query->get('updateAll'));
         $manualUpdate = (bool) $req->request->get('manualUpdate', $req->query->get('manualUpdate'));
 
-        $user = $this->getUser() ?: $doctrine
-            ->getRepository(User::class)
+        $user = $this->getUser() ?: $this->getEM()->getRepository(User::class)
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 
         if (!$user) {
@@ -818,7 +804,7 @@ class PackageController extends Controller
 
             if (null !== $autoUpdated) {
                 $package->setAutoUpdated($autoUpdated ? Package::AUTO_MANUAL_HOOK : 0);
-                $doctrine->getManager()->flush();
+                $this->getEM()->flush();
             }
 
             if ($update) {
@@ -842,11 +828,8 @@ class PackageController extends Controller
      */
     public function deletePackageAction(Request $req, $name)
     {
-        $doctrine = $this->doctrine;
-
         try {
-            /** @var Package $package */
-            $package = $doctrine
+            $package = $this->getEM()
                 ->getRepository(Package::class)
                 ->getPartialPackageByNameWithVersions($name);
         } catch (NoResultException $e) {
@@ -876,8 +859,7 @@ class PackageController extends Controller
      */
     public function createMaintainerAction(Request $req, $name, LoggerInterface $logger)
     {
-        /** @var Package $package */
-        $package = $this->doctrine
+        $package = $this->getEM()
             ->getRepository(Package::class)
             ->findOneBy(['name' => $name]);
 
@@ -901,7 +883,7 @@ class PackageController extends Controller
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $em = $this->doctrine->getManager();
+                $em = $this->getEM();
                 $user = $form->getData()->getUser();
 
                 if (!empty($user)) {
@@ -933,8 +915,7 @@ class PackageController extends Controller
      */
     public function removeMaintainerAction(Request $req, $name, LoggerInterface $logger)
     {
-        /** @var Package $package */
-        $package = $this->doctrine
+        $package = $this->getEM()
             ->getRepository(Package::class)
             ->findOneBy(['name' => $name]);
 
@@ -957,7 +938,7 @@ class PackageController extends Controller
         $removeMaintainerForm->handleRequest($req);
         if ($removeMaintainerForm->isSubmitted() && $removeMaintainerForm->isValid()) {
             try {
-                $em = $this->doctrine->getManager();
+                $em = $this->getEM();
                 $user = $removeMaintainerForm->getData()->getUser();
 
                 if (!empty($user)) {
@@ -1007,7 +988,7 @@ class PackageController extends Controller
             // Force updating of packages once the package is viewed after the redirect.
             $package->setCrawledAt(null);
 
-            $em = $this->doctrine->getManager();
+            $em = $this->getEM();
             $em->persist($package);
             $em->flush();
 
@@ -1047,7 +1028,7 @@ class PackageController extends Controller
             $package->setUpdatedAt(new \DateTime());
             $package->setDumpedAt(null);
 
-            $em = $this->doctrine->getManager();
+            $em = $this->getEM();
             $em->flush();
 
             return $this->redirect($this->generateUrl('view_package', array('name' => $package->getName())));
@@ -1079,7 +1060,7 @@ class PackageController extends Controller
         $package->setUpdatedAt(new \DateTime());
         $package->setDumpedAt(null);
 
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $em->flush();
 
         return $this->redirect($this->generateUrl('view_package', array('name' => $package->getName())));
@@ -1154,8 +1135,7 @@ class PackageController extends Controller
             $perPage = 100;
         }
 
-        /** @var PackageRepository $repo */
-        $repo = $this->doctrine->getRepository(Package::class);
+        $repo = $this->getEM()->getRepository(Package::class);
         $depCount = $repo->getDependantCount($name);
         $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy);
 
@@ -1210,8 +1190,7 @@ class PackageController extends Controller
             $perPage = 100;
         }
 
-        /** @var PackageRepository $repo */
-        $repo = $this->doctrine->getRepository(Package::class);
+        $repo = $this->getEM()->getRepository(Package::class);
         $suggestCount = $repo->getSuggestCount($name);
         $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
 
@@ -1271,18 +1250,18 @@ class PackageController extends Controller
         $dlData = [];
         if (null !== $majorVersion) {
             if ($majorVersion === 'all') {
-                $dlData = $this->doctrine->getRepository(Download::class)->findDataByMajorVersions($package);
+                $dlData = $this->getEM()->getRepository(Download::class)->findDataByMajorVersions($package);
             } else {
                 if (!is_numeric($majorVersion)) {
                     throw new BadRequestHttpException('Major version should be an int or "all"');
                 }
-                $dlData = $this->doctrine->getRepository(Download::class)->findDataByMajorVersion($package, (int) $majorVersion);
+                $dlData = $this->getEM()->getRepository(Download::class)->findDataByMajorVersion($package, (int) $majorVersion);
             }
         } elseif ($version) {
-            $downloads = $this->doctrine->getRepository(Download::class)->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
+            $downloads = $this->getEM()->getRepository(Download::class)->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
             $dlData[$version->getVersion()] = [$downloads ? $downloads->getData() : []];
         } else {
-            $downloads = $this->doctrine->getRepository(Download::class)->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
+            $downloads = $this->getEM()->getRepository(Download::class)->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
             $dlData[$package->getName()] = [$downloads ? $downloads->getData() : []];
         }
 
@@ -1343,7 +1322,7 @@ class PackageController extends Controller
         $normalizer = new VersionParser;
         $normVersion = $normalizer->normalize($version);
 
-        $version = $this->doctrine->getRepository(Version::class)->findOneBy([
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy([
             'package' => $package,
             'normalizedVersion' => $normVersion
         ]);
@@ -1365,7 +1344,7 @@ class PackageController extends Controller
     public function securityAdvisoriesAction(Request $request, $name)
     {
         /** @var SecurityAdvisoryRepository $repo */
-        $repo = $this->doctrine->getRepository(SecurityAdvisory::class);
+        $repo = $this->getEM()->getRepository(SecurityAdvisory::class);
         $securityAdvisories = $repo->getPackageSecurityAdvisories($name);
 
         $data = [];
@@ -1373,7 +1352,7 @@ class PackageController extends Controller
 
         $data['matchingAdvisories'] = [];
         if ($versionId = $request->query->getInt('version')) {
-            $version = $this->doctrine->getRepository(Version::class)->findOneBy([
+            $version = $this->getEM()->getRepository(Version::class)->findOneBy([
                 'name' => $name,
                 'id' => $versionId,
             ]);

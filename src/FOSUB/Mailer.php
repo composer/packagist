@@ -11,6 +11,7 @@ use Twig\Environment;
 
 class Mailer extends FOSUBMailer
 {
+    // @phpstan-ignore-next-line
     public function __construct(MailerInterface $mailer, UrlGeneratorInterface $router, Environment $templating, array $parameters)
     {
         $this->mailer = $mailer;
@@ -40,6 +41,7 @@ class Mailer extends FOSUBMailer
             ->to($toEmail)
             ->text($body);
 
+        // @phpstan-ignore-next-line
         $this->mailer->send($message);
     }
 }

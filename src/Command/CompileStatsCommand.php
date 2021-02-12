@@ -26,6 +26,8 @@ use Symfony\Component\Console\Command\Command;
  */
 class CompileStatsCommand extends Command
 {
+    use \App\Util\DoctrineTrait;
+
     private Client $redis;
     private Locker $locker;
     private ManagerRegistry $doctrine;
@@ -38,9 +40,6 @@ class CompileStatsCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this
@@ -51,22 +50,19 @@ class CompileStatsCommand extends Command
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $lockAcquired = $this->locker->lockCommand($this->getName());
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
             }
-            return;
+            return 0;
         }
 
         $verbose = $input->getOption('verbose');
 
-        $conn = $this->doctrine->getManager()->getConnection();
+        $conn = $this->getEM()->getConnection();
 
         $yesterday = new \DateTime('yesterday 00:00:00');
 
@@ -89,14 +85,16 @@ class CompileStatsCommand extends Command
                 $trendiness = 0;
             }
 
-            $this->redis->zadd('downloads:trending:new', $trendiness, $id);
-            $this->redis->zadd('downloads:absolute:new', $total, $id);
+            $this->redis->zadd('downloads:trending:new', [$id => $trendiness]);
+            $this->redis->zadd('downloads:absolute:new', [$id => $total]);
         }
 
         $this->redis->rename('downloads:trending:new', 'downloads:trending');
         $this->redis->rename('downloads:absolute:new', 'downloads:absolute');
 
         $this->locker->unlockCommand($this->getName());
+
+        return 0;
     }
 
     protected function sumLastNDays($days, $id, \DateTime $yesterday, $conn)

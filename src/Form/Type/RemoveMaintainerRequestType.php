@@ -12,9 +12,9 @@
 
 namespace App\Form\Type;
 
-use Doctrine\ORM\EntityRepository;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Entity\UserRepository;
 use App\Form\Model\MaintainerRequest;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -30,7 +30,7 @@ class RemoveMaintainerRequestType extends AbstractType
     {
         $builder->add('user', EntityType::class, array(
             'class' => User::class,
-            'query_builder' => function(EntityRepository $er) use ($options) {
+            'query_builder' => function(UserRepository $er) use ($options) {
                 return $er->getPackageMaintainersQueryBuilder($options['package'], $options['excludeUser']);
             },
         ));

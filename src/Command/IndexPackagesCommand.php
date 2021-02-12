@@ -28,6 +28,8 @@ use Symfony\Component\Console\Command\Command;
 
 class IndexPackagesCommand extends Command
 {
+    use \App\Util\DoctrineTrait;
+
     private SearchClient $algolia;
     private Locker $locker;
     private ManagerRegistry $doctrine;
@@ -50,9 +52,6 @@ class IndexPackagesCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this
@@ -66,10 +65,7 @@ class IndexPackagesCommand extends Command
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $verbose = $input->getOption('verbose');
         $force = $input->getOption('force');
@@ -81,7 +77,7 @@ class IndexPackagesCommand extends Command
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
-            return;
+            return 0;
         }
 
         $lockAcquired = $this->locker->lockCommand($this->getName());
@@ -89,18 +85,18 @@ class IndexPackagesCommand extends Command
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
             }
-            return;
+            return 0;
         }
 
         $index = $this->algolia->initIndex($this->algoliaIndexName);
 
         if ($package) {
-            $packages = array(array('id' => $this->doctrine->getRepository(Package::class)->findOneByName($package)->getId()));
+            $packages = array(array('id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()));
         } elseif ($force || $indexAll) {
-            $packages = $this->doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
-            $this->doctrine->getManager()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
+            $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $this->getEM()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
         } else {
-            $packages = $this->doctrine->getRepository(Package::class)->getStalePackagesForIndexing();
+            $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForIndexing();
         }
 
         $ids = array();
@@ -124,7 +120,7 @@ class IndexPackagesCommand extends Command
         while ($ids) {
             $indexTime = new \DateTime;
             $idsSlice = array_splice($ids, 0, 50);
-            $packages = $this->doctrine->getRepository(Package::class)->findById($idsSlice);
+            $packages = $this->getEM()->getRepository(Package::class)->findBy(['id' => $idsSlice]);
 
             $idsToUpdate = [];
             $records = [];
@@ -146,7 +142,7 @@ class IndexPackagesCommand extends Command
                 }
 
                 try {
-                    $tags = $this->getTags($this->doctrine, $package);
+                    $tags = $this->getTags($package);
 
                     $records[] = $this->packageToSearchableArray($package, $tags);
 
@@ -157,7 +153,7 @@ class IndexPackagesCommand extends Command
                     continue;
                 }
 
-                $providers = $this->getProviders($this->doctrine, $package);
+                $providers = $this->getProviders($package);
                 foreach ($providers as $provided) {
                     $records[] = $this->createSearchableProvider($provided['packageName']);
                 }
@@ -170,17 +166,19 @@ class IndexPackagesCommand extends Command
                 continue;
             }
 
-            $this->doctrine->getManager()->clear();
+            $this->getEM()->clear();
             unset($packages);
 
             if ($verbose) {
                 $output->writeln('Updating package indexedAt column');
             }
 
-            $this->updateIndexedAt($idsToUpdate, $this->doctrine, $indexTime->format('Y-m-d H:i:s'));
+            $this->updateIndexedAt($idsToUpdate, $indexTime->format('Y-m-d H:i:s'));
         }
 
         $this->locker->unlockCommand($this->getName());
+
+        return 0;
     }
 
     private function packageToSearchableArray(Package $package, array $tags)
@@ -247,9 +245,9 @@ class IndexPackagesCommand extends Command
         ];
     }
 
-    private function getProviders(ManagerRegistry $doctrine, Package $package): array
+    private function getProviders(Package $package): array
     {
-        return $doctrine->getManager()->getConnection()->fetchAll(
+        return $this->getEM()->getConnection()->fetchAll(
             'SELECT lp.packageName
                 FROM package p
                 JOIN package_version pv ON p.id = pv.package_id
@@ -261,9 +259,9 @@ class IndexPackagesCommand extends Command
         );
     }
 
-    private function getTags(ManagerRegistry $doctrine, Package $package): array
+    private function getTags(Package $package): array
     {
-        $tags = $doctrine->getManager()->getConnection()->fetchAll(
+        $tags = $this->getEM()->getConnection()->fetchAll(
             'SELECT t.name FROM package p
                             JOIN package_version pv ON p.id = pv.package_id
                             JOIN version_tag vt ON vt.version_id = pv.id
@@ -282,13 +280,13 @@ class IndexPackagesCommand extends Command
         }, $tags)));
     }
 
-    private function updateIndexedAt(array $idsToUpdate, ManagerRegistry $doctrine, string $time)
+    private function updateIndexedAt(array $idsToUpdate, string $time)
     {
         $retries = 5;
         // retry loop in case of a lock timeout
         while ($retries--) {
             try {
-                $doctrine->getManager()->getConnection()->executeQuery(
+                $this->getEM()->getConnection()->executeQuery(
                     'UPDATE package SET indexedAt=:indexed WHERE id IN (:ids)',
                     [
                         'ids' => $idsToUpdate,

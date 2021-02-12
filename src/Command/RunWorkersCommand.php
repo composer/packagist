@@ -35,7 +35,7 @@ class RunWorkersCommand extends Command
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         \Monolog\ErrorHandler::register($this->logger);
 
@@ -46,7 +46,7 @@ class RunWorkersCommand extends Command
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another of the same worker is still active');
             }
-            return;
+            return 0;
         }
 
         try {
@@ -59,5 +59,7 @@ class RunWorkersCommand extends Command
         } finally {
             $this->release();
         }
+
+        return 0;
     }
 }

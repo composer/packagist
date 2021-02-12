@@ -46,10 +46,12 @@ class RecaptchaHelper
     public function increaseCounter(Request $request): void
     {
         if ($this->recaptchaEnabled) {
+            // @phpstan-ignore-next-line
             $this->redisCache->getProfile()->defineCommand('incrFailedLoginCounter', FailedLoginCounter::class);
 
             $ipKey = self::LOGIN_BASE_KEY_IP . $request->getClientIp();
             $userKey = self::LOGIN_BASE_KEY_USER . strtolower((string) $request->get('_username'));
+            // @phpstan-ignore-next-line
             $this->redisCache->incrFailedLoginCounter($ipKey, $userKey);
         }
     }

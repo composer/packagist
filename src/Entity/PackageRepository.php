@@ -261,7 +261,7 @@ class PackageRepository extends ServiceEntityRepository
         return $pkg;
     }
 
-    public function getPackageByName($name)
+    public function getPackageByName($name): Package
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'm')

@@ -31,6 +31,8 @@ use Graze\DogStatsD\Client as StatsDClient;
  */
 class SymlinkDumper
 {
+    use \App\Util\DoctrineTrait;
+
     /**
      * Doctrine
      * @var ManagerRegistry
@@ -313,7 +315,7 @@ class SymlinkDumper
                 }
 
                 unset($packages, $package, $version);
-                $this->doctrine->getManager()->clear();
+                $this->getEM()->clear();
 
                 if ($current % 250 === 0 || !$packageIds) {
                     if ($verbose) {
@@ -475,7 +477,7 @@ class SymlinkDumper
             // retry loop in case of a lock timeout
             while ($retries--) {
                 try {
-                    $this->doctrine->getManager()->getConnection()->executeQuery(
+                    $this->getEM()->getConnection()->executeQuery(
                         'UPDATE package SET dumpedAt=:dumped WHERE id IN (:ids)',
                         [
                             'ids' => $ids,
@@ -906,7 +908,7 @@ class SymlinkDumper
             throw new \LogicException('Could not match package name from '.$path);
         }
 
-        $this->redis->zadd('metadata-dumps', $timestamp, $match[1]);
+        $this->redis->zadd('metadata-dumps', [$match[1] => $timestamp]);
     }
 
     private function writeFileNonAtomic($path, $contents)

@@ -3,7 +3,7 @@
 namespace App\Service;
 
 use Predis\Client as Redis;
-use Psr\Log\LoggerInterface;
+use Monolog\Logger;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Job;
 use Seld\Signal\SignalHandler;
@@ -11,16 +11,16 @@ use Graze\DogStatsD\Client as StatsDClient;
 
 class QueueWorker
 {
-    private $redis;
-    private $logger;
-    /** @var ManagerRegistry */
-    private $doctrine;
-    private $jobWorkers;
-    private $processedJobs = 0;
-    /** @var StatsDClient */
-    private $statsd;
+    use \App\Util\DoctrineTrait;
 
-    public function __construct(Redis $redis, ManagerRegistry $doctrine, LoggerInterface $logger, array $jobWorkers, StatsDClient $statsd)
+    private Redis $redis;
+    private Logger $logger;
+    private ManagerRegistry $doctrine;
+    private array $jobWorkers;
+    private int $processedJobs = 0;
+    private StatsDClient $statsd;
+
+    public function __construct(Redis $redis, ManagerRegistry $doctrine, Logger $logger, array $jobWorkers, StatsDClient $statsd)
     {
         $this->redis = $redis;
         $this->logger = $logger;
@@ -29,10 +29,7 @@ class QueueWorker
         $this->statsd = $statsd;
     }
 
-    /**
-     * @param string|int $minPriority
-     */
-    public function processMessages(int $count)
+    public function processMessages(int $count): void
     {
         $signal = SignalHandler::create(null, $this->logger);
 
@@ -67,7 +64,7 @@ class QueueWorker
 
     private function checkForTimedoutJobs(): int
     {
-        $this->doctrine->getManager()->getRepository(Job::class)->markTimedOutJobs();
+        $this->getEM()->getRepository(Job::class)->markTimedOutJobs();
 
         // check for timed out jobs every 20 min at least
         return time() + 1200;
@@ -75,7 +72,7 @@ class QueueWorker
 
     private function checkForScheduledJobs(SignalHandler $signal): int
     {
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $repo = $em->getRepository(Job::class);
 
         foreach ($repo->getScheduledJobIds() as $jobId) {
@@ -93,14 +90,14 @@ class QueueWorker
      */
     private function process(string $jobId, SignalHandler $signal): bool
     {
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $repo = $em->getRepository(Job::class);
         if (!$repo->start($jobId)) {
             // race condition, some other worker caught the job first, aborting
             return false;
         }
 
-        $job = $repo->findOneById($jobId);
+        $job = $repo->find($jobId);
 
         $this->logger->pushProcessor(function ($record) use ($job) {
             $record['extra']['job-id'] = $job->getId();
@@ -140,12 +137,12 @@ class QueueWorker
 
         // If an exception is thrown during a transaction the EntityManager is closed
         // and we won't be able to update the job or handle future jobs
-        if (!$this->doctrine->getManager()->isOpen()) {
+        if (!$this->getEM()->isOpen()) {
             $this->doctrine->resetManager();
         }
 
         // refetch objects in case the EM was reset during the job run
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $repo = $em->getRepository(Job::class);
 
         if ($result['status'] === Job::STATUS_RESCHEDULE) {
@@ -171,7 +168,7 @@ class QueueWorker
             $result['exceptionClass'] = get_class($result['exception']);
         }
 
-        $job = $repo->findOneById($jobId);
+        $job = $repo->find($jobId);
         $job->complete($result);
 
         $this->redis->setex('job-'.$job->getId(), 600, json_encode($result));

@@ -36,78 +36,82 @@ class Job
      * @ORM\Id
      * @ORM\Column(type="string")
      */
-    private $id;
+    private string $id;
 
     /**
      * @ORM\Column(type="string")
      */
-    private $type;
+    private string $type;
 
     /**
      * @ORM\Column(type="json_array")
      */
-    private $payload;
+    private array $payload = [];
 
     /**
      * One of queued, started, completed, failed
      *
      * @ORM\Column(type="string")
+     * @var self::STATUS_*
      */
-    private $status = self::STATUS_QUEUED;
+    private string $status = self::STATUS_QUEUED;
 
     /**
      * @ORM\Column(type="json_array", nullable=true)
      */
-    private $result;
+    private ?array $result = null;
 
     /**
      * @ORM\Column(type="datetime")
      */
-    private $createdAt;
+    private DateTimeInterface $createdAt;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $startedAt;
+    private ?DateTimeInterface $startedAt = null;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $completedAt;
+    private ?DateTimeInterface $completedAt = null;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $executeAfter;
+    private ?DateTimeInterface $executeAfter = null;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
      */
-    private $packageId;
+    private ?int $packageId = null;
 
-    public function start()
+    public function __construct(string $id, string $type, array $payload)
     {
-        $this->startedAt = new \DateTime();
+        $this->id = $id;
+        $this->type = $type;
+        $this->payload = $payload;
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function start(): void
+    {
+        $this->startedAt = new \DateTimeImmutable();
         $this->status = self::STATUS_STARTED;
     }
 
-    public function complete(array $result)
+    public function complete(array $result): void
     {
         $this->result = $result;
-        $this->completedAt = new \DateTime();
+        $this->completedAt = new \DateTimeImmutable();
         $this->status = $result['status'];
     }
 
-    public function reschedule(\DateTimeInterface $when)
+    public function reschedule(DateTimeInterface $when): void
     {
         $this->status = self::STATUS_QUEUED;
         $this->startedAt = null;
         $this->setExecuteAfter($when);
-    }
-
-    public function setId(string $id)
-    {
-        $this->id = $id;
     }
 
     public function getId(): string
@@ -115,19 +119,14 @@ class Job
         return $this->id;
     }
 
-    public function setPackageId(int $packageId)
+    public function setPackageId(?int $packageId): void
     {
         $this->packageId = $packageId;
     }
 
-    public function getPackageId()
+    public function getPackageId(): ?int
     {
         return $this->packageId;
-    }
-
-    public function setType(string $type)
-    {
-        $this->type = $type;
     }
 
     public function getType(): string
@@ -135,17 +134,12 @@ class Job
         return $this->type;
     }
 
-    public function setPayload(array $payload)
-    {
-        $this->payload = $payload;
-    }
-
     public function getPayload(): array
     {
         return $this->payload;
     }
 
-    public function setStatus(string $status)
+    public function setStatus(string $status): void
     {
         $this->status = $status;
     }
@@ -155,12 +149,12 @@ class Job
         return $this->status;
     }
 
-    public function getResult()
+    public function getResult(): ?array
     {
         return $this->result;
     }
 
-    public function setCreatedAt(DateTimeInterface $createdAt)
+    public function setCreatedAt(DateTimeInterface $createdAt): void
     {
         $this->createdAt = $createdAt;
     }
@@ -170,22 +164,22 @@ class Job
         return $this->createdAt;
     }
 
-    public function getStartedAt(): DateTimeInterface
+    public function getStartedAt(): ?DateTimeInterface
     {
         return $this->startedAt;
     }
 
-    public function setExecuteAfter(DateTimeInterface $executeAfter)
+    public function setExecuteAfter(?DateTimeInterface $executeAfter): void
     {
         $this->executeAfter = $executeAfter;
     }
 
-    public function getExecuteAfter()
+    public function getExecuteAfter(): ?DateTimeInterface
     {
         return $this->executeAfter;
     }
 
-    public function getCompletedAt()
+    public function getCompletedAt(): ?DateTimeInterface
     {
         return $this->completedAt;
     }

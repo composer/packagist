@@ -235,7 +235,6 @@ class Version
         } else {
             $tags = array();
             foreach ($this->getTags() as $tag) {
-                /** @var $tag Tag */
                 $tags[] = $tag->getName();
             }
         }
@@ -248,7 +247,6 @@ class Version
             } else {
                 $authors = array();
                 foreach ($this->getAuthors() as $author) {
-                    /** @var $author Author */
                     $authors[] = $author->toArray();
                 }
             }
@@ -736,7 +734,7 @@ class Version
     /**
      * Get tags
      *
-     * @return Tag[]
+     * @return ArrayCollection<Tag>
      */
     public function getTags()
     {
@@ -786,7 +784,7 @@ class Version
     /**
      * Get authors
      *
-     * @return Author[]
+     * @return ArrayCollection<Author>
      */
     public function getAuthors()
     {
@@ -958,7 +956,7 @@ class Version
     /**
      * Get require
      *
-     * @return RequireLink[]
+     * @return ArrayCollection<RequireLink>
      */
     public function getRequire()
     {
@@ -978,7 +976,7 @@ class Version
     /**
      * Get replace
      *
-     * @return ReplaceLink[]
+     * @return ArrayCollection<ReplaceLink>
      */
     public function getReplace()
     {
@@ -998,7 +996,7 @@ class Version
     /**
      * Get conflict
      *
-     * @return ConflictLink[]
+     * @return ArrayCollection<ConflictLink>
      */
     public function getConflict()
     {
@@ -1018,7 +1016,7 @@ class Version
     /**
      * Get provide
      *
-     * @return ProvideLink[]
+     * @return ArrayCollection<ProvideLink>
      */
     public function getProvide()
     {
@@ -1038,7 +1036,7 @@ class Version
     /**
      * Get devRequire
      *
-     * @return DevRequireLink[]
+     * @return ArrayCollection<DevRequireLink>
      */
     public function getDevRequire()
     {
@@ -1058,7 +1056,7 @@ class Version
     /**
      * Get suggest
      *
-     * @return SuggestLink[]
+     * @return ArrayCollection<SuggestLink>
      */
     public function getSuggest()
     {

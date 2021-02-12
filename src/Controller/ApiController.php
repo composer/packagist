@@ -75,7 +75,7 @@ class ApiController extends Controller
         }
         $url = $payload['repository']['url'];
         $package = new Package;
-        $package->setEntityRepository($this->doctrine->getRepository(Package::class));
+        $package->setEntityRepository($this->getEM()->getRepository(Package::class));
         $package->setRouter($router);
         $user = $this->findUser($request);
         $package->addMaintainer($user);
@@ -89,7 +89,7 @@ class ApiController extends Controller
             return new JsonResponse(array('status' => 'error', 'message' => $errorArray), 406);
         }
         try {
-            $em = $this->doctrine->getManager();
+            $em = $this->getEM();
             $em->persist($package);
             $em->flush();
 
@@ -181,7 +181,7 @@ class ApiController extends Controller
 
         $package->setCrawledAt(null);
 
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $em->persist($package);
         $em->flush();
 
@@ -304,7 +304,7 @@ class ApiController extends Controller
         $updatedSince = $request->query->getInt('updatedSince', 0);
 
         /** @var array[] $advisories */
-        $advisories = $this->doctrine->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
+        $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
 
         $response = ['advisories' => []];
         foreach ($advisories as $advisory) {
@@ -323,7 +323,7 @@ class ApiController extends Controller
     {
         // support legacy composer v1 normalized default branches
         if ($version === '9999999-dev') {
-            return $this->doctrine->getManager()->getConnection()->fetchAssoc(
+            return $this->getEM()->getConnection()->fetchAssoc(
                 'SELECT p.id, v.id vid
                 FROM package p
                 LEFT JOIN package_version v ON p.id = v.package_id
@@ -334,7 +334,7 @@ class ApiController extends Controller
             );
         }
 
-        return $this->doctrine->getManager()->getConnection()->fetchAssoc(
+        return $this->getEM()->getConnection()->fetchAssoc(
             'SELECT p.id, v.id vid
             FROM package p
             LEFT JOIN package_version v ON p.id = v.package_id
@@ -373,7 +373,7 @@ class ApiController extends Controller
         if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature')) {
             $username = $request->query->get('username');
             $sig = $request->headers->get('X-Hub-Signature');
-            $user = $this->doctrine->getRepository(User::class)->findOneByUsername($username);
+            $user = $this->getEM()->getRepository(User::class)->findOneBy(['username' => $username]);
             if ($sig && $user && $user->isEnabled()) {
                 list($algo, $sig) = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
@@ -430,7 +430,7 @@ class ApiController extends Controller
             $jobs[] = $job->getId();
         }
 
-        $this->doctrine->getManager()->flush();
+        $this->getEM()->flush();
 
         return new JsonResponse(['status' => 'success', 'jobs' => $jobs, 'type' => $receiveType], 202);
     }
@@ -455,7 +455,7 @@ class ApiController extends Controller
             return null;
         }
 
-        $user = $this->doctrine->getRepository(User::class)
+        $user = $this->getEM()->getRepository(User::class)
             ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
 
         if ($user && !$user->isEnabled()) {
@@ -505,7 +505,7 @@ class ApiController extends Controller
      */
     protected function findPackagesByRepository(string $url, $remoteId, User $user = null): array
     {
-        $packageRepo = $this->doctrine->getRepository(Package::class);
+        $packageRepo = $this->getEM()->getRepository(Package::class);
         $packages = $packageRepo->findBy(['repository' => $url]);
         $updateUrl = false;
 

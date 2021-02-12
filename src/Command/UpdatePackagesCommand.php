@@ -35,6 +35,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class UpdatePackagesCommand extends Command
 {
+    use \App\Util\DoctrineTrait;
+
     private Scheduler $scheduler;
     private Locker $locker;
     private ManagerRegistry $doctrine;
@@ -47,9 +49,6 @@ class UpdatePackagesCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this
@@ -64,10 +63,7 @@ class UpdatePackagesCommand extends Command
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $verbose = $input->getOption('verbose');
         $force = $input->getOption('force');
@@ -85,16 +81,16 @@ class UpdatePackagesCommand extends Command
         }
 
         if ($package) {
-            $packages = array(array('id' => $this->doctrine->getRepository(Package::class)->findOneByName($package)->getId()));
+            $packages = array(array('id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()));
             if ($force) {
                 $updateEqualRefs = true;
             }
             $randomTimes = false;
         } elseif ($force) {
-            $packages = $this->doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
             $updateEqualRefs = true;
         } else {
-            $packages = $this->doctrine->getRepository(Package::class)->getStalePackages();
+            $packages = $this->getEM()->getRepository(Package::class)->getStalePackages();
         }
 
         $ids = array();
@@ -118,10 +114,12 @@ class UpdatePackagesCommand extends Command
                     $output->writeln('Scheduled update job '.$job->getId().' for package '.$id);
                 }
 
-                $this->doctrine->getManager()->clear();
+                $this->getEM()->clear();
             }
         }
 
         $this->locker->unlockCommand($this->getName());
+
+        return 0;
     }
 }

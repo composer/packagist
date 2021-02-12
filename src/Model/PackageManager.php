@@ -61,7 +61,6 @@ class PackageManager
 
     public function deletePackage(Package $package)
     {
-        /** @var VersionRepository $versionRepo */
         $versionRepo = $this->doctrine->getRepository(Version::class);
         foreach ($package->getVersions() as $version) {
             $versionRepo->remove($version);
@@ -120,7 +119,7 @@ class PackageManager
         } catch (\Predis\Connection\ConnectionException $e) {
         }
 
-        $this->redis->zadd('metadata-deletes', round(microtime(true)*10000), strtolower($packageName));
+        $this->redis->zadd('metadata-deletes', [strtolower($packageName) => round(microtime(true)*10000)]);
 
         // attempt search index cleanup
         try {

@@ -68,7 +68,6 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
             $finder = new Finder();
             $finder->name('*.yaml');
             $advisories = [];
-            /** @var \SplFileInfo $file */
             foreach ($finder->in($localDir) as $file) {
                 $content = Yaml::parse(file_get_contents($file->getRealPath()));
                 $advisories[] = RemoteSecurityAdvisory::createFromFriendsOfPhp($file->getRelativePathname(), $content);

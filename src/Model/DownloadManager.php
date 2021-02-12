@@ -68,7 +68,7 @@ class DownloadManager
         $keyBase .= ':';
         $date = new \DateTime();
         $todayDate = $date->format('Ymd');
-        $yesterdayDate = date('Ymd', $date->format('U') - 86400);
+        $yesterdayDate = date('Ymd', ((int) $date->format('U')) - 86400);
 
         // fetch today, yesterday and the latest total from redis
         $redisData = $this->redis->mget([$keyBase.$todayDate, $keyBase.$yesterdayDate, 'dl:'.$package]);
@@ -146,7 +146,7 @@ class DownloadManager
     /**
      * Tracks downloads by updating the relevant keys.
      *
-     * @param array[] an array of arrays containing id (package id), vid (version id) and ip keys
+     * @param list<array{id: int, vid: int, ip: string}> $jobs Each job contains id (package id), vid (version id) and ip keys
      */
     public function addDownloads(array $jobs)
     {

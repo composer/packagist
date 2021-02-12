@@ -41,10 +41,7 @@ class ConfigureAlgoliaCommand extends Command
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $settings = Yaml::parse(
             file_get_contents(__DIR__.'/../config/algolia_settings.yml')
@@ -53,5 +50,7 @@ class ConfigureAlgoliaCommand extends Command
         $index = $this->algolia->initIndex($this->algoliaIndexName);
 
         $index->setSettings($settings);
+
+        return 0;
     }
 }

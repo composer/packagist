@@ -40,7 +40,7 @@ class MigrateDownloadCountsCommand extends Command
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // another migrate command is still active
         $lockAcquired = $this->locker->lockCommand($this->getName());
@@ -48,7 +48,7 @@ class MigrateDownloadCountsCommand extends Command
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
             }
-            return;
+            return 0;
         }
 
         $signal = SignalHandler::create(null, $this->logger);
@@ -114,5 +114,7 @@ class MigrateDownloadCountsCommand extends Command
         } finally {
             $this->locker->unlockCommand($this->getName());
         }
+
+        return 0;
     }
 }

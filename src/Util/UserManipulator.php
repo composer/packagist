@@ -17,6 +17,7 @@ use FOS\UserBundle\Util\TokenGeneratorInterface;
 use FOS\UserBundle\Util\UserManipulator as BaseManipulator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use App\Entity\User;
 
 class UserManipulator extends BaseManipulator
 {
@@ -45,6 +46,10 @@ class UserManipulator extends BaseManipulator
     public function create($username, $password, $email, $active, $superadmin)
     {
         $user = parent::create($username, $password, $email, $active, $superadmin);
+
+        if (!$user instanceof User) {
+            throw new \LogicException('Expected '.User::class.' instance, got '.get_class($user));
+        }
 
         $apiToken = substr($this->tokenGenerator->generateToken(), 0, 20);
         $user->setApiToken($apiToken);

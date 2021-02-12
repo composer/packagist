@@ -26,7 +26,9 @@ class RecaptchaListener implements EventSubscriberInterface
         try {
             $this->recaptchaVerifier->verify();
         } catch (RecaptchaException $e) {
-            $event->getRequest()->getSession()->getFlashBag()->add('error', 'Invalid ReCaptcha');
+            /** @var \Symfony\Component\HttpFoundation\Session\Session */
+            $session = $event->getRequest()->getSession();
+            $session->getFlashBag()->add('error', 'Invalid ReCaptcha');
             $event->setResponse(new RedirectResponse($this->urlGenerator->generate('fos_user_resetting_request')));
         }
     }

@@ -25,6 +25,8 @@ use App\Model\FavoriteManager;
  */
 class Controller extends AbstractController
 {
+    use \App\Util\DoctrineTrait;
+
     protected FavoriteManager $favoriteManager;
     protected DownloadManager $downloadManager;
     protected ManagerRegistry $doctrine;

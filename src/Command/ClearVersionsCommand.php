@@ -26,6 +26,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class ClearVersionsCommand extends Command
 {
+    use \App\Util\DoctrineTrait;
+
     private ManagerRegistry $doctrine;
 
     public function __construct(ManagerRegistry $doctrine)
@@ -34,9 +36,6 @@ class ClearVersionsCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this
@@ -54,15 +53,12 @@ EOF
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $force = $input->getOption('force');
         $versionIds = $input->getOption('ids');
 
-        $versionRepo = $this->doctrine->getRepository(Version::class);
+        $versionRepo = $this->getEM()->getRepository(Version::class);
 
         $packageNames = array();
 
@@ -84,15 +80,15 @@ EOF
                     }
                 }
 
-                $this->doctrine->getManager()->flush();
-                $this->doctrine->getManager()->clear();
+                $this->getEM()->flush();
+                $this->getEM()->clear();
                 unset($versions);
             }
         } else {
             if ($id = $input->getArgument('package')) {
                 $ids = [$id];
             } else {
-                $packages = $this->doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+                $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
                 $ids = array();
                 foreach ($packages as $package) {
                     $ids[] = $package['id'];
@@ -116,21 +112,23 @@ EOF
                     }
                 }
 
-                $this->doctrine->getManager()->flush();
-                $this->doctrine->getManager()->clear();
+                $this->getEM()->flush();
+                $this->getEM()->clear();
                 unset($versions);
             }
         }
 
         if ($force) {
             // mark packages as recently crawled so that they get updated
-            $packageRepo = $this->doctrine->getRepository(Package::class);
+            $packageRepo = $this->getEM()->getRepository(Package::class);
             foreach ($packageNames as $name) {
-                $package = $packageRepo->findOneByName($name);
+                $package = $packageRepo->findOneBy(['name' => $name]);
                 $package->setCrawledAt(new \DateTime);
             }
 
-            $this->doctrine->getManager()->flush();
+            $this->getEM()->flush();
         }
+
+        return 0;
     }
 }

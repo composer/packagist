@@ -203,7 +203,6 @@ class Package
     {
         $maintainers = array();
         foreach ($this->getMaintainers() as $maintainer) {
-            /** @var $maintainer User */
             $maintainers[] = $maintainer->toArray();
         }
 
@@ -598,12 +597,7 @@ class Package
         return $this->createdAt;
     }
 
-    /**
-     * Set repository
-     *
-     * @param string $repository
-     */
-    public function setRepository($repoUrl)
+    public function setRepository(string $repoUrl): void
     {
         $this->vcsDriver = null;
 
@@ -693,7 +687,7 @@ class Package
     /**
      * Get versions
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return ArrayCollection<Version>
      */
     public function getVersions()
     {
@@ -813,7 +807,7 @@ class Package
     /**
      * Get maintainers
      *
-     * @return \Doctrine\Common\Collections\Collection
+     * @return ArrayCollection<User>
      */
     public function getMaintainers()
     {

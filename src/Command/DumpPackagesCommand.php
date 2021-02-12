@@ -26,6 +26,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class DumpPackagesCommand extends Command
 {
+    use \App\Util\DoctrineTrait;
+
     private SymlinkDumper $dumper;
     private Locker $locker;
     private ManagerRegistry $doctrine;
@@ -40,9 +42,6 @@ class DumpPackagesCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this
@@ -55,10 +54,7 @@ class DumpPackagesCommand extends Command
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $force = (bool) $input->getOption('force');
         $gc = (bool) $input->getOption('gc');
@@ -69,7 +65,7 @@ class DumpPackagesCommand extends Command
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
-            return;
+            return 0;
         }
 
         // another dumper is still active
@@ -94,9 +90,9 @@ class DumpPackagesCommand extends Command
         }
 
         if ($force) {
-            $packages = $this->doctrine->getManager()->getConnection()->fetchAll('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
+            $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
         } else {
-            $packages = $this->doctrine->getRepository(Package::class)->getStalePackagesForDumping();
+            $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumping();
         }
 
         $ids = array();

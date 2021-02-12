@@ -26,6 +26,7 @@ services:
             $redis: '@snc_redis.default'
             $redisCache: '@snc_redis.cache'
             $recaptchaVerifier: "@beelab_recaptcha2.verifier"
+            'Monolog\Logger': '@logger'
 
             # params
             $dbUrl: '%env(DATABASE_URL)%'

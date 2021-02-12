@@ -39,6 +39,8 @@ use Composer\Package\CompletePackageInterface;
  */
 class Updater
 {
+    use \App\Util\DoctrineTrait;
+
     const UPDATE_EQUAL_REFS = 1;
     const DELETE_BEFORE = 2;
     const FORCE_DUMP = 4;
@@ -107,7 +109,7 @@ class Updater
         $deleteDate = new \DateTime();
         $deleteDate->modify('-1day');
 
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $apc = extension_loaded('apcu');
         $rootIdentifier = null;
 
@@ -248,10 +250,10 @@ class Updater
         // remove outdated versions
         foreach ($existingVersions as $version) {
             if (!is_null($version['softDeletedAt']) && new \DateTime($version['softDeletedAt']) < $deleteDate) {
-                $versionRepository->remove($versionRepository->findOneById($version['id']));
+                $versionRepository->remove($versionRepository->find($version['id']));
             } elseif ($version['normalizedVersion'] === '9999999-dev') {
                 // removed v1 normalized versions of dev-master/trunk/default immediately as they have been recreated as dev-master/trunk/default in a non-normalized way
-                $versionRepository->remove($versionRepository->findOneById($version['id']));
+                $versionRepository->remove($versionRepository->find($version['id']));
             } else {
                 // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
                 // version is still missing it will be really removed
@@ -281,7 +283,7 @@ class Updater
         }
 
         $em->flush();
-        if ($repository->hadInvalidBranches()) {
+        if ($repository instanceof VcsRepository && $repository->hadInvalidBranches()) {
             throw new InvalidRepositoryException('Some branches contained invalid data and were discarded, it is advised to review the log and fix any issues present in branches');
         }
 
@@ -297,7 +299,7 @@ class Updater
      */
     private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, $flags, $rootIdentifier)
     {
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $version = new Version();
 
         $normVersion = $data->getVersion();
@@ -315,9 +317,9 @@ class Updater
                 // or if the version default branch state has changed
                 || ($data->isDefaultBranch() !== $version->isDefaultBranch())
             ) {
-                $version = $versionRepo->findOneById($existingVersion['id']);
+                $version = $versionRepo->find($existingVersion['id']);
             } elseif ($existingVersion['needs_author_migration']) {
-                $version = $versionRepo->findOneById($existingVersion['id']);
+                $version = $versionRepo->find($existingVersion['id']);
 
                 $version->setAuthorJson($version->getAuthorData());
                 $version->getAuthors()->clear();

@@ -327,7 +327,7 @@ class UserController extends Controller
             return $this->redirectToRoute('home');
         }
 
-        return $this->redirectToRoute('user_profile', ['name' => $user->getName()]);
+        return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
     }
 
     /**

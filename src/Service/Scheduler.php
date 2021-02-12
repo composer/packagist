@@ -9,6 +9,8 @@ use App\Entity\Job;
 
 class Scheduler
 {
+    use \App\Util\DoctrineTrait;
+
     private ManagerRegistry $doctrine;
     private RedisClient $redis;
 
@@ -31,7 +33,7 @@ class Scheduler
 
         $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateEqualRefs, $deleteBefore);
         if ($pendingJobId) {
-            $pendingJob = $this->doctrine->getManager()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId]);
+            $pendingJob = $this->getEM()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId]);
 
             // pending job will execute before the one we are trying to schedule so skip scheduling
             if (
@@ -49,7 +51,7 @@ class Scheduler
             // pending job will somehow execute after the one we are scheduling so we mark it complete and schedule a new job to run immediately
             $pendingJob->start();
             $pendingJob->complete(['status' => Job::STATUS_COMPLETED, 'message' => 'Another job is attempting to schedule immediately for this package, aborting scheduled-for-later update']);
-            $this->doctrine->getManager()->flush($pendingJob);
+            $this->getEM()->flush($pendingJob);
         }
 
         return $this->createJob('package:updates', ['id' => $packageOrId, 'update_equal_refs' => $updateEqualRefs, 'delete_before' => $deleteBefore, 'force_dump' => $forceDump], $packageOrId, $executeAfter);
@@ -67,7 +69,7 @@ class Scheduler
 
     private function getPendingUpdateJob(int $packageId, $updateEqualRefs = false, $deleteBefore = false)
     {
-        $result = $this->doctrine->getManager()->getConnection()->fetchAssoc(
+        $result = $this->getEM()->getConnection()->fetchAssoc(
             'SELECT id, payload FROM job WHERE packageId = :package AND status = :status AND type = :type LIMIT 1',
             [
                 'package' => $packageId,
@@ -124,11 +126,7 @@ class Scheduler
     {
         $jobId = bin2hex(random_bytes(20));
 
-        $job = new Job();
-        $job->setId($jobId);
-        $job->setType($type);
-        $job->setPayload($payload);
-        $job->setCreatedAt(new \DateTime());
+        $job = new Job($jobId, $type, $payload);
         if ($packageId) {
             $job->setPackageId($packageId);
         }
@@ -136,7 +134,7 @@ class Scheduler
             $job->setExecuteAfter($executeAfter);
         }
 
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $em->persist($job);
         $em->flush();
 

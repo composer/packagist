@@ -34,9 +34,6 @@ class GenerateTokensCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this
@@ -45,10 +42,7 @@ class GenerateTokensCommand extends Command
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $userRepo = $this->doctrine->getRepository(User::class);
 
@@ -58,5 +52,7 @@ class GenerateTokensCommand extends Command
             $user->setApiToken($apiToken);
         }
         $this->doctrine->getManager()->flush();
+
+        return 0;
     }
 }
