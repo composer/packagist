@@ -261,13 +261,15 @@ class ApiController extends Controller
                 return new JsonResponse(array('status' => 'success'), 201);
             }
 
-            $this->downloadManager->addDownloads($jobs);
-
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
             if (!$uaParser->getComposerVersion()) {
-                $this->logger->error('Could not parse UA: '.$_SERVER['HTTP_USER_AGENT'].' with '.$request->getContent().' from '.$request->getClientIp());
-                $statsd->increment('installs.invalid-ua');
+                if (0 !== strpos($request->headers->get('User-Agent'), 'User-Agent:')) {
+                    $this->logger->error('Could not parse UA: '.$request->headers->get('User-Agent').' with '.$request->getContent().' from '.$request->getClientIp());
+                    $statsd->increment('installs.invalid-ua');
+                }
             } else {
+                $this->downloadManager->addDownloads($jobs);
+
                 $statsd->increment('installs', 1, 1, [
                     'composer' => $uaParser->getComposerVersion() ?: 'unknown',
                     'composer_major' => $uaParser->getComposerMajorVersion() ?: 'unknown',
