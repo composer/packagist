@@ -15,7 +15,6 @@ namespace App\Command;
 use Algolia\AlgoliaSearch\SearchClient;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Doctrine\Persistence\ManagerRegistry;
 use App\Service\Locker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;

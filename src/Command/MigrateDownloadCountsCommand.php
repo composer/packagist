@@ -4,10 +4,8 @@ namespace App\Command;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Seld\Signal\SignalHandler;
-use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Service\Locker;
 use Predis\Client;

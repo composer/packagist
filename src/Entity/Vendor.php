@@ -12,14 +12,7 @@
 
 namespace App\Entity;
 
-use Composer\Factory;
-use Composer\IO\NullIO;
-use Composer\Repository\VcsRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\Context\ExecutionContextInterface;
-use Composer\Repository\Vcs\GitHubDriver;
 
 /**
  * @ORM\Entity(repositoryClass="App\Entity\VendorRepository")

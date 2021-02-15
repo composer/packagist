@@ -22,7 +22,6 @@ use Composer\Util\ErrorHandler;
 use Composer\Util\HttpDownloader;
 use Composer\Config;
 use Composer\IO\IOInterface;
-use App\Entity\Author;
 use App\Entity\Package;
 use App\Entity\Tag;
 use App\Entity\Version;
