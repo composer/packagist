@@ -53,12 +53,12 @@ class UpdatePackagesCommand extends Command
     {
         $this
             ->setName('packagist:update')
-            ->setDefinition(array(
+            ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages, or if a package name is given forces an update of all versions'),
                 new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all versions before an update'),
                 new InputOption('update-equal-refs', null, InputOption::VALUE_NONE, 'Force update of all versions even when they already exist'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
-            ))
+            ])
             ->setDescription('Updates packages')
         ;
     }
@@ -81,7 +81,7 @@ class UpdatePackagesCommand extends Command
         }
 
         if ($package) {
-            $packages = array(array('id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()));
+            $packages = [['id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()]];
             if ($force) {
                 $updateEqualRefs = true;
             }
@@ -93,7 +93,7 @@ class UpdatePackagesCommand extends Command
             $packages = $this->getEM()->getRepository(Package::class)->getStalePackages();
         }
 
-        $ids = array();
+        $ids = [];
         foreach ($packages as $package) {
             $ids[] = (int) $package['id'];
         }

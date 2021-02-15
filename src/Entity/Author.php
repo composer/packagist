@@ -79,7 +79,7 @@ class Author
 
     public function toArray()
     {
-        $data = array();
+        $data = [];
 
         if ($this->getName()) {
             $data['name'] = $this->getName();

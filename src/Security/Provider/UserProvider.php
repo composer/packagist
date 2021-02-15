@@ -60,7 +60,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         }
 
         /** @var User $previousUser */
-        $previousUser = $this->userManager->findUserBy(array('githubId' => $username));
+        $previousUser = $this->userManager->findUserBy(['githubId' => $username]);
 
         /** @var User $user */
         $user->setGithubId($username);
@@ -95,7 +95,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         }
 
         /** @var User $user */
-        $user = $this->userManager->findUserBy(array('githubId' => $username));
+        $user = $this->userManager->findUserBy(['githubId' => $username]);
 
         if (!$user) {
             throw new AccountNotLinkedException(sprintf('No user with github username "%s" was found.', $username));

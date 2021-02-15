@@ -44,8 +44,7 @@ class CompileStatsCommand extends Command
     {
         $this
             ->setName('packagist:stats:compile')
-            ->setDefinition(array(
-            ))
+            ->setDefinition([])
             ->setDescription('Updates the redis stats indices')
         ;
     }
@@ -68,7 +67,7 @@ class CompileStatsCommand extends Command
 
         // fetch existing ids
         $packages = $conn->fetchAll('SELECT id FROM package ORDER BY id ASC');
-        $ids = array();
+        $ids = [];
         foreach ($packages as $row) {
             $ids[] = (int) $row['id'];
         }

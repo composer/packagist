@@ -74,15 +74,15 @@ class PackageController extends Controller
     public function listAction(Request $req)
     {
         $repo = $this->getEM()->getRepository(Package::class);
-        $fields = (array) $req->query->get('fields', array());
-        $fields = array_intersect($fields, array('repository', 'type'));
+        $fields = (array) $req->query->get('fields', []);
+        $fields = array_intersect($fields, ['repository', 'type']);
 
         if ($fields) {
-            $filters = array_filter(array(
+            $filters = array_filter([
                 'type' => $req->query->get('type'),
-            ));
+            ]);
 
-            return new JsonResponse(array('packages' => $repo->getPackagesWithFields($filters, $fields)));
+            return new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);
         }
 
         if ($req->query->get('type')) {
@@ -104,7 +104,7 @@ class PackageController extends Controller
             $names = $filtered;
         }
 
-        return new JsonResponse(array('packageNames' => $names));
+        return new JsonResponse(['packageNames' => $names]);
     }
 
     /**
@@ -208,14 +208,14 @@ class PackageController extends Controller
 
                 $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
 
-                return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
+                return new RedirectResponse($this->generateUrl('view_package', ['name' => $package->getName()]));
             } catch (\Exception $e) {
-                $logger->critical($e->getMessage(), array('exception', $e));
+                $logger->critical($e->getMessage(), ['exception', $e]);
                 $this->addFlash('error', $package->getName().' could not be saved.');
             }
         }
 
-        return array('form' => $form->createView(), 'page' => 'submit');
+        return ['form' => $form->createView(), 'page' => 'submit'];
     }
 
     /**
@@ -241,20 +241,20 @@ class PackageController extends Controller
                     ['query' => '%/'.$name]
                 );
 
-            $similar = array();
+            $similar = [];
 
             foreach ($existingPackages as $existingPackage) {
-                $similar[] = array(
+                $similar[] = [
                     'name' => $existingPackage['name'],
-                    'url' => $this->generateUrl('view_package', array('name' => $existingPackage['name']), true),
-                );
+                    'url' => $this->generateUrl('view_package', ['name' => $existingPackage['name']], true),
+                ];
             }
 
-            return new JsonResponse(array('status' => 'success', 'name' => $package->getName(), 'similar' => $similar));
+            return new JsonResponse(['status' => 'success', 'name' => $package->getName(), 'similar' => $similar]);
         }
 
         if ($form->isSubmitted()) {
-            $errors = array();
+            $errors = [];
             if (count($form->getErrors())) {
                 foreach ($form->getErrors() as $error) {
                     $errors[] = $error->getMessageTemplate();
@@ -268,10 +268,10 @@ class PackageController extends Controller
                 }
             }
 
-            return new JsonResponse(array('status' => 'error', 'reason' => $errors));
+            return new JsonResponse(['status' => 'error', 'reason' => $errors]);
         }
 
-        return new JsonResponse(array('status' => 'error', 'reason' => 'No data posted.'));
+        return new JsonResponse(['status' => 'error', 'reason' => 'No data posted.']);
     }
 
     /**
@@ -287,15 +287,15 @@ class PackageController extends Controller
             ->getResult();
 
         if (!$packages) {
-            return $this->redirect($this->generateUrl('search', array('q' => $vendor, 'reason' => 'vendor_not_found')));
+            return $this->redirect($this->generateUrl('search', ['q' => $vendor, 'reason' => 'vendor_not_found']));
         }
 
-        return array(
+        return [
             'packages' => $packages,
             'meta' => $this->getPackagesMetadata($packages),
             'vendor' => $vendor,
             'paginate' => false,
-        );
+        ];
     }
 
     /**
@@ -324,10 +324,10 @@ class PackageController extends Controller
             throw new NotFoundHttpException('Package not found');
         }
         if (false === strpos(trim($name, '/'), '/')) {
-            return $this->redirect($this->generateUrl('view_vendor', array('vendor' => $name, '_format' => $format)));
+            return $this->redirect($this->generateUrl('view_vendor', ['vendor' => $name, '_format' => $format]));
         }
 
-        return $this->redirect($this->generateUrl('view_package', array('name' => trim($name, '/'), '_format' => $format)));
+        return $this->redirect($this->generateUrl('view_package', ['name' => trim($name, '/'), '_format' => $format]));
     }
 
     /**
@@ -348,7 +348,7 @@ class PackageController extends Controller
                 return new JsonResponse(['providers' => []]);
             }
 
-            return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
+            return $this->redirect($this->generateUrl('search', ['q' => $name, 'reason' => 'package_not_found']));
         }
 
         if ($req->getRequestFormat() !== 'json') {
@@ -359,7 +359,7 @@ class PackageController extends Controller
         }
 
         try {
-            $trendiness = array();
+            $trendiness = [];
             foreach ($providers as $package) {
                 /** @var Package $package */
                 $trendiness[$package->getId()] = (int) $redis->zscore('downloads:trending', $package->getId());
@@ -384,12 +384,12 @@ class PackageController extends Controller
             return new JsonResponse(['providers' => $providers]);
         }
 
-        return $this->render('package/providers.html.twig', array(
+        return $this->render('package/providers.html.twig', [
             'name' => $name,
             'packages' => $providers,
             'meta' => $this->getPackagesMetadata($providers),
             'paginate' => false,
-        ));
+        ]);
     }
 
     /**
@@ -497,14 +497,14 @@ class PackageController extends Controller
             $package = $repo->getPartialPackageByNameWithVersions($name);
         } catch (NoResultException $e) {
             if ('json' === $req->getRequestFormat()) {
-                return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 404);
+                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
             }
 
             if ($providers = $repo->findProviders($name)) {
-                return $this->redirect($this->generateUrl('view_providers', array('name' => $name)));
+                return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
             }
 
-            return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
+            return $this->redirect($this->generateUrl('search', ['q' => $name, 'reason' => 'package_not_found']));
         }
 
         if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
@@ -528,7 +528,7 @@ class PackageController extends Controller
                 $data['versions'] = new \stdClass;
             }
 
-            $response = new JsonResponse(array('package' => $data));
+            $response = new JsonResponse(['package' => $data]);
             $response->setSharedMaxAge(12*3600);
 
             return $response;
@@ -560,12 +560,12 @@ class PackageController extends Controller
             $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
         }
 
-        $data = array(
+        $data = [
             'package' => $package,
             'version' => $version,
             'versions' => $versions,
             'expandedVersion' => $expandedVersion,
-        );
+        ];
 
         try {
             $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
@@ -664,20 +664,20 @@ class PackageController extends Controller
             $package = $repo->getPartialPackageByNameWithVersions($name);
         } catch (NoResultException $e) {
             if ('json' === $req->getRequestFormat()) {
-                return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 404);
+                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
             }
 
             if ($providers = $repo->findProviders($name)) {
-                return $this->redirect($this->generateUrl('view_providers', array('name' => $name)));
+                return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
             }
 
-            return $this->redirect($this->generateUrl('search', array('q' => $name, 'reason' => 'package_not_found')));
+            return $this->redirect($this->generateUrl('search', ['q' => $name, 'reason' => 'package_not_found']));
         }
 
         $versions = $package->getVersions();
-        $data = array(
+        $data = [
             'name' => $package->getName(),
-        );
+        ];
 
         try {
             $data['downloads']['total'] = $this->downloadManager->getDownloads($package);
@@ -695,7 +695,7 @@ class PackageController extends Controller
             }
         }
 
-        $response = new Response(json_encode(array('package' => $data)), 200);
+        $response = new Response(json_encode(['package' => $data]), 200);
         $response->setSharedMaxAge(3600);
 
         return $response;
@@ -719,10 +719,10 @@ class PackageController extends Controller
 
         $html = $this->renderView(
             'package/version_details.html.twig',
-            array('version' => $repo->getFullVersion($versionId))
+            ['version' => $repo->getFullVersion($versionId)]
         );
 
-        return new JsonResponse(array('content' => $html));
+        return new JsonResponse(['content' => $html]);
     }
 
     /**
@@ -766,7 +766,7 @@ class PackageController extends Controller
                 ->getRepository(Package::class)
                 ->getPackageByName($name);
         } catch (NoResultException $e) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Package not found',)), 404);
+            return new Response(json_encode(['status' => 'error', 'message' => 'Package not found',]), 404);
         }
 
         if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
@@ -787,7 +787,7 @@ class PackageController extends Controller
         $manualUpdate = (bool) $req->request->get('manualUpdate', $req->query->get('manualUpdate'));
 
         $user = $this->getUser() ?: $this->getEM()->getRepository(User::class)
-            ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
+            ->findOneBy(['username' => $username, 'apiToken' => $apiToken]);
 
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
@@ -820,7 +820,7 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours',], 404);
         }
 
-        return new JsonResponse(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',), 404);
+        return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',], 404);
     }
 
     /**
@@ -871,14 +871,14 @@ class PackageController extends Controller
             throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
         }
 
-        $data = array(
+        $data = [
             'package' => $package,
             'versions' => null,
             'expandedVersion' => null,
             'version' => null,
             'addMaintainerForm' => $form->createView(),
             'show_add_maintainer_form' => true,
-        );
+        ];
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -897,11 +897,11 @@ class PackageController extends Controller
 
                     $this->addFlash('success', $user->getUsername().' is now a '.$package->getName().' maintainer.');
 
-                    return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
+                    return new RedirectResponse($this->generateUrl('view_package', ['name' => $package->getName()]));
                 }
                 $this->addFlash('error', 'The user could not be found.');
             } catch (\Exception $e) {
-                $logger->critical($e->getMessage(), array('exception', $e));
+                $logger->critical($e->getMessage(), ['exception', $e]);
                 $this->addFlash('error', 'The maintainer could not be added.');
             }
         }
@@ -926,14 +926,14 @@ class PackageController extends Controller
             throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
         }
 
-        $data = array(
+        $data = [
             'package' => $package,
             'versions' => null,
             'expandedVersion' => null,
             'version' => null,
             'removeMaintainerForm' => $removeMaintainerForm->createView(),
             'show_remove_maintainer_form' => true,
-        );
+        ];
 
         $removeMaintainerForm->handleRequest($req);
         if ($removeMaintainerForm->isSubmitted() && $removeMaintainerForm->isValid()) {
@@ -951,11 +951,11 @@ class PackageController extends Controller
 
                     $this->addFlash('success', $user->getUsername().' is no longer a '.$package->getName().' maintainer.');
 
-                    return new RedirectResponse($this->generateUrl('view_package', array('name' => $package->getName())));
+                    return new RedirectResponse($this->generateUrl('view_package', ['name' => $package->getName()]));
                 }
                 $this->addFlash('error', 'The user could not be found.');
             } catch (\Exception $e) {
-                $logger->critical($e->getMessage(), array('exception', $e));
+                $logger->critical($e->getMessage(), ['exception', $e]);
                 $this->addFlash('error', 'The maintainer could not be removed.');
             }
         }
@@ -977,7 +977,7 @@ class PackageController extends Controller
             throw new AccessDeniedException;
         }
 
-        $form = $this->createFormBuilder($package, array("validation_groups" => array("Update")))
+        $form = $this->createFormBuilder($package, ["validation_groups" => ["Update"]])
             ->add('repository', TextType::class)
             ->setMethod('POST')
             ->setAction($this->generateUrl('edit_package', ['name' => $package->getName()]))
@@ -995,13 +995,13 @@ class PackageController extends Controller
             $this->addFlash("success", "Changes saved.");
 
             return $this->redirect(
-                $this->generateUrl("view_package", array("name" => $package->getName()))
+                $this->generateUrl("view_package", ["name" => $package->getName()])
             );
         }
 
-        return array(
+        return [
             "package" => $package, "form" => $form->createView()
-        );
+        ];
     }
 
     /**
@@ -1031,13 +1031,13 @@ class PackageController extends Controller
             $em = $this->getEM();
             $em->flush();
 
-            return $this->redirect($this->generateUrl('view_package', array('name' => $package->getName())));
+            return $this->redirect($this->generateUrl('view_package', ['name' => $package->getName()]));
         }
 
-        return array(
+        return [
             'package' => $package,
             'form'    => $form->createView()
-        );
+        ];
     }
 
     /**
@@ -1063,7 +1063,7 @@ class PackageController extends Controller
         $em = $this->getEM();
         $em->flush();
 
-        return $this->redirect($this->generateUrl('view_package', array('name' => $package->getName())));
+        return $this->redirect($this->generateUrl('view_package', ['name' => $package->getName()]));
     }
 
     /**
@@ -1280,10 +1280,10 @@ class PackageController extends Controller
             }
         }
 
-        $datePoints = array(
+        $datePoints = [
             'labels' => array_keys($datePoints),
             'values' => $series,
-        );
+        ];
 
         $datePoints['average'] = $average;
 
@@ -1397,9 +1397,9 @@ class PackageController extends Controller
 
         if ($this->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
             $maintainerRequest = new MaintainerRequest();
-            return $this->createForm(RemoveMaintainerRequestType::class, $maintainerRequest, array(
+            return $this->createForm(RemoveMaintainerRequestType::class, $maintainerRequest, [
                 'package' => $package,
-            ));
+            ]);
         }
     }
 
@@ -1428,7 +1428,7 @@ class PackageController extends Controller
             }
         }
 
-        return $this->createFormBuilder(array())->getForm();
+        return $this->createFormBuilder([])->getForm();
     }
 
     private function createDatePoints(DateTimeImmutable $from, DateTimeImmutable $to, $average)

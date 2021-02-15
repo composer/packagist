@@ -40,7 +40,7 @@ class WebController extends Controller
             return $resp;
         }
 
-        return array('page' => 'home');
+        return ['page' => 'home'];
     }
 
     /**
@@ -58,9 +58,9 @@ class WebController extends Controller
 
         $form->handleRequest($req);
 
-        return $this->render('web/search_form.html.twig', array(
+        return $this->render('web/search_form.html.twig', [
             'searchQuery' => $req->query->get('search_query')['query'] ?? '',
-        ));
+        ]);
     }
 
     private function checkForQueryMatch(Request $req)
@@ -92,9 +92,9 @@ class WebController extends Controller
 
         $blockList = ['2400:6180:100:d0::83b:b001', '34.235.38.170'];
         if (in_array($req->getClientIp(), $blockList, true)) {
-            return JsonResponse::create(array(
+            return JsonResponse::create([
                 'error' => 'Too many requests, reach out to contact@packagist.org'
-            ), 400)->setCallback($req->query->get('callback'));
+            ], 400)->setCallback($req->query->get('callback'));
         }
 
         $typeFilter = str_replace('%type%', '', $req->query->get('type'));
@@ -105,9 +105,9 @@ class WebController extends Controller
         $this->computeSearchQuery($req, $filteredOrderBys);
 
         if (!$req->query->has('search_query') && !$typeFilter && !$tagsFilter) {
-            return JsonResponse::create(array(
+            return JsonResponse::create([
                 'error' => 'Missing search query, example: ?q=example'
-            ), 400)->setCallback($req->query->get('callback'));
+            ], 400)->setCallback($req->query->get('callback'));
         }
 
         $form = $this->createForm(SearchQueryType::class, new SearchQuery());
@@ -123,7 +123,7 @@ class WebController extends Controller
 
         // filter by tags
         if ($tagsFilter) {
-            $tags = array();
+            $tags = [];
             foreach ((array) $tagsFilter as $tag) {
                 $tag = strtr($tag, '-', ' ');
                 $tags[] = 'tags:"'.$tag.'"';
@@ -135,10 +135,10 @@ class WebController extends Controller
         }
 
         if (!empty($filteredOrderBys)) {
-            return JsonResponse::create(array(
+            return JsonResponse::create([
                 'status' => 'error',
                 'message' => 'Search sorting is not available anymore',
-            ), 400)->setCallback($req->query->get('callback'));
+            ], 400)->setCallback($req->query->get('callback'));
         }
 
         $form->handleRequest($req);
@@ -149,10 +149,10 @@ class WebController extends Controller
         $perPage = max(1, (int) $req->query->getInt('per_page', 15));
         if ($perPage <= 0 || $perPage > 100) {
            if ($req->getRequestFormat() === 'json') {
-                return JsonResponse::create(array(
+                return JsonResponse::create([
                     'status' => 'error',
                     'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-                ), 400)->setCallback($req->query->get('callback'));
+                ], 400)->setCallback($req->query->get('callback'));
             }
 
             $perPage = max(0, min(100, $perPage));
@@ -167,30 +167,30 @@ class WebController extends Controller
         try {
             $results = $index->search($query, $queryParams);
         } catch (\Throwable $e) {
-            return JsonResponse::create(array(
+            return JsonResponse::create([
                 'status' => 'error',
                 'message' => 'Could not connect to the search server',
-            ), 500)->setCallback($req->query->get('callback'));
+            ], 500)->setCallback($req->query->get('callback'));
         }
 
-        $result = array(
-            'results' => array(),
+        $result = [
+            'results' => [],
             'total' => $results['nbHits'],
-        );
+        ];
 
         foreach ($results['hits'] as $package) {
             if (ctype_digit((string) $package['id'])) {
-                $url = $this->generateUrl('view_package', array('name' => $package['name']), UrlGeneratorInterface::ABSOLUTE_URL);
+                $url = $this->generateUrl('view_package', ['name' => $package['name']], UrlGeneratorInterface::ABSOLUTE_URL);
             } else {
-                $url = $this->generateUrl('view_providers', array('name' => $package['name']), UrlGeneratorInterface::ABSOLUTE_URL);
+                $url = $this->generateUrl('view_providers', ['name' => $package['name']], UrlGeneratorInterface::ABSOLUTE_URL);
             }
 
-            $row = array(
+            $row = [
                 'name' => $package['name'],
                 'description' => $package['description'] ?: '',
                 'url' => $url,
                 'repository' => $package['repository'],
-            );
+            ];
             if (ctype_digit((string) $package['id'])) {
                 $row['downloads'] = $package['meta']['downloads'];
                 $row['favers'] = $package['meta']['favers'];
@@ -204,11 +204,11 @@ class WebController extends Controller
         }
 
         if ($results['nbPages'] > $results['page'] + 1) {
-            $params = array(
+            $params = [
                 '_format' => 'json',
                 'q' => $form->getData()->getQuery(),
                 'page' => $results['page'] + 2,
-            );
+            ];
             if ($tagsFilter) {
                 $params['tags'] = (array) $tagsFilter;
             }
@@ -242,7 +242,7 @@ class WebController extends Controller
             ->getConnection()
             ->fetchAll('SELECT COUNT(*) count, YEAR(releasedAt) year, MONTH(releasedAt) month FROM `package_version` GROUP BY year, month');
 
-        $chart = array('versions' => array(), 'packages' => array(), 'months' => array());
+        $chart = ['versions' => [], 'packages' => [], 'months' => []];
 
         // prepare x axis
         $date = new \DateTime($packages[0]['year'] . '-' . $packages[0]['month'] . '-01');
@@ -285,7 +285,7 @@ class WebController extends Controller
             $today = new \DateTime('today 00:00:00');
             $dailyGraphStart = new \DateTime('-30days 00:00:00'); // 30 days before today
 
-            $dlChart = $dlChartMonthly = array();
+            $dlChart = $dlChartMonthly = [];
             while ($date <= $today) {
                 if ($date > $dailyGraphStart) {
                     $dlChart[$date->format('Y-m-d')] = 'downloads:'.$date->format('Ymd');
@@ -294,20 +294,20 @@ class WebController extends Controller
                 $date->modify('+1day');
             }
 
-            $dlChart = array(
+            $dlChart = [
                 'labels' => array_keys($dlChart),
                 'values' => $redis->mget(array_values($dlChart))
-            );
-            $dlChartMonthly = array(
+            ];
+            $dlChartMonthly = [
                 'labels' => array_keys($dlChartMonthly),
                 'values' => $redis->mget(array_values($dlChartMonthly))
-            );
+            ];
         } catch (ConnectionException $e) {
             $downloads = 'N/A';
             $dlChart = $dlChartMonthly = null;
         }
 
-        return array(
+        return [
             'chart' => $chart,
             'packages' => !empty($chart['packages']) ? max($chart['packages']) : 0,
             'versions' => !empty($chart['versions']) ? max($chart['versions']) : 0,
@@ -317,7 +317,7 @@ class WebController extends Controller
             'downloadsChartMonthly' => $dlChartMonthly,
             'maxMonthlyDownloads' => !empty($dlChartMonthly) ? max($dlChartMonthly['values']) : null,
             'downloadsStartDate' => $downloadsStartDate,
-        );
+        ];
     }
 
     /**
@@ -350,24 +350,24 @@ class WebController extends Controller
      */
     protected function getFilteredOrderedBys(Request $req)
     {
-        $orderBys = $req->query->get('orderBys', array());
+        $orderBys = $req->query->get('orderBys', []);
         if (!$orderBys) {
             $orderBys = $req->query->get('search_query');
-            $orderBys = $orderBys['orderBys'] ?? array();
+            $orderBys = $orderBys['orderBys'] ?? [];
         }
 
         if ($orderBys) {
-            $allowedSorts = array(
+            $allowedSorts = [
                 'downloads' => 1,
                 'favers' => 1
-            );
+            ];
 
-            $allowedOrders = array(
+            $allowedOrders = [
                 'asc' => 1,
                 'desc' => 1,
-            );
+            ];
 
-            $filteredOrderBys = array();
+            $filteredOrderBys = [];
 
             foreach ($orderBys as $orderBy) {
                 if (isset($orderBy['sort'])
@@ -378,7 +378,7 @@ class WebController extends Controller
                 }
             }
         } else {
-            $filteredOrderBys = array();
+            $filteredOrderBys = [];
         }
 
         return $filteredOrderBys;
@@ -392,7 +392,7 @@ class WebController extends Controller
     {
         // transform q=search shortcut
         if ($req->query->has('q') || $req->query->has('orderBys')) {
-            $searchQuery = array();
+            $searchQuery = [];
 
             $q = $req->query->get('q');
 

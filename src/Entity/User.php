@@ -142,10 +142,10 @@ class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface, 
 
     public function toArray()
     {
-        return array(
+        return [
             'name' => $this->getUsername(),
             'avatar_url' => $this->getGravatarUrl(),
-        );
+        ];
     }
 
     /**

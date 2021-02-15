@@ -71,7 +71,7 @@ class ApiController extends Controller
     {
         $payload = json_decode($request->getContent(), true);
         if (!$payload) {
-            return new JsonResponse(array('status' => 'error', 'message' => 'Missing payload parameter'), 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
         }
         $url = $payload['repository']['url'];
         $package = new Package;
@@ -82,11 +82,11 @@ class ApiController extends Controller
         $package->setRepository($url);
         $errors = $validator->validate($package);
         if (count($errors) > 0) {
-            $errorArray = array();
+            $errorArray = [];
             foreach ($errors as $error) {
                 $errorArray[$error->getPropertyPath()] =  $error->getMessage();
             }
-            return new JsonResponse(array('status' => 'error', 'message' => $errorArray), 406);
+            return new JsonResponse(['status' => 'error', 'message' => $errorArray], 406);
         }
         try {
             $em = $this->getEM();
@@ -98,11 +98,11 @@ class ApiController extends Controller
                 $githubUserMigrationWorker->setupWebHook($user->getGithubToken(), $package);
             }
         } catch (\Exception $e) {
-            $this->logger->critical($e->getMessage(), array('exception', $e));
-            return new JsonResponse(array('status' => 'error', 'message' => 'Error saving package'), 500);
+            $this->logger->critical($e->getMessage(), ['exception', $e]);
+            return new JsonResponse(['status' => 'error', 'message' => 'Error saving package'], 500);
         }
 
-        return new JsonResponse(array('status' => 'success'), 202);
+        return new JsonResponse(['status' => 'success'], 202);
     }
 
     /**
@@ -119,7 +119,7 @@ class ApiController extends Controller
         }
 
         if (!$payload) {
-            return new JsonResponse(array('status' => 'error', 'message' => 'Missing payload parameter'), 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
         }
 
         if (isset($payload['project']['git_http_url'])) { // gitlab event payload
@@ -140,7 +140,7 @@ class ApiController extends Controller
             $url = $payload['canon_url'].$payload['repository']['absolute_url'];
             $remoteId = null;
         } else {
-            return new JsonResponse(array('status' => 'error', 'message' => 'Missing or invalid payload'), 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid payload'], 406);
         }
 
         return $this->receivePost($request, $url, $urlRegex, $remoteId, $githubWebhookSecret);
@@ -170,13 +170,13 @@ class ApiController extends Controller
 
         $package->setRepository($payload['repository']);
 
-        $errors = $validator->validate($package, null, array("Update"));
+        $errors = $validator->validate($package, null, ["Update"]);
         if (count($errors) > 0) {
-            $errorArray = array();
+            $errorArray = [];
             foreach ($errors as $error) {
                 $errorArray[$error->getPropertyPath()] =  $error->getMessage();
             }
-            return new JsonResponse(array('status' => 'error', 'message' => $errorArray), 406);
+            return new JsonResponse(['status' => 'error', 'message' => $errorArray], 406);
         }
 
         $package->setCrawledAt(null);
@@ -185,7 +185,7 @@ class ApiController extends Controller
         $em->persist($package);
         $em->flush();
 
-        return new JsonResponse(array('status' => 'success'), 200);
+        return new JsonResponse(['status' => 'success'], 200);
     }
 
     /**
@@ -196,12 +196,12 @@ class ApiController extends Controller
         $result = $this->getPackageAndVersionId($name, $request->request->get('version_normalized'));
 
         if (!$result) {
-            return new JsonResponse(array('status' => 'error', 'message' => 'Package not found'), 200);
+            return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 200);
         }
 
         $this->downloadManager->addDownloads([['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $request->getClientIp()]]);
 
-        return new JsonResponse(array('status' => 'success'), 201);
+        return new JsonResponse(['status' => 'success'], 201);
     }
 
     /**
@@ -230,10 +230,10 @@ class ApiController extends Controller
     {
         $contents = json_decode($request->getContent(), true);
         if (empty($contents['downloads']) || !is_array($contents['downloads'])) {
-            return new JsonResponse(array('status' => 'error', 'message' => 'Invalid request format, must be a json object containing a downloads key filled with an array of name/version objects'), 200);
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid request format, must be a json object containing a downloads key filled with an array of name/version objects'], 200);
         }
 
-        $failed = array();
+        $failed = [];
 
         $ip = $request->headers->get('X-'.$trustedIpHeader);
         if (!$ip) {
@@ -258,7 +258,7 @@ class ApiController extends Controller
                 $this->logger->warning('Missing UA for '.$request->getContent().' (from '.$request->getClientIp().')');
                 $statsd->increment('installs.missing-ua');
 
-                return new JsonResponse(array('status' => 'success'), 201);
+                return new JsonResponse(['status' => 'success'], 201);
             }
 
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
@@ -282,10 +282,10 @@ class ApiController extends Controller
         }
 
         if ($failed) {
-            return new JsonResponse(array('status' => 'partial', 'message' => 'Packages '.json_encode($failed).' not found'), 200);
+            return new JsonResponse(['status' => 'partial', 'message' => 'Packages '.json_encode($failed).' not found'], 200);
         }
 
-        return new JsonResponse(array('status' => 'success'), 201);
+        return new JsonResponse(['status' => 'success'], 201);
     }
 
     /**
@@ -332,7 +332,7 @@ class ApiController extends Controller
                 WHERE p.name = ?
                 AND v.defaultBranch = true
                 LIMIT 1',
-                array($name)
+                [$name]
             );
         }
 
@@ -343,7 +343,7 @@ class ApiController extends Controller
             WHERE p.name = ?
             AND v.normalizedVersion = ?
             LIMIT 1',
-            array($name, $version)
+            [$name, $version]
         );
     }
 
@@ -359,7 +359,7 @@ class ApiController extends Controller
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!preg_match($urlRegex, $url, $match)) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Could not parse payload repository URL')), 406);
+            return new Response(json_encode(['status' => 'error', 'message' => 'Could not parse payload repository URL']), 406);
         }
 
         if ($remoteId) {
@@ -384,7 +384,7 @@ class ApiController extends Controller
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
                 } else {
-                    return new Response(json_encode(array('status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.')), 403);
+                    return new Response(json_encode(['status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.']), 403);
                 }
             } else {
                 $user = null;
@@ -411,7 +411,7 @@ class ApiController extends Controller
 
         if (!$packages) {
             if (!$user) {
-                return new Response(json_encode(array('status' => 'error', 'message' => 'Invalid credentials')), 403);
+                return new Response(json_encode(['status' => 'error', 'message' => 'Invalid credentials']), 403);
             }
 
             // try to find the user package
@@ -419,7 +419,7 @@ class ApiController extends Controller
         }
 
         if (!$packages) {
-            return new Response(json_encode(array('status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)')), 404);
+            return new Response(json_encode(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)']), 404);
         }
 
         $jobs = [];
@@ -458,7 +458,7 @@ class ApiController extends Controller
         }
 
         $user = $this->getEM()->getRepository(User::class)
-            ->findOneBy(array('username' => $username, 'apiToken' => $apiToken));
+            ->findOneBy(['username' => $username, 'apiToken' => $apiToken]);
 
         if ($user && !$user->isEnabled()) {
             return null;
@@ -478,10 +478,10 @@ class ApiController extends Controller
     protected function findPackagesByUrl(User $user, $url, $urlRegex, $remoteId)
     {
         if (!preg_match($urlRegex, $url, $matched)) {
-            return array();
+            return [];
         }
 
-        $packages = array();
+        $packages = [];
         foreach ($user->getPackages() as $package) {
             if (
                 $url === 'https://packagist.org/packages/'.$package->getName()

@@ -44,13 +44,13 @@ class Controller extends AbstractController
     protected function getPackagesMetadata($packages)
     {
         try {
-            $ids = array();
+            $ids = [];
 
             if (!count($packages)) {
                 return;
             }
 
-            $favs = array();
+            $favs = [];
             $search = false;
             foreach ($packages as $package) {
                 if ($package instanceof Package) {
@@ -65,16 +65,16 @@ class Controller extends AbstractController
             }
 
             if ($search) {
-                return array(
+                return [
                     'downloads' => $this->downloadManager->getPackagesDownloads($ids),
                     'favers' => $this->favoriteManager->getFaverCounts($ids),
-                );
+                ];
             }
 
-            return array(
+            return [
                 'downloads' => $this->downloadManager->getPackagesDownloads($ids),
                 'favers' => $favs,
-            );
+            ];
         } catch (\Predis\Connection\ConnectionException $e) {}
     }
 

@@ -31,28 +31,28 @@ class PackagistExtension extends AbstractExtension
 
     public function getTests()
     {
-        return array(
+        return [
             new TwigTest('existing_package', [$this, 'packageExistsTest']),
             new TwigTest('existing_provider', [$this, 'providerExistsTest']),
             new TwigTest('numeric', [$this, 'numericTest']),
-        );
+        ];
     }
 
     public function getFilters()
     {
-        return array(
+        return [
             new TwigFilter('prettify_source_reference', [$this, 'prettifySourceReference']),
             new TwigFilter('gravatar_hash', [$this, 'generateGravatarHash']),
             new TwigFilter('vendor', [$this, 'getVendor']),
             new TwigFilter('sort_links', [$this, 'sortLinks']),
-        );
+        ];
     }
 
     public function getFunctions()
     {
-        return array(
+        return [
             new TwigFunction('requires_recaptcha', [$this, 'requiresRecaptcha']),
-        );
+        ];
     }
 
     public function getName()

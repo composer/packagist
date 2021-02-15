@@ -46,10 +46,10 @@ class DumpPackagesCommand extends Command
     {
         $this
             ->setName('packagist:dump')
-            ->setDefinition(array(
+            ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a dump of all packages'),
                 new InputOption('gc', null, InputOption::VALUE_NONE, 'Runs garbage collection of old files'),
-            ))
+            ])
             ->setDescription('Dumps the packages into a packages.json + included files')
         ;
     }
@@ -95,7 +95,7 @@ class DumpPackagesCommand extends Command
             $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumping();
         }
 
-        $ids = array();
+        $ids = [];
         foreach ($packages as $package) {
             $ids[] = $package['id'];
         }

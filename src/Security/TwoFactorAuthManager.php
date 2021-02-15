@@ -56,9 +56,9 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $user->setTotpSecret($secret);
         $this->doctrine->getManager()->flush();
 
-        $body = $this->twig->render('email/two_factor_enabled.txt.twig', array(
+        $body = $this->twig->render('email/two_factor_enabled.txt.twig', [
             'username' => $user->getUsername(),
-        ));
+        ]);
 
         $message = (new Email())
             ->subject('[Packagist] Two-factor authentication enabled')
@@ -86,10 +86,10 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $user->invalidateAllBackupCodes();
         $this->doctrine->getManager()->flush();
 
-        $body = $this->twig->render('email/two_factor_disabled.txt.twig', array(
+        $body = $this->twig->render('email/two_factor_disabled.txt.twig', [
             'username' => $user->getUsername(),
             'reason' => $reason,
-        ));
+        ]);
 
         $message = (new Email())
             ->subject('[Packagist] Two-factor authentication disabled')
