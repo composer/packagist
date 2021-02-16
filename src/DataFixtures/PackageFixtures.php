@@ -47,20 +47,21 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface
         $maintainer = $this->getReference(UserFixtures::PACKAGE_MAINTAINER_REFERENCE);
 
         foreach ($urls as $url) {
-            $package = new Package;
+            $progressBar->setMessage($url);
+            $progressBar->display();
 
+            $package = new Package;
             $package->addMaintainer($maintainer);
             $package->setRepository($url);
 
             $manager->persist($package);
-            $manager->flush();
 
             $this->providerManager->insertPackage($package);
 
             $progressBar->advance();
-            $progressBar->setMessage($url);
         }
 
+        $manager->flush();
         $progressBar->finish();
 
         $output->writeln('');

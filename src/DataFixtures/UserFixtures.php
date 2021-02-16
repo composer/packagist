@@ -30,8 +30,7 @@ class UserFixtures extends Fixture
 
     public function load(ObjectManager $manager)
     {
-        /** @var User $user */
-        $user = $this->userManager->createUser();
+        $user = new User;
 
         $user->setEmail('dev@packagist.org');
         $user->setUsername('dev');
