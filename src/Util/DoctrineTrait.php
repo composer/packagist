@@ -2,8 +2,6 @@
 
 namespace App\Util;
 
-use Doctrine\ORM\EntityManager;
-
 /**
  * Requires a property Doctrine or type Doctrine\Persistence\ManagerRegistry to be present
  */

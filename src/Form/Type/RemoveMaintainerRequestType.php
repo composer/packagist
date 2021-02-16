@@ -12,7 +12,6 @@
 
 namespace App\Form\Type;
 
-use App\Entity\Package;
 use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Form\Model\MaintainerRequest;

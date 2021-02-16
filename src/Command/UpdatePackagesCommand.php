@@ -12,16 +12,8 @@
 
 namespace App\Command;
 
-use Composer\Factory;
-use Composer\IO\BufferIO;
-use Composer\IO\ConsoleIO;
-use Composer\Package\Loader\ArrayLoader;
-use Composer\Package\Loader\ValidatingArrayLoader;
-use Composer\Repository\InvalidRepositoryException;
-use Composer\Repository\VcsRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
-use App\Package\Updater;
 use App\Service\Locker;
 use App\Service\Scheduler;
 use Symfony\Component\Console\Command\Command;
