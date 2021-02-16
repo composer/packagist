@@ -201,12 +201,12 @@ class Package
 
     public function toArray(VersionRepository $versionRepo, bool $serializeForApi = false)
     {
-        $maintainers = array();
+        $maintainers = [];
         foreach ($this->getMaintainers() as $maintainer) {
             $maintainers[] = $maintainer->toArray();
         }
 
-        $versions = array();
+        $versions = [];
         $partialVersions = $this->getVersions()->toArray();
         while ($partialVersions) {
             $versionRepo->getEntityManager()->clear();
@@ -217,7 +217,7 @@ class Package
             $versions = array_merge($versions, $versionRepo->detachToArray($fullVersions, $versionData, $serializeForApi));
         }
 
-        $data = array(
+        $data = [
             'name' => $this->getName(),
             'description' => $this->getDescription(),
             'time' => $this->getCreatedAt()->format('c'),
@@ -230,7 +230,7 @@ class Package
             'github_forks' => $this->getGitHubForks(),
             'github_open_issues' => $this->getGitHubOpenIssues(),
             'language' => $this->getLanguage(),
-        );
+        ];
 
         if ($this->isAbandoned()) {
             $data['abandoned'] = $this->getReplacementPackage() ?: true;
@@ -300,7 +300,7 @@ class Package
             }
 
             if (
-                preg_match('{(free.*watch|watch.*free|(stream|online).*anschauver.*pelicula|ver.*completa|pelicula.*complet|season.*episode.*online|film.*(complet|entier)|(voir|regarder|guarda|assistir).*(film|complet)|full.*movie|online.*(free|tv|full.*hd)|(free|full|gratuit).*stream|movie.*free|free.*(movie|hack)|watch.*movie|watch.*full|generate.*resource|generate.*unlimited|hack.*coin|coin.*(hack|generat)|vbucks|hack.*cheat|hack.*generat|generat.*hack|hack.*unlimited|cheat.*(unlimited|generat)|(mod|cheat|apk).*(hack|cheat|mod)|hack.*(apk|mod|free|gold|gems|diamonds|coin)|putlocker|generat.*free|coins.*generat|(download|telecharg).*album|album.*(download|telecharg)|album.*(free|gratuit)|generat.*coins|unlimited.*coins|(fortnite|pubg|apex.*legend|t[1i]k.*t[o0]k).*(free|gratuit|generat|unlimited|coins|mobile|hack|follow))}i', str_replace(array('.', '-'), '', $information['name']))
+                preg_match('{(free.*watch|watch.*free|(stream|online).*anschauver.*pelicula|ver.*completa|pelicula.*complet|season.*episode.*online|film.*(complet|entier)|(voir|regarder|guarda|assistir).*(film|complet)|full.*movie|online.*(free|tv|full.*hd)|(free|full|gratuit).*stream|movie.*free|free.*(movie|hack)|watch.*movie|watch.*full|generate.*resource|generate.*unlimited|hack.*coin|coin.*(hack|generat)|vbucks|hack.*cheat|hack.*generat|generat.*hack|hack.*unlimited|cheat.*(unlimited|generat)|(mod|cheat|apk).*(hack|cheat|mod)|hack.*(apk|mod|free|gold|gems|diamonds|coin)|putlocker|generat.*free|coins.*generat|(download|telecharg).*album|album.*(download|telecharg)|album.*(free|gratuit)|generat.*coins|unlimited.*coins|(fortnite|pubg|apex.*legend|t[1i]k.*t[o0]k).*(free|gratuit|generat|unlimited|coins|mobile|hack|follow))}i', str_replace(['.', '-'], '', $information['name']))
                 && !preg_match('{^(hexmode|calgamo|liberty_code(_module)?|dvi|thelia|clayfreeman|watchfulli|assaneonline|awema-pl)/}', $information['name'])
             ) {
                 $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is blocked, if you think this is a mistake please get in touch with us.')
@@ -366,7 +366,7 @@ class Package
     {
         try {
             if ($this->entityRepository->findOneByName($this->name)) {
-                $context->buildViolation('A package with the name <a href="'.$this->router->generate('view_package', array('name' => $this->name)).'">'.$this->name.'</a> already exists.')
+                $context->buildViolation('A package with the name <a href="'.$this->router->generate('view_package', ['name' => $this->name]).'">'.$this->name.'</a> already exists.')
                     ->atPath('repository')
                     ->addViolation()
                 ;
@@ -384,7 +384,7 @@ class Package
                         . 'If they add you as a maintainer on any package in that vendor namespace, '
                         . 'you will then be able to add new packages in that namespace. '
                         . 'The packages already in that vendor namespace can be found at '
-                        . '<a href="'.$this->router->generate('view_vendor', array('vendor' => $vendor)).'">'.$vendor.'</a>.'
+                        . '<a href="'.$this->router->generate('view_vendor', ['vendor' => $vendor]).'">'.$vendor.'</a>.'
                         . 'If those packages belong to you but were submitted by someone else, you can <a href="mailto:contact@packagist.org">contact us</a> to resolve the issue.')
                     ->atPath('repository')
                     ->addViolation()
@@ -626,7 +626,7 @@ class Package
             $config = Factory::createConfig();
             $io->loadConfiguration($config);
             $httpDownloader = new HttpDownloader($io, $config);
-            $repository = new VcsRepository(array('url' => $this->repository), $io, $config, $httpDownloader);
+            $repository = new VcsRepository(['url' => $this->repository], $io, $config, $httpDownloader);
 
             $driver = $this->vcsDriver = $repository->getDriver();
             if (!$driver) {
@@ -697,7 +697,7 @@ class Package
     public function getVersion($normalizedVersion)
     {
         if (null === $this->cachedVersions) {
-            $this->cachedVersions = array();
+            $this->cachedVersions = [];
             foreach ($this->getVersions() as $version) {
                 $this->cachedVersions[strtolower($version->getNormalizedVersion())] = $version;
             }

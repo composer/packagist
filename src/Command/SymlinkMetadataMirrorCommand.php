@@ -42,7 +42,7 @@ class SymlinkMetadataMirrorCommand extends Command
     {
         $this
             ->setName('packagist:symlink-metadata')
-            ->setDefinition(array())
+            ->setDefinition([])
             ->setDescription('Symlinks metadata dir to the mirrored metadata, if needed')
         ;
     }

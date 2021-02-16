@@ -65,11 +65,11 @@ class UserController extends Controller
     {
         $packages = $this->getUserPackages($req, $user);
 
-        return array(
+        return [
             'packages' => $packages,
             'meta' => $this->getPackagesMetadata($packages),
             'user' => $user,
-        );
+        ];
     }
 
     /**
@@ -113,7 +113,7 @@ class UserController extends Controller
             throw new AccessDeniedException('This user can not mark others as spammers');
         }
 
-        $form = $this->createFormBuilder(array())->getForm();
+        $form = $this->createFormBuilder([])->getForm();
 
         $form->submit($req->request->get('form'));
         if ($form->isSubmitted() && $form->isValid()) {
@@ -133,7 +133,7 @@ class UserController extends Controller
             $versionRepo = $doctrine->getRepository(Version::class);
             $packages = $doctrine
                 ->getRepository(Package::class)
-                ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true)
+                ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true)
                 ->getQuery()->getResult();
 
             foreach ($packages as $package) {
@@ -150,7 +150,7 @@ class UserController extends Controller
         }
 
         return $this->redirect(
-            $this->generateUrl("user_profile", array("name" => $user->getUsername()))
+            $this->generateUrl("user_profile", ["name" => $user->getUsername()])
         );
     }
 
@@ -168,15 +168,15 @@ class UserController extends Controller
         $packages = $this->getUserPackages($req, $user);
         $lastGithubSync = $this->doctrine->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
 
-        $data = array(
+        $data = [
             'packages' => $packages,
             'meta' => $this->getPackagesMetadata($packages),
             'user' => $user,
             'githubSync' => $lastGithubSync,
-        );
+        ];
 
         if (!count($packages)) {
-            $data['deleteForm'] = $this->createFormBuilder(array())->getForm()->createView();
+            $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
 
         return $this->render(
@@ -194,17 +194,17 @@ class UserController extends Controller
     {
         $packages = $this->getUserPackages($req, $user);
 
-        $data = array(
+        $data = [
             'packages' => $packages,
             'meta' => $this->getPackagesMetadata($packages),
             'user' => $user,
-        );
+        ];
 
         if ($this->isGranted('ROLE_ANTISPAM')) {
-            $data['spammerForm'] = $this->createFormBuilder(array())->getForm()->createView();
+            $data['spammerForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
         if (!count($packages) && ($this->isGranted('ROLE_ADMIN') || ($this->getUser() && $this->getUser()->getId() === $user->getId()))) {
-            $data['deleteForm'] = $this->createFormBuilder(array())->getForm()->createView();
+            $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
 
         return $data;
@@ -244,9 +244,9 @@ class UserController extends Controller
             }
         } catch (\Exception $e) {
             $this->addFlash('error', 'Could not connect to the Redis database.');
-            $logger->notice($e->getMessage(), array('exception' => $e));
+            $logger->notice($e->getMessage(), ['exception' => $e]);
 
-            return array('user' => $user, 'packages' => array());
+            return ['user' => $user, 'packages' => []];
         }
 
         $paginator = new Pagerfanta(
@@ -257,7 +257,7 @@ class UserController extends Controller
         $paginator->setMaxPerPage(15);
         $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)));
 
-        return array('packages' => $paginator, 'user' => $user);
+        return ['packages' => $paginator, 'user' => $user];
     }
 
     /**
@@ -314,7 +314,7 @@ class UserController extends Controller
             throw new AccessDeniedException('The user has packages so it can not be deleted');
         }
 
-        $form = $this->createFormBuilder(array())->getForm();
+        $form = $this->createFormBuilder([])->getForm();
 
         $form->submit($req->request->get('form'));
         if ($form->isSubmitted() && $form->isValid()) {
@@ -345,7 +345,7 @@ class UserController extends Controller
             $backupCode = $req->getSession()->remove('backup_code');
         }
 
-        return array('user' => $user, 'backup_code' => $backupCode ?? null);
+        return ['user' => $user, 'backup_code' => $backupCode ?? null];
     }
 
     /**
@@ -381,11 +381,11 @@ class UserController extends Controller
                 $this->addFlash('success', 'Two-factor authentication has been enabled.');
                 $req->getSession()->set('backup_code', $backupCode);
 
-                return $this->redirectToRoute('user_2fa_confirm', array('name' => $user->getUsername()));
+                return $this->redirectToRoute('user_2fa_confirm', ['name' => $user->getUsername()]);
             }
         }
 
-        return array('user' => $user, 'provisioningUri' => $authenticator->getQRContent($user), 'secret' => $enableRequest->getSecret(), 'form' => $form->createView());
+        return ['user' => $user, 'provisioningUri' => $authenticator->getQRContent($user), 'secret' => $enableRequest->getSecret(), 'form' => $form->createView()];
     }
 
     /**
@@ -405,7 +405,7 @@ class UserController extends Controller
             return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
-        return array('user' => $user, 'backup_code' => $backupCode);
+        return ['user' => $user, 'backup_code' => $backupCode];
     }
 
     /**
@@ -425,10 +425,10 @@ class UserController extends Controller
 
             $this->addFlash('success', 'Two-factor authentication has been disabled.');
 
-            return $this->redirectToRoute('user_2fa_configure', array('name' => $user->getUsername()));
+            return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
-        return array('user' => $user);
+        return ['user' => $user];
     }
 
     /**
@@ -440,7 +440,7 @@ class UserController extends Controller
     {
         $packages = $this->doctrine
             ->getRepository(Package::class)
-            ->getFilteredQueryBuilder(array('maintainer' => $user->getId()), true);
+            ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true);
 
         $paginator = new Pagerfanta(new QueryAdapter($packages, true));
         $paginator->setNormalizeOutOfRangePages(true);

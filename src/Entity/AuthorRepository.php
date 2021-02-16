@@ -34,7 +34,7 @@ class AuthorRepository extends ServiceEntityRepository
             ->where('p.id = :packageId')
             ->andWhere('a.name = :author')
             ->setMaxResults(1)
-            ->setParameters(array('author' => $author, 'packageId' => $package->getId()));
+            ->setParameters(['author' => $author, 'packageId' => $package->getId()]);
 
         return $qb->getQuery()->getOneOrNullResult();
     }

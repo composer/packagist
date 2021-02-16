@@ -40,11 +40,11 @@ class ClearVersionsCommand extends Command
     {
         $this
             ->setName('packagist:clear:versions')
-            ->setDefinition(array(
+            ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force execution, by default it runs in dry-run mode'),
                 new InputOption('ids', null, InputOption::VALUE_REQUIRED, 'Version ids (comma separated) to delete'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package id to clear versions for'),
-            ))
+            ])
             ->setDescription('Clears all versions from the databases')
             ->setHelp(<<<EOF
 
@@ -60,7 +60,7 @@ EOF
 
         $versionRepo = $this->getEM()->getRepository(Version::class);
 
-        $packageNames = array();
+        $packageNames = [];
 
         if ($versionIds) {
             $ids = explode(',', trim($versionIds, ' ,'));
@@ -89,7 +89,7 @@ EOF
                 $ids = [$id];
             } else {
                 $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
-                $ids = array();
+                $ids = [];
                 foreach ($packages as $package) {
                     $ids[] = $package['id'];
                 }

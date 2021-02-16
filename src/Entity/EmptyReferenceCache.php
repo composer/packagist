@@ -30,7 +30,7 @@ class EmptyReferenceCache
     /**
      * @ORM\Column(type="array")
      */
-    protected $emptyReferences = array();
+    protected $emptyReferences = [];
 
     public function __construct(Package $package)
     {

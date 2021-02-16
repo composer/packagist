@@ -36,7 +36,7 @@ class FeedController extends Controller
      */
     public function feedsAction()
     {
-        return array();
+        return [];
     }
 
     /**
@@ -58,7 +58,7 @@ class FeedController extends Controller
             $req,
             'Newly Submitted Packages',
             'Latest packages submitted to Packagist.',
-            $this->generateUrl('browse', array(), UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->generateUrl('browse', [], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -84,7 +84,7 @@ class FeedController extends Controller
             $req,
             'New Releases',
             'Latest releases of all packages.',
-            $this->generateUrl('browse', array(), UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->generateUrl('browse', [], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -110,7 +110,7 @@ class FeedController extends Controller
             $req,
             "$vendor packages",
             "Latest packages updated on Packagist of $vendor.",
-            $this->generateUrl('view_vendor', array('vendor' => $vendor), UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->generateUrl('view_vendor', ['vendor' => $vendor], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -136,7 +136,7 @@ class FeedController extends Controller
             $req,
             "$package releases",
             "Latest releases on Packagist of $package.",
-            $this->generateUrl('view_package', array('name' => $package), UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->generateUrl('view_package', ['name' => $package], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -223,7 +223,7 @@ class FeedController extends Controller
         $entry->setLink(
             $this->generateUrl(
                 'view_package',
-                array('name' => $package->getName()),
+                ['name' => $package->getName()],
                 UrlGeneratorInterface::ABSOLUTE_URL
             )
         );
@@ -249,9 +249,9 @@ class FeedController extends Controller
 
         foreach ($version->getAuthorData() as $author) {
             if (!empty($author['name'])) {
-                $entry->addAuthor(array(
+                $entry->addAuthor([
                     'name' => $author['name']
-                ));
+                ]);
             }
         }
     }

@@ -56,11 +56,11 @@ class IndexPackagesCommand extends Command
     {
         $this
             ->setName('packagist:index')
-            ->setDefinition(array(
+            ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-indexing of all packages'),
                 new InputOption('all', null, InputOption::VALUE_NONE, 'Index all packages without clearing the index first'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to index'),
-            ))
+            ])
             ->setDescription('Indexes packages in Algolia')
         ;
     }
@@ -91,7 +91,7 @@ class IndexPackagesCommand extends Command
         $index = $this->algolia->initIndex($this->algoliaIndexName);
 
         if ($package) {
-            $packages = array(array('id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()));
+            $packages = [['id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()]];
         } elseif ($force || $indexAll) {
             $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
             $this->getEM()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
@@ -99,7 +99,7 @@ class IndexPackagesCommand extends Command
             $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForIndexing();
         }
 
-        $ids = array();
+        $ids = [];
         foreach ($packages as $row) {
             $ids[] = $row['id'];
         }

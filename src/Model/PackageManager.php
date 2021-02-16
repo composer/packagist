@@ -134,7 +134,7 @@ class PackageManager
     public function notifyUpdateFailure(Package $package, \Exception $e, $details = null)
     {
         if (!$package->isUpdateFailureNotified()) {
-            $recipients = array();
+            $recipients = [];
             foreach ($package->getMaintainers() as $maintainer) {
                 if ($maintainer->isNotifiableForFailures()) {
                     $recipients[$maintainer->getEmail()] = new Address($maintainer->getEmail(), $maintainer->getUsername());
@@ -142,12 +142,12 @@ class PackageManager
             }
 
             if ($recipients) {
-                $body = $this->twig->render('email/update_failed.txt.twig', array(
+                $body = $this->twig->render('email/update_failed.txt.twig', [
                     'package' => $package,
                     'exception' => get_class($e),
                     'exceptionMessage' => $e->getMessage(),
                     'details' => strip_tags($details),
-                ));
+                ]);
 
                 $message = (new Email())
                     ->subject($package->getName().' failed to update, invalid composer.json data')
@@ -181,9 +181,9 @@ class PackageManager
 
     public function notifyNewMaintainer($user, $package)
     {
-        $body = $this->twig->render('email/maintainer_added.txt.twig', array(
+        $body = $this->twig->render('email/maintainer_added.txt.twig', [
             'package_name' => $package->getName()
-        ));
+        ]);
 
         $message = (new Email)
             ->subject('You have been added to ' . $package->getName() . ' as a maintainer')

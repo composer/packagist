@@ -46,8 +46,7 @@ class CleanIndexCommand extends Command
     {
         $this
             ->setName('packagist:clean-index')
-            ->setDefinition(array(
-            ))
+            ->setDefinition([])
             ->setDescription('Cleans up the Algolia index of stale virtual packages')
         ;
     }

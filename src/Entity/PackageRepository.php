@@ -37,7 +37,7 @@ class PackageRepository extends ServiceEntityRepository
             ->andWhere('pr.packageName = :name')
             ->orderBy('p.name')
             ->getQuery()
-            ->setParameters(array('name' => $name));
+            ->setParameters(['name' => $name]);
 
         return $query->getResult();
     }
@@ -84,7 +84,7 @@ class PackageRepository extends ServiceEntityRepository
     {
         $query = $this->getEntityManager()
             ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.type = :type AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
-            ->setParameters(array('type' => $type));
+            ->setParameters(['type' => $type]);
 
         return $this->getPackageNamesForQuery($query);
     }
@@ -93,7 +93,7 @@ class PackageRepository extends ServiceEntityRepository
     {
         $query = $this->getEntityManager()
             ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.name LIKE :vendor AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
-            ->setParameters(array('vendor' => $vendor.'/%'));
+            ->setParameters(['vendor' => $vendor.'/%']);
 
         return $this->getPackageNamesForQuery($query);
     }
@@ -140,7 +140,7 @@ class PackageRepository extends ServiceEntityRepository
             ->createQuery("SELECT p.name $selector  FROM App\Entity\Package p WHERE $where")
             ->setParameters($filters);
 
-        $result = array();
+        $result = [];
         foreach ($query->getScalarResult() as $row) {
             $name = $row['name'];
             unset($row['name']);
@@ -152,7 +152,7 @@ class PackageRepository extends ServiceEntityRepository
 
     private function getPackageNamesForQuery($query)
     {
-        $names = array();
+        $names = [];
         foreach ($query->getScalarResult() as $row) {
             $names[] = $row['name'];
         }
@@ -180,7 +180,7 @@ class PackageRepository extends ServiceEntityRepository
                 OR (p.crawledAt < :autocrawled)
             )
             ORDER BY p.id ASC',
-            array(
+            [
                 // crawl new packages every 3h for the first day so that dummy packages get deleted ASAP
                 'recent' => date('Y-m-d H:i:s', strtotime('-3hour')),
                 'yesterday' => date('Y-m-d H:i:s', strtotime('-1day')),
@@ -188,7 +188,7 @@ class PackageRepository extends ServiceEntityRepository
                 'crawled' => date('Y-m-d H:i:s', strtotime('-2week')),
                 // crawl all packages including auto-updated once a month just in case
                 'autocrawled' => date('Y-m-d H:i:s', strtotime('-1month')),
-            )
+            ]
         );
     }
 
@@ -238,7 +238,7 @@ class PackageRepository extends ServiceEntityRepository
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC')
             ->where('p.name = ?0')
-            ->setParameters(array($name));
+            ->setParameters([$name]);
 
         $pkg = $qb->getQuery()->getSingleResult();
 
@@ -268,12 +268,12 @@ class PackageRepository extends ServiceEntityRepository
             ->from('App\Entity\Package', 'p')
             ->leftJoin('p.maintainers', 'm')
             ->where('p.name = ?0')
-            ->setParameters(array($name));
+            ->setParameters([$name]);
 
         return $qb->getQuery()->getSingleResult();
     }
 
-    public function getPackagesWithVersions(array $ids = null, $filters = array())
+    public function getPackagesWithVersions(array $ids = null, $filters = [])
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'v')
@@ -303,7 +303,7 @@ class PackageRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getFilteredQueryBuilder(array $filters = array(), $orderByName = false)
+    public function getFilteredQueryBuilder(array $filters = [], $orderByName = false)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
@@ -336,7 +336,7 @@ class PackageRepository extends ServiceEntityRepository
                 FROM App\Entity\Package p
                 JOIN p.maintainers m
                 WHERE p.name LIKE :vendor")
-            ->setParameters(array('vendor' => $vendor.'/%'));
+            ->setParameters(['vendor' => $vendor.'/%']);
 
         $rows = $query->getArrayResult();
         if (!$rows) {

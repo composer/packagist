@@ -62,7 +62,7 @@ class Version
     /**
      * @ORM\Column(type="array", nullable=true)
      */
-    private $extra = array();
+    private $extra = [];
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\Tag", inversedBy="versions")
@@ -233,7 +233,7 @@ class Version
         if (isset($versionData[$this->id]['tags'])) {
             $tags = $versionData[$this->id]['tags'];
         } else {
-            $tags = array();
+            $tags = [];
             foreach ($this->getTags() as $tag) {
                 $tags[] = $tag->getName();
             }
@@ -245,7 +245,7 @@ class Version
             if (isset($versionData[$this->id]['authors'])) {
                 $authors = $versionData[$this->id]['authors'];
             } else {
-                $authors = array();
+                $authors = [];
                 foreach ($this->getAuthors() as $author) {
                     $authors[] = $author->toArray();
                 }
@@ -256,7 +256,7 @@ class Version
         }
         unset($author);
 
-        $data = array(
+        $data = [
             'name' => $this->getName(),
             'description' => (string) $this->getDescription(),
             'keywords' => $tags,
@@ -268,7 +268,7 @@ class Version
             'source' => $this->getSource(),
             'dist' => $this->getDist(),
             'type' => $this->getType(),
-        );
+        ];
 
         if ($serializeForApi && $this->getSupport()) {
             $data['support'] = $this->getSupport();
@@ -295,14 +295,14 @@ class Version
             $data['bin'] = $this->getBinaries();
         }
 
-        $supportedLinkTypes = array(
+        $supportedLinkTypes = [
             'require'    => 'require',
             'devRequire' => 'require-dev',
             'suggest'    => 'suggest',
             'conflict'   => 'conflict',
             'provide'    => 'provide',
             'replace'    => 'replace',
-        );
+        ];
 
         if ($this->isDefaultBranch()) {
             $data['default-branch'] = true;
@@ -378,9 +378,9 @@ class Version
 
     public function getNames(array $versionData = null)
     {
-        $names = array(
+        $names = [
             strtolower($this->name) => true
-        );
+        ];
 
         if (isset($versionData[$this->id])) {
             foreach (($versionData[$this->id]['replace'] ?? []) as $link) {

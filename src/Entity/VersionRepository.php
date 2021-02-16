@@ -25,14 +25,14 @@ class VersionRepository extends ServiceEntityRepository
 {
     private $redis;
 
-    protected $supportedLinkTypes = array(
+    protected $supportedLinkTypes = [
         'require',
         'conflict',
         'provide',
         'replace',
         'devRequire',
         'suggest',
-    );
+    ];
 
     public function getEntityManager(): EntityManager
     {
@@ -53,14 +53,14 @@ class VersionRepository extends ServiceEntityRepository
         $version->getPackage()->setCrawledAt(new \DateTime);
         $version->getPackage()->setUpdatedAt(new \DateTime);
 
-        $em->getConnection()->executeQuery('DELETE FROM version_author WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM version_tag WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_suggest WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_conflict WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_replace WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_provide WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_require_dev WHERE version_id=:id', array('id' => $version->getId()));
-        $em->getConnection()->executeQuery('DELETE FROM link_require WHERE version_id=:id', array('id' => $version->getId()));
+        $em->getConnection()->executeQuery('DELETE FROM version_author WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM version_tag WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_suggest WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_conflict WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_replace WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_provide WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_require_dev WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM link_require WHERE version_id=:id', ['id' => $version->getId()]);
         $em->getConnection()->executeQuery('DELETE FROM download WHERE id=:id AND type = :type', ['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
 
         $em->remove($version);

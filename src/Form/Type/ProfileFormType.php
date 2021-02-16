@@ -36,26 +36,26 @@ class ProfileFormType extends BaseType
             }
 
             if (!$user->getGithubId()) {
-                $constraintsOptions = array(
+                $constraintsOptions = [
                     'message' => 'fos_user.current_password.invalid',
-                );
+                ];
 
-                $event->getForm()->add('current_password', PasswordType::class, array(
+                $event->getForm()->add('current_password', PasswordType::class, [
                     'label' => 'form.current_password',
                     'translation_domain' => 'FOSUserBundle',
                     'mapped' => false,
-                    'constraints' => array(
+                    'constraints' => [
                         new NotBlank(),
                         new UserPassword($constraintsOptions),
-                    ),
-                    'attr' => array(
+                    ],
+                    'attr' => [
                         'autocomplete' => 'current-password',
-                    ),
-                ));
+                    ],
+                ]);
             }
         });
 
-        $builder->add('failureNotifications', null, array('required' => false, 'label' => 'Notify me of package update failures'));
+        $builder->add('failureNotifications', null, ['required' => false, 'label' => 'Notify me of package update failures']);
     }
 
     /**

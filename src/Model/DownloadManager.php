@@ -127,7 +127,7 @@ class DownloadManager
      */
     public function getPackagesDownloads(array $packageIds)
     {
-        $keys = array();
+        $keys = [];
 
         foreach ($packageIds as $id) {
             if (ctype_digit((string) $id)) {
@@ -136,7 +136,7 @@ class DownloadManager
         }
 
         if (!$keys) {
-            return array();
+            return [];
         }
 
         $res = array_map('intval', $this->redis->mget(array_values($keys)));
