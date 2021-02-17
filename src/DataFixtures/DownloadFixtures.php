@@ -6,6 +6,8 @@ use App\Entity\Download;
 use App\Entity\Package;
 use App\Entity\Version;
 use DateInterval;
+use DateTime;
+use DateTimeImmutable;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
@@ -38,7 +40,7 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
         foreach ($packages as $package) {
             $latestVersion = $this->getLatestPackageVersion($manager, $package);
 
-            $dataPoints = $this->createDataPoints();
+            $dataPoints = $this->createDataPoints($package->getCreatedAt());
 
             $totalDownloads = array_sum($dataPoints);
             $this->redis->set('dl:' . $package->getId(), $totalDownloads);
@@ -90,18 +92,21 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
 
     /**
      * Returns pseudo-random data points for a download, as an associative array of YYYYMMDD to download count.
+     * The data points start at the package creation date, and end yesterday.
+     * The algorithm attempts to mimic a typical download stats curve.
      */
-    private function createDataPoints(): array
+    private function createDataPoints(DateTime $createdAt): array
     {
         $result = [];
 
-        $now = new \DateTimeImmutable('now');
+        $date = DateTimeImmutable::createFromMutable($createdAt);
+        $endDate = (new \DateTimeImmutable('yesterday'));
 
-        $date = $now->sub(new DateInterval('P365D'));
         $counter = 0;
 
-        for ($i = 0; $i < 365; $i++) {
-            $counter += random_int(- $i * 25, $i * 100);
+        for ($i = 0; ; $i++) {
+            $i = min($i, 300);
+            $counter += random_int(- $i * 9, $i * 10);
 
             if ($counter < 0) {
                 $counter = 0;
@@ -110,6 +115,10 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
             $result[$date->format('Ymd')] = $counter;
 
             $date = $date->add(new DateInterval('P1D'));
+
+            if ($date->diff($endDate)->invert) {
+                break;
+            }
         }
 
         return $result;
