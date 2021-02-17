@@ -2,17 +2,18 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\Download;
+use App\Command\MigrateDownloadCountsCommand;
 use App\Entity\Package;
 use App\Entity\Version;
 use DateInterval;
-use DateTime;
 use DateTimeImmutable;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
 use Predis\Client;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 /**
  * Creates fake download statistics for each package.
@@ -21,9 +22,12 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
 {
     private Client $redis;
 
-    public function __construct(Client $redis)
+    private MigrateDownloadCountsCommand $migrateDownloadCountsCommand;
+
+    public function __construct(Client $redis, MigrateDownloadCountsCommand $command)
     {
         $this->redis = $redis;
+        $this->migrateDownloadCountsCommand = $command;
     }
 
     public function getDependencies()
@@ -38,23 +42,25 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
         /** @var Package[] $packages */
         $packages = $manager->getRepository(Package::class)->findAll();
 
+        // Set the Redis keys that would normally be set by the DownloadManager, for the whole period.
+
+        $redisKeys = [];
+
         foreach ($packages as $package) {
             /** @var EntityManagerInterface $manager */
             $latestVersion = $this->getLatestPackageVersion($manager, $package);
 
-            $dataPoints = $this->createDataPoints($package->getCreatedAt());
-
-            $totalDownloads = array_sum($dataPoints);
-            $this->redis->set('dl:' . $package->getId(), $totalDownloads);
-
-            $packageDownload = $this->createDownload($package->getId(), Download::TYPE_PACKAGE, $package, $dataPoints);
-            $manager->persist($packageDownload);
-
-            $versionDownload = $this->createDownload($latestVersion->getId(), Download::TYPE_VERSION, $package, $dataPoints);
-            $manager->persist($versionDownload);
+            $redisKeys = $this->populateDownloads($redisKeys, $package, $latestVersion);
         }
 
-        $manager->flush();
+        $this->redis->mset($redisKeys);
+
+        // Migrate the download counts to the database.
+
+        $input  = new ArrayInput([]);
+        $output = new ConsoleOutput();
+
+        $this->migrateDownloadCountsCommand->run($input, $output);
     }
 
     /**
@@ -76,45 +82,43 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
     }
 
     /**
-     * Creates a Download with the given parameters.
-     * The Download is populated with 1 year worth of pseudo-random download stats.
-     */
-    private function createDownload(int $id, int $type, Package $package, array $dataPoints): Download
-    {
-        $download = new Download();
-
-        $download->setId($id);
-        $download->setType($type);
-        $download->setPackage($package);
-        $download->setLastUpdated(new \DateTimeImmutable('now'));
-        $download->setData($dataPoints);
-
-        return $download;
-    }
-
-    /**
-     * Returns pseudo-random data points for a download, as an associative array of YYYYMMDD to download count.
-     * The data points start at the package creation date, and end yesterday.
+     * Creates pseudo-random daily download stats starting at the package creation date, and ending today.
      * The algorithm attempts to mimic a typical download stats curve.
+     *
+     * Takes the current Redis keys and returns the updated Redis keys.
+     * The Redis keys set mimic the keys set by the DownloadManager.
      */
-    private function createDataPoints(DateTime $createdAt): array
+    private function populateDownloads(array $redisKeys, Package $package, Version $version): array
     {
-        $result = [];
+        $date = DateTimeImmutable::createFromMutable($package->getCreatedAt());
+        $endDate = (new \DateTimeImmutable('now'));
 
-        $date = DateTimeImmutable::createFromMutable($createdAt);
-        $endDate = (new \DateTimeImmutable('yesterday'));
-
-        $counter = 0;
+        $downloads = 0;
 
         for ($i = 0; ; $i++) {
-            $i = min($i, 300);
-            $counter += random_int(- $i * 9, $i * 10);
+            $val = min($i, 300);
+            $downloads += random_int(- $val * 9, $val * 10);
 
-            if ($counter < 0) {
-                $counter = 0;
+            if ($downloads < 0) {
+                $downloads = 0;
             }
 
-            $result[$date->format('Ymd')] = $counter;
+            $day = $date->format('Ymd');
+            $month = $date->format('Ym');
+
+            $keys = [
+                'downloads',
+                'downloads:' . $day,
+                'downloads:' . $month,
+
+                'dl:' . $package->getId(),
+                'dl:' . $package->getId() . ':' . $day,
+                'dl:' . $package->getId() . '-' . $version->getId() . ':' . $day
+            ];
+
+            foreach ($keys as $key) {
+                $redisKeys[$key] = ($redisKeys[$key] ?? 0) + $downloads;
+            }
 
             $date = $date->add(new DateInterval('P1D'));
 
@@ -123,6 +127,6 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
             }
         }
 
-        return $result;
+        return $redisKeys;
     }
 }
