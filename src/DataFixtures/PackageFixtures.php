@@ -191,7 +191,7 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface
             ['https://github.com/symfony/service-contracts', '2019-05-27T07:16:14+00:00'],
             ['https://github.com/tijsverkoyen/CssToInlineStyles', '2012-09-30T14:34:16+00:00'],
             ['https://github.com/symfony/polyfill-util', '2015-10-25T13:17:23+00:00'],
-            ['https://github.com/schmittjoh/php-option', '2012-11-05T16:24:14+00:00",'],
+            ['https://github.com/schmittjoh/php-option', '2012-11-05T16:24:14+00:00,'],
             ['https://github.com/phpseclib/phpseclib', '2012-06-10T05:33:10+00:00'],
             ['https://github.com/symfony/dependency-injection', '2011-10-16T03:41:53+00:00'],
             ['https://github.com/jmespath/jmespath.php', '2013-11-27T00:36:44+00:00'],
