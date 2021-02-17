@@ -98,8 +98,7 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->with($this->equalTo(['source' => 'test']))
             ->willReturn([$existingAdvisory1, $existingAdvisory2ToBeDeleted]);
 
-        $job = new Job();
-        $job->setPayload(['source' => 'test']);
+        $job = new Job('job', 'security:advisory', ['source' => 'test']);
         $this->worker->process($job, SignalHandler::create());
     }
 
@@ -119,8 +118,7 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->with($this->equalTo(['source' => 'test']))
             ->willReturn([]);
 
-        $job = new Job();
-        $job->setPayload(['source' => 'test']);
+        $job = new Job('job', 'security:advisory', ['source' => 'test']);
         $this->worker->process($job, SignalHandler::create());
     }
 
@@ -139,8 +137,7 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->expects($this->never())
             ->method('findBy');
 
-        $job = new Job();
-        $job->setPayload(['source' => 'test']);
+        $job = new Job('job', 'security:advisory', ['source' => 'test']);
         $this->worker->process($job, SignalHandler::create());
     }
 }
