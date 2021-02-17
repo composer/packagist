@@ -2,26 +2,37 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Model\ProviderManager;
+use App\Service\UpdaterWorker;
+use DateInterval;
+use DateTime;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
+use Monolog\Logger;
+use Seld\Signal\SignalHandler;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
+/**
+ * Creates packages and updates them from GitHub.
+ */
 class PackageFixtures extends Fixture implements DependentFixtureInterface
 {
-    private EntityManagerInterface $em;
-
     private ProviderManager $providerManager;
 
-    public function __construct(EntityManagerInterface $em, ProviderManager $providerManager)
+    private UpdaterWorker $updateWorker;
+
+    private SignalHandler $signalHandler;
+
+    public function __construct(ProviderManager $providerManager, UpdaterWorker $updaterWorker, Logger $logger)
     {
-        $this->em = $em;
         $this->providerManager = $providerManager;
+        $this->updateWorker = $updaterWorker;
+        $this->signalHandler = SignalHandler::create(null, $logger);
     }
 
     public function getDependencies()
@@ -44,31 +55,50 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface
         $progressBar->start();
 
         /** @var User $maintainer */
-        $maintainer = $this->getReference(UserFixtures::PACKAGE_MAINTAINER_REFERENCE);
+        $maintainer = $this->getReference(UserFixtures::PACKAGE_MAINTAINER);
 
         foreach ($urls as $url) {
+            /**
+             * The EntityManager gets cleared by the UpdaterWorker, so the User becomes detached.
+             * We need to re-load into the current EntityManager on every loop iteration.
+             *
+             * @var User $maintainer
+             */
+            $maintainer = $manager->find(User::class, $maintainer->getId());
+
             $progressBar->setMessage($url);
             $progressBar->display();
 
             $package = new Package;
+            $package->setCreatedAt((new DateTime('now'))->sub(new DateInterval('P1Y')));
             $package->addMaintainer($maintainer);
             $package->setRepository($url);
 
             $manager->persist($package);
 
             $this->providerManager->insertPackage($package);
+            $manager->flush();
+
+            $this->updatePackage($package->getId());
 
             $progressBar->advance();
         }
 
-        $manager->flush();
         $progressBar->finish();
 
         $output->writeln('');
-        $output->writeln('<fg=green>Success!</> Now run:');
-        $output->writeln(' - <fg=yellow>bin/console packagist:update</>');
-        $output->writeln(' - <fg=yellow>bin/console packagist:run-workers</>');
-        $output->writeln('and allow a few minutes for updates.');
+    }
+
+    private function updatePackage(int $id): void
+    {
+        $job = new Job('FAKE_ID', 'FAKE_TYPE', [
+            'id'                => $id,
+            'force_dump'        => false,
+            'delete_before'     => false,
+            'update_equal_refs' => false,
+        ]);
+
+        $this->updateWorker->process($job, $this->signalHandler);
     }
 
     private function getPackageUrls(): array

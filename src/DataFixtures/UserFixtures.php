@@ -4,27 +4,20 @@ namespace App\DataFixtures;
 
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
-use FOS\UserBundle\Model\UserManagerInterface;
 use FOS\UserBundle\Util\TokenGeneratorInterface;
 
 /**
- * Creates a user to own packages.
+ * Creates a user to be assigned as the maintainer of packages.
  */
 class UserFixtures extends Fixture
 {
-    public const PACKAGE_MAINTAINER_REFERENCE = 'package-maintainer';
-
-    private UserManagerInterface $userManager;
+    public const PACKAGE_MAINTAINER = 'package-maintainer';
 
     private TokenGeneratorInterface $tokenGenerator;
 
-    public function __construct(
-        UserManagerInterface $userManager,
-        TokenGeneratorInterface $tokenGenerator
-    ) {
-        $this->userManager = $userManager;
+    public function __construct(TokenGeneratorInterface $tokenGenerator)
+    {
         $this->tokenGenerator = $tokenGenerator;
     }
 
@@ -43,6 +36,6 @@ class UserFixtures extends Fixture
         $manager->persist($user);
         $manager->flush();
 
-        $this->addReference(self::PACKAGE_MAINTAINER_REFERENCE, $user);
+        $this->addReference(self::PACKAGE_MAINTAINER, $user);
     }
 }
