@@ -10,6 +10,7 @@ use DateTime;
 use DateTimeImmutable;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
 use Predis\Client;
 
@@ -38,6 +39,7 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
         $packages = $manager->getRepository(Package::class)->findAll();
 
         foreach ($packages as $package) {
+            /** @var EntityManagerInterface $manager */
             $latestVersion = $this->getLatestPackageVersion($manager, $package);
 
             $dataPoints = $this->createDataPoints($package->getCreatedAt());
@@ -58,7 +60,7 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
     /**
      * Returns the latest non-dev version of the given package.
      */
-    private function getLatestPackageVersion(ObjectManager $manager, Package $package): Version
+    private function getLatestPackageVersion(EntityManagerInterface $manager, Package $package): Version
     {
         return $manager->createQueryBuilder()
             ->select('v')
