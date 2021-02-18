@@ -53,7 +53,7 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
             $redisKeys = $this->populateDownloads($redisKeys, $package, $latestVersion);
         }
 
-        $this->redis->mset($redisKeys);
+        $this->msetRedis($redisKeys);
 
         // Migrate the download counts to the database.
 
@@ -128,5 +128,25 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
         }
 
         return $redisKeys;
+    }
+
+    /**
+     * Performs a Redis MSET in batches.
+     * We can't set all values at once, or the operation fails with "Error while writing bytes to the server".
+     */
+    private function msetRedis(array $dict): void
+    {
+        $batchSize = 100;
+
+        for ($start = 0; ; $start += $batchSize) {
+            $batch = array_slice($dict, $start, $batchSize, true);
+
+            if (! $batch) {
+                break;
+            }
+
+            $this->redis->mset($batch);
+            echo '.';
+        }
     }
 }
