@@ -26,8 +26,7 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
     const MAX_ATTEMPTS = 5;
     const RATE_LIMIT_DURATION = 15; // in minutes
 
-    /** @var Client */
-    protected $redisCache;
+    protected Client $redisCache;
 
     public function __construct(Client $redisCache)
     {

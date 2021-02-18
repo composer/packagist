@@ -26,8 +26,8 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
 {
-    private $userManager;
-    private $tokenGenerator;
+    private UserManagerInterface $userManager;
+    private TokenGeneratorInterface $tokenGenerator;
 
     /**
      * Constructor.

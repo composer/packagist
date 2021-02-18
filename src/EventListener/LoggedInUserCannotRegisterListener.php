@@ -15,11 +15,8 @@ use Symfony\Component\Security\Core\Authorization\Voter\AuthenticatedVoter;
  */
 class LoggedInUserCannotRegisterListener implements EventSubscriberInterface
 {
-    /** @var \Symfony\Component\Security\Core\Authorization\AuthorizationChecker */
-    private $authorizationChecker;
-
-    /** @var \Symfony\Component\Routing\Generator\UrlGeneratorInterface */
-    private $router;
+    private AuthorizationChecker $authorizationChecker;
+    private UrlGeneratorInterface $router;
 
     public function __construct(
         AuthorizationChecker $authorizationChecker,

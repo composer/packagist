@@ -14,8 +14,8 @@ class RunWorkersCommand extends Command
 {
     use LockableTrait;
 
-    private $logger;
-    private $worker;
+    private LoggerInterface $logger;
+    private QueueWorker $worker;
 
     public function __construct(LoggerInterface $logger, QueueWorker $worker)
     {

@@ -4,16 +4,11 @@ namespace App\Util;
 
 class UserAgentParser
 {
-    /** @var ?string */
-    private $composerVersion;
-    /** @var ?string */
-    private $phpVersion;
-    /** @var ?string */
-    private $os;
-    /** @var ?string */
-    private $httpVersion;
-    /** @var ?bool */
-    private $ci;
+    private ?string $composerVersion = null;
+    private ?string $phpVersion = null;
+    private ?string $os = null;
+    private ?string $httpVersion = null;
+    private ?bool $ci = null;
 
     public function __construct(?string $userAgent)
     {

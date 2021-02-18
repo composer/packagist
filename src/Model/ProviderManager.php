@@ -18,9 +18,9 @@ use Predis\Client;
 
 class ProviderManager
 {
-    protected $redis;
-    protected $repo;
-    protected $initializedProviders = false;
+    protected Client $redis;
+    protected PackageRepository $repo;
+    protected bool $initializedProviders = false;
 
     public function __construct(Client $redis, PackageRepository $repo)
     {

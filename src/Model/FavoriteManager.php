@@ -23,9 +23,9 @@ use Predis\Client;
  */
 class FavoriteManager
 {
-    protected $redis;
-    protected $packageRepo;
-    protected $userRepo;
+    protected Client $redis;
+    protected PackageRepository $packageRepo;
+    protected UserRepository $userRepo;
 
     public function __construct(Client $redis, PackageRepository $packageRepo, UserRepository $userRepo)
     {

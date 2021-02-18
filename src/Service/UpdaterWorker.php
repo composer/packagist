@@ -26,14 +26,13 @@ use Composer\Util\HttpDownloader;
 
 class UpdaterWorker
 {
-    private $logger;
-    private $doctrine;
-    private $updater;
-    private $locker;
-    /** @var Scheduler */
-    private $scheduler;
-    private $packageManager;
-    private $downloadManager;
+    private LoggerInterface $logger;
+    private ManagerRegistry $doctrine;
+    private Updater $updater;
+    private Locker $locker;
+    private Scheduler $scheduler;
+    private PackageManager $packageManager;
+    private DownloadManager $downloadManager;
 
     public function __construct(
         LoggerInterface $logger,

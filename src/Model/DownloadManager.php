@@ -25,9 +25,9 @@ use DateTimeImmutable;
  */
 class DownloadManager
 {
-    protected $redis;
-    protected $doctrine;
-    protected $redisCommandLoaded = false;
+    protected Client $redis;
+    protected ManagerRegistry $doctrine;
+    protected bool $redisCommandLoaded = false;
 
     public function __construct(Client $redis, ManagerRegistry $doctrine)
     {

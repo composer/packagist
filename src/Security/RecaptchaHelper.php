@@ -11,10 +11,8 @@ class RecaptchaHelper
     private const LOGIN_BASE_KEY_IP = 'bf:login:ip:';
     private const LOGIN_BASE_KEY_USER = 'bf:login:user:';
 
-    /** @var Client */
-    private $redisCache;
-    /** @var bool */
-    private $recaptchaEnabled;
+    private Client $redisCache;
+    private bool $recaptchaEnabled;
 
     public function __construct(Client $redisCache, bool $recaptchaEnabled)
     {

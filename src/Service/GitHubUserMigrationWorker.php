@@ -16,10 +16,10 @@ class GitHubUserMigrationWorker
     const HOOK_URL = 'https://packagist.org/api/github';
     const HOOK_URL_ALT = 'https://packagist.org/api/update-package';
 
-    private $logger;
-    private $doctrine;
-    private $guzzle;
-    private $githubWebhookSecret;
+    private LoggerInterface $logger;
+    private ManagerRegistry $doctrine;
+    private Client $guzzle;
+    private string $githubWebhookSecret;
 
     public function __construct(LoggerInterface $logger, ManagerRegistry $doctrine, Client $guzzle, string $githubWebhookSecret)
     {

@@ -6,7 +6,7 @@ use Doctrine\Persistence\ManagerRegistry;
 
 class Locker
 {
-    private $doctrine;
+    private ManagerRegistry $doctrine;
 
     public function __construct(ManagerRegistry $doctrine)
     {

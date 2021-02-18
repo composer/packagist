@@ -13,14 +13,9 @@ use Twig\TwigTest;
 
 class PackagistExtension extends AbstractExtension
 {
-    /**
-     * @var ProviderManager
-     */
-    private $providerManager;
-    /** @var RecaptchaHelper */
-    private $recaptchaHelper;
-    /** @var RequestStack */
-    private $requestStack;
+    private ProviderManager $providerManager;
+    private RecaptchaHelper $recaptchaHelper;
+    private RequestStack $requestStack;
 
     public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, RequestStack $requestStack)
     {

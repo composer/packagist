@@ -28,12 +28,12 @@ use Symfony\Component\Mime\Email;
  */
 class TwoFactorAuthManager implements BackupCodeManagerInterface
 {
-    protected $doctrine;
+    protected ManagerRegistry $doctrine;
     protected MailerInterface $mailer;
-    protected $twig;
-    protected $logger;
-    protected $flashBag;
-    protected $options;
+    protected Environment $twig;
+    protected LoggerInterface $logger;
+    protected FlashBagInterface $flashBag;
+    protected array $options;
 
     public function __construct(ManagerRegistry $doctrine, MailerInterface $mailer, Environment $twig, LoggerInterface $logger, FlashBagInterface $flashBag, array $options)
     {

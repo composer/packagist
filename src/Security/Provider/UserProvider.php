@@ -23,20 +23,11 @@ use App\Service\Scheduler;
 
 class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInterface
 {
-    /**
-     * @var UserManagerInterface
-     */
-    private $userManager;
+    private UserManagerInterface $userManager;
 
-    /**
-     * @var UserProviderInterface
-     */
-    private $userProvider;
+    private UserProviderInterface $userProvider;
 
-    /**
-     * @var Scheduler
-     */
-    private $scheduler;
+    private Scheduler $scheduler;
 
     /**
      * @param UserManagerInterface  $userManager

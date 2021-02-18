@@ -13,10 +13,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class RegistrationListener implements EventSubscriberInterface
 {
-    /**
-     * @var TokenGenerator
-     */
-    private $tokenGenerator;
+    private TokenGenerator $tokenGenerator;
 
     /**
      * @param TokenGenerator $tokenGenerator
