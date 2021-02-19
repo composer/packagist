@@ -98,10 +98,8 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
     }
 
     /**
-     * Creates pseudo-random daily download stats starting at the package creation date, and ending today.
+     * Populates Redis with pseudo-random daily download stats starting at the package creation date, and ending today.
      * The algorithm attempts to mimic a typical download stats curve.
-     *
-     * Takes the current Redis keys and returns the updated Redis keys.
      * The Redis keys set mimic the keys set by the DownloadManager.
      */
     private function populateDownloads(Package $package, Version $version): void
