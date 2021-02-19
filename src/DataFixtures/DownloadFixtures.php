@@ -14,6 +14,7 @@ use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
 use Predis\Client;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
@@ -44,22 +45,37 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
         $input  = new ArrayInput([]);
         $output = new ConsoleOutput();
 
-        $output->writeln('Creating download counters...');
+        $output->writeln('Generating downloads...');
 
         /** @var Package[] $packages */
         $packages = $manager->getRepository(Package::class)->findAll();
 
+        $progressBar = new ProgressBar($output, count($packages));
+        $progressBar->setFormat('%current%/%max% [%bar%] %percent:3s%% (%remaining% left) %message%');
+
+        $progressBar->setMessage('');
+        $progressBar->start();
+
         // Set the Redis keys that would normally be set by the DownloadManager, for the whole period.
 
         foreach ($packages as $package) {
+            $progressBar->setMessage($package->getName());
+            $progressBar->display();
+
             /** @var EntityManagerInterface $manager */
             $latestVersion = $this->getLatestPackageVersion($manager, $package);
 
             $this->populateDownloads($package, $latestVersion);
+
+            $progressBar->advance();
         }
 
-        $output->writeln('Migrating downloads to db... (this may take some time)');
+        $progressBar->finish();
+        $output->writeln('');
 
+        // Then migrate the Redis keys to the db
+
+        $output->writeln('Migrating downloads to db... (this may take some time)');
         $this->migrateDownloadCountsCommand->run($input, $output);
     }
 
