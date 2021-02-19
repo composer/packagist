@@ -37,10 +37,10 @@ class PackageDumper
         FavoriteManager $favoriteManager,
         string $webDir
     ) {
-        $this->em              = $em;
+        $this->em = $em;
         $this->downloadManager = $downloadManager;
         $this->favoriteManager = $favoriteManager;
-        $this->webDir          = realpath($webDir);
+        $this->webDir = realpath($webDir);
     }
 
     public function dump(): void
@@ -98,11 +98,11 @@ class PackageDumper
                     'language'           => $package->getLanguage(),
                 ];
 
-                $data['abandoned']  = $package->isAbandoned() ? ($package->getReplacementPackage() ?? true) : false;
+                $data['abandoned'] = $package->isAbandoned() ? ($package->getReplacementPackage() ?? true) : false;
                 $data['dependents'] = $packageRepository->getDependantCount($package->getName());
                 $data['suggesters'] = $packageRepository->getSuggestCount($package->getName());
-                $data['downloads']  = $this->downloadManager->getDownloads($package);
-                $data['favers']     = $this->favoriteManager->getFaverCount($package);
+                $data['downloads'] = $this->downloadManager->getDownloads($package);
+                $data['favers'] = $this->favoriteManager->getFaverCount($package);
 
                 yield $data;
 

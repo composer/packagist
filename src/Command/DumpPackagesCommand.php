@@ -39,9 +39,9 @@ class DumpPackagesCommand extends Command
     {
         $this->symlinkDumper = $symlinkDumper;
         $this->packageDumper = $packageDumper;
-        $this->locker        = $locker;
-        $this->doctrine      = $doctrine;
-        $this->cacheDir      = $cacheDir;
+        $this->locker = $locker;
+        $this->doctrine = $doctrine;
+        $this->cacheDir = $cacheDir;
 
         parent::__construct();
     }
