@@ -41,26 +41,24 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
 
     public function load(ObjectManager $manager)
     {
+        $input  = new ArrayInput([]);
+        $output = new ConsoleOutput();
+
+        $output->writeln('Creating download counters...');
+
         /** @var Package[] $packages */
         $packages = $manager->getRepository(Package::class)->findAll();
 
         // Set the Redis keys that would normally be set by the DownloadManager, for the whole period.
 
-        $redisKeys = [];
-
         foreach ($packages as $package) {
             /** @var EntityManagerInterface $manager */
             $latestVersion = $this->getLatestPackageVersion($manager, $package);
 
-            $redisKeys = $this->populateDownloads($redisKeys, $package, $latestVersion);
+            $this->populateDownloads($package, $latestVersion);
         }
 
-        $this->msetRedis($redisKeys);
-
-        // Migrate the download counts to the database.
-
-        $input  = new ArrayInput([]);
-        $output = new ConsoleOutput();
+        $output->writeln('Migrating downloads to db... (this may take some time)');
 
         $this->migrateDownloadCountsCommand->run($input, $output);
     }
@@ -90,7 +88,7 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
      * Takes the current Redis keys and returns the updated Redis keys.
      * The Redis keys set mimic the keys set by the DownloadManager.
      */
-    private function populateDownloads(array $redisKeys, Package $package, Version $version): array
+    private function populateDownloads(Package $package, Version $version): void
     {
         $date = DateTimeImmutable::createFromMutable($package->getCreatedAt());
         $endDate = (new \DateTimeImmutable('now'));
@@ -119,7 +117,7 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
             ];
 
             foreach ($keys as $key) {
-                $redisKeys[$key] = ($redisKeys[$key] ?? 0) + $downloads;
+                $this->redis->incrby($key, $downloads);
             }
 
             $date = $date->add(new DateInterval('P1D'));
@@ -127,28 +125,6 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
             if ($date->diff($endDate)->invert) {
                 break;
             }
-        }
-
-        return $redisKeys;
-    }
-
-    /**
-     * Performs a Redis MSET in batches.
-     * We can't set all values at once, or the operation fails with "Error while writing bytes to the server".
-     */
-    private function msetRedis(array $dict): void
-    {
-        $batchSize = 100;
-
-        for ($start = 0; ; $start += $batchSize) {
-            $batch = array_slice($dict, $start, $batchSize, true);
-
-            if (! $batch) {
-                break;
-            }
-
-            $this->redis->mset($batch);
-            echo '.';
         }
     }
 }
