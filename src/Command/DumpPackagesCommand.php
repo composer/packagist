@@ -12,7 +12,6 @@
 
 namespace App\Command;
 
-use App\Package\PackageDumper;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
 use App\Package\SymlinkDumper;
@@ -29,20 +28,17 @@ class DumpPackagesCommand extends Command
 {
     use \App\Util\DoctrineTrait;
 
-    private SymlinkDumper $symlinkDumper;
-    private PackageDumper $packageDumper;
+    private SymlinkDumper $dumper;
     private Locker $locker;
     private ManagerRegistry $doctrine;
     private string $cacheDir;
 
-    public function __construct(SymlinkDumper $symlinkDumper, PackageDumper $packageDumper, Locker $locker, ManagerRegistry $doctrine, string $cacheDir)
+    public function __construct(SymlinkDumper $dumper, Locker $locker, ManagerRegistry $doctrine, string $cacheDir)
     {
-        $this->symlinkDumper = $symlinkDumper;
-        $this->packageDumper = $packageDumper;
+        $this->dumper = $dumper;
         $this->locker = $locker;
         $this->doctrine = $doctrine;
         $this->cacheDir = $cacheDir;
-
         parent::__construct();
     }
 
@@ -86,21 +82,11 @@ class DumpPackagesCommand extends Command
 
         if ($gc) {
             try {
-                $this->symlinkDumper->gc();
+                $this->dumper->gc();
             } finally {
                 $this->locker->unlockCommand($lockName);
             }
             return 0;
-        }
-
-        if ($verbose) {
-            $output->writeln('Dumping full package list...');
-        }
-
-        $this->packageDumper->dump();
-
-        if ($verbose) {
-            $output->writeln('Dumping packages...');
         }
 
         if ($force) {
@@ -124,7 +110,7 @@ class DumpPackagesCommand extends Command
         gc_enable();
 
         try {
-            $result = $this->symlinkDumper->dump($ids, $force, $verbose);
+            $result = $this->dumper->dump($ids, $force, $verbose);
         } finally {
             $this->locker->unlockCommand($lockName);
         }
