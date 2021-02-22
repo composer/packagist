@@ -27,9 +27,10 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
     /** @var LoggerInterface */
     private $logger;
 
-    public function __construct(ManagerRegistry $doctrine)
+    public function __construct(ManagerRegistry $doctrine, LoggerInterface $logger)
     {
         $this->doctrine = $doctrine;
+        $this->logger = $logger;
     }
 
     public function getAdvisories(ConsoleIO $io): ?array
