@@ -4,6 +4,7 @@
 <h2 class="title">{{ 'api_doc.title'|trans }}</h2>
 
 <ul class="toc">
+  <li><a href="#best-practices">Best practices</a></li>
   <li><a href="#list-packages">{{ 'api_doc.listing_names'|trans }}</a>
     <ul>
       <li><a href="#list-packages-all">{{ 'api_doc.all_packages'|trans }}</a></li>
@@ -19,6 +20,7 @@
     </ul>
   </li>
   <li><a href="#get-package-data">{{ 'api_doc.get_package_data'|trans }}</a></li>
+  <li><a href="#track-package-updates">Track package updates</a></li>
   <li><a href="#get-statistics">{{ 'api_doc.get_statistics'|trans }}</a></li>
   <li><a href="#list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</a></li>
   <li><a href="#create-package">{{ 'api_doc.api_create_package'|trans }}</a></li>
@@ -26,6 +28,14 @@
 
 
 <section class="col-d-12">
+<h3 id="best-practices">Best practices when using the Packagist.org API</h3>
+<ul>
+  <li>If you do scheduled jobs, <strong>avoid running things at midnight or once an hour at XX:00</strong>. Most people do so and we do see traffic peaks every hour. Pick a "random" time by hand for your cron jobs, or even better (if you can) is to make it run on a really randomized schedule.</li>
+  <li><strong>Send a User-Agent header</strong> with all your requests including an email or twitter or some sort of contact information so we can reach out to you if we have an issue with the way you use the API. If not you can leave us with no choice but to block IPs which we rather not do.</li>
+  <li>If you send requests in parallel, be a good citizen and do a <strong>maximum of 10 concurrent requests</strong>, or up to 20 if you only fetch static files. Huge bursts in requests can cause issues for other regular users so try to spread out the load.</li>
+  <li>Use an <strong>HTTP/2</strong>-capable client and make sure you enable that, it is much more efficient than reconnecting for every request.</li>
+</ul>
+
 <h3 id="list-packages">{{ 'api_doc.listing_names'|trans }}</h3>
 <h4 id="list-packages-all">{{ 'api_doc.all_packages'|trans }}</h4>
 <pre>
@@ -144,11 +154,53 @@ GET https://{{ packagist_host }}/search.json?q=[query]&amp;type=symfony-bundle
 <section class="col-d-12">
 <h3 id="get-package-data">{{ 'api_doc.get_package_data'|trans }}</h3>
 
-<h4 id="get-package-by-name">Using the Composer metadata</h4>
+<h4 id="get-package-metadata-v2">Using the Composer v2 metadata</h4>
 
 <p>This is the preferred way to access the data as it is always up to date, and dumped to static files so it is very efficient on our end.</p>
 
-<p>You can also send If-Modified-Since headers to limit your bandwidth usage and cache the files on your end with the proper filemtime set according to our Last-Modified header.</p>
+<p>You can also send <code>If-Modified-Since</code> headers to limit your bandwidth usage and cache the files on your end with the proper filemtime set according to our <code>Last-Modified</code> header.</p>
+
+<p>There are a few gotchas though with using this method:
+
+<ul>
+  <li>It only provides you with the package metadata but not information about the maintainers, download stats or github info.</li>
+  <li>It is in a compressed format for efficiency which requires you to use <code><a href="https://github.com/composer/composer/blob/40800df6bd6f42c64860c08befe6fe8c0b745d8c/src/Composer/Util/MetadataMinifier.php#L17">Composer\Util\MetadataMinifier::expand($response['packages'][$packageName])</a></code> to restore it to the full data.</li>
+  <li>The <code>p2/$vendor/$package.json</code> file contains only tagged releases. If you want to fetch information about branches (i.e. dev versions) you need to download <code>p2/$vendor/$package~dev.json</code>.</li>
+</ul>
+</p>
+
+<pre>
+GET https://repo.{{ packagist_host }}/p2/[vendor]/[package].json
+<code>
+{
+  "packages": {
+    "[vendor]/[package]": {
+      "[version1]": {
+        "name": "[vendor]/[package],
+        "description": [description],
+        // ...
+      },
+      "[version2]": {
+        // ...
+      }
+      // ...
+    }
+  },
+  "minified": "composer/2.0"
+}
+</code></pre>
+<p>Working examples:</p>
+<ul>
+  <li>For tagged releases: <code><a href="https://repo.{{ packagist_host }}/p2/monolog/monolog.json">https://repo.{{ packagist_host }}/p2/monolog/monolog.json</a></code></li>
+  <li>For dev releases: <code><a href="https://repo.{{ packagist_host }}/p2/monolog/monolog~dev.json">https://repo.{{ packagist_host }}/p2/monolog/monolog~dev.json</a></code></li>
+</ul>
+
+<p>Looking to remain up to date and know when packages updated? See the <a href="#track-package-updates">Track package updates</a> API.</p>
+
+
+<h4 id="get-package-metadata-v1">Using the Composer v1 metadata (DEPRECATED)</h4>
+
+<p>You can also send <code>If-Modified-Since</code> headers to limit your bandwidth usage and cache the files on your end with the proper filemtime set according to our <code>Last-Modified</code> header.</p>
 
 <p>There are a few gotchas though with using this method:
 
@@ -179,6 +231,7 @@ GET https://repo.{{ packagist_host }}/p/[vendor]/[package].json
 </code></pre>
 <p>Working example: <code><a href="https://repo.{{ packagist_host }}/p/monolog/monolog.json">https://repo.{{ packagist_host }}/p/monolog/monolog.json</a></code></p>
 
+
 <h4 id="get-package-by-name">Using the API</h4>
 
 <p>The JSON API for packages gives you all the infos we have including downloads, dependents count, github info, etc. However it is generated dynamically so for performance reason we cache the responses for twelve hours. As such if the static file endpoint described above is enough please use it instead.</p>
@@ -208,10 +261,84 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package].json
 
 </section>
 
+
+<section class="col-d-12">
+<h3 id="track-package-updates">Track package updates</h3>
+
+<h4 id="get-package-updates">Track package updates</h4>
+
+<p>This endpoint provides you with a feed of metadata changes you can poll to know what packages you need to update.</p>
+
+<p>First to initialize this you can poll the API without timestamp to get the most current timestamp, or make your own by using <code>10000 * time()</code>:</p>
+
+<pre>
+GET https://{{ packagist_host }}/metadata/changes.json
+<code>
+{
+  "error": "Invalid or missing "since" query parameter, make sure you store the timestamp at the initial point you started mirroring, then send that to begin receiving changes, e.g. https://{{ packagist_host }}/metadata/changes.json?since=16142636710498 for example.",
+  "timestamp": 16142636710498
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/metadata/changes.json">https://{{ packagist_host }}/metadata/changes.json</a></code></p>
+
+<p>After that, you should store the timestamp for the next time you want to call the API, let's say 10 minutes later you want to know what changed, you call this again but this time you pass the previous timestamp:</p>
+
+<pre>
+GET https://{{ packagist_host }}/metadata/changes.json?since=16142636710498
+<code>
+{
+  "actions": [
+    {
+      "type": "update",
+      "package": "acme/package",
+      "time": 1614264954
+    },
+    {
+      "type": "update",
+      "package": "foo/bar~dev",
+      "time": 1614264951
+    },
+    {
+      "type": "delete",
+      "package": "acme/gone",
+      "time": 1614264953
+    }
+  ]
+}</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/metadata/changes.json?since={{ "-10 minutes"|date('U') * 10000 }}">https://{{ packagist_host }}/metadata/changes.json?since={{ "-10 minutes"|date('U') * 10000 }}</a></code></p>
+
+<p>In the example above, you receive 3 changes, let's go over what they mean and what you should do to sync these up:</p>
+
+<ul>
+  <li><code>acme/update</code> was updated (tagged releases of <code>acme/update</code>), you can fetch <code>https://repo.{{ packagist_host }}/p2/acme/update.json</code> and should ensure that the <code>Last-Modified</code> is AT LEAST (<code>&gt;=</code>) equal to the <code>time</code> value. If it is older than that, wait a few seconds and retry. Due to internal mirroring delays it may happen that you get a race condition and get an outdated file.</li>
+  <li><code>foo/bar~dev</code> was updated (dev releases of <code>foo/bar</code>, you can fetch <code>https://repo.{{ packagist_host }}/p2/foo/bar~dev.json</code> and should ensure that the <code>Last-Modified</code> is AT LEAST (<code>&gt;=</code>) equal to the <code>time</code> value.</li>
+  <li><code>acme/gone</code> was deleted, you can delete it on your end as well, this means both <code>acme/gone</code> and <code>acme/gone~dev</code> are deleted.</li>
+</ul>
+
+<p><strong>Warning:</strong> The changes log is kept for up to 24h on our end, so make sure you fetch the API at least once a day or you will get a resync response like the following:</p>
+
+<pre>
+GET https://{{ packagist_host }}/metadata/changes.json?since=16140636710498
+<code>
+{
+  "actions": [
+    {
+      "type": "resync",
+      "package": "*",
+      "time": 1614264954
+    }
+  ]
+}</code></pre>
+
+<p>If you get this, you should assume your data is stale and you should revalidate everything (if you cached files using <code>Last-Modified</code> headers, you can still keep that and make sure with <code>If-Modified-Since</code> requests for every file that it is still up to date).</p>
+
+</section>
+
+
 <section class="col-d-12">
 <h3 id="get-statistics">{{ 'api_doc.get_statistics'|trans }}</h3>
 
-<h4 id="get-package-by-name">{{ 'api_doc.get_statistics'|trans }}</h4>
+<h4 id="get-global-statistics">{{ 'api_doc.get_statistics'|trans }}</h4>
 
 <p>This endpoint provides basic some statistics.</p>
 
@@ -259,6 +386,7 @@ GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestam
     <p>Working example: <code><a href="https://{{ packagist_host }}/api/security-advisories/?packages[]=monolog/monolog">https://{{ packagist_host }}/api/security-advisories/?packages[]=monolog/monolog</a></code></p>
 
 </section>
+
 
 <section class="col-d-12">
   <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }}</h3>
