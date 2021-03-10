@@ -26,13 +26,13 @@ nelmio_security:
                 - 'https://www.gstatic.com/recaptcha/'
             connect-src:
                 - 'self'
-                - '*.algolia.net'
-                - '*.algolianet.com'
+                - 'https://*.algolia.net'
+                - 'https://*.algolianet.com'
+                - 'https://www.google-analytics.com/'
             img-src:
                 - 'self'
                 - 'https:'
                 - 'data:'
-                - 'http://www.google-analytics.com/'
             style-src:
                 - 'self'
                 - 'unsafe-inline'
