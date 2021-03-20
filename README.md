@@ -53,4 +53,4 @@ You can get test data by running the fixtures:
 bin/console doctrine:fixtures:load
  ```
 
-This will create 100 packages from packagist.org, update them from GitHub, populate them with fake download stats, and assign a user named `dev` as their maintainer.
+This will create 100 packages from packagist.org, update them from GitHub, populate them with fake download stats, and assign a user named `dev` (password: `dev`) as their maintainer.
