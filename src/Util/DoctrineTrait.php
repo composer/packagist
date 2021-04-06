@@ -3,7 +3,7 @@
 namespace App\Util;
 
 /**
- * Requires a property Doctrine or type Doctrine\Persistence\ManagerRegistry to be present
+ * Requires a property doctrine or type Doctrine\Persistence\ManagerRegistry to be present
  */
 trait DoctrineTrait
 {

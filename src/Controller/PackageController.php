@@ -24,7 +24,6 @@ use App\Model\ProviderManager;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Connection\ConnectionException;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -43,6 +42,7 @@ use Symfony\Component\Routing\RouterInterface;
 use Predis\Client as RedisClient;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 
 class PackageController extends Controller
 {
@@ -67,7 +67,6 @@ class PackageController extends Controller
 
     /**
      * @Route("/packages/list.json", name="list", defaults={"_format"="json"}, methods={"GET"})
-     * @Cache(smaxage=300)
      */
     public function listAction(Request $req)
     {
@@ -80,7 +79,11 @@ class PackageController extends Controller
                 'type' => $req->query->get('type'),
             ]);
 
-            return new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);
+            $response = new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);
+            $response->setSharedMaxAge(300);
+            $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+            return $response;
         }
 
         if ($req->query->get('type')) {
@@ -102,7 +105,11 @@ class PackageController extends Controller
             $names = $filtered;
         }
 
-        return new JsonResponse(['packageNames' => $names]);
+        $response = new JsonResponse(['packageNames' => $names]);
+        $response->setSharedMaxAge(300);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+        return $response;
     }
 
     /**
@@ -528,6 +535,7 @@ class PackageController extends Controller
 
             $response = new JsonResponse(['package' => $data]);
             $response->setSharedMaxAge(12*3600);
+            $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
             return $response;
         }
@@ -693,8 +701,9 @@ class PackageController extends Controller
             }
         }
 
-        $response = new Response(json_encode(['package' => $data]), 200);
+        $response = new JsonResponse(['package' => $data], 200);
         $response->setSharedMaxAge(3600);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $response;
     }
@@ -1292,6 +1301,7 @@ class PackageController extends Controller
 
         $response = new JsonResponse($datePoints);
         $response->setSharedMaxAge(1800);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $response;
     }

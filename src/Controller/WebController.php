@@ -17,13 +17,13 @@ use App\Form\Model\SearchQuery;
 use App\Form\Type\SearchQueryType;
 use App\Entity\Package;
 use Predis\Connection\ConnectionException;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Predis\Client as RedisClient;
+use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -223,14 +223,13 @@ class WebController extends Controller
 
         $response = JsonResponse::create($result)->setCallback($req->query->get('callback'));
         $response->setSharedMaxAge(300);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $response;
     }
 
     /**
      * @Route("/statistics", name="stats")
-     * @Template
-     * @Cache(smaxage=5)
      */
     public function statsAction(RedisClient $redis)
     {
@@ -307,7 +306,7 @@ class WebController extends Controller
             $dlChart = $dlChartMonthly = null;
         }
 
-        return [
+        $response = $this->render('web/stats.html.twig', [
             'chart' => $chart,
             'packages' => !empty($chart['packages']) ? max($chart['packages']) : 0,
             'versions' => !empty($chart['versions']) ? max($chart['versions']) : 0,
@@ -317,7 +316,9 @@ class WebController extends Controller
             'downloadsChartMonthly' => $dlChartMonthly,
             'maxMonthlyDownloads' => !empty($dlChartMonthly) ? max($dlChartMonthly['values']) : null,
             'downloadsStartDate' => $downloadsStartDate,
-        ];
+        ]);
+
+        return $response;
     }
 
     /**

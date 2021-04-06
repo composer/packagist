@@ -19,13 +19,13 @@ use App\Entity\PackageRepository;
 use App\Entity\VersionRepository;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Predis\Client as RedisClient;
+use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 
 /**
  * @Route("/explore")
@@ -75,7 +75,6 @@ class ExploreController extends Controller
     /**
      * @Template()
      * @Route("/popular.{_format}", name="browse_popular", defaults={"_format"="html"})
-     * @Cache(smaxage=900)
      */
     public function popularAction(Request $req, RedisClient $redis)
     {
@@ -147,7 +146,11 @@ class ExploreController extends Controller
                 $result['next'] = $this->generateUrl('browse_popular', $params, UrlGeneratorInterface::ABSOLUTE_URL);
             }
 
-            return new JsonResponse($result);
+            $response = new JsonResponse($result);
+            $response->setSharedMaxAge(900);
+            $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+            return $response;
         }
 
         return $data;

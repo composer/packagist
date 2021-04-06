@@ -28,7 +28,7 @@ security:
                 secure: '%force_ssl%'
                 lifetime: 31104000 # 1y
             logout:       true
-            anonymous:    true
+            anonymous:    lazy
             oauth:
                 resource_owners:
                     github: '/login/check-github'

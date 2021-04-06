@@ -22,6 +22,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Laminas\Feed\Writer\Entry;
 use Laminas\Feed\Writer\Feed;
+use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 
 /**
  * @author Rafael Dohms <rafael@doh.ms>
@@ -265,6 +266,7 @@ class FeedController extends Controller
 
         $response = new Response($content, 200);
         $response->setSharedMaxAge(3600);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $response;
     }
