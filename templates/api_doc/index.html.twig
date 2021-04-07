@@ -174,17 +174,19 @@ GET https://repo.{{ packagist_host }}/p2/[vendor]/[package].json
 <code>
 {
   "packages": {
-    "[vendor]/[package]": {
-      "[version1]": {
+    "[vendor]/[package]": [
+      {
         "name": "[vendor]/[package],
         "description": [description],
+        "version": "[version1]",
         // ...
       },
-      "[version2]": {
+      {
+        "version": "[version2]",
         // ...
       }
       // ...
-    }
+    ]
   },
   "minified": "composer/2.0"
 }
