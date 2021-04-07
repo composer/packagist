@@ -164,7 +164,7 @@ GET https://{{ packagist_host }}/search.json?q=[query]&amp;type=symfony-bundle
 
 <ul>
   <li>It only provides you with the package metadata but not information about the maintainers, download stats or github info.</li>
-  <li>It is in a compressed format for efficiency which requires you to use <code><a href="https://github.com/composer/composer/blob/40800df6bd6f42c64860c08befe6fe8c0b745d8c/src/Composer/Util/MetadataMinifier.php#L17">Composer\Util\MetadataMinifier::expand($response['packages'][$packageName])</a></code> to restore it to the full data.</li>
+  <li>It is in a compressed format for efficiency which requires you to use <code><a href="https://github.com/composer/metadata-minifier/blob/main/src/MetadataMinifier.php#L17">Composer\MetadataMinifier\MetadataMinifier::expand($response['packages'][$packageName])</a></code> from the <a href="https://packagist.org/packages/composer/metadata-minifier">composer/metadata-minifier</a> package to restore it to the full data.</li>
   <li>The <code>p2/$vendor/$package.json</code> file contains only tagged releases. If you want to fetch information about branches (i.e. dev versions) you need to download <code>p2/$vendor/$package~dev.json</code>.</li>
 </ul>
 </p>
