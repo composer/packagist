@@ -206,6 +206,13 @@ class PackageRepository extends ServiceEntityRepository
         return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAt IS NULL OR p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW() ORDER BY p.id ASC');
     }
 
+    public function getStalePackagesForDumpingV2()
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAtV2 IS NULL OR p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW() ORDER BY p.id ASC');
+    }
+
     public function iterateStaleDownloadCountPackageIds()
     {
         $qb = $this->createQueryBuilder('p');
@@ -273,6 +280,9 @@ class PackageRepository extends ServiceEntityRepository
         return $qb->getQuery()->getSingleResult();
     }
 
+    /**
+     * @return Package[]
+     */
     public function getPackagesWithVersions(array $ids = null, $filters = [])
     {
         $qb = $this->getEntityManager()->createQueryBuilder();

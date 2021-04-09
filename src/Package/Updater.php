@@ -279,6 +279,7 @@ class Updater
 
         if ($flags & self::FORCE_DUMP) {
             $package->setDumpedAt(null);
+            $package->setDumpedAtV2(null);
         }
 
         $em->flush();

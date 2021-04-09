@@ -1034,6 +1034,7 @@ class PackageController extends Controller
             $package->setCrawledAt(new \DateTime());
             $package->setUpdatedAt(new \DateTime());
             $package->setDumpedAt(null);
+            $package->setDumpedAtV2(null);
 
             $em = $this->getEM();
             $em->flush();
@@ -1066,6 +1067,7 @@ class PackageController extends Controller
         $package->setCrawledAt(new \DateTime());
         $package->setUpdatedAt(new \DateTime());
         $package->setDumpedAt(null);
+        $package->setDumpedAtV2(null);
 
         $em = $this->getEM();
         $em->flush();

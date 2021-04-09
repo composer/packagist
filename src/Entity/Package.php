@@ -31,6 +31,7 @@ use Composer\Util\HttpDownloader;
  *         @ORM\Index(name="indexed_idx",columns={"indexedAt"}),
  *         @ORM\Index(name="crawled_idx",columns={"crawledAt"}),
  *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"}),
+ *         @ORM\Index(name="dumped2_idx",columns={"dumpedAtV2"}),
  *         @ORM\Index(name="repository_idx",columns={"repository"}),
  *         @ORM\Index(name="remoteid_idx",columns={"remoteId"})
  *     }
@@ -142,6 +143,11 @@ class Package
      * @ORM\Column(type="datetime", nullable=true)
      */
     private $dumpedAt;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $dumpedAtV2;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Download", mappedBy="package")
@@ -792,6 +798,16 @@ class Package
     public function getDumpedAt()
     {
         return $this->dumpedAt;
+    }
+
+    public function setDumpedAtV2(?\DateTimeInterface $dumpedAt)
+    {
+        $this->dumpedAtV2 = $dumpedAt;
+    }
+
+    public function getDumpedAtV2(): ?\DateTimeInterface
+    {
+        return $this->dumpedAtV2;
     }
 
     /**

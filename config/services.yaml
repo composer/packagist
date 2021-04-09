@@ -78,7 +78,15 @@ services:
         arguments: [ '@fos_user.util.token_generator' ]
 
     App\Package\SymlinkDumper:
-        arguments: [ '@doctrine', '@filesystem', '@router', '@snc_redis.default', '%kernel.root_dir%/../web/', '%packagist_metadata_dir%', '%packagist_dumper_compress%', '%aws_metadata%', '@Graze\DogStatsD\Client' ]
+        arguments:
+            $webDir: '%kernel.root_dir%/../web/'
+            $targetDir: '%packagist_metadata_dir%'
+            $compress: '%packagist_dumper_compress%'
+
+    App\Package\V2Dumper:
+        arguments:
+            $webDir: '%kernel.root_dir%/../web/'
+            $targetDir: '%packagist_metadata_dir%'
 
     App\Security\Provider\UserProvider:
         arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email']
