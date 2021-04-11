@@ -44,3 +44,13 @@ These steps are provided for development purposes only.
 6. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
 
 You should now be able to access the site, create a user, etc.
+
+### Fixtures
+
+You can get test data by running the fixtures:
+
+```bash
+bin/console doctrine:fixtures:load
+ ```
+
+This will create 100 packages from packagist.org, update them from GitHub, populate them with fake download stats, and assign a user named `dev` (password: `dev`) as their maintainer.
