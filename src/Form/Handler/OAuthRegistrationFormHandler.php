@@ -18,6 +18,7 @@ use HWI\Bundle\OAuthBundle\Form\RegistrationFormHandlerInterface;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
+use App\Entity\User;
 
 /**
  * OAuthRegistrationFormHandler
@@ -46,6 +47,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
      */
     public function process(Request $request, Form $form, UserResponseInterface $userInformation)
     {
+        /** @var User $user */
         $user = $this->userManager->createUser();
 
         // Try to get some properties for the initial form when coming from github

@@ -2,22 +2,22 @@
 
 namespace App\Command;
 
+use Monolog\Logger;
 use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Command\Command;
 use App\Service\QueueWorker;
-use Psr\Log\LoggerInterface;
 
 class RunWorkersCommand extends Command
 {
     use LockableTrait;
 
-    private LoggerInterface $logger;
+    private Logger $logger;
     private QueueWorker $worker;
 
-    public function __construct(LoggerInterface $logger, QueueWorker $worker)
+    public function __construct(Logger $logger, QueueWorker $worker)
     {
         $this->logger = $logger;
         $this->worker = $worker;

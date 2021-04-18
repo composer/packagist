@@ -17,6 +17,7 @@ use Doctrine\DBAL\Connection;
 use App\Entity\Package;
 use App\Entity\Version;
 use App\Entity\Download;
+use App\Util\DoctrineTrait;
 use Predis\Client;
 use DateTimeImmutable;
 
@@ -25,6 +26,8 @@ use DateTimeImmutable;
  */
 class DownloadManager
 {
+    use DoctrineTrait;
+
     protected Client $redis;
     protected ManagerRegistry $doctrine;
     protected bool $redisCommandLoaded = false;
@@ -62,7 +65,7 @@ class DownloadManager
             $keyBase .= '-'.$version;
         }
 
-        $record = $this->doctrine->getRepository(Download::class)->findOneBy(['id' => $id, 'type' => $type]);
+        $record = $this->getEM()->getRepository(Download::class)->findOneBy(['id' => $id, 'type' => $type]);
         $dlData = $record ? $record->getData() : [];
 
         $keyBase .= ':';
@@ -154,6 +157,7 @@ class DownloadManager
         $month = date('Ym');
 
         if (!$this->redisCommandLoaded) {
+            /** @phpstan-ignore-next-line */
             $this->redis->getProfile()->defineCommand('downloadsIncr', 'App\Redis\DownloadsIncr');
             $this->redisCommandLoaded = true;
         }
@@ -178,12 +182,13 @@ class DownloadManager
 
         $args[] = $job['ip'];
 
+        /** @phpstan-ignore-next-line */
         $this->redis->downloadsIncr(...$args);
     }
 
     public function transferDownloadsToDb(int $packageId, array $keys, DateTimeImmutable $now)
     {
-        $package = $this->doctrine->getRepository(Package::class)->findOneById($packageId);
+        $package = $this->getEM()->getRepository(Package::class)->find($packageId);
         // package was deleted in the meantime, abort
         if (!$package) {
             $this->redis->del($keys);
@@ -197,7 +202,7 @@ class DownloadManager
             }
         }
 
-        $rows = $this->doctrine->getManager()->getConnection()->fetchAll(
+        $rows = $this->getEM()->getConnection()->fetchAll(
             'SELECT id FROM package_version WHERE id IN (:ids)',
             ['ids' => array_keys($versionsWithDownloads)],
             ['ids' => Connection::PARAM_INT_ARRAY]
@@ -231,7 +236,7 @@ class DownloadManager
             $this->createDbRecordsForKeys($package, $buffer, $versionIds, $now);
         }
 
-        $this->doctrine->getManager()->flush();
+        $this->getEM()->flush();
 
         $this->redis->del($keys);
     }
@@ -246,7 +251,7 @@ class DownloadManager
             return;
         }
 
-        $record = $this->doctrine->getRepository(Download::class)->findOneBy(['id' => $id, 'type' => $type]);
+        $record = $this->getEM()->getRepository(Download::class)->findOneBy(['id' => $id, 'type' => $type]);
         $isNewRecord = false;
         if (!$record) {
             $record = new Download();
@@ -267,7 +272,7 @@ class DownloadManager
 
         // only store records for packages or for versions that have had downloads to avoid storing empty records
         if ($isNewRecord && ($type === Download::TYPE_PACKAGE || count($record->getData()) > 0)) {
-            $this->doctrine->getManager()->persist($record);
+            $this->getEM()->persist($record);
         }
 
         $record->computeSum();
