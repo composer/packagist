@@ -21,8 +21,8 @@ use App\Entity\User;
 
 class UserManipulator extends BaseManipulator
 {
-    private $userManager;
-    private $tokenGenerator;
+    private UserManagerInterface $userManager;
+    private TokenGeneratorInterface $tokenGenerator;
 
     /**
      * {@inheritdoc}

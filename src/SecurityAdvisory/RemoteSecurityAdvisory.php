@@ -6,24 +6,16 @@ use App\Entity\SecurityAdvisory;
 
 class RemoteSecurityAdvisory
 {
-    /** @var string */
-    private $id;
-    /** @var string */
-    private $title;
-    /** @var string */
-    private $packageName;
-    /** @var string */
-    private $affectedVersions;
-    /** @var string */
-    private $link;
-    /** @var ?string */
-    private $cve;
-    /** @var \DateTime */
-    private $date;
-    /** @var string|null */
-    private $composerRepository;
+    private string $id;
+    private string $title;
+    private string $packageName;
+    private string $affectedVersions;
+    private string $link;
+    private ?string $cve;
+    private \DateTime $date;
+    private ?string $composerRepository;
 
-    public function __construct(string $id, string $title, string $packageName, string $affectedVersions, string $link, $cve, \DateTime $date, ?string $composerRepository)
+    public function __construct(string $id, string $title, string $packageName, string $affectedVersions, string $link, ?string $cve, \DateTime $date, ?string $composerRepository)
     {
         $this->id = $id;
         $this->title = $title;

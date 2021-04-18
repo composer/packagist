@@ -15,14 +15,14 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class SecurityAdvisoryWorker
 {
-    /** @var Locker */
-    private $locker;
-    /** @var LoggerInterface */
-    private $logger;
-    /** @var ManagerRegistry */
-    private $doctrine;
+    private Locker $locker;
+
+    private LoggerInterface $logger;
+
+    private ManagerRegistry $doctrine;
+
     /** @var SecurityAdvisorySourceInterface[] */
-    private $sources;
+    private array $sources;
 
     public function __construct(Locker $locker, LoggerInterface $logger, ManagerRegistry $doctrine, array $sources)
     {

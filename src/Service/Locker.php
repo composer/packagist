@@ -3,10 +3,13 @@
 namespace App\Service;
 
 use Doctrine\Persistence\ManagerRegistry;
+use App\Util\DoctrineTrait;
 
 class Locker
 {
-    private $doctrine;
+    use DoctrineTrait;
+
+    private ManagerRegistry $doctrine;
 
     public function __construct(ManagerRegistry $doctrine)
     {
@@ -63,6 +66,6 @@ class Locker
 
     private function getConn()
     {
-        return $this->doctrine->getManager()->getConnection();
+        return $this->getEM()->getConnection();
     }
 }

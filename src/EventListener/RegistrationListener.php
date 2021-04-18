@@ -4,7 +4,7 @@ namespace App\EventListener;
 
 use FOS\UserBundle\Event\FormEvent;
 use FOS\UserBundle\FOSUserEvents;
-use FOS\UserBundle\Util\TokenGenerator;
+use FOS\UserBundle\Util\TokenGeneratorInterface;
 use App\Entity\User;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -13,15 +13,12 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class RegistrationListener implements EventSubscriberInterface
 {
-    /**
-     * @var TokenGenerator
-     */
-    private $tokenGenerator;
+    private TokenGeneratorInterface $tokenGenerator;
 
     /**
-     * @param TokenGenerator $tokenGenerator
+     * @param TokenGeneratorInterface $tokenGenerator
      */
-    public function __construct(TokenGenerator $tokenGenerator)
+    public function __construct(TokenGeneratorInterface $tokenGenerator)
     {
         $this->tokenGenerator = $tokenGenerator;
     }

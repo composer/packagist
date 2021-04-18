@@ -9,9 +9,9 @@ use App\Entity\Version;
 class VersionCache implements VersionCacheInterface
 {
     /** @var Version[] */
-    private $versionCache;
-    private $emptyReferences;
-    private $package;
+    private array $versionCache;
+    private array $emptyReferences;
+    private Package $package;
 
     public function __construct(Package $package, array $existingVersions, array $emptyReferences)
     {

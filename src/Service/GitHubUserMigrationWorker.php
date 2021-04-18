@@ -7,19 +7,22 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Entity\Job;
+use App\Util\DoctrineTrait;
 use Seld\Signal\SignalHandler;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
 
 class GitHubUserMigrationWorker
 {
+    use DoctrineTrait;
+
     const HOOK_URL = 'https://packagist.org/api/github';
     const HOOK_URL_ALT = 'https://packagist.org/api/update-package';
 
-    private $logger;
-    private $doctrine;
-    private $guzzle;
-    private $githubWebhookSecret;
+    private LoggerInterface $logger;
+    private ManagerRegistry $doctrine;
+    private Client $guzzle;
+    private string $githubWebhookSecret;
 
     public function __construct(LoggerInterface $logger, ManagerRegistry $doctrine, Client $guzzle, string $githubWebhookSecret)
     {
@@ -31,13 +34,13 @@ class GitHubUserMigrationWorker
 
     public function process(Job $job, SignalHandler $signal): array
     {
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $id = $job->getPayload()['id'];
         $packageRepository = $em->getRepository(Package::class);
         $userRepository = $em->getRepository(User::class);
 
         /** @var User $user */
-        $user = $userRepository->findOneById($id);
+        $user = $userRepository->find($id);
 
         if (!$user) {
             $this->logger->info('User is gone, skipping', ['id' => $id]);
@@ -144,7 +147,7 @@ class GitHubUserMigrationWorker
             if (count($hooks) && !preg_match('{^https://api\.github\.com/repos/'.$repoKey.'/hooks/}', $hooks[0]['url'])) {
                 if (preg_match('{https://api\.github\.com/repos/([^/]+/[^/]+)/hooks}', $hooks[0]['url'], $match)) {
                     $package->setRepository('https://github.com/'.$match[1]);
-                    $this->doctrine->getManager()->flush($package);
+                    $this->getEM()->flush($package);
                 }
             }
         } catch (\GuzzleHttp\Exception\ClientException $e) {

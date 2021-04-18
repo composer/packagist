@@ -22,10 +22,8 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
     public const SOURCE_NAME = 'FriendsOfPHP/security-advisories';
     public const SECURITY_PACKAGE = 'sensiolabs/security-advisories';
 
-    /** @var ManagerRegistry */
-    private $doctrine;
-    /** @var LoggerInterface */
-    private $logger;
+    private ManagerRegistry $doctrine;
+    private LoggerInterface $logger;
 
     public function __construct(ManagerRegistry $doctrine, LoggerInterface $logger)
     {

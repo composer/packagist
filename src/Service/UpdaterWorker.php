@@ -19,6 +19,7 @@ use App\Entity\Job;
 use App\Entity\EmptyReferenceCache;
 use App\Model\PackageManager;
 use App\Model\DownloadManager;
+use App\Util\DoctrineTrait;
 use Seld\Signal\SignalHandler;
 use Composer\Factory;
 use Composer\Downloader\TransportException;
@@ -26,14 +27,15 @@ use Composer\Util\HttpDownloader;
 
 class UpdaterWorker
 {
-    private $logger;
-    private $doctrine;
-    private $updater;
-    private $locker;
-    /** @var Scheduler */
-    private $scheduler;
-    private $packageManager;
-    private $downloadManager;
+    use DoctrineTrait;
+
+    private LoggerInterface $logger;
+    private ManagerRegistry $doctrine;
+    private Updater $updater;
+    private Locker $locker;
+    private Scheduler $scheduler;
+    private PackageManager $packageManager;
+    private DownloadManager $downloadManager;
 
     public function __construct(
         LoggerInterface $logger,
@@ -55,11 +57,11 @@ class UpdaterWorker
 
     public function process(Job $job, SignalHandler $signal): array
     {
-        $em = $this->doctrine->getManager();
+        $em = $this->getEM();
         $id = $job->getPayload()['id'];
         $packageRepository = $em->getRepository(Package::class);
         /** @var Package $package */
-        $package = $packageRepository->findOneById($id);
+        $package = $packageRepository->find($id);
         if (!$package) {
             $this->logger->info('Package is gone, skipping', ['id' => $id]);
 
@@ -146,12 +148,12 @@ class UpdaterWorker
         } catch (\Throwable $e) {
             $output = $io->getOutput();
 
-            if (!$this->doctrine->getManager()->isOpen()) {
+            if (!$this->getEM()->isOpen()) {
                 $this->doctrine->resetManager();
-                $package = $this->doctrine->getManager()->getRepository(Package::class)->findOneById($package->getId());
+                $package = $this->getEM()->getRepository(Package::class)->find($package->getId());
             } else {
                 // reload the package just in case as Updater tends to merge it to a new instance
-                $package = $packageRepository->findOneById($id);
+                $package = $packageRepository->find($id);
             }
 
             if (!$package) {
@@ -219,7 +221,7 @@ class UpdaterWorker
             // detected a 404 so mark the package as gone and prevent updates for 1y
             if ($found404) {
                 $package->setCrawledAt($found404 === true ? new \DateTime('+1 year') : $found404);
-                $this->doctrine->getManager()->flush($package);
+                $this->getEM()->flush($package);
 
                 return [
                     'status' => Job::STATUS_PACKAGE_GONE,

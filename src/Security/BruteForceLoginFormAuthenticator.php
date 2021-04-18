@@ -24,14 +24,13 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
 
     public const LOGIN_ROUTE = 'login';
 
-    /** @var UrlGeneratorInterface */
-    private $urlGenerator;
-    /** @var RecaptchaVerifier */
-    private $recaptchaVerifier;
-    /** @var UserPasswordEncoderInterface */
-    private $passwordEncoder;
-    /** @var RecaptchaHelper */
-    private $recaptchaHelper;
+    private UrlGeneratorInterface $urlGenerator;
+
+    private RecaptchaVerifier $recaptchaVerifier;
+
+    private UserPasswordEncoderInterface $passwordEncoder;
+
+    private RecaptchaHelper $recaptchaHelper;
 
     public function __construct(
         UrlGeneratorInterface $urlGenerator,

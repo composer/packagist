@@ -46,19 +46,15 @@ class Updater
 
     /**
      * Doctrine
-     * @var ManagerRegistry
      */
-    protected $doctrine;
-    /**
-     * @var ProviderManager
-     */
-    protected $providerManager;
+    protected ManagerRegistry $doctrine;
+
+    protected ProviderManager $providerManager;
 
     /**
      * Supported link types
-     * @var array
      */
-    protected $supportedLinkTypes = [
+    protected array $supportedLinkTypes = [
         'require'     => [
             'method' => 'getRequires',
             'entity' => 'RequireLink',
