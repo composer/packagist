@@ -89,7 +89,7 @@
                         {%- if app.user %}
                             <li class="nav-user">
                                 <section>
-                                    <a href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a>
+                                    <a class="username-link" title="{{  app.user.username }}" href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a>
 
                                     <section class="nav-user-menu">
                                         {{ knp_menu_render('user_menu', {'allow_safe_labels': true}) }}

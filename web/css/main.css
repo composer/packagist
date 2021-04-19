@@ -131,10 +131,16 @@ strong {
     .v2highlight {
         left: 350px;
     }
+    .nav-user .username-link {
+        max-width: 105px !important;
+    }
 }
 @media (max-width: 992px) {
     .v2highlight {
         display: none;
+    }
+    .nav-user .username-link {
+        max-width: 200px !important;
     }
 }
 
@@ -260,6 +266,13 @@ strong {
     height: 57px;
     margin-right: 15px;
     margin-top: -5px;
+}
+
+.nav-user .username-link {
+    max-width: 200px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .nav-user .nav-user-menu, .nav-user .signin-box {
