@@ -162,7 +162,7 @@
     });
     $('.package .delete').on('submit', function (e) {
         e.preventDefault();
-        if (window.confirm('Are you sure?')) {
+        if (window.confirm('Are you sure you want to delete this package?')) {
             dispatchAjaxForm(this, function () {
                 humane.log('Package successfully deleted', {timeout: 0, clickToClose: true});
                 setTimeout(function () {
@@ -187,7 +187,7 @@
         e.preventDefault();
         e.stopImmediatePropagation();
         var form = this;
-        if (window.confirm('Are you sure?')) {
+        if (window.confirm('Are you sure you want to delete this package version?')) {
             dispatchAjaxForm(this, function () {
                 humane.log('Version successfully deleted', {timeout: 3000, clickToClose: true});
                 $(form).closest('.version').remove();
