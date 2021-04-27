@@ -13,7 +13,7 @@
 namespace App\Package;
 
 use Symfony\Component\Filesystem\Filesystem;
-use Composer\Util\MetadataMinifier;
+use Composer\MetadataMinifier\MetadataMinifier;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Finder\Finder;
 use App\Entity\Version;
