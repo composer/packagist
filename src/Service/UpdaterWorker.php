@@ -29,6 +29,16 @@ class UpdaterWorker
 {
     use DoctrineTrait;
 
+    const VCS_REPO_DRIVERS = [
+        'github' => 'Composer\Repository\Vcs\GitHubDriver',
+        'gitlab' => 'Composer\Repository\Vcs\GitLabDriver',
+        'git-bitbucket' => 'Composer\Repository\Vcs\GitBitbucketDriver',
+        'git' => 'Composer\Repository\Vcs\GitDriver',
+        'hg-bitbucket' => 'Composer\Repository\Vcs\HgBitbucketDriver',
+        'hg' => 'Composer\Repository\Vcs\HgDriver',
+        'svn' => 'Composer\Repository\Vcs\SvnDriver',
+    ];
+
     private LoggerInterface $logger;
     private ManagerRegistry $doctrine;
     private Updater $updater;
@@ -127,7 +137,7 @@ class UpdaterWorker
                 $httpDownloader,
                 null,
                 null,
-                null,
+                self::VCS_REPO_DRIVERS,
                 $versionCache
             );
             $repository->setLoader($loader);

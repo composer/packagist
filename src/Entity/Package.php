@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Service\UpdaterWorker;
 use Composer\Factory;
 use Composer\IO\NullIO;
 use Composer\Repository\VcsRepository;
@@ -632,7 +633,7 @@ class Package
             $config = Factory::createConfig();
             $io->loadConfiguration($config);
             $httpDownloader = new HttpDownloader($io, $config);
-            $repository = new VcsRepository(['url' => $this->repository], $io, $config, $httpDownloader);
+            $repository = new VcsRepository(['url' => $this->repository], $io, $config, $httpDownloader, null, null, UpdaterWorker::VCS_REPO_DRIVERS);
 
             $driver = $this->vcsDriver = $repository->getDriver();
             if (!$driver) {
