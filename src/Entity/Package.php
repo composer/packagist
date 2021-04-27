@@ -617,6 +617,9 @@ class Package
         $repoUrl = preg_replace('{^git://github.com/}i', 'https://github.com/', $repoUrl);
         $repoUrl = preg_replace('{^(https://github.com/.*?)\.git$}i', '$1', $repoUrl);
 
+        $repoUrl = preg_replace('{^git@gitlab.com:}i', 'https://gitlab.com/', $repoUrl);
+        $repoUrl = preg_replace('{^(https://gitlab.com/.*?)\.git$}i', '$1', $repoUrl);
+
         // normalize protocol case
         $repoUrl = preg_replace_callback('{^(https?|git|svn)://}i', function ($match) { return strtolower($match[1]) . '://'; }, $repoUrl);
 
@@ -625,6 +628,11 @@ class Package
 
         // avoid user@host URLs
         if (preg_match('{https?://.+@}', $repoUrl)) {
+            return;
+        }
+
+        // validate that this is a somewhat valid URL
+        if (!preg_match('{^([a-z0-9][^@\s]+@[a-z0-9-_.]+:\S+ | [a-z0-9]+://\S+)$}Dx', $repoUrl)) {
             return;
         }
 
