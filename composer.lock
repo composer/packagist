@@ -557,12 +557,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "40c7a725e1e3e644f90825b44dc156e78c0f9b0e"
+                "reference": "832af78e284b23a8f43914b2571fb4c48a7b108a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/40c7a725e1e3e644f90825b44dc156e78c0f9b0e",
-                "reference": "40c7a725e1e3e644f90825b44dc156e78c0f9b0e",
+                "url": "https://api.github.com/repos/composer/composer/zipball/832af78e284b23a8f43914b2571fb4c48a7b108a",
+                "reference": "832af78e284b23a8f43914b2571fb4c48a7b108a",
                 "shasum": ""
             },
             "require": {
@@ -648,7 +648,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2021-04-27T11:06:49+00:00"
+            "time": "2021-04-28T19:53:09+00:00"
         },
         {
             "name": "composer/metadata-minifier",
@@ -12501,5 +12501,5 @@
     "platform-overrides": {
         "php": "7.4.10"
     },
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.1.0"
 }
