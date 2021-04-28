@@ -620,6 +620,11 @@ class Package
         $repoUrl = preg_replace('{^git@gitlab.com:}i', 'https://gitlab.com/', $repoUrl);
         $repoUrl = preg_replace('{^(https://gitlab.com/.*?)\.git$}i', '$1', $repoUrl);
 
+        $repoUrl = preg_replace('{^git@+bitbucket.org:}i', 'https://bitbucket.org/', $repoUrl);
+        $repoUrl = preg_replace('{^bitbucket.org:}i', 'https://bitbucket.org/', $repoUrl);
+        $repoUrl = preg_replace('{^https://[a-z0-9_-]*@bitbucket.org/}i', 'https://bitbucket.org/', $repoUrl);
+        $repoUrl = preg_replace('{^(https://bitbucket.org/[^/]+/[^/]+)/src/[^.]+}i', '$1.git', $repoUrl);
+
         // normalize protocol case
         $repoUrl = preg_replace_callback('{^(https?|git|svn)://}i', function ($match) { return strtolower($match[1]) . '://'; }, $repoUrl);
 
