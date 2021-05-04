@@ -187,7 +187,7 @@
         e.preventDefault();
         e.stopImmediatePropagation();
         var form = this;
-        if (window.confirm('Are you sure you want to delete this package version?')) {
+        if (window.confirm('Are you sure you want to delete ' + $(form).prev().text() + '?')) {
             dispatchAjaxForm(this, function () {
                 humane.log('Version successfully deleted', {timeout: 3000, clickToClose: true});
                 $(form).closest('.version').remove();
