@@ -372,7 +372,7 @@ class PackageRepository extends ServiceEntityRepository
     public function markPackageSuspect(Package $package): void
     {
         $sql = 'UPDATE package SET suspect = :suspect WHERE id = :id';
-        $this->getEntityManager()->getConnection()->executeUpdate($sql, ['suspect' => $package->getSuspect(), 'id' => $package->getId()]);
+        $this->getEntityManager()->getConnection()->executeStatement($sql, ['suspect' => $package->getSuspect(), 'id' => $package->getId()]);
     }
 
     public function getSuspectPackageCount(): int

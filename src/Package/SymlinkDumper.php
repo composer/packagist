@@ -187,7 +187,7 @@ class SymlinkDumper
                 $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions(array_splice($packageIds, 0, $step));
 
                 if ($verbose) {
-                    echo '['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.PHP_EOL;
+                    echo '['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Processing '.$step.' packages ('.(memory_get_usage(true)/1024/1024).' MB RAM)'.PHP_EOL;
                 }
 
                 $current += $step;
@@ -251,7 +251,7 @@ class SymlinkDumper
                 $this->getEM()->clear();
                 $this->logger->reset();
 
-                if ($current % 250 === 0 || !$packageIds) {
+                if ($current % 250 === 0 || !$packageIds || memory_get_usage() > 1024*1024*1024) {
                     if ($verbose) {
                         echo 'Dumping individual files'.PHP_EOL;
                     }
