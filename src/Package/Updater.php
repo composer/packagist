@@ -236,7 +236,7 @@ class Updater
         }
 
         // mark versions that did not update as updated to avoid them being pruned
-        $em->getConnection()->executeUpdate(
+        $em->getConnection()->executeStatement(
             'UPDATE package_version SET updatedAt = :now, softDeletedAt = NULL WHERE id IN (:ids)',
             ['now' => date('Y-m-d H:i:s'), 'ids' => $idsToMarkUpdated],
             ['ids' => Connection::PARAM_INT_ARRAY]
@@ -252,7 +252,7 @@ class Updater
             } else {
                 // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
                 // version is still missing it will be really removed
-                $em->getConnection()->executeUpdate(
+                $em->getConnection()->executeStatement(
                     'UPDATE package_version SET softDeletedAt = :now WHERE id = :id',
                     ['now' => date('Y-m-d H:i:s'), 'id' => $version['id']]
                 );

@@ -112,7 +112,7 @@ class PackageRepository extends ServiceEntityRepository
         return $query->getResult();
     }
 
-    public function isPackageMaintainedBy(Package $package, int $userId)
+    public function isPackageMaintainedBy(Package $package, int $userId): bool
     {
         $query = $this->createQueryBuilder('p')
             ->select('p.id')
@@ -170,7 +170,7 @@ class PackageRepository extends ServiceEntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchAll(
+        return $conn->fetchAllAssociative(
             'SELECT p.id FROM package p
             WHERE p.abandoned = false
             AND (
@@ -196,7 +196,7 @@ class PackageRepository extends ServiceEntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.indexedAt IS NULL OR p.indexedAt <= p.crawledAt ORDER BY p.id ASC');
+        return $conn->fetchAllAssociative('SELECT p.id FROM package p WHERE p.indexedAt IS NULL OR p.indexedAt <= p.crawledAt ORDER BY p.id ASC');
     }
 
     public function getStalePackagesForDumping()
@@ -320,7 +320,7 @@ class PackageRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getFilteredQueryBuilder(array $filters = [], $orderByName = false)
+    public function getFilteredQueryBuilder(array $filters = [], $orderByName = false): QueryBuilder
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
@@ -345,7 +345,7 @@ class PackageRepository extends ServiceEntityRepository
         return $qb;
     }
 
-    public function isVendorTaken($vendor, User $user)
+    public function isVendorTaken($vendor, User $user): bool
     {
         $query = $this->getEntityManager()
             ->createQuery(
@@ -369,21 +369,17 @@ class PackageRepository extends ServiceEntityRepository
         return true;
     }
 
-    public function markPackageSuspect(Package $package)
+    public function markPackageSuspect(Package $package): void
     {
         $sql = 'UPDATE package SET suspect = :suspect WHERE id = :id';
         $this->getEntityManager()->getConnection()->executeUpdate($sql, ['suspect' => $package->getSuspect(), 'id' => $package->getId()]);
     }
 
-    public function getSuspectPackageCount()
+    public function getSuspectPackageCount(): int
     {
         $sql = 'SELECT COUNT(*) count FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam")';
 
-        $stmt = $this->getEntityManager()->getConnection()->executeQuery($sql);
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
-
-        return (int) $result[0]['count'];
+        return (int) $this->getEntityManager()->getConnection()->fetchOne($sql);
     }
 
     public function getSuspectPackages($offset = 0, $limit = 15): array
@@ -391,14 +387,10 @@ class PackageRepository extends ServiceEntityRepository
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam") ORDER BY p.createdAt DESC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
 
-        $stmt = $this->getEntityManager()->getConnection()->executeQuery($sql);
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
-
-        return $result;
+        return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
     }
 
-    public function getDependantCount($name)
+    public function getDependantCount($name): int
     {
         $sql = 'SELECT COUNT(*) count FROM (
                 SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
@@ -408,10 +400,10 @@ class PackageRepository extends ServiceEntityRepository
 
         $stmt = $this->getEntityManager()->getConnection()
             ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'dependents_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
+        $result = $stmt->fetchOne();
+        $stmt->free();
 
-        return (int) $result[0]['count'];
+        return (int) $result;
     }
 
     public function getDependents($name, $offset = 0, $limit = 15, $orderBy = 'name')
@@ -439,13 +431,13 @@ class PackageRepository extends ServiceEntityRepository
                 [],
                 new QueryCacheProfile(7*86400, 'dependents_'.$name.'_'.$offset.'_'.$limit.'_'.$orderBy, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
             );
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
+        $result = $stmt->fetchAllAssociative();
+        $stmt->free();
 
         return $result;
     }
 
-    public function getSuggestCount($name)
+    public function getSuggestCount($name): int
     {
         $sql = 'SELECT COUNT(DISTINCT pv.package_id) count
             FROM link_suggest s
@@ -454,10 +446,10 @@ class PackageRepository extends ServiceEntityRepository
 
         $stmt = $this->getEntityManager()->getConnection()
             ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'suggesters_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
+        $result = $stmt->fetchOne();
+        $stmt->free();
 
-        return (int) $result[0]['count'];
+        return (int) $result;
     }
 
     public function getSuggests($name, $offset = 0, $limit = 15)
@@ -477,8 +469,8 @@ class PackageRepository extends ServiceEntityRepository
                 [],
                 new QueryCacheProfile(7*86400, 'suggesters_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
             );
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
+        $result = $stmt->fetchAllAssociative();
+        $stmt->free();
 
         return $result;
     }
