@@ -400,10 +400,12 @@ class PackageRepository extends ServiceEntityRepository
 
         $stmt = $this->getEntityManager()->getConnection()
             ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'dependents_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
-        $result = $stmt->fetchOne();
+
+        // we have to fetch the whole result set here to make sure caching works as per https://www.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/caching.html#caching
+        $result = $stmt->fetchAllAssociative();
         $stmt->free();
 
-        return (int) $result;
+        return (int) $result[0]['count'];
     }
 
     public function getDependents($name, $offset = 0, $limit = 15, $orderBy = 'name')
@@ -446,10 +448,12 @@ class PackageRepository extends ServiceEntityRepository
 
         $stmt = $this->getEntityManager()->getConnection()
             ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'suggesters_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
-        $result = $stmt->fetchOne();
+
+        // we have to fetch the whole result set here to make sure caching works as per https://www.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/caching.html#caching
+        $result = $stmt->fetchAllAssociative();
         $stmt->free();
 
-        return (int) $result;
+        return (int) $result[0]['count'];
     }
 
     public function getSuggests($name, $offset = 0, $limit = 15)
