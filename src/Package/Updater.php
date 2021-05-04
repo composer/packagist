@@ -94,7 +94,7 @@ class Updater
      * Update a project
      *
      * @param \App\Entity\Package $package
-     * @param RepositoryInterface $repository the repository instance used to update from
+     * @param VcsRepository $repository the repository instance used to update from
      * @param int $flags a few of the constants of this class
      */
     public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, $flags = 0, array $existingVersions = null, VersionCache $versionCache = null): Package
