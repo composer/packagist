@@ -208,7 +208,11 @@ class PackageController extends Controller
 
                 $this->providerManager->insertPackage($package);
                 if ($user->getGithubToken()) {
-                    $githubUserMigrationWorker->setupWebHook($user->getGithubToken(), $package);
+                    try {
+                        $githubUserMigrationWorker->setupWebHook($user->getGithubToken(), $package);
+                    } catch (\Throwable $e) {
+                        // ignore errors at this point
+                    }
                 }
 
                 $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
