@@ -203,14 +203,21 @@ class PackageRepository extends ServiceEntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAt IS NULL OR p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW() ORDER BY p.id ASC');
+        return $conn->fetchFirstColumn('
+            SELECT p.id
+            FROM package p
+            LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
+            WHERE (p.dumpedAt IS NULL OR (p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW()))
+            AND (d.total > 1000 OR d.lastUpdated > :date)
+            ORDER BY p.id ASC
+        ', ['date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
     }
 
     public function getStalePackagesForDumpingV2()
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchAll('SELECT p.id FROM package p WHERE p.dumpedAtV2 IS NULL OR p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW() ORDER BY p.id ASC');
+        return $conn->fetchFirstColumn('SELECT p.id FROM package p WHERE p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW()) ORDER BY p.id ASC');
     }
 
     public function iterateStaleDownloadCountPackageIds()

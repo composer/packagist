@@ -90,15 +90,18 @@ class DumpPackagesCommand extends Command
         }
 
         if ($force) {
-            $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
+            $ids = $this->getEM()->getConnection()->fetchFirstColumn('
+                SELECT p.id
+                FROM package p
+                LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
+                WHERE (replacementPackage != "spam/spam" OR replacementPackage IS NULL)
+                AND (d.total > 1000 OR d.lastUpdated > :date)
+                ORDER BY p.id ASC
+            ', ['date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
         } else {
-            $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumping();
+            $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumping();
         }
 
-        $ids = [];
-        foreach ($packages as $package) {
-            $ids[] = $package['id'];
-        }
         if (!$ids && !$force) {
             if ($verbose) {
                 $output->writeln('Aborting, no packages to dump and not doing a forced run');

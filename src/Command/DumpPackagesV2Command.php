@@ -93,14 +93,9 @@ class DumpPackagesV2Command extends Command
         try {
             while ($iterations--) {
                 if ($force) {
-                    $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
+                    $ids = $this->getEM()->getConnection()->fetchFirstColumn('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
                 } else {
-                    $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2();
-                }
-
-                $ids = [];
-                foreach ($packages as $package) {
-                    $ids[] = $package['id'];
+                    $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2();
                 }
 
                 if ($ids || $force) {
