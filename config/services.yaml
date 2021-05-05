@@ -32,8 +32,7 @@ services:
             $dbUrl: '%env(DATABASE_URL)%'
             $awsMetadata: '%aws_metadata%'
             $cacheDir: '%kernel.cache_dir%'
-            $webDir: '%kernel.root_dir%/../web/'
-            $rootDir: '%kernel.root_dir%'
+            $webDir: '%kernel.project_dir%/web/'
             $metadataDir: '%packagist_metadata_dir%'
             $trustedIpHeader: '%trusted_ip_header%'
             $algoliaIndexName: '%env(ALGOLIA_INDEX_NAME)%'
@@ -79,13 +78,13 @@ services:
 
     App\Package\SymlinkDumper:
         arguments:
-            $webDir: '%kernel.root_dir%/../web/'
+            $webDir: '%kernel.project_dir%/web/'
             $targetDir: '%packagist_metadata_dir%'
             $compress: '%packagist_dumper_compress%'
 
     App\Package\V2Dumper:
         arguments:
-            $webDir: '%kernel.root_dir%/../web/'
+            $webDir: '%kernel.project_dir%/web/'
             $targetDir: '%packagist_metadata_dir%'
 
     App\Security\Provider\UserProvider:
@@ -159,12 +158,7 @@ services:
         public: true
         class: App\Security\TwoFactorAuthManager
         arguments:
-            - '@doctrine'
-            - '@mailer'
-            - '@twig'
-            - '@logger'
-            - '@session.flash_bag'
-            - { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
+            $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
 
     App\Service\SecurityAdvisoryWorker:
         bind:

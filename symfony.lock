@@ -312,6 +312,9 @@
     "psr/container": {
         "version": "1.0.0"
     },
+    "psr/event-dispatcher": {
+        "version": "1.0.0"
+    },
     "psr/http-client": {
         "version": "1.0.1"
     },
@@ -416,9 +419,6 @@
     "symfony/css-selector": {
         "version": "v4.4.16"
     },
-    "symfony/debug": {
-        "version": "v4.4.16"
-    },
     "symfony/debug-bundle": {
         "version": "4.1",
         "recipe": {
@@ -510,9 +510,6 @@
         "version": "v4.4.16"
     },
     "symfony/http-kernel": {
-        "version": "v4.4.16"
-    },
-    "symfony/inflector": {
         "version": "v4.4.16"
     },
     "symfony/intl": {

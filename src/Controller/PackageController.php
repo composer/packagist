@@ -72,7 +72,7 @@ class PackageController extends Controller
     public function listAction(Request $req)
     {
         $repo = $this->getEM()->getRepository(Package::class);
-        $fields = (array) $req->query->get('fields', []);
+        $fields = (array) $req->query->get('fields');
         $fields = array_intersect($fields, ['repository', 'type']);
 
         if ($fields) {
@@ -416,7 +416,7 @@ class PackageController extends Controller
             throw new NotFoundHttpException();
         }
 
-        $page = max(1, (int) $req->query->get('page', 1));
+        $page = max(1, $req->query->getInt('page', 1));
 
         $repo = $this->getEM()->getRepository(Package::class);
         $count = $repo->getSuspectPackageCount();
@@ -817,10 +817,10 @@ class PackageController extends Controller
             $req->request->get('apiToken') :
             $req->query->get('apiToken');
 
-        $update = $req->request->get('update', $req->query->get('update'));
+        $update = $req->request->getBoolean('update', $req->query->getBoolean('update'));
         $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
-        $updateEqualRefs = (bool) $req->request->get('updateAll', $req->query->get('updateAll'));
-        $manualUpdate = (bool) $req->request->get('manualUpdate', $req->query->get('manualUpdate'));
+        $updateEqualRefs = $req->request->getBoolean('updateAll', $req->query->getBoolean('updateAll'));
+        $manualUpdate = $req->request->getBoolean('manualUpdate', $req->query->getBoolean('manualUpdate'));
 
         $user = $this->getUser() ?: $this->getEM()->getRepository(User::class)
             ->findOneBy(['usernameCanonical' => $username, 'apiToken' => $apiToken]);
@@ -839,7 +839,7 @@ class PackageController extends Controller
             }
 
             if (null !== $autoUpdated) {
-                $package->setAutoUpdated($autoUpdated ? Package::AUTO_MANUAL_HOOK : 0);
+                $package->setAutoUpdated(filter_var($autoUpdated, FILTER_VALIDATE_BOOLEAN) ? Package::AUTO_MANUAL_HOOK : 0);
                 $this->getEM()->flush();
             }
 
@@ -1172,7 +1172,7 @@ class PackageController extends Controller
         if (!Killswitch::LINKS_ENABLED) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
-        $page = max(1, (int) $req->query->get('page', 1));
+        $page = max(1, $req->query->getInt('page', 1));
         $perPage = 15;
         $orderBy = $req->query->get('order_by', 'name');
 
@@ -1231,7 +1231,7 @@ class PackageController extends Controller
         if (!Killswitch::LINKS_ENABLED) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
-        $page = max(1, (int) $req->query->get('page', 1));
+        $page = max(1, $req->query->getInt('page', 1));
         $perPage = 15;
 
         if ($req->getRequestFormat() === 'json') {

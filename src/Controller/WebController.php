@@ -95,9 +95,9 @@ class WebController extends Controller
 
         $blockList = ['2400:6180:100:d0::83b:b001', '34.235.38.170'];
         if (in_array($req->getClientIp(), $blockList, true)) {
-            return JsonResponse::create([
+            return (new JsonResponse([
                 'error' => 'Too many requests, reach out to contact@packagist.org'
-            ], 400)->setCallback($req->query->get('callback'));
+            ], 400))->setCallback($req->query->get('callback'));
         }
 
         $typeFilter = str_replace('%type%', '', $req->query->get('type'));
@@ -108,9 +108,9 @@ class WebController extends Controller
         $this->computeSearchQuery($req, $filteredOrderBys);
 
         if (!$req->query->has('search_query') && !$typeFilter && !$tagsFilter) {
-            return JsonResponse::create([
+            return (new JsonResponse([
                 'error' => 'Missing search query, example: ?q=example'
-            ], 400)->setCallback($req->query->get('callback'));
+            ], 400))->setCallback($req->query->get('callback'));
         }
 
         $form = $this->createForm(SearchQueryType::class, new SearchQuery());
@@ -138,10 +138,10 @@ class WebController extends Controller
         }
 
         if (!empty($filteredOrderBys)) {
-            return JsonResponse::create([
+            return (new JsonResponse([
                 'status' => 'error',
                 'message' => 'Search sorting is not available anymore',
-            ], 400)->setCallback($req->query->get('callback'));
+            ], 400))->setCallback($req->query->get('callback'));
         }
 
         $form->handleRequest($req);
@@ -152,10 +152,10 @@ class WebController extends Controller
         $perPage = max(1, (int) $req->query->getInt('per_page', 15));
         if ($perPage <= 0 || $perPage > 100) {
            if ($req->getRequestFormat() === 'json') {
-                return JsonResponse::create([
+                return (new JsonResponse([
                     'status' => 'error',
                     'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-                ], 400)->setCallback($req->query->get('callback'));
+                ], 400))->setCallback($req->query->get('callback'));
             }
 
             $perPage = max(0, min(100, $perPage));
@@ -165,15 +165,15 @@ class WebController extends Controller
             $queryParams['filters'] = implode(' AND ', $queryParams['filters']);
         }
         $queryParams['hitsPerPage'] = $perPage;
-        $queryParams['page'] = max(1, (int) $req->query->get('page', 1)) - 1;
+        $queryParams['page'] = max(1, $req->query->getInt('page', 1)) - 1;
 
         try {
             $results = $index->search($query, $queryParams);
         } catch (\Throwable $e) {
-            return JsonResponse::create([
+            return (new JsonResponse([
                 'status' => 'error',
                 'message' => 'Could not connect to the search server',
-            ], 500)->setCallback($req->query->get('callback'));
+            ], 500))->setCallback($req->query->get('callback'));
         }
 
         $result = [
@@ -224,7 +224,7 @@ class WebController extends Controller
             $result['next'] = $this->generateUrl('search', $params, UrlGeneratorInterface::ABSOLUTE_URL);
         }
 
-        $response = JsonResponse::create($result)->setCallback($req->query->get('callback'));
+        $response = (new JsonResponse($result))->setCallback($req->query->get('callback'));
         $response->setSharedMaxAge(300);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
@@ -350,10 +350,9 @@ class WebController extends Controller
      */
     protected function getFilteredOrderedBys(Request $req)
     {
-        $orderBys = $req->query->get('orderBys', []);
+        $orderBys = $req->query->get('orderBys');
         if (!$orderBys) {
-            $orderBys = $req->query->get('search_query');
-            $orderBys = $orderBys['orderBys'] ?? [];
+            $orderBys = $req->query->get('search_query')['orderBys'] ?? [];
         }
 
         if ($orderBys) {

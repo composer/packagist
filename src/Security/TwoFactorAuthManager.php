@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Twig\Environment;
 use Symfony\Component\Mailer\MailerInterface;
@@ -32,16 +33,16 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
     protected MailerInterface $mailer;
     protected Environment $twig;
     protected LoggerInterface $logger;
-    protected FlashBagInterface $flashBag;
+    protected RequestStack $requestStack;
     protected array $options;
 
-    public function __construct(ManagerRegistry $doctrine, MailerInterface $mailer, Environment $twig, LoggerInterface $logger, FlashBagInterface $flashBag, array $options)
+    public function __construct(ManagerRegistry $doctrine, MailerInterface $mailer, Environment $twig, LoggerInterface $logger, RequestStack $requestStack, array $options)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;
         $this->twig = $twig;
         $this->logger = $logger;
-        $this->flashBag = $flashBag;
+        $this->requestStack = $requestStack;
         $this->options = $options;
     }
 
@@ -151,7 +152,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
     {
         if ($user instanceof BackupCodeInterface) {
             $this->disableTwoFactorAuth($user, 'Backup code used');
-            $this->flashBag->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
+            $this->requestStack->getCurrentRequest()->getSession()->getFlashBag()->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
         }
     }
 }
