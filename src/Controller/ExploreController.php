@@ -43,7 +43,7 @@ class ExploreController extends Controller
         /** @var VersionRepository $verRepo */
         $verRepo = $this->doctrine->getRepository(Version::class);
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
-            ->getQuery()->useResultCache(true, 60)->getResult();
+            ->getQuery()->enableResultCache(60)->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
         $maxId = $this->doctrine->getConnection()->fetchColumn('SELECT max(id) FROM package');
         $random = $pkgRepo
@@ -55,7 +55,7 @@ class ExploreController extends Controller
             $popularIds = $redis->zrevrange('downloads:trending', 0, 9);
             if ($popularIds) {
                 $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
-                    ->getQuery()->useResultCache(true, 900)->getResult();
+                    ->getQuery()->enableResultCache(900)->getResult();
                 usort($popular, function ($a, $b) use ($popularIds) {
                     return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
                 });
@@ -98,7 +98,7 @@ class ExploreController extends Controller
             );
             $popular = $this->doctrine->getRepository(Package::class)
                 ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
-                ->getQuery()->useResultCache(true, 900)->getResult();
+                ->getQuery()->enableResultCache(900)->getResult();
             usort($popular, function ($a, $b) use ($popularIds) {
                 return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
             });

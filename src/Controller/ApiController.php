@@ -325,7 +325,7 @@ class ApiController extends Controller
     {
         // support legacy composer v1 normalized default branches
         if ($version === '9999999-dev') {
-            return $this->getEM()->getConnection()->fetchAssoc(
+            return $this->getEM()->getConnection()->fetchAssociative(
                 'SELECT p.id, v.id vid
                 FROM package p
                 LEFT JOIN package_version v ON p.id = v.package_id
@@ -336,7 +336,7 @@ class ApiController extends Controller
             );
         }
 
-        return $this->getEM()->getConnection()->fetchAssoc(
+        return $this->getEM()->getConnection()->fetchAssociative(
             'SELECT p.id, v.id vid
             FROM package p
             LEFT JOIN package_version v ON p.id = v.package_id

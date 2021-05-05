@@ -93,7 +93,7 @@ class IndexPackagesCommand extends Command
         if ($package) {
             $packages = [['id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()]];
         } elseif ($force || $indexAll) {
-            $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
             $this->getEM()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
         } else {
             $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForIndexing();
@@ -247,7 +247,7 @@ class IndexPackagesCommand extends Command
 
     private function getProviders(Package $package): array
     {
-        return $this->getEM()->getConnection()->fetchAll(
+        return $this->getEM()->getConnection()->fetchAllAssociative(
             'SELECT lp.packageName
                 FROM package p
                 JOIN package_version pv ON p.id = pv.package_id
@@ -261,7 +261,7 @@ class IndexPackagesCommand extends Command
 
     private function getTags(Package $package): array
     {
-        $tags = $this->getEM()->getConnection()->fetchAll(
+        $tags = $this->getEM()->getConnection()->fetchAllAssociative(
             'SELECT t.name FROM package p
                             JOIN package_version pv ON p.id = pv.package_id
                             JOIN version_tag vt ON vt.version_id = pv.id

@@ -44,7 +44,7 @@ class Job
     private string $type;
 
     /**
-     * @ORM\Column(type="json_array")
+     * @ORM\Column(type="json")
      */
     private array $payload = [];
 
@@ -57,7 +57,7 @@ class Job
     private string $status = self::STATUS_QUEUED;
 
     /**
-     * @ORM\Column(type="json_array", nullable=true)
+     * @ORM\Column(type="json", nullable=true)
      */
     private ?array $result = null;
 

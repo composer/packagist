@@ -475,8 +475,8 @@ class SymlinkDumper
             $safeFiles[basename($listing)] = true;
 
             $listingJson = json_decode(file_get_contents($this->webDir.'/'.$listing), true);
-            foreach ($listingJson['providers'] as $pkg => $opts) {
-                $provPath = $pkg.'$'.$opts['sha256'].'.json';
+            foreach ($listingJson['providers'] as $pkg => $pkgOpts) {
+                $provPath = $pkg.'$'.$pkgOpts['sha256'].'.json';
                 $safeFiles[$provPath] = true;
             }
         }
@@ -705,7 +705,7 @@ class SymlinkDumper
 
         foreach ($blocks as $label => $block) {
             if ($mtime >= $block) {
-                return "provider-${label}.json";
+                return "provider-$label.json";
             }
         }
 

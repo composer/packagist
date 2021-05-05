@@ -21,7 +21,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ORDER BY s.reportedAt DESC, s.id DESC';
 
         return $this->getEntityManager()->getConnection()
-            ->fetchAll($sql, ['name' => $name]);
+            ->fetchAllAssociative($sql, ['name' => $name]);
     }
 
     public function searchSecurityAdvisories(array $packageNames, int $updatedSince): array
@@ -33,7 +33,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             .' ORDER BY s.id DESC';
 
         return $this->getEntityManager()->getConnection()
-            ->fetchAll(
+            ->fetchAllAssociative(
                 $sql,
                 [
                     'packageNames' => $packageNames,

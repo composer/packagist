@@ -131,7 +131,7 @@ class VersionRepository extends ServiceEntityRepository
         }
 
         foreach ($links as $link => $table) {
-            $rows = $this->getEntityManager()->getConnection()->fetchAll(
+            $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
                 'SELECT version_id, packageName name, packageVersion version FROM '.$table.' WHERE version_id IN (:ids)',
                 ['ids' => $versionIds],
                 ['ids' => Connection::PARAM_INT_ARRAY]
@@ -141,7 +141,7 @@ class VersionRepository extends ServiceEntityRepository
             }
         }
 
-        $rows = $this->getEntityManager()->getConnection()->fetchAll(
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             'SELECT va.version_id, name, email, homepage, role FROM author a JOIN version_author va ON va.author_id = a.id WHERE va.version_id IN (:ids)',
             ['ids' => $versionIds],
             ['ids' => Connection::PARAM_INT_ARRAY]
@@ -152,7 +152,7 @@ class VersionRepository extends ServiceEntityRepository
             $result[$versionId]['authors'][] = array_filter($row);
         }
 
-        $rows = $this->getEntityManager()->getConnection()->fetchAll(
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             'SELECT vt.version_id, name FROM tag t JOIN version_tag vt ON vt.tag_id = t.id WHERE vt.version_id IN (:ids)',
             ['ids' => $versionIds],
             ['ids' => Connection::PARAM_INT_ARRAY]
@@ -167,7 +167,7 @@ class VersionRepository extends ServiceEntityRepository
 
     public function getVersionMetadataForUpdate(Package $package)
     {
-        $rows = $this->getEntityManager()->getConnection()->fetchAll(
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             'SELECT id, version, normalizedVersion, source, softDeletedAt, `authors` IS NULL as needs_author_migration FROM package_version v WHERE v.package_id = :id',
             ['id' => $package->getId()]
         );

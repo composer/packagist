@@ -41,41 +41,40 @@ class Controller extends AbstractController
         $this->doctrine = $doctrine;
     }
 
-    protected function getPackagesMetadata($packages)
+    /**
+     * @param array<Package|array{id: int}> $packages
+     * @return array{downloads: array<int, int>, favers: array<int, int>}
+     */
+    protected function getPackagesMetadata($packages): array
     {
+        $downloads = [];
+        $favorites = [];
+
         try {
             $ids = [];
 
-            if (!count($packages)) {
-                return;
-            }
-
-            $favs = [];
             $search = false;
             foreach ($packages as $package) {
                 if ($package instanceof Package) {
                     $ids[] = $package->getId();
-                    $favs[$package->getId()] = $this->favoriteManager->getFaverCount($package);
+                    // fetch one by one to avoid re-fetching the github stars as we already have them on the package object
+                    $favorites[$package->getId()] = $this->favoriteManager->getFaverCount($package);
                 } elseif (is_array($package)) {
-                    $search = true;
                     $ids[] = $package['id'];
+                    // fetch all in one query if we do not have objects
+                    $search = true;
                 } else {
                     throw new \LogicException('Got invalid package entity');
                 }
             }
 
+            $downloads = $this->downloadManager->getPackagesDownloads($ids);
             if ($search) {
-                return [
-                    'downloads' => $this->downloadManager->getPackagesDownloads($ids),
-                    'favers' => $this->favoriteManager->getFaverCounts($ids),
-                ];
+                $favorites = $this->favoriteManager->getFaverCounts($ids);
             }
-
-            return [
-                'downloads' => $this->downloadManager->getPackagesDownloads($ids),
-                'favers' => $favs,
-            ];
         } catch (\Predis\Connection\ConnectionException $e) {}
+
+        return ['downloads' => $downloads, 'favers' => $favorites];
     }
 
     /**
@@ -83,9 +82,8 @@ class Controller extends AbstractController
      *
      * @param \Doctrine\ORM\QueryBuilder $query Query for packages
      * @param int                        $page  Pagenumber to retrieve.
-     * @return \Pagerfanta\Pagerfanta
      */
-    protected function setupPager($query, $page)
+    protected function setupPager($query, $page): Pagerfanta
     {
         $paginator = new Pagerfanta(new QueryAdapter($query, true));
         $paginator->setNormalizeOutOfRangePages(true);

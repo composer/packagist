@@ -38,9 +38,6 @@ class CleanIndexCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this
@@ -50,10 +47,7 @@ class CleanIndexCommand extends Command
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $verbose = $input->getOption('verbose');
 
@@ -62,7 +56,7 @@ class CleanIndexCommand extends Command
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
-            return;
+            return 0;
         }
 
         $lockAcquired = $this->locker->lockCommand($this->getName());
@@ -70,7 +64,7 @@ class CleanIndexCommand extends Command
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
             }
-            return;
+            return 0;
         }
 
         $index = $this->algolia->initIndex($this->algoliaIndexName);

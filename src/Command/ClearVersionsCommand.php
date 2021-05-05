@@ -68,10 +68,9 @@ EOF
             while ($ids) {
                 $qb = $versionRepo->createQueryBuilder('v');
                 $qb->where($qb->expr()->in('v.id', array_splice($ids, 0, 50)));
-                $versions = $qb->getQuery()->iterate();
+                $versions = $qb->getQuery()->toIterable();
 
                 foreach ($versions as $version) {
-                    $version = $version[0];
                     $name = $version->getName().' '.$version->getVersion();
                     $output->writeln('Clearing '.$name);
                     if ($force) {
@@ -88,11 +87,7 @@ EOF
             if ($id = $input->getArgument('package')) {
                 $ids = [$id];
             } else {
-                $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
-                $ids = [];
-                foreach ($packages as $package) {
-                    $ids[] = $package['id'];
-                }
+                $ids = $this->getEM()->getConnection()->fetchFirstColumn('SELECT id FROM package ORDER BY id ASC');
             }
 
             while ($ids) {
@@ -100,10 +95,9 @@ EOF
                 $qb
                     ->join('v.package', 'p')
                     ->where($qb->expr()->in('p.id', array_splice($ids, 0, 50)));
-                $versions = $qb->getQuery()->iterate();
+                $versions = $qb->getQuery()->toIterable();
 
                 foreach ($versions as $version) {
-                    $version = $version[0];
                     $name = $version->getName().' '.$version->getVersion();
                     $output->writeln('Clearing '.$name);
                     if ($force) {

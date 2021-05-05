@@ -67,9 +67,9 @@ class Scheduler
         return $this->createJob('security:advisory', ['source' => $source], null, $executeAfter);
     }
 
-    private function getPendingUpdateJob(int $packageId, $updateEqualRefs = false, $deleteBefore = false)
+    private function getPendingUpdateJob(int $packageId, $updateEqualRefs = false, $deleteBefore = false): ?string
     {
-        $result = $this->getEM()->getConnection()->fetchAssoc(
+        $result = $this->getEM()->getConnection()->fetchAssociative(
             'SELECT id, payload FROM job WHERE packageId = :package AND status = :status AND type = :type LIMIT 1',
             [
                 'package' => $packageId,
@@ -84,6 +84,8 @@ class Scheduler
                 return $result['id'];
             }
         }
+
+        return null;
     }
 
     /**

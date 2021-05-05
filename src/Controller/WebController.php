@@ -306,7 +306,7 @@ class WebController extends Controller
             $dlChart = $dlChartMonthly = null;
         }
 
-        $response = $this->render('web/stats.html.twig', [
+        return $this->render('web/stats.html.twig', [
             'chart' => $chart,
             'packages' => !empty($chart['packages']) ? max($chart['packages']) : 0,
             'versions' => !empty($chart['versions']) ? max($chart['versions']) : 0,
@@ -317,8 +317,6 @@ class WebController extends Controller
             'maxMonthlyDownloads' => !empty($dlChartMonthly) ? max($dlChartMonthly['values']) : null,
             'downloadsStartDate' => $downloadsStartDate,
         ]);
-
-        return $response;
     }
 
     /**

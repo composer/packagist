@@ -65,11 +65,9 @@ class CompileStatsCommand extends Command
         $yesterday = new \DateTime('yesterday 00:00:00');
 
         // fetch existing ids
-        $packages = $conn->fetchAll('SELECT id FROM package ORDER BY id ASC');
-        $ids = [];
-        foreach ($packages as $row) {
-            $ids[] = (int) $row['id'];
-        }
+        $ids = $conn->fetchFirstColumn('SELECT id FROM package ORDER BY id ASC');
+        /** @var list<int> $ids */
+        $ids = array_map('intval', $ids);
 
         if ($verbose) {
             $output->writeln('Writing new trendiness data into redis');

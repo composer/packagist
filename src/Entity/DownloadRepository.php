@@ -16,7 +16,7 @@ class DownloadRepository extends ServiceEntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        $conn->executeUpdate('DELETE FROM download WHERE package_id = :id', ['id' => $package->getId()]);
+        $conn->executeStatement('DELETE FROM download WHERE package_id = :id', ['id' => $package->getId()]);
     }
 
     public function findDataByMajorVersion(Package $package, int $majorVersion)
@@ -33,8 +33,8 @@ class DownloadRepository extends ServiceEntityRepository
                 $sql,
                 ['package' => $package->getId(), 'versionType' => Download::TYPE_VERSION, 'majorVersion' => $majorVersion . '.%']
             );
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
+        $result = $stmt->fetchAllAssociative();
+        $stmt->free();
 
         $series = [];
         foreach ($result as $row) {
@@ -59,8 +59,8 @@ class DownloadRepository extends ServiceEntityRepository
                 $sql,
                 ['package' => $package->getId(), 'versionType' => Download::TYPE_VERSION]
             );
-        $result = $stmt->fetchAll();
-        $stmt->closeCursor();
+        $result = $stmt->fetchAllAssociative();
+        $stmt->free();
 
         $series = [];
         foreach ($result as $row) {

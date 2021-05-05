@@ -202,16 +202,12 @@ class DownloadManager
             }
         }
 
-        $rows = $this->getEM()->getConnection()->fetchAll(
+        $versionIds = $this->getEM()->getConnection()->fetchFirstColumn(
             'SELECT id FROM package_version WHERE id IN (:ids)',
             ['ids' => array_keys($versionsWithDownloads)],
             ['ids' => Connection::PARAM_INT_ARRAY]
         );
-        $versionIds = [];
-        foreach ($rows as $row) {
-            $versionIds[] = (int) $row['id'];
-        }
-        unset($versionsWithDownloads, $rows, $row);
+        unset($versionsWithDownloads);
 
         sort($keys);
 
@@ -241,6 +237,10 @@ class DownloadManager
         $this->redis->del($keys);
     }
 
+    /**
+     * @param list<string> $keys
+     * @param list<int>    $validVersionIds
+     */
     private function createDbRecordsForKeys(Package $package, array $keys, array $validVersionIds, DateTimeImmutable $now)
     {
         reset($keys);

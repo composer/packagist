@@ -2,11 +2,11 @@
 
 namespace App\EventListener;
 
-use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
 class CacheListener
 {
-    public function onResponse(FilterResponseEvent $e)
+    public function onResponse(ResponseEvent $e)
     {
         $resp = $e->getResponse();
 

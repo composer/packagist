@@ -245,7 +245,7 @@ class PackageController extends Controller
 
             $existingPackages = $this->getEM()
                 ->getConnection()
-                ->fetchAll(
+                ->fetchAllAssociative(
                     'SELECT name FROM package WHERE name LIKE :query',
                     ['query' => '%/'.$name]
                 );
@@ -1393,52 +1393,48 @@ class PackageController extends Controller
 
     private function createAddMaintainerForm(Package $package)
     {
-        if (!$user = $this->getUser()) {
-            return;
+        if (!($user = $this->getUser()) || !$this->isGranted('ROLE_EDIT_PACKAGES') || !$package->getMaintainers()->contains($user)) {
+            return null;
         }
 
-        if ($this->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
-            $maintainerRequest = new MaintainerRequest();
-            return $this->createForm(AddMaintainerRequestType::class, $maintainerRequest);
-        }
+        $maintainerRequest = new MaintainerRequest();
+        return $this->createForm(AddMaintainerRequestType::class, $maintainerRequest);
     }
 
     private function createRemoveMaintainerForm(Package $package)
     {
-        if (!($user = $this->getUser()) || 1 == $package->getMaintainers()->count()) {
-            return;
+        if (!($user = $this->getUser()) || 1 == $package->getMaintainers()->count() || !$this->isGranted('ROLE_EDIT_PACKAGES') || !$package->getMaintainers()->contains($user)) {
+            return null;
         }
 
-        if ($this->isGranted('ROLE_EDIT_PACKAGES') || $package->getMaintainers()->contains($user)) {
-            $maintainerRequest = new MaintainerRequest();
-            return $this->createForm(RemoveMaintainerRequestType::class, $maintainerRequest, [
-                'package' => $package,
-            ]);
-        }
+        $maintainerRequest = new MaintainerRequest();
+        return $this->createForm(RemoveMaintainerRequestType::class, $maintainerRequest, [
+            'package' => $package,
+        ]);
     }
 
     private function createDeletePackageForm(Package $package)
     {
         if (!$user = $this->getUser()) {
-            return;
+            return null;
         }
 
         // super admins bypass additional checks
         if (!$this->isGranted('ROLE_DELETE_PACKAGES')) {
             // non maintainers can not delete
             if (!$package->getMaintainers()->contains($user)) {
-                return;
+                return null;
             }
 
             try {
                 $downloads = $this->downloadManager->getTotalDownloads($package);
             } catch (ConnectionException $e) {
-                return;
+                return null;
             }
 
             // more than 100 downloads = established package, do not allow deletion by maintainers
             if ($downloads > 100) {
-                return;
+                return null;
             }
         }
 

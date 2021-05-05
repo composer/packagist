@@ -27,18 +27,18 @@ class VendorRepository extends ServiceEntityRepository
 
     public function isVerified(string $vendor): bool
     {
-        $result = $this->getEntityManager()->getConnection()->fetchColumn('SELECT verified FROM vendor WHERE name = :vendor', ['vendor' => $vendor]);
+        $result = $this->getEntityManager()->getConnection()->fetchOne('SELECT verified FROM vendor WHERE name = :vendor', ['vendor' => $vendor]);
 
         return $result === '1';
     }
 
     public function verify(string $vendor)
     {
-        $this->getEntityManager()->getConnection()->executeUpdate(
+        $this->getEntityManager()->getConnection()->executeStatement(
             'INSERT INTO vendor (name, verified) VALUES (:vendor, 1) ON DUPLICATE KEY UPDATE verified=1',
             ['vendor' => $vendor]
         );
-        $this->getEntityManager()->getConnection()->executeUpdate(
+        $this->getEntityManager()->getConnection()->executeStatement(
             'UPDATE package SET suspect = NULL WHERE name LIKE :vendor',
             ['vendor' => $vendor.'/%']
         );

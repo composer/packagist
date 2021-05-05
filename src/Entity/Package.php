@@ -400,12 +400,7 @@ class Package
         } catch (\Doctrine\ORM\NoResultException $e) {}
     }
 
-    /**
-     * Get id
-     *
-     * @return string
-     */
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
@@ -726,6 +721,8 @@ class Package
         if (isset($this->cachedVersions[strtolower($normalizedVersion)])) {
             return $this->cachedVersions[strtolower($normalizedVersion)];
         }
+
+        return null;
     }
 
     /**

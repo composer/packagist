@@ -79,7 +79,7 @@ class UpdatePackagesCommand extends Command
             }
             $randomTimes = false;
         } elseif ($force) {
-            $packages = $this->getEM()->getConnection()->fetchAll('SELECT id FROM package ORDER BY id ASC');
+            $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
             $updateEqualRefs = true;
         } else {
             $packages = $this->getEM()->getRepository(Package::class)->getStalePackages();

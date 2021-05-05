@@ -34,7 +34,7 @@ class Download
     public $type;
 
     /**
-     * @ORM\Column(type="json_array")
+     * @ORM\Column(type="json")
      */
     public $data;
 

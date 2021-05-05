@@ -61,13 +61,7 @@ class GitHubUserMigrationWorker
                 }
                 // null result means not processed as not a github-like URL
             }
-        } catch (\GuzzleHttp\Exception\ServerException $e) {
-            return [
-                'status' => Job::STATUS_RESCHEDULE,
-                'message' => 'Got error, rescheduling: '.$e->getMessage(),
-                'after' => new \DateTime('+5 minutes'),
-            ];
-        } catch (\GuzzleHttp\Exception\ConnectException $e) {
+        } catch (\GuzzleHttp\Exception\ServerException | \GuzzleHttp\Exception\ConnectException $e) {
             return [
                 'status' => Job::STATUS_RESCHEDULE,
                 'message' => 'Got error, rescheduling: '.$e->getMessage(),
@@ -85,7 +79,7 @@ class GitHubUserMigrationWorker
     public function setupWebHook(string $token, Package $package)
     {
         if (!preg_match('#^(?:(?:https?|git)://([^/]+)/|git@([^:]+):)(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git|/)?$#', $package->getRepository(), $match)) {
-            return;
+            return null;
         }
 
         $this->logger->debug('Updating hooks for package '.$package->getName());

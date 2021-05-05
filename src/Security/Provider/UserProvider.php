@@ -40,9 +40,6 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         $this->scheduler = $scheduler;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function connect($user, UserResponseInterface $response)
     {
         $username = $response->getUsername();
@@ -75,9 +72,6 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
         $this->scheduler->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function loadUserByOAuthUserResponse(UserResponseInterface $response)
     {
         $username = $response->getUsername();
