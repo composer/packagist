@@ -152,6 +152,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
     {
         if ($user instanceof BackupCodeInterface) {
             $this->disableTwoFactorAuth($user, 'Backup code used');
+            /** @phpstan-ignore-next-line */
             $this->requestStack->getCurrentRequest()->getSession()->getFlashBag()->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
         }
     }

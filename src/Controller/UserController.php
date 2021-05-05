@@ -13,8 +13,6 @@
 namespace App\Controller;
 
 use Doctrine\ORM\NoResultException;
-use FOS\UserBundle\Model\UserInterface;
-use FOS\UserBundle\Model\UserManagerInterface;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\Version;
@@ -57,22 +55,6 @@ class UserController extends Controller
     }
 
     /**
-     * @Template()
-     * @Route("/users/{name}/packages/", name="user_packages")
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
-     */
-    public function packagesAction(Request $req, User $user)
-    {
-        $packages = $this->getUserPackages($req, $user);
-
-        return [
-            'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
-            'user' => $user,
-        ];
-    }
-
-    /**
      * @Route("/trigger-github-sync/", name="user_github_sync")
      */
     public function triggerGitHubSyncAction()
@@ -107,7 +89,7 @@ class UserController extends Controller
      * @Route("/spammers/{name}/", name="mark_spammer", methods={"POST"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function markSpammerAction(Request $req, User $user, UserManagerInterface $userManager)
+    public function markSpammerAction(Request $req, User $user)
     {
         if (!$this->isGranted('ROLE_ANTISPAM')) {
             throw new AccessDeniedException('This user can not mark others as spammers');
@@ -119,10 +101,10 @@ class UserController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             $user->addRole('ROLE_SPAMMER');
             $user->setEnabled(false);
-            $userManager->updateUser($user);
-            $doctrine = $this->doctrine;
 
-            $doctrine->getConnection()->executeUpdate(
+            $em = $this->getEM();
+
+            $em->getConnection()->executeStatement(
                 'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id
                  SET abandoned = 1, replacementPackage = "spam/spam", suspect = "spam", indexedAt = NULL, dumpedAt = "2100-01-01 00:00:00"
                  WHERE mp.user_id = :userId',
@@ -130,8 +112,8 @@ class UserController extends Controller
             );
 
             /** @var VersionRepository $versionRepo */
-            $versionRepo = $doctrine->getRepository(Version::class);
-            $packages = $doctrine
+            $versionRepo = $em->getRepository(Version::class);
+            $packages = $em
                 ->getRepository(Package::class)
                 ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true)
                 ->getQuery()->getResult();
@@ -144,7 +126,7 @@ class UserController extends Controller
                 $this->providerManager->deletePackage($package);
             }
 
-            $this->doctrine->getManager()->flush();
+            $this->getEM()->flush();
 
             $this->addFlash('success', $user->getUsername().' has been marked as a spammer');
         }
@@ -152,83 +134,6 @@ class UserController extends Controller
         return $this->redirect(
             $this->generateUrl("user_profile", ["name" => $user->getUsername()])
         );
-    }
-
-    /**
-     * @param Request $req
-     * @return Response
-     */
-    public function viewProfileAction(Request $req)
-    {
-        $user = $this->getUser();
-        if (!is_object($user) || !$user instanceof UserInterface) {
-            throw new AccessDeniedException('This user does not have access to this section.');
-        }
-
-        $packages = $this->getUserPackages($req, $user);
-        $lastGithubSync = $this->doctrine->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
-
-        $data = [
-            'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
-            'user' => $user,
-            'githubSync' => $lastGithubSync,
-        ];
-
-        if (!count($packages)) {
-            $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
-        }
-
-        return $this->render(
-            '@FOSUser/Profile/show.html.twig',
-            $data
-        );
-    }
-
-    /**
-     * @Template()
-     * @Route("/users/{name}/", name="user_profile")
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
-     */
-    public function profileAction(Request $req, User $user)
-    {
-        $packages = $this->getUserPackages($req, $user);
-
-        $data = [
-            'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
-            'user' => $user,
-        ];
-
-        if ($this->isGranted('ROLE_ANTISPAM')) {
-            $data['spammerForm'] = $this->createFormBuilder([])->getForm()->createView();
-        }
-        if (!count($packages) && ($this->isGranted('ROLE_ADMIN') || ($this->getUser() && $this->getUser()->getId() === $user->getId()))) {
-            $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
-        }
-
-        return $data;
-    }
-
-    /**
-     * @Route("/oauth/github/disconnect", name="user_github_disconnect")
-     */
-    public function disconnectGitHubAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager)
-    {
-        $user = $this->getUser();
-        $token = $csrfTokenManager->getToken('unlink_github')->getValue();
-        if (!hash_equals($token, $req->query->get('token', '')) || !$user) {
-            throw new AccessDeniedException('Invalid CSRF token');
-        }
-
-        if ($user->getGithubId()) {
-            $user->setGithubId(null);
-            $user->setGithubToken(null);
-            $user->setGithubScope(null);
-            $this->doctrine->getManager()->flush();
-        }
-
-        return $this->redirectToRoute('fos_user_profile_edit');
     }
 
     /**
@@ -272,7 +177,7 @@ class UserController extends Controller
 
         $package = $req->request->get('package');
         try {
-            $package = $this->doctrine
+            $package = $this->getEM()
                 ->getRepository(Package::class)
                 ->findOneBy(['name' => $package]);
         } catch (NoResultException $e) {
@@ -318,7 +223,7 @@ class UserController extends Controller
 
         $form->submit($req->request->get('form'));
         if ($form->isSubmitted() && $form->isValid()) {
-            $em = $this->doctrine->getManager();
+            $em = $this->getEM();
             $em->remove($user);
             $em->flush();
 
@@ -429,24 +334,5 @@ class UserController extends Controller
         }
 
         return ['user' => $user];
-    }
-
-    /**
-     * @param Request $req
-     * @param User $user
-     * @return Pagerfanta
-     */
-    protected function getUserPackages($req, $user)
-    {
-        $packages = $this->doctrine
-            ->getRepository(Package::class)
-            ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true);
-
-        $paginator = new Pagerfanta(new QueryAdapter($packages, true));
-        $paginator->setNormalizeOutOfRangePages(true);
-        $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)));
-
-        return $paginator;
     }
 }

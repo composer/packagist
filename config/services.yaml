@@ -38,6 +38,8 @@ services:
             $algoliaIndexName: '%env(ALGOLIA_INDEX_NAME)%'
             $githubWebhookSecret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
             $recaptchaEnabled: "%env(bool:APP_RECAPTCHA_ENABLED)%"
+            $mailFromEmail: "%env(APP_MAILER_FROM_EMAIL)%"
+            $mailFromName: "%env(APP_MAILER_FROM_NAME)%"
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -73,9 +75,6 @@ services:
         bind:
             $authorizationChecker: '@security.authorization_checker'
 
-    App\EventListener\RegistrationListener:
-        arguments: [ '@fos_user.util.token_generator' ]
-
     App\Package\SymlinkDumper:
         arguments:
             $webDir: '%kernel.project_dir%/web/'
@@ -87,22 +86,11 @@ services:
             $webDir: '%kernel.project_dir%/web/'
             $targetDir: '%packagist_metadata_dir%'
 
-    App\Security\Provider\UserProvider:
-        arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email']
-
-    fos_user.util.user_manipulator:
-        public: true
-        class: App\Util\UserManipulator
-        arguments:
-            - '@fos_user.user_manager'
-            - '@fos_user.util.token_generator'
-            - '@event_dispatcher'
-            - '@request_stack'
+    App\Security\Provider\UserProvider: ~
 
     App\Form\Handler\OAuthRegistrationFormHandler:
         public: true
         class: App\Form\Handler\OAuthRegistrationFormHandler
-        arguments: ['@fos_user.user_manager', '@fos_user.util.token_generator']
 
     App\Form\Type\OAuthRegistrationFormType:
         tags:
@@ -122,7 +110,6 @@ services:
     packagist.profile.form.type:
         public: true
         class: App\Form\Type\ProfileFormType
-        arguments: ['%fos_user.model.user.class%']
         tags:
             - { name: form.type, alias: packagist_user_profile }
 

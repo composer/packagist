@@ -78,6 +78,21 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
         }
     }
 
+    private function validateRecaptcha(array $credentials): void
+    {
+        if ($this->recaptchaHelper->requiresRecaptcha($credentials['ip'], $credentials['username'])) {
+            if (!$credentials['recaptcha']) {
+                throw new CustomUserMessageAuthenticationException('We detected too many failed login attempts. Please log in again with ReCaptcha.');
+            }
+
+            try {
+                $this->recaptchaVerifier->verify($credentials['recaptcha']);
+            } catch (RecaptchaException $e) {
+                throw new CustomUserMessageAuthenticationException('Invalid ReCaptcha');
+            }
+        }
+    }
+
     public function checkCredentials($credentials, UserInterface $user)
     {
         return $this->passwordEncoder->isPasswordValid($user, $credentials['password']);
@@ -105,20 +120,5 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
     protected function getLoginUrl()
     {
         return $this->urlGenerator->generate(self::LOGIN_ROUTE);
-    }
-
-    private function validateRecaptcha(array $credentials): void
-    {
-        if ($this->recaptchaHelper->requiresRecaptcha($credentials['ip'], $credentials['username'])) {
-            if (!$credentials['recaptcha']) {
-                throw new CustomUserMessageAuthenticationException('We detected too many failed login attempts. Please log in again with ReCaptcha.');
-            }
-
-            try {
-                $this->recaptchaVerifier->verify($credentials['recaptcha']);
-            } catch (RecaptchaException $e) {
-                throw new CustomUserMessageAuthenticationException('Invalid ReCaptcha');
-            }
-        }
     }
 }

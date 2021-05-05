@@ -920,7 +920,7 @@ class PackageController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $em = $this->getEM();
-                $user = $form->getData()->getUser();
+                $user = $em->getRepository(User::class)->findOneByUsernameOrEmail($form->getData()->getUser());
 
                 if (!empty($user)) {
                     if (!$package->getMaintainers()->contains($user)) {
@@ -942,7 +942,7 @@ class PackageController extends Controller
             }
         }
 
-        return $data;
+        return $this->redirectToRoute('view_package', ['name' => $name]);
     }
 
     /**

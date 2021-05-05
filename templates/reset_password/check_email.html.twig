@@ -1,0 +1,11 @@
+{% extends 'bundles/FOSUserBundle/layout.html.twig' %}
+
+{% block title %}Password Reset Email Sent - {{ parent() }}{% endblock %}
+
+{% block fos_user_content %}
+    <p>
+        An email has been sent that contains a link that you can click to reset your password.
+        This link will expire in 24 hours.
+    </p>
+    <p>If you don't receive an email please check your spam folder or <a href="{{ path('fos_user_resetting_request') }}">try again</a>.</p>
+{% endblock %}

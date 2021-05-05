@@ -12,15 +12,15 @@
 
 namespace App\Form\Model;
 
-use FOS\UserBundle\Model\UserInterface;
+use App\Entity\User;
 
 class MaintainerRequest
 {
     protected $user;
 
-    public function setUser(UserInterface $user)
+    public function setUser(string $username)
     {
-        $this->user = $user;
+        $this->user = $username;
     }
 
     public function getUser()

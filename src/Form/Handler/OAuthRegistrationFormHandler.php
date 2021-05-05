@@ -12,6 +12,8 @@
 
 namespace App\Form\Handler;
 
+use App\Util\DoctrineTrait;
+use Doctrine\Persistence\ManagerRegistry;
 use FOS\UserBundle\Model\UserManagerInterface;
 use FOS\UserBundle\Util\TokenGeneratorInterface;
 use HWI\Bundle\OAuthBundle\Form\RegistrationFormHandlerInterface;
@@ -27,19 +29,13 @@ use App\Entity\User;
  */
 class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
 {
-    private UserManagerInterface $userManager;
-    private TokenGeneratorInterface $tokenGenerator;
+    use DoctrineTrait;
 
-    /**
-     * Constructor.
-     *
-     * @param UserManagerInterface $userManager
-     * @param TokenGeneratorInterface $tokenGenerator
-     */
-    public function __construct(UserManagerInterface $userManager, TokenGeneratorInterface $tokenGenerator)
+    protected ManagerRegistry $doctrine;
+
+    public function __construct(ManagerRegistry $doctrine)
     {
-        $this->tokenGenerator = $tokenGenerator;
-        $this->userManager = $userManager;
+        $this->doctrine = $doctrine;
     }
 
     /**
@@ -47,8 +43,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
      */
     public function process(Request $request, Form $form, UserResponseInterface $userInformation)
     {
-        /** @var User $user */
-        $user = $this->userManager->createUser();
+        $user = new User();
 
         // Try to get some properties for the initial form when coming from github
         if ('GET' === $request->getMethod()) {
@@ -62,14 +57,12 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
             $form->handleRequest($request);
 
             if ($form->isSubmitted() && $form->isValid()) {
-                if (!$user->getPassword() && !$user->getPlainPassword()) {
-                    $randomPassword = $this->tokenGenerator->generateToken();
-                    $user->setPlainPassword($randomPassword);
+                if (!$user->getPassword()) {
+                    // TODO should encode a random password or prompt user for one ideally..
+                    // $user->setPlainPassword($randomPassword);
                 }
                 $user->setEnabled(true);
-
-                $apiToken = substr($this->tokenGenerator->generateToken(), 0, 20);
-                $user->setApiToken($apiToken);
+                $user->initializeApiToken();
 
                 return true;
             }
@@ -93,7 +86,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
         $testName = $name;
 
         do {
-            $user = $this->userManager->findUserByUsername($testName);
+            $user = $this->getEM()->getRepository(User::class)->findBy(['username' => $testName]);
         } while ($user !== null && $i < 10 && $testName = $name.++$i);
 
         return $user !== null ? '' : $testName;

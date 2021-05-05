@@ -107,23 +107,22 @@
                             </li>
                             <li class="nav-user">
                                 <section class="nav-user-signin">
-                                    <a href="{{ path('hwi_oauth_connect') }}">{{ 'menu.sign_in'|trans }}</a>
+                                    <a href="{{ path('login') }}">{{ 'menu.sign_in'|trans }}</a>
 
                                     <section class="signin-box">
                                         <form action="{{ path('login') }}" method="POST" id="nav_login">
                                             <div class="input-group">
-                                                <input class="form-control" type="text" id="_username" name="_username" placeholder="{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}">
+                                                <input class="form-control" type="text" id="_username" name="_username" placeholder="Username / Email">
                                                 <span class="input-group-addon"><span class="icon-user"></span></span>
                                             </div>
                                             <div class="input-group">
-                                                <input class="form-control" type="password" id="_password" name="_password" placeholder="{{ 'security.login.password'|trans({}, 'FOSUserBundle') }}">
+                                                <input class="form-control" type="password" id="_password" name="_password" placeholder="Password">
                                                 <span class="input-group-addon"><span class="icon-lock"></span></span>
                                             </div>
 
                                             <div class="checkbox">
                                                 <label for="_remember_me">
-                                                    <input type="checkbox" id="_remember_me" name="_remember_me" value="on" checked="checked" />
-                                                    {{- 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}
+                                                    <input type="checkbox" id="_remember_me" name="_remember_me" value="on" checked="checked" /> Remember me
                                                 </label>
                                             </div>
 
@@ -132,8 +131,8 @@
                                             {%- endif %}
 
                                             <div class="signin-box-buttons">
-                                                <a href="{{ hwi_oauth_login_url('github') }}" class="pull-right btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
-                                                <button type="submit" class="btn btn-success" id="_submit_mini" name="_submit">{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}</button>
+                                                <a href="{{ path('login_github_start') }}" class="pull-right btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
+                                                <button type="submit" class="btn btn-success" id="_submit_mini" name="_submit">Log in</button>
                                             </div>
                                         </form>
 

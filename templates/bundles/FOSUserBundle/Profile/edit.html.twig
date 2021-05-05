@@ -1,0 +1,68 @@
+{% extends "bundles/FOSUserBundle/layout.html.twig" %}
+
+{% block fos_user_content %}
+    {{ form_start(form, { 'action': path('fos_user_profile_edit'), 'attr': { 'class': 'fos_user_profile_edit col-md-6' } }) }}
+        {{ form_errors(form) }}
+
+        <div class="form-group clearfix">
+            {{ form_label(form.username) }}
+            <div class="input-group">
+                {{ form_errors(form.username) }}
+                {{ form_widget(form.username) }}
+                <span class="input-group-addon"><span class="icon-user"></span></span>
+            </div>
+        </div>
+
+        <div class="form-group clearfix">
+            {{ form_label(form.email) }}
+            <div class="input-group clearfix">
+                {{ form_errors(form.email) }}
+                {{ form_widget(form.email) }}
+                <span class="input-group-addon"><span class="icon-mail"></span></span>
+            </div>
+        </div>
+
+        {% if not app.user.githubId %}
+        <div class="form-group clearfix">
+            {{ form_label(form.current_password) }}
+            <div class="input-group">
+                {{ form_errors(form.current_password) }}
+                {{ form_widget(form.current_password) }}
+                <span class="input-group-addon"><span class="icon-lock"></span></span>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="notifications form-group">
+            {{ form_errors(form.failureNotifications) }}
+            <label>
+                {{ form_widget(form.failureNotifications) }}
+                {{ 'profile.notify_on_failure'|trans }}
+            </label>
+        </div>
+
+        {{ form_rest(form) }}
+
+        <input type="submit" class="btn btn-block btn-success btn-lg" value="Update" />
+
+        <hr>
+
+        <h5>Using GitHub:</h5>
+        <a href="{{ app.user.githubId ? '#' : path('connect_github_start') }}" class="btn btn-block btn-github btn-lg {{ app.user.githubId ? 'disabled' : 'btn-primary' }}">
+            <span class="icon-github"></span>
+            {% set ghUser = app.user.githubUsername %}
+            {{ (app.user.githubId ? 'profile.accounts_connected' : 'profile.connect_accounts')|trans({"%user%": ghUser|default('unknown')}) }}
+        </a>
+
+        {% if app.user.githubId %}
+            {% if ghUser == false %}
+                <p>Unknown GitHub user, token is missing, logout and login again via GitHub to fix it, or <a href="{{ path('user_github_disconnect', {token: csrf_token('unlink_github')}) }}">disconnect your GitHub account</a> entirely to connect another one.</p>
+            {% else %}
+                <p><a href="{{ path('user_github_disconnect', {token: csrf_token('unlink_github')}) }}">Disconnect your GitHub account</a> to connect another one.</p>
+            {% endif %}
+        {% endif %}
+    {{ form_end(form) }}
+
+    <div class="col-md-2">
+    </div>
+{% endblock fos_user_content %}
