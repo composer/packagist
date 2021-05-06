@@ -14,7 +14,6 @@ namespace App\Command;
 
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
-use FOS\UserBundle\Util\TokenGeneratorInterface;
 use App\Entity\User;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

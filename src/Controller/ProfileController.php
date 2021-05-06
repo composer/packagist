@@ -6,6 +6,8 @@ use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Form\Type\ProfileFormType;
+use App\Model\DownloadManager;
+use App\Model\FavoriteManager;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -21,7 +23,7 @@ class ProfileController extends Controller
     /**
      * @Route("/profile/", name="my_profile")
      */
-    public function myProfile(Request $req)
+    public function myProfile(Request $req, FavoriteManager $favMgr, DownloadManager $dlMgr)
     {
         $user = $this->getUser();
         if (!is_object($user)) {
@@ -33,7 +35,7 @@ class ProfileController extends Controller
 
         $data = [
             'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
+            'meta' => $this->getPackagesMetadata($favMgr, $dlMgr, $packages),
             'user' => $user,
             'githubSync' => $lastGithubSync,
         ];
@@ -52,13 +54,13 @@ class ProfileController extends Controller
      * @Route("/users/{name}/", name="user_profile")
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function publicProfile(Request $req, User $user)
+    public function publicProfile(Request $req, User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
     {
         $packages = $this->getUserPackages($req, $user);
 
         $data = [
             'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
+            'meta' => $this->getPackagesMetadata($favMgr, $dlMgr, $packages),
             'user' => $user,
         ];
 
@@ -79,7 +81,7 @@ class ProfileController extends Controller
      * @Route("/users/{name}/packages/", name="user_packages")
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function packagesAction(Request $req, User $user)
+    public function packagesAction(Request $req, User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
     {
         $packages = $this->getUserPackages($req, $user);
 
@@ -87,7 +89,7 @@ class ProfileController extends Controller
             'user/packages.html.twig',
             [
                 'packages' => $packages,
-                'meta' => $this->getPackagesMetadata($packages),
+                'meta' => $this->getPackagesMetadata($favMgr, $dlMgr, $packages),
                 'user' => $user,
             ]
         );

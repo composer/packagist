@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Model\FavoriteManager;
 use Doctrine\ORM\NoResultException;
 use App\Entity\Job;
 use App\Entity\Package;
@@ -141,7 +142,7 @@ class UserController extends Controller
      * @Route("/users/{name}/favorites/", name="user_favorites", methods={"GET"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function favoritesAction(Request $req, User $user, LoggerInterface $logger, RedisClient $redis)
+    public function favoritesAction(Request $req, User $user, LoggerInterface $logger, RedisClient $redis, FavoriteManager $favoriteManager)
     {
         try {
             if (!$redis->isConnected()) {
@@ -155,7 +156,7 @@ class UserController extends Controller
         }
 
         $paginator = new Pagerfanta(
-            new RedisAdapter($this->favoriteManager, $user, 'getFavorites', 'getFavoriteCount')
+            new RedisAdapter($favoriteManager, $user, 'getFavorites', 'getFavoriteCount')
         );
 
         $paginator->setNormalizeOutOfRangePages(true);
@@ -169,7 +170,7 @@ class UserController extends Controller
      * @Route("/users/{name}/favorites/", name="user_add_fav", defaults={"_format" = "json"}, methods={"POST"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function postFavoriteAction(Request $req, User $user)
+    public function postFavoriteAction(Request $req, User $user, FavoriteManager $favoriteManager)
     {
         if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You can only change your own favorites');
@@ -184,7 +185,7 @@ class UserController extends Controller
             throw new NotFoundHttpException('The given package "'.$package.'" was not found.');
         }
 
-        $this->favoriteManager->markFavorite($user, $package);
+        $favoriteManager->markFavorite($user, $package);
 
         return new Response('{"status": "success"}', 201);
     }
@@ -194,13 +195,13 @@ class UserController extends Controller
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      * @ParamConverter("package", options={"mapping": {"package": "name"}})
      */
-    public function deleteFavoriteAction(User $user, Package $package)
+    public function deleteFavoriteAction(User $user, Package $package, FavoriteManager $favoriteManager)
     {
         if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You can only change your own favorites');
         }
 
-        $this->favoriteManager->removeFavorite($user, $package);
+        $favoriteManager->removeFavorite($user, $package);
 
         return new Response('{"status": "success"}', 204);
     }

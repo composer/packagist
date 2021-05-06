@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Util\Killswitch;
+use App\Model\DownloadManager;
+use App\Model\FavoriteManager;
 use Composer\Package\Version\VersionParser;
 use Composer\Semver\Constraint\Constraint;
 use DateTimeImmutable;
@@ -50,12 +52,16 @@ class PackageController extends Controller
     private ProviderManager $providerManager;
     private PackageManager $packageManager;
     private Scheduler $scheduler;
+    private FavoriteManager $favoriteManager;
+    private DownloadManager $downloadManager;
 
-    public function __construct(ProviderManager $providerManager, PackageManager $packageManager, Scheduler $scheduler)
+    public function __construct(ProviderManager $providerManager, PackageManager $packageManager, Scheduler $scheduler, FavoriteManager $favoriteManager, DownloadManager $downloadManager)
     {
         $this->providerManager = $providerManager;
         $this->packageManager = $packageManager;
         $this->scheduler = $scheduler;
+        $this->downloadManager = $downloadManager;
+        $this->favoriteManager = $favoriteManager;
     }
 
     /**
@@ -302,7 +308,7 @@ class PackageController extends Controller
 
         return [
             'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
+            'meta' => $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $packages),
             'vendor' => $vendor,
             'paginate' => false,
         ];
@@ -397,7 +403,7 @@ class PackageController extends Controller
         return $this->render('package/providers.html.twig', [
             'name' => $name,
             'packages' => $providers,
-            'meta' => $this->getPackagesMetadata($providers),
+            'meta' => $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $providers),
             'paginate' => false,
         ]);
     }
@@ -429,7 +435,7 @@ class PackageController extends Controller
 
         $data['packages'] = $paginator;
         $data['count'] = $count;
-        $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['meta'] = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
         $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
 
         $vendorRepo = $this->getEM()->getRepository(Vendor::class);
@@ -1193,7 +1199,7 @@ class PackageController extends Controller
             $data = [
                 'packages' => $paginator->getCurrentPageResults(),
             ];
-            $meta = $this->getPackagesMetadata($data['packages']);
+            $meta = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
             foreach ($data['packages'] as $index => $package) {
                 $data['packages'][$index]['downloads'] = $meta['downloads'][$package['id']];
                 $data['packages'][$index]['favers'] = $meta['favers'][$package['id']];
@@ -1211,7 +1217,7 @@ class PackageController extends Controller
         $data['packages'] = $paginator;
         $data['count'] = $depCount;
 
-        $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['meta'] = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
         $data['name'] = $name;
         $data['order_by'] = $orderBy;
 
@@ -1251,7 +1257,7 @@ class PackageController extends Controller
             $data = [
                 'packages' => $paginator->getCurrentPageResults(),
             ];
-            $meta = $this->getPackagesMetadata($data['packages']);
+            $meta = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
             foreach ($data['packages'] as $index => $package) {
                 $data['packages'][$index]['downloads'] = $meta['downloads'][$package['id']];
                 $data['packages'][$index]['favers'] = $meta['favers'][$package['id']];
@@ -1267,7 +1273,7 @@ class PackageController extends Controller
         $data['packages'] = $paginator;
         $data['count'] = $suggestCount;
 
-        $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['meta'] = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
         $data['name'] = $name;
 
         return $this->render('package/suggesters.html.twig', $data);

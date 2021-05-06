@@ -15,7 +15,6 @@ namespace App\Security\Provider;
 use App\Entity\UserRepository;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
-use FOS\UserBundle\Model\UserManagerInterface;
 use App\Entity\User;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
