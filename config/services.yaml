@@ -27,6 +27,7 @@ services:
             $redisCache: '@snc_redis.cache'
             $recaptchaVerifier: "@beelab_recaptcha2.verifier"
             'Monolog\Logger': '@logger'
+            'Symfony\Contracts\EventDispatcher\EventDispatcherInterface $mainEventDispatcher': '@security.event_dispatcher.main'
 
             # params
             $dbUrl: '%env(DATABASE_URL)%'
@@ -84,30 +85,9 @@ services:
 
     App\Security\Provider\UserProvider: ~
 
-    App\Form\Handler\OAuthRegistrationFormHandler:
-        public: true
-        class: App\Form\Handler\OAuthRegistrationFormHandler
-
-    App\Form\Type\OAuthRegistrationFormType:
-        tags:
-            - { name: form.type, alias: packagist_oauth_user_registration }
-
-    packagist.oauth.registration_form:
-        public: true
-        factory: ['@form.factory', create]
-        class: Symfony\Component\Form\Form
-        arguments:
-            - 'App\Form\Type\OAuthRegistrationFormType'
-
     App\Model\PackageManager:
         bind:
             $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
-
-    packagist.profile.form.type:
-        public: true
-        class: App\Form\Type\ProfileFormType
-        tags:
-            - { name: form.type, alias: packagist_user_profile }
 
     App\Menu\MenuBuilder:
         arguments: ['@knp_menu.factory', '@security.token_storage', '@translator']

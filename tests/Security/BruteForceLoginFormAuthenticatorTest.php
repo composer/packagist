@@ -5,6 +5,7 @@ namespace App\Tests\Security;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use App\Security\BruteForceLoginFormAuthenticator;
 use App\Security\RecaptchaHelper;
+use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -27,6 +28,8 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
     private $passwordEncoder;
     /** @var RecaptchaHelper&\PHPUnit\Framework\MockObject\MockObject */
     private $recaptchaHelper;
+    /** @var ManagerRegistry&\PHPUnit\Framework\MockObject\MockObject */
+    private $doctrine;
 
     protected function setUp(): void
     {
@@ -34,8 +37,9 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
         $this->recaptchaVerifier = $this->getMockBuilder(RecaptchaVerifier::class)->disableOriginalConstructor()->getMock();
         $this->passwordEncoder = $this->getMockBuilder(UserPasswordEncoderInterface::class)->disableOriginalConstructor()->getMock();
         $this->recaptchaHelper = $this->getMockBuilder(RecaptchaHelper::class)->disableOriginalConstructor()->getMock();
+        $this->doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
 
-        $this->authenticator = new BruteForceLoginFormAuthenticator($this->urlGenerator, $this->recaptchaVerifier, $this->passwordEncoder, $this->recaptchaHelper);
+        $this->authenticator = new BruteForceLoginFormAuthenticator($this->urlGenerator, $this->recaptchaVerifier, $this->passwordEncoder, $this->recaptchaHelper, $this->doctrine);
     }
 
     /**

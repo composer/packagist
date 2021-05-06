@@ -3,31 +3,38 @@
 namespace App\Security;
 
 use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Util\DoctrineTrait;
+use Doctrine\Persistence\ManagerRegistry;
 use KnpU\OAuth2ClientBundle\Client\Provider\GithubClient;
 use KnpU\OAuth2ClientBundle\Security\Authenticator\SocialAuthenticator;
 use KnpU\OAuth2ClientBundle\Client\Provider\FacebookClient;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
+use League\OAuth2\Client\Provider\GithubResourceOwner;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 class GitHubAuthenticator extends SocialAuthenticator
 {
-    private ClientRegistry $clientRegistry;
-    private EntityManagerInterface $em;
-    private UrlGeneratorInterface $router;
+    use DoctrineTrait;
 
-    public function __construct(ClientRegistry $clientRegistry, EntityManagerInterface $em, UrlGeneratorInterface $router)
+    private ClientRegistry $clientRegistry;
+    private ManagerRegistry $doctrine;
+    private UrlGeneratorInterface $router;
+    private UserPasswordEncoderInterface $passwordEncoder;
+
+    public function __construct(ClientRegistry $clientRegistry, ManagerRegistry $doctrine, UrlGeneratorInterface $router, UserPasswordEncoderInterface $passwordEncoder)
     {
         $this->clientRegistry = $clientRegistry;
-        $this->em = $em;
-	    $this->router = $router;
+        $this->doctrine = $doctrine;
+        $this->router = $router;
+        $this->passwordEncoder = $passwordEncoder;
     }
 
     public function supports(Request $request)
@@ -38,65 +45,75 @@ class GitHubAuthenticator extends SocialAuthenticator
 
     public function getCredentials(Request $request)
     {
-        // this method is only called if supports() returns true
-
-        // For Symfony lower than 3.4 the supports method need to be called manually here:
-        // if (!$this->supports($request)) {
-        //     return null;
-        // }
-
         return $this->fetchAccessToken($this->getGitHubClient());
     }
 
     public function getUser($credentials, UserProviderInterface $userProvider)
     {
+        /** @var GithubResourceOwner $ghUser */
         $ghUser = $this->getGitHubClient()->fetchUserFromToken($credentials);
         if (!$ghUser->getId() || $ghUser->getId() <= 0) {
             throw new \LogicException('Failed to load info from GitHub');
         }
 
+        $userRepo = $this->getEM()->getRepository(User::class);
+
         // Logged in with GitHub already
-        $existingUser = $this->em->getRepository(User::class)
-            ->findOneBy(['githubId' => $ghUser->getId()]);
+        $existingUser = $userRepo->findOneBy(['githubId' => $ghUser->getId()]);
         if ($existingUser) {
             return $existingUser;
         }
 
-        return null;
+        if ($userRepo->findOneBy(['username' => $ghUser->getNickname()])) {
+            throw new AccountUsernameExistsWithoutGitHubException($ghUser->getNickname());
+        }
 
+        $provider = $this->getGitHubClient()->getOAuth2Provider();
+        $request = $provider->getAuthenticatedRequest('GET', 'https://api.github.com/user/emails', $credentials);
+        $response = $provider->getParsedResponse($request);
+        $email = null;
+        foreach ($response as $item) {
+            if ($item['verified'] === true) {
+                if ($userRepo->findOneBy(['email' => $item['email']])) {
+                    throw new AccountEmailExistsWithoutGitHubException($item['email']);
+                }
 
-        // Do we have a matching user by email?
-//        $user = $this->em->getRepository(User::class)
-//            ->findOneBy(['email' => $email, 'enabled' => true]);
-
-        // Maybe register the user by creating
-        // a User object or showing/prefilling a registration form?
-        // TODO see OAuthRegistrationFormHandler to handle registration
-        // + the following
-
-        /*
-
-        // TODO requires 'user:email' in scopes
-
-        $provider = $client->getOAuth2Provider();
-        $request = $provider->getAuthenticatedRequest(
-            'GET',
-            'https://api.github.com/user/emails',
-            $token
-        );
-        $array = $provider->getParsedResponse($request);
-        foreach ($array as $item) {
-            if ($item['primary'] === true && $item['verified'] === true) {
-                $email = $item['email'];
-                break;
+                if ($item['primary'] === true || $email === null) {
+                    $email = $item['email'];
+                }
             }
         }
 
-        dd($user, $user->getName(), $email);
+        if (!$email) {
+            throw new NoVerifiedGitHubEmailFoundException();
+        }
 
+        $user = new User();
+        $user->setEmail($email);
+        $user->setUsername($ghUser->getNickname());
+        $user->setGithubId((string) $ghUser->getId());
+        $user->setGithubToken($credentials->getToken());
+        $user->setGithubScope($credentials->getValues()['scope']);
+
+        // encode the plain password
+        $user->setPassword(
+            $this->passwordEncoder->encodePassword(
+                $user,
+                hash('sha512', random_bytes(60))
+            )
+        );
+
+        $user->setLastLogin(new \DateTimeImmutable());
+        $user->initializeApiToken();
+        $user->setEnabled(true);
+
+        $this->getEM()->persist($user);
+        $this->getEM()->flush();
+
+        // TODO when migrating to an authenticator should be able to set this on the session:
+        // $request->getSession()->addFlash('success', 'A new account was automatically created. You are now logged in.');
 
         return $user;
-        */
     }
 
     private function getGitHubClient(): GithubClient
@@ -106,13 +123,9 @@ class GitHubAuthenticator extends SocialAuthenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
     {
-        // change "app_homepage" to some route in your app
         $targetUrl = $this->router->generate('home');
 
         return new RedirectResponse($targetUrl);
-
-        // or, on success, let the request continue to be handled by the controller
-        //return null;
     }
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception)

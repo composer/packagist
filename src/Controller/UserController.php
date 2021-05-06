@@ -40,6 +40,8 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Predis\Client as RedisClient;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Security\Http\Event\LogoutEvent;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -207,10 +209,10 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/users/{name}/delete", name="user_delete", defaults={"_format" = "json"}, methods={"POST"})
+     * @Route("/users/{name}/delete", name="user_delete", methods={"POST"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function deleteUserAction(User $user, Request $req, TokenStorageInterface $storage)
+    public function deleteUserAction(User $user, Request $req, TokenStorageInterface $storage, EventDispatcherInterface $mainEventDispatcher)
     {
         if (!($this->isGranted('ROLE_ADMIN') || ($this->getUser() && $user->getId() === $this->getUser()->getId()))) {
             throw new AccessDeniedException('You cannot delete this user');
@@ -228,6 +230,13 @@ class UserController extends Controller
             $em->remove($user);
             $em->flush();
 
+            // programmatic logout
+            $logoutEvent = new LogoutEvent($req, $storage->getToken());
+            $mainEventDispatcher->dispatch($logoutEvent);
+            $response = $logoutEvent->getResponse();
+            if (!$response instanceof Response) {
+                throw new \RuntimeException('No logout listener set the Response, make sure at least the DefaultLogoutListener is registered.');
+            }
             $storage->setToken(null);
 
             return $this->redirectToRoute('home');

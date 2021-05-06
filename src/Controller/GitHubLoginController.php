@@ -33,7 +33,7 @@ class GitHubLoginController extends Controller
             ->getClient('github')
             ->redirect([
                 // the scopes you want to access
-	            'admin:repo_hook', 'read:org',
+	            'admin:repo_hook', 'read:org', 'user:email',
             ], [
                 'redirect_uri' => $this->generateUrl('connect_github_check', [], UrlGeneratorInterface::ABSOLUTE_URL)
             ]);
@@ -50,7 +50,7 @@ class GitHubLoginController extends Controller
             ->getClient('github')
             ->redirect([
                 // the scopes you want to access
-	            'admin:repo_hook', 'read:org',
+	            'admin:repo_hook', 'read:org', 'user:email',
             ], [
                 'redirect_uri' => $this->generateUrl('login_github_check', [], UrlGeneratorInterface::ABSOLUTE_URL)
             ]);
@@ -93,7 +93,7 @@ class GitHubLoginController extends Controller
             }
 
             $oldScope = $user->getGithubScope() ?: '';
-            $user->setGithubId($ghUser->getId());
+            $user->setGithubId((string) $ghUser->getId());
             $user->setGithubToken($token->getToken());
             $user->setGithubScope($token->getValues()['scope']);
 

@@ -2,8 +2,11 @@
 
 namespace App\Security;
 
+use App\Entity\User;
+use App\Util\DoctrineTrait;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -21,8 +24,11 @@ use Symfony\Component\Security\Http\Util\TargetPathTrait;
 class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
 {
     use TargetPathTrait;
+    use DoctrineTrait;
 
     public const LOGIN_ROUTE = 'login';
+
+    private ManagerRegistry $doctrine;
 
     private UrlGeneratorInterface $urlGenerator;
 
@@ -36,12 +42,14 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
         UrlGeneratorInterface $urlGenerator,
         RecaptchaVerifier $recaptchaVerifier,
         UserPasswordEncoderInterface $passwordEncoder,
-        RecaptchaHelper $recaptchaHelper
+        RecaptchaHelper $recaptchaHelper,
+        ManagerRegistry $doctrine
     ) {
         $this->urlGenerator = $urlGenerator;
         $this->recaptchaVerifier = $recaptchaVerifier;
         $this->passwordEncoder = $passwordEncoder;
         $this->recaptchaHelper = $recaptchaHelper;
+        $this->doctrine = $doctrine;
     }
 
     public function supports(Request $request)
@@ -102,6 +110,12 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
     {
         $this->recaptchaHelper->clearCounter($request);
+
+        if ($token->getUser() instanceof User) {
+            $token->getUser()->setLastLogin(new \DateTimeImmutable());
+            $this->getEM()->persist($token->getUser());
+            $this->getEM()->flush();
+        }
 
         if ($targetPath = $this->getTargetPath($request->getSession(), $providerKey)) {
             return new RedirectResponse($targetPath);
