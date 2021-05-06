@@ -16,10 +16,12 @@ use Algolia\AlgoliaSearch\SearchClient;
 use App\Form\Model\SearchQuery;
 use App\Form\Type\SearchQueryType;
 use App\Entity\Package;
+use App\Util\Killswitch;
 use Predis\Connection\ConnectionException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Predis\Client as RedisClient;
@@ -233,6 +235,10 @@ class WebController extends Controller
      */
     public function statsAction(RedisClient $redis)
     {
+        if (!Killswitch::DOWNLOADS_ENABLED) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
+
         $packages = $this->doctrine
             ->getConnection()
             ->fetchAll('SELECT COUNT(*) count, YEAR(createdAt) year, MONTH(createdAt) month FROM `package` GROUP BY year, month');
@@ -324,6 +330,10 @@ class WebController extends Controller
      */
     public function statsTotalsAction(RedisClient $redis)
     {
+        if (!Killswitch::DOWNLOADS_ENABLED) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
+
         $downloads = (int) ($redis->get('downloads') ?: 0);
         $packages = (int) $this->doctrine
             ->getConnection()

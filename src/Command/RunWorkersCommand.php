@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use App\Util\Killswitch;
 use Monolog\Logger;
 use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
@@ -41,11 +42,17 @@ class RunWorkersCommand extends Command
 
         ini_set('memory_limit', '1G');
 
-        // another dumper is still active
         if (!$this->lock('packagist_run_' . $input->getOption('worker-id'))) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another of the same worker is still active');
             }
+            return 0;
+        }
+
+        if (!Killswitch::WORKERS_ENABLED) {
+            sleep(10);
+            $this->release();
+
             return 0;
         }
 

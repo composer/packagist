@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Util\Killswitch;
 use Composer\Package\Version\VersionParser;
 use Composer\Semver\Constraint\Constraint;
 use DateTimeImmutable;
@@ -491,6 +492,10 @@ class PackageController extends Controller
      */
     public function viewPackageAction(Request $req, $name, CsrfTokenManagerInterface $csrfTokenManager)
     {
+        if (!Killswitch::PAGES_ENABLED) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
+
         if ($req->getSession()->isStarted()) {
             $req->getSession()->save();
         }
@@ -522,13 +527,18 @@ class PackageController extends Controller
 
         if ('json' === $req->getRequestFormat()) {
             $data = $package->toArray($this->getEM()->getRepository(Version::class), true);
-            $data['dependents'] = $repo->getDependantCount($package->getName());
-            $data['suggesters'] = $repo->getSuggestCount($package->getName());
+            if (Killswitch::LINKS_ENABLED) {
+                $data['dependents'] = $repo->getDependantCount($package->getName());
+                $data['suggesters'] = $repo->getSuggestCount($package->getName());
+            }
 
             try {
+                if (!Killswitch::DOWNLOADS_ENABLED) {
+                    throw new \RuntimeException();
+                }
                 $data['downloads'] = $this->downloadManager->getDownloads($package);
                 $data['favers'] = $this->favoriteManager->getFaverCount($package);
-            } catch (ConnectionException $e) {
+            } catch (\RuntimeException | ConnectionException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
             }
@@ -538,7 +548,9 @@ class PackageController extends Controller
             }
 
             $response = new JsonResponse(['package' => $data]);
-            $response->setSharedMaxAge(12*3600);
+            if (Killswitch::LINKS_ENABLED && Killswitch::DOWNLOADS_ENABLED) {
+                $response->setSharedMaxAge(12 * 3600);
+            }
             $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
             return $response;
@@ -578,6 +590,9 @@ class PackageController extends Controller
         ];
 
         try {
+            if (!Killswitch::DOWNLOADS_ENABLED) {
+                throw new \RuntimeException();
+            }
             $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
 
             if (
@@ -595,35 +610,41 @@ class PackageController extends Controller
             if ($this->getUser()) {
                 $data['is_favorite'] = $this->favoriteManager->isMarked($this->getUser(), $package);
             }
-        } catch (ConnectionException $e) {
+        } catch (\RuntimeException | ConnectionException $e) {
         }
 
-        $data['dependents'] = $repo->getDependantCount($package->getName());
-        $data['suggesters'] = $repo->getSuggestCount($package->getName());
+        $data['dependents'] = Killswitch::PAGE_DETAILS_ENABLED && Killswitch::LINKS_ENABLED ? $repo->getDependantCount($package->getName()) : 0;
+        $data['suggesters'] = Killswitch::PAGE_DETAILS_ENABLED && Killswitch::LINKS_ENABLED ? $repo->getSuggestCount($package->getName()) : 0;
 
-        $securityAdvisoryRepository = $this->getEM()->getRepository(SecurityAdvisory::class);
-        $securityAdvisories = $securityAdvisoryRepository->getPackageSecurityAdvisories($package->getName());
-        $data['securityAdvisories'] = count($securityAdvisories);
-        $data['hasVersionSecurityAdvisories'] = [];
-        foreach ($securityAdvisories as $advisory) {
-            $versionParser = new VersionParser();
-            $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
-            foreach ($versions as $version) {
-                if (!isset($data['hasVersionSecurityAdvisories'][$version->getId()]) && $affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
-                    $data['hasVersionSecurityAdvisories'][$version->getId()] = true;
+        if (Killswitch::PAGE_DETAILS_ENABLED) {
+            $securityAdvisoryRepository = $this->getEM()->getRepository(SecurityAdvisory::class);
+            $securityAdvisories = $securityAdvisoryRepository->getPackageSecurityAdvisories($package->getName());
+            $data['securityAdvisories'] = count($securityAdvisories);
+            $data['hasVersionSecurityAdvisories'] = [];
+            foreach ($securityAdvisories as $advisory) {
+                $versionParser = new VersionParser();
+                $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
+                foreach ($versions as $version) {
+                    if (!isset($data['hasVersionSecurityAdvisories'][$version->getId()]) && $affectedVersionConstraint->matches(new Constraint('=',
+                            $version->getNormalizedVersion()))) {
+                        $data['hasVersionSecurityAdvisories'][$version->getId()] = true;
+                    }
                 }
             }
+
+            if ($maintainerForm = $this->createAddMaintainerForm($package)) {
+                $data['addMaintainerForm'] = $maintainerForm->createView();
+            }
+            if ($removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
+                $data['removeMaintainerForm'] = $removeMaintainerForm->createView();
+            }
+            if ($deleteForm = $this->createDeletePackageForm($package)) {
+                $data['deleteForm'] = $deleteForm->createView();
+            }
+        } else {
+            $data['hasVersionSecurityAdvisories'] = [];
         }
 
-        if ($maintainerForm = $this->createAddMaintainerForm($package)) {
-            $data['addMaintainerForm'] = $maintainerForm->createView();
-        }
-        if ($removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
-            $data['removeMaintainerForm'] = $removeMaintainerForm->createView();
-        }
-        if ($deleteForm = $this->createDeletePackageForm($package)) {
-            $data['deleteForm'] = $deleteForm->createView();
-        }
         if ($this->getUser() && (
                 $this->isGranted('ROLE_DELETE_PACKAGES')
                 || $package->getMaintainers()->contains($this->getUser())
@@ -668,6 +689,10 @@ class PackageController extends Controller
      */
     public function viewPackageDownloadsAction(Request $req, $name)
     {
+        if (!Killswitch::DOWNLOADS_ENABLED) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
+
         $repo = $this->getEM()->getRepository(Package::class);
 
         try {
@@ -1090,6 +1115,10 @@ class PackageController extends Controller
      */
     public function statsAction(Request $req, Package $package)
     {
+        if (!Killswitch::DOWNLOADS_ENABLED) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
+
         /** @var Version[] $versions */
         $versions = $package->getVersions()->toArray();
         usort($versions, Package::class.'::sortVersions');
@@ -1140,6 +1169,9 @@ class PackageController extends Controller
      */
     public function dependentsAction(Request $req, $name)
     {
+        if (!Killswitch::LINKS_ENABLED) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
         $page = max(1, (int) $req->query->get('page', 1));
         $perPage = 15;
         $orderBy = $req->query->get('order_by', 'name');
@@ -1196,6 +1228,9 @@ class PackageController extends Controller
      */
     public function suggestersAction(Request $req, $name)
     {
+        if (!Killswitch::LINKS_ENABLED) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
         $page = max(1, (int) $req->query->get('page', 1));
         $perPage = 15;
 
