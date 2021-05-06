@@ -19,7 +19,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 class ProfileController extends Controller
 {
     /**
-     * @Route("/profile/", name="fos_user_profile_show")
+     * @Route("/profile/", name="my_profile")
      */
     public function myProfile(Request $req)
     {
@@ -43,7 +43,7 @@ class ProfileController extends Controller
         }
 
         return $this->render(
-            'bundles/FOSUserBundle/Profile/show.html.twig',
+            'user/my_profile.html.twig',
             $data
         );
     }
@@ -70,7 +70,7 @@ class ProfileController extends Controller
         }
 
         return $this->render(
-            'user/profile.html.twig',
+            'user/public_profile.html.twig',
             $data
         );
     }
@@ -94,7 +94,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * @Route("/profile/edit", name="fos_user_profile_edit")
+     * @Route("/profile/edit", name="edit_profile")
      */
     public function editAction(Request $request)
     {
@@ -111,10 +111,10 @@ class ProfileController extends Controller
             $this->getEM()->persist($user);
             $this->getEM()->flush();
 
-            return $this->redirectToRoute('fos_user_profile_show');
+            return $this->redirectToRoute('my_profile');
         }
 
-        return $this->render('bundles/FOSUserBundle/Profile/edit.html.twig', array(
+        return $this->render('user/edit.html.twig', array(
             'form' => $form->createView(),
         ));
     }

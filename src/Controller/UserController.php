@@ -67,13 +67,13 @@ class UserController extends Controller
         if (!$user->getGithubToken()) {
             $this->addFlash('error', 'You must connect your user account to github to sync packages.');
 
-            return $this->redirectToRoute('fos_user_profile_show');
+            return $this->redirectToRoute('my_profile');
         }
 
         if (!$user->getGithubScope()) {
             $this->addFlash('error', 'Please log out and log in with GitHub again to make sure the correct GitHub permissions are granted.');
 
-            return $this->redirectToRoute('fos_user_profile_show');
+            return $this->redirectToRoute('my_profile');
         }
 
         $this->scheduler->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
@@ -82,7 +82,7 @@ class UserController extends Controller
 
         $this->addFlash('success', 'User sync scheduled. It might take a few seconds to run through, make sure you refresh then to check if any packages still need sync.');
 
-        return $this->redirectToRoute('fos_user_profile_show');
+        return $this->redirectToRoute('my_profile');
     }
 
     /**

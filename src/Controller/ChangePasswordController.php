@@ -13,7 +13,7 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 class ChangePasswordController extends Controller
 {
     /**
-     * @Route("/change-password", name="fos_user_change_password")
+     * @Route("/profile/change-password", name="change_password")
      */
     public function changePasswordAction(Request $request, UserPasswordEncoderInterface $passwordEncoder)
     {
@@ -36,10 +36,10 @@ class ChangePasswordController extends Controller
             $this->getEM()->persist($user);
             $this->getEM()->flush();
 
-            return $this->redirectToRoute('fos_user_profile_show');
+            return $this->redirectToRoute('my_profile');
         }
 
-        return $this->render('bundles/FOSUserBundle/ChangePassword/change_password.html.twig', array(
+        return $this->render('user/change_password.html.twig', array(
             'form' => $form->createView(),
         ));
     }

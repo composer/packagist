@@ -11,6 +11,7 @@ use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
@@ -18,11 +19,11 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 class GitHubAuthenticator extends SocialAuthenticator
 {
-    private $clientRegistry;
-    private $em;
-    private $router;
+    private ClientRegistry $clientRegistry;
+    private EntityManagerInterface $em;
+    private UrlGeneratorInterface $router;
 
-    public function __construct(ClientRegistry $clientRegistry, EntityManagerInterface $em, RouterInterface $router)
+    public function __construct(ClientRegistry $clientRegistry, EntityManagerInterface $em, UrlGeneratorInterface $router)
     {
         $this->clientRegistry = $clientRegistry;
         $this->em = $em;
@@ -122,8 +123,9 @@ class GitHubAuthenticator extends SocialAuthenticator
             $message = 'No Packagist.org account found that is connected to your GitHub account. Please register an account and connect it to GitHub first.';
         }
 
-        /** @phpstan-ignore-next-line */
-        $request->getSession()->getFlashBag()->add('warning', $message);
+        /** @var \Symfony\Component\HttpFoundation\Session\Session */
+        $session = $request->getSession();
+        $session->getFlashBag()->add('warning', $message);
 
         return new RedirectResponse($this->router->generate('login'), Response::HTTP_TEMPORARY_REDIRECT);
     }

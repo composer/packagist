@@ -1,16 +1,11 @@
-{% extends "bundles/FOSUserBundle/layout.html.twig" %}
-
-{% trans_default_domain 'FOSUserBundle' %}
+{% extends "user/layout.html.twig" %}
 
 {% block title %}Log in - {{ parent() }}{% endblock %}
 
-{% block fos_user_header %}
-{% endblock %}
-
-{% block fos_user_content %}
+{% block user_content %}
     {% if app.user %}
         <div class="col-xs-6">
-            <p>You are logged in as {{ app.user.username }}, <a href="{{ path('app_logout') }}">Logout</a></p>
+            <p>You are logged in as {{ app.user.username }}, <a href="{{ path('logout') }}">Logout</a></p>
         </div>
     {% else %}
         <div class="col-xs-12">
@@ -47,7 +42,7 @@
                 </div>
 
                 <div class="checkbox">
-                    <a class="pull-right" href="{{ path('fos_user_resetting_request') }}">Forgot password?</a>
+                    <a class="pull-right" href="{{ path('request_pwd_reset') }}">Forgot password?</a>
 
                     <label for="remember_me">
                         <input type="checkbox" id="remember_me" name="_remember_me" value="on" checked="checked" />

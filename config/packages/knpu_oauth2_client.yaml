@@ -1,7 +1,6 @@
 knpu_oauth2_client:
     clients:
-        # the key "facebook_main" can be anything, it
-        # will create a service: "knpu.oauth2.client.facebook_main"
+        # the key "github" can be anything, it will create a service: "knpu.oauth2.client.github"
         github:
             type: github
             client_id: '%env(APP_GITHUB_CLIENT_ID)%'

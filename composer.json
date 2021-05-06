@@ -16,12 +16,6 @@
             "homepage": "https://seld.be"
         }
     ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/Seldaek/FOSUserBundle.git"
-        }
-    ],
     "support": {
           "email": "contact@packagist.org"
     },
@@ -41,9 +35,7 @@
         "doctrine/orm": "^2.7",
         "endroid/qr-code-bundle": "^3.3",
         "ezyang/htmlpurifier": "^4.6",
-        "friendsofsymfony/user-bundle": "dev-bugfix as 2.99",
         "graze/dog-statsd": "^1",
-        "hwi/oauth-bundle": "^1",
         "knplabs/knp-menu-bundle": "^3",
         "knpuniversity/oauth2-client-bundle": "^2.8",
         "laminas/laminas-diagnostics": "^1.6",

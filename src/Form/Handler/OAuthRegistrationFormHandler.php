@@ -16,8 +16,6 @@ use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
 use FOS\UserBundle\Model\UserManagerInterface;
 use FOS\UserBundle\Util\TokenGeneratorInterface;
-use HWI\Bundle\OAuthBundle\Form\RegistrationFormHandlerInterface;
-use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\User;
@@ -27,7 +25,7 @@ use App\Entity\User;
  *
  * @author Alexander <iam.asm89@gmail.com>
  */
-class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
+class OAuthRegistrationFormHandler
 {
     use DoctrineTrait;
 
@@ -38,10 +36,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
         $this->doctrine = $doctrine;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function process(Request $request, Form $form, UserResponseInterface $userInformation)
+    public function process(Request $request, Form $form, $userInformation)
     {
         $user = new User();
 
@@ -77,8 +72,7 @@ class OAuthRegistrationFormHandler implements RegistrationFormHandlerInterface
      * @param string $name
      *
      * @return string Name, or empty string if it failed after 10 times
-     *
-     * @see HWI\Bundle\OAuthBundle\Form\FOSUBRegistrationHandler
+
      */
     protected function getUniqueUserName($name)
     {

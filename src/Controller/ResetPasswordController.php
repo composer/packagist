@@ -6,6 +6,8 @@ use App\Entity\User;
 use App\Form\ResetPasswordFormType;
 use App\Form\ResetPasswordRequestFormType;
 use App\Security\BruteForceLoginFormAuthenticator;
+use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
+use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -17,9 +19,6 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Security\Guard\GuardAuthenticatorHandler;
 
-/**
- * @Route("/reset-password")
- */
 class ResetPasswordController extends Controller
 {
     private const RESET_TTL = 86400;
@@ -35,14 +34,24 @@ class ResetPasswordController extends Controller
     /**
      * Display & process form to request a password reset.
      *
-     * @Route("", name="fos_user_resetting_request")
+     * @Route("/reset-password", name="request_pwd_reset")
      */
-    public function request(Request $request, MailerInterface $mailer): Response
+    public function request(Request $request, MailerInterface $mailer, RecaptchaVerifier $recaptchaVerifier): Response
     {
         $form = $this->createForm(ResetPasswordRequestFormType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $recaptchaVerifier->verify();
+            } catch (RecaptchaException $e) {
+                /** @var \Symfony\Component\HttpFoundation\Session\Session */
+                $session = $request->getSession();
+                $session->getFlashBag()->add('error', 'Invalid ReCaptcha. Please try again.');
+
+                return $this->redirectToRoute('request_pwd_reset');
+            }
+
             return $this->processSendingPasswordResetEmail(
                 $form->get('email')->getData(),
                 $mailer
@@ -57,7 +66,7 @@ class ResetPasswordController extends Controller
     /**
      * Confirmation page after a user has requested a password reset.
      *
-     * @Route("/check-email", name="app_check_email")
+     * @Route("/reset-password/check-email", name="request_pwd_check_email")
      */
     public function checkEmail(): Response
     {
@@ -67,7 +76,7 @@ class ResetPasswordController extends Controller
     /**
      * Validates and process the reset URL that the user clicked in their email.
      *
-     * @Route("/reset/{token}", name="app_reset_password")
+     * @Route("/reset-password/reset/{token}", name="do_pwd_reset")
      */
     public function reset(Request $request, UserPasswordEncoderInterface $passwordEncoder, GuardAuthenticatorHandler $guardHandler, BruteForceLoginFormAuthenticator $authenticator, string $token = null): Response
     {
@@ -79,7 +88,7 @@ class ResetPasswordController extends Controller
         if (null === $user || $user->isPasswordRequestExpired(86400)) {
             $this->addFlash('reset_password_error', 'Your password reset request has expired.');
 
-            return $this->redirectToRoute('fos_user_resetting_request');
+            return $this->redirectToRoute('request_pwd_reset');
         }
 
         // The token is valid; allow the user to change their password.
@@ -107,7 +116,7 @@ class ResetPasswordController extends Controller
                 'main' // firewall name in security.yaml
             );
 
-            return $this->redirectToRoute('fos_user_profile_show');
+            return $this->redirectToRoute('my_profile');
         }
 
         return $this->render('reset_password/reset.html.twig', [
@@ -121,7 +130,7 @@ class ResetPasswordController extends Controller
 
         // Do not reveal whether a user account was found or not.
         if (!$user) {
-            return $this->redirectToRoute('app_check_email');
+            return $this->redirectToRoute('request_pwd_check_email');
         }
 
         if (null === $user->getConfirmationToken() || $user->isPasswordRequestExpired(self::RESET_TTL)) {
@@ -143,6 +152,6 @@ class ResetPasswordController extends Controller
 
         $mailer->send($email);
 
-        return $this->redirectToRoute('app_check_email');
+        return $this->redirectToRoute('request_pwd_check_email');
     }
 }

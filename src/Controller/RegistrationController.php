@@ -27,10 +27,14 @@ class RegistrationController extends Controller
     }
 
     /**
-     * @Route("/register", name="fos_user_registration_register")
+     * @Route("/register/", name="register")
      */
-    public function register(Request $request, UserPasswordEncoderInterface $passwordEncoder): Response
+    public function register(Request $request, UserPasswordEncoderInterface $passwordEncoder, string $mailFromEmail, string $mailFromName): Response
     {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('home');
+        }
+
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
@@ -50,11 +54,11 @@ class RegistrationController extends Controller
             $this->getEM()->flush();
 
             // generate a signed url and email it to the user
-            $this->emailVerifier->sendEmailConfirmation('verify_email', $user,
+            $this->emailVerifier->sendEmailConfirmation('register_confirm_email', $user,
                 (new TemplatedEmail())
-                    ->from(new Address('contact@packagist.org', 'Packagist.org'))
+                    ->from(new Address($mailFromEmail, $mailFromName))
                     ->to($user->getEmail())
-                    ->subject('Please Confirm your Email')
+                    ->subject('Please confirm your email')
                     ->htmlTemplate('registration/confirmation_email.html.twig')
                     ->textTemplate('registration/confirmation_email.txt.twig')
             );
@@ -69,20 +73,20 @@ class RegistrationController extends Controller
     }
 
     /**
-     * @Route("/verify/email", name="verify_email")
+     * @Route("/register/verify", name="register_confirm_email")
      */
-    public function verifyUserEmail(Request $request, UserRepository $userRepository, GuardAuthenticatorHandler $guardHandler, BruteForceLoginFormAuthenticator $authenticator): Response
+    public function confirmEmail(Request $request, UserRepository $userRepository, GuardAuthenticatorHandler $guardHandler, BruteForceLoginFormAuthenticator $authenticator): Response
     {
         $id = $request->get('id');
 
         if (null === $id) {
-            return $this->redirectToRoute('fos_user_registration_register');
+            return $this->redirectToRoute('register');
         }
 
         $user = $userRepository->find($id);
 
         if (null === $user) {
-            return $this->redirectToRoute('fos_user_registration_register');
+            return $this->redirectToRoute('register');
         }
 
         // validate email confirmation link, sets User::isVerified=true and persists
@@ -91,7 +95,7 @@ class RegistrationController extends Controller
         } catch (VerifyEmailExceptionInterface $exception) {
             $this->addFlash('verify_email_error', $exception->getReason());
 
-            return $this->redirectToRoute('fos_user_registration_register');
+            return $this->redirectToRoute('register');
         }
 
         $this->addFlash('success', 'Your email address has been verified. You are now logged in.');

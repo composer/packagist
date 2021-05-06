@@ -140,9 +140,6 @@
     "ezyang/htmlpurifier": {
         "version": "v4.13.0"
     },
-    "friendsofsymfony/user-bundle": {
-        "version": "2.2.x-dev"
-    },
     "google/recaptcha": {
         "version": "1.1",
         "recipe": {
@@ -166,19 +163,6 @@
     },
     "guzzlehttp/psr7": {
         "version": "1.7.0"
-    },
-    "hwi/oauth-bundle": {
-        "version": "0.6",
-        "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
-            "version": "0.6",
-            "ref": "20cacc9b2da49d96ea55c8a8dd31324c5be88bc9"
-        },
-        "files": [
-            "config/packages/hwi_oauth.yaml",
-            "config/routes/hwi_oauth_routing.yaml"
-        ]
     },
     "justinrainbow/json-schema": {
         "version": "5.2.10"
@@ -678,9 +662,6 @@
     },
     "symfony/string": {
         "version": "v5.2.1"
-    },
-    "symfony/templating": {
-        "version": "v4.4.16"
     },
     "symfony/translation": {
         "version": "3.3",

@@ -1538,7 +1538,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 
-.fos_user_profile_edit .notifications {
+.edit_profile .notifications {
     margin: 10px 0;
     float: left;
 }

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "86b9ba913fffafcb14d9c4e744f53361",
+    "content-hash": "ac32e807dc855e19ca263808629ab872",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -416,12 +416,12 @@
             "version": "v1.5.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/clue/php-stream-filter.git",
+                "url": "https://github.com/clue/stream-filter.git",
                 "reference": "aeb7d8ea49c7963d3b581378955dbf5bc49aa320"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/clue/php-stream-filter/zipball/aeb7d8ea49c7963d3b581378955dbf5bc49aa320",
+                "url": "https://api.github.com/repos/clue/stream-filter/zipball/aeb7d8ea49c7963d3b581378955dbf5bc49aa320",
                 "reference": "aeb7d8ea49c7963d3b581378955dbf5bc49aa320",
                 "shasum": ""
             },
@@ -462,8 +462,8 @@
                 "stream_filter_register"
             ],
             "support": {
-                "issues": "https://github.com/clue/php-stream-filter/issues",
-                "source": "https://github.com/clue/php-stream-filter/tree/v1.5.0"
+                "issues": "https://github.com/clue/stream-filter/issues",
+                "source": "https://github.com/clue/stream-filter/tree/v1.5.0"
             },
             "funding": [
                 {
@@ -2546,92 +2546,6 @@
             "time": "2020-06-29T00:56:53+00:00"
         },
         {
-            "name": "friendsofsymfony/user-bundle",
-            "version": "dev-bugfix",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Seldaek/FOSUserBundle.git",
-                "reference": "3b85e9d14a94492595ec167885169100f8419fcb"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/FOSUserBundle/zipball/3b85e9d14a94492595ec167885169100f8419fcb",
-                "reference": "3b85e9d14a94492595ec167885169100f8419fcb",
-                "shasum": ""
-            },
-            "require": {
-                "paragonie/random_compat": "^1 || ^2 || ^9",
-                "php": "^7.2.5 || ^8",
-                "symfony/form": "^4.4 || ^5.0",
-                "symfony/framework-bundle": "^4.4 || ^5.0",
-                "symfony/security-bundle": "^4.4 || ^5.0",
-                "symfony/templating": "^4.4 || ^5.0",
-                "symfony/translation": "^4.4 || ^5.0",
-                "symfony/translation-contracts": "^2.0",
-                "symfony/twig-bundle": "^4.4 || ^5.0",
-                "symfony/validator": "^4.4 || ^5.0",
-                "twig/twig": "^1.28 || ^2.0"
-            },
-            "conflict": {
-                "doctrine/doctrine-bundle": "<1.3",
-                "symfony/doctrine-bridge": "<2.7"
-            },
-            "require-dev": {
-                "doctrine/doctrine-bundle": "^1.3 || ^2.0",
-                "friendsofphp/php-cs-fixer": "^2.2",
-                "phpunit/phpunit": "^4.8.35 || ^5.7.11 || ^6.5 || ^8",
-                "swiftmailer/swiftmailer": "^4.3 || ^5.0 || ^6.0",
-                "symfony/console": "^4.4 || ^5.0",
-                "symfony/phpunit-bridge": "^3.4 || ^4.2 || ^5.0",
-                "symfony/yaml": "^4.4 || ^5.0"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.2.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "FOS\\UserBundle\\": ""
-                },
-                "exclude-from-classmap": [
-                    "/Tests/"
-                ]
-            },
-            "autoload-dev": {
-                "psr-4": {
-                    "FOS\\UserBundle\\Tests\\": "/Tests/"
-                }
-            },
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Christophe Coevoet",
-                    "email": "stof@notk.org"
-                },
-                {
-                    "name": "Thibault Duplessis"
-                },
-                {
-                    "name": "FriendsOfSymfony Community",
-                    "homepage": "https://github.com/friendsofsymfony/FOSUserBundle/contributors"
-                }
-            ],
-            "description": "Symfony FOSUserBundle",
-            "homepage": "http://friendsofsymfony.github.com",
-            "keywords": [
-                "User management"
-            ],
-            "support": {
-                "docs": "https://symfony.com/doc/master/bundles/FOSUserBundle/index.html",
-                "source": "https://github.com/Seldaek/FOSUserBundle/tree/bugfix"
-            },
-            "time": "2021-01-15T14:05:17+00:00"
-        },
-        {
             "name": "google/recaptcha",
             "version": "1.2.4",
             "source": {
@@ -2944,175 +2858,6 @@
                 "source": "https://github.com/guzzle/psr7/tree/1.8.2"
             },
             "time": "2021-04-26T09:17:50+00:00"
-        },
-        {
-            "name": "hwi/oauth-bundle",
-            "version": "1.2.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/hwi/HWIOAuthBundle.git",
-                "reference": "252608b96ade4124ac7b028814fd3c9574750824"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/hwi/HWIOAuthBundle/zipball/252608b96ade4124ac7b028814fd3c9574750824",
-                "reference": "252608b96ade4124ac7b028814fd3c9574750824",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.2",
-                "php-http/client-common": "^2.0",
-                "php-http/client-implementation": "^1.0",
-                "php-http/discovery": "^1.0",
-                "php-http/httplug": "^2.0",
-                "php-http/message-factory": "^1.0",
-                "psr/http-message": "^1.0",
-                "symfony/form": "^3.4|^4.4|^5.0",
-                "symfony/framework-bundle": "^3.4.26|^4.4|^5.0",
-                "symfony/options-resolver": "^3.4|^4.4|^5.0",
-                "symfony/security-bundle": "^3.4|^4.4|^5.0",
-                "symfony/templating": "^3.4|^4.4|^5.0",
-                "symfony/yaml": "^3.4|^4.4|^5.0"
-            },
-            "conflict": {
-                "twig/twig": "<1.34"
-            },
-            "require-dev": {
-                "doctrine/doctrine-bundle": "^1.11|^2.0",
-                "doctrine/orm": "^2.3",
-                "friendsofphp/php-cs-fixer": "^2.0",
-                "friendsofsymfony/user-bundle": "^2.1",
-                "php-http/guzzle6-adapter": "^2.0",
-                "php-http/httplug-bundle": "^1.7",
-                "phpunit/phpunit": "^7.5|^8.0",
-                "symfony/browser-kit": "^3.4|^4.4|^5.0",
-                "symfony/css-selector": "^3.4|^4.4|^5.0",
-                "symfony/monolog-bundle": "^3.4",
-                "symfony/phpunit-bridge": "^5.0",
-                "symfony/property-access": "^3.4|^4.4|^5.0",
-                "symfony/stopwatch": "^3.4|^4.4|^5.0",
-                "symfony/translation": "^3.4|^4.4|^5.0",
-                "symfony/twig-bundle": "^3.4|^4.4|^5.0",
-                "symfony/validator": "^3.4|^4.4|^5.0"
-            },
-            "suggest": {
-                "doctrine/doctrine-bundle": "to use Doctrine user provider",
-                "friendsofsymfony/user-bundle": "to connect FOSUB with this bundle",
-                "php-http/httplug-bundle": "to provide required HTTP client with ease.",
-                "symfony/property-access": "to use FOSUB integration with this bundle",
-                "symfony/twig-bundle": "to use the Twig hwi_oauth_* functions"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.2-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "HWI\\Bundle\\OAuthBundle\\": ""
-                },
-                "exclude-from-classmap": [
-                    "/Tests/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Alexander",
-                    "email": "iam.asm89@gmail.com"
-                },
-                {
-                    "name": "Joseph Bielawski",
-                    "email": "stloyd@gmail.com"
-                },
-                {
-                    "name": "Geoffrey Bachelet",
-                    "email": "geoffrey.bachelet@gmail.com"
-                },
-                {
-                    "name": "Contributors",
-                    "homepage": "https://github.com/hwi/HWIOAuthBundle/contributors"
-                }
-            ],
-            "description": "Support for authenticating users using both OAuth1.0a and OAuth2 in Symfony2.",
-            "homepage": "http://github.com/hwi/HWIOAuthBundle",
-            "keywords": [
-                "37signals",
-                "Authentication",
-                "Deezer",
-                "EVE Online",
-                "amazon",
-                "apple",
-                "asana",
-                "auth0",
-                "azure",
-                "bitbucket",
-                "bitly",
-                "box",
-                "bufferapp",
-                "clever",
-                "dailymotion",
-                "deviantart",
-                "discogs",
-                "disqus",
-                "dropbox",
-                "eventbrite",
-                "facebook",
-                "firewall",
-                "fiware",
-                "flickr",
-                "foursquare",
-                "genius",
-                "github",
-                "gitlab",
-                "google",
-                "hubic",
-                "instagram",
-                "jawbone",
-                "jira",
-                "linkedin",
-                "mail.ru",
-                "oauth",
-                "oauth1",
-                "oauth2",
-                "odnoklassniki",
-                "paypal",
-                "qq",
-                "reddit",
-                "runkeeper",
-                "salesforce",
-                "security",
-                "sensio connect",
-                "sina weibo",
-                "slack",
-                "sound cloud",
-                "spotify",
-                "stack exchange",
-                "stereomood",
-                "strava",
-                "toshl",
-                "trakt",
-                "trello",
-                "twitch",
-                "twitter",
-                "vkontakte",
-                "windows live",
-                "wordpress",
-                "wunderlist",
-                "xing",
-                "yahoo",
-                "yandex",
-                "youtube"
-            ],
-            "support": {
-                "issues": "https://github.com/hwi/HWIOAuthBundle/issues",
-                "source": "https://github.com/hwi/HWIOAuthBundle/tree/1.2.0"
-            },
-            "time": "2020-10-19T11:02:20+00:00"
         },
         {
             "name": "justinrainbow/json-schema",
@@ -10481,74 +10226,6 @@
             "time": "2021-03-17T17:12:15+00:00"
         },
         {
-            "name": "symfony/templating",
-            "version": "v5.2.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/templating.git",
-                "reference": "954c01bae6689423a83b6c9025f83bb93d38d9b2"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/templating/zipball/954c01bae6689423a83b6c9025f83bb93d38d9b2",
-                "reference": "954c01bae6689423a83b6c9025f83bb93d38d9b2",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.2.5",
-                "symfony/polyfill-ctype": "~1.8"
-            },
-            "require-dev": {
-                "psr/log": "~1.0"
-            },
-            "suggest": {
-                "psr/log-implementation": "For using debug logging in loaders"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\Component\\Templating\\": ""
-                },
-                "exclude-from-classmap": [
-                    "/Tests/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com"
-                },
-                {
-                    "name": "Symfony Community",
-                    "homepage": "https://symfony.com/contributors"
-                }
-            ],
-            "description": "Provides all the tools needed to build any kind of template system",
-            "homepage": "https://symfony.com",
-            "support": {
-                "source": "https://github.com/symfony/templating/tree/v5.2.4"
-            },
-            "funding": [
-                {
-                    "url": "https://symfony.com/sponsor",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/fabpot",
-                    "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
-                    "type": "tidelift"
-                }
-            ],
-            "time": "2021-01-27T10:01:46+00:00"
-        },
-        {
             "name": "symfony/translation",
             "version": "v5.2.7",
             "source": {
@@ -12778,18 +12455,10 @@
             "time": "2021-04-13T07:28:22+00:00"
         }
     ],
-    "aliases": [
-        {
-            "package": "friendsofsymfony/user-bundle",
-            "version": "dev-bugfix",
-            "alias": "2.99",
-            "alias_normalized": "2.99.0.0"
-        }
-    ],
+    "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "composer/composer": 20,
-        "friendsofsymfony/user-bundle": 20
+        "composer/composer": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

@@ -18,7 +18,7 @@ class PackageManagerTest extends TestCase
         $package->setRepository($url);
 
         $user = new User;
-        $user->addPackages($package);
+        $user->addPackage($package);
 
         $repo = $this->getMockBuilder('App\Entity\UserRepository')->disableOriginalConstructor()->getMock();
         $em = $this->getMockBuilder('Doctrine\ORM\EntityManager')->disableOriginalConstructor()->getMock();

@@ -40,25 +40,18 @@ security:
                 provider: packagist
 
     access_control:
-        # The WDT has to be allowed to anonymous users to avoid requiring the login with the AJAX request
-        - { path: ^/_wdt/, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/_profiler/, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        # AsseticBundle paths used when using the controller for assets
-        - { path: ^/js/, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/css/, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        # URL of FOSUserBundle which need to be available to anonymous users
-        - { path: ^/login$, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/register, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/resetting, role: IS_AUTHENTICATED_ANONYMOUSLY }
-        # This makes the logout route available during two-factor authentication, allows the user to cancel
-        - { path: ^/logout, role: IS_AUTHENTICATED_ANONYMOUSLY }
+        # Explicit public access
+        - { path: ^/_(?:wdt|profiler)/, roles: PUBLIC_ACCESS }
+        - { path: ^/login$, role: PUBLIC_ACCESS }
+        - { path: ^/register($|/), role: PUBLIC_ACCESS }
+        - { path: ^/reset-password($|/), role: PUBLIC_ACCESS }
+        - { path: ^/logout$, role: PUBLIC_ACCESS }
         # This ensures that the form can only be accessed when two-factor authentication is in progress
         - { path: ^/2fa, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
-        # Secured part of the site
-        # This config requires being logged for the whole site and having the admin role for the admin part.
-        # Change these rules to adapt them to your needs
+        # Members only parts of the site
         - { path: ^/packages/submit$, role: ROLE_USER }
-        - { path: ^/admin/, role: ROLE_ADMIN }
+        - { path: ^/profile(/|$), role: ROLE_USER }
+        - { path: ^/connect(/|$), role: ROLE_USER }
 
     role_hierarchy:
         ROLE_UPDATE_PACKAGES: ~

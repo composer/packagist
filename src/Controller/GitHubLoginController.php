@@ -76,7 +76,7 @@ class GitHubLoginController extends Controller
             if ($user->getGithubId()) {
                 $this->addFlash('error', 'You must disconnect your GitHub account before you can connect a new one.');
 
-                return $this->redirectToRoute('fos_user_profile_edit');
+                return $this->redirectToRoute('edit_profile');
             }
 
             /** @var GithubResourceOwner $ghUser */
@@ -89,7 +89,7 @@ class GitHubLoginController extends Controller
 
             // The account is already connected. Do nothing
             if ($previousUser === $user) {
-                return $this->redirectToRoute('fos_user_profile_edit');
+                return $this->redirectToRoute('edit_profile');
             }
 
             $oldScope = $user->getGithubScope() ?: '';
@@ -113,7 +113,7 @@ class GitHubLoginController extends Controller
             $this->addFlash('error', 'Failed OAuth Login: '.$e->getMessage());
         }
 
-        return $this->redirectToRoute('fos_user_profile_edit');
+        return $this->redirectToRoute('edit_profile');
     }
 
     /**
@@ -144,7 +144,7 @@ class GitHubLoginController extends Controller
             $this->getEM()->flush();
         }
 
-        return $this->redirectToRoute('fos_user_profile_edit');
+        return $this->redirectToRoute('edit_profile');
     }
 
     private function disconnectUser(User $user)

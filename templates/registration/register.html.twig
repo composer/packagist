@@ -1,8 +1,8 @@
-{% extends 'bundles/FOSUserBundle/layout.html.twig' %}
+{% extends 'user/layout.html.twig' %}
 
 {% block title %}Create account - {{ parent() }}{% endblock %}
 
-{% block fos_user_content %}
+{% block user_content %}
     <div class="col-md-12">
         <h2 class="title">
             Create account
@@ -13,7 +13,7 @@
         <div class="alert alert-danger" role="alert">{{ flashError }}</div>
     {% endfor %}
 
-    {{ form_start(registrationForm, {attr: {class: "fos_user_registration_register col-md-6"}}) }}
+    {{ form_start(registrationForm, {attr: {class: "register col-md-6"}}) }}
         <div class="form-group clearfix">
             <label for="fos_user_registration_email">Email:</label>
             <div class="input-group clearfix">

@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
@@ -29,45 +30,11 @@ use DateTimeInterface;
 /**
  * @ORM\Entity(repositoryClass="App\Entity\UserRepository")
  * @ORM\Table(name="fos_user")
- * @ORM\AttributeOverrides({
- *     @ORM\AttributeOverride(name="username",
- *         column=@ORM\Column(
- *             name="username",
- *             type="string",
- *             length=191
- *         )
- *     ),
- *     @ORM\AttributeOverride(name="usernameCanonical",
- *         column=@ORM\Column(
- *             name="username_canonical",
- *             type="string",
- *             length=191,
- *             unique=true
- *         )
- *     ),
- *     @ORM\AttributeOverride(name="email",
- *         column=@ORM\Column(
- *             name="email",
- *             type="string",
- *             length=191
- *         )
- *     ),
- *     @ORM\AttributeOverride(name="emailCanonical",
- *         column=@ORM\Column(
- *             name="email_canonical",
- *             type="string",
- *             length=191,
- *             unique=true
- *         )
- *     )
- * })
- * @UniqueEntity(fields={"username"}, message="There is already an account with this username")
- * @UniqueEntity(fields={"email"}, message="There is already an account with this email")
+ * @UniqueEntity(fields={"usernameCanonical"}, message="There is already an account with this username", errorPath="username")
+ * @UniqueEntity(fields={"emailCanonical"}, message="There is already an account with this email", errorPath="email")
  */
 class User implements UserInterface, Serializable, TwoFactorInterface, BackupCodeInterface, EquatableInterface
 {
-    const ROLE_SUPER_ADMIN = 'ROLE_SUPER_ADMIN';
-
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -76,41 +43,34 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=180)
-     * @Assert\Length(
-     *     min=2,
-     *     max=180,
-     *     groups={"Profile", "Registration"}
-     * )
+     * @ORM\Column(type="string", length=191)
+     * @Assert\Length(min=2, max=191, groups={"Profile", "Registration"})
      * @Assert\Regex(
      *     pattern="{^[^/""\r\n><#\[\]]{2,100}$}",
      *     message="Username invalid, /""\r\n><#[] are not allowed",
      *     groups={"Profile", "Registration"}
      * )
-     * @Assert\NotBlank(
-     *     message="fos_user.username.blank",
-     *     groups={"Profile", "Registration"}
-     * )
+     * @Assert\NotBlank(groups={"Profile", "Registration"})
      * @var string
      */
     private $username;
 
     /**
-     * @ORM\Column(type="string", length=180, unique=true)
+     * @ORM\Column(type="string", name="username_canonical", length=191, unique=true)
      * @var string
      */
     private $usernameCanonical;
 
     /**
-     * @ORM\Column(type="string", length=180)
-     * @Assert\Length(min=2, max=180, groups={"Profile", "Registration"})
-     * @Assert\Email(message="fos_user.email.invalid", groups={"Profile", "Registration"})
-     * @Assert\NotBlank(message="fos_user.email.blank", groups={"Profile", "Registration"})
+     * @ORM\Column(type="string", length=191)
+     * @Assert\Length(min=2, max=191, groups={"Profile", "Registration"})
+     * @Assert\Email(groups={"Profile", "Registration"})
+     * @Assert\NotBlank(groups={"Profile", "Registration"})
      */
     private $email;
 
     /**
-     * @ORM\Column(type="string", length=180, unique=true)
+     * @ORM\Column(type="string", name="email_canonical", length=191, unique=true)
      * @var string
      */
     private $emailCanonical;
@@ -133,7 +93,7 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
     private $password;
 
     /**
-     * The salt to use for hashing. Newer hash algos do not typically require one anymore so it is usually null
+     * The salt to use for hashing.
      *
      * @ORM\Column(type="string", nullable=true)
      */
@@ -154,12 +114,12 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
 
     /**
      * @ORM\Column(type="datetime", name="password_requested_at", nullable=true)
-     * @var \DateTime|null
      */
-    private $passwordRequestedAt;
+    private ?DateTimeInterface $passwordRequestedAt = null;
 
     /**
      * @ORM\ManyToMany(targetEntity="Package", mappedBy="maintainers")
+     * @var Collection<Package>
      */
     private $packages;
 
@@ -169,9 +129,9 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
     private DateTimeInterface $createdAt;
 
     /**
-     * @ORM\Column(type="string", length=20, nullable=true)
+     * @ORM\Column(type="string", length=20)
      */
-    private ?string $apiToken = null;
+    private string $apiToken;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
@@ -195,31 +155,29 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
 
     /**
      * @ORM\Column(name="totpSecret", type="string", nullable=true)
-     * @var string|null
      */
-    private $totpSecret;
+    private ?string $totpSecret = null;
 
     /**
      * @ORM\Column(type="string", length=8, nullable=true)
-     * @var string|null
      */
-    private $backupCode;
+    private ?string $backupCode = null;
 
     public function __construct()
     {
         $this->enabled = false;
         $this->roles = array();
         $this->packages = new ArrayCollection();
-        $this->createdAt = new \DateTime();
+        $this->createdAt = new \DateTimeImmutable();
         $this->salt = hash('sha256', random_bytes(40));
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return (string) $this->getUsername();
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return [
             'name' => $this->getUsername(),
@@ -227,191 +185,104 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         ];
     }
 
-    /**
-     * Add packages
-     *
-     * @param Package $packages
-     */
-    public function addPackages(Package $packages)
+    public function addPackage(Package $packages)
     {
         $this->packages[] = $packages;
     }
 
     /**
-     * Get packages
-     *
-     * @return Package[]
+     * @return Collection<Package>
      */
-    public function getPackages()
+    public function getPackages(): Collection
     {
         return $this->packages;
     }
 
-    /**
-     * Set createdAt
-     *
-     * @param \DateTime $createdAt
-     */
-    public function setCreatedAt($createdAt)
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    /**
-     * Get createdAt
-     *
-     * @return \DateTime
-     */
-    public function getCreatedAt()
+    public function getCreatedAt(): DateTimeInterface
     {
         return $this->createdAt;
     }
 
-    /**
-     * Set apiToken
-     *
-     * @param string $apiToken
-     */
-    public function setApiToken($apiToken)
+    public function setApiToken(string $apiToken): void
     {
         $this->apiToken = $apiToken;
     }
 
-    /**
-     * Get apiToken
-     *
-     * @return string
-     */
-    public function getApiToken()
+    public function getApiToken(): string
     {
         return $this->apiToken;
     }
 
-    /**
-     * Get githubId.
-     *
-     * @return string
-     */
-    public function getGithubId()
+    public function getGithubId(): ?string
     {
         return $this->githubId;
     }
 
-    /**
-     * Get githubId.
-     *
-     * @return string
-     */
-    public function getGithubUsername()
+    public function getGithubUsername(): ?string
     {
         if ($this->githubId) {
             if (!$this->githubToken) {
-                return false;
+                return null;
             }
 
             $ctxt = ['http' => ['header' => ['User-Agent: packagist.org', 'Authorization: token '.$this->githubToken]]];
             $res = @file_get_contents('https://api.github.com/user', false, stream_context_create($ctxt));
             if (!$res || !($res = json_decode($res, true))) {
-                return false;
+                return null;
             }
 
             return $res['login'];
         }
 
-        return false;
+        return null;
     }
 
-    /**
-     * Set githubId.
-     *
-     * @param string $githubId
-     */
-    public function setGithubId($githubId)
+    public function setGithubId(?string $githubId): void
     {
         $this->githubId = $githubId;
     }
 
-    /**
-     * Get githubToken.
-     *
-     * @return string
-     */
-    public function getGithubToken()
+    public function getGithubToken(): ?string
     {
         return $this->githubToken;
     }
 
-    /**
-     * Set githubToken.
-     *
-     * @param string $githubToken
-     */
-    public function setGithubToken($githubToken)
+    public function setGithubToken(?string $githubToken): void
     {
         $this->githubToken = $githubToken;
     }
 
-    /**
-     * Get githubScope.
-     *
-     * @return string
-     */
-    public function getGithubScope()
+    public function getGithubScope(): ?string
     {
         return $this->githubScope;
     }
 
-    /**
-     * Set githubScope.
-     *
-     * @param string $githubScope
-     */
-    public function setGithubScope($githubScope)
+    public function setGithubScope(?string $githubScope): void
     {
         $this->githubScope = $githubScope;
     }
 
-    /**
-     * Set failureNotifications
-     *
-     * @param Boolean $failureNotifications
-     */
-    public function setFailureNotifications($failureNotifications)
+    public function setFailureNotifications(bool $failureNotifications): void
     {
         $this->failureNotifications = $failureNotifications;
     }
 
-    /**
-     * Get failureNotifications
-     *
-     * @return Boolean
-     */
-    public function getFailureNotifications()
+    public function getFailureNotifications(): bool
     {
         return $this->failureNotifications;
     }
 
-    /**
-     * Get failureNotifications
-     *
-     * @return Boolean
-     */
-    public function isNotifiableForFailures()
+    public function isNotifiableForFailures(): bool
     {
         return $this->failureNotifications;
     }
 
-    /**
-     * Get Gravatar Url
-     *
-     * @return string
-     */
-    public function getGravatarUrl()
+    public function getGravatarUrl(): string
     {
         return 'https://www.gravatar.com/avatar/'.md5(strtolower($this->getEmail())).'?d=identicon';
     }
 
-    public function setTotpSecret(?string $secret)
+    public function setTotpSecret(?string $secret): void
     {
         $this->totpSecret = $secret;
     }
@@ -451,26 +322,18 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         $this->backupCode = $code;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function addRole($role)
+    public function addRole(string $role): void
     {
         $role = strtoupper($role);
         if ($role === 'ROLE_USER') {
-            return $this;
+            return;
         }
 
         if (!in_array($role, $this->roles, true)) {
             $this->roles[] = $role;
         }
-
-        return $this;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function serialize()
     {
         return serialize(array(
@@ -485,22 +348,9 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         ));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function unserialize($serialized)
     {
         $data = unserialize($serialized);
-
-        if (13 === count($data)) {
-            // Unserializing a User object from 1.3.x
-            unset($data[4], $data[5], $data[6], $data[9], $data[10]);
-            $data = array_values($data);
-        } elseif (11 === count($data)) {
-            // Unserializing a User from a dev version somewhere between 2.0-alpha3 and 2.0-beta1
-            unset($data[4], $data[7], $data[8]);
-            $data = array_values($data);
-        }
 
         list(
             $this->password,
@@ -514,83 +364,54 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         ) = $data;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function eraseCredentials()
     {
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getUsername()
+    public function getUsername(): ?string
     {
         return $this->username;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getUsernameCanonical()
+    public function getUsernameCanonical(): ?string
     {
         return $this->usernameCanonical;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getSalt()
+    public function getSalt(): ?string
     {
         return $this->salt;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getEmail()
+    public function getEmail(): ?string
     {
         return $this->email;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getEmailCanonical()
+    public function getEmailCanonical(): ?string
     {
         return $this->emailCanonical;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getPassword()
+    public function getPassword(): ?string
     {
         return $this->password;
     }
 
-    /**
-     * Gets the last login time.
-     *
-     * @return \DateTime|null
-     */
-    public function getLastLogin()
+    public function getLastLogin(): ?DateTimeInterface
     {
         return $this->lastLogin;
     }
 
     /**
-     * {@inheritdoc}
+     * @return list<string>
      */
-    public function getRoles()
+    public function getRoles(): array
     {
         $roles = $this->roles;
 
@@ -600,211 +421,86 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         return array_values(array_unique($roles));
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function hasRole($role)
+    public function hasRole(string $role): bool
     {
         return in_array(strtoupper($role), $this->getRoles(), true);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function isAccountNonExpired()
-    {
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function isAccountNonLocked()
-    {
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function isCredentialsNonExpired()
-    {
-        return true;
-    }
-
-    public function isEnabled()
+    public function isEnabled(): bool
     {
         return $this->enabled;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function isSuperAdmin()
-    {
-        return $this->hasRole(static::ROLE_SUPER_ADMIN);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function removeRole($role)
+    public function removeRole(string $role): void
     {
         if (false !== $key = array_search(strtoupper($role), $this->roles, true)) {
             unset($this->roles[$key]);
             $this->roles = array_values($this->roles);
         }
-
-        return $this;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setUsername($username)
+    public function setUsername(?string $username)
     {
         $this->username = $username;
-        $this->setUsernameCanonical(mb_strtolower($username));
-
-        return $this;
+        $this->setUsernameCanonical($username);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setUsernameCanonical($usernameCanonical)
+    public function setUsernameCanonical(?string $usernameCanonical): void
     {
-        $this->usernameCanonical = $usernameCanonical;
-
-        return $this;
+        $this->usernameCanonical = null === $usernameCanonical ? null : mb_strtolower($usernameCanonical);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setSalt($salt)
+    public function setSalt($salt): void
     {
         $this->salt = $salt;
-
-        return $this;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setEmail($email)
+    public function setEmail(?string $email): void
     {
         $this->email = $email;
-        $this->setEmailCanonical(mb_strtolower($email));
-
-        return $this;
+        $this->setEmailCanonical($email);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setEmailCanonical($emailCanonical)
+    public function setEmailCanonical(?string $emailCanonical): void
     {
-        $this->emailCanonical = $emailCanonical;
-
-        return $this;
+        $this->emailCanonical = null === $emailCanonical ? null : mb_strtolower($emailCanonical);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setEnabled($boolean)
+    public function setEnabled(bool $boolean): void
     {
-        $this->enabled = (bool) $boolean;
-
-        return $this;
+        $this->enabled = $boolean;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setPassword($password)
+    public function setPassword(?string $password): void
     {
         $this->password = $password;
-
-        return $this;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setSuperAdmin($boolean)
-    {
-        if (true === $boolean) {
-            $this->addRole(static::ROLE_SUPER_ADMIN);
-        } else {
-            $this->removeRole(static::ROLE_SUPER_ADMIN);
-        }
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setLastLogin(\DateTime $time = null)
+    public function setLastLogin(?DateTimeInterface $time = null): void
     {
         $this->lastLogin = $time;
-
-        return $this;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setConfirmationToken($confirmationToken)
-    {
-        $this->confirmationToken = $confirmationToken;
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setPasswordRequestedAt(\DateTime $date = null)
+    public function setPasswordRequestedAt(?DateTimeInterface $date = null): void
     {
         $this->passwordRequestedAt = $date;
-
-        return $this;
     }
 
     /**
      * Gets the timestamp that the user requested a password reset.
-     *
-     * @return \DateTime|null
      */
-    public function getPasswordRequestedAt()
+    public function getPasswordRequestedAt(): ?DateTimeInterface
     {
         return $this->passwordRequestedAt;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function isPasswordRequestNonExpired($ttl)
-    {
-        return $this->getPasswordRequestedAt() instanceof \DateTime &&
-               $this->getPasswordRequestedAt()->getTimestamp() + $ttl > time();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setRoles(array $roles)
+    public function setRoles(array $roles): void
     {
         $this->roles = array();
 
         foreach ($roles as $role) {
             $this->addRole($role);
         }
-
-        return $this;
     }
 
     public function isEqualTo(UserInterface $user)

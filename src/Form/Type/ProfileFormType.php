@@ -31,25 +31,21 @@ class ProfileFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('username', null, array('label' => 'Username', 'translation_domain' => 'FOSUserBundle'))
-            ->add('email', EmailType::class, array('label' => 'Email', 'translation_domain' => 'FOSUserBundle'))
+            ->add('username', null, array('label' => 'Username'))
+            ->add('email', EmailType::class, array('label' => 'Email'))
             ->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event) {
                 if (!($user = $event->getData())) {
                     return;
                 }
 
                 if (!$user->getGithubId()) {
-                    $constraintsOptions = [
-                        'message' => 'fos_user.current_password.invalid',
-                    ];
-
                     $event->getForm()->add('current_password', PasswordType::class, [
                         'label' => 'Current password',
                         'translation_domain' => 'FOSUserBundle',
                         'mapped' => false,
                         'constraints' => [
                             new NotBlank(),
-                            new UserPassword($constraintsOptions),
+                            new UserPassword(),
                         ],
                         'attr' => [
                             'autocomplete' => 'current-password',

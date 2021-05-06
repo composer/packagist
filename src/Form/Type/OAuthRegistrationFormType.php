@@ -23,8 +23,8 @@ class OAuthRegistrationFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('username', null, ['label' => 'form.username', 'translation_domain' => 'FOSUserBundle'])
-            ->add('email', EmailType::class, ['label' => 'form.email', 'translation_domain' => 'FOSUserBundle'])
+            ->add('username', null, ['label' => 'Username'])
+            ->add('email', EmailType::class, ['label' => 'Email'])
         ;
     }
 
