@@ -1393,7 +1393,7 @@ class PackageController extends Controller
 
     private function createAddMaintainerForm(Package $package)
     {
-        if (!($user = $this->getUser()) || !$this->isGranted('ROLE_EDIT_PACKAGES') || !$package->getMaintainers()->contains($user)) {
+        if (!($user = $this->getUser()) || (!$this->isGranted('ROLE_EDIT_PACKAGES') && !$package->getMaintainers()->contains($user))) {
             return null;
         }
 
@@ -1403,7 +1403,7 @@ class PackageController extends Controller
 
     private function createRemoveMaintainerForm(Package $package)
     {
-        if (!($user = $this->getUser()) || 1 == $package->getMaintainers()->count() || !$this->isGranted('ROLE_EDIT_PACKAGES') || !$package->getMaintainers()->contains($user)) {
+        if (!($user = $this->getUser()) || 1 == $package->getMaintainers()->count() || (!$this->isGranted('ROLE_EDIT_PACKAGES') && !$package->getMaintainers()->contains($user))) {
             return null;
         }
 
