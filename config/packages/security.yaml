@@ -1,6 +1,11 @@
 security:
     encoders:
         App\Entity\User:
+            algorithm: auto
+            cost: 12
+            migrate_from: [legacy]
+
+        legacy:
             algorithm:        sha512
             encode_as_base64: false
             iterations:       1

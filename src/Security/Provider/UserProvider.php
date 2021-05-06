@@ -16,11 +16,12 @@ use App\Entity\UserRepository;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\User;
+use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use App\Service\Scheduler;
 
-class UserProvider implements UserProviderInterface
+class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
     use DoctrineTrait;
 
@@ -52,6 +53,18 @@ class UserProvider implements UserProviderInterface
         }
 
         return $this->getRepo()->find($user->getId());
+    }
+
+    public function upgradePassword(UserInterface $user, string $newEncodedPassword): void
+    {
+        if (!$user instanceof User) {
+            throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
+        }
+
+        $user->setPassword($newEncodedPassword);
+
+        $this->getEM()->persist($user);
+        $this->getEM()->flush();
     }
 
     /**

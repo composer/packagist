@@ -19,9 +19,10 @@ use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Guard\Authenticator\AbstractFormLoginAuthenticator;
+use Symfony\Component\Security\Guard\PasswordAuthenticatedInterface;
 use Symfony\Component\Security\Http\Util\TargetPathTrait;
 
-class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
+class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator implements PasswordAuthenticatedInterface
 {
     use TargetPathTrait;
     use DoctrineTrait;
@@ -74,6 +75,11 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
         return $credentials;
     }
 
+    public function getPassword($credentials): ?string
+    {
+        return $credentials['password'];
+    }
+
     public function getUser($credentials, UserProviderInterface $userProvider)
     {
         $this->validateRecaptcha($credentials);
@@ -104,7 +110,6 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
     public function checkCredentials($credentials, UserInterface $user)
     {
         return $this->passwordEncoder->isPasswordValid($user, $credentials['password']);
-
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
