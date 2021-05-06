@@ -375,7 +375,7 @@ class ApiController extends Controller
         if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature')) {
             $username = $request->query->get('username');
             $sig = $request->headers->get('X-Hub-Signature');
-            $user = $this->getEM()->getRepository(User::class)->findOneBy(['username' => $username]);
+            $user = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => $username]);
             if ($sig && $user && $user->isEnabled()) {
                 list($algo, $sig) = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
@@ -458,7 +458,7 @@ class ApiController extends Controller
         }
 
         $user = $this->getEM()->getRepository(User::class)
-            ->findOneBy(['username' => $username, 'apiToken' => $apiToken]);
+            ->findOneBy(['usernameCanonical' => $username, 'apiToken' => $apiToken]);
 
         if ($user && !$user->isEnabled()) {
             return null;

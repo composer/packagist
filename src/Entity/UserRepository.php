@@ -38,7 +38,7 @@ class UserRepository extends ServiceEntityRepository
             ->select('u')
             ->innerJoin('u.packages', 'p', 'WITH', 'p.id = :packageId')
             ->setParameter(':packageId', $package->getId())
-            ->orderBy('u.username', 'ASC');
+            ->orderBy('u.usernameCanonical', 'ASC');
 
         if ($excludeUser) {
             $qb->andWhere('u.id <> :userId')

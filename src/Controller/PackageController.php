@@ -823,7 +823,7 @@ class PackageController extends Controller
         $manualUpdate = (bool) $req->request->get('manualUpdate', $req->query->get('manualUpdate'));
 
         $user = $this->getUser() ?: $this->getEM()->getRepository(User::class)
-            ->findOneBy(['username' => $username, 'apiToken' => $apiToken]);
+            ->findOneBy(['usernameCanonical' => $username, 'apiToken' => $apiToken]);
 
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
