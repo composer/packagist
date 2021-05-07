@@ -196,7 +196,7 @@ class PackageController extends Controller
     {
         $user = $this->getUser();
         if (!$user) {
-            throw new $this->createAccessDeniedException('User required to submit packages.');
+            throw $this->createAccessDeniedException('User required to submit packages.');
         }
 
         $package = new Package;
@@ -242,7 +242,7 @@ class PackageController extends Controller
     {
         $user = $this->getUser();
         if (!$user) {
-            throw new $this->createAccessDeniedException('User required to submit packages.');
+            throw $this->createAccessDeniedException('User required to submit packages.');
         }
 
         $package = new Package;
