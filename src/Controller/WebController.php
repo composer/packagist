@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use Algolia\AlgoliaSearch\SearchClient;
+use App\Entity\Version;
 use App\Form\Model\SearchQuery;
 use App\Form\Type\SearchQueryType;
 use App\Entity\Package;
@@ -239,13 +240,8 @@ class WebController extends Controller
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
-        $packages = $this->doctrine
-            ->getConnection()
-            ->fetchAll('SELECT COUNT(*) count, YEAR(createdAt) year, MONTH(createdAt) month FROM `package` GROUP BY year, month');
-
-        $versions = $this->doctrine
-            ->getConnection()
-            ->fetchAll('SELECT COUNT(*) count, YEAR(releasedAt) year, MONTH(releasedAt) month FROM `package_version` GROUP BY year, month');
+        $packages = $this->getEM()->getRepository(Package::class)->getCountByYearMonth();
+        $versions = $this->getEM()->getRepository(Version::class)->getCountByYearMonth();
 
         $chart = ['versions' => [], 'packages' => [], 'months' => []];
 
@@ -335,13 +331,8 @@ class WebController extends Controller
         }
 
         $downloads = (int) ($redis->get('downloads') ?: 0);
-        $packages = (int) $this->doctrine
-            ->getConnection()
-            ->fetchColumn('SELECT COUNT(*) count FROM `package`');
-
-        $versions = (int) $this->doctrine
-            ->getConnection()
-            ->fetchColumn('SELECT COUNT(*) count FROM `package_version`');
+        $packages = $this->getEM()->getRepository(Package::class)->getTotal();
+        $versions = $this->getEM()->getRepository(Version::class)->getTotal();
 
         $totals = [
             'downloads' => $downloads,

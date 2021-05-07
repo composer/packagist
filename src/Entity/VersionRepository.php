@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\DBAL\Connection;
 use Predis\Client;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -249,5 +250,40 @@ class VersionRepository extends ServiceEntityRepository
         $this->redis->setex('new_releases', 600, json_encode($res));
 
         return $res;
+    }
+
+    public function getTotal(): int
+    {
+        // it seems the GROUP BY 1=1 helps mysql figure out a faster way to get the count by using another index
+        $sql = 'SELECT COUNT(*) count FROM `package_version` GROUP BY 1=1';
+
+        $stmt = $this->getEntityManager()->getConnection()
+            ->executeCacheQuery(
+                $sql,
+                [],
+                [],
+                new QueryCacheProfile(86400, 'total_package_versions', $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+            );
+        $result = $stmt->fetchAllAssociative();
+        $stmt->free();
+
+        return (int) $result[0]['count'];
+    }
+
+    public function getCountByYearMonth(): array
+    {
+        $sql = 'SELECT COUNT(*) count, YEAR(releasedAt) year, MONTH(releasedAt) month FROM `package_version` GROUP BY year, month';
+
+        $stmt = $this->getEntityManager()->getConnection()
+            ->executeCacheQuery(
+                $sql,
+                [],
+                [],
+                new QueryCacheProfile(3600, 'package_versions_count_by_year_month', $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+            );
+        $result = $stmt->fetchAllAssociative();
+        $stmt->free();
+
+        return $result;
     }
 }

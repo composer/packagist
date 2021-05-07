@@ -479,6 +479,41 @@ class PackageRepository extends ServiceEntityRepository
         return $result;
     }
 
+    public function getTotal(): int
+    {
+        // it seems the GROUP BY 1=1 helps mysql figure out a faster way to get the count by using another index
+        $sql = 'SELECT COUNT(*) count FROM `package` GROUP BY 1=1';
+
+        $stmt = $this->getEntityManager()->getConnection()
+            ->executeCacheQuery(
+                $sql,
+                [],
+                [],
+                new QueryCacheProfile(86400, 'total_packages', $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+            );
+        $result = $stmt->fetchAllAssociative();
+        $stmt->free();
+
+        return (int) $result[0]['count'];
+    }
+
+    public function getCountByYearMonth(): array
+    {
+        $sql = 'SELECT COUNT(*) count, YEAR(createdAt) year, MONTH(createdAt) month FROM `package` GROUP BY year, month';
+
+        $stmt = $this->getEntityManager()->getConnection()
+            ->executeCacheQuery(
+                $sql,
+                [],
+                [],
+                new QueryCacheProfile(3600, 'package_count_by_year_month', $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+            );
+        $result = $stmt->fetchAllAssociative();
+        $stmt->free();
+
+        return $result;
+    }
+
     private function addFilters(QueryBuilder $qb, array $filters)
     {
         foreach ($filters as $name => $value) {
