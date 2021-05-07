@@ -12,6 +12,7 @@
 
 namespace App\Package;
 
+use App\Entity\Dependent;
 use cebe\markdown\GithubMarkdown;
 use Composer\Package\AliasPackage;
 use Composer\Repository\RepositoryInterface;
@@ -207,6 +208,9 @@ class Updater
         $processedVersions = [];
         $lastProcessed = null;
         $idsToMarkUpdated = [];
+
+        /** @var int|null|false $dependentSuggesterSource Version id to use as dependent/suggester source */
+        $dependentSuggesterSource = null;
         foreach ($versions as $version) {
             if ($version instanceof AliasPackage) {
                 continue;
@@ -221,6 +225,15 @@ class Updater
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
             $lastUpdated = $result['updated'];
 
+            // use the first version which should be the highest stable version by default
+            if (null === $dependentSuggesterSource) {
+                $dependentSuggesterSource = $result['updated'] ? $result['id'] : false;
+            }
+            // if default branch is present however we prefer that as the canonical source of dependent/suggester
+            if ($version->isDefaultBranch()) {
+                $dependentSuggesterSource = $result['updated'] ? $result['id'] : false;
+            }
+
             if ($lastUpdated) {
                 $em->flush();
                 $em->clear();
@@ -231,6 +244,10 @@ class Updater
 
             // mark the version processed so we can prune leftover ones
             unset($existingVersions[$result['version']]);
+        }
+
+        if ($dependentSuggesterSource) {
+            $em->getRepository(Dependent::class)->updateDependentSuggesters($package->getId(), $dependentSuggesterSource);
         }
 
         // mark versions that did not update as updated to avoid them being pruned

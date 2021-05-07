@@ -43,6 +43,9 @@ class UpdaterTest extends TestCase
 
         $this->config  = new Config();
         $this->package = new Package();
+        $reflProp = new \ReflectionProperty(Package::class, 'id');
+        $reflProp->setAccessible(true);
+        $reflProp->setValue($this->package, 1);
 
         $this->ioMock         = $this->getMockBuilder(NullIO::class)->disableOriginalConstructor()->getMock();
         $this->repositoryMock = $this->getMockBuilder(VcsRepository::class)->disableOriginalConstructor()->getMock();
