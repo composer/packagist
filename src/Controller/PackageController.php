@@ -881,7 +881,7 @@ class PackageController extends Controller
         if (!$form = $this->createDeletePackageForm($package)) {
             throw new AccessDeniedException;
         }
-        $form->submit($req->request->get('form'));
+        $form->submit($req->request->all('form'));
         if ($form->isSubmitted() && $form->isValid()) {
             if ($req->getSession()->isStarted()) {
                 $req->getSession()->save();

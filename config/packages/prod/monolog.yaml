@@ -21,6 +21,7 @@ monolog:
         deprecation:
             type: stream
             path: "%kernel.logs_dir%/deprecations.log"
+            include_stacktraces: true
 
         console_debug:
             type:   console
