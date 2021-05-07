@@ -55,10 +55,16 @@ class PopulateDependentsSuggestersCommand extends Command
         /** @var list<int> $ids */
         $ids = array_map('intval', $ids);
 
+        $total = count($ids);
+        $done = 0;
         while ($id = array_shift($ids)) {
             if (!$this->locker->lockPackageUpdate($id)) {
                 $ids[] = $id;
                 continue;
+            }
+
+            if ((++$done % 1000) === 0) {
+                $output->writeln($done.' / '.$total);
             }
 
             try {

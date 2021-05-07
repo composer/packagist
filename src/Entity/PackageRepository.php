@@ -390,25 +390,27 @@ class PackageRepository extends ServiceEntityRepository
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
     }
 
-    public function getDependentCount($name): int
+    /**
+     * @param string   $name Package name to find the dependents of
+     * @param int|null $type One of Dependent::TYPE_*
+     */
+    public function getDependentCount(string $name, ?int $type = null): int
     {
-        $sql = 'SELECT COUNT(*) count FROM (
-                SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
-                UNION
-                SELECT pv.package_id FROM link_require_dev r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
-            ) x';
+        $sql = 'SELECT COUNT(*) count FROM dependent WHERE packageName = :name';
+        $args = ['name' => $name];
+        if (null !== $type) {
+            $sql .= ' AND type = :type';
+            $args['type'] = $type;
+        }
 
-        $stmt = $this->getEntityManager()->getConnection()
-            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'dependents_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
-
-        // we have to fetch the whole result set here to make sure caching works as per https://www.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/caching.html#caching
-        $result = $stmt->fetchAllAssociative();
-        $stmt->free();
-
-        return (int) $result[0]['count'];
+        return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args);
     }
 
-    public function getDependents($name, $offset = 0, $limit = 15, $orderBy = 'name')
+    /**
+     * @param string   $name Package name to find the dependents of
+     * @param int|null $type One of Dependent::TYPE_*
+     */
+    public function getDependents(string $name, int $offset = 0, int $limit = 15, string $orderBy = 'name', ?int $type = null)
     {
         $orderByField = 'p.name ASC';
         $join = '';
@@ -419,64 +421,37 @@ class PackageRepository extends ServiceEntityRepository
             $orderBy = 'name';
         }
 
+        $args = ['name' => $name];
+        $typeFilter = '';
+        if (null !== $type) {
+            $typeFilter = ' AND type = :type';
+            $args['type'] = $type;
+        }
+
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
-                SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
-                UNION
-                SELECT pv.package_id FROM link_require_dev r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
+                SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
             ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
 
-        $stmt = $this->getEntityManager()->getConnection()
-            ->executeCacheQuery(
-                $sql,
-                ['name' => $name],
-                [],
-                new QueryCacheProfile(7*86400, 'dependents_'.$name.'_'.$offset.'_'.$limit.'_'.$orderBy, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
-            );
-        $result = $stmt->fetchAllAssociative();
-        $stmt->free();
-
-        return $result;
+        return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args);
     }
 
     public function getSuggestCount($name): int
     {
-        $sql = 'SELECT COUNT(DISTINCT pv.package_id) count
-            FROM link_suggest s
-            INNER JOIN package_version pv ON (pv.id = s.version_id AND pv.development = 1)
-            WHERE s.packageName = :name';
+        $sql = 'SELECT COUNT(*) count FROM suggester WHERE packageName = :name';
+        $args = ['name' => $name];
 
-        $stmt = $this->getEntityManager()->getConnection()
-            ->executeCacheQuery($sql, ['name' => $name], [], new QueryCacheProfile(7*86400, 'suggesters_count_'.$name, $this->getEntityManager()->getConfiguration()->getResultCacheImpl()));
-
-        // we have to fetch the whole result set here to make sure caching works as per https://www.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/caching.html#caching
-        $result = $stmt->fetchAllAssociative();
-        $stmt->free();
-
-        return (int) $result[0]['count'];
+        return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args);
     }
 
     public function getSuggests($name, $offset = 0, $limit = 15)
     {
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
-            FROM link_suggest s
-            INNER JOIN package_version pv ON (pv.id = s.version_id AND pv.development = 1)
-            INNER JOIN package p ON (p.id = pv.package_id)
-            WHERE s.packageName = :name
-            GROUP BY pv.package_id
-            ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+            FROM package p INNER JOIN (
+                SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
+            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
 
-        $stmt = $this->getEntityManager()->getConnection()
-            ->executeCacheQuery(
-                $sql,
-                ['name' => $name],
-                [],
-                new QueryCacheProfile(7*86400, 'suggesters_'.$name.'_'.$offset.'_'.$limit, $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
-            );
-        $result = $stmt->fetchAllAssociative();
-        $stmt->free();
-
-        return $result;
+        return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]);
     }
 
     public function getTotal(): int
