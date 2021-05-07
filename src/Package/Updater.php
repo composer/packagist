@@ -225,21 +225,21 @@ class Updater
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
             $lastUpdated = $result['updated'];
 
-            // use the first version which should be the highest stable version by default
-            if (null === $dependentSuggesterSource) {
-                $dependentSuggesterSource = $result['updated'] ? $result['id'] : false;
-            }
-            // if default branch is present however we prefer that as the canonical source of dependent/suggester
-            if ($version->isDefaultBranch()) {
-                $dependentSuggesterSource = $result['updated'] ? $result['id'] : false;
-            }
-
             if ($lastUpdated) {
                 $em->flush();
                 $em->clear();
                 $package = $em->merge($package);
             } else {
                 $idsToMarkUpdated[] = $result['id'];
+            }
+
+            // use the first version which should be the highest stable version by default
+            if (null === $dependentSuggesterSource) {
+                $dependentSuggesterSource = $lastUpdated ? $result['object']->getId() : false;
+            }
+            // if default branch is present however we prefer that as the canonical source of dependent/suggester
+            if ($version->isDefaultBranch()) {
+                $dependentSuggesterSource = $lastUpdated ? $result['object']->getId() : false;
             }
 
             // mark the version processed so we can prune leftover ones
