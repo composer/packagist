@@ -28,13 +28,13 @@ class UserRepository extends ServiceEntityRepository
     public function findOneByUsernameOrEmail(string $usernameOrEmail): ?User
     {
         if (preg_match('/^.+\@\S+\.\S+$/', $usernameOrEmail)) {
-            $user = $this->findOneBy(['email' => $usernameOrEmail]);
+            $user = $this->findOneBy(['emailCanonical' => $usernameOrEmail]);
             if (null !== $user) {
                 return $user;
             }
         }
 
-        return $this->findOneBy(['username' => $usernameOrEmail]);
+        return $this->findOneBy(['usernameCanonical' => $usernameOrEmail]);
     }
 
     /**

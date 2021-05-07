@@ -64,7 +64,7 @@ class GitHubAuthenticator extends SocialAuthenticator
             return $existingUser;
         }
 
-        if ($userRepo->findOneBy(['username' => $ghUser->getNickname()])) {
+        if ($userRepo->findOneBy(['usernameCanonical' => mb_strtolower($ghUser->getNickname())])) {
             throw new AccountUsernameExistsWithoutGitHubException($ghUser->getNickname());
         }
 
@@ -74,7 +74,7 @@ class GitHubAuthenticator extends SocialAuthenticator
         $email = null;
         foreach ($response as $item) {
             if ($item['verified'] === true) {
-                if ($userRepo->findOneBy(['email' => $item['email']])) {
+                if ($userRepo->findOneBy(['emailCanonical' => mb_strtolower($item['email'])])) {
                     throw new AccountEmailExistsWithoutGitHubException($item['email']);
                 }
 

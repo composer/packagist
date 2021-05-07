@@ -52,7 +52,7 @@ class ProfileController extends Controller
 
     /**
      * @Route("/users/{name}/", name="user_profile")
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function publicProfile(Request $req, User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
     {

@@ -90,7 +90,7 @@ class UserController extends Controller
 
     /**
      * @Route("/spammers/{name}/", name="mark_spammer", methods={"POST"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function markSpammerAction(Request $req, User $user)
     {
@@ -142,7 +142,7 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/favorites/", name="user_favorites", methods={"GET"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function favoritesAction(Request $req, User $user, LoggerInterface $logger, RedisClient $redis, FavoriteManager $favoriteManager)
     {
@@ -170,7 +170,7 @@ class UserController extends Controller
 
     /**
      * @Route("/users/{name}/favorites/", name="user_add_fav", defaults={"_format" = "json"}, methods={"POST"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function postFavoriteAction(Request $req, User $user, FavoriteManager $favoriteManager)
     {
@@ -194,7 +194,7 @@ class UserController extends Controller
 
     /**
      * @Route("/users/{name}/favorites/{package}", name="user_remove_fav", defaults={"_format" = "json"}, requirements={"package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}, methods={"DELETE"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      * @ParamConverter("package", options={"mapping": {"package": "name"}})
      */
     public function deleteFavoriteAction(User $user, Package $package, FavoriteManager $favoriteManager)
@@ -210,7 +210,7 @@ class UserController extends Controller
 
     /**
      * @Route("/users/{name}/delete", name="user_delete", methods={"POST"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function deleteUserAction(User $user, Request $req, TokenStorageInterface $storage, EventDispatcherInterface $mainEventDispatcher)
     {
@@ -248,7 +248,7 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/2fa/", name="user_2fa_configure", methods={"GET"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function configureTwoFactorAuthAction(User $user, Request $req)
     {
@@ -266,7 +266,7 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/2fa/enable", name="user_2fa_enable", methods={"GET", "POST"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function enableTwoFactorAuthAction(Request $req, User $user, TotpAuthenticatorInterface $authenticator, TwoFactorAuthManager $authManager)
     {
@@ -306,7 +306,7 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/2fa/confirm", name="user_2fa_confirm", methods={"GET"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function confirmTwoFactorAuthAction(User $user, Request $req)
     {
@@ -326,7 +326,7 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/2fa/disable", name="user_2fa_disable", methods={"GET"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function disableTwoFactorAuthAction(Request $req, User $user, CsrfTokenManagerInterface $csrfTokenManager, TwoFactorAuthManager $authManager)
     {
