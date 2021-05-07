@@ -21,6 +21,7 @@ security:
             security: false
         main:
             pattern:      .*
+            user_checker: App\Security\UserChecker
             guard:
                 provider: packagist
                 authenticators:
