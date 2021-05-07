@@ -13,11 +13,19 @@
                 <h2 class="title">
                     <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a> {{ 'packages.dependents'|trans }}
                     <small>({{ count }})</small>
-                    <small>
-                        Order by:
-                        {% if order_by == 'name' %}name{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'name'}) }}">name</a>{% endif %} |
-                        {% if order_by == 'downloads' %}downloads{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'downloads'}) }}">downloads</a>{% endif %}
-                    </small>
+                    <span class="filters">
+                        <span class="filter">
+                            Order by:
+                            {% if order_by == 'name' %}<span class="active">name</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'name', requires: requires}) }}">name</a>{% endif %} |
+                            {% if order_by == 'downloads' %}<span class="active">downloads</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'downloads', requires: requires}) }}">downloads</a>{% endif %}
+                        </span>
+                        <span class="filter">
+                            Show:
+                            {% if requires == 'all' %}<span class="active">all</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: order_by, requires: 'all'}) }}">all</a>{% endif %} |
+                            {% if requires == 'require' %}<span class="active">require</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: order_by, requires: 'require'}) }}">require</a>{% endif %} |
+                            {% if requires == 'require-dev' %}<span class="active">require-dev</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: order_by, requires: 'require-dev'}) }}">require-dev</a>{% endif %}
+                        </span>
+                    </span>
                 </h2>
             </div>
         </div>

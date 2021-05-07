@@ -1072,6 +1072,21 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   display: inline-block;
 }
 
+.package-header .filters {
+    font-size: .5em;
+    float: right;
+    background: #fafafa;
+    padding: 5px 10px;
+    border: 1px solid #f28d1a;
+    line-height: 24px;
+}
+.package-header .filters .filter {
+    display: block;
+}
+.package-header .filters .active {
+    text-decoration: underline;
+}
+
 .btn-github.disabled {
     background: #ecf0f1;
     color: #bdc3c7;

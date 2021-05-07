@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Dependent;
 use App\Util\Killswitch;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
@@ -1181,14 +1182,21 @@ class PackageController extends Controller
         $page = max(1, $req->query->getInt('page', 1));
         $perPage = 15;
         $orderBy = $req->query->get('order_by', 'name');
+        $requires = $req->query->get('requires', 'all');
 
         if ($req->getRequestFormat() === 'json') {
             $perPage = 100;
         }
 
         $repo = $this->getEM()->getRepository(Package::class);
-        $depCount = $repo->getDependentCount($name);
-        $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy);
+        $requireType = null;
+        if ($requires === 'require') {
+            $requireType = Dependent::TYPE_REQUIRE;
+        } elseif ($requires === 'require-dev') {
+            $requireType = Dependent::TYPE_REQUIRE_DEV;
+        }
+        $depCount = $repo->getDependentCount($name, $requireType);
+        $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
 
         $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
         $paginator->setNormalizeOutOfRangePages(true);
@@ -1220,6 +1228,7 @@ class PackageController extends Controller
         $data['meta'] = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
         $data['name'] = $name;
         $data['order_by'] = $orderBy;
+        $data['requires'] = $requires;
 
         return $this->render('package/dependents.html.twig', $data);
     }
