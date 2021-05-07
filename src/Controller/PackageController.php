@@ -195,8 +195,8 @@ class PackageController extends Controller
     public function submitPackageAction(Request $req, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, LoggerInterface $logger)
     {
         $user = $this->getUser();
-        if (!$user->isEnabled()) {
-            throw new AccessDeniedException();
+        if (!$user) {
+            throw new $this->createAccessDeniedException('User required to submit packages.');
         }
 
         $package = new Package;
@@ -240,11 +240,15 @@ class PackageController extends Controller
      */
     public function fetchInfoAction(Request $req, RouterInterface $router)
     {
+        $user = $this->getUser();
+        if (!$user) {
+            throw new $this->createAccessDeniedException('User required to submit packages.');
+        }
+
         $package = new Package;
         $package->setEntityRepository($this->getEM()->getRepository(Package::class));
         $package->setRouter($router);
         $form = $this->createForm(PackageType::class, $package);
-        $user = $this->getUser();
         $package->addMaintainer($user);
 
         $form->handleRequest($req);
