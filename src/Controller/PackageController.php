@@ -534,7 +534,7 @@ class PackageController extends Controller
         if ('json' === $req->getRequestFormat()) {
             $data = $package->toArray($this->getEM()->getRepository(Version::class), true);
             if (Killswitch::LINKS_ENABLED) {
-                $data['dependents'] = $repo->getDependantCount($package->getName());
+                $data['dependents'] = $repo->getDependentCount($package->getName());
                 $data['suggesters'] = $repo->getSuggestCount($package->getName());
             }
 
@@ -619,7 +619,7 @@ class PackageController extends Controller
         } catch (\RuntimeException | ConnectionException $e) {
         }
 
-        $data['dependents'] = Killswitch::PAGE_DETAILS_ENABLED && Killswitch::LINKS_ENABLED ? $repo->getDependantCount($package->getName()) : 0;
+        $data['dependents'] = Killswitch::PAGE_DETAILS_ENABLED && Killswitch::LINKS_ENABLED ? $repo->getDependentCount($package->getName()) : 0;
         $data['suggesters'] = Killswitch::PAGE_DETAILS_ENABLED && Killswitch::LINKS_ENABLED ? $repo->getSuggestCount($package->getName()) : 0;
 
         if (Killswitch::PAGE_DETAILS_ENABLED) {
@@ -1187,7 +1187,7 @@ class PackageController extends Controller
         }
 
         $repo = $this->getEM()->getRepository(Package::class);
-        $depCount = $repo->getDependantCount($name);
+        $depCount = $repo->getDependentCount($name);
         $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy);
 
         $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));

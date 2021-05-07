@@ -390,7 +390,7 @@ class PackageRepository extends ServiceEntityRepository
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
     }
 
-    public function getDependantCount($name): int
+    public function getDependentCount($name): int
     {
         $sql = 'SELECT COUNT(*) count FROM (
                 SELECT pv.package_id FROM link_require r INNER JOIN package_version pv ON (pv.id = r.version_id AND pv.development = 1) WHERE r.packageName = :name
