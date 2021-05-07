@@ -1,0 +1,46 @@
+{% extends 'user/layout.html.twig' %}
+
+{% block title %}Create account - {{ parent() }}{% endblock %}
+
+{% block user_content %}
+    <div class="col-md-12">
+        <h2 class="title">
+            Create account
+        </h2>
+    </div>
+
+    {% for flashError in app.flashes('verify_email_error') %}
+        <div class="alert alert-danger" role="alert">{{ flashError }}</div>
+    {% endfor %}
+
+    {{ form_start(registrationForm, {attr: {class: "register col-md-6"}}) }}
+        <div class="form-group clearfix">
+            <label for="fos_user_registration_email">Email:</label>
+            <div class="input-group clearfix">
+                {{ form_errors(registrationForm.email) }}
+                {{ form_widget(registrationForm.email) }}
+                <span class="input-group-addon"><span class="icon-mail"></span></span>
+            </div>
+        </div>
+
+        <div class="form-group clearfix">
+            <label for="fos_user_registration_username">Username:</label>
+            <div class="input-group clearfix">
+                {{ form_errors(registrationForm.username) }}
+                {{ form_widget(registrationForm.username) }}
+                <span class="input-group-addon"><span class="icon-user"></span></span>
+            </div>
+        </div>
+
+        <div class="form-group clearfix">
+            <label for="fos_user_registration_plainPassword_first">Password:</label>
+            <div class="input-group clearfix">
+                {{ form_errors(registrationForm.plainPassword) }}
+                {{ form_widget(registrationForm.plainPassword) }}
+                <span class="input-group-addon"><span class="icon-lock"></span></span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-block btn-success btn-lg">Register</button>
+    {{ form_end(registrationForm) }}
+{% endblock %}

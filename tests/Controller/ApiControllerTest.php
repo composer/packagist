@@ -40,7 +40,7 @@ class ApiControllerTest extends WebTestCase
         $package->setRepository($url);
 
         $user = new User;
-        $user->addPackages($package);
+        $user->addPackage($package);
         $user->setEnabled(true);
         $user->setUsername('test');
         $user->setEmail('test@example.org');

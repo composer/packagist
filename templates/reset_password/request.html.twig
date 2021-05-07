@@ -1,0 +1,25 @@
+{% extends 'user/layout.html.twig' %}
+
+{% set requiresRecaptcha = true %}
+
+{% block title %}Reset your password - {{ parent() }}{% endblock %}
+
+{% block user_content %}
+    {% for flashError in app.flashes('reset_password_error') %}
+        <div class="alert alert-warning" role="alert">{{ flashError }}</div>
+    {% endfor %}
+
+    {{ form_start(requestForm, {attr: {class: "request_pwd_reset col-md-6", id: "request_password"}}) }}
+        <div class="form-group">
+            {{ form_label(requestForm.email) }}
+            <div class="input-group">
+                {{ form_widget(requestForm.email) }}
+                <span class="input-group-addon"><span class="icon-user"></span></span>
+            </div>
+        </div>
+
+        <div><small>Enter your email address and we we will send you a link to reset your password.</small></div>
+
+        <button class="btn btn-block btn-inverse btn-lg" id="_request_password_submit">Send password reset email</button>
+    {{ form_end(requestForm) }}
+{% endblock %}

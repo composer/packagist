@@ -12,7 +12,6 @@
 
 namespace App\Form\Type;
 
-use FOS\UserBundle\Form\Type\UsernameFormType;
 use App\Form\Model\MaintainerRequest;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -25,7 +24,7 @@ class AddMaintainerRequestType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('user', UsernameFormType::class);
+        $builder->add('user');
     }
 
     public function configureOptions(OptionsResolver $resolver)

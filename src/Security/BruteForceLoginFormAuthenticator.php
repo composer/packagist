@@ -2,8 +2,11 @@
 
 namespace App\Security;
 
+use App\Entity\User;
+use App\Util\DoctrineTrait;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -16,13 +19,17 @@ use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Guard\Authenticator\AbstractFormLoginAuthenticator;
+use Symfony\Component\Security\Guard\PasswordAuthenticatedInterface;
 use Symfony\Component\Security\Http\Util\TargetPathTrait;
 
-class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
+class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator implements PasswordAuthenticatedInterface
 {
     use TargetPathTrait;
+    use DoctrineTrait;
 
     public const LOGIN_ROUTE = 'login';
+
+    private ManagerRegistry $doctrine;
 
     private UrlGeneratorInterface $urlGenerator;
 
@@ -36,12 +43,14 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
         UrlGeneratorInterface $urlGenerator,
         RecaptchaVerifier $recaptchaVerifier,
         UserPasswordEncoderInterface $passwordEncoder,
-        RecaptchaHelper $recaptchaHelper
+        RecaptchaHelper $recaptchaHelper,
+        ManagerRegistry $doctrine
     ) {
         $this->urlGenerator = $urlGenerator;
         $this->recaptchaVerifier = $recaptchaVerifier;
         $this->passwordEncoder = $passwordEncoder;
         $this->recaptchaHelper = $recaptchaHelper;
+        $this->doctrine = $doctrine;
     }
 
     public function supports(Request $request)
@@ -66,6 +75,11 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
         return $credentials;
     }
 
+    public function getPassword($credentials): ?string
+    {
+        return $credentials['password'];
+    }
+
     public function getUser($credentials, UserProviderInterface $userProvider)
     {
         $this->validateRecaptcha($credentials);
@@ -78,15 +92,35 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
         }
     }
 
+    private function validateRecaptcha(array $credentials): void
+    {
+        if ($this->recaptchaHelper->requiresRecaptcha($credentials['ip'], $credentials['username'])) {
+            if (!$credentials['recaptcha']) {
+                throw new CustomUserMessageAuthenticationException('We detected too many failed login attempts. Please log in again with ReCaptcha.');
+            }
+
+            try {
+                $this->recaptchaVerifier->verify($credentials['recaptcha']);
+            } catch (RecaptchaException $e) {
+                throw new CustomUserMessageAuthenticationException('Invalid ReCaptcha');
+            }
+        }
+    }
+
     public function checkCredentials($credentials, UserInterface $user)
     {
         return $this->passwordEncoder->isPasswordValid($user, $credentials['password']);
-
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
     {
         $this->recaptchaHelper->clearCounter($request);
+
+        if ($token->getUser() instanceof User) {
+            $token->getUser()->setLastLogin(new \DateTimeImmutable());
+            $this->getEM()->persist($token->getUser());
+            $this->getEM()->flush();
+        }
 
         if ($targetPath = $this->getTargetPath($request->getSession(), $providerKey)) {
             return new RedirectResponse($targetPath);
@@ -105,20 +139,5 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator
     protected function getLoginUrl()
     {
         return $this->urlGenerator->generate(self::LOGIN_ROUTE);
-    }
-
-    private function validateRecaptcha(array $credentials): void
-    {
-        if ($this->recaptchaHelper->requiresRecaptcha($credentials['ip'], $credentials['username'])) {
-            if (!$credentials['recaptcha']) {
-                throw new CustomUserMessageAuthenticationException('We detected too many failed login attempts. Please log in again with ReCaptcha.');
-            }
-
-            try {
-                $this->recaptchaVerifier->verify($credentials['recaptcha']);
-            } catch (RecaptchaException $e) {
-                throw new CustomUserMessageAuthenticationException('Invalid ReCaptcha');
-            }
-        }
     }
 }

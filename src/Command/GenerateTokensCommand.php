@@ -12,8 +12,8 @@
 
 namespace App\Command;
 
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
-use FOS\UserBundle\Util\TokenGeneratorInterface;
 use App\Entity\User;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -24,12 +24,12 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class GenerateTokensCommand extends Command
 {
-    private TokenGeneratorInterface $tokenGenerator;
+    use DoctrineTrait;
+
     private ManagerRegistry $doctrine;
 
-    public function __construct(TokenGeneratorInterface $tokenGenerator, ManagerRegistry $doctrine)
+    public function __construct(ManagerRegistry $doctrine)
     {
-        $this->tokenGenerator = $tokenGenerator;
         $this->doctrine = $doctrine;
         parent::__construct();
     }
@@ -44,12 +44,11 @@ class GenerateTokensCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $userRepo = $this->doctrine->getRepository(User::class);
+        $userRepo = $this->getEM()->getRepository(User::class);
 
         $users = $userRepo->findUsersMissingApiToken();
         foreach ($users as $user) {
-            $apiToken = substr($this->tokenGenerator->generateToken(), 0, 20);
-            $user->setApiToken($apiToken);
+            $user->initializeApiToken();
         }
         $this->doctrine->getManager()->flush();
 

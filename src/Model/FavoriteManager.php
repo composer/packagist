@@ -12,9 +12,9 @@
 
 namespace App\Model;
 
-use FOS\UserBundle\Model\UserInterface;
 use App\Entity\Package;
 use App\Entity\PackageRepository;
+use App\Entity\User;
 use App\Entity\UserRepository;
 use Predis\Client;
 
@@ -34,7 +34,7 @@ class FavoriteManager
         $this->userRepo = $userRepo;
     }
 
-    public function markFavorite(UserInterface $user, Package $package)
+    public function markFavorite(User $user, Package $package)
     {
         if (!$this->isMarked($user, $package)) {
             $this->redis->zadd('pkg:'.$package->getId().':fav', [$user->getId() => time()]);
@@ -42,20 +42,20 @@ class FavoriteManager
         }
     }
 
-    public function removeFavorite(UserInterface $user, Package $package)
+    public function removeFavorite(User $user, Package $package)
     {
         $this->redis->zrem('pkg:'.$package->getId().':fav', $user->getId());
         $this->redis->zrem('usr:'.$user->getId().':fav', $package->getId());
     }
 
-    public function getFavorites(UserInterface $user, $limit = 0, $offset = 0)
+    public function getFavorites(User $user, $limit = 0, $offset = 0)
     {
         $favoriteIds = $this->redis->zrevrange('usr:'.$user->getId().':fav', $offset, $offset + $limit - 1);
 
         return $this->packageRepo->findBy(['id' => $favoriteIds]);
     }
 
-    public function getFavoriteCount(UserInterface $user)
+    public function getFavoriteCount(User $user)
     {
         return $this->redis->zcard('usr:'.$user->getId().':fav');
     }
@@ -91,7 +91,7 @@ class FavoriteManager
         return $res;
     }
 
-    public function isMarked(UserInterface $user, Package $package)
+    public function isMarked(User $user, Package $package)
     {
         return null !== $this->redis->zrank('usr:'.$user->getId().':fav', $package->getId());
     }

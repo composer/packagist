@@ -27,18 +27,20 @@ services:
             $redisCache: '@snc_redis.cache'
             $recaptchaVerifier: "@beelab_recaptcha2.verifier"
             'Monolog\Logger': '@logger'
+            'Symfony\Contracts\EventDispatcher\EventDispatcherInterface $mainEventDispatcher': '@security.event_dispatcher.main'
 
             # params
             $dbUrl: '%env(DATABASE_URL)%'
             $awsMetadata: '%aws_metadata%'
             $cacheDir: '%kernel.cache_dir%'
-            $webDir: '%kernel.root_dir%/../web/'
-            $rootDir: '%kernel.root_dir%'
+            $webDir: '%kernel.project_dir%/web/'
             $metadataDir: '%packagist_metadata_dir%'
             $trustedIpHeader: '%trusted_ip_header%'
             $algoliaIndexName: '%env(ALGOLIA_INDEX_NAME)%'
             $githubWebhookSecret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
             $recaptchaEnabled: "%env(bool:APP_RECAPTCHA_ENABLED)%"
+            $mailFromEmail: "%env(APP_MAILER_FROM_EMAIL)%"
+            $mailFromName: "%env(APP_MAILER_FROM_NAME)%"
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -70,62 +72,22 @@ services:
         tags:
             - { name: kernel.event_listener, event: kernel.response, method: onResponse }
 
-    App\EventListener\LoggedInUserCannotRegisterListener:
-        bind:
-            $authorizationChecker: '@security.authorization_checker'
-
-    App\EventListener\RegistrationListener:
-        arguments: [ '@fos_user.util.token_generator' ]
-
     App\Package\SymlinkDumper:
         arguments:
-            $webDir: '%kernel.root_dir%/../web/'
+            $webDir: '%kernel.project_dir%/web/'
             $targetDir: '%packagist_metadata_dir%'
             $compress: '%packagist_dumper_compress%'
 
     App\Package\V2Dumper:
         arguments:
-            $webDir: '%kernel.root_dir%/../web/'
+            $webDir: '%kernel.project_dir%/web/'
             $targetDir: '%packagist_metadata_dir%'
 
-    App\Security\Provider\UserProvider:
-        arguments: ['@fos_user.user_manager', '@fos_user.user_provider.username_email']
-
-    fos_user.util.user_manipulator:
-        public: true
-        class: App\Util\UserManipulator
-        arguments:
-            - '@fos_user.user_manager'
-            - '@fos_user.util.token_generator'
-            - '@event_dispatcher'
-            - '@request_stack'
-
-    App\Form\Handler\OAuthRegistrationFormHandler:
-        public: true
-        class: App\Form\Handler\OAuthRegistrationFormHandler
-        arguments: ['@fos_user.user_manager', '@fos_user.util.token_generator']
-
-    App\Form\Type\OAuthRegistrationFormType:
-        tags:
-            - { name: form.type, alias: packagist_oauth_user_registration }
-
-    packagist.oauth.registration_form:
-        public: true
-        factory: ['@form.factory', create]
-        class: Symfony\Component\Form\Form
-        arguments:
-            - 'App\Form\Type\OAuthRegistrationFormType'
+    App\Security\Provider\UserProvider: ~
 
     App\Model\PackageManager:
         bind:
             $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
-
-    packagist.profile.form.type:
-        public: true
-        class: App\Form\Type\ProfileFormType
-        arguments: ['%fos_user.model.user.class%']
-        tags:
-            - { name: form.type, alias: packagist_user_profile }
 
     App\Menu\MenuBuilder:
         arguments: ['@knp_menu.factory', '@security.token_storage', '@translator']
@@ -159,26 +121,9 @@ services:
         public: true
         class: App\Security\TwoFactorAuthManager
         arguments:
-            - '@doctrine'
-            - '@mailer'
-            - '@twig'
-            - '@logger'
-            - '@session.flash_bag'
-            - { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
+            $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
 
     App\Service\SecurityAdvisoryWorker:
         bind:
             $sources:
                 'FriendsOfPHP/security-advisories': '@App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource'
-
-    App\FOSUB\Mailer:
-        # Made lazy to avoid initializing Twig for nothing on many requests
-        lazy: true
-        bind:
-            $parameters:
-                confirmation.template: '%fos_user.registration.confirmation.template%'
-                resetting.template: '%fos_user.resetting.email.template%'
-                from_email:
-                    confirmation: '%fos_user.registration.confirmation.from_email%'
-                    resetting: '%fos_user.resetting.email.from_email%'
-                from_name: '%env(APP_MAILER_FROM_NAME)%'

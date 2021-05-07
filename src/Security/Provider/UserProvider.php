@@ -12,95 +12,27 @@
 
 namespace App\Security\Provider;
 
-use FOS\UserBundle\Model\UserManagerInterface;
-use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
-use HWI\Bundle\OAuthBundle\Security\Core\Exception\AccountNotLinkedException;
-use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
+use App\Entity\UserRepository;
+use App\Util\DoctrineTrait;
+use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\User;
+use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use App\Service\Scheduler;
 
-class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInterface
+class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
-    private UserManagerInterface $userManager;
+    use DoctrineTrait;
 
-    private UserProviderInterface $userProvider;
+    private ManagerRegistry $doctrine;
 
     private Scheduler $scheduler;
 
-    /**
-     * @param UserManagerInterface  $userManager
-     * @param UserProviderInterface $userProvider
-     */
-    public function __construct(UserManagerInterface $userManager, UserProviderInterface $userProvider, Scheduler $scheduler)
+    public function __construct(ManagerRegistry $doctrine, Scheduler $scheduler)
     {
-        $this->userManager = $userManager;
-        $this->userProvider = $userProvider;
+        $this->doctrine = $doctrine;
         $this->scheduler = $scheduler;
-    }
-
-    public function connect($user, UserResponseInterface $response)
-    {
-        $username = $response->getUsername();
-        if (!$username || $username <= 0) {
-            throw new \LogicException('Failed to load info from GitHub');
-        }
-
-        /** @var User $previousUser */
-        $previousUser = $this->userManager->findUserBy(['githubId' => $username]);
-
-        /** @var User $user */
-        $user->setGithubId($username);
-        $user->setGithubToken($response->getAccessToken());
-        $user->setGithubScope($response->getOAuthToken()->getRawToken()['scope']);
-
-        // The account is already connected. Do nothing
-        if ($previousUser === $user) {
-            return;
-        }
-
-        // 'disconnect' a previous account
-        if (null !== $previousUser) {
-            $previousUser->setGithubId(null);
-            $previousUser->setGithubToken(null);
-            $this->userManager->updateUser($previousUser);
-        }
-
-        $this->userManager->updateUser($user);
-
-        $this->scheduler->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
-    }
-
-    public function loadUserByOAuthUserResponse(UserResponseInterface $response)
-    {
-        $username = $response->getUsername();
-        if (!$username || $username <= 0) {
-            throw new \LogicException('Failed to load info from GitHub');
-        }
-
-        /** @var User $user */
-        $user = $this->userManager->findUserBy(['githubId' => $username]);
-
-        if (!$user) {
-            throw new AccountNotLinkedException(sprintf('No user with github username "%s" was found.', $username));
-        }
-
-        if ($user->getGithubId() !== (string) $response->getUsername()) {
-            throw new \LogicException('This really should not happen but checking just in case');
-        }
-
-        if ($user->getGithubToken() !== $response->getAccessToken()) {
-            $user->setGithubToken($response->getAccessToken());
-            $oldScope = $user->getGithubScope();
-            $user->setGithubScope($response->getOAuthToken()->getRawToken()['scope']);
-            $this->userManager->updateUser($user);
-            if ($oldScope !== $user->getGithubScope()) {
-                $this->scheduler->scheduleUserScopeMigration($user->getId(), $oldScope ?: '', $user->getGithubScope());
-            }
-        }
-
-        return $user;
     }
 
     /**
@@ -108,7 +40,7 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function loadUserByUsername($usernameOrEmail)
     {
-        return $this->userProvider->loadUserByUsername($usernameOrEmail);
+        return $this->getRepo()->findOneByUsernameOrEmail((string) $usernameOrEmail);
     }
 
     /**
@@ -116,7 +48,23 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function refreshUser(UserInterface $user)
     {
-        return $this->userProvider->refreshUser($user);
+        if (!$user instanceof User) {
+            throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
+        }
+
+        return $this->getRepo()->find($user->getId());
+    }
+
+    public function upgradePassword(UserInterface $user, string $newEncodedPassword): void
+    {
+        if (!$user instanceof User) {
+            throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
+        }
+
+        $user->setPassword($newEncodedPassword);
+
+        $this->getEM()->persist($user);
+        $this->getEM()->flush();
     }
 
     /**
@@ -124,6 +72,11 @@ class UserProvider implements OAuthAwareUserProviderInterface, UserProviderInter
      */
     public function supportsClass($class)
     {
-        return $this->userProvider->supportsClass($class);
+        return User::class === $class || is_subclass_of($class, User::class);
+    }
+
+    private function getRepo(): UserRepository
+    {
+        return $this->getEM()->getRepository(User::class);
     }
 }

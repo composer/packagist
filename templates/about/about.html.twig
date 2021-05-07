@@ -115,7 +115,7 @@ v2.0.4-p1</code></pre>
             <ul>
                 <li>Payload URL: <code>https://packagist.org/api/github?username={{ app.user.username|default('PACKAGIST_USERNAME') }}</code></li>
                 <li>Content Type: <code>application/json</code></li>
-                <li>Secret: your <a href="{{ path('fos_user_profile_show') }}">Packagist API Token</a></li>
+                <li>Secret: your <a href="{{ path('my_profile') }}">Packagist API Token</a></li>
                 <li>Which events? Just the <code>push</code> event is enough.</li>
             </ul>
         </section>
@@ -141,7 +141,7 @@ v2.0.4-p1</code></pre>
         <div class="clearfix"></div>
         <section class="col-md-6">
             <h3>API Token</h3>
-            <p>You can find your API token on <a href="{{ path('fos_user_profile_show') }}">your profile page</a>.</p>
+            <p>You can find your API token on <a href="{{ path('my_profile') }}">your profile page</a>.</p>
         </section>
     </section>
 {% endblock %}

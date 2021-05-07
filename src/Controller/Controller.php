@@ -23,21 +23,17 @@ use App\Model\FavoriteManager;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class Controller extends AbstractController
+abstract class Controller extends AbstractController
 {
     use \App\Util\DoctrineTrait;
 
-    protected FavoriteManager $favoriteManager;
-    protected DownloadManager $downloadManager;
     protected ManagerRegistry $doctrine;
 
     /**
      * @required
      */
-    public function setDeps(FavoriteManager $favMgr, DownloadManager $dlMgr, ManagerRegistry $doctrine)
+    public function setDeps(ManagerRegistry $doctrine)
     {
-        $this->favoriteManager = $favMgr;
-        $this->downloadManager = $dlMgr;
         $this->doctrine = $doctrine;
     }
 
@@ -45,7 +41,7 @@ class Controller extends AbstractController
      * @param array<Package|array{id: int}> $packages
      * @return array{downloads: array<int, int>, favers: array<int, int>}
      */
-    protected function getPackagesMetadata($packages): array
+    protected function getPackagesMetadata(FavoriteManager $favMgr, DownloadManager $dlMgr, iterable $packages): array
     {
         $downloads = [];
         $favorites = [];
@@ -58,7 +54,7 @@ class Controller extends AbstractController
                 if ($package instanceof Package) {
                     $ids[] = $package->getId();
                     // fetch one by one to avoid re-fetching the github stars as we already have them on the package object
-                    $favorites[$package->getId()] = $this->favoriteManager->getFaverCount($package);
+                    $favorites[$package->getId()] = $favMgr->getFaverCount($package);
                 } elseif (is_array($package)) {
                     $ids[] = $package['id'];
                     // fetch all in one query if we do not have objects
@@ -68,9 +64,9 @@ class Controller extends AbstractController
                 }
             }
 
-            $downloads = $this->downloadManager->getPackagesDownloads($ids);
+            $downloads = $dlMgr->getPackagesDownloads($ids);
             if ($search) {
-                $favorites = $this->favoriteManager->getFaverCounts($ids);
+                $favorites = $favMgr->getFaverCounts($ids);
             }
         } catch (\Predis\Connection\ConnectionException $e) {}
 

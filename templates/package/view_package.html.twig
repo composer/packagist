@@ -122,7 +122,7 @@
                                 </form>
                             {% endif %}
                         </div>
-                        {% if lastJobWarning is not empty %}
+                        {% if lastJobWarning is defined and lastJobWarning is not empty %}
                             <p class="alert alert-danger">{{ lastJobWarning|raw }} <br /> <a href="#" data-msg="{{ lastJobMsg }}" data-details="{{ lastJobDetails }}" class="view-log">View Last Update Log</a></p>
                         {% endif %}
                     {% endif %}

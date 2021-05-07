@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Util\Killswitch;
+use App\Model\DownloadManager;
+use App\Model\FavoriteManager;
 use Composer\Package\Version\VersionParser;
 use Composer\Semver\Constraint\Constraint;
 use DateTimeImmutable;
@@ -50,12 +52,16 @@ class PackageController extends Controller
     private ProviderManager $providerManager;
     private PackageManager $packageManager;
     private Scheduler $scheduler;
+    private FavoriteManager $favoriteManager;
+    private DownloadManager $downloadManager;
 
-    public function __construct(ProviderManager $providerManager, PackageManager $packageManager, Scheduler $scheduler)
+    public function __construct(ProviderManager $providerManager, PackageManager $packageManager, Scheduler $scheduler, FavoriteManager $favoriteManager, DownloadManager $downloadManager)
     {
         $this->providerManager = $providerManager;
         $this->packageManager = $packageManager;
         $this->scheduler = $scheduler;
+        $this->downloadManager = $downloadManager;
+        $this->favoriteManager = $favoriteManager;
     }
 
     /**
@@ -72,7 +78,7 @@ class PackageController extends Controller
     public function listAction(Request $req)
     {
         $repo = $this->getEM()->getRepository(Package::class);
-        $fields = (array) $req->query->get('fields', []);
+        $fields = (array) $req->query->get('fields');
         $fields = array_intersect($fields, ['repository', 'type']);
 
         if ($fields) {
@@ -302,7 +308,7 @@ class PackageController extends Controller
 
         return [
             'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
+            'meta' => $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $packages),
             'vendor' => $vendor,
             'paginate' => false,
         ];
@@ -397,7 +403,7 @@ class PackageController extends Controller
         return $this->render('package/providers.html.twig', [
             'name' => $name,
             'packages' => $providers,
-            'meta' => $this->getPackagesMetadata($providers),
+            'meta' => $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $providers),
             'paginate' => false,
         ]);
     }
@@ -416,7 +422,7 @@ class PackageController extends Controller
             throw new NotFoundHttpException();
         }
 
-        $page = max(1, (int) $req->query->get('page', 1));
+        $page = max(1, $req->query->getInt('page', 1));
 
         $repo = $this->getEM()->getRepository(Package::class);
         $count = $repo->getSuspectPackageCount();
@@ -429,7 +435,7 @@ class PackageController extends Controller
 
         $data['packages'] = $paginator;
         $data['count'] = $count;
-        $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['meta'] = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
         $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
 
         $vendorRepo = $this->getEM()->getRepository(Vendor::class);
@@ -817,10 +823,10 @@ class PackageController extends Controller
             $req->request->get('apiToken') :
             $req->query->get('apiToken');
 
-        $update = $req->request->get('update', $req->query->get('update'));
+        $update = $req->request->getBoolean('update', $req->query->getBoolean('update'));
         $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
-        $updateEqualRefs = (bool) $req->request->get('updateAll', $req->query->get('updateAll'));
-        $manualUpdate = (bool) $req->request->get('manualUpdate', $req->query->get('manualUpdate'));
+        $updateEqualRefs = $req->request->getBoolean('updateAll', $req->query->getBoolean('updateAll'));
+        $manualUpdate = $req->request->getBoolean('manualUpdate', $req->query->getBoolean('manualUpdate'));
 
         $user = $this->getUser() ?: $this->getEM()->getRepository(User::class)
             ->findOneBy(['usernameCanonical' => $username, 'apiToken' => $apiToken]);
@@ -839,7 +845,7 @@ class PackageController extends Controller
             }
 
             if (null !== $autoUpdated) {
-                $package->setAutoUpdated($autoUpdated ? Package::AUTO_MANUAL_HOOK : 0);
+                $package->setAutoUpdated(filter_var($autoUpdated, FILTER_VALIDATE_BOOLEAN) ? Package::AUTO_MANUAL_HOOK : 0);
                 $this->getEM()->flush();
             }
 
@@ -920,7 +926,7 @@ class PackageController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $em = $this->getEM();
-                $user = $form->getData()->getUser();
+                $user = $em->getRepository(User::class)->findOneByUsernameOrEmail($form->getData()->getUser());
 
                 if (!empty($user)) {
                     if (!$package->getMaintainers()->contains($user)) {
@@ -942,7 +948,7 @@ class PackageController extends Controller
             }
         }
 
-        return $data;
+        return $this->redirectToRoute('view_package', ['name' => $name]);
     }
 
     /**
@@ -1172,7 +1178,7 @@ class PackageController extends Controller
         if (!Killswitch::LINKS_ENABLED) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
-        $page = max(1, (int) $req->query->get('page', 1));
+        $page = max(1, $req->query->getInt('page', 1));
         $perPage = 15;
         $orderBy = $req->query->get('order_by', 'name');
 
@@ -1193,7 +1199,7 @@ class PackageController extends Controller
             $data = [
                 'packages' => $paginator->getCurrentPageResults(),
             ];
-            $meta = $this->getPackagesMetadata($data['packages']);
+            $meta = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
             foreach ($data['packages'] as $index => $package) {
                 $data['packages'][$index]['downloads'] = $meta['downloads'][$package['id']];
                 $data['packages'][$index]['favers'] = $meta['favers'][$package['id']];
@@ -1211,7 +1217,7 @@ class PackageController extends Controller
         $data['packages'] = $paginator;
         $data['count'] = $depCount;
 
-        $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['meta'] = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
         $data['name'] = $name;
         $data['order_by'] = $orderBy;
 
@@ -1231,7 +1237,7 @@ class PackageController extends Controller
         if (!Killswitch::LINKS_ENABLED) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
-        $page = max(1, (int) $req->query->get('page', 1));
+        $page = max(1, $req->query->getInt('page', 1));
         $perPage = 15;
 
         if ($req->getRequestFormat() === 'json') {
@@ -1251,7 +1257,7 @@ class PackageController extends Controller
             $data = [
                 'packages' => $paginator->getCurrentPageResults(),
             ];
-            $meta = $this->getPackagesMetadata($data['packages']);
+            $meta = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
             foreach ($data['packages'] as $index => $package) {
                 $data['packages'][$index]['downloads'] = $meta['downloads'][$package['id']];
                 $data['packages'][$index]['favers'] = $meta['favers'][$package['id']];
@@ -1267,7 +1273,7 @@ class PackageController extends Controller
         $data['packages'] = $paginator;
         $data['count'] = $suggestCount;
 
-        $data['meta'] = $this->getPackagesMetadata($data['packages']);
+        $data['meta'] = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
         $data['name'] = $name;
 
         return $this->render('package/suggesters.html.twig', $data);

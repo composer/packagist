@@ -25,7 +25,22 @@ class UserRepository extends ServiceEntityRepository
         parent::__construct($registry, User::class);
     }
 
-    public function findUsersMissingApiToken()
+    public function findOneByUsernameOrEmail(string $usernameOrEmail): ?User
+    {
+        if (preg_match('/^.+\@\S+\.\S+$/', $usernameOrEmail)) {
+            $user = $this->findOneBy(['emailCanonical' => $usernameOrEmail]);
+            if (null !== $user) {
+                return $user;
+            }
+        }
+
+        return $this->findOneBy(['usernameCanonical' => $usernameOrEmail]);
+    }
+
+    /**
+     * @return list<User>
+     */
+    public function findUsersMissingApiToken(): array
     {
         $qb = $this->createQueryBuilder('u')
             ->where('u.apiToken IS NULL');

@@ -15,6 +15,7 @@ namespace App\Controller;
 use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
 use App\Entity\User;
+use App\Model\DownloadManager;
 use App\Model\ProviderManager;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
@@ -191,7 +192,7 @@ class ApiController extends Controller
     /**
      * @Route("/downloads/{name}", name="track_download", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function trackDownloadAction(Request $request, $name)
+    public function trackDownloadAction(Request $request, string $name, DownloadManager $downloadManager)
     {
         $result = $this->getPackageAndVersionId($name, $request->request->get('version_normalized'));
 
@@ -199,7 +200,7 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 200);
         }
 
-        $this->downloadManager->addDownloads([['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $request->getClientIp()]]);
+        $downloadManager->addDownloads([['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $request->getClientIp()]]);
 
         return new JsonResponse(['status' => 'success'], 201);
     }
@@ -226,7 +227,7 @@ class ApiController extends Controller
      *
      * @Route("/downloads/", name="track_download_batch", defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function trackDownloadsAction(Request $request, StatsDClient $statsd, string $trustedIpHeader)
+    public function trackDownloadsAction(Request $request, StatsDClient $statsd, string $trustedIpHeader, DownloadManager $downloadManager)
     {
         $contents = json_decode($request->getContent(), true);
         if (empty($contents['downloads']) || !is_array($contents['downloads'])) {
@@ -268,7 +269,7 @@ class ApiController extends Controller
                     $statsd->increment('installs.invalid-ua');
                 }
             } else {
-                $this->downloadManager->addDownloads($jobs);
+                $downloadManager->addDownloads($jobs);
 
                 $statsd->increment('installs', 1, 1, [
                     'composer' => $uaParser->getComposerVersion() ?: 'unknown',

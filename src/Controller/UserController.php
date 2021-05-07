@@ -12,9 +12,8 @@
 
 namespace App\Controller;
 
+use App\Model\FavoriteManager;
 use Doctrine\ORM\NoResultException;
-use FOS\UserBundle\Model\UserInterface;
-use FOS\UserBundle\Model\UserManagerInterface;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\Version;
@@ -41,6 +40,8 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Predis\Client as RedisClient;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Security\Http\Event\LogoutEvent;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -57,22 +58,6 @@ class UserController extends Controller
     }
 
     /**
-     * @Template()
-     * @Route("/users/{name}/packages/", name="user_packages")
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
-     */
-    public function packagesAction(Request $req, User $user)
-    {
-        $packages = $this->getUserPackages($req, $user);
-
-        return [
-            'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
-            'user' => $user,
-        ];
-    }
-
-    /**
      * @Route("/trigger-github-sync/", name="user_github_sync")
      */
     public function triggerGitHubSyncAction()
@@ -85,13 +70,13 @@ class UserController extends Controller
         if (!$user->getGithubToken()) {
             $this->addFlash('error', 'You must connect your user account to github to sync packages.');
 
-            return $this->redirectToRoute('fos_user_profile_show');
+            return $this->redirectToRoute('my_profile');
         }
 
         if (!$user->getGithubScope()) {
             $this->addFlash('error', 'Please log out and log in with GitHub again to make sure the correct GitHub permissions are granted.');
 
-            return $this->redirectToRoute('fos_user_profile_show');
+            return $this->redirectToRoute('my_profile');
         }
 
         $this->scheduler->scheduleUserScopeMigration($user->getId(), '', $user->getGithubScope());
@@ -100,14 +85,14 @@ class UserController extends Controller
 
         $this->addFlash('success', 'User sync scheduled. It might take a few seconds to run through, make sure you refresh then to check if any packages still need sync.');
 
-        return $this->redirectToRoute('fos_user_profile_show');
+        return $this->redirectToRoute('my_profile');
     }
 
     /**
      * @Route("/spammers/{name}/", name="mark_spammer", methods={"POST"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
-    public function markSpammerAction(Request $req, User $user, UserManagerInterface $userManager)
+    public function markSpammerAction(Request $req, User $user)
     {
         if (!$this->isGranted('ROLE_ANTISPAM')) {
             throw new AccessDeniedException('This user can not mark others as spammers');
@@ -119,10 +104,10 @@ class UserController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             $user->addRole('ROLE_SPAMMER');
             $user->setEnabled(false);
-            $userManager->updateUser($user);
-            $doctrine = $this->doctrine;
 
-            $doctrine->getConnection()->executeUpdate(
+            $em = $this->getEM();
+
+            $em->getConnection()->executeStatement(
                 'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id
                  SET abandoned = 1, replacementPackage = "spam/spam", suspect = "spam", indexedAt = NULL, dumpedAt = "2100-01-01 00:00:00"
                  WHERE mp.user_id = :userId',
@@ -130,8 +115,8 @@ class UserController extends Controller
             );
 
             /** @var VersionRepository $versionRepo */
-            $versionRepo = $doctrine->getRepository(Version::class);
-            $packages = $doctrine
+            $versionRepo = $em->getRepository(Version::class);
+            $packages = $em
                 ->getRepository(Package::class)
                 ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true)
                 ->getQuery()->getResult();
@@ -144,7 +129,7 @@ class UserController extends Controller
                 $this->providerManager->deletePackage($package);
             }
 
-            $this->doctrine->getManager()->flush();
+            $this->getEM()->flush();
 
             $this->addFlash('success', $user->getUsername().' has been marked as a spammer');
         }
@@ -155,88 +140,11 @@ class UserController extends Controller
     }
 
     /**
-     * @param Request $req
-     * @return Response
-     */
-    public function viewProfileAction(Request $req)
-    {
-        $user = $this->getUser();
-        if (!is_object($user) || !$user instanceof UserInterface) {
-            throw new AccessDeniedException('This user does not have access to this section.');
-        }
-
-        $packages = $this->getUserPackages($req, $user);
-        $lastGithubSync = $this->doctrine->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
-
-        $data = [
-            'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
-            'user' => $user,
-            'githubSync' => $lastGithubSync,
-        ];
-
-        if (!count($packages)) {
-            $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
-        }
-
-        return $this->render(
-            '@FOSUser/Profile/show.html.twig',
-            $data
-        );
-    }
-
-    /**
-     * @Template()
-     * @Route("/users/{name}/", name="user_profile")
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
-     */
-    public function profileAction(Request $req, User $user)
-    {
-        $packages = $this->getUserPackages($req, $user);
-
-        $data = [
-            'packages' => $packages,
-            'meta' => $this->getPackagesMetadata($packages),
-            'user' => $user,
-        ];
-
-        if ($this->isGranted('ROLE_ANTISPAM')) {
-            $data['spammerForm'] = $this->createFormBuilder([])->getForm()->createView();
-        }
-        if (!count($packages) && ($this->isGranted('ROLE_ADMIN') || ($this->getUser() && $this->getUser()->getId() === $user->getId()))) {
-            $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
-        }
-
-        return $data;
-    }
-
-    /**
-     * @Route("/oauth/github/disconnect", name="user_github_disconnect")
-     */
-    public function disconnectGitHubAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager)
-    {
-        $user = $this->getUser();
-        $token = $csrfTokenManager->getToken('unlink_github')->getValue();
-        if (!hash_equals($token, $req->query->get('token', '')) || !$user) {
-            throw new AccessDeniedException('Invalid CSRF token');
-        }
-
-        if ($user->getGithubId()) {
-            $user->setGithubId(null);
-            $user->setGithubToken(null);
-            $user->setGithubScope(null);
-            $this->doctrine->getManager()->flush();
-        }
-
-        return $this->redirectToRoute('fos_user_profile_edit');
-    }
-
-    /**
      * @Template()
      * @Route("/users/{name}/favorites/", name="user_favorites", methods={"GET"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
-    public function favoritesAction(Request $req, User $user, LoggerInterface $logger, RedisClient $redis)
+    public function favoritesAction(Request $req, User $user, LoggerInterface $logger, RedisClient $redis, FavoriteManager $favoriteManager)
     {
         try {
             if (!$redis->isConnected()) {
@@ -250,7 +158,7 @@ class UserController extends Controller
         }
 
         $paginator = new Pagerfanta(
-            new RedisAdapter($this->favoriteManager, $user, 'getFavorites', 'getFavoriteCount')
+            new RedisAdapter($favoriteManager, $user, 'getFavorites', 'getFavoriteCount')
         );
 
         $paginator->setNormalizeOutOfRangePages(true);
@@ -262,9 +170,9 @@ class UserController extends Controller
 
     /**
      * @Route("/users/{name}/favorites/", name="user_add_fav", defaults={"_format" = "json"}, methods={"POST"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
-    public function postFavoriteAction(Request $req, User $user)
+    public function postFavoriteAction(Request $req, User $user, FavoriteManager $favoriteManager)
     {
         if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You can only change your own favorites');
@@ -272,39 +180,39 @@ class UserController extends Controller
 
         $package = $req->request->get('package');
         try {
-            $package = $this->doctrine
+            $package = $this->getEM()
                 ->getRepository(Package::class)
                 ->findOneBy(['name' => $package]);
         } catch (NoResultException $e) {
             throw new NotFoundHttpException('The given package "'.$package.'" was not found.');
         }
 
-        $this->favoriteManager->markFavorite($user, $package);
+        $favoriteManager->markFavorite($user, $package);
 
         return new Response('{"status": "success"}', 201);
     }
 
     /**
      * @Route("/users/{name}/favorites/{package}", name="user_remove_fav", defaults={"_format" = "json"}, requirements={"package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}, methods={"DELETE"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      * @ParamConverter("package", options={"mapping": {"package": "name"}})
      */
-    public function deleteFavoriteAction(User $user, Package $package)
+    public function deleteFavoriteAction(User $user, Package $package, FavoriteManager $favoriteManager)
     {
         if (!$this->getUser() || $user->getId() !== $this->getUser()->getId()) {
             throw new AccessDeniedException('You can only change your own favorites');
         }
 
-        $this->favoriteManager->removeFavorite($user, $package);
+        $favoriteManager->removeFavorite($user, $package);
 
         return new Response('{"status": "success"}', 204);
     }
 
     /**
-     * @Route("/users/{name}/delete", name="user_delete", defaults={"_format" = "json"}, methods={"POST"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @Route("/users/{name}/delete", name="user_delete", methods={"POST"})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
-    public function deleteUserAction(User $user, Request $req, TokenStorageInterface $storage)
+    public function deleteUserAction(User $user, Request $req, TokenStorageInterface $storage, EventDispatcherInterface $mainEventDispatcher)
     {
         if (!($this->isGranted('ROLE_ADMIN') || ($this->getUser() && $user->getId() === $this->getUser()->getId()))) {
             throw new AccessDeniedException('You cannot delete this user');
@@ -318,10 +226,17 @@ class UserController extends Controller
 
         $form->submit($req->request->get('form'));
         if ($form->isSubmitted() && $form->isValid()) {
-            $em = $this->doctrine->getManager();
+            $em = $this->getEM();
             $em->remove($user);
             $em->flush();
 
+            // programmatic logout
+            $logoutEvent = new LogoutEvent($req, $storage->getToken());
+            $mainEventDispatcher->dispatch($logoutEvent);
+            $response = $logoutEvent->getResponse();
+            if (!$response instanceof Response) {
+                throw new \RuntimeException('No logout listener set the Response, make sure at least the DefaultLogoutListener is registered.');
+            }
             $storage->setToken(null);
 
             return $this->redirectToRoute('home');
@@ -333,7 +248,7 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/2fa/", name="user_2fa_configure", methods={"GET"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function configureTwoFactorAuthAction(User $user, Request $req)
     {
@@ -351,7 +266,7 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/2fa/enable", name="user_2fa_enable", methods={"GET", "POST"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function enableTwoFactorAuthAction(Request $req, User $user, TotpAuthenticatorInterface $authenticator, TwoFactorAuthManager $authManager)
     {
@@ -391,7 +306,7 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/2fa/confirm", name="user_2fa_confirm", methods={"GET"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function confirmTwoFactorAuthAction(User $user, Request $req)
     {
@@ -411,7 +326,7 @@ class UserController extends Controller
     /**
      * @Template()
      * @Route("/users/{name}/2fa/disable", name="user_2fa_disable", methods={"GET"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
+     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
     public function disableTwoFactorAuthAction(Request $req, User $user, CsrfTokenManagerInterface $csrfTokenManager, TwoFactorAuthManager $authManager)
     {
@@ -429,24 +344,5 @@ class UserController extends Controller
         }
 
         return ['user' => $user];
-    }
-
-    /**
-     * @param Request $req
-     * @param User $user
-     * @return Pagerfanta
-     */
-    protected function getUserPackages($req, $user)
-    {
-        $packages = $this->doctrine
-            ->getRepository(Package::class)
-            ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true);
-
-        $paginator = new Pagerfanta(new QueryAdapter($packages, true));
-        $paginator->setNormalizeOutOfRangePages(true);
-        $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)));
-
-        return $paginator;
     }
 }

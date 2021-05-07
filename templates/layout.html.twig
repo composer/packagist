@@ -89,7 +89,7 @@
                         {%- if app.user %}
                             <li class="nav-user">
                                 <section>
-                                    <a class="username-link" title="{{  app.user.username }}" href="{{ path('fos_user_profile_show') }}">{{ app.user.username }}</a>
+                                    <a class="username-link" title="{{  app.user.username }}" href="{{ path('my_profile') }}">{{ app.user.username }}</a>
 
                                     <section class="nav-user-menu">
                                         {{ knp_menu_render('user_menu', {'allow_safe_labels': true}) }}
@@ -103,27 +103,26 @@
                             </li>
                         {%- else %}
                             <li>
-                                <a href="{{ path('fos_user_registration_register') }}">{{ 'menu.create_account'|trans }}</a>
+                                <a href="{{ path('register') }}">{{ 'menu.create_account'|trans }}</a>
                             </li>
                             <li class="nav-user">
                                 <section class="nav-user-signin">
-                                    <a href="{{ path('hwi_oauth_connect') }}">{{ 'menu.sign_in'|trans }}</a>
+                                    <a href="{{ path('login') }}">{{ 'menu.sign_in'|trans }}</a>
 
                                     <section class="signin-box">
                                         <form action="{{ path('login') }}" method="POST" id="nav_login">
                                             <div class="input-group">
-                                                <input class="form-control" type="text" id="_username" name="_username" placeholder="{{ 'security.login.username'|trans({}, 'FOSUserBundle') }}">
+                                                <input class="form-control" type="text" id="_username" name="_username" placeholder="Username / Email">
                                                 <span class="input-group-addon"><span class="icon-user"></span></span>
                                             </div>
                                             <div class="input-group">
-                                                <input class="form-control" type="password" id="_password" name="_password" placeholder="{{ 'security.login.password'|trans({}, 'FOSUserBundle') }}">
+                                                <input class="form-control" type="password" id="_password" name="_password" placeholder="Password">
                                                 <span class="input-group-addon"><span class="icon-lock"></span></span>
                                             </div>
 
                                             <div class="checkbox">
                                                 <label for="_remember_me">
-                                                    <input type="checkbox" id="_remember_me" name="_remember_me" value="on" checked="checked" />
-                                                    {{- 'security.login.remember_me'|trans({}, 'FOSUserBundle') }}
+                                                    <input type="checkbox" id="_remember_me" name="_remember_me" value="on" checked="checked" /> Remember me
                                                 </label>
                                             </div>
 
@@ -132,13 +131,13 @@
                                             {%- endif %}
 
                                             <div class="signin-box-buttons">
-                                                <a href="{{ hwi_oauth_login_url('github') }}" class="pull-right btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
-                                                <button type="submit" class="btn btn-success" id="_submit_mini" name="_submit">{{ 'security.login.submit'|trans({}, 'FOSUserBundle') }}</button>
+                                                <a href="{{ path('login_github_start') }}" class="pull-right btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
+                                                <button type="submit" class="btn btn-success" id="_submit_mini" name="_submit">Log in</button>
                                             </div>
                                         </form>
 
                                         <div class="signin-box-register">
-                                            <a href="{{ path('fos_user_registration_register') }}">{{ 'signinbox.register'|trans }}</a>
+                                            <a href="{{ path('register') }}">{{ 'signinbox.register'|trans }}</a>
                                         </div>
                                     </section>
                                 </section>
@@ -158,15 +157,9 @@
                 <div class="container flash-container">
                 {%- for type, flashMessages in app.flashes() %}
                     {%- for flashMessage in flashMessages %}
-                        {%- if 'fos_user_' in type %}
-                            <div class="alert alert-{{ type|replace({'fos_user_': ''}) }}">
-                                <p>{{ flashMessage|trans({}, 'FOSUserBundle') }}</p>
-                            </div>
-                        {%- else %}
-                            <div class="alert alert-{{ type }}">
-                                <p>{{ flashMessage|trans }}</p>
-                            </div>
-                        {%- endif %}
+                        <div class="alert alert-{{ type }}">
+                            <p>{{ flashMessage|trans }}</p>
+                        </div>
                     {%- endfor %}
                 {%- endfor %}
                 </div>

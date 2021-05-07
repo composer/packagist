@@ -12,11 +12,13 @@
 
 namespace App\Form\Type;
 
-use FOS\UserBundle\Form\Type\ProfileFormType as BaseType;
-use FOS\UserBundle\Util\LegacyFormHelper;
+use App\Entity\User;
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormEvent;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Security\Core\Validator\Constraints\UserPassword;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -24,38 +26,43 @@ use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class ProfileFormType extends BaseType
+class ProfileFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $this->buildUserForm($builder, $options);
+        $builder
+            ->add('username', null, array('label' => 'Username'))
+            ->add('email', EmailType::class, array('label' => 'Email'))
+            ->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event) {
+                if (!($user = $event->getData())) {
+                    return;
+                }
 
-        $builder->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event) {
-            if (!($user = $event->getData())) {
-                return;
-            }
-
-            if (!$user->getGithubId()) {
-                $constraintsOptions = [
-                    'message' => 'fos_user.current_password.invalid',
-                ];
-
-                $event->getForm()->add('current_password', PasswordType::class, [
-                    'label' => 'form.current_password',
-                    'translation_domain' => 'FOSUserBundle',
-                    'mapped' => false,
-                    'constraints' => [
-                        new NotBlank(),
-                        new UserPassword($constraintsOptions),
-                    ],
-                    'attr' => [
-                        'autocomplete' => 'current-password',
-                    ],
-                ]);
-            }
-        });
+                if (!$user->getGithubId()) {
+                    $event->getForm()->add('current_password', PasswordType::class, [
+                        'label' => 'Current password',
+                        'translation_domain' => 'FOSUserBundle',
+                        'mapped' => false,
+                        'constraints' => [
+                            new NotBlank(),
+                            new UserPassword(),
+                        ],
+                        'attr' => [
+                            'autocomplete' => 'current-password',
+                        ],
+                    ]);
+                }
+            });
 
         $builder->add('failureNotifications', null, ['required' => false, 'label' => 'Notify me of package update failures']);
+    }
+
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults(array(
+            'data_class' => User::class,
+            'csrf_token_id' => 'profile',
+        ));
     }
 
     /**

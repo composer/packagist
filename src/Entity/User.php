@@ -13,93 +13,124 @@
 namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
-use FOS\UserBundle\Model\User as BaseUser;
 use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Serializable;
+use DateTimeInterface;
 
 /**
  * @ORM\Entity(repositoryClass="App\Entity\UserRepository")
  * @ORM\Table(name="fos_user")
- * @ORM\AttributeOverrides({
- *     @ORM\AttributeOverride(name="username",
- *         column=@ORM\Column(
- *             name="username",
- *             type="string",
- *             length=191
- *         )
- *     ),
- *     @ORM\AttributeOverride(name="usernameCanonical",
- *         column=@ORM\Column(
- *             name="username_canonical",
- *             type="string",
- *             length=191,
- *             unique=true
- *         )
- *     ),
- *     @ORM\AttributeOverride(name="email",
- *         column=@ORM\Column(
- *             name="email",
- *             type="string",
- *             length=191
- *         )
- *     ),
- *     @ORM\AttributeOverride(name="emailCanonical",
- *         column=@ORM\Column(
- *             name="email_canonical",
- *             type="string",
- *             length=191,
- *             unique=true
- *         )
- *     )
- * })
+ * @UniqueEntity(fields={"usernameCanonical"}, message="There is already an account with this username", errorPath="username")
+ * @UniqueEntity(fields={"emailCanonical"}, message="There is already an account with this email", errorPath="email")
  */
-class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface, EquatableInterface
+class User implements UserInterface, Serializable, TwoFactorInterface, BackupCodeInterface, EquatableInterface
 {
     /**
      * @ORM\Id
+     * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue(strategy="AUTO")
      */
-    protected $id;
+    private $id;
 
     /**
-     * @Assert\Length(
-     *     min=2,
-     *     max=180,
-     *     groups={"Profile", "Registration"}
-     * )
+     * @ORM\Column(type="string", length=191)
+     * @Assert\Length(min=2, max=191, groups={"Profile", "Registration"})
      * @Assert\Regex(
      *     pattern="{^[^/""\r\n><#\[\]]{2,100}$}",
      *     message="Username invalid, /""\r\n><#[] are not allowed",
      *     groups={"Profile", "Registration"}
      * )
-     * @Assert\NotBlank(
-     *     message="fos_user.username.blank",
-     *     groups={"Profile", "Registration"}
-     * )
+     * @Assert\NotBlank(groups={"Profile", "Registration"})
+     * @var string
      */
-    protected $username;
+    private $username;
+
+    /**
+     * @ORM\Column(type="string", name="username_canonical", length=191, unique=true)
+     * @var string
+     */
+    private $usernameCanonical;
+
+    /**
+     * @ORM\Column(type="string", length=191)
+     * @Assert\Length(min=2, max=191, groups={"Profile", "Registration"})
+     * @Assert\Email(groups={"Profile", "Registration"})
+     * @Assert\NotBlank(groups={"Profile", "Registration"})
+     */
+    private $email;
+
+    /**
+     * @ORM\Column(type="string", name="email_canonical", length=191, unique=true)
+     * @var string
+     */
+    private $emailCanonical;
+
+    /**
+     * @ORM\Column(type="boolean")
+     * @var bool
+     */
+    private $enabled = false;
+
+    /**
+     * @ORM\Column(type="array")
+     */
+    private $roles = [];
+
+    /**
+     * @var string The hashed password
+     * @ORM\Column(type="string")
+     */
+    private $password;
+
+    /**
+     * The salt to use for hashing.
+     *
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private ?string $salt = null;
+
+    /**
+     * @ORM\Column(type="datetime", name="last_login", nullable=true)
+     * @var \DateTime|null
+     */
+    private $lastLogin;
+
+    /**
+     * Random string sent to the user email address in order to verify it.
+     *
+     * @ORM\Column(type="string", name="confirmation_token", length=180, nullable=true, unique=true)
+     */
+    private ?string $confirmationToken = null;
+
+    /**
+     * @ORM\Column(type="datetime", name="password_requested_at", nullable=true)
+     */
+    private ?DateTimeInterface $passwordRequestedAt = null;
 
     /**
      * @ORM\ManyToMany(targetEntity="Package", mappedBy="maintainers")
+     * @var Collection<Package>
      */
     private $packages;
 
     /**
      * @ORM\Column(type="datetime")
      */
-    private $createdAt;
+    private DateTimeInterface $createdAt;
 
     /**
-     * @ORM\Column(type="string", length=20, nullable=true)
+     * @ORM\Column(type="string", length=20)
      */
-    private ?string $apiToken = null;
+    private string $apiToken;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
@@ -123,24 +154,29 @@ class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface, 
 
     /**
      * @ORM\Column(name="totpSecret", type="string", nullable=true)
-     * @var string|null
      */
-    private $totpSecret;
+    private ?string $totpSecret = null;
 
     /**
      * @ORM\Column(type="string", length=8, nullable=true)
-     * @var string|null
      */
-    private $backupCode;
+    private ?string $backupCode = null;
 
     public function __construct()
     {
+        $this->enabled = false;
+        $this->roles = array();
         $this->packages = new ArrayCollection();
-        $this->createdAt = new \DateTime();
-        parent::__construct();
+        $this->createdAt = new \DateTimeImmutable();
+        $this->salt = hash('sha256', random_bytes(40));
     }
 
-    public function toArray()
+    public function __toString(): string
+    {
+        return (string) $this->getUsername();
+    }
+
+    public function toArray(): array
     {
         return [
             'name' => $this->getUsername(),
@@ -148,191 +184,104 @@ class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface, 
         ];
     }
 
-    /**
-     * Add packages
-     *
-     * @param Package $packages
-     */
-    public function addPackages(Package $packages)
+    public function addPackage(Package $packages)
     {
         $this->packages[] = $packages;
     }
 
     /**
-     * Get packages
-     *
-     * @return Package[]
+     * @return Collection<Package>
      */
-    public function getPackages()
+    public function getPackages(): Collection
     {
         return $this->packages;
     }
 
-    /**
-     * Set createdAt
-     *
-     * @param \DateTime $createdAt
-     */
-    public function setCreatedAt($createdAt)
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    /**
-     * Get createdAt
-     *
-     * @return \DateTime
-     */
-    public function getCreatedAt()
+    public function getCreatedAt(): DateTimeInterface
     {
         return $this->createdAt;
     }
 
-    /**
-     * Set apiToken
-     *
-     * @param string $apiToken
-     */
-    public function setApiToken($apiToken)
+    public function setApiToken(string $apiToken): void
     {
         $this->apiToken = $apiToken;
     }
 
-    /**
-     * Get apiToken
-     *
-     * @return string
-     */
-    public function getApiToken()
+    public function getApiToken(): string
     {
         return $this->apiToken;
     }
 
-    /**
-     * Get githubId.
-     *
-     * @return string
-     */
-    public function getGithubId()
+    public function getGithubId(): ?string
     {
         return $this->githubId;
     }
 
-    /**
-     * Get githubId.
-     *
-     * @return string
-     */
-    public function getGithubUsername()
+    public function getGithubUsername(): ?string
     {
         if ($this->githubId) {
             if (!$this->githubToken) {
-                return false;
+                return null;
             }
 
             $ctxt = ['http' => ['header' => ['User-Agent: packagist.org', 'Authorization: token '.$this->githubToken]]];
             $res = @file_get_contents('https://api.github.com/user', false, stream_context_create($ctxt));
             if (!$res || !($res = json_decode($res, true))) {
-                return false;
+                return null;
             }
 
             return $res['login'];
         }
 
-        return false;
+        return null;
     }
 
-    /**
-     * Set githubId.
-     *
-     * @param string $githubId
-     */
-    public function setGithubId($githubId)
+    public function setGithubId(?string $githubId): void
     {
         $this->githubId = $githubId;
     }
 
-    /**
-     * Get githubToken.
-     *
-     * @return string
-     */
-    public function getGithubToken()
+    public function getGithubToken(): ?string
     {
         return $this->githubToken;
     }
 
-    /**
-     * Set githubToken.
-     *
-     * @param string $githubToken
-     */
-    public function setGithubToken($githubToken)
+    public function setGithubToken(?string $githubToken): void
     {
         $this->githubToken = $githubToken;
     }
 
-    /**
-     * Get githubScope.
-     *
-     * @return string
-     */
-    public function getGithubScope()
+    public function getGithubScope(): ?string
     {
         return $this->githubScope;
     }
 
-    /**
-     * Set githubScope.
-     *
-     * @param string $githubScope
-     */
-    public function setGithubScope($githubScope)
+    public function setGithubScope(?string $githubScope): void
     {
         $this->githubScope = $githubScope;
     }
 
-    /**
-     * Set failureNotifications
-     *
-     * @param Boolean $failureNotifications
-     */
-    public function setFailureNotifications($failureNotifications)
+    public function setFailureNotifications(bool $failureNotifications): void
     {
         $this->failureNotifications = $failureNotifications;
     }
 
-    /**
-     * Get failureNotifications
-     *
-     * @return Boolean
-     */
-    public function getFailureNotifications()
+    public function getFailureNotifications(): bool
     {
         return $this->failureNotifications;
     }
 
-    /**
-     * Get failureNotifications
-     *
-     * @return Boolean
-     */
-    public function isNotifiableForFailures()
+    public function isNotifiableForFailures(): bool
     {
         return $this->failureNotifications;
     }
 
-    /**
-     * Get Gravatar Url
-     *
-     * @return string
-     */
-    public function getGravatarUrl()
+    public function getGravatarUrl(): string
     {
         return 'https://www.gravatar.com/avatar/'.md5(strtolower($this->getEmail())).'?d=identicon';
     }
 
-    public function setTotpSecret(?string $secret)
+    public function setTotpSecret(?string $secret): void
     {
         $this->totpSecret = $secret;
     }
@@ -372,6 +321,187 @@ class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface, 
         $this->backupCode = $code;
     }
 
+    public function addRole(string $role): void
+    {
+        $role = strtoupper($role);
+        if ($role === 'ROLE_USER') {
+            return;
+        }
+
+        if (!in_array($role, $this->roles, true)) {
+            $this->roles[] = $role;
+        }
+    }
+
+    public function serialize()
+    {
+        return serialize(array(
+            $this->password,
+            $this->salt,
+            $this->usernameCanonical,
+            $this->username,
+            $this->enabled,
+            $this->id,
+            $this->email,
+            $this->emailCanonical,
+        ));
+    }
+
+    public function unserialize($serialized)
+    {
+        $data = unserialize($serialized);
+
+        list(
+            $this->password,
+            $this->salt,
+            $this->usernameCanonical,
+            $this->username,
+            $this->enabled,
+            $this->id,
+            $this->email,
+            $this->emailCanonical
+        ) = $data;
+    }
+
+    public function eraseCredentials()
+    {
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
+
+    public function getUsernameCanonical(): ?string
+    {
+        return $this->usernameCanonical;
+    }
+
+    public function getSalt(): ?string
+    {
+        return $this->salt;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function getEmailCanonical(): ?string
+    {
+        return $this->emailCanonical;
+    }
+
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    public function getLastLogin(): ?DateTimeInterface
+    {
+        return $this->lastLogin;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getRoles(): array
+    {
+        $roles = $this->roles;
+
+        // we need to make sure to have at least one role
+        $roles[] = 'ROLE_USER';
+
+        return array_values(array_unique($roles));
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return in_array(strtoupper($role), $this->getRoles(), true);
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function removeRole(string $role): void
+    {
+        if (false !== $key = array_search(strtoupper($role), $this->roles, true)) {
+            unset($this->roles[$key]);
+            $this->roles = array_values($this->roles);
+        }
+    }
+
+    public function setUsername(?string $username)
+    {
+        $this->username = $username;
+        $this->setUsernameCanonical($username);
+    }
+
+    public function setUsernameCanonical(?string $usernameCanonical): void
+    {
+        $this->usernameCanonical = null === $usernameCanonical ? null : mb_strtolower($usernameCanonical);
+    }
+
+    public function setSalt($salt): void
+    {
+        $this->salt = $salt;
+    }
+
+    public function setEmail(?string $email): void
+    {
+        $this->email = $email;
+        $this->setEmailCanonical($email);
+    }
+
+    public function setEmailCanonical(?string $emailCanonical): void
+    {
+        $this->emailCanonical = null === $emailCanonical ? null : mb_strtolower($emailCanonical);
+    }
+
+    public function setEnabled(bool $boolean): void
+    {
+        $this->enabled = $boolean;
+    }
+
+    public function setPassword(?string $password): void
+    {
+        $this->password = $password;
+    }
+
+    public function setLastLogin(?DateTimeInterface $time = null): void
+    {
+        $this->lastLogin = $time;
+    }
+
+    public function setPasswordRequestedAt(?DateTimeInterface $date = null): void
+    {
+        $this->passwordRequestedAt = $date;
+    }
+
+    /**
+     * Gets the timestamp that the user requested a password reset.
+     */
+    public function getPasswordRequestedAt(): ?DateTimeInterface
+    {
+        return $this->passwordRequestedAt;
+    }
+
+    public function setRoles(array $roles): void
+    {
+        $this->roles = array();
+
+        foreach ($roles as $role) {
+            $this->addRole($role);
+        }
+    }
+
     public function isEqualTo(UserInterface $user)
     {
         if (!$user instanceof User) {
@@ -394,10 +524,31 @@ class User extends BaseUser implements TwoFactorInterface, BackupCodeInterface, 
             return false;
         }
 
-        if ($this->getSalt() !== $user->getSalt()) {
-            return false;
-        }
-
         return (!$this->getPassword() && !$user->getPassword()) || ($this->getPassword() && $user->getPassword() && hash_equals($this->getPassword(), $user->getPassword()));
+    }
+
+    public function initializeApiToken(): void
+    {
+        $this->apiToken = substr(hash('sha256', random_bytes(20)), 0, 20);
+    }
+
+    public function getConfirmationToken(): ?string
+    {
+        return $this->confirmationToken;
+    }
+
+    public function initializeConfirmationToken(): void
+    {
+        $this->confirmationToken = substr(hash('sha256', random_bytes(40)), 0, 40);
+    }
+
+    public function clearConfirmationToken(): void
+    {
+        $this->confirmationToken = null;
+    }
+
+    public function isPasswordRequestExpired(int $ttl): bool
+    {
+        return !$this->getPasswordRequestedAt() instanceof \DateTime || $this->getPasswordRequestedAt()->getTimestamp() + $ttl <= time();
     }
 }

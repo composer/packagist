@@ -1,0 +1,11 @@
+{% extends 'user/layout.html.twig' %}
+
+{% block title %}Password Reset Email Sent - {{ parent() }}{% endblock %}
+
+{% block user_content %}
+    <p>
+        An email has been sent that contains a link that you can click to reset your password.
+        This link will expire in 24 hours.
+    </p>
+    <p>If you don't receive an email please check your spam folder or <a href="{{ path('request_pwd_reset') }}">try again</a>.</p>
+{% endblock %}

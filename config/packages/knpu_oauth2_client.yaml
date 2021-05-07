@@ -1,0 +1,11 @@
+knpu_oauth2_client:
+    clients:
+        # the key "github" can be anything, it will create a service: "knpu.oauth2.client.github"
+        github:
+            type: github
+            client_id: '%env(APP_GITHUB_CLIENT_ID)%'
+            client_secret: '%env(APP_GITHUB_CLIENT_SECRET)%'
+            # the route that you're redirected to after
+            # see the controller example below
+            redirect_route: login_github_check
+            redirect_params: {}

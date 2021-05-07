@@ -140,9 +140,6 @@
     "ezyang/htmlpurifier": {
         "version": "v4.13.0"
     },
-    "friendsofsymfony/user-bundle": {
-        "version": "2.2.x-dev"
-    },
     "google/recaptcha": {
         "version": "1.1",
         "recipe": {
@@ -167,19 +164,6 @@
     "guzzlehttp/psr7": {
         "version": "1.7.0"
     },
-    "hwi/oauth-bundle": {
-        "version": "0.6",
-        "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
-            "version": "0.6",
-            "ref": "20cacc9b2da49d96ea55c8a8dd31324c5be88bc9"
-        },
-        "files": [
-            "config/packages/hwi_oauth.yaml",
-            "config/routes/hwi_oauth_routing.yaml"
-        ]
-    },
     "justinrainbow/json-schema": {
         "version": "5.2.10"
     },
@@ -191,6 +175,18 @@
     },
     "knplabs/knp-menu-bundle": {
         "version": "v3.1.0"
+    },
+    "knpuniversity/oauth2-client-bundle": {
+        "version": "1.20",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "master",
+            "version": "1.20",
+            "ref": "80acc9223a205cbf5d9828fd616c82a374d281dd"
+        },
+        "files": [
+            "config/packages/knpu_oauth2_client.yaml"
+        ]
     },
     "laminas/laminas-diagnostics": {
         "version": "1.6.0"
@@ -209,6 +205,12 @@
     },
     "lcobucci/jwt": {
         "version": "3.4.2"
+    },
+    "league/oauth2-client": {
+        "version": "2.6.0"
+    },
+    "league/oauth2-github": {
+        "version": "2.0.0"
     },
     "monolog/monolog": {
         "version": "1.26.0"
@@ -310,6 +312,9 @@
         "version": "1.0.1"
     },
     "psr/container": {
+        "version": "1.0.0"
+    },
+    "psr/event-dispatcher": {
         "version": "1.0.0"
     },
     "psr/http-client": {
@@ -416,9 +421,6 @@
     "symfony/css-selector": {
         "version": "v4.4.16"
     },
-    "symfony/debug": {
-        "version": "v4.4.16"
-    },
     "symfony/debug-bundle": {
         "version": "4.1",
         "recipe": {
@@ -510,9 +512,6 @@
         "version": "v4.4.16"
     },
     "symfony/http-kernel": {
-        "version": "v4.4.16"
-    },
-    "symfony/inflector": {
         "version": "v4.4.16"
     },
     "symfony/intl": {
@@ -664,9 +663,6 @@
     "symfony/string": {
         "version": "v5.2.1"
     },
-    "symfony/templating": {
-        "version": "v4.4.16"
-    },
     "symfony/translation": {
         "version": "3.3",
         "recipe": {
@@ -738,6 +734,9 @@
     },
     "symfony/yaml": {
         "version": "v4.4.16"
+    },
+    "symfonycasts/verify-email-bundle": {
+        "version": "v1.4.0"
     },
     "thecodingmachine/safe": {
         "version": "v1.3.3"
