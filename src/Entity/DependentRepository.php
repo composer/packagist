@@ -34,8 +34,7 @@ class DependentRepository extends ServiceEntityRepository
         $conn->beginTransaction();
 
         try {
-            $conn->executeStatement('DELETE FROM dependent WHERE package_id = :id', ['id' => $packageId]);
-            $conn->executeStatement('DELETE FROM suggester WHERE package_id = :id', ['id' => $packageId]);
+            $this->deletePackageDependentSuggesters($packageId);
 
             $conn->executeStatement(
                 'INSERT INTO dependent (package_id, packageName, type) SELECT DISTINCT :id, packageName, :type FROM link_require WHERE version_id = :version',
@@ -55,6 +54,13 @@ class DependentRepository extends ServiceEntityRepository
         }
 
         $conn->commit();
+    }
+
+    public function deletePackageDependentSuggesters(int $packageId)
+    {
+        $conn = $this->getEntityManager()->getConnection();
+        $conn->executeStatement('DELETE FROM dependent WHERE package_id = :id', ['id' => $packageId]);
+        $conn->executeStatement('DELETE FROM suggester WHERE package_id = :id', ['id' => $packageId]);
     }
 
     // /**

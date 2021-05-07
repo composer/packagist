@@ -13,6 +13,7 @@
 namespace App\Model;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
+use App\Entity\Dependent;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
 use App\Entity\Version;
@@ -83,6 +84,9 @@ class PackageManager
 
         $downloadRepo = $this->doctrine->getRepository(Download::class);
         $downloadRepo->deletePackageDownloads($package);
+
+        $dependentRepo = $this->doctrine->getRepository(Dependent::class);
+        $dependentRepo->deletePackageDependentSuggesters($package->getId());
 
         $emptyRefRepo = $this->doctrine->getRepository(EmptyReferenceCache::class);
         $emptyRef = $emptyRefRepo->findOneBy(['package' => $package]);
