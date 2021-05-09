@@ -16,14 +16,14 @@ use App\Entity\User;
 
 class MaintainerRequest
 {
-    protected $user;
+    private ?string $user = null;
 
     public function setUser(string $username)
     {
         $this->user = $username;
     }
 
-    public function getUser()
+    public function getUser(): ?string
     {
         return $this->user;
     }

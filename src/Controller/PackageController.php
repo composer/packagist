@@ -931,7 +931,9 @@ class PackageController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $em = $this->getEM();
-                $user = $em->getRepository(User::class)->findOneByUsernameOrEmail($form->getData()->getUser());
+                if ($username = $form->getData()->getUser()) {
+                    $user = $em->getRepository(User::class)->findOneByUsernameOrEmail($username);
+                }
 
                 if (!empty($user)) {
                     if (!$package->getMaintainers()->contains($user)) {
@@ -986,7 +988,9 @@ class PackageController extends Controller
         if ($removeMaintainerForm->isSubmitted() && $removeMaintainerForm->isValid()) {
             try {
                 $em = $this->getEM();
-                $user = $removeMaintainerForm->getData()->getUser();
+                if ($username = $removeMaintainerForm->getData()->getUser()) {
+                    $user = $em->getRepository(User::class)->findOneByUsernameOrEmail($username);
+                }
 
                 if (!empty($user)) {
                     if ($package->getMaintainers()->contains($user)) {
