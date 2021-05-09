@@ -661,7 +661,7 @@ class PackageController extends Controller
                 || $package->getMaintainers()->contains($this->getUser())
             )) {
             $data['deleteVersionCsrfToken'] = $csrfTokenManager->getToken('delete_version');
-            $lastJob = $this->getEM()->getRepository(Job::class)->findOneBy(['packageId' => $package->getId(), 'status' => [Job::STATUS_COMPLETED, Job::STATUS_ERRORED, Job::STATUS_FAILED], 'type' => 'package:updates'], ['createdAt' => 'DESC']);
+            $lastJob = $this->getEM()->getRepository(Job::class)->findLatestExecutedJob($package->getId(), 'package:updates');
             $data['lastJobWarning'] = null;
             $data['lastJobStatus'] = $lastJob ? $lastJob->getStatus() : null;
             $data['lastJobMsg'] = $lastJob ? $lastJob->getResult()['message'] ?? '' : null;

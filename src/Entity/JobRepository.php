@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 
 class JobRepository extends ServiceEntityRepository
@@ -58,5 +59,25 @@ class JobRepository extends ServiceEntityRepository
         while ($row = $stmt->fetchAssociative()) {
             yield $row['id'];
         }
+    }
+
+    public function findLatestExecutedJob(int $packageId, string $type): ?Job
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $id = $conn->fetchOne(
+            'SELECT id FROM job WHERE packageId = :package AND status IN (:statuses) AND type = :type',
+            [
+                'package' => $packageId,
+                'statuses' => [Job::STATUS_COMPLETED, Job::STATUS_ERRORED, Job::STATUS_FAILED],
+                'type' => $type,
+            ],
+            ['statuses' => Connection::PARAM_STR_ARRAY]
+        );
+        if ($id) {
+            return $this->find($id);
+        }
+
+        return null;
     }
 }
