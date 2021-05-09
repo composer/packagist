@@ -1,5 +1,7 @@
 {% extends 'user/layout.html.twig' %}
 
+{% set requiresRecaptcha = true %}
+
 {% block title %}Create account - {{ parent() }}{% endblock %}
 
 {% block user_content %}
@@ -13,7 +15,7 @@
         <div class="alert alert-danger" role="alert">{{ flashError }}</div>
     {% endfor %}
 
-    {{ form_start(registrationForm, {attr: {class: "register col-md-6"}}) }}
+    {{ form_start(registrationForm, {attr: {class: "register col-md-6", id: "register_form"}}) }}
         <div class="form-group clearfix">
             <label for="fos_user_registration_email">Email:</label>
             <div class="input-group clearfix">
@@ -41,6 +43,6 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-block btn-success btn-lg">Register</button>
+        <button type="submit" class="btn btn-block btn-success btn-lg" id="_register_submit">Register</button>
     {{ form_end(registrationForm) }}
 {% endblock %}

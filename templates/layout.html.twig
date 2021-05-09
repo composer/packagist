@@ -30,32 +30,24 @@
 
             <script type="text/javascript">
                 var onloadRecaptchaCallback = function() {
-                    if (document.getElementById('_submit')) {
-                        grecaptcha.render('_submit', {
-                            'sitekey' : '{{ recaptcha_site_key }}',
-                            'callback' : onPageLoginSubmit
-                        });
-                    }
-                    if (document.getElementById('_request_password_submit')) {
-                        grecaptcha.render('_request_password_submit', {
-                            'sitekey' : '{{ recaptcha_site_key }}',
-                            'callback' : onRequestPasswordSubmit
-                        });
-                    }
-                    grecaptcha.render('_submit_mini', {
-                        'sitekey' : '{{ recaptcha_site_key }}',
-                        'callback' : onNavLoginSubmit
+                    const forms = [
+                        {submit: '_submit', form: 'page_login'},
+                        {submit: '_request_password_submit', form: 'request_password'},
+                        {submit: '_register_submit', form: 'register_form'},
+                        {submit: '_submit_mini', form: 'nav_login'},
+                    ];
+
+                    forms.forEach(({submit, form}) => {
+                        if (document.getElementById(submit)) {
+                            grecaptcha.render(submit, {
+                                'sitekey' : '{{ recaptcha_site_key }}',
+                                'callback' : function (token) {
+                                    document.getElementById(form).submit();
+                                }
+                            });
+                        }
                     });
                 };
-                function onNavLoginSubmit(token) {
-                    document.getElementById('nav_login').submit();
-                }
-                function onPageLoginSubmit(token) {
-                    document.getElementById('page_login').submit();
-                }
-                function onRequestPasswordSubmit(token) {
-                    document.getElementById('request_password').submit();
-                }
             </script>
         {% endif %}
 

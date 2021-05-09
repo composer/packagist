@@ -7,6 +7,8 @@ use App\Form\RegistrationFormType;
 use App\Security\EmailVerifier;
 use App\Security\BruteForceLoginFormAuthenticator;
 use App\Entity\UserRepository;
+use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
+use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,7 +31,7 @@ class RegistrationController extends Controller
     /**
      * @Route("/register/", name="register")
      */
-    public function register(Request $request, UserPasswordEncoderInterface $passwordEncoder, string $mailFromEmail, string $mailFromName): Response
+    public function register(Request $request, UserPasswordEncoderInterface $passwordEncoder, string $mailFromEmail, string $mailFromName, RecaptchaVerifier $recaptchaVerifier): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('home');
@@ -40,6 +42,14 @@ class RegistrationController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $recaptchaVerifier->verify();
+            } catch (RecaptchaException $e) {
+                $this->addFlash('error', 'Invalid ReCaptcha. Please try again.');
+
+                return $this->redirectToRoute('register');
+            }
+
             // encode the plain password
             $user->setPassword(
                 $passwordEncoder->encodePassword(

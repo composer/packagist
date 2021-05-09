@@ -45,9 +45,7 @@ class ResetPasswordController extends Controller
             try {
                 $recaptchaVerifier->verify();
             } catch (RecaptchaException $e) {
-                /** @var \Symfony\Component\HttpFoundation\Session\Session */
-                $session = $request->getSession();
-                $session->getFlashBag()->add('error', 'Invalid ReCaptcha. Please try again.');
+                $this->addFlash('error', 'Invalid ReCaptcha. Please try again.');
 
                 return $this->redirectToRoute('request_pwd_reset');
             }
