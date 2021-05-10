@@ -62,7 +62,7 @@ class WebController extends Controller
         $form->handleRequest($req);
 
         return $this->render('web/search_form.html.twig', [
-            'searchQuery' => $req->query->all('search_query')['query'] ?? '',
+            'searchQuery' => $req->query->all()['search_query']['query'] ?? '',
         ]);
     }
 
@@ -350,9 +350,9 @@ class WebController extends Controller
      */
     protected function getFilteredOrderedBys(Request $req)
     {
-        $orderBys = $req->query->all('orderBys');
+        $orderBys = $req->query->all()['orderBys'] ?? [];
         if (!$orderBys) {
-            $orderBys = $req->query->all('search_query')['orderBys'] ?? [];
+            $orderBys = $req->query->all()['search_query']['orderBys'] ?? [];
         }
 
         if ($orderBys) {
