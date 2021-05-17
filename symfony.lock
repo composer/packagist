@@ -239,8 +239,14 @@
     "nikic/php-parser": {
         "version": "v4.10.2"
     },
-    "pagerfanta/pagerfanta": {
-        "version": "v2.5.1"
+    "pagerfanta/core": {
+        "version": "v3.1.0"
+    },
+    "pagerfanta/doctrine-orm-adapter": {
+        "version": "v3.1.0"
+    },
+    "pagerfanta/twig": {
+        "version": "v3.1.0"
     },
     "paragonie/constant_time_encoding": {
         "version": "v2.4.0"
