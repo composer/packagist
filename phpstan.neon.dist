@@ -5,7 +5,7 @@ includes:
     - vendor/phpstan/phpstan-doctrine/rules.neon
 
 parameters:
-    level: 3
+    level: 4
 
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: false

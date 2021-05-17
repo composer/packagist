@@ -16,6 +16,7 @@ use Composer\Package\Version\VersionParser;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use DateTimeInterface;
 
 /**
  * @ORM\Entity(repositoryClass="App\Entity\VersionRepository")
@@ -197,22 +198,22 @@ class Version
     /**
      * @ORM\Column(type="datetime")
      */
-    private $createdAt;
+    private DateTimeInterface $createdAt;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $softDeletedAt;
+    private ?DateTimeInterface $softDeletedAt = null;
 
     /**
      * @ORM\Column(type="datetime")
      */
-    private $updatedAt;
+    private DateTimeInterface $updatedAt;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $releasedAt;
+    private ?DateTimeInterface $releasedAt = null;
 
     public function __construct()
     {
@@ -671,42 +672,22 @@ class Version
         return $funding;
     }
 
-    /**
-     * Set createdAt
-     *
-     * @param \DateTime $createdAt
-     */
-    public function setCreatedAt($createdAt)
+    public function setCreatedAt(DateTimeInterface $createdAt): void
     {
         $this->createdAt = $createdAt;
     }
 
-    /**
-     * Get createdAt
-     *
-     * @return \DateTime
-     */
-    public function getCreatedAt()
+    public function getCreatedAt(): DateTimeInterface
     {
         return $this->createdAt;
     }
 
-    /**
-     * Set releasedAt
-     *
-     * @param \DateTime $releasedAt
-     */
-    public function setReleasedAt($releasedAt)
+    public function setReleasedAt(?DateTimeInterface $releasedAt): void
     {
         $this->releasedAt = $releasedAt;
     }
 
-    /**
-     * Get releasedAt
-     *
-     * @return \DateTime
-     */
-    public function getReleasedAt()
+    public function getReleasedAt(): ?DateTimeInterface
     {
         return $this->releasedAt;
     }
@@ -741,42 +722,22 @@ class Version
         return $this->tags;
     }
 
-    /**
-     * Set updatedAt
-     *
-     * @param \DateTime $updatedAt
-     */
-    public function setUpdatedAt($updatedAt)
+    public function setUpdatedAt(DateTimeInterface $updatedAt)
     {
         $this->updatedAt = $updatedAt;
     }
 
-    /**
-     * Get updatedAt
-     *
-     * @return \DateTime $updatedAt
-     */
-    public function getUpdatedAt()
+    public function getUpdatedAt(): DateTimeInterface
     {
         return $this->updatedAt;
     }
 
-    /**
-     * Set softDeletedAt
-     *
-     * @param \DateTime|null $softDeletedAt
-     */
-    public function setSoftDeletedAt($softDeletedAt)
+    public function setSoftDeletedAt(?DateTimeInterface $softDeletedAt)
     {
         $this->softDeletedAt = $softDeletedAt;
     }
 
-    /**
-     * Get softDeletedAt
-     *
-     * @return \DateTime|null $softDeletedAt
-     */
-    public function getSoftDeletedAt()
+    public function getSoftDeletedAt(): ?DateTimeInterface
     {
         return $this->softDeletedAt;
     }

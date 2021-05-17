@@ -21,4 +21,13 @@ class Killswitch
 
     // package pages
     const PAGES_ENABLED = true;
+
+    /**
+     * Silly workaround to avoid phpstan reporting "this condition is always true/false" when using the constants directly
+     * @param self::* $feature
+     */
+    public static function isEnabled(bool $feature): bool
+    {
+        return $feature;
+    }
 }

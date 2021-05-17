@@ -151,14 +151,10 @@ class WebController extends Controller
 
         $perPage = max(1, (int) $req->query->getInt('per_page', 15));
         if ($perPage <= 0 || $perPage > 100) {
-           if ($req->getRequestFormat() === 'json') {
-                return (new JsonResponse([
-                    'status' => 'error',
-                    'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-                ], 400))->setCallback($req->query->get('callback'));
-            }
-
-            $perPage = max(0, min(100, $perPage));
+            return (new JsonResponse([
+                'status' => 'error',
+                'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
+            ], 400))->setCallback($req->query->get('callback'));
         }
 
         if (isset($queryParams['filters'])) {
@@ -236,7 +232,7 @@ class WebController extends Controller
      */
     public function statsAction(RedisClient $redis)
     {
-        if (!Killswitch::DOWNLOADS_ENABLED) {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
@@ -326,7 +322,7 @@ class WebController extends Controller
      */
     public function statsTotalsAction(RedisClient $redis)
     {
-        if (!Killswitch::DOWNLOADS_ENABLED) {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 

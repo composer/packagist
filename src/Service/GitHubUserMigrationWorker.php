@@ -39,9 +39,7 @@ class GitHubUserMigrationWorker
         $packageRepository = $em->getRepository(Package::class);
         $userRepository = $em->getRepository(User::class);
 
-        /** @var User $user */
         $user = $userRepository->find($id);
-
         if (!$user) {
             $this->logger->info('User is gone, skipping', ['id' => $id]);
 

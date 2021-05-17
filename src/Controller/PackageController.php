@@ -503,7 +503,7 @@ class PackageController extends Controller
      */
     public function viewPackageAction(Request $req, $name, CsrfTokenManagerInterface $csrfTokenManager)
     {
-        if (!Killswitch::PAGES_ENABLED) {
+        if (!Killswitch::isEnabled(Killswitch::PAGES_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
@@ -538,13 +538,13 @@ class PackageController extends Controller
 
         if ('json' === $req->getRequestFormat()) {
             $data = $package->toArray($this->getEM()->getRepository(Version::class), true);
-            if (Killswitch::LINKS_ENABLED) {
+            if (Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
                 $data['dependents'] = $repo->getDependentCount($package->getName());
                 $data['suggesters'] = $repo->getSuggestCount($package->getName());
             }
 
             try {
-                if (!Killswitch::DOWNLOADS_ENABLED) {
+                if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
                     throw new \RuntimeException();
                 }
                 $data['downloads'] = $this->downloadManager->getDownloads($package);
@@ -559,7 +559,7 @@ class PackageController extends Controller
             }
 
             $response = new JsonResponse(['package' => $data]);
-            if (Killswitch::LINKS_ENABLED && Killswitch::DOWNLOADS_ENABLED) {
+            if (Killswitch::isEnabled(Killswitch::LINKS_ENABLED) && Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
                 $response->setSharedMaxAge(12 * 3600);
             }
             $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
@@ -601,7 +601,7 @@ class PackageController extends Controller
         ];
 
         try {
-            if (!Killswitch::DOWNLOADS_ENABLED) {
+            if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
                 throw new \RuntimeException();
             }
             $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
@@ -624,10 +624,10 @@ class PackageController extends Controller
         } catch (\RuntimeException | ConnectionException $e) {
         }
 
-        $data['dependents'] = Killswitch::PAGE_DETAILS_ENABLED && Killswitch::LINKS_ENABLED ? $repo->getDependentCount($package->getName()) : 0;
-        $data['suggesters'] = Killswitch::PAGE_DETAILS_ENABLED && Killswitch::LINKS_ENABLED ? $repo->getSuggestCount($package->getName()) : 0;
+        $data['dependents'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getDependentCount($package->getName()) : 0;
+        $data['suggesters'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getSuggestCount($package->getName()) : 0;
 
-        if (Killswitch::PAGE_DETAILS_ENABLED) {
+        if (Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED)) {
             $securityAdvisoryRepository = $this->getEM()->getRepository(SecurityAdvisory::class);
             $securityAdvisories = $securityAdvisoryRepository->getPackageSecurityAdvisories($package->getName());
             $data['securityAdvisories'] = count($securityAdvisories);
@@ -704,7 +704,7 @@ class PackageController extends Controller
      */
     public function viewPackageDownloadsAction(Request $req, $name)
     {
-        if (!Killswitch::DOWNLOADS_ENABLED) {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
@@ -867,7 +867,7 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'success'], 202);
         }
 
-        if (!$canUpdatePackage && $package->wasUpdatedInTheLast24Hours()) {
+        if ($package->wasUpdatedInTheLast24Hours()) {
             return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours',], 404);
         }
 
@@ -1134,7 +1134,7 @@ class PackageController extends Controller
      */
     public function statsAction(Request $req, Package $package)
     {
-        if (!Killswitch::DOWNLOADS_ENABLED) {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
@@ -1188,7 +1188,7 @@ class PackageController extends Controller
      */
     public function dependentsAction(Request $req, $name)
     {
-        if (!Killswitch::LINKS_ENABLED) {
+        if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
         $page = max(1, $req->query->getInt('page', 1));
@@ -1255,7 +1255,7 @@ class PackageController extends Controller
      */
     public function suggestersAction(Request $req, $name)
     {
-        if (!Killswitch::LINKS_ENABLED) {
+        if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
         $page = max(1, $req->query->getInt('page', 1));

@@ -70,7 +70,6 @@ class UpdaterWorker
         $em = $this->getEM();
         $id = $job->getPayload()['id'];
         $packageRepository = $em->getRepository(Package::class);
-        /** @var Package $package */
         $package = $packageRepository->find($id);
         if (!$package) {
             $this->logger->info('Package is gone, skipping', ['id' => $id]);
@@ -290,19 +289,17 @@ class UpdaterWorker
         }x', '$5', $str);
     }
 
-    private function checkForDeadGitHubPackage(Package $package, $match, HttpDownloader $httpDownloader, $output)
+    private function checkForDeadGitHubPackage(Package $package, $match, HttpDownloader $httpDownloader, $output): ?array
     {
         try {
             $httpDownloader->get('https://api.github.com/repos/'.$match[1], ['retry-auth-failure' => false]);
         } catch (\Throwable $e) {
             if ($e instanceof TransportException && $e->getStatusCode() === 404) {
                 try {
-                    if (
-                        // check composer repo is visible to make sure it's not github or something else glitching
-                        $httpDownloader->get('https://api.github.com/repos/composer/composer', ['retry-auth-failure' => false])
-                        // remove packages with very low downloads and that are 404
-                        && $this->downloadManager->getTotalDownloads($package) <= 100
-                    ) {
+                    // check composer repo is visible to make sure it's not github or something else glitching
+                    $httpDownloader->get('https://api.github.com/repos/composer/composer', ['retry-auth-failure' => false]);
+                    // remove packages with very low downloads and that are 404
+                    if ($this->downloadManager->getTotalDownloads($package) <= 100) {
                         $this->packageManager->deletePackage($package);
 
                         return [
@@ -318,5 +315,7 @@ class UpdaterWorker
                 }
             }
         }
+
+        return null;
     }
 }

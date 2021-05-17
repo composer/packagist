@@ -49,7 +49,7 @@ class RunWorkersCommand extends Command
             return 0;
         }
 
-        if (!Killswitch::WORKERS_ENABLED) {
+        if (!Killswitch::isEnabled(Killswitch::WORKERS_ENABLED)) {
             sleep(10);
             $this->release();
 

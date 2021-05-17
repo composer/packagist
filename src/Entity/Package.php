@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Service\UpdaterWorker;
+use Composer\Downloader\TransportException;
 use Composer\Factory;
 use Composer\IO\NullIO;
 use Composer\Repository\VcsRepository;
@@ -22,6 +23,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Util\HttpDownloader;
+use DateTimeInterface;
 
 /**
  * @ORM\Entity(repositoryClass="App\Entity\PackageRepository")
@@ -59,7 +61,7 @@ class Package
      *
      * @ORM\Column(length=191)
      */
-    private $name;
+    private string $name = '';
 
     /**
      * @ORM\Column(nullable=true)
@@ -123,32 +125,32 @@ class Package
     /**
      * @ORM\Column(type="datetime")
      */
-    private $createdAt;
+    private DateTimeInterface $createdAt;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $updatedAt;
+    private ?DateTimeInterface $updatedAt = null;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $crawledAt;
+    private ?DateTimeInterface $crawledAt = null;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $indexedAt;
+    private ?DateTimeInterface $indexedAt = null;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $dumpedAt;
+    private ?DateTimeInterface $dumpedAt = null;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private $dumpedAtV2;
+    private ?DateTimeInterface $dumpedAtV2 = null;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Download", mappedBy="package")
@@ -249,7 +251,7 @@ class Package
     public function isRepositoryValid(ExecutionContextInterface $context)
     {
         // vcs driver was not nulled which means the repository was not set/modified and is still valid
-        if (true === $this->vcsDriver && null !== $this->getName()) {
+        if (true === $this->vcsDriver && '' !== $this->name) {
             return;
         }
 
@@ -281,15 +283,6 @@ class Package
         }
         try {
             $information = $driver->getComposerInformation($driver->getRootIdentifier());
-
-            if (false === $information) {
-                $context->buildViolation('No composer.json was found in the '.$driver->getRootIdentifier().' branch.')
-                    ->atPath($property)
-                    ->addViolation()
-                ;
-                return;
-            }
-
             if (empty($information['name'])) {
                 $context->buildViolation('The package name was not found in the composer.json, make sure there is a name present.')
                     ->atPath($property)
@@ -346,12 +339,22 @@ class Package
                 return;
             }
         } catch (\Exception $e) {
+            if ($e instanceof TransportException && $e->getCode() === 404) {
+                $context->buildViolation('No composer.json was found in the '.$driver->getRootIdentifier().' branch.')
+                    ->atPath($property)
+                    ->addViolation()
+                ;
+                return;
+            }
+
             $context->buildViolation('We had problems parsing your composer.json file, the parser reports: '.htmlentities($e->getMessage(), ENT_COMPAT, 'utf-8'))
                 ->atPath($property)
                 ->addViolation()
             ;
+            return;
         }
-        if (null === $this->getName()) {
+
+        if ('' === $this->name) {
             $context->buildViolation('An unexpected error has made our parser fail to find a package name in your repository, if you think this is incorrect please try again')
                 ->atPath($property)
                 ->addViolation()
@@ -405,23 +408,17 @@ class Package
         return $this->id;
     }
 
-    /**
-     * Set name
-     *
-     * @param string $name
-     */
-    public function setName($name)
+    public function setName(string $name)
     {
         $this->name = $name;
     }
 
-    /**
-     * Get name
-     *
-     * @return string
-     */
-    public function getName()
+    public function getName(): string
     {
+        if ('' === $this->name) {
+            throw new \LogicException('This should not be called on an invalid package object which was not initialized with a name yet');
+        }
+
         return $this->name;
     }
 
@@ -579,22 +576,12 @@ class Package
         return $this->gitHubOpenIssues;
     }
 
-    /**
-     * Set createdAt
-     *
-     * @param \DateTime $createdAt
-     */
-    public function setCreatedAt($createdAt)
+    public function setCreatedAt(DateTimeInterface $createdAt): void
     {
         $this->createdAt = $createdAt;
     }
 
-    /**
-     * Get createdAt
-     *
-     * @return \DateTime
-     */
-    public function getCreatedAt()
+    public function getCreatedAt(): DateTimeInterface
     {
         return $this->createdAt;
     }
@@ -651,7 +638,7 @@ class Package
             if (!isset($information['name'])) {
                 return;
             }
-            if (null === $this->getName()) {
+            if ('' === $this->name) {
                 $this->setName(trim($information['name']));
             }
             if ($driver instanceof GitHubDriver) {
@@ -725,98 +712,58 @@ class Package
         return null;
     }
 
-    /**
-     * Set updatedAt
-     *
-     * @param \DateTime $updatedAt
-     */
-    public function setUpdatedAt($updatedAt)
+    public function setUpdatedAt(DateTimeInterface $updatedAt)
     {
         $this->updatedAt = $updatedAt;
         $this->setUpdateFailureNotified(false);
     }
 
-    /**
-     * Get updatedAt
-     *
-     * @return \DateTime
-     */
-    public function getUpdatedAt()
+    public function getUpdatedAt(): ?DateTimeInterface
     {
         return $this->updatedAt;
     }
 
     public function wasUpdatedInTheLast24Hours(): bool
     {
-        return $this->updatedAt > new \DateTime('-24 hours');
+        return $this->updatedAt && $this->updatedAt > new \DateTime('-24 hours');
     }
 
-    /**
-     * Set crawledAt
-     *
-     * @param \DateTime|null $crawledAt
-     */
-    public function setCrawledAt($crawledAt)
+    public function setCrawledAt(?DateTimeInterface $crawledAt): void
     {
         $this->crawledAt = $crawledAt;
     }
 
-    /**
-     * Get crawledAt
-     *
-     * @return \DateTime
-     */
-    public function getCrawledAt()
+    public function getCrawledAt(): ?DateTimeInterface
     {
         return $this->crawledAt;
     }
 
-    /**
-     * Set indexedAt
-     *
-     * @param \DateTime $indexedAt
-     */
-    public function setIndexedAt($indexedAt)
+    public function setIndexedAt(?DateTimeInterface $indexedAt): void
     {
         $this->indexedAt = $indexedAt;
     }
 
-    /**
-     * Get indexedAt
-     *
-     * @return \DateTime
-     */
-    public function getIndexedAt()
+    public function getIndexedAt(): ?DateTimeInterface
     {
         return $this->indexedAt;
     }
 
-    /**
-     * Set dumpedAt
-     *
-     * @param \DateTime $dumpedAt
-     */
-    public function setDumpedAt($dumpedAt)
+    public function setDumpedAt(?DateTimeInterface $dumpedAt): void
     {
         $this->dumpedAt = $dumpedAt;
     }
 
-    /**
-     * Get dumpedAt
-     *
-     * @return \DateTime
-     */
-    public function getDumpedAt()
+    public function getDumpedAt(): ?DateTimeInterface
     {
         return $this->dumpedAt;
     }
 
-    public function setDumpedAtV2(?\DateTimeInterface $dumpedAt)
+    public function setDumpedAtV2(?DateTimeInterface $dumpedAt): void
     {
         $this->dumpedAtV2 = $dumpedAt;
     }
 
-    public function getDumpedAtV2(): ?\DateTimeInterface
+    public function getDumpedAtV2(): ?DateTimeInterface
     {
         return $this->dumpedAtV2;
     }
