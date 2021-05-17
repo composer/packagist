@@ -42,12 +42,12 @@ class Dependent
     /**
      * @ORM\Id
      * @ORM\Column(type="smallint")
-     * @var int self::TYPE_*
+     * @var self::TYPE_*
      */
     private int $type;
 
     /**
-     * @param int $type self::TYPE_*
+     * @param self::TYPE_* $type
      */
     public function __construct(Package $sourcePackage, string $targetPackageName, int $type)
     {

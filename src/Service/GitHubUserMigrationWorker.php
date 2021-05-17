@@ -221,7 +221,10 @@ class GitHubUserMigrationWorker
             $opts['json'] = $json;
         }
 
-        return $this->guzzle->request($method, 'https://api.github.com/' . $url, $opts);
+        /** @var Response $response */
+        $response = $this->guzzle->request($method, 'https://api.github.com/' . $url, $opts);
+
+        return $response;
     }
 
     private function getGitHubHookData(): array

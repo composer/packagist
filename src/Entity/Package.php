@@ -190,7 +190,7 @@ class Package
     private $router;
 
     /**
-     * @var \Composer\Repository\Vcs\VcsDriverInterface
+     * @var true|null|\Composer\Repository\Vcs\VcsDriverInterface
      */
     private $vcsDriver = true;
     private $vcsDriverError;

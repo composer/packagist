@@ -100,9 +100,8 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
 
     /**
      * @ORM\Column(type="datetime", name="last_login", nullable=true)
-     * @var \DateTime|null
      */
-    private $lastLogin;
+    private ?DateTimeInterface $lastLogin = null;
 
     /**
      * Random string sent to the user email address in order to verify it.

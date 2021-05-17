@@ -2,13 +2,18 @@
 
 namespace App\Util;
 
+use Doctrine\ORM\EntityManager;
+
 /**
  * Requires a property doctrine or type Doctrine\Persistence\ManagerRegistry to be present
  */
 trait DoctrineTrait
 {
-    protected function getEM(): \Doctrine\ORM\EntityManager
+    protected function getEM(): EntityManager
     {
-        return $this->doctrine->getManager();
+        /** @var EntityManager $em */
+        $em = $this->doctrine->getManager();
+
+        return $em;
     }
 }

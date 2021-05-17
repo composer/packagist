@@ -118,8 +118,11 @@ class GitHubAuthenticator extends SocialAuthenticator
 
     private function getGitHubClient(): GithubClient
     {
-        return $this->clientRegistry->getClient('github');
-	}
+        /** @var GithubClient $client */
+        $client = $this->clientRegistry->getClient('github');
+
+        return $client;
+    }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
     {
