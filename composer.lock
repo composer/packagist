@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e525e9aed0612ae9bcbe962f14060793",
+    "content-hash": "2f69a220b3ddddcda49774823468659e",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -2082,37 +2082,36 @@
         },
         {
             "name": "doctrine/persistence",
-            "version": "2.2.0",
+            "version": "2.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/persistence.git",
-                "reference": "08d3e6e666de85c7748fa27bfd63bb15ac29eab2"
+                "reference": "bac0f7fc16fc294e4c38b8763de21657dcf803f0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/persistence/zipball/08d3e6e666de85c7748fa27bfd63bb15ac29eab2",
-                "reference": "08d3e6e666de85c7748fa27bfd63bb15ac29eab2",
+                "url": "https://api.github.com/repos/doctrine/persistence/zipball/bac0f7fc16fc294e4c38b8763de21657dcf803f0",
+                "reference": "bac0f7fc16fc294e4c38b8763de21657dcf803f0",
                 "shasum": ""
             },
             "require": {
                 "doctrine/annotations": "^1.0",
-                "doctrine/cache": "^1.11 || ^2.0",
+                "doctrine/cache": "^1.0|^2.0",
                 "doctrine/collections": "^1.0",
                 "doctrine/event-manager": "^1.0",
-                "php": "^7.1 || ^8.0",
-                "psr/cache": "^1.0|^2.0|^3.0"
+                "php": "^7.1 || ^8.0"
             },
             "conflict": {
                 "doctrine/common": "<2.10@dev"
             },
             "require-dev": {
                 "composer/package-versions-deprecated": "^1.11",
-                "doctrine/coding-standard": "^6.0 || ^9.0",
+                "doctrine/coding-standard": "^6.0 || ^8.0",
                 "doctrine/common": "^3.0",
-                "phpstan/phpstan": "0.12.84",
+                "phpstan/phpstan": "^0.12",
                 "phpunit/phpunit": "^7.5.20 || ^8.0 || ^9.0",
-                "symfony/cache": "^4.4|^5.0",
-                "vimeo/psalm": "4.7.0"
+                "symfony/cache": "^4.4",
+                "vimeo/psalm": "^4.3.1"
             },
             "type": "library",
             "autoload": {
@@ -2162,9 +2161,9 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/persistence/issues",
-                "source": "https://github.com/doctrine/persistence/tree/2.2.0"
+                "source": "https://github.com/doctrine/persistence/tree/2.1.1"
             },
-            "time": "2021-05-15T18:37:00+00:00"
+            "time": "2021-04-30T12:44:08+00:00"
         },
         {
             "name": "doctrine/sql-formatter",
