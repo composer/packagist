@@ -656,6 +656,10 @@ class PackageController extends Controller
             $data['hasVersionSecurityAdvisories'] = [];
         }
 
+        if (date('Y') === '2021') {
+            $data['isVisibleToV1'] = $this->getEM()->getRepository(Package::class)->isPackageDumpableForV1($package);
+        }
+
         if ($this->getUser() && (
                 $this->isGranted('ROLE_DELETE_PACKAGES')
                 || $package->getMaintainers()->contains($this->getUser())

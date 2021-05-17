@@ -213,6 +213,19 @@ class PackageRepository extends ServiceEntityRepository
         ', ['date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
     }
 
+    public function isPackageDumpableForV1(Package $package): bool
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        return (bool) $conn->fetchOne('
+            SELECT p.id
+            FROM package p
+            LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
+            WHERE p.id = :id
+            AND (d.total > 1000 OR d.lastUpdated > :date)
+        ', ['id' => $package->getId(), 'date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
+    }
+
     public function getStalePackagesForDumpingV2()
     {
         $conn = $this->getEntityManager()->getConnection();

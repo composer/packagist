@@ -60,6 +60,10 @@
                         {% endif %}
                     {% endif %}
 
+                    {% if isVisibleToV1 is defined and isVisibleToV1 == false %}
+                        <div class="alert alert-warning">This package is not installable via Composer 1.x, please make sure you <a href="https://getcomposer.org/2">upgrade</a> to Composer 2+. <a href="https://blog.packagist.com/deprecating-composer-1-support/">Read more about our Composer 1.x deprecation policy.</a></div>
+                    {% endif %}
+
                     {% if package.abandoned %}
                         <div class="alert alert-danger">
                             This package is <strong>abandoned</strong> and no longer maintained.
