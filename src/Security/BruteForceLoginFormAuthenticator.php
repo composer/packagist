@@ -65,7 +65,7 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator im
             'username' => $request->request->get('_username'),
             'password' => $request->request->get('_password'),
             'ip' => $request->getClientIp(),
-            'recaptcha' => $request->request->get(RecaptchaVerifier::GOOGLE_DEFAULT_INPUT),
+            'recaptcha' => $request->request->get('g-recaptcha-response'),
         ];
         $request->getSession()->set(
             Security::LAST_USERNAME,

@@ -36,7 +36,7 @@
             <p><small>(This is not an exhaustive list of compatible apps. Packagist does not endorse or recommend one application over another.)</small></p>
 
             <p class="pull-right two-factor-key">
-                <img src="{{ qr_code_data_uri(provisioningUri) }}" height="200" />
+                <img src="{{ qrCode }}" height="200" />
                 <br>
                 <small>TOTP Key: <code>{{ secret }}</code></small>
             </p>
@@ -65,7 +65,6 @@
 
                 <input type="submit" class="btn btn-block btn-inverse btn-lg" value="Enable Two-Factor Authentication" />
             {{ form_end(form) }}
-        </section>
         </section>
     </section>
 {% endblock %}

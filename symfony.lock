@@ -134,9 +134,6 @@
     "endroid/qr-code": {
         "version": "3.9.6"
     },
-    "endroid/qr-code-bundle": {
-        "version": "3.4.3"
-    },
     "ezyang/htmlpurifier": {
         "version": "v4.13.0"
     },
@@ -166,9 +163,6 @@
     },
     "justinrainbow/json-schema": {
         "version": "5.2.10"
-    },
-    "khanamiryan/qrcode-detector-decoder": {
-        "version": "1.0.4"
     },
     "knplabs/knp-menu": {
         "version": "v3.1.2"
@@ -203,6 +197,9 @@
     "laminas/laminas-zendframework-bridge": {
         "version": "1.1.1"
     },
+    "lcobucci/clock": {
+        "version": "2.0.0"
+    },
     "lcobucci/jwt": {
         "version": "3.4.2"
     },
@@ -214,9 +211,6 @@
     },
     "monolog/monolog": {
         "version": "1.26.0"
-    },
-    "myclabs/php-enum": {
-        "version": "1.7.7"
     },
     "nelmio/cors-bundle": {
         "version": "1.5",
@@ -341,18 +335,27 @@
     "react/promise": {
         "version": "v2.8.0"
     },
-    "scheb/two-factor-bundle": {
-        "version": "3.16",
+    "scheb/2fa-backup-code": {
+        "version": "v5.8.1"
+    },
+    "scheb/2fa-bundle": {
+        "version": "5.0",
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
             "branch": "master",
-            "version": "3.16",
-            "ref": "b5789cd9710e2ee555bf361079b991068a0f640b"
+            "version": "5.0",
+            "ref": "95d9da4bffdc29417c209141cae8292e40d6af19"
         },
         "files": [
-            "config/packages/scheb_two_factor.yaml",
-            "config/routes/scheb_two_factor.yaml"
+            "config/packages/scheb_2fa.yaml",
+            "config/routes/scheb_2fa.yaml"
         ]
+    },
+    "scheb/2fa-totp": {
+        "version": "v5.8.1"
+    },
+    "scheb/2fa-trusted-device": {
+        "version": "v5.8.1"
     },
     "seld/jsonlint": {
         "version": "1.8.3"
