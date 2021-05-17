@@ -23,7 +23,7 @@ jobs:
         with:
           coverage: "none"
           extensions: "intl, zip, apcu"
-          php-version: "7.4"
+          php-version: "8.0"
           tools: composer
 
       - name: Get composer cache directory
