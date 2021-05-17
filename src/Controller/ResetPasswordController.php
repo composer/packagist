@@ -115,8 +115,6 @@ class ResetPasswordController extends Controller
                 $authenticator,
                 'main' // firewall name in security.yaml
             );
-
-            return $this->redirectToRoute('my_profile');
         }
 
         return $this->render('reset_password/reset.html.twig', [

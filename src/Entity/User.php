@@ -16,9 +16,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
-use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
-use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\EquatableInterface;
@@ -100,9 +100,8 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
 
     /**
      * @ORM\Column(type="datetime", name="last_login", nullable=true)
-     * @var \DateTime|null
      */
-    private $lastLogin;
+    private ?DateTimeInterface $lastLogin = null;
 
     /**
      * Random string sent to the user email address in order to verify it.

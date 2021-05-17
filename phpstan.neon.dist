@@ -5,7 +5,7 @@ includes:
     - vendor/phpstan/phpstan-doctrine/rules.neon
 
 parameters:
-    level: 2
+    level: 4
 
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: false
@@ -17,3 +17,5 @@ parameters:
         objectManagerLoader: tests/object-manager.php
 
     ignoreErrors:
+        # https://github.com/phpstan/phpstan-doctrine/issues/176
+        - '~Property App\\Entity\\Dependent::\$type type mapping mismatch: database can contain int but property expects~'

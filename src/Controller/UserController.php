@@ -42,6 +42,11 @@ use Predis\Client as RedisClient;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
+use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
+use Endroid\QrCode\Writer\PngWriter;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -300,7 +305,25 @@ class UserController extends Controller
             }
         }
 
-        return ['user' => $user, 'provisioningUri' => $authenticator->getQRContent($user), 'secret' => $enableRequest->getSecret(), 'form' => $form->createView()];
+        $qrContent = $authenticator->getQRContent($user);
+
+        $qrCode = Builder::create()
+            ->writer(new PngWriter())
+            ->writerOptions([])
+            ->data($qrContent)
+            ->encoding(new Encoding('UTF-8'))
+            ->errorCorrectionLevel(new ErrorCorrectionLevelHigh())
+            ->size(200)
+            ->margin(0)
+            ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
+            ->build();
+
+        return [
+            'user' => $user,
+            'secret' => $enableRequest->getSecret(),
+            'form' => $form->createView(),
+            'qrCode' => $qrCode->getDataUri(),
+        ];
     }
 
     /**

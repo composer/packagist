@@ -251,6 +251,7 @@ class SymlinkDumper
                 $this->getEM()->clear();
                 $this->logger->reset();
 
+                /** @phpstan-ignore-next-line https://github.com/phpstan/phpstan/issues/5017 */
                 if ($current % 250 === 0 || !$packageIds || memory_get_usage() > 1024*1024*1024) {
                     if ($verbose) {
                         echo 'Dumping individual files'.PHP_EOL;
