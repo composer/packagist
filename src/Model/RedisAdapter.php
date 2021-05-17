@@ -32,18 +32,12 @@ class RedisAdapter implements AdapterInterface
         $this->countMethod = $countMethod;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getNbResults()
+    public function getNbResults(): int
     {
         return $this->model->{$this->countMethod}($this->instance);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getSlice($offset, $length)
+    public function getSlice(int $offset, int $length): iterable
     {
         return $this->model->{$this->fetchMethod}($this->instance, $length, $offset);
     }
