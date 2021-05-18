@@ -784,12 +784,15 @@ class PackageController extends Controller
      *     methods={"DELETE"}
      * )
      */
-    public function deletePackageVersionAction(Request $req, $versionId)
+    public function deletePackageVersionAction(Request $req, int $versionId)
     {
         $repo = $this->getEM()->getRepository(Version::class);
 
-        /** @var Version $version  */
-        $version = $repo->getFullVersion($versionId);
+        try {
+            $version = $repo->getFullVersion($versionId);
+        } catch (NoResultException $e) {
+            return new Response('Version '.$versionId.' not found', 404);
+        }
         $package = $version->getPackage();
 
         if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_DELETE_PACKAGES')) {

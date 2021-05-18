@@ -185,7 +185,10 @@ class VersionRepository extends ServiceEntityRepository
         return $versions;
     }
 
-    public function getFullVersion($versionId)
+    /**
+     * @throws \Doctrine\ORM\NoResultException
+     */
+    public function getFullVersion(int $versionId): Version
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('v', 't', 'a')
