@@ -249,7 +249,7 @@ class DownloadManager
     }
 
     /**
-     * @param list<string> $keys
+     * @param array<string, int> $keys array of keys => dl count
      * @param list<int>    $validVersionIds
      */
     private function createDbRecordsForKeys(Package $package, array $keys, array $validVersionIds, DateTimeImmutable $now)

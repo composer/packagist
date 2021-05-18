@@ -19,3 +19,5 @@ parameters:
     ignoreErrors:
         # https://github.com/phpstan/phpstan-doctrine/issues/176
         - '~Property App\\Entity\\Dependent::\$type type mapping mismatch: database can contain int but property expects~'
+        - '~Property App\\Entity\\PhpStat::\$type type mapping mismatch: database can contain int but property expects~'
+        - '~Property App\\Entity\\PhpStat::\$depth type mapping mismatch: database can contain int but property expects~'

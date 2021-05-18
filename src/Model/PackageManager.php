@@ -14,6 +14,7 @@ namespace App\Model;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use App\Entity\Dependent;
+use App\Entity\PhpStat;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
 use App\Entity\Version;
@@ -84,6 +85,9 @@ class PackageManager
 
         $downloadRepo = $this->doctrine->getRepository(Download::class);
         $downloadRepo->deletePackageDownloads($package);
+
+        $phpStatsRepo = $this->doctrine->getRepository(PhpStat::class);
+        $phpStatsRepo->deletePackageStats($package);
 
         $dependentRepo = $this->doctrine->getRepository(Dependent::class);
         $dependentRepo->deletePackageDependentSuggesters($package->getId());
