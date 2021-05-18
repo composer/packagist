@@ -149,9 +149,9 @@ class DownloadManager
     /**
      * Tracks downloads by updating the relevant keys.
      *
-     * @param list<array{id: int, vid: int, ip: string}> $jobs Each job contains id (package id), vid (version id) and ip keys
+     * @param list<array{id: int, vid: int, minor: string}> $jobs Each job contains id (package id), vid (version id) and ip keys
      */
-    public function addDownloads(array $jobs)
+    public function addDownloads(array $jobs, string $ip, string $phpMinor, string $phpMinorPlatform)
     {
         $day = date('Ymd');
         $month = date('Ym');
@@ -162,7 +162,13 @@ class DownloadManager
             $this->redisCommandLoaded = true;
         }
 
-        $args = ['downloads', 'downloads:'.$day, 'downloads:'.$month];
+        $args = [
+            'downloads',
+            'downloads:'.$day,
+            'downloads:'.$month,
+            'php:'.$phpMinor.':',
+            'phpplatform:'.$phpMinorPlatform.':',
+        ];
 
         if (!$jobs) {
             return;
@@ -171,6 +177,7 @@ class DownloadManager
         foreach ($jobs as $job) {
             $package = $job['id'];
             $version = $job['vid'];
+            $minorVersion = str_replace(':', '', $job['minor']);
 
             // throttle key
             $args[] = 'throttle:'.$package.':'.$day;
@@ -178,9 +185,13 @@ class DownloadManager
             $args[] = 'dl:'.$package;
             $args[] = 'dl:'.$package.':'.$day;
             $args[] = 'dl:'.$package.'-'.$version.':'.$day;
+            $args[] = 'php:'.$package.'-'.$minorVersion.':'.$phpMinor.':'.$day;
+            $args[] = 'phpplatform:'.$package.'-'.$minorVersion.':'.$phpMinorPlatform.':'.$day;
         }
 
-        $args[] = $job['ip'];
+        $args[] = $ip;
+        $args[] = $day;
+        $args[] = $month;
 
         /** @phpstan-ignore-next-line */
         $this->redis->downloadsIncr(...$args);
@@ -271,7 +282,7 @@ class DownloadManager
         }
 
         // only store records for packages or for versions that have had downloads to avoid storing empty records
-        if ($isNewRecord && ($type === Download::TYPE_PACKAGE || count($record->getData()) > 0)) {
+        if (!$isNewRecord || $type === Download::TYPE_PACKAGE || count($record->getData()) > 0) {
             $this->getEM()->persist($record);
         }
 

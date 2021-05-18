@@ -289,8 +289,6 @@ class SymlinkDumper
             // prepare root file
             $rootFile = $buildDir.'/packages.json';
             $this->rootFile = ['packages' => []];
-            $url = $this->router->generate('track_download', ['name' => 'VND/PKG'], UrlGeneratorInterface::ABSOLUTE_URL);
-            $this->rootFile['notify'] = str_replace('VND/PKG', '%package%', $url);
             $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch', [], UrlGeneratorInterface::ABSOLUTE_URL);
             $this->rootFile['providers-url'] = $this->router->generate('home', []) . 'p/%package%$%hash%.json';
             $this->rootFile['metadata-url'] = $this->router->generate('home', []) . 'p2/%package%.json';

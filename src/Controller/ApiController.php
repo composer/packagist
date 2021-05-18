@@ -190,22 +190,6 @@ class ApiController extends Controller
     }
 
     /**
-     * @Route("/downloads/{name}", name="track_download", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"}, methods={"POST"})
-     */
-    public function trackDownloadAction(Request $request, string $name, DownloadManager $downloadManager)
-    {
-        $result = $this->getPackageAndVersionId($name, $request->request->get('version_normalized'));
-
-        if (!$result) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 200);
-        }
-
-        $downloadManager->addDownloads([['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $request->getClientIp()]]);
-
-        return new JsonResponse(['status' => 'success'], 201);
-    }
-
-    /**
      * @Route("/jobs/{id}", name="get_job", requirements={"id"="[a-f0-9]+"}, defaults={"_format" = "json"}, methods={"GET"})
      */
     public function getJobAction(string $id)
@@ -250,7 +234,7 @@ class ApiController extends Controller
                 continue;
             }
 
-            $jobs[$result['id']] = ['id' => $result['id'], 'vid' => $result['vid'], 'ip' => $ip];
+            $jobs[$result['id']] = ['id' => $result['id'], 'vid' => $result['vid'], 'minor' => $this->extractMinorVersion($package['version'])];
         }
         $jobs = array_values($jobs);
 
@@ -263,18 +247,19 @@ class ApiController extends Controller
             }
 
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
-            if (!$uaParser->getComposerVersion()) {
+            if (!$uaParser->getComposerVersion() || !$uaParser->getPhpMinorVersion()) {
                 if (0 !== strpos($request->headers->get('User-Agent'), 'User-Agent:')) {
                     $this->logger->error('Could not parse UA: '.$request->headers->get('User-Agent').' with '.$request->getContent().' from '.$request->getClientIp());
                     $statsd->increment('installs.invalid-ua');
                 }
             } else {
-                $downloadManager->addDownloads($jobs);
+                $downloadManager->addDownloads($jobs, $ip, $uaParser->getPhpMinorVersion(), $uaParser->getPhpMinorPlatformVersion() ?: $uaParser->getPhpMinorVersion());
 
                 $statsd->increment('installs', 1, 1, [
                     'composer' => $uaParser->getComposerVersion() ?: 'unknown',
                     'composer_major' => $uaParser->getComposerMajorVersion() ?: 'unknown',
                     'php_minor' => $uaParser->getPhpMinorVersion() ?: 'unknown',
+                    'platform_php_minor' => $uaParser->getPhpMinorPlatformVersion() ?: 'unknown',
                     'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
                     'http' => $uaParser->getHttpVersion() ?: 'unknown',
                     'ci' => $uaParser->getCI() ? 'true' : 'false',
@@ -287,6 +272,11 @@ class ApiController extends Controller
         }
 
         return new JsonResponse(['status' => 'success'], 201);
+    }
+
+    private function extractMinorVersion(string $version): string
+    {
+        return preg_replace('{^(\d+\.\d+).*}', '$1', $version);
     }
 
     /**
