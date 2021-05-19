@@ -32,15 +32,15 @@ class PhpStat
     /**
      * Version prefix
      *
-     * - null for the overall package stats
+     * - "" for the overall package stats
      * - x.y for numeric versions (grouped by minor)
      * - x for numeric versions (grouped by major)
      * - Full version for the rest (dev- & co)
      *
      * @ORM\Id
-     * @ORM\Column(type="string", length=191, nullable=true)
+     * @ORM\Column(type="string", length=191)
      */
-    public ?string $version;
+    public string $version;
 
     /**
      * @ORM\Id
@@ -82,13 +82,13 @@ class PhpStat
     /**
      * @param self::TYPE_* $type
      */
-    public function __construct(Package $package, int $type, ?string $version)
+    public function __construct(Package $package, int $type, string $version)
     {
         $this->package = $package;
         $this->type = $type;
         $this->version = $version;
 
-        if (null === $version) {
+        if ('' === $version) {
             $this->depth = self::DEPTH_PACKAGE;
         } elseif (preg_match('{^\d+$}', $version)) {
             $this->depth = self::DEPTH_MAJOR;
@@ -110,7 +110,7 @@ class PhpStat
         return $this->type;
     }
 
-    public function getVersion(): ?string
+    public function getVersion(): string
     {
         return $this->version;
     }
@@ -131,6 +131,11 @@ class PhpStat
     public function addDataPoint($phpMinor, $date, $value)
     {
         $this->data[$phpMinor][$date] = ($this->data[$phpMinor][$date] ?? 0) + $value;
+    }
+
+    public function setDataPoint($phpMinor, $date, $value)
+    {
+        $this->data[$phpMinor][$date] = $value;
     }
 
     public function getData(): array

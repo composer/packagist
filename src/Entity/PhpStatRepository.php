@@ -56,6 +56,9 @@ class PhpStatRepository extends ServiceEntityRepository
             $this->createDbRecordsForKeys($package, $buffer, $now);
             $this->redis->del(array_keys($buffer));
         }
+
+        $this->createOrUpdateMainRecord($package, PhpStat::TYPE_PHP, $now);
+        $this->createOrUpdateMainRecord($package, PhpStat::TYPE_PLATFORM, $now);
     }
 
     /**
@@ -99,6 +102,43 @@ class PhpStatRepository extends ServiceEntityRepository
         $this->getEntityManager()->flush();
 
         return $record;
+    }
+
+    private function createOrUpdateMainRecord(Package $package, int $type, DateTimeImmutable $now)
+    {
+        $record = $this->getEntityManager()->getRepository(PhpStat::class)->findOneBy(['package' => $package, 'type' => $type, 'version' => '']);
+
+        if ($record) {
+            $record->setLastUpdated($now);
+        } else {
+            $record = new PhpStat($package, $type, '');
+        }
+
+        $minorPhpVersions = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            'SELECT DISTINCT stats.php_minor AS php_minor
+            FROM (SELECT DISTINCT JSON_KEYS(p.data) as versions FROM php_stat p WHERE p.package_id = :package AND p.type = :type AND p.depth IN (:exact, :major)) AS x, 
+            JSON_TABLE(x.versions, \'$[*]\' COLUMNS (php_minor VARCHAR(191) PATH \'$\')) stats',
+            ['package' => $package->getId(), 'type' => $type, 'exact' => PhpStat::DEPTH_EXACT, 'major' => PhpStat::DEPTH_MAJOR]
+        );
+
+        $sumQueries = [];
+        $yesterdayPoint = date('Ymd', strtotime('now'));
+        foreach ($minorPhpVersions as $index => $version) {
+            $sumQueries[] = 'SUM(DATA->\'$."'.$version.'"."'.$yesterdayPoint.'"\')';
+        }
+        $sums = $this->getEntityManager()->getConnection()->fetchNumeric(
+            'SELECT '.implode(', ', $sumQueries).' FROM php_stat p WHERE p.package_id = :package AND p.type = :type AND p.depth IN (:exact, :major)',
+            ['package' => $package->getId(), 'type' => $type, 'exact' => PhpStat::DEPTH_EXACT, 'major' => PhpStat::DEPTH_MAJOR]
+        );
+
+        foreach ($minorPhpVersions as $index => $version) {
+            if ($sums[$index]) {
+                $record->setDataPoint($version, $yesterdayPoint, $sums[$index]);
+            }
+        }
+
+        $this->getEntityManager()->persist($record);
+        $this->getEntityManager()->flush();
     }
 
     /**
