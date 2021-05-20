@@ -59,7 +59,9 @@ class UserAgentParser
             return 'hhvm';
         }
 
-        return preg_replace('{^(\d+\.\d+).*}', '$1', $this->phpVersion);
+        $version = preg_replace('{^(\d+\.\d+).*}', '$1', $this->phpVersion);
+
+        return $this->isValidMinorVersion($version) ? $version : null;
     }
 
     public function getPhpMinorPlatformVersion(): ?string
@@ -72,7 +74,23 @@ class UserAgentParser
             return 'hhvm';
         }
 
-        return preg_replace('{^(\d+\.\d+).*}', '$1', $this->platformPhpVersion);
+        $version = preg_replace('{^(\d+\.\d+).*}', '$1', $this->platformPhpVersion);
+
+        return $this->isValidMinorVersion($version) ? $version : null;
+    }
+
+    private function isValidMinorVersion(string $version): bool
+    {
+        if ($version === 'hhvm') {
+            return true;
+        }
+
+        // TODO update for php 9
+        if (preg_match('{^(5\.[23456]|7\.[01234]|8\.[0123456])$}', $version)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function getOs(): ?string
