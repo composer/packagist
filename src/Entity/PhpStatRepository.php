@@ -22,7 +22,7 @@ class PhpStatRepository extends ServiceEntityRepository
         $conn->executeStatement('DELETE FROM php_stat WHERE package_id = :id', ['id' => $package->getId()]);
     }
 
-    public function transferStatsToDb(int $packageId, array $keys, DateTimeImmutable $now): void
+    public function transferStatsToDb(int $packageId, array $keys, DateTimeImmutable $now, DateTimeImmutable $updateDateForMajor): void
     {
         $package = $this->getEntityManager()->getRepository(Package::class)->find($packageId);
         // package was deleted in the meantime, abort
@@ -59,8 +59,8 @@ class PhpStatRepository extends ServiceEntityRepository
         }
 
         if ($addedData) {
-            $this->createOrUpdateMainRecord($package, PhpStat::TYPE_PHP, $now);
-            $this->createOrUpdateMainRecord($package, PhpStat::TYPE_PLATFORM, $now);
+            $this->createOrUpdateMainRecord($package, PhpStat::TYPE_PHP, $now, $updateDateForMajor);
+            $this->createOrUpdateMainRecord($package, PhpStat::TYPE_PLATFORM, $now, $updateDateForMajor);
         }
     }
 
@@ -116,7 +116,7 @@ class PhpStatRepository extends ServiceEntityRepository
         return null;
     }
 
-    private function createOrUpdateMainRecord(Package $package, int $type, DateTimeImmutable $now): void
+    public function createOrUpdateMainRecord(Package $package, int $type, DateTimeImmutable $now, DateTimeImmutable $updateDate): void
     {
         $minorPhpVersions = $this->getEntityManager()->getConnection()->fetchFirstColumn(
             'SELECT DISTINCT stats.php_minor AS php_minor
@@ -136,9 +136,9 @@ class PhpStatRepository extends ServiceEntityRepository
         }
 
         $sumQueries = [];
-        $yesterdayPoint = date('Ymd', strtotime('now'));
+        $dataPointDate = $updateDate->format('Ymd');
         foreach ($minorPhpVersions as $index => $version) {
-            $sumQueries[] = 'SUM(DATA->\'$."'.$version.'"."'.$yesterdayPoint.'"\')';
+            $sumQueries[] = 'SUM(DATA->\'$."'.$version.'"."'.$dataPointDate.'"\')';
         }
         $sums = $this->getEntityManager()->getConnection()->fetchNumeric(
             'SELECT '.implode(', ', $sumQueries).' FROM php_stat p WHERE p.package_id = :package AND p.type = :type AND p.depth IN (:exact, :major)',
@@ -147,7 +147,7 @@ class PhpStatRepository extends ServiceEntityRepository
 
         foreach ($minorPhpVersions as $index => $version) {
             if ($sums[$index]) {
-                $record->setDataPoint($version, $yesterdayPoint, $sums[$index]);
+                $record->setDataPoint($version, $dataPointDate, $sums[$index]);
             }
         }
 

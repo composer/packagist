@@ -53,6 +53,7 @@ class MigratePhpStatsCommand extends Command
             ini_set('memory_limit', '2G');
 
             $now = new \DateTimeImmutable();
+            $yesterday = new \DateTimeImmutable('yesterday');
             $todaySuffix = ':'.$now->format('Ymd');
             $keysToUpdate = $this->redis->keys('php:*:*:*');
             $keysToUpdate = array_merge($keysToUpdate, $this->redis->keys('phpplatform:*:*:*'));
@@ -91,7 +92,7 @@ class MigratePhpStatsCommand extends Command
 
                 if ($lastPackageId && $lastPackageId !== $packageId) {
                     $this->logger->debug('Processing package #'.$lastPackageId);
-                    $phpStatRepo->transferStatsToDb($lastPackageId, $buffer, $now);
+                    $phpStatRepo->transferStatsToDb($lastPackageId, $buffer, $now, $yesterday);
                     $buffer = [];
 
                     $this->getEM()->clear();
@@ -107,7 +108,7 @@ class MigratePhpStatsCommand extends Command
 
             // process last package
             if ($buffer) {
-                $phpStatRepo->transferStatsToDb($lastPackageId, $buffer, $now);
+                $phpStatRepo->transferStatsToDb($lastPackageId, $buffer, $now, $yesterday);
             }
         } finally {
             $this->locker->unlockCommand($this->getName());
