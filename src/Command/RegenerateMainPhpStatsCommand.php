@@ -76,6 +76,8 @@ class RegenerateMainPhpStatsCommand extends Command
                 $this->logger->debug('Processing package #'.$id);
                 $phpStatRepo->createOrUpdateMainRecord($package, PhpStat::TYPE_PHP, $now, $dataPoint);
                 $phpStatRepo->createOrUpdateMainRecord($package, PhpStat::TYPE_PLATFORM, $now, $dataPoint);
+
+                $this->getEM()->clear();
             }
         } finally {
             $this->locker->unlockCommand($this->getName());
