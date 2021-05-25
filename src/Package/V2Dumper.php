@@ -247,10 +247,10 @@ class V2Dumper
         $path = $dir . '/' . $filename;
 
         $metadata = [
+            'minified' => 'composer/2.0',
             'packages' => [
                 $packageName => MetadataMinifier::minify($versionArrays),
             ],
-            'minified' => 'composer/2.0',
         ];
 
         $json = json_encode($metadata, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
