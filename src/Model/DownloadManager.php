@@ -218,6 +218,7 @@ class DownloadManager
             ['ids' => array_keys($versionsWithDownloads)],
             ['ids' => Connection::PARAM_INT_ARRAY]
         );
+        $versionIds = array_map('intval', $versionIds);
         unset($versionsWithDownloads);
 
         sort($keys);
