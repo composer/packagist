@@ -78,6 +78,10 @@ class RegenerateMainPhpStatsCommand extends Command
                 $phpStatRepo->createOrUpdateMainRecord($package, PhpStat::TYPE_PLATFORM, $now, $dataPoint);
 
                 $this->getEM()->clear();
+
+                if ($signal->isTriggered()) {
+                    break;
+                }
             }
         } finally {
             $this->locker->unlockCommand($this->getName());
