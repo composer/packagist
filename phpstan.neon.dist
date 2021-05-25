@@ -1,11 +1,13 @@
 # run with: bin/phpstan analyse
 
 includes:
+    - phpstan-baseline.neon
     - vendor/phpstan/phpstan-doctrine/extension.neon
     - vendor/phpstan/phpstan-doctrine/rules.neon
 
 parameters:
-    level: 4
+    level: 8
+    checkExplicitMixed: true
 
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: false

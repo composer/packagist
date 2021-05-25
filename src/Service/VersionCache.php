@@ -8,13 +8,16 @@ use App\Entity\Version;
 
 class VersionCache implements VersionCacheInterface
 {
-    /** @var Version[] */
+    /** @var array<string, array{version: string, normalizedVersion: string, source: array{reference: string|null, type: string|null, url: string|null}}> */
     private array $versionCache;
-    private array $emptyReferences;
-    private Package $package;
 
-    public function __construct(Package $package, array $existingVersions, array $emptyReferences)
-    {
+    public function __construct(
+        private Package $package,
+        /** @var array<string, array{version: string, normalizedVersion: string, source: array{reference: string|null, type: string|null, url: string|null}}> */
+        private array $existingVersions,
+        /** @var string[] */
+        private array $emptyReferences
+    ) {
         $this->versionCache = [];
         foreach ($existingVersions as $version) {
             $this->versionCache[$version['version']] = $version;
@@ -23,6 +26,11 @@ class VersionCache implements VersionCacheInterface
         $this->emptyReferences = $emptyReferences;
     }
 
+    /**
+     * @param string $version
+     * @param string $identifier
+     * @return array{name: string, version: string, version_normalized: string, source: array{reference: string|null, type: string|null, url: string|null}}|false|null
+     */
     public function getVersionPackage($version, $identifier)
     {
         if (!empty($this->versionCache[$version]['source']['reference']) && $this->versionCache[$version]['source']['reference'] === $identifier) {
@@ -41,7 +49,7 @@ class VersionCache implements VersionCacheInterface
         return null;
     }
 
-    public function clearVersion($version)
+    public function clearVersion(string $version): void
     {
         foreach (array_keys($this->versionCache) as $v) {
             if (preg_replace('{\.x-dev$}', '', $v) === $version || preg_replace('{-dev$}', '', $v) === $version || preg_replace('{^dev-}', '', $v) === $version) {

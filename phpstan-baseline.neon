@@ -1,0 +1,4972 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Method App\\\\Command\\\\CleanIndexCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/CleanIndexCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/CleanIndexCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/CleanIndexCommand.php
+
+		-
+			message: "#^Cannot call method getName\\(\\) on mixed\\.$#"
+			count: 4
+			path: src/Command/ClearVersionsCommand.php
+
+		-
+			message: "#^Cannot call method getVersion\\(\\) on mixed\\.$#"
+			count: 2
+			path: src/Command/ClearVersionsCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\ClearVersionsCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/ClearVersionsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function trim expects string, array\\<string\\>\\|string\\|true given\\.$#"
+			count: 1
+			path: src/Command/ClearVersionsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$version of method App\\\\Entity\\\\VersionRepository\\:\\:remove\\(\\) expects App\\\\Entity\\\\Version, mixed given\\.$#"
+			count: 2
+			path: src/Command/ClearVersionsCommand.php
+
+		-
+			message: "#^Cannot access offset string on mixed\\.$#"
+			count: 1
+			path: src/Command/CompileStatsCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\CompileStatsCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/CompileStatsCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\CompileStatsCommand\\:\\:sumLastNDays\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/CompileStatsCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\CompileStatsCommand\\:\\:sumLastNDays\\(\\) has parameter \\$conn with no typehint specified\\.$#"
+			count: 1
+			path: src/Command/CompileStatsCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\CompileStatsCommand\\:\\:sumLastNDays\\(\\) has parameter \\$days with no typehint specified\\.$#"
+			count: 1
+			path: src/Command/CompileStatsCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\CompileStatsCommand\\:\\:sumLastNDays\\(\\) has parameter \\$id with no typehint specified\\.$#"
+			count: 1
+			path: src/Command/CompileStatsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/CompileStatsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/CompileStatsCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\ConfigureAlgoliaCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/ConfigureAlgoliaCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$input of static method Symfony\\\\Component\\\\Yaml\\\\Yaml\\:\\:parse\\(\\) expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Command/ConfigureAlgoliaCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\DumpPackagesCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/DumpPackagesCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/DumpPackagesCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 2
+			path: src/Command/DumpPackagesCommand.php
+
+		-
+			message: "#^Parameter \\#2 \\$value of function ini_set expects string, int given\\.$#"
+			count: 1
+			path: src/Command/DumpPackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\DumpPackagesV2Command\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/DumpPackagesV2Command.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/DumpPackagesV2Command.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 2
+			path: src/Command/DumpPackagesV2Command.php
+
+		-
+			message: "#^Parameter \\#2 \\$value of function ini_set expects string, int given\\.$#"
+			count: 1
+			path: src/Command/DumpPackagesV2Command.php
+
+		-
+			message: "#^Method App\\\\Command\\\\GenerateTokensCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/GenerateTokensCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:createSearchableProvider\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:getProviders\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:getTags\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:packageToSearchableArray\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:packageToSearchableArray\\(\\) has parameter \\$tags with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:updateIndexedAt\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:updateIndexedAt\\(\\) has parameter \\$idsToUpdate with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$num of function log expects float, string given\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function strlen expects string, int\\<0, max\\> given\\.$#"
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\MigrateDownloadCountsCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/MigrateDownloadCountsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/MigrateDownloadCountsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/MigrateDownloadCountsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$packageId of method App\\\\Model\\\\DownloadManager\\:\\:transferDownloadsToDb\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: src/Command/MigrateDownloadCountsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$string1 of function strcmp expects string, mixed given\\.$#"
+			count: 1
+			path: src/Command/MigrateDownloadCountsCommand.php
+
+		-
+			message: "#^Parameter \\#2 \\$string2 of function strcmp expects string, mixed given\\.$#"
+			count: 1
+			path: src/Command/MigrateDownloadCountsCommand.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function preg_replace expects array\\|string, mixed given\\.$#"
+			count: 2
+			path: src/Command/MigrateDownloadCountsCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\MigratePhpStatsCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/MigratePhpStatsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/MigratePhpStatsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/MigratePhpStatsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$packageId of method App\\\\Entity\\\\PhpStatRepository\\:\\:transferStatsToDb\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: src/Command/MigratePhpStatsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$string1 of function strcmp expects string, mixed given\\.$#"
+			count: 1
+			path: src/Command/MigratePhpStatsCommand.php
+
+		-
+			message: "#^Parameter \\#2 \\$string2 of function strcmp expects string, mixed given\\.$#"
+			count: 1
+			path: src/Command/MigratePhpStatsCommand.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function preg_replace expects array\\|string, mixed given\\.$#"
+			count: 2
+			path: src/Command/MigratePhpStatsCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\PopulateDependentsSuggestersCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/PopulateDependentsSuggestersCommand.php
+
+		-
+			message: "#^Parameter \\#2 \\$versionId of method App\\\\Entity\\\\DependentRepository\\:\\:updateDependentSuggesters\\(\\) expects int, mixed given\\.$#"
+			count: 1
+			path: src/Command/PopulateDependentsSuggestersCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\RegenerateMainPhpStatsCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/RegenerateMainPhpStatsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/RegenerateMainPhpStatsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/RegenerateMainPhpStatsCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$datetime of class DateTimeImmutable constructor expects string, array\\<string\\>\\|string\\|null given\\.$#"
+			count: 1
+			path: src/Command/RegenerateMainPhpStatsCommand.php
+
+		-
+			message: "#^Binary operation \"\\.\" between 'packagist_run_' and array\\<string\\>\\|bool\\|string\\|null results in an error\\.$#"
+			count: 1
+			path: src/Command/RunWorkersCommand.php
+
+		-
+			message: "#^Cannot cast array\\<string\\>\\|bool\\|string\\|null to int\\.$#"
+			count: 1
+			path: src/Command/RunWorkersCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\RunWorkersCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/RunWorkersCommand.php
+
+		-
+			message: "#^Parameter \\#5 \\$default of method Symfony\\\\Component\\\\Console\\\\Command\\\\Command\\:\\:addOption\\(\\) expects array\\<string\\>\\|bool\\|string\\|null, int given\\.$#"
+			count: 1
+			path: src/Command/RunWorkersCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\SymlinkMetadataMirrorCommand\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Command/SymlinkMetadataMirrorCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\SymlinkMetadataMirrorCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/SymlinkMetadataMirrorCommand.php
+
+		-
+			message: "#^Property App\\\\Command\\\\SymlinkMetadataMirrorCommand\\:\\:\\$awsMeta type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Command/SymlinkMetadataMirrorCommand.php
+
+		-
+			message: "#^Property App\\\\Command\\\\SymlinkMetadataMirrorCommand\\:\\:\\$webDir \\(string\\) does not accept string\\|false\\.$#"
+			count: 1
+			path: src/Command/SymlinkMetadataMirrorCommand.php
+
+		-
+			message: "#^Method App\\\\Command\\\\UpdatePackagesCommand\\:\\:configure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Command/UpdatePackagesCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/UpdatePackagesCommand.php
+
+		-
+			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Command/UpdatePackagesCommand.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\AboutController\\:\\:aboutAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/AboutController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\AboutController\\:\\:aboutComposerFallbackAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/AboutController.php
+
+		-
+			message: "#^Cannot access offset 'canon_url' on mixed\\.$#"
+			count: 2
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Cannot access offset 'downloads' on mixed\\.$#"
+			count: 3
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Cannot access offset 'project' on mixed\\.$#"
+			count: 2
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Cannot access offset 'repository' on mixed\\.$#"
+			count: 9
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Cannot call method getGithubToken\\(\\) on App\\\\Entity\\\\User\\|null\\.$#"
+			count: 2
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:createPackageAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:editPackageAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:extractMinorVersion\\(\\) should return string but returns string\\|null\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:findPackagesByRepository\\(\\) has parameter \\$remoteId with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:findPackagesByRepository\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:findPackagesByUrl\\(\\) has parameter \\$remoteId with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:findPackagesByUrl\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:getJobAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:getPackageAndVersionId\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:getPackageAndVersionId\\(\\) should return array but returns array\\<string, mixed\\>\\|false\\.$#"
+			count: 2
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:packagesAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:receivePost\\(\\) has parameter \\$remoteId with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:trackDownloadsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:updatePackageAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#1 \\$content of class Symfony\\\\Component\\\\HttpFoundation\\\\Response constructor expects string\\|null, string\\|false given\\.$#"
+			count: 6
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#1 \\$haystack of function strpos expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
+			count: 2
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, resource\\|string given\\.$#"
+			count: 4
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#1 \\$maintainer of method App\\\\Entity\\\\Package\\:\\:addMaintainer\\(\\) expects App\\\\Entity\\\\User, App\\\\Entity\\\\User\\|null given\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#1 \\$token of method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:setupWebHook\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#2 \\$data of function hash_hmac expects string, resource\\|string given\\.$#"
+			count: 2
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#2 \\$ip of method App\\\\Model\\\\DownloadManager\\:\\:addDownloads\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#2 \\$userId of method App\\\\Entity\\\\PackageRepository\\:\\:isPackageMaintainedBy\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#3 \\$phpMinor of method App\\\\Model\\\\DownloadManager\\:\\:addDownloads\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Parameter \\#4 \\$phpMinorPlatform of method App\\\\Model\\\\DownloadManager\\:\\:addDownloads\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ApiDocController\\:\\:indexAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ApiDocController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:setPassword\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/ChangePasswordController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ChangePasswordController\\:\\:changePasswordAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ChangePasswordController.php
+
+		-
+			message: "#^Parameter \\#1 \\$user of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:encodePassword\\(\\) expects Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface, object given\\.$#"
+			count: 1
+			path: src/Controller/ChangePasswordController.php
+
+		-
+			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:encodePassword\\(\\) expects string, mixed given\\.$#"
+			count: 1
+			path: src/Controller/ChangePasswordController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\Controller\\:\\:setDeps\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/Controller.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:fetchColumn\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/ExploreController.php
+
+		-
+			message: "#^Cannot call method getId\\(\\) on mixed\\.$#"
+			count: 4
+			path: src/Controller/ExploreController.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 2
+			path: src/Controller/ExploreController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ExploreController\\:\\:exploreAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ExploreController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ExploreController\\:\\:popularAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ExploreController.php
+
+		-
+			message: "#^Parameter \\#1 \\$array of function usort expects array, mixed given\\.$#"
+			count: 2
+			path: src/Controller/ExploreController.php
+
+		-
+			message: "#^Parameter \\#1 \\$currentPage of method Pagerfanta\\\\Pagerfanta\\:\\:setCurrentPage\\(\\) expects int, mixed given\\.$#"
+			count: 1
+			path: src/Controller/ExploreController.php
+
+		-
+			message: "#^Parameter \\#2 \\$results of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects iterable, mixed given\\.$#"
+			count: 1
+			path: src/Controller/ExploreController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:feedsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/FeedController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) return type has no value type specified in iterable type array\\|Traversable\\.$#"
+			count: 1
+			path: src/Controller/FeedController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) should return array\\|Traversable but returns mixed\\.$#"
+			count: 1
+			path: src/Controller/FeedController.php
+
+		-
+			message: "#^Parameter \\#1 \\$array of function reset expects array, array\\|Traversable given\\.$#"
+			count: 1
+			path: src/Controller/FeedController.php
+
+		-
+			message: "#^Parameter \\#1 \\$type of method Laminas\\\\Feed\\\\Writer\\\\Feed\\:\\:export\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/FeedController.php
+
+		-
+			message: "#^Parameter \\#2 \\$type of method Laminas\\\\Feed\\\\Writer\\\\AbstractFeed\\:\\:setFeedLink\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/FeedController.php
+
+		-
+			message: "#^Parameter \\#5 \\$items of method App\\\\Controller\\\\FeedController\\:\\:buildFeed\\(\\) expects array\\<int, App\\\\Entity\\\\Package\\|App\\\\Entity\\\\Version\\>, array\\|Traversable given\\.$#"
+			count: 4
+			path: src/Controller/FeedController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:getGithubId\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:connect\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:connectCheck\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:disconnect\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:disconnectUser\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:login\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:loginCheck\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Parameter \\#1 \\$accessToken of method KnpU\\\\OAuth2ClientBundle\\\\Client\\\\Provider\\\\GithubClient\\:\\:fetchUserFromToken\\(\\) expects League\\\\OAuth2\\\\Client\\\\Token\\\\AccessToken, League\\\\OAuth2\\\\Client\\\\Token\\\\AccessTokenInterface given\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Parameter \\#1 \\$user of method App\\\\Controller\\\\GitHubLoginController\\:\\:disconnectUser\\(\\) expects App\\\\Entity\\\\User, object given\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Parameter \\#1 \\$userId of method App\\\\Service\\\\Scheduler\\:\\:scheduleUserScopeMigration\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Parameter \\#2 \\$user_string of function hash_equals expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Parameter \\#3 \\$newScope of method App\\\\Service\\\\Scheduler\\:\\:scheduleUserScopeMigration\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/GitHubLoginController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:healthCheckAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:logResults\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:logResults\\(\\) has parameter \\$msg with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:logResults\\(\\) has parameter \\$results with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Parameter \\#1 \\$haystack of function strpos expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function trim expects string, string\\|false\\|null given\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Parameter \\#2 \\$username of class Laminas\\\\Diagnostics\\\\Check\\\\PDOCheck constructor expects string, string\\|false\\|null given\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Parameter \\#3 \\$password of class Laminas\\\\Diagnostics\\\\Check\\\\PDOCheck constructor expects string, string\\|false\\|null given\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Property App\\\\Controller\\\\HealthCheckController\\:\\:\\$awsMeta type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/HealthCheckController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\MirrorsController\\:\\:indexAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/MirrorsController.php
+
+		-
+			message: "#^Call to an undefined method Symfony\\\\Component\\\\Form\\\\FormError\\|Symfony\\\\Component\\\\Form\\\\FormErrorIterator\\:\\:getMessageTemplate\\(\\)\\.$#"
+			count: 2
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:getGithubToken\\(\\)\\.$#"
+			count: 2
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Cannot access offset 'depth' on mixed\\.$#"
+			count: 7
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Cannot access offset 'version' on array\\('label' \\=\\> string\\|null, 'version' \\=\\> string, 'depth' \\=\\> 'exact'\\|'major'\\|'minor'\\|'package'\\)\\|false\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Cannot access offset 'version' on mixed\\.$#"
+			count: 6
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Cannot call method getId\\(\\) on mixed\\.$#"
+			count: 4
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Cannot call method getName\\(\\) on mixed\\.$#"
+			count: 2
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:abandonAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:allAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createAddMaintainerForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createDatePoints\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createDatePoints\\(\\) has parameter \\$average with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createDeletePackageForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createMaintainerAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createMaintainerAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createRemoveMaintainerForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:deletePackageAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:deletePackageAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:deletePackageVersionAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:dependentsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:dependentsAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:editAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:fetchInfoAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:getStatsInterval\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:getStatsInterval\\(\\) has parameter \\$average with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:guessStatsAverage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:guessStatsStartDate\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:guessStatsStartDate\\(\\) has parameter \\$packageOrVersion with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:listAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:majorVersionStatsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:majorVersionStatsAction\\(\\) has parameter \\$majorVersion with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:markSafeAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:metadataChangesAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:overallStatsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:overallStatsAction\\(\\) has parameter \\$majorVersion with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:phpStatsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:removeMaintainerAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:removeMaintainerAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:securityAdvisoriesAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:securityAdvisoriesAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:statsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:submitPackageAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:suggestersAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:suggestersAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:unabandonAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:updatePackageAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:updatePackageAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:updatedSinceAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:versionPhpStatsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:versionStatsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:versionStatsAction\\(\\) has parameter \\$version with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageAliasAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageAliasAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageDownloadsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageDownloadsAction\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageVersionAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageVersionAction\\(\\) has parameter \\$versionId with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewProvidersAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewSpamAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewVendorAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewVendorAction\\(\\) has parameter \\$vendor with no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#1 \\$content of class Symfony\\\\Component\\\\HttpFoundation\\\\Response constructor expects string\\|null, string\\|false given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#1 \\$maintainer of method App\\\\Entity\\\\Package\\:\\:addMaintainer\\(\\) expects App\\\\Entity\\\\User, object given\\.$#"
+			count: 2
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#1 \\$object of static method DateTimeImmutable\\:\\:createFromMutable\\(\\) expects DateTime, DateTimeInterface given\\.$#"
+			count: 2
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#1 \\$object of static method DateTimeImmutable\\:\\:createFromMutable\\(\\) expects DateTime, DateTimeInterface\\|null given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#1 \\$str of function preg_quote expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#1 \\$user of method App\\\\Model\\\\FavoriteManager\\:\\:isMarked\\(\\) expects App\\\\Entity\\\\User, object\\|null given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#2 \\$token of method Symfony\\\\Bundle\\\\FrameworkBundle\\\\Controller\\\\AbstractController\\:\\:isCsrfTokenValid\\(\\) expects string\\|null, mixed given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#2 \\$user_string of function hash_equals expects string, mixed given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#3 \\$packages of method App\\\\Controller\\\\Controller\\:\\:getPackagesMetadata\\(\\) expects iterable\\<App\\\\Entity\\\\Package\\|array\\('id' \\=\\> int\\)\\>, mixed given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#3 \\$referenceType of method Symfony\\\\Bundle\\\\FrameworkBundle\\\\Controller\\\\AbstractController\\:\\:generateUrl\\(\\) expects int, true given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, mixed given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#4 \\$orderBy of method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:getId\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/ProfileController.php
+
+		-
+			message: "#^Cannot call method getId\\(\\) on object\\|null\\.$#"
+			count: 1
+			path: src/Controller/ProfileController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ProfileController\\:\\:editAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ProfileController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ProfileController\\:\\:myProfile\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ProfileController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ProfileController\\:\\:packagesAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ProfileController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ProfileController\\:\\:publicProfile\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/ProfileController.php
+
+		-
+			message: "#^Parameter \\#2 \\$default of method Symfony\\\\Component\\\\HttpFoundation\\\\InputBag\\:\\:get\\(\\) expects string\\|null, int given\\.$#"
+			count: 1
+			path: src/Controller/ProfileController.php
+
+		-
+			message: "#^Parameter \\#2 \\$user of method App\\\\Controller\\\\ProfileController\\:\\:getUserPackages\\(\\) expects App\\\\Entity\\\\User, object given\\.$#"
+			count: 1
+			path: src/Controller/ProfileController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\RegistrationController\\:\\:confirmEmail\\(\\) should return Symfony\\\\Component\\\\HttpFoundation\\\\Response but returns Symfony\\\\Component\\\\HttpFoundation\\\\Response\\|null\\.$#"
+			count: 1
+			path: src/Controller/RegistrationController.php
+
+		-
+			message: "#^Parameter \\#1 \\.\\.\\.\\$addresses of method Symfony\\\\Component\\\\Mime\\\\Email\\:\\:to\\(\\) expects string\\|Symfony\\\\Component\\\\Mime\\\\Address, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/RegistrationController.php
+
+		-
+			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:encodePassword\\(\\) expects string, mixed given\\.$#"
+			count: 1
+			path: src/Controller/RegistrationController.php
+
+		-
+			message: "#^Property App\\\\Controller\\\\RegistrationController\\:\\:\\$emailVerifier has no typehint specified\\.$#"
+			count: 1
+			path: src/Controller/RegistrationController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\ResetPasswordController\\:\\:reset\\(\\) should return Symfony\\\\Component\\\\HttpFoundation\\\\Response but returns Symfony\\\\Component\\\\HttpFoundation\\\\Response\\|null\\.$#"
+			count: 1
+			path: src/Controller/ResetPasswordController.php
+
+		-
+			message: "#^Parameter \\#1 \\$userEmail of method App\\\\Controller\\\\ResetPasswordController\\:\\:processSendingPasswordResetEmail\\(\\) expects string, mixed given\\.$#"
+			count: 1
+			path: src/Controller/ResetPasswordController.php
+
+		-
+			message: "#^Parameter \\#1 \\.\\.\\.\\$addresses of method Symfony\\\\Component\\\\Mime\\\\Email\\:\\:to\\(\\) expects string\\|Symfony\\\\Component\\\\Mime\\\\Address, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/ResetPasswordController.php
+
+		-
+			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:encodePassword\\(\\) expects string, mixed given\\.$#"
+			count: 1
+			path: src/Controller/ResetPasswordController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\SecurityController\\:\\:logout\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/SecurityController.php
+
+		-
+			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:getGithubScope\\(\\)\\.$#"
+			count: 2
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:getGithubToken\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:getId\\(\\)\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Cannot call method getId\\(\\) on object\\|null\\.$#"
+			count: 8
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:configureTwoFactorAuthAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:confirmTwoFactorAuthAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:deleteFavoriteAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:deleteUserAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:disableTwoFactorAuthAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:enableTwoFactorAuthAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:favoritesAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:markSpammerAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:postFavoriteAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\UserController\\:\\:triggerGitHubSyncAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Parameter \\#2 \\$code of method Scheb\\\\TwoFactorBundle\\\\Security\\\\TwoFactor\\\\Provider\\\\Totp\\\\TotpAuthenticatorInterface\\:\\:checkCode\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Parameter \\#2 \\$default of method Symfony\\\\Component\\\\HttpFoundation\\\\InputBag\\:\\:get\\(\\) expects string\\|null, int given\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Parameter \\#2 \\$user_string of function hash_equals expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/UserController.php
+
+		-
+			message: "#^Cannot call method getQuery\\(\\) on mixed\\.$#"
+			count: 2
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\WebController\\:\\:checkForQueryMatch\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\WebController\\:\\:computeSearchQuery\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\WebController\\:\\:computeSearchQuery\\(\\) has parameter \\$filteredOrderBys with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\WebController\\:\\:getFilteredOrderedBys\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\WebController\\:\\:indexAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\WebController\\:\\:searchAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\WebController\\:\\:searchFormAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\WebController\\:\\:statsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\Controller\\\\WebController\\:\\:statsTotalsAction\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, string\\|null given\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Method App\\\\DataFixtures\\\\DownloadFixtures\\:\\:getLatestPackageVersion\\(\\) should return App\\\\Entity\\\\Version but returns mixed\\.$#"
+			count: 1
+			path: src/DataFixtures/DownloadFixtures.php
+
+		-
+			message: "#^Method App\\\\DataFixtures\\\\DownloadFixtures\\:\\:load\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/DataFixtures/DownloadFixtures.php
+
+		-
+			message: "#^Parameter \\#1 \\$object of static method DateTimeImmutable\\:\\:createFromMutable\\(\\) expects DateTime, DateTimeInterface given\\.$#"
+			count: 1
+			path: src/DataFixtures/DownloadFixtures.php
+
+		-
+			message: "#^Method App\\\\DataFixtures\\\\PackageFixtures\\:\\:getPackages\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/DataFixtures/PackageFixtures.php
+
+		-
+			message: "#^Method App\\\\DataFixtures\\\\PackageFixtures\\:\\:load\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/DataFixtures/PackageFixtures.php
+
+		-
+			message: "#^Method App\\\\DataFixtures\\\\UserFixtures\\:\\:load\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/DataFixtures/UserFixtures.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Author\\:\\:addVersion\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Author\\:\\:setCreatedAt\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Author\\:\\:setEmail\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Author\\:\\:setHomepage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Author\\:\\:setName\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Author\\:\\:setOwner\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Author\\:\\:setRole\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Author\\:\\:setUpdatedAt\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Author\\:\\:toArray\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$createdAt has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$email has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$homepage has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$id has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$name has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$owner has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$role has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$updatedAt has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$versions has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Author.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\AuthorRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/AuthorRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\AuthorRepository\\:\\:findOneByNameAndPackage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/AuthorRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\AuthorRepository\\:\\:findOneByNameAndPackage\\(\\) has parameter \\$author with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/AuthorRepository.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\ConflictLink\\:\\:\\$version has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/ConflictLink.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\DependentRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/DependentRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\DependentRepository\\:\\:deletePackageDependentSuggesters\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/DependentRepository.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\DevRequireLink\\:\\:\\$version has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/DevRequireLink.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:computeSum\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:getData\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:setData\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:setData\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:setDataPoint\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:setDataPoint\\(\\) has parameter \\$key with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:setDataPoint\\(\\) has parameter \\$value with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:setId\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:setLastUpdated\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:setPackage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Download\\:\\:setType\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$data has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$id has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$lastUpdated has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$package has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$total has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$type has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Download.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\DownloadRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/DownloadRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:deletePackageDownloads\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/DownloadRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:findDataByMajorVersion\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/DownloadRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:findDataByMajorVersions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/DownloadRepository.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
+			count: 2
+			path: src/Entity/DownloadRepository.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function preg_replace expects array\\|string, mixed given\\.$#"
+			count: 2
+			path: src/Entity/DownloadRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:getEmptyReferences\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/EmptyReferenceCache.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:setEmptyReferences\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/EmptyReferenceCache.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:setEmptyReferences\\(\\) has parameter \\$emptyReferences with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/EmptyReferenceCache.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:setPackage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/EmptyReferenceCache.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\EmptyReferenceCache\\:\\:\\$emptyReferences has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/EmptyReferenceCache.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\EmptyReferenceCache\\:\\:\\$package has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/EmptyReferenceCache.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Job\\:\\:__construct\\(\\) has parameter \\$payload with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Job.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Job\\:\\:complete\\(\\) has parameter \\$result with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Job.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Job\\:\\:getPayload\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Job.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Job\\:\\:getResult\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Job.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Job\\:\\:\\$payload type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Job.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Job\\:\\:\\$result type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Job.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\JobRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/JobRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:getLastGitHubSyncJob\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/JobRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:getScheduledJobIds\\(\\) return type has no value type specified in iterable type Generator\\.$#"
+			count: 1
+			path: src/Entity/JobRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:markTimedOutJobs\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/JobRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:addMaintainer\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:addVersions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:getMaintainers\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:getPackageName\\(\\) should return string but returns string\\|null\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:getVendor\\(\\) should return string but returns string\\|null\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:getVersion\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:getVersion\\(\\) has parameter \\$normalizedVersion with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:getVersions\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:isPackageUnique\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:isRepositoryValid\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:isVendorWritable\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setAbandoned\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setAutoUpdated\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setDescription\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setEntityRepository\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setEntityRepository\\(\\) has parameter \\$repository with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setGitHubForks\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setGitHubOpenIssues\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setGitHubStars\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setGitHubWatches\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setLanguage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setName\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setReadme\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setRemoteId\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setReplacementPackage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setRouter\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setRouter\\(\\) has parameter \\$router with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setSuspect\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setType\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setUpdateFailureNotified\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:setUpdatedAt\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:sortVersions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:sortVersions\\(\\) has parameter \\$a with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:sortVersions\\(\\) has parameter \\$b with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:toArray\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Parameter \\#2 \\$subject of function preg_match expects string, string\\|null given\\.$#"
+			count: 2
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function preg_replace expects array\\|string, string\\|null given\\.$#"
+			count: 8
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Parameter \\#3 \\$subject of function preg_replace_callback expects array\\|string, string\\|null given\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$autoUpdated has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$cachedVersions type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$description has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$downloads has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$entityRepository has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$gitHubForks has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$gitHubOpenIssues has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$gitHubStars has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$gitHubWatches has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$id has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$language has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$maintainers has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$readme has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$remoteId has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$repository has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$router has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$suspect has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$type has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$updateFailureNotified has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$vcsDriverError has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$versions has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Package.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:getId\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setId\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setId\\(\\) has parameter \\$id with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setPackageName\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setPackageVersion\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setVersion\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:toArray\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\PackageLink\\:\\:\\$id has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\PackageLink\\:\\:\\$packageName has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\PackageLink\\:\\:\\$packageVersion has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\PackageLink\\:\\:\\$version has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageLink.php
+
+		-
+			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Cannot access offset 'name' on mixed\\.$#"
+			count: 2
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Cannot access offset 'user_id' on mixed\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Cannot call method getMaintainers\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Cannot call method getVersions\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 4
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\PackageRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:addFilters\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:addFilters\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:findProviders\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:findProviders\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getCountByYearMonth\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getFilteredQueryBuilder\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getFilteredQueryBuilder\\(\\) has parameter \\$orderByName with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getGitHubPackagesByMaintainer\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getGitHubStars\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getGitHubStars\\(\\) has parameter \\$ids with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageByName\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageByName\\(\\) should return App\\\\Entity\\\\Package but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNames\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesByType\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesByType\\(\\) has parameter \\$type with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesByVendor\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesByVendor\\(\\) has parameter \\$vendor with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesForQuery\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesForQuery\\(\\) has parameter \\$query with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesUpdatedSince\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithFields\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithFields\\(\\) has parameter \\$fields with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithFields\\(\\) has parameter \\$filters with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithVersions\\(\\) has parameter \\$filters with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithVersions\\(\\) has parameter \\$ids with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithVersions\\(\\) should return array\\<App\\\\Entity\\\\Package\\> but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPartialPackageByNameWithVersions\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPartialPackageByNameWithVersions\\(\\) should return App\\\\Entity\\\\Package but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getProvidedNames\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackages\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumping\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumpingV2\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForIndexing\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggestCount\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggests\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggests\\(\\) has parameter \\$limit with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggests\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggests\\(\\) has parameter \\$offset with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuspectPackages\\(\\) has parameter \\$limit with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuspectPackages\\(\\) has parameter \\$offset with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuspectPackages\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:isVendorTaken\\(\\) has parameter \\$vendor with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:iterateStaleDownloadCountPackageIds\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Parameter \\#1 \\$class of class ReflectionProperty constructor expects object\\|string, mixed given\\.$#"
+			count: 2
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Parameter \\#1 \\$entity of method Doctrine\\\\ORM\\\\EntityManager\\:\\:refresh\\(\\) expects object, mixed given\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Parameter \\#1 \\$objectOrValue of method ReflectionProperty\\:\\:setValue\\(\\) expects object\\|null, mixed given\\.$#"
+			count: 2
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:addDataPoint\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:addDataPoint\\(\\) has parameter \\$date with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:addDataPoint\\(\\) has parameter \\$phpMinor with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:addDataPoint\\(\\) has parameter \\$value with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:getData\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setData\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setData\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setDataPoint\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setDataPoint\\(\\) has parameter \\$date with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setDataPoint\\(\\) has parameter \\$phpMinor with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setDataPoint\\(\\) has parameter \\$value with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setLastUpdated\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStat.php
+
+		-
+			message: "#^Cannot access offset int on array\\<int, mixed\\>\\|false\\.$#"
+			count: 2
+			path: src/Entity/PhpStatRepository.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\PhpStatRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/PhpStatRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:createOrUpdateRecord\\(\\) has parameter \\$keys with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PhpStatRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:deletePackageStats\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/PhpStatRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:getStatVersions\\(\\) should return array\\<int, array\\('version' \\=\\> string, 'depth' \\=\\> 0\\|1\\|2\\|3\\)\\> but returns array\\.$#"
+			count: 1
+			path: src/Entity/PhpStatRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:transferStatsToDb\\(\\) has parameter \\$keys with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PhpStatRepository.php
+
+		-
+			message: "#^Parameter \\#2 \\$key of method App\\\\Entity\\\\PhpStatRepository\\:\\:getKeyInfo\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Entity/PhpStatRepository.php
+
+		-
+			message: "#^Parameter \\#2 \\$keys of method App\\\\Entity\\\\PhpStatRepository\\:\\:createDbRecordsForKeys\\(\\) expects array\\<string, int\\>, array\\<int\\|string, int\\> given\\.$#"
+			count: 2
+			path: src/Entity/PhpStatRepository.php
+
+		-
+			message: "#^Parameter \\#2 \\$type of class App\\\\Entity\\\\PhpStat constructor expects 1\\|2, int given\\.$#"
+			count: 2
+			path: src/Entity/PhpStatRepository.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\ProvideLink\\:\\:\\$version has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/ProvideLink.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\ReplaceLink\\:\\:\\$version has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/ReplaceLink.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\RequireLink\\:\\:\\$version has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/RequireLink.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$affectedVersions has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$composerRepository has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$cve has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$id has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$link has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$packageName has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$remoteId has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$reportedAt has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$source has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$title has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$updatedAt has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisory.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\SecurityAdvisoryRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/SecurityAdvisoryRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\SecurityAdvisoryRepository\\:\\:getPackageSecurityAdvisories\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisoryRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\SecurityAdvisoryRepository\\:\\:searchSecurityAdvisories\\(\\) has parameter \\$packageNames with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisoryRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\SecurityAdvisoryRepository\\:\\:searchSecurityAdvisories\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/SecurityAdvisoryRepository.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\SuggestLink\\:\\:\\$version has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/SuggestLink.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\SuggesterRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/SuggesterRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Tag\\:\\:__construct\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Tag\\:\\:addVersions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Tag\\:\\:getByName\\(\\) should return App\\\\Entity\\\\Tag but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Tag\\:\\:getId\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Tag\\:\\:getName\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Tag\\:\\:setId\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Tag\\:\\:setId\\(\\) has parameter \\$id with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Tag\\:\\:setName\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Tag\\:\\:setName\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Tag\\:\\:\\$id has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Tag\\:\\:\\$name has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Tag\\:\\:\\$versions has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Tag.php
+
+		-
+			message: "#^Cannot access offset 'login' on mixed\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\User\\:\\:addPackage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\User\\:\\:eraseCredentials\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\User\\:\\:getPackages\\(\\) return type with generic interface Doctrine\\\\Common\\\\Collections\\\\Collection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\User\\:\\:setRoles\\(\\) has parameter \\$roles with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\User\\:\\:setSalt\\(\\) has parameter \\$salt with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\User\\:\\:setUsername\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\User\\:\\:toArray\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Parameter \\#1 \\$known_string of function hash_equals expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Parameter \\#1 \\$secret of class Scheb\\\\TwoFactorBundle\\\\Model\\\\Totp\\\\TotpConfiguration constructor expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function strtolower expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Parameter \\#2 \\$user_string of function hash_equals expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$email has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$emailCanonical \\(string\\) does not accept string\\|null\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$id has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$packages with generic interface Doctrine\\\\Common\\\\Collections\\\\Collection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$password \\(string\\) does not accept string\\|null\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$roles has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$username \\(string\\) does not accept string\\|null\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$usernameCanonical \\(string\\) does not accept string\\|null\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\UserRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/UserRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\UserRepository\\:\\:findUsersMissingApiToken\\(\\) should return array\\<int, App\\\\Entity\\\\User\\> but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/UserRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\UserRepository\\:\\:getPackageMaintainersQueryBuilder\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/UserRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Vendor\\:\\:setName\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Vendor.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Vendor\\:\\:setVerified\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Vendor.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Vendor\\:\\:\\$name has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Vendor.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Vendor\\:\\:\\$verified has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Vendor.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\VendorRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/VendorRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VendorRepository\\:\\:verify\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/VendorRepository.php
+
+		-
+			message: "#^Cannot access offset 'type' on mixed\\.$#"
+			count: 2
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Cannot access offset 'url' on mixed\\.$#"
+			count: 2
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Cannot call method format\\(\\) on DateTimeInterface\\|null\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:addAuthor\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:addConflictLink\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:addDevRequireLink\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:addProvideLink\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:addReplaceLink\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:addRequireLink\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:addSuggestLink\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:addTag\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:equals\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAuthorJson\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAuthors\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAutoload\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAutoload\\(\\) should return array\\|null but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getBinaries\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getBinaries\\(\\) should return array\\|null but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getConflict\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getDevRequire\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getDist\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getDist\\(\\) should return array\\|null but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getExtra\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getFunding\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getFundingSorted\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getIncludePaths\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getIncludePaths\\(\\) should return array\\|null but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getLicense\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getLicense\\(\\) should return array but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getNames\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getNames\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getProvide\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getReplace\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getRequire\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getRequireVersion\\(\\) should return string but returns string\\|null\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSource\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSource\\(\\) should return array\\|null but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSuggest\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSupport\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSupport\\(\\) should return array\\|null but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getTags\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getVersionAlias\\(\\) should return string but returns string\\|null\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setAuthorJson\\(\\) has parameter \\$authors with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setAutoload\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setAutoload\\(\\) has parameter \\$autoload with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setBinaries\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setBinaries\\(\\) has parameter \\$binaries with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setDescription\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setDevelopment\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setDist\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setDist\\(\\) has parameter \\$dist with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setExtra\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setExtra\\(\\) has parameter \\$extra with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setFunding\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setFunding\\(\\) has parameter \\$funding with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setHomepage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setIncludePaths\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setIncludePaths\\(\\) has parameter \\$paths with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setLicense\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setLicense\\(\\) has parameter \\$license with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setName\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setNormalizedVersion\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setPackage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSoftDeletedAt\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSource\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSource\\(\\) has parameter \\$source with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSupport\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSupport\\(\\) has parameter \\$support with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setTargetDir\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setType\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setUpdatedAt\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:setVersion\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:sortAuthorKeys\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:sortAuthorKeys\\(\\) has parameter \\$a with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:sortAuthorKeys\\(\\) has parameter \\$b with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:toArray\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:toArray\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:toV2Array\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:toV2Array\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Parameter \\#1 \\$array of function ksort expects array, array\\|null given\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$authorJson has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$authors has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$autoload has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$binaries has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$conflict has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$description has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$devRequire has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$development has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$dist has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$extra has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$funding has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$homepage has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$id has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$includePaths has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$isDefaultBranch has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$license has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$name has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$normalizedVersion has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$package has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$provide has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$replace has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$require has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$source has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$suggest has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$support has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$tags has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$targetDir has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$type has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$version has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Cannot cast mixed to int\\.$#"
+			count: 2
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Class App\\\\Entity\\\\VersionRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:detachToArray\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:detachToArray\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getCountByYearMonth\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getFullVersion\\(\\) should return App\\\\Entity\\\\Version but returns mixed\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getLatestReleases\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getLatestReleases\\(\\) has parameter \\$count with no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionData\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionData\\(\\) has parameter \\$versionIds with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionMetadataForUpdate\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:remove\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function strtolower expects string, mixed given\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\VersionRepository\\:\\:\\$redis has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\VersionRepository\\:\\:\\$supportedLinkTypes has no typehint specified\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
+			message: "#^Method App\\\\EventListener\\\\CacheListener\\:\\:onResponse\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/EventListener/CacheListener.php
+
+		-
+			message: "#^Parameter \\#2 \\$values of method Symfony\\\\Component\\\\HttpFoundation\\\\ResponseHeaderBag\\:\\:set\\(\\) expects array\\<string\\>\\|string, mixed given\\.$#"
+			count: 1
+			path: src/EventListener/CacheListener.php
+
+		-
+			message: "#^Method App\\\\Form\\\\ChangePasswordFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/ChangePasswordFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\ChangePasswordFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/ChangePasswordFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\MaintainerRequest\\:\\:setUser\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/MaintainerRequest.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:getOrder\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/OrderBy.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:getSort\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/OrderBy.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:setOrder\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/OrderBy.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:setOrder\\(\\) has parameter \\$order with no typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/OrderBy.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:setSort\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/OrderBy.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:setSort\\(\\) has parameter \\$sort with no typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/OrderBy.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:getOrderBys\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/SearchQuery.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:getQuery\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/SearchQuery.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:setOrderBys\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/SearchQuery.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:setOrderBys\\(\\) has parameter \\$orderBys with no typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/SearchQuery.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:setQuery\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/SearchQuery.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:setQuery\\(\\) has parameter \\$query with no typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/SearchQuery.php
+
+		-
+			message: "#^Property App\\\\Form\\\\Model\\\\SearchQuery\\:\\:\\$orderBys type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/Model/SearchQuery.php
+
+		-
+			message: "#^Property App\\\\Form\\\\Model\\\\SearchQuery\\:\\:\\$query has no typehint specified\\.$#"
+			count: 1
+			path: src/Form/Model/SearchQuery.php
+
+		-
+			message: "#^Method App\\\\Form\\\\RegistrationFormType\\:\\:buildForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/RegistrationFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\RegistrationFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/RegistrationFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\RegistrationFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/RegistrationFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\RegistrationFormType\\:\\:configureOptions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/RegistrationFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\ResetPasswordFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/ResetPasswordFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\ResetPasswordFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/ResetPasswordFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\ResetPasswordRequestFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/ResetPasswordRequestFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\ResetPasswordRequestFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/ResetPasswordRequestFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\AbandonedType\\:\\:buildForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/AbandonedType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\AbandonedType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/Type/AbandonedType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\AbandonedType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/Type/AbandonedType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\AddMaintainerRequestType\\:\\:buildForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/AddMaintainerRequestType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\AddMaintainerRequestType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/Type/AddMaintainerRequestType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\AddMaintainerRequestType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/Type/AddMaintainerRequestType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\AddMaintainerRequestType\\:\\:configureOptions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/AddMaintainerRequestType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:buildForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/EnableTwoFactorAuthType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/Type/EnableTwoFactorAuthType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/Type/EnableTwoFactorAuthType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:configureOptions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/EnableTwoFactorAuthType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\OrderByType\\:\\:buildForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/OrderByType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\OrderByType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/Type/OrderByType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\OrderByType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/Type/OrderByType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\OrderByType\\:\\:configureOptions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/OrderByType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\PackageType\\:\\:buildForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/PackageType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\PackageType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/Type/PackageType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\PackageType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/Type/PackageType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\PackageType\\:\\:configureOptions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/PackageType.php
+
+		-
+			message: "#^Cannot call method getGithubId\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Form/Type/ProfileFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\ProfileFormType\\:\\:buildForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/ProfileFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\ProfileFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/Type/ProfileFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\ProfileFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/Type/ProfileFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\ProfileFormType\\:\\:configureOptions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/ProfileFormType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\RemoveMaintainerRequestType\\:\\:buildForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/RemoveMaintainerRequestType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\RemoveMaintainerRequestType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/Type/RemoveMaintainerRequestType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\RemoveMaintainerRequestType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/Type/RemoveMaintainerRequestType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\RemoveMaintainerRequestType\\:\\:configureOptions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/RemoveMaintainerRequestType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\SearchQueryType\\:\\:buildForm\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/SearchQueryType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\SearchQueryType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
+			count: 1
+			path: src/Form/Type/SearchQueryType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\SearchQueryType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Form/Type/SearchQueryType.php
+
+		-
+			message: "#^Method App\\\\Form\\\\Type\\\\SearchQueryType\\:\\:configureOptions\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Form/Type/SearchQueryType.php
+
+		-
+			message: "#^Method App\\\\HealthCheck\\\\MetadataDirCheck\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/HealthCheck/MetadataDirCheck.php
+
+		-
+			message: "#^Method App\\\\HealthCheck\\\\MetadataDirCheck\\:\\:isMetadataStoreMounted\\(\\) has parameter \\$awsMeta with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/HealthCheck/MetadataDirCheck.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function substr expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/HealthCheck/MetadataDirCheck.php
+
+		-
+			message: "#^Property App\\\\HealthCheck\\\\MetadataDirCheck\\:\\:\\$awsMeta type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/HealthCheck/MetadataDirCheck.php
+
+		-
+			message: "#^Cannot call method getUser\\(\\) on Symfony\\\\Component\\\\Security\\\\Core\\\\Authentication\\\\Token\\\\TokenInterface\\|null\\.$#"
+			count: 2
+			path: src/Menu/MenuBuilder.php
+
+		-
+			message: "#^Cannot call method getUsername\\(\\) on string\\|Stringable\\|Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\.$#"
+			count: 1
+			path: src/Menu/MenuBuilder.php
+
+		-
+			message: "#^Method App\\\\Menu\\\\MenuBuilder\\:\\:addProfileMenu\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Menu/MenuBuilder.php
+
+		-
+			message: "#^Method App\\\\Menu\\\\MenuBuilder\\:\\:addProfileMenu\\(\\) has parameter \\$menu with no typehint specified\\.$#"
+			count: 1
+			path: src/Menu/MenuBuilder.php
+
+		-
+			message: "#^Method App\\\\Menu\\\\MenuBuilder\\:\\:createProfileMenu\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Menu/MenuBuilder.php
+
+		-
+			message: "#^Method App\\\\Menu\\\\MenuBuilder\\:\\:createUserMenu\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Menu/MenuBuilder.php
+
+		-
+			message: "#^Method App\\\\Model\\\\DownloadManager\\:\\:addDownloads\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\DownloadManager\\:\\:createDbRecordsForKeys\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\DownloadManager\\:\\:getDownloads\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\DownloadManager\\:\\:getKeyInfo\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\DownloadManager\\:\\:getPackagesDownloads\\(\\) has parameter \\$packageIds with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\DownloadManager\\:\\:getPackagesDownloads\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\DownloadManager\\:\\:transferDownloadsToDb\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\DownloadManager\\:\\:transferDownloadsToDb\\(\\) has parameter \\$keys with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Parameter \\#1 \\$key of method App\\\\Model\\\\DownloadManager\\:\\:getKeyInfo\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Parameter \\#2 \\$keys of method App\\\\Model\\\\DownloadManager\\:\\:createDbRecordsForKeys\\(\\) expects array\\<string, int\\>, array\\<int\\|string, int\\> given\\.$#"
+			count: 2
+			path: src/Model/DownloadManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFaverCount\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFaverCounts\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFaverCounts\\(\\) has parameter \\$packageIds with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavers\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavers\\(\\) has parameter \\$limit with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavers\\(\\) has parameter \\$offset with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavoriteCount\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavorites\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavorites\\(\\) has parameter \\$limit with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavorites\\(\\) has parameter \\$offset with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:isMarked\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:markFavorite\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:removeFavorite\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\PackageManager\\:\\:__construct\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\PackageManager\\:\\:deletePackage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\PackageManager\\:\\:notifyNewMaintainer\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\PackageManager\\:\\:notifyNewMaintainer\\(\\) has parameter \\$package with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\PackageManager\\:\\:notifyNewMaintainer\\(\\) has parameter \\$user with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\PackageManager\\:\\:notifyUpdateFailure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\PackageManager\\:\\:notifyUpdateFailure\\(\\) has parameter \\$details with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Parameter \\#1 \\$address of class Symfony\\\\Component\\\\Mime\\\\Address constructor expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Parameter \\#2 \\$name of class Symfony\\\\Component\\\\Mime\\\\Address constructor expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Property App\\\\Model\\\\PackageManager\\:\\:\\$options type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Model/PackageManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\ProviderManager\\:\\:deletePackage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/ProviderManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\ProviderManager\\:\\:getPackageNames\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/ProviderManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\ProviderManager\\:\\:insertPackage\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/ProviderManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\ProviderManager\\:\\:packageExists\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/ProviderManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\ProviderManager\\:\\:packageExists\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/ProviderManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\ProviderManager\\:\\:packageIsProvided\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/ProviderManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\ProviderManager\\:\\:packageIsProvided\\(\\) has parameter \\$name with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/ProviderManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\ProviderManager\\:\\:populateProviders\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Model/ProviderManager.php
+
+		-
+			message: "#^Parameter \\#2 \\$members of method Predis\\\\ClientInterface\\:\\:sadd\\(\\) expects array, string given\\.$#"
+			count: 1
+			path: src/Model/ProviderManager.php
+
+		-
+			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:__construct\\(\\) has parameter \\$countMethod with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/RedisAdapter.php
+
+		-
+			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:__construct\\(\\) has parameter \\$fetchMethod with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/RedisAdapter.php
+
+		-
+			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:__construct\\(\\) has parameter \\$instance with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/RedisAdapter.php
+
+		-
+			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:__construct\\(\\) has parameter \\$model with no typehint specified\\.$#"
+			count: 1
+			path: src/Model/RedisAdapter.php
+
+		-
+			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:getSlice\\(\\) return type has no value type specified in iterable type iterable\\.$#"
+			count: 1
+			path: src/Model/RedisAdapter.php
+
+		-
+			message: "#^Property App\\\\Model\\\\RedisAdapter\\:\\:\\$countMethod has no typehint specified\\.$#"
+			count: 1
+			path: src/Model/RedisAdapter.php
+
+		-
+			message: "#^Property App\\\\Model\\\\RedisAdapter\\:\\:\\$fetchMethod has no typehint specified\\.$#"
+			count: 1
+			path: src/Model/RedisAdapter.php
+
+		-
+			message: "#^Property App\\\\Model\\\\RedisAdapter\\:\\:\\$instance has no typehint specified\\.$#"
+			count: 1
+			path: src/Model/RedisAdapter.php
+
+		-
+			message: "#^Property App\\\\Model\\\\RedisAdapter\\:\\:\\$model has no typehint specified\\.$#"
+			count: 1
+			path: src/Model/RedisAdapter.php
+
+		-
+			message: "#^Argument of an invalid type array\\|false supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Cannot access offset 'provider\\-includes' on mixed\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Cannot access offset 'providers' on mixed\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Cannot call method getTimestamp\\(\\) on DateTimeInterface\\|null\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cleanOldFiles\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cleanOldFiles\\(\\) has parameter \\$buildDir with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cleanOldFiles\\(\\) has parameter \\$oldBuildDir with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cleanOldFiles\\(\\) has parameter \\$safeFiles with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:clearDirectory\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:clearDirectory\\(\\) has parameter \\$path with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cloneDir\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cloneDir\\(\\) has parameter \\$source with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cloneDir\\(\\) has parameter \\$target with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:copyWriteLog\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:copyWriteLog\\(\\) has parameter \\$from with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:copyWriteLog\\(\\) has parameter \\$to with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dump\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dump\\(\\) has parameter \\$packageIds with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFile\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFile\\(\\) has parameter \\$key with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFile\\(\\) has parameter \\$path with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFiles\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFiles\\(\\) has parameter \\$buildDir with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpListing\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpListing\\(\\) has parameter \\$path with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpRootFile\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpRootFile\\(\\) has parameter \\$file with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has parameter \\$file with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has parameter \\$key with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has parameter \\$versionData with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:gc\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:getTargetListing\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:getTargetListing\\(\\) has parameter \\$file with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:getTargetListingBlocks\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:getTargetListingBlocks\\(\\) has parameter \\$now with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:loadIndividualFile\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:loadIndividualFile\\(\\) has parameter \\$key with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:loadIndividualFile\\(\\) has parameter \\$path with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:removeDirectory\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:removeDirectory\\(\\) has parameter \\$path with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:switchActiveWebDir\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:switchActiveWebDir\\(\\) has parameter \\$buildDir with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:switchActiveWebDir\\(\\) has parameter \\$webDir with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFile\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFile\\(\\) has parameter \\$contents with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFile\\(\\) has parameter \\$mtime with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFile\\(\\) has parameter \\$path with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFileNonAtomic\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFileNonAtomic\\(\\) has parameter \\$contents with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFileNonAtomic\\(\\) has parameter \\$path with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$data of function gzencode expects string, string\\|false given\\.$#"
+			count: 2
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$directory of function rmdir expects string, string\\|false given\\.$#"
+			count: 2
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$dirs of method Symfony\\\\Component\\\\Finder\\\\Finder\\:\\:in\\(\\) expects array\\<string\\>\\|string, string\\|false given\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, string\\|false given\\.$#"
+			count: 4
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$str of function strtr expects string, array\\|string given\\.$#"
+			count: 2
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function strlen expects string, int\\<0, max\\> given\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$target of function symlink expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Parameter \\#2 \\$data of function hash expects string, string\\|false given\\.$#"
+			count: 2
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$awsMeta type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$individualFiles type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$individualFilesMtime type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$listings type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$rootFile type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$webDir \\(string\\) does not accept string\\|false\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$writeLog type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/SymlinkDumper.php
+
+		-
+			message: "#^Cannot call method addElement\\(\\) on HTMLPurifier_HTMLDefinition\\|null\\.$#"
+			count: 2
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Cannot call method getReleaseDate\\(\\) on mixed\\.$#"
+			count: 2
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Cannot call method getVersion\\(\\) on mixed\\.$#"
+			count: 2
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Cannot call method removeChild\\(\\) on DOMNode\\|null\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:sanitize\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:sanitize\\(\\) has parameter \\$str with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:update\\(\\) has parameter \\$existingVersions with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateGitHubInfo\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateGitHubInfo\\(\\) has parameter \\$owner with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateGitHubInfo\\(\\) has parameter \\$repo with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateInformation\\(\\) has parameter \\$existingVersions with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateInformation\\(\\) has parameter \\$flags with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateInformation\\(\\) has parameter \\$rootIdentifier with no typehint specified\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateInformation\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateReadme\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Offset 'email'\\|'homepage'\\|'name'\\|'role' does not exist on array\\(\\?'name' \\=\\> string, \\?'homepage' \\=\\> string, \\?'email' \\=\\> string, \\?'role' \\=\\> string\\)\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#1 \\$haystack of function strpos expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function substr expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#1 \\$val of method App\\\\Entity\\\\Package\\:\\:setGitHubForks\\(\\) expects int, null given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#1 \\$val of method App\\\\Entity\\\\Package\\:\\:setGitHubOpenIssues\\(\\) expects int, null given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#1 \\$val of method App\\\\Entity\\\\Package\\:\\:setGitHubStars\\(\\) expects int, null given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#1 \\$val of method App\\\\Entity\\\\Package\\:\\:setGitHubWatches\\(\\) expects int, null given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#2 \\$offset of function substr expects int, int\\|false given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#3 \\$length of function substr expects int\\|null, int\\|false given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Parameter \\#5 \\$data of method App\\\\Package\\\\Updater\\:\\:updateInformation\\(\\) expects Composer\\\\Package\\\\CompletePackageInterface, Composer\\\\Package\\\\PackageInterface given\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Property App\\\\Package\\\\Updater\\:\\:\\$supportedLinkTypes type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: "#^Argument of an invalid type array\\<int, string\\>\\|false supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\V2Dumper\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\V2Dumper\\:\\:dumpPackageToV2File\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\V2Dumper\\:\\:dumpVersionsToV2File\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Method App\\\\Package\\\\V2Dumper\\:\\:dumpVersionsToV2File\\(\\) has parameter \\$versions with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$dir of method App\\\\Package\\\\V2Dumper\\:\\:dumpPackageToV2File\\(\\) expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function strlen expects string, int\\<0, max\\> given\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Parameter \\#1 \\$target of function symlink expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Parameter \\#2 \\$contents of method App\\\\Package\\\\V2Dumper\\:\\:writeV2File\\(\\) expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Property App\\\\Package\\\\V2Dumper\\:\\:\\$awsMeta type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Property App\\\\Package\\\\V2Dumper\\:\\:\\$webDir \\(string\\) does not accept string\\|false\\.$#"
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: "#^Method App\\\\Redis\\\\DownloadsIncr\\:\\:filterArguments\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Redis/DownloadsIncr.php
+
+		-
+			message: "#^Method App\\\\Redis\\\\DownloadsIncr\\:\\:filterArguments\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Redis/DownloadsIncr.php
+
+		-
+			message: "#^Property App\\\\Redis\\\\DownloadsIncr\\:\\:\\$args has no typehint specified\\.$#"
+			count: 1
+			path: src/Redis/DownloadsIncr.php
+
+		-
+			message: "#^Method App\\\\Redis\\\\FailedLoginCounter\\:\\:filterArguments\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Redis/FailedLoginCounter.php
+
+		-
+			message: "#^Method App\\\\Redis\\\\FailedLoginCounter\\:\\:filterArguments\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Redis/FailedLoginCounter.php
+
+		-
+			message: "#^Property App\\\\Redis\\\\FailedLoginCounter\\:\\:\\$args has no typehint specified\\.$#"
+			count: 1
+			path: src/Redis/FailedLoginCounter.php
+
+		-
+			message: "#^Cannot access offset 'password' on mixed\\.$#"
+			count: 2
+			path: src/Security/BruteForceLoginFormAuthenticator.php
+
+		-
+			message: "#^Cannot access offset 'username' on mixed\\.$#"
+			count: 1
+			path: src/Security/BruteForceLoginFormAuthenticator.php
+
+		-
+			message: "#^Method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:onAuthenticationSuccess\\(\\) has parameter \\$providerKey with no typehint specified\\.$#"
+			count: 1
+			path: src/Security/BruteForceLoginFormAuthenticator.php
+
+		-
+			message: "#^Method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:validateRecaptcha\\(\\) has parameter \\$credentials with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Security/BruteForceLoginFormAuthenticator.php
+
+		-
+			message: "#^Parameter \\#1 \\$credentials of method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:validateRecaptcha\\(\\) expects array, mixed given\\.$#"
+			count: 1
+			path: src/Security/BruteForceLoginFormAuthenticator.php
+
+		-
+			message: "#^Property App\\\\Security\\\\EmailVerifier\\:\\:\\$mailer has no typehint specified\\.$#"
+			count: 1
+			path: src/Security/EmailVerifier.php
+
+		-
+			message: "#^Property App\\\\Security\\\\EmailVerifier\\:\\:\\$verifyEmailHelper has no typehint specified\\.$#"
+			count: 1
+			path: src/Security/EmailVerifier.php
+
+		-
+			message: "#^Method App\\\\Security\\\\ExceptionListener\\:\\:setTargetPath\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Security/ExceptionListener.php
+
+		-
+			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
+			count: 1
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^Cannot call method getToken\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^Cannot call method getValues\\(\\) on mixed\\.$#"
+			count: 1
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^Method App\\\\Security\\\\GitHubAuthenticator\\:\\:onAuthenticationSuccess\\(\\) has parameter \\$providerKey with no typehint specified\\.$#"
+			count: 1
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^PHPDoc tag @var has no value type specified in iterable type Symfony\\\\Component\\\\HttpFoundation\\\\Session\\\\Session\\.$#"
+			count: 1
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^Parameter \\#1 \\$accessToken of method KnpU\\\\OAuth2ClientBundle\\\\Client\\\\Provider\\\\GithubClient\\:\\:fetchUserFromToken\\(\\) expects League\\\\OAuth2\\\\Client\\\\Token\\\\AccessToken, mixed given\\.$#"
+			count: 1
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function mb_strtolower expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^Parameter \\#1 \\$username of class App\\\\Security\\\\AccountUsernameExistsWithoutGitHubException constructor expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^Parameter \\#3 \\$token of method League\\\\OAuth2\\\\Client\\\\Provider\\\\AbstractProvider\\:\\:getAuthenticatedRequest\\(\\) expects League\\\\OAuth2\\\\Client\\\\Token\\\\AccessTokenInterface\\|string, mixed given\\.$#"
+			count: 1
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^Method App\\\\Security\\\\Provider\\\\UserProvider\\:\\:loadUserByUsername\\(\\) has parameter \\$usernameOrEmail with no typehint specified\\.$#"
+			count: 1
+			path: src/Security/Provider/UserProvider.php
+
+		-
+			message: "#^Method App\\\\Security\\\\Provider\\\\UserProvider\\:\\:loadUserByUsername\\(\\) should return Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface but returns App\\\\Entity\\\\User\\|null\\.$#"
+			count: 1
+			path: src/Security/Provider/UserProvider.php
+
+		-
+			message: "#^Method App\\\\Security\\\\Provider\\\\UserProvider\\:\\:supportsClass\\(\\) has parameter \\$class with no typehint specified\\.$#"
+			count: 1
+			path: src/Security/Provider/UserProvider.php
+
+		-
+			message: "#^Cannot cast mixed to string\\.$#"
+			count: 2
+			path: src/Security/RecaptchaHelper.php
+
+		-
+			message: "#^Cannot call method getSession\\(\\) on Symfony\\\\Component\\\\HttpFoundation\\\\Request\\|null\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthManager.php
+
+		-
+			message: "#^Method App\\\\Security\\\\TwoFactorAuthManager\\:\\:__construct\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthManager.php
+
+		-
+			message: "#^Method App\\\\Security\\\\TwoFactorAuthManager\\:\\:disableTwoFactorAuth\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthManager.php
+
+		-
+			message: "#^Method App\\\\Security\\\\TwoFactorAuthManager\\:\\:enableTwoFactorAuth\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthManager.php
+
+		-
+			message: "#^PHPDoc tag @var has no value type specified in iterable type Symfony\\\\Component\\\\HttpFoundation\\\\Session\\\\Session\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthManager.php
+
+		-
+			message: "#^Parameter \\#1 \\.\\.\\.\\$addresses of method Symfony\\\\Component\\\\Mime\\\\Email\\:\\:to\\(\\) expects string\\|Symfony\\\\Component\\\\Mime\\\\Address, string\\|null given\\.$#"
+			count: 2
+			path: src/Security/TwoFactorAuthManager.php
+
+		-
+			message: "#^Property App\\\\Security\\\\TwoFactorAuthManager\\:\\:\\$options type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthManager.php
+
+		-
+			message: "#^Method App\\\\Security\\\\TwoFactorAuthRateLimiter\\:\\:getSubscribedEvents\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthRateLimiter.php
+
+		-
+			message: "#^Method App\\\\Security\\\\TwoFactorAuthRateLimiter\\:\\:onAuthAttempt\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthRateLimiter.php
+
+		-
+			message: "#^Method App\\\\Security\\\\TwoFactorAuthRateLimiter\\:\\:onAuthFailure\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthRateLimiter.php
+
+		-
+			message: "#^Parameter \\#1 \\$filename of function file_get_contents expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
+
+		-
+			message: "#^Parameter \\#1 \\$input of static method Symfony\\\\Component\\\\Yaml\\\\Yaml\\:\\:parse\\(\\) expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
+
+		-
+			message: "#^Parameter \\#2 \\$info of static method App\\\\SecurityAdvisory\\\\RemoteSecurityAdvisory\\:\\:createFromFriendsOfPhp\\(\\) expects array, mixed given\\.$#"
+			count: 1
+			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
+
+		-
+			message: "#^Method App\\\\SecurityAdvisory\\\\RemoteSecurityAdvisory\\:\\:createFromFriendsOfPhp\\(\\) has parameter \\$info with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/SecurityAdvisory/RemoteSecurityAdvisory.php
+
+		-
+			message: "#^Cannot call method getBody\\(\\) on Psr\\\\Http\\\\Message\\\\ResponseInterface\\|null\\.$#"
+			count: 1
+			path: src/Service/GitHubUserMigrationWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:getGitHubHookData\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/GitHubUserMigrationWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:getHooks\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/GitHubUserMigrationWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:isAcceptableException\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/GitHubUserMigrationWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:process\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/GitHubUserMigrationWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:request\\(\\) has parameter \\$json with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/GitHubUserMigrationWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:setupWebHook\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/GitHubUserMigrationWorker.php
+
+		-
+			message: "#^Parameter \\#2 \\.\\.\\.\\$arrays of function array_merge expects array, mixed given\\.$#"
+			count: 1
+			path: src/Service/GitHubUserMigrationWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Locker\\:\\:getConn\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/Locker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/Locker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Locker\\:\\:lockPackageUpdate\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/Locker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Locker\\:\\:lockSecurityAdvisory\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/Locker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/Locker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Locker\\:\\:unlockPackageUpdate\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/Locker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Locker\\:\\:unlockSecurityAdvisory\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/Locker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\QueueWorker\\:\\:__construct\\(\\) has parameter \\$jobWorkers with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/QueueWorker.php
+
+		-
+			message: "#^Property App\\\\Service\\\\QueueWorker\\:\\:\\$jobWorkers type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/QueueWorker.php
+
+		-
+			message: "#^Cannot access offset 'delete_before' on mixed\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Cannot access offset 'update_equal_refs' on mixed\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:createJob\\(\\) has parameter \\$executeAfter with no typehint specified\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:createJob\\(\\) has parameter \\$packageId with no typehint specified\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:createJob\\(\\) has parameter \\$payload with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobStatus\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobStatus\\(\\) should return array but returns mixed\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobsStatus\\(\\) should return array\\<array\\> but returns array\\<string, mixed\\>\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getPendingUpdateJob\\(\\) has parameter \\$deleteBefore with no typehint specified\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getPendingUpdateJob\\(\\) has parameter \\$updateEqualRefs with no typehint specified\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getPendingUpdateJob\\(\\) should return string\\|null but returns mixed\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:scheduleUpdate\\(\\) has parameter \\$packageOrId with no typehint specified\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Parameter \\#2 \\$values of method Predis\\\\ClientInterface\\:\\:lpush\\(\\) expects array, string given\\.$#"
+			count: 1
+			path: src/Service/Scheduler.php
+
+		-
+			message: "#^Method App\\\\Service\\\\SecurityAdvisoryWorker\\:\\:__construct\\(\\) has parameter \\$sources with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/SecurityAdvisoryWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\SecurityAdvisoryWorker\\:\\:process\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/SecurityAdvisoryWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:checkForDeadGitHubPackage\\(\\) has parameter \\$match with no typehint specified\\.$#"
+			count: 1
+			path: src/Service/UpdaterWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:checkForDeadGitHubPackage\\(\\) has parameter \\$output with no typehint specified\\.$#"
+			count: 1
+			path: src/Service/UpdaterWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:checkForDeadGitHubPackage\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UpdaterWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:cleanupOutput\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Service/UpdaterWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:cleanupOutput\\(\\) has parameter \\$str with no typehint specified\\.$#"
+			count: 1
+			path: src/Service/UpdaterWorker.php
+
+		-
+			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:process\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Service/UpdaterWorker.php
+
+		-
+			message: "#^Cannot call method getClientIp\\(\\) on Symfony\\\\Component\\\\HttpFoundation\\\\Request\\|null\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Cannot call method getPackageName\\(\\) on mixed\\.$#"
+			count: 6
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:generateGravatarHash\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:generateGravatarHash\\(\\) has parameter \\$email with no typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:getName\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:getVendor\\(\\) should return string but returns string\\|null\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:numericTest\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:numericTest\\(\\) has parameter \\$val with no typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:packageExistsTest\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:packageExistsTest\\(\\) has parameter \\$package with no typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:prettifySourceReference\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:prettifySourceReference\\(\\) has parameter \\$sourceReference with no typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:providerExistsTest\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:providerExistsTest\\(\\) has parameter \\$package with no typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:sortLinks\\(\\) has no return typehint specified\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:sortLinks\\(\\) has parameter \\$links with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Parameter \\#1 \\$ip of method App\\\\Security\\\\RecaptchaHelper\\:\\:requiresRecaptcha\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Parameter \\#2 \\$username of method App\\\\Security\\\\RecaptchaHelper\\:\\:requiresRecaptcha\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Twig/PackagistExtension.php
+
+		-
+			message: "#^Parameter \\#1 \\$version of method App\\\\Util\\\\UserAgentParser\\:\\:isValidMinorVersion\\(\\) expects string, string\\|null given\\.$#"
+			count: 2
+			path: src/Util/UserAgentParser.php
+
+		-
+			message: "#^Method App\\\\Validator\\\\Password\\:\\:getConstraints\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Validator/Password.php
+
