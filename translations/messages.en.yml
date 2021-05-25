@@ -4,8 +4,8 @@ menu:
     about_composer: About Composer
     home: Home
     profile: Profile
-    logout: Logout
-    login: Login
+    logout: Log out
+    login: Log in
     register: Register
     browse_packages: Browse Packages
     twitter: "Follow @packagist"

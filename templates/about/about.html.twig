@@ -105,7 +105,7 @@ v2.0.4-p1</code></pre>
             <p>Enabling the Packagist service hook ensures that your package will always be updated instantly when you push to GitHub.</p>
             <p>To do so you can:</p>
             <ul>
-                <li>Make sure you login via GitHub (if you already have an account not connected to GitHub, you can <a href="https://packagist.org/profile/edit">connect it on your profile</a>). If you are logged in already, log out first then login via GitHub again to make sure you grant us the required permissions.</li>
+                <li>Make sure you log in via GitHub (if you already have an account not connected to GitHub, you can <a href="https://packagist.org/profile/edit">connect it on your profile</a>). If you are logged in already, log out first then log in via GitHub again to make sure you grant us the required permissions.</li>
                 <li>Make sure <a href="https://github.com/settings/connections/applications/a059f127e1c09c04aa5a">the Packagist application</a> has access to all the GitHub organizations you need to publish packages from.</li>
                 <li>Check <a href="https://packagist.org/profile/">your package list</a> to see if any has a warning about not being automatically synced.</li>
                 <li>If you still need to setup sync on some packages, try <a rel="nofollow noindex" href="{{ path('user_github_sync') }}">triggering a manual account sync</a> to have Packagist try to set up hooks on your account again. Note that archived repositories can not be setup as they are readonly in GitHub's API.</li>
