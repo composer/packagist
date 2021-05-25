@@ -5,7 +5,7 @@
 {% block user_content %}
     {% if app.user %}
         <div class="col-xs-6">
-            <p>You are logged in as {{ app.user.username }}, <a href="{{ path('logout') }}">Logout</a></p>
+            <p>You are logged in as {{ app.user.username }}, <a href="{{ path('logout') }}">Log out</a></p>
         </div>
     {% else %}
         <div class="col-xs-12">
@@ -54,7 +54,7 @@
                     <input type="hidden" name="_target_path" value="{{ app.request.headers.get('Referer') }}" />
                 {% endif %}
 
-                <input class="btn btn-block btn-success btn-lg" type="submit" id="_submit" name="_submit" value="Login" />
+                <input class="btn btn-block btn-success btn-lg" type="submit" id="_submit" name="_submit" value="Log in" />
             </form>
 
             <hr>
@@ -63,7 +63,7 @@
         <div class="clearfix"></div>
 
         <div class="col-md-6">
-            <a class="btn btn-block btn-github btn-primary btn-lg" href="{{ path('login_github_start') }}"><span class="icon-github"></span>Login with GitHub</a>
+            <a class="btn btn-block btn-github btn-primary btn-lg" href="{{ path('login_github_start') }}"><span class="icon-github"></span>Log in with GitHub</a>
         </div>
     {% endif %}
 {% endblock %}

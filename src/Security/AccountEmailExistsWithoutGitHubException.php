@@ -19,6 +19,6 @@ class AccountEmailExistsWithoutGitHubException extends UsernameNotFoundException
     public function getMessageKey()
     {
         return 'An account with your GitHub email ('.$this->email.') already exists on Packagist.org but it is not linked to your GitHub account. '
-            . 'Please login to it via username/password and then connect your GitHub account from the Profile > Settings page.';
+            . 'Please log in to it via username/password and then connect your GitHub account from the Profile > Settings page.';
     }
 }
