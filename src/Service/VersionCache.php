@@ -13,7 +13,7 @@ class VersionCache implements VersionCacheInterface
 
     public function __construct(
         private Package $package,
-        /** @var array<string, array{version: string, normalizedVersion: string, source: array{reference: string|null, type: string|null, url: string|null}}> */
+        /** @var array<string|int, array{version: string, normalizedVersion: string, source: array{reference: string|null, type: string|null, url: string|null}}> */
         private array $existingVersions,
         /** @var string[] */
         private array $emptyReferences
@@ -52,6 +52,7 @@ class VersionCache implements VersionCacheInterface
     public function clearVersion(string $version): void
     {
         foreach (array_keys($this->versionCache) as $v) {
+            $v = (string) $v;
             if (preg_replace('{\.x-dev$}', '', $v) === $version || preg_replace('{-dev$}', '', $v) === $version || preg_replace('{^dev-}', '', $v) === $version) {
                 unset($this->versionCache[$v]);
             }
