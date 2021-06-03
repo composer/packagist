@@ -321,7 +321,7 @@ class WebController extends Controller
     /**
      * @Route("/php-statistics", name="php_stats")
      */
-    public function phpStatsAction()
+    public function phpStatsAction(): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);

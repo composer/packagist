@@ -34,13 +34,15 @@ class PhpStatRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param  'months'|'days'     $period
-     * @param  'php'|'phpplatform' $type
+     * @param string[]            $versions
+     * @param 'months'|'days'     $period
+     * @param 'php'|'phpplatform' $type
      *
      * @return array{labels: string[], values: array<string, int[]>}
      */
     public function getGlobalChartData(array $versions, string $period, string $type): array
     {
+        $series = [];
         foreach ($versions as $version) {
             $series[$version] = $this->redis->hgetall($type.':'.$version.':'.$period);
         }
