@@ -1,0 +1,47 @@
+{% extends "web/stats_base.html.twig" %}
+
+{% block title %}PHP Version Statistics - {{ parent() }}{% endblock %}
+
+{% block content %}
+    {{ parent() }}
+
+    <section class="row">
+        <div class="col-lg-12">
+            <h3>Package installations by PHP minor version, daily</h3>
+
+            <p class="row">
+                <svg class="chart col-xs-12 js-php-daily-stats" width="500" height="200">
+                    Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                </svg>
+            </p>
+        </div>
+    </section>
+
+    <section class="row">
+        <div class="col-lg-12">
+            <h3>Package installations by PHP minor version, monthly</h3>
+
+            <p class="row">
+                <svg class="chart col-xs-12 js-php-monthly-stats" width="500" height="200">
+                    Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
+                </svg>
+            </p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block stylesheets %}
+    <link href="https://cdn.jsdelivr.net/npm/nvd3@1.8.6/build/nv.d3.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/d3@3.5.17/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nvd3@1.8.6/build/nv.d3.min.js"></script>
+    <script src="{{ asset('js/charts.js') }}"></script>
+    <script>
+        (function () {
+            initGlobalPhpStats('.js-php-daily-stats', {{ dailyData|json_encode|raw }});
+            initGlobalPhpStats('.js-php-monthly-stats', {{ monthlyData|json_encode|raw }});
+        }());
+    </script>
+{% endblock %}

@@ -17,6 +17,7 @@ use App\Entity\Version;
 use App\Form\Model\SearchQuery;
 use App\Form\Type\SearchQueryType;
 use App\Entity\Package;
+use App\Entity\PhpStat;
 use App\Util\Killswitch;
 use Predis\Connection\ConnectionException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
@@ -315,6 +316,46 @@ class WebController extends Controller
             'maxMonthlyDownloads' => !empty($dlChartMonthly) ? max($dlChartMonthly['values']) : null,
             'downloadsStartDate' => $downloadsStartDate,
         ]);
+    }
+
+    /**
+     * @Route("/php-statistics", name="php_stats")
+     */
+    public function phpStatsAction()
+    {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
+
+        $versions = [
+            '5.3',
+            '5.4',
+            '5.5',
+            '5.6',
+            '7.0',
+            '7.1',
+            '7.2',
+            '7.3',
+            '7.4',
+            '8.0',
+            '8.1',
+            '8.2',
+            '8.3',
+            '8.4',
+            // 'hhvm', // honorable mention here but excluded as it's so low (below 0.00%) it's irrelevant
+        ];
+
+        $dailyData = $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'days', 'php');
+        $monthlyData = $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'months', 'php');
+
+        $resp = $this->render('web/php_stats.html.twig', [
+            'dailyData' => $dailyData,
+            'monthlyData' => $monthlyData,
+        ]);
+        $resp->setSharedMaxAge(1800);
+        $resp->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+        return $resp;
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Dependent;
+use App\Entity\PhpStat;
 use App\Util\Killswitch;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
@@ -1183,6 +1184,196 @@ class PackageController extends Controller
 
     /**
      * @Route(
+     *      "/packages/{name}/php-stats.{_format}",
+     *      name="view_package_php_stats",
+     *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"},
+     *      defaults={"_format"="html"}
+     * )
+     * @Template()
+     */
+    public function phpStatsAction(Request $req, Package $package)
+    {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
+
+        $phpStatRepo = $this->getEM()->getRepository(PhpStat::class);
+        $versions = $phpStatRepo->getStatVersions($package);
+        $defaultVersion = $this->getEM()->getConnection()->fetchOne('SELECT normalizedVersion from package_version WHERE package_id = :id AND defaultBranch = 1', ['id' => $package->getId()]);
+
+        usort($versions, function ($a, $b) use ($defaultVersion) {
+            if ($defaultVersion === $a['version'] && $b['depth'] !== PhpStat::DEPTH_PACKAGE) {
+                return -1;
+            }
+            if ($defaultVersion === $b['version'] && $a['depth'] !== PhpStat::DEPTH_PACKAGE) {
+                return 1;
+            }
+
+            if ($a['depth'] !== $b['depth']) {
+                return $a['depth'] <=> $b['depth'];
+            }
+
+            if ($a['depth'] === PhpStat::DEPTH_EXACT) {
+                return $a['version'] <=> $b['version'];
+            }
+
+            return version_compare($b['version'], $a['version']);
+        });
+
+        $versionsFormatted = [];
+        foreach ($versions as $index => $version) {
+            if ($version['version'] === '') {
+                $label = 'All';
+            } elseif (str_ends_with($version['version'], '.9999999')) {
+                $label = preg_replace('{\.9999999$}', '.x-dev', $version['version']);
+            } elseif (in_array($version['depth'], [PhpStat::DEPTH_MINOR, PhpStat::DEPTH_MAJOR], true)) {
+                $label = $version['version'].'.*';
+            } else {
+                $label = $version['version'];
+            }
+            $versionsFormatted[] = [
+                'label' => $label,
+                'version' => $version['version'] === '' ? 'all' : $version['version'],
+                'depth' => match ($version['depth']) {
+                    PhpStat::DEPTH_PACKAGE => 'package',
+                    PhpStat::DEPTH_MAJOR => 'major',
+                    PhpStat::DEPTH_MINOR => 'minor',
+                    PhpStat::DEPTH_EXACT => 'exact',
+                },
+            ];
+        }
+        unset($versions);
+
+        $date = $this->guessPhpStatsStartDate($package);
+        $data = [
+            'versions' => $versionsFormatted,
+            'average' => $this->guessStatsAverage($date),
+            'date' => $date->format('Y-m-d'),
+        ];
+
+        if ($req->getRequestFormat() === 'json') {
+            return new JsonResponse($data);
+        }
+
+        $data['package'] = $package;
+
+        $data['expandedVersion'] = reset($versionsFormatted)['version'] ?? null;
+
+        return $data;
+    }
+
+    /**
+     * @Route(
+     *      "/packages/{name}/php-stats/{type}/{version}.json",
+     *      name="version_php_stats",
+     *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "type"="platform|effective", "version"=".+"}
+     * )
+     */
+    public function versionPhpStatsAction(Request $req, string $name, string $type, string $version)
+    {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'This page is temporarily disabled, please come back later.',], Response::HTTP_BAD_GATEWAY);
+        }
+
+        try {
+            $package = $this->getEM()
+                ->getRepository(Package::class)
+                ->getPackageByName($name);
+        } catch (NoResultException $e) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Package not found',], 404);
+        }
+
+        if ($from = $req->query->get('from')) {
+            $from = new DateTimeImmutable($from);
+        } else {
+            $from = $this->guessPhpStatsStartDate($package);
+        }
+        if ($to = $req->query->get('to')) {
+            $to = new DateTimeImmutable($to);
+        } else {
+            $to = new DateTimeImmutable('today 00:00:00');
+        }
+
+        $average = $req->query->get('average', $this->guessStatsAverage($from, $to));
+
+        $phpStat = $this->getEM()->getRepository(PhpStat::class)->findOneBy(['package' => $package, 'type' => $type === 'platform' ? PhpStat::TYPE_PLATFORM : PhpStat::TYPE_PHP, 'version' => $version === 'all' ? '' : $version]);
+        if (!$phpStat) {
+            throw new NotFoundHttpException('No stats found for the requested version');
+        }
+
+        $datePoints = $this->createDatePoints($from, $to, $average);
+        $series = [];
+        $totals = array_fill(0, count($datePoints), 0);
+
+        $index = 0;
+        foreach ($datePoints as $label => $values) {
+            foreach ($phpStat->getData() as $seriesName => $seriesData) {
+                $value = 0;
+                foreach ($values as $valueKey) {
+                    $value += $seriesData[$valueKey] ?? 0;
+                }
+                // average the value over the datapoints in this current label
+                $value = (int) ceil($value / count($values));
+
+                $series[$seriesName][] = $value;
+                $totals[$index] += $value;
+            }
+            $index++;
+        }
+
+        // filter out series which have only 0 values
+        foreach ($series as $seriesName => $data) {
+            foreach ($data as $value) {
+                if ($value !== 0) {
+                    continue 2;
+                }
+            }
+            unset($series[$seriesName]);
+        }
+
+        // delete last datapoint or two if they are still 0 as the nightly job syncing the data in mysql may not have run yet
+        for ($i = 0; $i < 2; $i++) {
+            if (0 === $totals[count($totals) - 1]) {
+                unset($totals[count($totals) - 1]);
+                end($datePoints);
+                unset($datePoints[key($datePoints)]);
+                foreach ($series as $seriesName => $data) {
+                    unset($series[$seriesName][count($data) - 1]);
+                }
+            }
+        }
+
+        uksort($series, function ($a, $b) {
+            if ($a === 'hhvm') {
+                return 1;
+            }
+            if ($b === 'hhvm') {
+                return -1;
+            }
+            return $b <=> $a;
+        });
+
+        $datePoints = [
+            'labels' => array_keys($datePoints),
+            'values' => $series,
+        ];
+
+        $datePoints['average'] = $average;
+
+        if (empty($datePoints['labels']) && empty($datePoints['values'])) {
+            $datePoints['labels'][] = date('Y-m-d');
+            $datePoints['values'][] = [0];
+        }
+
+        $response = new JsonResponse($datePoints);
+        $response->setSharedMaxAge(1800);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+        return $response;
+    }
+
+    /**
+     * @Route(
      *      "/packages/{name}/dependents.{_format}",
      *      name="view_package_dependents",
      *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"},
@@ -1548,6 +1739,18 @@ class PackageController extends Controller
         }
 
         $statsRecordDate = new DateTimeImmutable('2012-04-13 00:00:00');
+        if ($date < $statsRecordDate) {
+            $date = $statsRecordDate;
+        }
+
+        return $date->setTime(0, 0, 0);
+    }
+
+    private function guessPhpStatsStartDate(Package $package): DateTimeImmutable
+    {
+        $date = DateTimeImmutable::createFromMutable($package->getCreatedAt());
+
+        $statsRecordDate = new DateTimeImmutable('2021-05-18 00:00:00');
         if ($date < $statsRecordDate) {
             $date = $statsRecordDate;
         }

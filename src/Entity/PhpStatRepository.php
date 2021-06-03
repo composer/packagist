@@ -15,6 +15,83 @@ class PhpStatRepository extends ServiceEntityRepository
         parent::__construct($registry, PhpStat::class);
     }
 
+    /**
+     * @param Package $package
+     * @return list<array{version: string, depth: PhpStat::DEPTH_*}>
+     */
+    public function getStatVersions(Package $package): array
+    {
+        $query = $this->createQueryBuilder('s')
+            ->select('s.version, s.depth')
+            ->where('s.package = :package AND s.type = :type')
+            ->getQuery();
+
+        $query->setParameters(
+            ['package' => $package, 'type' => PhpStat::TYPE_PHP]
+        );
+
+        return $query->getArrayResult();
+    }
+
+    /**
+     * @param  'months'|'days'     $period
+     * @param  'php'|'phpplatform' $type
+     *
+     * @return array{labels: string[], values: array<string, int[]>}
+     */
+    public function getGlobalChartData(array $versions, string $period, string $type): array
+    {
+        foreach ($versions as $version) {
+            $series[$version] = $this->redis->hgetall($type.':'.$version.':'.$period);
+        }
+
+        // filter out series which have only 0 values
+        $datePoints = [];
+        foreach ($series as $seriesName => $data) {
+            $empty = true;
+            foreach ($data as $date => $value) {
+                $datePoints[$date] = true;
+                if ($value !== 0) {
+                    $empty = false;
+                }
+            }
+            if ($empty) {
+                unset($series[$seriesName]);
+            }
+        }
+
+        ksort($datePoints);
+        $datePoints = array_map('strval', array_keys($datePoints));
+
+        foreach ($series as $seriesName => $data) {
+            foreach ($datePoints as $date) {
+                $series[$seriesName][$date] = (int) ($data[$date] ?? 0);
+            }
+            $series[$seriesName] = array_values($series[$seriesName]);
+        }
+
+        if ($period === 'months') {
+            $datePoints = array_map(fn ($point) => substr($point, 0, 4).'-'.substr($point, 4), $datePoints);
+        } else {
+            $datePoints = array_map(fn ($point) => substr($point, 0, 4).'-'.substr($point, 4, 2).'-'.substr($point, 6), $datePoints);
+        }
+
+        uksort($series, function ($a, $b) {
+            if ($a === 'hhvm') {
+                return 1;
+            }
+            if ($b === 'hhvm') {
+                return -1;
+            }
+            return $b <=> $a;
+        });
+
+        return [
+            'labels' => $datePoints,
+            'values' => $series,
+        ];
+    }
+
     public function deletePackageStats(Package $package)
     {
         $conn = $this->getEntityManager()->getConnection();

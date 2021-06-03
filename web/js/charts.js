@@ -6,7 +6,38 @@
         '#2d2d32'
     ];
 
-    function initPackagistChart(svg, labels, series, withDatePicker) {
+    const PHP_VERSION_COLORS = {
+        '5.2': '#ffbd74',
+        '5.3': '#ee8e33',
+        '5.4': '#e77f02',
+        '5.5': '#9a601e',
+        '5.6': '#8d4a00',
+        '7.0': '#a2fd88',
+        '7.1': '#56f52d',
+        '7.2': '#2cec00',
+        '7.3': '#4f903b',
+        '7.4': '#33a316',
+        '8.0': '#7171ff',
+        '8.1': '#2e2ef3',
+        '8.2': '#111192',
+        '8.3': '#5a4ac1',
+        '8.4': '#4a5ce7',
+        'hhvm': '#cdcdcd',
+    };
+
+    function phpVersionSort(a, b) {
+        if (a.name === 'hhvm') {
+            return 1;
+        }
+        if (b.name === 'hhvm') {
+            return -1;
+        }
+
+        return b.name.localeCompare(a.name, undefined, {numeric: true});
+    }
+
+    function initPackagistChart(svg, labels, series, withDatePicker, type) {
+        type = type || 'line';
         var format = d3.time.format("%Y-%m-%d");
         if (labels[0].match(/^\d+-\d+$/)) {
             format = d3.time.format("%Y-%m");
@@ -21,7 +52,7 @@
             chartData.push({
                 values: points,
                 key: serie.name,
-                color: colors[index]
+                color: colors[serie.name] || colors[index],
             });
         })
 
@@ -31,10 +62,22 @@
 
         nv.addGraph(function() {
             var chart;
-            if (withDatePicker) {
-                chart = nv.models.lineWithFocusChart();
+            if (type === 'line') {
+                if (withDatePicker) {
+                    chart = nv.models.lineWithFocusChart();
+                } else {
+                    chart = nv.models.lineChart();
+                }
+                chart.useInteractiveGuideline(true);
+            } else if (type === 'area') {
+                chart = nv.models.stackedAreaChart();
+                chart.showControls(false);
+                chart.useInteractiveGuideline(true);
+                chart.rightAlignYAxis(true);
+                chart.tooltip.valueFormatter((d) => d + '%')
+                chart.stacked.style('expand');
             } else {
-                chart = nv.models.lineChart();
+                throw new Error('Unknown type: ' + type);
             }
 
             function formatDate(a,b) {
@@ -223,5 +266,137 @@
         });
 
         initializeVersionListExpander();
+    };
+
+    window.initPhpStats = function (average, date, versions, versionStatsUrl) {
+        colors = PHP_VERSION_COLORS;
+
+        var match,
+            hash = document.location.hash,
+            versionCache = {},
+            ongoingRequest = false;
+
+        function initChart(type, res) {
+            var key, series = [];
+
+            for (key in res.values) {
+                if (res.values.hasOwnProperty(key)) {
+                    series.push({name: key, values: res.values[key]});
+                }
+            }
+
+            series.sort(phpVersionSort)
+
+            initPackagistChart(
+                $('.js-'+type+'-dls')[0],
+                res.labels,
+                series,
+                true,
+                'area'
+            );
+        }
+
+        function loadVersionChart(versionId, type) {
+            ongoingRequest = true;
+            $.ajax({
+                url: versionStatsUrl.replace('_VERSION_', versionId).replace('_TYPE_', type) + '?average=' + average + '&from=' + date,
+                success: function (res) {
+                    initChart('version', res);
+                    versionCache[versionId+type] = res;
+                    ongoingRequest = false;
+                }
+            });
+        }
+
+        function switchToChart(versionId) {
+            const type = $('#ignore_platform').is(':checked') ? 'effective' : 'platform';
+
+            if (versionCache[versionId+type]) {
+                const res = versionCache[versionId+type];
+                initChart('version', res);
+            } else {
+                if (ongoingRequest) {
+                    return false;
+                }
+                loadVersionChart(versionId, type);
+            }
+
+            return true;
+        }
+
+        function initializeVersionListExpander() {
+            var versionsList = $('.package .versions:visible')[0];
+            if (versionsList.offsetHeight < versionsList.scrollHeight) {
+                $('.package .versions-expander').removeClass('hidden').on('click', function () {
+                    $(this).addClass('hidden');
+                    $(versionsList).css('max-height', 'inherit');
+                });
+            } else {
+                $('.package .versions-expander').addClass('hidden')
+            }
+        }
+
+        // initializer for #<version-id> present on page load
+        if (hash.length > 1) {
+            hash = hash.substring(1);
+            match = $('.package .details-toggler[data-version-id="'+hash+'"]');
+            if (match.length) {
+                $('.package .details-toggler.open').removeClass('open');
+                match.addClass('open');
+            }
+        }
+
+        if ($('.package .details-toggler.open').length) {
+            switchToChart($('.package .details-toggler.open').attr('data-version-id'));
+        }
+
+        $('.package .details-toggler').on('click', function () {
+            const target = $(this),
+                versionId = target.attr('data-version-id');
+
+            if (!switchToChart(versionId)) {
+                return;
+            }
+
+            $('.package .details-toggler.open').removeClass('open');
+            target.addClass('open');
+        });
+
+        $('#ignore_platform').on('click', function () {
+            const versionId = $('.package .details-toggler.open').attr('data-version-id');
+
+            switchToChart(versionId);
+        })
+
+        $(window).on('scroll', function () {
+            var basePos = $('.version-stats').offset().top;
+            var footerPadding = $(document).height() - basePos - $('footer').height() - $('.version-stats-chart').height() - 50;
+            var headerPadding = 80;
+            $('.version-stats-chart').css('top', Math.max(0, Math.min(footerPadding, window.scrollY - basePos + headerPadding)) + 'px');
+        });
+
+        initializeVersionListExpander();
+    };
+
+    window.initGlobalPhpStats = function (selector, res) {
+        colors = PHP_VERSION_COLORS;
+
+        var key, series = [];
+
+        for (key in res.values) {
+            if (res.values.hasOwnProperty(key)) {
+                series.push({name: key, values: res.values[key]});
+            }
+        }
+
+        series.sort(phpVersionSort)
+
+        initPackagistChart(
+            $(selector)[0],
+            res.labels,
+            series,
+            true,
+            'area'
+        );
     };
 })(jQuery);

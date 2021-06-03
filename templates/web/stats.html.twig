@@ -1,11 +1,9 @@
-{% extends "layout.html.twig" %}
+{% extends "web/stats_base.html.twig" %}
 
-{% set showSearchDesc = 'hide' %}
+{% block title %}Install Statistics - {{ parent() }}{% endblock %}
 
 {% block content %}
-    {% set packageCount = 0 %}
-
-    <h2 class="title">{{ 'statistics.title'|trans }}</h2>
+    {{ parent() }}
 
     <section class="row">
         <div class="col-lg-12">
