@@ -188,6 +188,11 @@ class Package
      */
     private $suspect;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $tagPattern;
+
     private $entityRepository;
     private $router;
 
@@ -881,6 +886,25 @@ class Package
     public function getSuspect(): ?string
     {
         return $this->suspect;
+    }
+
+    /**
+     * If defined, tags/versions must match this pattern or they will be ignored.
+     */
+    public function getTagPattern(): ?string
+    {
+        return $this->tagPattern;
+    }
+
+    /**
+     * @param string $tagPattern
+     */
+    public function setTagPattern(string $tagPattern): void
+    {
+        if ($tagPattern === '') {
+            $tagPattern = null;
+        }
+        $this->tagPattern = $tagPattern;
     }
 
     /**
