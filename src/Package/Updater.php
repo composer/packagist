@@ -349,7 +349,7 @@ class Updater
 
         // Filter package versions
         $pattern = $package->getTagPattern();
-        if ($pattern !== null && $pattern !== '' && $pattern !== '*' && !preg_match('#'.$pattern.'#', $normVersion)) {
+        if ($pattern !== null && $pattern !== '' && $pattern !== '*' && !preg_match('#'.$pattern.'#', $data->getPrettyVersion())) {
             throw new VersionIgnoredException();
         }
 

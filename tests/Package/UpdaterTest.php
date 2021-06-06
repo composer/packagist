@@ -185,13 +185,16 @@ EOR;
     public function testIgnoreTags()
     {
         $versionMainDev = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
-        $versionMainDev->expects($this->any())->method('getVersion')->willReturn('dev-master');
+        $versionMainDev->expects($this->any())->method('getVersion')->willReturn('dev-main');
+        $versionMainDev->expects($this->any())->method('getPrettyVersion')->willReturn('dev-main');
 
         $version600 = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
         $version600->expects($this->any())->method('getVersion')->willReturn('6.0.0');
+        $version600->expects($this->any())->method('getPrettyVersion')->willReturn('6.0.0');
 
         $version540 = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
         $version540->expects($this->any())->method('getVersion')->willReturn('5.4.0');
+        $version540->expects($this->any())->method('getPrettyVersion')->willReturn('5.4.0');
 
         foreach ([$versionMainDev, $version600, $version540] as $packageMock) {
             $packageMock->expects($this->any())->method('getRequires')->willReturn([]);
@@ -208,10 +211,24 @@ EOR;
             $versionMainDev, $version600, $version540
         ]);
 
-        $this->package->setTagPattern('^([12345]|main).*');
+        $this->package->setTagPattern('^([12345]|dev-).*');
+
+        $versionsToSave = ['5.4.0' => true, 'dev-main' => true];
+        $this->emMock->expects($this->exactly(2))->method('persist')->with($this->callback(function($entity) use (&$versionsToSave) {
+            if (!$entity instanceof Version) {
+                return true;
+            }
+
+            $version = $entity->getVersion();
+            if (!isset($versionsToSave[$version])) {
+                return false;
+            }
+
+            unset($versionsToSave[$version]);
+            return true;
+        }));
+
         $this->updater->update($this->ioMock, $this->config, $this->package, $repositoryMock);
-
-        $this->emMock->expects($this->exactly(5))->method('persist');
-
+        self::assertEmpty($versionsToSave);
     }
 }
