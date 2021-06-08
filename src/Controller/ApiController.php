@@ -247,12 +247,7 @@ class ApiController extends Controller
             }
 
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
-            if (!$uaParser->getComposerVersion() || !$uaParser->getPhpMinorVersion()) {
-                if (0 !== strpos($request->headers->get('User-Agent'), 'User-Agent:')) {
-                    $this->logger->error('Could not parse UA: '.$request->headers->get('User-Agent').' with '.$request->getContent().' from '.$request->getClientIp());
-                    $statsd->increment('installs.invalid-ua');
-                }
-            } else {
+            if ($uaParser->getComposerVersion() && $uaParser->getPhpMinorVersion() && $uaParser->getComposerMajorVersion()) {
                 $downloadManager->addDownloads($jobs, $ip, $uaParser->getPhpMinorVersion(), $uaParser->getPhpMinorPlatformVersion() ?: $uaParser->getPhpMinorVersion());
 
                 $statsd->increment('installs', 1, 1, [
@@ -264,6 +259,14 @@ class ApiController extends Controller
                     'http' => $uaParser->getHttpVersion() ?: 'unknown',
                     'ci' => $uaParser->getCI() ? 'true' : 'false',
                 ]);
+            } elseif (
+                // log only if user-agent header is well-formed (it sometimes contains the header name itself in the value)
+                0 !== strpos($request->headers->get('User-Agent'), 'User-Agent:')
+                // and only if composer version or php minor are missing, if only composer major is invalid it's irrelevant
+                || !$uaParser->getComposerVersion() || !$uaParser->getPhpMinorVersion()
+            ) {
+                $this->logger->error('Could not parse UA: '.$request->headers->get('User-Agent').' with '.$request->getContent().' from '.$request->getClientIp());
+                $statsd->increment('installs.invalid-ua');
             }
         }
 

@@ -41,7 +41,12 @@ class UserAgentParser
             return '1';
         }
 
-        return substr($this->composerVersion, 0, 1);
+        $major = substr($this->composerVersion, 0, 1);
+        if (!is_numeric($major)) {
+            return null;
+        }
+
+        return $major;
     }
 
     public function getPhpVersion(): ?string
