@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ProfileController extends Controller
 {
@@ -79,11 +80,30 @@ class ProfileController extends Controller
 
     /**
      * @Route("/users/{name}/packages/", name="user_packages")
+     * @Route("/users/{name}/packages.json", name="user_packages_json", defaults={"_format": "json"})
      * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
     public function packagesAction(Request $req, User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
     {
         $packages = $this->getUserPackages($req, $user);
+
+        if ($req->getRequestFormat() === 'json') {
+            $packages->setMaxPerPage(50);
+            $result = ['packages' => []];
+            foreach ($packages as $pkg) {
+                $result['packages'][] = [
+                    'name' => $pkg->getName(),
+                    'description' => $pkg->getDescription(),
+                    'repository' => $pkg->getRepository(),
+                ];
+            }
+
+            if ($packages->hasNextPage()) {
+                $result['next'] = $this->generateUrl('user_packages_json', ['name' => $user->getUsername(), 'page' => $packages->getCurrentPage() + 1], UrlGeneratorInterface::ABSOLUTE_URL);
+            }
+
+            return $this->json($result);
+        }
 
         return $this->render(
             'user/packages.html.twig',
@@ -130,7 +150,7 @@ class ProfileController extends Controller
         $paginator = new Pagerfanta(new QueryAdapter($packages, true));
         $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)));
+        $paginator->setCurrentPage(max(1, $req->query->getInt('page', 1)));
 
         return $paginator;
     }
