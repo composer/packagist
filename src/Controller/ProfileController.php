@@ -90,6 +90,7 @@ class ProfileController extends Controller
         if ($req->getRequestFormat() === 'json') {
             $packages->setMaxPerPage(50);
             $result = ['packages' => []];
+            /** @var Package $pkg */
             foreach ($packages as $pkg) {
                 $result['packages'][] = [
                     'name' => $pkg->getName(),
