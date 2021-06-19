@@ -67,6 +67,13 @@ packages:
     from: "Packages from %vendor%"
     security_advisory_title: Security Advisories
     security_advisories: Security Advisories
+    tag_pattern:
+        label: Version regex
+        help: |
+            You may add a regex to only allow some specific versions. The default
+            behavior is to allow everyting (same as "*"). If you only want to add
+            versions starting with 2, 3, 4 or "dev-", you can add the following
+            regex (no quotes): "^([234]|dev-).*"
 
 browse:
     packages: Packages

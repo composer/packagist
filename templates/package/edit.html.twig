@@ -9,7 +9,12 @@
 
 <section class="row">
     {{ form_start(form, { attr: { class: 'col-md-6' } }) }}
-        {{ form_widget(form) }}
+        {{ form_row(form.repository) }}
+        <div class="form-group">
+            {{ form_label(form.tagPattern) }}
+            {{ form_widget(form.tagPattern) }}
+            <p>{{ 'packages.tag_pattern.help'|trans }}</p>
+        </div>
 
         <input class="btn btn-block btn-primary btn-lg" id="submit" type="submit" value="{{ 'edit.submit'|trans }}" />
     {{ form_end(form) }}
