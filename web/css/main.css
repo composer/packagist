@@ -1498,7 +1498,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     vertical-align: middle;
 }
 
-.wrapper .content h2 a {
+.wrapper .content h2.title a {
     color: #2d2d32;
     font-weight: 600;
     text-decoration: none;
