@@ -310,6 +310,16 @@ class Package
                 return;
             }
 
+            $reservedVendors = ['php'];
+            $bits = explode('/', strtolower($information['name']));
+            if (in_array($bits[0], $reservedVendors, true)) {
+                $context->buildViolation('The vendor name '.htmlentities($bits[0], ENT_COMPAT, 'utf-8').' is reserved, please use another name or reach out to us if you have a legitimate use for it.')
+                    ->atPath($property)
+                    ->addViolation()
+                ;
+                return;
+            }
+
             $reservedNames = ['nul', 'con', 'prn', 'aux', 'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'];
             $bits = explode('/', strtolower($information['name']));
             if (in_array($bits[0], $reservedNames, true) || in_array($bits[1], $reservedNames, true)) {

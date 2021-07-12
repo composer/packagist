@@ -526,7 +526,7 @@ class PackageController extends Controller
                 return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
             }
 
-            if ($providers = $repo->findProviders($name)) {
+            if ($repo->findProviders($name)) {
                 return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
             }
 
@@ -686,8 +686,8 @@ class PackageController extends Controller
                         break;
                 }
             }
-
         }
+
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
         }
@@ -718,7 +718,7 @@ class PackageController extends Controller
                 return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
             }
 
-            if ($providers = $repo->findProviders($name)) {
+            if ($repo->findProviders($name)) {
                 return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
             }
 
