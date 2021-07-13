@@ -19,6 +19,7 @@ use App\Package\Updater;
 use App\Entity\VersionRepository;
 use App\Entity\AuthorRepository;
 use App\Model\ProviderManager;
+use App\Model\VersionIdCache;
 use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_MockObject;
 
@@ -76,7 +77,9 @@ class UpdaterTest extends TestCase
         $packageMock->expects($this->any())->method('getDevRequires')->willReturn([]);
         $packageMock->expects($this->any())->method('isDefaultBranch')->willReturn(false);
 
-        $this->updater = new Updater($registryMock, $providerManagerMock);
+        $versionIdCache = $this->getMockBuilder(VersionIdCache::class)->disableOriginalConstructor()->getMock();
+
+        $this->updater = new Updater($registryMock, $providerManagerMock, $versionIdCache);
     }
 
     public function testUpdatesTheReadme()
