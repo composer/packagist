@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Model\VersionIdCache;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\DBAL\Connection;
 use Predis\Client;
@@ -40,7 +41,7 @@ class VersionRepository extends ServiceEntityRepository
         return parent::getEntityManager();
     }
 
-    public function __construct(ManagerRegistry $registry, Client $redisCache)
+    public function __construct(ManagerRegistry $registry, Client $redisCache, private VersionIdCache $versionIdCache)
     {
         parent::__construct($registry, Version::class);
 
@@ -50,9 +51,13 @@ class VersionRepository extends ServiceEntityRepository
     public function remove(Version $version)
     {
         $em = $this->getEntityManager();
-        $version->getPackage()->getVersions()->removeElement($version);
-        $version->getPackage()->setCrawledAt(new \DateTime);
-        $version->getPackage()->setUpdatedAt(new \DateTime);
+        $package = $version->getPackage();
+        $package->getVersions()->removeElement($version);
+        $package->setCrawledAt(new \DateTime);
+        $package->setUpdatedAt(new \DateTime);
+        $em->persist($package);
+
+        $this->versionIdCache->deleteVersion($package, $version);
 
         $em->getConnection()->executeQuery('DELETE FROM version_author WHERE version_id=:id', ['id' => $version->getId()]);
         $em->getConnection()->executeQuery('DELETE FROM version_tag WHERE version_id=:id', ['id' => $version->getId()]);

@@ -1257,7 +1257,7 @@ class PackageController extends Controller
 
         $data['package'] = $package;
 
-        $data['expandedVersion'] = reset($versionsFormatted)['version'] ?? null;
+        $data['expandedVersion'] = $versionsFormatted ? reset($versionsFormatted)['version'] : null;
 
         return $data;
     }

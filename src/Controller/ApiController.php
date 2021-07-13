@@ -17,6 +17,7 @@ use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Model\DownloadManager;
 use App\Model\ProviderManager;
+use App\Model\VersionIdCache;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\UserAgentParser;
@@ -211,30 +212,41 @@ class ApiController extends Controller
      *
      * @Route("/downloads/", name="track_download_batch", defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function trackDownloadsAction(Request $request, StatsDClient $statsd, string $trustedIpHeader, DownloadManager $downloadManager)
+    public function trackDownloadsAction(Request $request, StatsDClient $statsd, string $trustedIpHeader, DownloadManager $downloadManager, VersionIdCache $versionIdCache)
     {
         $contents = json_decode($request->getContent(), true);
-        if (empty($contents['downloads']) || !is_array($contents['downloads'])) {
+        $invalidInputs = function ($item) {
+            return !isset($item['name'], $item['version']);
+        };
+
+        if (!is_array($contents) || !isset($contents['downloads']) || !is_array($contents['downloads']) || array_filter($contents['downloads'], $invalidInputs)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid request format, must be a json object containing a downloads key filled with an array of name/version objects'], 200);
         }
-
-        $failed = [];
 
         $ip = $request->headers->get('X-'.$trustedIpHeader);
         if (!$ip) {
             $ip = $request->getClientIp();
         }
 
-        $jobs = [];
-        foreach ($contents['downloads'] as $package) {
-            $result = $this->getPackageAndVersionId($package['name'], $package['version']);
+        $payload = $versionIdCache->augmentDownloadPayloadWithIds($contents['downloads']);
 
-            if (!$result) {
+        $jobs = $failed = [];
+        foreach ($payload as $package) {
+            // support legacy composer v1 normalized default branches
+            if ($package['version'] === '9999999-dev' && !isset($package['id'], $package['vid'])) {
+                $result = $this->getDefaultPackageAndVersionId($package['name']);
+                if ($result) {
+                    $package['id'] = $result['id'];
+                    $package['vid'] = $result['vid'];
+                }
+            }
+
+            if (!isset($package['id'], $package['vid'])) {
                 $failed[] = $package;
                 continue;
             }
 
-            $jobs[$result['id']] = ['id' => $result['id'], 'vid' => $result['vid'], 'minor' => $this->extractMinorVersion($package['version'])];
+            $jobs[$package['id']] = ['id' => $package['id'], 'vid' => $package['vid'], 'minor' => $this->extractMinorVersion($package['version'])];
         }
         $jobs = array_values($jobs);
 
@@ -312,33 +324,26 @@ class ApiController extends Controller
 
     /**
      * @param string $name
-     * @param string $version
-     * @return array
+     * @return array{id: int, vid: int}|false
      */
-    protected function getPackageAndVersionId($name, $version)
+    protected function getDefaultPackageAndVersionId($name)
     {
-        // support legacy composer v1 normalized default branches
-        if ($version === '9999999-dev') {
-            return $this->getEM()->getConnection()->fetchAssociative(
-                'SELECT p.id, v.id vid
-                FROM package p
-                LEFT JOIN package_version v ON p.id = v.package_id
-                WHERE p.name = ?
-                AND v.defaultBranch = true
-                LIMIT 1',
-                [$name]
-            );
-        }
-
-        return $this->getEM()->getConnection()->fetchAssociative(
+        /** @var array{id: string, vid: string}|false $result */
+        $result = $this->getEM()->getConnection()->fetchAssociative(
             'SELECT p.id, v.id vid
             FROM package p
             LEFT JOIN package_version v ON p.id = v.package_id
             WHERE p.name = ?
-            AND v.normalizedVersion = ?
+            AND v.defaultBranch = true
             LIMIT 1',
-            [$name, $version]
+            [$name]
         );
+
+        if (false === $result) {
+            return false;
+        }
+
+        return ['id' => (int) $result['id'], 'vid' => (int) $result['vid']];
     }
 
     /**

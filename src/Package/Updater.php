@@ -29,6 +29,7 @@ use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Entity\SuggestLink;
 use App\Model\ProviderManager;
+use App\Model\VersionIdCache;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Service\VersionCache;
@@ -44,13 +45,6 @@ class Updater
     const UPDATE_EQUAL_REFS = 1;
     const DELETE_BEFORE = 2;
     const FORCE_DUMP = 4;
-
-    /**
-     * Doctrine
-     */
-    protected ManagerRegistry $doctrine;
-
-    protected ProviderManager $providerManager;
 
     /**
      * Supported link types
@@ -83,11 +77,11 @@ class Updater
      *
      * @param ManagerRegistry $doctrine
      */
-    public function __construct(ManagerRegistry $doctrine, ProviderManager $providerManager)
-    {
-        $this->doctrine = $doctrine;
-        $this->providerManager = $providerManager;
-
+    public function __construct(
+        private ManagerRegistry $doctrine,
+        private ProviderManager $providerManager,
+        private VersionIdCache $versionIdCache
+    ) {
         ErrorHandler::register();
     }
 
@@ -229,6 +223,8 @@ class Updater
                 $em->flush();
                 $em->clear();
                 $package = $em->merge($package);
+
+                $this->versionIdCache->insertVersion($package, $result['object']);
             } else {
                 $idsToMarkUpdated[] = $result['id'];
             }

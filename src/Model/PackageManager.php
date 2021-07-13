@@ -46,7 +46,7 @@ class PackageManager
     private string $metadataDir;
     private Client $redis;
 
-    public function __construct(ManagerRegistry $doctrine, MailerInterface $mailer, Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir, Client $redis)
+    public function __construct(ManagerRegistry $doctrine, MailerInterface $mailer, Environment $twig, LoggerInterface $logger, array $options, ProviderManager $providerManager, SearchClient $algoliaClient, string $algoliaIndexName, GitHubUserMigrationWorker $githubWorker, string $metadataDir, Client $redis, private VersionIdCache $versionIdCache)
     {
         $this->doctrine = $doctrine;
         $this->mailer = $mailer;
@@ -100,6 +100,7 @@ class PackageManager
         }
 
         $this->providerManager->deletePackage($package);
+        $this->versionIdCache->deletePackage($package);
         $packageId = $package->getId();
         $packageName = $package->getName();
 
