@@ -37,6 +37,8 @@ class UpdaterTest extends TestCase
     private $repositoryMock;
     /** @var VcsDriverInterface|PHPUnit_Framework_MockObject_MockObject */
     private $driverMock;
+    /** @var EntityManagerInterface|PHPUnit_Framework_MockObject_MockObject */
+    private $emMock;
 
     protected function setUp(): void
     {
@@ -53,7 +55,7 @@ class UpdaterTest extends TestCase
         $this->repositoryMock = $this->getMockBuilder(VcsRepository::class)->disableOriginalConstructor()->getMock();
         $registryMock         = $this->getMockBuilder(Registry::class)->disableOriginalConstructor()->getMock();
         $providerManagerMock  = $this->getMockBuilder(ProviderManager::class)->disableOriginalConstructor()->getMock();
-        $emMock               = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
+        $this->emMock         = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
         $connectionMock       = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
         $packageMock          = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
         $this->driverMock     = $this->getMockBuilder(GitDriver::class)->disableOriginalConstructor()->getMock();
@@ -61,10 +63,10 @@ class UpdaterTest extends TestCase
         $authorRepoMock      = $this->getMockBuilder(AuthorRepository::class)->disableOriginalConstructor()->getMock();
 
         $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn(array());
-        $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
-        $emMock->expects($this->any())->method('merge')->will($this->returnCallback(function ($package) { return $package; }));
+        $this->emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
+        $this->emMock->expects($this->any())->method('merge')->will($this->returnCallback(function ($package) { return $package; }));
 
-        $registryMock->expects($this->any())->method('getManager')->willReturn($emMock);
+        $registryMock->expects($this->any())->method('getManager')->willReturn($this->emMock);
         $registryMock->expects($this->at(1))->method('getRepository')->with(Version::class)->willReturn($versionRepoMock);
         $this->repositoryMock->expects($this->any())->method('getPackages')->willReturn([
             $packageMock
@@ -181,5 +183,55 @@ EOR;
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
 
         self::assertSame('<pre>This is the readme</pre>', $this->package->getReadme());
+    }
+
+    public function testIgnoreTags()
+    {
+        $versionMainDev = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
+        $versionMainDev->expects($this->any())->method('getVersion')->willReturn('dev-main');
+        $versionMainDev->expects($this->any())->method('getPrettyVersion')->willReturn('dev-main');
+
+        $version600 = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
+        $version600->expects($this->any())->method('getVersion')->willReturn('6.0.0');
+        $version600->expects($this->any())->method('getPrettyVersion')->willReturn('6.0.0');
+
+        $version540 = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
+        $version540->expects($this->any())->method('getVersion')->willReturn('5.4.0');
+        $version540->expects($this->any())->method('getPrettyVersion')->willReturn('5.4.0');
+
+        foreach ([$versionMainDev, $version600, $version540] as $packageMock) {
+            $packageMock->expects($this->any())->method('getRequires')->willReturn([]);
+            $packageMock->expects($this->any())->method('getConflicts')->willReturn([]);
+            $packageMock->expects($this->any())->method('getProvides')->willReturn([]);
+            $packageMock->expects($this->any())->method('getReplaces')->willReturn([]);
+            $packageMock->expects($this->any())->method('getDevRequires')->willReturn([]);
+            $packageMock->expects($this->any())->method('isDefaultBranch')->willReturn(false);
+        }
+
+        $repositoryMock = $this->getMockBuilder(VcsRepository::class)->disableOriginalConstructor()->getMock();
+        $repositoryMock->expects($this->any())->method('getDriver')->willReturn($this->driverMock);
+        $repositoryMock->expects($this->any())->method('getPackages')->willReturn([
+            $versionMainDev, $version600, $version540
+        ]);
+
+        $this->package->setTagPattern('^([12345]|dev-).*');
+
+        $versionsToSave = ['5.4.0' => true, 'dev-main' => true];
+        $this->emMock->expects($this->exactly(2))->method('persist')->with($this->callback(function($entity) use (&$versionsToSave) {
+            if (!$entity instanceof Version) {
+                return true;
+            }
+
+            $version = $entity->getVersion();
+            if (!isset($versionsToSave[$version])) {
+                return false;
+            }
+
+            unset($versionsToSave[$version]);
+            return true;
+        }));
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $repositoryMock);
+        self::assertEmpty($versionsToSave);
     }
 }

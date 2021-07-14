@@ -216,9 +216,15 @@ class Updater
             }
             $processedVersions[strtolower($version->getVersion())] = $version;
 
-            $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
-            $lastUpdated = $result['updated'];
+            try {
+                $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
+            } catch (VersionIgnoredException $e) {
+                $io->write('Skipping ignored version '.$version->getPrettyVersion(), true, IOInterface::VERBOSE);
 
+                continue;
+            }
+
+            $lastUpdated = $result['updated'];
             if ($lastUpdated) {
                 $em->flush();
                 $em->clear();
@@ -335,6 +341,12 @@ class Updater
             } else {
                 return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
             }
+        }
+
+        // Filter package versions
+        $pattern = $package->getTagPattern();
+        if ($pattern !== null && $pattern !== '' && $pattern !== '*' && !preg_match('#'.$pattern.'#', $data->getPrettyVersion())) {
+            throw new VersionIgnoredException();
         }
 
         $version->setName($package->getName());

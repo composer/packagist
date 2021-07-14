@@ -1038,6 +1038,7 @@ class PackageController extends Controller
 
         $form = $this->createFormBuilder($package, ["validation_groups" => ["Update"]])
             ->add('repository', TextType::class)
+            ->add('tagPattern', TextType::class, ['required'=>false, 'label'=>'packages.tag_pattern.label'])
             ->setMethod('POST')
             ->setAction($this->generateUrl('edit_package', ['name' => $package->getName()]))
             ->getForm();
