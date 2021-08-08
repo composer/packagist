@@ -71,4 +71,12 @@ class RemoteSecurityAdvisoryTest extends TestCase
 
         $this->assertSame('2019-10-08 00:00:00', $advisory->getDate()->format('Y-m-d H:i:s'));
     }
+
+    public function testWithAddedAffectedVersion(): void
+    {
+        $advisory = new RemoteSecurityAdvisory('id', 'foobar', 'foo/bar', '>=1', 'https://foobar.com', null, new \DateTime(), null);
+        $advisory = $advisory->withAddedAffectedVersion('<2');
+
+        $this->assertSame('>=1|<2', $advisory->getAffectedVersions());
+    }
 }

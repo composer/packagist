@@ -127,3 +127,4 @@ services:
         bind:
             $sources:
                 'FriendsOfPHP/security-advisories': '@App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource'
+                'GitHub': '@App\SecurityAdvisory\GitHubSecurityAdvisoriesSource'

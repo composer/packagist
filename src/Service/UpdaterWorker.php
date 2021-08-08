@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
+use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use Psr\Log\LoggerInterface;
 use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
@@ -270,7 +271,9 @@ class UpdaterWorker
         }
 
         if ($packageName === FriendsOfPhpSecurityAdvisoriesSource::SECURITY_PACKAGE) {
-            $this->scheduler->scheduleSecurityAdvisory(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
+            $this->scheduler->scheduleSecurityAdvisory(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, $id);
+        } elseif (preg_match('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository())) {
+            $this->scheduler->scheduleSecurityAdvisory(GitHubSecurityAdvisoriesSource::SOURCE_NAME, $id);
         }
 
         return [

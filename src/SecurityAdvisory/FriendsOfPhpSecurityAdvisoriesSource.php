@@ -31,10 +31,13 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
         $this->logger = $logger;
     }
 
-    public function getAdvisories(ConsoleIO $io): ?array
+    public function getAdvisories(ConsoleIO $io, Package $package): ?array
     {
-        $package = $this->doctrine->getRepository(Package::class)->findOneBy(['name' => self::SECURITY_PACKAGE]);
-        if (!$package || !($version = $this->doctrine->getRepository(Version::class)->findOneBy(['package' => $package->getId(), 'isDefaultBranch' => true]))) {
+        if ($package->getName() !== self::SECURITY_PACKAGE) {
+            return null;
+        }
+
+        if (!($version = $this->doctrine->getRepository(Version::class)->findOneBy(['package' => $package->getId(), 'isDefaultBranch' => true]))) {
             return null;
         }
 

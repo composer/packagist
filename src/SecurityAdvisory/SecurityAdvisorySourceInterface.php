@@ -2,6 +2,7 @@
 
 namespace App\SecurityAdvisory;
 
+use App\Entity\Package;
 use Composer\IO\ConsoleIO;
 
 interface SecurityAdvisorySourceInterface
@@ -9,5 +10,5 @@ interface SecurityAdvisorySourceInterface
     /**
      * @return null|RemoteSecurityAdvisory[]
      */
-    public function getAdvisories(ConsoleIO $io): ?array;
+    public function getAdvisories(ConsoleIO $io, Package $package): ?array;
 }
