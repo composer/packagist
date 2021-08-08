@@ -57,9 +57,9 @@ class Scheduler
         return $this->createJob('githubuser:migrate', ['id' => $userId, 'old_scope' => $oldScope, 'new_scope' => $newScope], $userId);
     }
 
-    public function scheduleSecurityAdvisory(string $source, ?\DateTimeInterface $executeAfter = null): Job
+    public function scheduleSecurityAdvisory(string $source, int $packageId, ?\DateTimeInterface $executeAfter = null): Job
     {
-        return $this->createJob('security:advisory', ['source' => $source], null, $executeAfter);
+        return $this->createJob('security:advisory', ['source' => $source], $packageId, $executeAfter);
     }
 
     private function getPendingUpdateJob(int $packageId, bool $updateEqualRefs = false, bool $deleteBefore = false): ?string

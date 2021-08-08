@@ -82,6 +82,20 @@ class RemoteSecurityAdvisory
         return $this->composerRepository;
     }
 
+    public function withAddedAffectedVersion(string $version): self
+    {
+        return new self(
+            $this->getId(),
+            $this->getTitle(),
+            $this->getPackageName(),
+            implode('|', [$this->getAffectedVersions(), $version]),
+            $this->getLink(),
+            $this->getCve(),
+            $this->getDate(),
+            $this->getComposerRepository()
+        );
+    }
+
     /**
      * @phpstan-param FriendsOfPhpSecurityAdvisory $info
      */

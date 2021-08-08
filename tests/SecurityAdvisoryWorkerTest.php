@@ -2,6 +2,7 @@
 
 namespace App\Tests;
 
+use App\Entity\Package;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
 use App\Entity\Job;
@@ -25,6 +26,8 @@ class SecurityAdvisoryWorkerTest extends TestCase
     private $em;
     /** @var \PHPUnit\Framework\MockObject\MockObject */
     private $securityAdvisoryRepository;
+    /** @var \PHPUnit\Framework\MockObject\MockObject */
+    private $packageRepository;
 
     protected function setUp(): void
     {
@@ -44,11 +47,18 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->willReturn(true);
 
         $this->securityAdvisoryRepository = $this->getMockBuilder(EntityRepository::class)->disableOriginalConstructor()->getMock();
+        $this->packageRepository = $this->getMockBuilder(EntityRepository::class)->disableOriginalConstructor()->getMock();
 
         $doctrine
             ->method('getRepository')
-            ->with($this->equalTo(SecurityAdvisory::class))
-            ->willReturn($this->securityAdvisoryRepository);
+            ->withConsecutive(
+                [$this->equalTo(Package::class)],
+                [$this->equalTo(SecurityAdvisory::class)]
+            )
+            ->willReturnOnConsecutiveCalls(
+                $this->packageRepository,
+                $this->securityAdvisoryRepository
+            );
     }
 
     public function testProcess(): void
@@ -110,11 +120,17 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->with($this->equalTo(['source' => 'test']))
             ->willReturn([$existingAdvisory1, $existingAdvisory2ToBeDeleted]);
 
+        $this->packageRepository
+            ->method('findOneBy')
+            ->with(['id' => 42])
+            ->willReturn(new Package());
+
         $job = new Job('job', 'security:advisory', ['source' => 'test']);
+        $job->setPackageId(42);
         $this->worker->process($job, SignalHandler::create());
     }
 
-    public function testProcessNone(): void
+    public function testProcessNoAdvisories(): void
     {
         $this->source
             ->expects($this->once())
@@ -130,11 +146,17 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->with($this->equalTo(['source' => 'test']))
             ->willReturn([]);
 
+        $this->packageRepository
+            ->method('findOneBy')
+            ->with(['id' => 42])
+            ->willReturn(new Package());
+
         $job = new Job('job', 'security:advisory', ['source' => 'test']);
+        $job->setPackageId(42);
         $this->worker->process($job, SignalHandler::create());
     }
 
-    public function testProcessFailed(): void
+    public function testProcessAdvisoryFailed(): void
     {
         $this->source
             ->expects($this->once())
@@ -149,7 +171,13 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->expects($this->never())
             ->method('findBy');
 
+        $this->packageRepository
+            ->method('findOneBy')
+            ->with(['id' => 42])
+            ->willReturn(new Package());
+
         $job = new Job('job', 'security:advisory', ['source' => 'test']);
+        $job->setPackageId(42);
         $this->worker->process($job, SignalHandler::create());
     }
 }

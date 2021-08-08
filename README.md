@@ -45,7 +45,11 @@ These steps are provided for development purposes only.
    ```bash
    symfony serve
    ```
-6. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
+6. Start Redis:
+   ```bash
+   docker compose up -d
+   ```
+7. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
 7. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files.
 
 You should now be able to access the site, create a user, etc.

@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\Package;
 use Composer\Console\HtmlOutputFormatter;
 use Composer\Factory;
 use Composer\IO\BufferIO;
@@ -30,6 +31,14 @@ class SecurityAdvisoryWorker
     public function process(Job $job, SignalHandler $signal): array
     {
         $sourceName = $job->getPayload()['source'];
+        $package = $this->doctrine->getRepository(Package::class)->findOneBy(['id' => $job->getPackageId()]);
+
+        if (!$package instanceof Package) {
+            $this->logger->info('Security advisory update failed, skipping', ['packageId' => $job->getPackageId()]);
+
+            return ['status' => Job::STATUS_ERRORED, 'message' => 'Security advisory update failed, skipped'];
+        }
+
         $lockAcquired = $this->locker->lockSecurityAdvisory($sourceName);
         if (!$lockAcquired) {
             return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+5 minutes')];
@@ -39,7 +48,7 @@ class SecurityAdvisoryWorker
 
         /** @var SecurityAdvisorySourceInterface $source */
         $source = $this->sources[$sourceName];
-        $remoteAdvisories = $source->getAdvisories($io);
+        $remoteAdvisories = $source->getAdvisories($io, $package);
         if (null === $remoteAdvisories) {
             $this->logger->info('Security advisory update failed, skipping', ['source' => $source]);
 

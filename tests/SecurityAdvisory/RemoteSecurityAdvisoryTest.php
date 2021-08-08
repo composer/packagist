@@ -98,4 +98,12 @@ class RemoteSecurityAdvisoryTest extends TestCase
         $this->assertSame('symfony/framework-bundle/CVE-2022-xxxx.yaml', $advisory->getId());
         $this->assertNull($advisory->getCve());
     }
+
+    public function testWithAddedAffectedVersion(): void
+    {
+        $advisory = new RemoteSecurityAdvisory('id', 'foobar', 'foo/bar', '>=1', 'https://foobar.com', null, new \DateTime(), null);
+        $advisory = $advisory->withAddedAffectedVersion('<2');
+
+        $this->assertSame('>=1|<2', $advisory->getAffectedVersions());
+    }
 }
