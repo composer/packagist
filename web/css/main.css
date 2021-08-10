@@ -1364,6 +1364,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 .package .version-details .package-links ul  {
     padding-left: 18px;
+    word-break: break-word;
 }
 .package .version-details .package-links .no-links {
     color: #999;
