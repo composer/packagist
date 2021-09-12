@@ -559,12 +559,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "b583310476763f6826be9ccf16872d525c57dc9b"
+                "reference": "61fba697a0f93aa1f29967328f51eec93263aa4c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/b583310476763f6826be9ccf16872d525c57dc9b",
-                "reference": "b583310476763f6826be9ccf16872d525c57dc9b",
+                "url": "https://api.github.com/repos/composer/composer/zipball/61fba697a0f93aa1f29967328f51eec93263aa4c",
+                "reference": "61fba697a0f93aa1f29967328f51eec93263aa4c",
                 "shasum": ""
             },
             "require": {
@@ -632,7 +632,7 @@
                 "package"
             ],
             "support": {
-                "irc": "irc://irc.freenode.org/composer",
+                "irc": "ircs://irc.libera.chat:6697/composer",
                 "issues": "https://github.com/composer/composer/issues",
                 "source": "https://github.com/composer/composer/tree/master"
             },
@@ -650,7 +650,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2021-08-19T14:03:59+00:00"
+            "time": "2021-08-30T11:43:33+00:00"
         },
         {
             "name": "composer/metadata-minifier",

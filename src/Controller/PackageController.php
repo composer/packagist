@@ -533,7 +533,7 @@ class PackageController extends Controller
             return $this->redirect($this->generateUrl('search', ['q' => $name, 'reason' => 'package_not_found']));
         }
 
-        if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
+        if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam' && !$this->isGranted('ROLE_ADMIN')) {
             throw new NotFoundHttpException('This is a spam package');
         }
 
