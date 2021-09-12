@@ -209,6 +209,9 @@ class Updater
             if ($version instanceof AliasPackage) {
                 continue;
             }
+            if (!$version instanceof CompletePackageInterface) {
+                throw new \LogicException('Received a package instance of type '.get_class($version).', expected a CompletePackageInterface instance');
+            }
 
             if (isset($processedVersions[strtolower($version->getVersion())])) {
                 $io->write('Skipping version '.$version->getPrettyVersion().' (duplicate of '.$processedVersions[strtolower($version->getVersion())]->getPrettyVersion().')', true, IOInterface::VERBOSE);
