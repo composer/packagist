@@ -14,7 +14,6 @@ namespace App\Controller;
 
 use App\Model\FavoriteManager;
 use Doctrine\ORM\NoResultException;
-use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\Version;
 use App\Entity\User;
@@ -25,7 +24,7 @@ use App\Model\ProviderManager;
 use App\Model\RedisAdapter;
 use App\Security\TwoFactorAuthManager;
 use App\Service\Scheduler;
-use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Endroid\QrCode\Writer\SvgWriter;
 use Pagerfanta\Pagerfanta;
 use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
@@ -46,7 +45,6 @@ use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
 use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
-use Endroid\QrCode\Writer\PngWriter;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -279,14 +277,20 @@ class UserController extends Controller
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        $enableRequest = new EnableTwoFactorRequest($authenticator->generateSecret());
-        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest);
-        $form->handleRequest($req);
+        $enableRequest = new EnableTwoFactorRequest();
+        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest)
+            ->handleRequest($req);
+
+        $secret = (string) $req->getSession()->get('2fa_secret');
+        if (!$form->isSubmitted()) {
+            $secret = $authenticator->generateSecret();
+            $req->getSession()->set('2fa_secret', $secret);
+        }
 
         // Temporarily store this code on the user, as we'll need it there to generate the
         // QR code and to check the confirmation code.  We won't actually save this change
         // until we've confirmed the code
-        $user->setTotpSecret($enableRequest->getSecret());
+        $user->setTotpSecret($secret);
 
         if ($form->isSubmitted()) {
             // Validate the code using the secret that was submitted in the form
@@ -295,7 +299,8 @@ class UserController extends Controller
             }
 
             if ($form->isValid()) {
-                $authManager->enableTwoFactorAuth($user, $enableRequest->getSecret());
+                $req->getSession()->remove('2fa_secret');
+                $authManager->enableTwoFactorAuth($user, $secret);
                 $backupCode = $authManager->generateAndSaveNewBackupCode($user);
 
                 $this->addFlash('success', 'Two-factor authentication has been enabled.');
@@ -308,7 +313,7 @@ class UserController extends Controller
         $qrContent = $authenticator->getQRContent($user);
 
         $qrCode = Builder::create()
-            ->writer(new PngWriter())
+            ->writer(new SvgWriter())
             ->writerOptions([])
             ->data($qrContent)
             ->encoding(new Encoding('UTF-8'))
@@ -320,7 +325,6 @@ class UserController extends Controller
 
         return [
             'user' => $user,
-            'secret' => $enableRequest->getSecret(),
             'form' => $form->createView(),
             'qrCode' => $qrCode->getDataUri(),
         ];

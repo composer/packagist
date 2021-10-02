@@ -38,7 +38,7 @@
             <p class="pull-right two-factor-key">
                 <img src="{{ qrCode }}" height="200" />
                 <br>
-                <small>TOTP Key: <code>{{ secret }}</code></small>
+                <small>TOTP Key: <code style="user-select: all">{{ user.totpAuthenticationConfiguration.secret }}</code></small>
             </p>
 
             <h3>Enabling Two-Factor Authentication</h3>
