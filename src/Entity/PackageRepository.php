@@ -131,19 +131,28 @@ class PackageRepository extends ServiceEntityRepository
         foreach ($fields as $field) {
             $selector .= ', p.'.$field;
         }
-        $where = 'p.replacementPackage != :replacement';
+
+        if (in_array('abandoned', $fields, true)) {
+            $selector .= ', p.replacementPackage';
+        }
+
+        $where = '(p.replacementPackage IS NULL OR p.replacementPackage != :replacement)';
         foreach ($filters as $filter => $val) {
             $where .= ' AND p.'.$filter.' = :'.$filter;
         }
         $filters['replacement'] = "spam/spam";
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name $selector  FROM App\Entity\Package p WHERE $where")
+            ->createQuery("SELECT p.name $selector FROM App\Entity\Package p WHERE $where ORDER BY p.name")
             ->setParameters($filters);
 
         $result = [];
         foreach ($query->getScalarResult() as $row) {
             $name = $row['name'];
             unset($row['name']);
+            if (isset($row['abandoned'])) {
+                $row['abandoned'] = $row['abandoned'] == 1 ? ($row['replacementPackage'] ?: true) : false;
+                unset($row['replacementPackage']);
+            }
             $result[$name] = $row;
         }
 

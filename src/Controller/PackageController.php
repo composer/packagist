@@ -81,7 +81,7 @@ class PackageController extends Controller
     {
         $repo = $this->getEM()->getRepository(Package::class);
         $fields = (array) $req->query->get('fields');
-        $fields = array_intersect($fields, ['repository', 'type']);
+        $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
 
         if ($fields) {
             $filters = array_filter([
