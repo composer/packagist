@@ -146,11 +146,12 @@ class PackageRepository extends ServiceEntityRepository
             ->setParameters($filters);
 
         $result = [];
+        /** @var array{name: string, abandoned?: string, replacementPackage?: string|null} $row */
         foreach ($query->getScalarResult() as $row) {
             $name = $row['name'];
             unset($row['name']);
-            if (isset($row['abandoned'])) {
-                $row['abandoned'] = $row['abandoned'] == 1 ? ($row['replacementPackage'] ?: true) : false;
+            if (isset($row['abandoned']) && array_key_exists('replacementPackage', $row)) {
+                $row['abandoned'] = $row['abandoned'] == "1" ? ($row['replacementPackage'] ?: true) : false;
                 unset($row['replacementPackage']);
             }
             $result[$name] = $row;
