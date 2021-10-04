@@ -211,6 +211,12 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && preg_match('{fatal: repository \'[^\']+\' not found\n}i', $e->getMessage())) {
                 // random git clone failures
                 $found404 = true;
+            } elseif ($e instanceof \RuntimeException && preg_match('{fatal: Authentication failed}i', $e->getMessage())) {
+                // git clone failed because repo now requires auth
+                $found404 = true;
+            } elseif ($e instanceof \RuntimeException && preg_match('{Driver could not be established for package}i', $e->getMessage())) {
+                // no driver found as it is a custom hosted git most likely on a server that is now unreachable or similar
+                $found404 = true;
             } elseif ($e instanceof \RuntimeException && (
                 preg_match('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
                 || preg_match('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
