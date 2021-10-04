@@ -86,6 +86,7 @@ class PackageController extends Controller
         if ($fields) {
             $filters = array_filter([
                 'type' => $req->query->get('type'),
+                'vendor' => $req->query->get('vendor'),
             ]);
 
             $response = new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);

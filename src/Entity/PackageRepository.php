@@ -138,7 +138,12 @@ class PackageRepository extends ServiceEntityRepository
 
         $where = '(p.replacementPackage IS NULL OR p.replacementPackage != :replacement)';
         foreach ($filters as $filter => $val) {
-            $where .= ' AND p.'.$filter.' = :'.$filter;
+            if ($filter === 'vendor') {
+                $where .= ' AND p.name LIKE :'.$filter;
+                $filters[$filter] = $val.'/%';
+            } else {
+                $where .= ' AND p.'.$filter.' = :'.$filter;
+            }
         }
         $filters['replacement'] = "spam/spam";
         $query = $this->getEntityManager()

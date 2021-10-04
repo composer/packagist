@@ -76,6 +76,27 @@ GET https://{{ packagist_host }}/packages/list.json?type=[type]
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?type=composer-plugin">https://{{ packagist_host }}/packages/list.json?type=composer-plugin</a></code></p>
 
+<h4>Retrieving additional data if the name is not enough</h4>
+If you need more than just package names you can additionally request one or more fields to be returned with every package. Currently supported fields are: <code>repository</code>, <code>type</code>, and <code>abandoned</code>.
+
+Note that when requesting fields, the response structure is different.
+
+<pre>
+GET https://{{ packagist_host }}/packages/list.json?vendor=[type]&amp;fields[]=type&amp;fields[]=repository&amp;fields[]=abandoned
+<code>
+{
+  "package": {
+    "[vendor]/[package]": {
+      "type": "library",
+      "repository": "https://...",
+      "abandoned": false|true|string (with advised replacement)
+    },
+    ...
+  }
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?vendor=symfony&amp;fields[]=repository&amp;fields[]=type">https://{{ packagist_host }}/packages/list.json?vendor=symfony&amp;fields[]=repository&amp;fields[]=type</a></code></p>
+
 </section>
 
 
