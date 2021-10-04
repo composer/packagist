@@ -10,6 +10,7 @@
       <li><a href="#list-packages-all">{{ 'api_doc.all_packages'|trans }}</a></li>
       <li><a href="#list-packages-by-organization">{{ 'api_doc.by_organization'|trans }}</a></li>
       <li><a href="#list-packages-by-type">{{ 'api_doc.by_type'|trans }}</a></li>
+      <li><a href="#list-packages-with-fields">With additional data</a></li>
     </ul>
   </li>
   <li><a href="#search-packages">{{ 'api_doc.searching'|trans }}</a>
@@ -76,7 +77,7 @@ GET https://{{ packagist_host }}/packages/list.json?type=[type]
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?type=composer-plugin">https://{{ packagist_host }}/packages/list.json?type=composer-plugin</a></code></p>
 
-<h4>Retrieving additional data if the name is not enough</h4>
+<h4 id="list-packages-with-fields">Retrieving additional data if the name is not enough</h4>
 If you need more than just package names you can additionally request one or more fields to be returned with every package. Currently supported fields are: <code>repository</code>, <code>type</code>, and <code>abandoned</code>.
 
 Note that when requesting fields, the response structure is different.
@@ -95,7 +96,7 @@ GET https://{{ packagist_host }}/packages/list.json?vendor=[type]&amp;fields[]=t
   }
 }
 </code></pre>
-<p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?vendor=symfony&amp;fields[]=repository&amp;fields[]=type">https://{{ packagist_host }}/packages/list.json?vendor=symfony&amp;fields[]=repository&amp;fields[]=type</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?vendor=composer&amp;fields[]=repository&amp;fields[]=type">https://{{ packagist_host }}/packages/list.json?vendor=composer&amp;fields[]=repository&amp;fields[]=type</a></code></p>
 
 </section>
 
