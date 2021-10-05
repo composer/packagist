@@ -224,6 +224,10 @@ class UpdaterWorker
             )) {
                 // unreachable host, skip for a week as this may be a temporary failure
                 $found404 = new \DateTime('+7 days');
+            } elseif ($e instanceof TransportException && $e->getStatusCode() === 409 && preg_match('{^The "https://api.github.com/repos/[^/]+/[^/]+/git/refs/heads?per_page=100" file could not be downloaded (HTTP/2 409 )$}', $e->getMessage())) {
+                $found404 = true;
+            } elseif ($e instanceof TransportException && $e->getStatusCode() === 451 && preg_match('{^The "https://api.github.com/repos/[^/]+/[^/]+" file could not be downloaded (HTTP/2 451 )$}', $e->getMessage())) {
+                $found404 = true;
             }
 
             // github 404'ed, check through API whether the package still exists and delete if not
@@ -298,9 +302,12 @@ class UpdaterWorker
     private function checkForDeadGitHubPackage(Package $package, $match, HttpDownloader $httpDownloader, $output): ?array
     {
         try {
-            $httpDownloader->get('https://api.github.com/repos/'.$match[1], ['retry-auth-failure' => false]);
+            $httpDownloader->get('https://api.github.com/repos/'.$match[1].'/git/refs/heads', ['retry-auth-failure' => false]);
         } catch (\Throwable $e) {
-            if ($e instanceof TransportException && $e->getStatusCode() === 404) {
+            // 404 indicates the repo does not exist
+            // 409 indicates an empty repo which is about the same for our purposes
+            // 451 is used for DMCA takedowns which also indicate the package is bust
+            if ($e instanceof TransportException && in_array($e->getStatusCode(), [404, 409, 451], true)) {
                 try {
                     // check composer repo is visible to make sure it's not github or something else glitching
                     $httpDownloader->get('https://api.github.com/repos/composer/composer', ['retry-auth-failure' => false]);
