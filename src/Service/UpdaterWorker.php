@@ -224,9 +224,9 @@ class UpdaterWorker
             )) {
                 // unreachable host, skip for a week as this may be a temporary failure
                 $found404 = new \DateTime('+7 days');
-            } elseif ($e instanceof TransportException && $e->getStatusCode() === 409 && preg_match('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?/git/refs/heads?per_page=100" file could not be downloaded \(HTTP/2 409 \)$}', $e->getMessage())) {
+            } elseif ($e instanceof TransportException && $e->getStatusCode() === 409 && preg_match('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?/git/refs/heads\?per_page=100" file could not be downloaded \(HTTP/2 409 \)}', $e->getMessage())) {
                 $found404 = true;
-            } elseif ($e instanceof TransportException && $e->getStatusCode() === 451 && preg_match('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded \(HTTP/2 451 \)$}', $e->getMessage())) {
+            } elseif ($e instanceof TransportException && $e->getStatusCode() === 451 && preg_match('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded \(HTTP/2 451 \)}', $e->getMessage())) {
                 $found404 = true;
             }
 
