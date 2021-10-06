@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Service\UpdaterWorker;
+use App\Validator\TypoSquatters;
 use Composer\Downloader\TransportException;
 use Composer\Factory;
 use Composer\IO\NullIO;
@@ -39,9 +40,10 @@ use DateTimeInterface;
  *         @ORM\Index(name="remoteid_idx",columns={"remoteId"})
  *     }
  * )
- * @Assert\Callback(callback="isPackageUnique")
- * @Assert\Callback(callback="isVendorWritable")
+ * @Assert\Callback(callback="isPackageUnique", groups={"Create"})
+ * @Assert\Callback(callback="isVendorWritable", groups={"Create"})
  * @Assert\Callback(callback="isRepositoryValid", groups={"Update", "Default"})
+ * @TypoSquatters(groups={"Create"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package

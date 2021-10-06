@@ -37,6 +37,7 @@ class PackageType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Package::class,
+            'validation_groups' => ['Default', 'Create']
         ]);
     }
 

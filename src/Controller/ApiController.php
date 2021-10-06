@@ -82,7 +82,7 @@ class ApiController extends Controller
         $user = $this->findUser($request);
         $package->addMaintainer($user);
         $package->setRepository($url);
-        $errors = $validator->validate($package);
+        $errors = $validator->validate($package, groups: ['Default', 'Create']);
         if (count($errors) > 0) {
             $errorArray = [];
             foreach ($errors as $error) {

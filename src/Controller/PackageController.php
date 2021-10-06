@@ -46,6 +46,7 @@ use App\Service\Scheduler;
 use Symfony\Component\Routing\RouterInterface;
 use Predis\Client as RedisClient;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\Mailer\MailerInterface;
@@ -215,32 +216,6 @@ class PackageController extends Controller
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $existingPackages = $this->getEM()
-                    ->getConnection()
-                    ->fetchAllAssociative(
-                        'SELECT name FROM package WHERE name LIKE :query',
-                        ['query' => '%/'.$package->getPackageName()]
-                    );
-
-                foreach ($existingPackages as $existingPackage) {
-                    $existingVendor = explode('/', $existingPackage['name'])[0];
-                    if (levenshtein($existingVendor, $package->getVendor()) <= 1) {
-                        if ($this->downloadManager->getTotalDownloads($existingPackage['name']) > 1_000_000) {
-                            $this->addFlash('error', 'Your package name "'.$package->getName().'" is blocked as its name is too close to "'.$existingPackage['name'].'"');
-                            return ['form' => $form->createView(), 'page' => 'submit'];
-                        } else {
-                            $message = (new Email())
-                                ->subject($package->getName().' is suspiciously close to '.$existingPackage['name'])
-                                ->from(new Address($mailFromEmail))
-                                ->to($mailFromEmail)
-                                ->text('Check out '.$this->generateUrl('view_package', ['name' => $package->getName()], UrlGeneratorInterface::ABSOLUTE_URL).' is not hijacking '.$this->generateUrl('view_package', ['name' => $existingPackage['name']], UrlGeneratorInterface::ABSOLUTE_URL))
-                            ;
-                            $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
-                            $mailer->send($message);
-                        }
-                    }
-                }
-
                 $em = $this->getEM();
                 $em->persist($package);
                 $em->flush();
@@ -294,13 +269,6 @@ class PackageController extends Controller
             $similar = [];
 
             foreach ($existingPackages as $existingPackage) {
-                $existingVendor = explode('/', $existingPackage['name'])[0];
-                if (levenshtein($existingVendor, $package->getVendor()) <= 1) {
-                    if ($this->downloadManager->getTotalDownloads($existingPackage['name']) > 1_000_000) {
-                        return new JsonResponse(['status' => 'error', 'reason' => ['Your package name "'.$package->getName().'" is blocked as its name is too close to "'.$existingPackage['name'].'"']]);
-                    }
-                }
-
                 $similar[] = [
                     'name' => $existingPackage['name'],
                     'url' => $this->generateUrl('view_package', ['name' => $existingPackage['name']], true),
@@ -314,13 +282,17 @@ class PackageController extends Controller
             $errors = [];
             if (count($form->getErrors())) {
                 foreach ($form->getErrors() as $error) {
-                    $errors[] = $error->getMessageTemplate();
+                    if ($error instanceof FormError) {
+                        $errors[] = $error->getMessage();
+                    }
                 }
             }
             foreach ($form->all() as $child) {
                 if (count($child->getErrors())) {
                     foreach ($child->getErrors() as $error) {
-                        $errors[] = $error->getMessageTemplate();
+                        if ($error instanceof FormError) {
+                            $errors[] = $error->getMessage();
+                        }
                     }
                 }
             }
