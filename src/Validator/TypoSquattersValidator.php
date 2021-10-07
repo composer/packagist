@@ -54,6 +54,11 @@ class TypoSquattersValidator extends ConstraintValidator
             );
 
         foreach ($existingPackages as $existingPackage) {
+            // duplicate submission, ignore it as it is caught elsewhere
+            if ($existingPackage['name'] === $value->getName()) {
+                continue;
+            }
+
             $existingVendor = explode('/', $existingPackage['name'])[0];
             if (levenshtein($existingVendor, $value->getVendor()) <= 1) {
                 if ($this->downloadManager->getTotalDownloads($existingPackage['id']) >= 1_000_000) {
