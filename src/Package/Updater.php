@@ -100,43 +100,7 @@ class Updater
         $deleteDate->modify('-1day');
 
         $em = $this->getEM();
-        $apc = extension_loaded('apcu');
         $rootIdentifier = null;
-
-        $cfg = $repository->getRepoConfig();
-        if (isset($cfg['url']) && preg_match('{\bgithub\.com\b}i', $cfg['url'])) {
-            foreach ($package->getMaintainers() as $maintainer) {
-                if ($maintainer->getId() === 1) {
-                    continue;
-                }
-                if (!($newGithubToken = $maintainer->getGithubToken())) {
-                    continue;
-                }
-
-                $valid = null;
-                if ($apc) {
-                    $valid = apcu_fetch('is_token_valid_'.$maintainer->getUsernameCanonical());
-                }
-
-                if (true !== $valid) {
-                    $context = stream_context_create(['http' => ['header' => ['User-agent: packagist-token-check', 'Authorization: token '.$newGithubToken]]]);
-                    $rate = json_decode(@file_get_contents('https://api.github.com/rate_limit', false, $context), true);
-                    // invalid/outdated token, wipe it so we don't try it again
-                    if (!$rate && isset($http_response_header[0]) && (strpos($http_response_header[0], '403') || strpos($http_response_header[0], '401'))) {
-                        $maintainer->setGithubToken(null);
-                        $em->flush($maintainer);
-                        continue;
-                    }
-                }
-
-                if ($apc) {
-                    apcu_store('is_token_valid_'.$maintainer->getUsernameCanonical(), true, 86400);
-                }
-
-                $io->setAuthentication('github.com', $newGithubToken, 'x-oauth-basic');
-                break;
-            }
-        }
 
         if (!$repository->getDriver()) {
             throw new \RuntimeException('Driver could not be established for package '.$package->getName().' ('.$package->getRepository().')');

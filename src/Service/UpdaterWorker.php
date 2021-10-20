@@ -20,10 +20,12 @@ use App\Entity\EmptyReferenceCache;
 use App\Model\PackageManager;
 use App\Model\DownloadManager;
 use App\Util\DoctrineTrait;
+use App\Util\LoggingHttpDownloader;
 use Seld\Signal\SignalHandler;
 use Composer\Factory;
 use Composer\Downloader\TransportException;
 use Composer\Util\HttpDownloader;
+use Graze\DogStatsD\Client as StatsDClient;
 
 class UpdaterWorker
 {
@@ -34,7 +36,6 @@ class UpdaterWorker
         'gitlab' => 'Composer\Repository\Vcs\GitLabDriver',
         'git-bitbucket' => 'Composer\Repository\Vcs\GitBitbucketDriver',
         'git' => 'Composer\Repository\Vcs\GitDriver',
-        'hg-bitbucket' => 'Composer\Repository\Vcs\HgBitbucketDriver',
         'hg' => 'Composer\Repository\Vcs\HgDriver',
         'svn' => 'Composer\Repository\Vcs\SvnDriver',
     ];
@@ -54,7 +55,8 @@ class UpdaterWorker
         Locker $locker,
         Scheduler $scheduler,
         PackageManager $packageManager,
-        DownloadManager $downloadManager
+        DownloadManager $downloadManager,
+        private StatsDClient $statsd,
     ) {
         $this->logger = $logger;
         $this->doctrine = $doctrine;
@@ -91,7 +93,46 @@ class UpdaterWorker
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
         $io->loadConfiguration($config);
 
-        $httpDownloader = new HttpDownloader($io, $config);
+        $usesPackagistToken = false;
+        if (preg_match('{\bgithub\.com\b}i', $package->getRepository())) {
+            $usesPackagistToken = true;
+            $apc = extension_loaded('apcu');
+
+            foreach ($package->getMaintainers() as $maintainer) {
+                if ($maintainer->getId() === 1) {
+                    continue;
+                }
+                if (!($newGithubToken = $maintainer->getGithubToken())) {
+                    continue;
+                }
+
+                $valid = null;
+                if ($apc) {
+                    $valid = apcu_fetch('is_token_valid_'.$maintainer->getUsernameCanonical());
+                }
+
+                if (true !== $valid) {
+                    $context = stream_context_create(['http' => ['header' => ['User-agent: packagist-token-check', 'Authorization: token '.$newGithubToken]]]);
+                    $rate = json_decode((string) @file_get_contents('https://api.github.com/rate_limit', false, $context), true);
+                    // invalid/outdated token, wipe it so we don't try it again
+                    if (!$rate && isset($http_response_header[0]) && (strpos($http_response_header[0], '403') || strpos($http_response_header[0], '401'))) {
+                        $maintainer->setGithubToken(null);
+                        $em->flush($maintainer);
+                        continue;
+                    }
+                }
+
+                if ($apc) {
+                    apcu_store('is_token_valid_'.$maintainer->getUsernameCanonical(), true, 86400);
+                }
+
+                $usesPackagistToken = false;
+                $io->setAuthentication('github.com', $newGithubToken, 'x-oauth-basic');
+                break;
+            }
+        }
+
+        $httpDownloader = new LoggingHttpDownloader($io, $config, $this->statsd, $usesPackagistToken, $packageVendor);
 
         try {
             $flags = 0;
