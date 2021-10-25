@@ -56,11 +56,6 @@ class SecurityAdvisoryWorker
         /** @var SecurityAdvisory[] $existingAdvisories */
         $existingAdvisories = $this->doctrine->getRepository(SecurityAdvisory::class)->findBy(['source' => $sourceName]);
         foreach ($existingAdvisories as $advisory) {
-            // Assign an advisory id to all existing advisories -> remove once applied everywhere
-            if (!$advisory->hasPackagistAdvisoryId()) {
-                $advisory->assignPackagistAdvisoryId();
-            }
-
             $existingAdvisoryMap[$advisory->getRemoteId()] = $advisory;
         }
 
