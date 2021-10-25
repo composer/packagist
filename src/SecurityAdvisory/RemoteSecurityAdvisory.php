@@ -81,10 +81,19 @@ class RemoteSecurityAdvisory
         $lowestBranchDate = null;
         foreach ($info['branches'] as $branchInfo) {
             $affectedVersions[] = implode(',', $branchInfo['versions']);
-            if (!$date && isset($branchInfo['time']) && is_int($branchInfo['time'])) {
-                $branchDate = new \DateTime('@' . $branchInfo['time']);
-                if (!$lowestBranchDate || $branchDate < $lowestBranchDate) {
-                    $lowestBranchDate = $branchDate;
+            if (!$date && isset($branchInfo['time'])) {
+                $timestamp = null;
+                if (is_int($branchInfo['time'])) {
+                    $timestamp = $branchInfo['time'];
+                } elseif (is_string($branchInfo['time'])) {
+                    $timestamp = strtotime($branchInfo['time']);
+                }
+
+                if ($timestamp) {
+                    $branchDate = new \DateTime('@' . $timestamp);
+                    if (!$lowestBranchDate || $branchDate < $lowestBranchDate) {
+                        $lowestBranchDate = $branchDate;
+                    }
                 }
             }
         }
