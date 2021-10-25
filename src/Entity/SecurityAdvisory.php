@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\SecurityAdvisory\AdvisoryIdGenerator;
 use Doctrine\ORM\Mapping as ORM;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 
@@ -28,9 +29,9 @@ class SecurityAdvisory
     private $id;
 
     /**
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="string", nullable=true)
      */
-    private $advisoryId;
+    private ?string $packagistAdvisoryId = null;
 
     /**
      * @ORM\Column(type="string")
@@ -85,6 +86,7 @@ class SecurityAdvisory
     public function __construct(RemoteSecurityAdvisory $advisory, string $source)
     {
         $this->source = $source;
+        $this->assignPackagistAdvisoryId();
         $this->updateAdvisory($advisory);
     }
 
@@ -189,5 +191,20 @@ class SecurityAdvisory
         }
 
         return $score;
+    }
+
+    public function hasPackagistAdvisoryId(): bool
+    {
+        return (bool) $this->packagistAdvisoryId;
+    }
+
+    public function assignPackagistAdvisoryId(): void
+    {
+        if ($this->hasPackagistAdvisoryId()) {
+            throw new \RuntimeException('Packagist advisory id already assigned');
+        }
+
+        $this->updatedAt = new \DateTime();
+        $this->packagistAdvisoryId = AdvisoryIdGenerator::generate();
     }
 }
