@@ -2,3 +2,5 @@
 # www.google.com/support/webmasters/bin/answer.py?hl=en&answer=156449
 
 User-agent: *
+Disallow: /p/
+Disallow: /p2/
