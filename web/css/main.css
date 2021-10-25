@@ -115,30 +115,12 @@ strong {
     margin: 0;
 }
 
-.v2highlight {
-    position: absolute;
-    left: 450px;
-    top: 13px;
-    background: #e7ad6b6b;
-    padding: 5px 10px;
-    border-radius: 5px;
-}
-.v2highlight a, .v2highlight a:hover, .v2highlight a:visited, .v2highlight a:active {
-    color: white;
-    text-decoration: none;
-}
 @media (max-width: 1200px) {
-    .v2highlight {
-        left: 350px;
-    }
     .nav-user .username-link {
         max-width: 105px !important;
     }
 }
 @media (max-width: 992px) {
-    .v2highlight {
-        display: none;
-    }
     .nav-user .username-link {
         max-width: 200px !important;
     }
