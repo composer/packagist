@@ -30,6 +30,11 @@ class SecurityAdvisory
     /**
      * @ORM\Column(type="string")
      */
+    private $advisoryId;
+
+    /**
+     * @ORM\Column(type="string")
+     */
     private $remoteId;
 
     /**
@@ -141,5 +146,48 @@ class SecurityAdvisory
     public function getSource(): string
     {
         return $this->source;
+    }
+
+    public function calculateDifferenceScore(RemoteSecurityAdvisory $advisory): int
+    {
+        $score = 0;
+        if ($advisory->getId() !== $this->getRemoteId()) {
+            $score++;
+        }
+
+        if ($advisory->getPackageName() !== $this->getPackageName()) {
+            $score += 99;
+        }
+
+        if ($advisory->getTitle() !== $this->getTitle()) {
+            $score++;
+        }
+
+        if ($advisory->getLink() !== $this->getLink()) {
+            $score++;
+        }
+
+        if ($advisory->getCve() !== $this->getCve()) {
+            $score++;
+
+            // CVE ID changed from not null to different not-null value
+            if ($advisory->getCve() !== null && $this->getCve() !== null) {
+                $score += 99;
+            }
+        }
+
+        if ($advisory->getAffectedVersions() !== $this->getAffectedVersions()) {
+            $score++;
+        }
+
+        if ($advisory->getComposerRepository() !== $this->composerRepository) {
+            $score++;
+        }
+
+        if ($advisory->getDate() !== $this->reportedAt) {
+            $score++;
+        }
+
+        return $score;
     }
 }

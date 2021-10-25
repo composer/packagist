@@ -59,17 +59,46 @@ class SecurityAdvisoryWorker
             $existingAdvisoryMap[$advisory->getRemoteId()] = $advisory;
         }
 
+        $unmatchedRemoteAdvisories = [];
+        // Attempt to match existing advisories against remote id
         foreach ($remoteAdvisories as $remoteAdvisory) {
             if (isset($existingAdvisoryMap[$remoteAdvisory->getId()])) {
                 $existingAdvisoryMap[$remoteAdvisory->getId()]->updateAdvisory($remoteAdvisory);
                 unset($existingAdvisoryMap[$remoteAdvisory->getId()]);
             } else {
-                $this->doctrine->getManager()->persist(new SecurityAdvisory($remoteAdvisory, $sourceName));
+                $unmatchedRemoteAdvisories[$remoteAdvisory->getPackageName()][$remoteAdvisory->getId()] = $remoteAdvisory;
             }
         }
 
-        foreach ($existingAdvisoryMap as $advisory) {
-            $this->doctrine->getManager()->remove($advisory);
+        // Try to match remaining remote advisories with remaining local advisories in case the remote id changed
+        // Allow three changes e.g. filename, CVE, date on a rename
+        $requiredDifferenceScore = 3;
+        foreach ($existingAdvisoryMap as $existingAdvisory) {
+            $matchedAdvisory = null;
+            $lowestScore = 9999;
+            if (isset($unmatchedRemoteAdvisories[$existingAdvisory->getPackageName()])) {
+                foreach ($unmatchedRemoteAdvisories[$existingAdvisory->getPackageName()] as $unmatchedAdvisory) {
+                    $score = $existingAdvisory->calculateDifferenceScore($unmatchedAdvisory);
+                    if ($score < $lowestScore && $score <= $requiredDifferenceScore) {
+                        $matchedAdvisory = $unmatchedAdvisory;
+                        $lowestScore = $score;
+                    }
+                }
+            }
+
+            if ($matchedAdvisory === null) {
+                $this->doctrine->getManager()->remove($existingAdvisory);
+            } else {
+                $existingAdvisory->updateAdvisory($matchedAdvisory);
+                unset($unmatchedRemoteAdvisories[$matchedAdvisory->getPackageName()][$matchedAdvisory->getId()]);
+            }
+        }
+
+        // No similar existing advisories found. Store them as new advisories
+        foreach ($unmatchedRemoteAdvisories as $packageUnmatchedAdvisories) {
+            foreach ($packageUnmatchedAdvisories as $unmatchedAdvisory) {
+                $this->doctrine->getManager()->persist(new SecurityAdvisory($unmatchedAdvisory, $sourceName));
+            }
         }
 
         $this->doctrine->getManager()->flush();
