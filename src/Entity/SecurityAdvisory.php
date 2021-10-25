@@ -29,7 +29,7 @@ class SecurityAdvisory
     private $id;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
+     * @ORM\Column(type="string", unique=true, nullable=true)
      */
     private ?string $packagistAdvisoryId = null;
 
