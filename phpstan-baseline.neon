@@ -4206,11 +4206,6 @@ parameters:
 			path: src/Package/SymlinkDumper.php
 
 		-
-			message: "#^Parameter \\#1 \\$string of function strlen expects string, int\\<0, max\\> given\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
 			message: "#^Parameter \\#1 \\$target of function symlink expects string, string\\|false given\\.$#"
 			count: 1
 			path: src/Package/SymlinkDumper.php

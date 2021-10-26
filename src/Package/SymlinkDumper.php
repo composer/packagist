@@ -187,7 +187,7 @@ class SymlinkDumper
                 $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions(array_splice($packageIds, 0, $step));
 
                 if ($verbose) {
-                    echo '['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Processing '.$step.' packages ('.(memory_get_usage(true)/1024/1024).' MB RAM)'.PHP_EOL;
+                    echo '['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages ('.(memory_get_usage(true)/1024/1024).' MB RAM)'.PHP_EOL;
                 }
 
                 $current += $step;
@@ -247,7 +247,7 @@ class SymlinkDumper
                     $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
 
                     if ($verbose) {
-                        echo '['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Processing '.$package->getName().' ('.(memory_get_usage(true)/1024/1024).' MB RAM)'.PHP_EOL;
+                        echo '['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$package->getName().' ('.(memory_get_usage(true)/1024/1024).' MB RAM)'.PHP_EOL;
                     }
 
                     if (memory_get_usage(true)/1024/1024 > 8000) {
