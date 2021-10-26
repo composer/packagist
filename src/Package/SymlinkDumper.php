@@ -245,6 +245,18 @@ class SymlinkDumper
                     $this->writeFileNonAtomic($buildDir.'/'.$name.'.files', json_encode(array_keys($affectedFiles)));
 
                     $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
+
+                    if ($verbose) {
+                        echo '['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Processing '.$package->getName().' ('.(memory_get_usage(true)/1024/1024).' MB RAM)'.PHP_EOL;
+                    }
+
+                    if (memory_get_usage(true)/1024/1024 > 8000) {
+                        if ($verbose) {
+                            echo 'Memory usage too high, stopping here.'.PHP_EOL;
+                        }
+                        $packageIds = [];
+                        break;
+                    }
                 }
 
                 unset($packages, $package, $version);

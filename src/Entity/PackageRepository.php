@@ -224,7 +224,7 @@ class PackageRepository extends ServiceEntityRepository
             LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
             WHERE (p.dumpedAt IS NULL OR (p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW()))
             AND (d.total > 1000 OR d.lastUpdated > :date)
-            ORDER BY p.id ASC
+            ORDER BY p.crawledAt ASC
         ', ['date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
     }
 
