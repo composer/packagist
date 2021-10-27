@@ -7,7 +7,7 @@ use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 class NoVerifiedGitHubEmailFoundException extends UsernameNotFoundException
 {
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     public function getMessageKey()
     {

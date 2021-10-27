@@ -35,7 +35,7 @@ class AddMaintainerRequestType extends AbstractType
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     public function getBlockPrefix()
     {

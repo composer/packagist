@@ -45,7 +45,7 @@ class RemoveMaintainerRequestType extends AbstractType
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     public function getBlockPrefix()
     {

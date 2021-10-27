@@ -31,7 +31,7 @@ class ConfigureAlgoliaCommand extends Command
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     protected function configure()
     {

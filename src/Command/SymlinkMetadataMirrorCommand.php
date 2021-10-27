@@ -34,7 +34,7 @@ class SymlinkMetadataMirrorCommand extends Command
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     protected function configure()
     {
@@ -46,7 +46,7 @@ class SymlinkMetadataMirrorCommand extends Command
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {

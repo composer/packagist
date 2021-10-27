@@ -54,7 +54,7 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public static function getSubscribedEvents()
     {

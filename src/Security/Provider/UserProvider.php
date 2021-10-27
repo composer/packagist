@@ -36,7 +36,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function loadUserByUsername($usernameOrEmail)
     {
@@ -44,7 +44,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function refreshUser(UserInterface $user)
     {
@@ -68,7 +68,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
     public function supportsClass($class)
     {

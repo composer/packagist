@@ -14,7 +14,7 @@ class AccountEmailExistsWithoutGitHubException extends UsernameNotFoundException
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritDoc
      */
     public function getMessageKey()
     {
