@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use App\Service\UpdaterWorker;
 use App\Validator\TypoSquatters;
+use App\Validator\Copyright;
 use Composer\Downloader\TransportException;
 use Composer\Factory;
 use Composer\IO\NullIO;
@@ -44,6 +45,7 @@ use DateTimeInterface;
  * @Assert\Callback(callback="isVendorWritable", groups={"Create"})
  * @Assert\Callback(callback="isRepositoryValid", groups={"Update", "Default"})
  * @TypoSquatters(groups={"Create"})
+ * @Copyright(groups={"Create"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class Package
