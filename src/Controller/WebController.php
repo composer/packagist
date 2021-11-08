@@ -198,7 +198,7 @@ class WebController extends Controller
                 $row['virtual'] = true;
             }
             if (!empty($package['abandoned'])) {
-                $row['abandoned'] = $package['replacementPackage'] ?? true;
+                $row['abandoned'] = isset($package['replacementPackage']) && $package['replacementPackage'] !== '' ? $package['replacementPackage'] : true;
             }
             $result['results'][] = $row;
         }
