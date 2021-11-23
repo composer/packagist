@@ -1695,8 +1695,8 @@ class PackageController extends Controller
                 return null;
             }
 
-            // more than 100 downloads = established package, do not allow deletion by maintainers
-            if ($downloads > 100) {
+            // more than 500 downloads = established package, do not allow deletion by maintainers
+            if ($downloads > 500) {
                 return null;
             }
         }
