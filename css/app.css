@@ -14,11 +14,11 @@
 
 @font-face {
     font-family: 'fontello';
-    src: url('../font/fontello.eot');
-    src: url('../font/fontello.eot?#iefix') format('embedded-opentype'),
-    url('../font/fontello.woff') format('woff'),
-    url('../font/fontello.ttf') format('truetype'),
-    url('../font/fontello.svg#fontello') format('svg');
+    src: url('../web/font/fontello.eot');
+    src: url('../web/font/fontello.eot?#iefix') format('embedded-opentype'),
+    url('../web/font/fontello.woff') format('woff'),
+    url('../web/font/fontello.ttf') format('truetype'),
+    url('../web/font/fontello.svg#fontello') format('svg');
     font-weight: normal;
     font-style: normal;
 }
@@ -798,7 +798,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .btn.loading, .btn.loading:hover, .btn.loading:active {
-    background-image: url("../img/loader.gif");
+    background-image: url("../web/img/loader.gif");
     background-position: 95% 50%;
     background-repeat: no-repeat;
 }
@@ -966,13 +966,13 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .force-update-trigger.loading:after {
     content: "";
     background-position: 7px center;
-    background-image: url("../img/loader-white.gif");
+    background-image: url("../web/img/loader-white.gif");
     background-repeat: no-repeat;
     padding-left: 30px;
 }
 .package .action input.loading, .package .action input.loading:hover, .package .action input.loading:active {
   background-position: 10px center;
-  background-image: url("../img/loader.gif");
+  background-image: url("../web/img/loader.gif");
   background-repeat: no-repeat;
   padding-left: 35px;
 }
@@ -1289,7 +1289,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   content: "";
   width: 16px;
   height: 16px;
-  background-image: url("../img/loader-white.gif");
+  background-image: url("../web/img/loader-white.gif");
   background-repeat: no-repeat;
   position: relative;
   top: 2px;

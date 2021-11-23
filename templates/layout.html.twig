@@ -14,7 +14,7 @@
 
         <link rel="stylesheet" href="{{ asset('libs/bootstrap-3.3.5/css/bootstrap.min.css') }}" />
         <link rel="stylesheet" href="{{ asset('libs/bootstrap-3.3.5/css/bootstrap-theme.min.css') }}" />
-        <link rel="stylesheet" href="{{ asset('css/main.css') }}" />
+        <link rel="stylesheet" href="{{ asset('build/app.css') }}" />
         <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css') }}" />
         {% block stylesheets %}{% endblock %}
 
@@ -26,7 +26,7 @@
         <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist" />
 
         {% if requiresRecaptcha|default(false) or (not app.user and requires_recaptcha(lastUsername|default)) %}
-            <script src="https://www.google.com/recaptcha/api.js?render=explicit&onload=onloadRecaptchaCallback" async defer></script>
+            <script src="https://www.google.com/recaptcha/api.js?render=explicit&amp;onload=onloadRecaptchaCallback" async defer></script>
 
             <script type="text/javascript">
                 var onloadRecaptchaCallback = function() {
@@ -235,29 +235,14 @@
 
         <script>
             var algoliaConfig = {{ algolia|json_encode|raw }};
+            {% block script_init %}{% endblock %}
         </script>
 
-        <script src="{{ asset('libs/jquery-2.1.4.min.js') }}"></script>
         <script src="{{ asset('libs/humane-3.2.2.min.js') }}"></script>
-        <script src="{{ asset('js/layout.js') }}"></script>
+        <script src="{{ asset('build/app.js') }}"></script>
         <script src="{{ asset('libs/bootstrap-3.3.5/js/bootstrap.min.js')}}"></script>
         <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@2.7.4/dist/instantsearch.min.js"></script>
         <script src="{{ asset('js/search.js') }}"></script>
-
-        {%- block analytics %}
-        {%- if not app.debug and google_analytics.ga_key %}
-        <script>
-            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-            ga('set', 'anonymizeIp', true);
-            ga('create', '{{ google_analytics.ga_key }}', 'auto');
-            ga('send', 'pageview');
-        </script>
-        {%- endif %}
-        {%- endblock %}
 
         {% block scripts %}{% endblock %}
     </body>

@@ -31,6 +31,7 @@ These steps are provided for development purposes only.
 3. Install dependencies:
    ```bash
    composer install
+   npm install
    ```
    The composer install will prompt you for the database connection details on first install.
 4. Setup the database:
@@ -42,6 +43,8 @@ These steps are provided for development purposes only.
    symfony serve
    ```
 6. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
+
+7. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files.
 
 You should now be able to access the site, create a user, etc.
 

@@ -1,7 +1,9 @@
+/node_modules/
 web/packages*.json
 web/providers-*.json
 web/p/
 web/p2/
+web/build/
 /config/parameters.yml
 /.settings
 /.buildpath

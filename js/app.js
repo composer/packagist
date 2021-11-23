@@ -1,3 +1,10 @@
+import Plausible from 'plausible-tracker'
+import jQuery from "jquery";
+
+import '../css/app.css';
+
+window.jQuery = window.$ = jQuery;
+
 (function ($, humane) {
     "use strict";
 
@@ -49,3 +56,11 @@
         }, 0);
     });
 })(jQuery, humane);
+
+if (window.trackPageload !== false && location.host === 'packagist.org') {
+    const plausible = Plausible({
+      domain: 'packagist.org',
+      apiHost: 'https://packagist.org',
+    });
+    plausible.trackPageview();
+}

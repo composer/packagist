@@ -1,0 +1,15 @@
+{
+    "name": "packagist.org",
+    "dependencies": {
+        "jquery": "^3.6.0",
+        "plausible-tracker": "^0.3"
+    },
+    "devDependencies": {
+        "esbuild": "^0.13.15"
+    },
+    "scripts": {
+        "dev": "esbuild js/app.js --bundle --outdir=web/build --sourcemap --loader:.gif=file --loader:.eot=file --loader:.ttf=file --loader:.svg=file --loader:.woff=file --target=chrome58,firefox57,safari11,edge16 --watch",
+        "build": "esbuild js/app.js --bundle --outdir=web/build  --minify --loader:.gif=file --loader:.eot=file --loader:.ttf=file --loader:.svg=file --loader:.woff=file --target=chrome58,firefox57,safari11,edge16",
+        "analyze": "esbuild js/app.js --bundle --outdir=web/build  --minify --loader:.gif=file --loader:.eot=file --loader:.ttf=file --loader:.svg=file --loader:.woff=file --target=chrome58,firefox57,safari11,edge16 --analyze"
+    }
+}
