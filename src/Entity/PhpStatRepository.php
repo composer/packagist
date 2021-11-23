@@ -137,6 +137,8 @@ class PhpStatRepository extends ServiceEntityRepository
             $this->redis->del(array_keys($buffer));
         }
 
+        $this->getEntityManager()->flush();
+
         if ($addedData) {
             $this->createOrUpdateMainRecord($package, PhpStat::TYPE_PHP, $now, $updateDateForMajor);
             $this->createOrUpdateMainRecord($package, PhpStat::TYPE_PLATFORM, $now, $updateDateForMajor);
@@ -187,7 +189,6 @@ class PhpStatRepository extends ServiceEntityRepository
             $record->setLastUpdated($now);
 
             $this->getEntityManager()->persist($record);
-            $this->getEntityManager()->flush();
 
             return $record;
         }
