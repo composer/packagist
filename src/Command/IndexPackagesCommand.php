@@ -94,7 +94,9 @@ class IndexPackagesCommand extends Command
             $packages = [['id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()]];
         } elseif ($force || $indexAll) {
             $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
-            $this->getEM()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
+            if ($force) {
+                $this->getEM()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
+            }
         } else {
             $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForIndexing();
         }
@@ -286,11 +288,23 @@ class IndexPackagesCommand extends Command
         // retry loop in case of a lock timeout
         while ($retries--) {
             try {
+                // updating only if indexedAt is <crawledAt, to make sure the package is not stale for indexing anymore
+                // but in the nightly job where we index all packages anyway, we do not need to update all of them
                 $this->getEM()->getConnection()->executeQuery(
-                    'UPDATE package SET indexedAt=:indexed WHERE id IN (:ids)',
+                    'UPDATE package SET indexedAt=:indexed WHERE id IN (:ids) AND (indexedAt IS NULL OR indexedAt <= crawledAt)',
                     [
                         'ids' => $idsToUpdate,
                         'indexed' => $time,
+                    ],
+                    ['ids' => Connection::PARAM_INT_ARRAY]
+                );
+
+                // make sure that packages where crawledAt is set in far future do not get indexed repeatedly
+                $this->getEM()->getConnection()->executeQuery(
+                    'UPDATE package SET indexedAt=DATE_ADD(crawledAt, INTERVAL 1 SECOND) WHERE id IN (:ids) AND indexedAt <= crawledAt AND crawledAt > :tomorrow',
+                    [
+                        'ids' => $idsToUpdate,
+                        'tomorrow' => date('Y-m-d H:i:s', strtotime('+1day')),
                     ],
                     ['ids' => Connection::PARAM_INT_ARRAY]
                 );
