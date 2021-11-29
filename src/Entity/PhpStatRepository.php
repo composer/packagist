@@ -166,6 +166,7 @@ class PhpStatRepository extends ServiceEntityRepository
     private function createOrUpdateRecord(Package $package, int $type, string $version, array $keys, DateTimeImmutable $now): ?PhpStat
     {
         $record = $this->getEntityManager()->getRepository(PhpStat::class)->findOneBy(['package' => $package, 'type' => $type, 'version' => $version]);
+        $newRecord = !$record;
 
         if (!$record) {
             $record = new PhpStat($package, $type, $version);
@@ -189,6 +190,9 @@ class PhpStatRepository extends ServiceEntityRepository
             $record->setLastUpdated($now);
 
             $this->getEntityManager()->persist($record);
+            if ($newRecord) {
+                $this->getEntityManager()->flush();
+            }
 
             return $record;
         }
