@@ -14,7 +14,3 @@ snc_redis:
             options:
                 profile: 3.2
                 connection_timeout: 1
-    session:
-        client: cache
-        prefix: 'sess:'
-        ttl: 3600

@@ -12,7 +12,7 @@ framework:
         cookie_httponly: true
         cookie_secure: auto
         cookie_samesite: lax
-        handler_id: snc_redis.session.handler
+        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
 
     #esi: true
     fragments: true
