@@ -113,6 +113,7 @@ class DumpPackagesCommand extends Command
         gc_enable();
 
         try {
+            $ids = array_map('intval', $ids);
             $result = $this->dumper->dump($ids, $force, $verbose);
         } finally {
             $this->locker->unlockCommand($lockName);

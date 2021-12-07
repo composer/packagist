@@ -102,7 +102,7 @@ class SymlinkDumper
     /**
      * Dump a set of packages to the web root
      *
-     * @param array   $packageIds
+     * @param int[]   $packageIds
      * @param Boolean $force
      * @param Boolean $verbose
      */
@@ -178,6 +178,12 @@ class SymlinkDumper
 
         try {
             $modifiedIndividualFiles = [];
+
+            // make sure huge packages get processed first to avoid blowing out memory usage later
+            if (in_array(300981, $packageIds, true)) {
+                unset($packageIds[array_search(300981, $packageIds, true)]);
+                $packageIds = array_merge([300981], $packageIds);
+            }
 
             $total = count($packageIds);
             $current = 0;
