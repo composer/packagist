@@ -29,9 +29,9 @@ class SecurityAdvisory
     private $id;
 
     /**
-     * @ORM\Column(type="string", unique=true, nullable=true)
+     * @ORM\Column(type="string", unique=true)
      */
-    private ?string $packagistAdvisoryId = null;
+    private string $packagistAdvisoryId;
 
     /**
      * @ORM\Column(type="string")
@@ -198,13 +198,8 @@ class SecurityAdvisory
         return (bool) $this->packagistAdvisoryId;
     }
 
-    public function assignPackagistAdvisoryId(): void
+    private function assignPackagistAdvisoryId(): void
     {
-        if ($this->hasPackagistAdvisoryId()) {
-            throw new \RuntimeException('Packagist advisory id already assigned');
-        }
-
-        $this->updatedAt = new \DateTime();
         $this->packagistAdvisoryId = AdvisoryIdGenerator::generate();
     }
 }
