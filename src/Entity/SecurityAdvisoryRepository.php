@@ -26,7 +26,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
     public function searchSecurityAdvisories(array $packageNames, int $updatedSince): array
     {
-        $sql = 'SELECT s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository
+        $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository
             FROM security_advisory s
             WHERE s.updatedAt >= :updatedSince ' .
             (count($packageNames) > 0 ? ' AND s.packageName IN (:packageNames)' : '')

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\SecurityAdvisory\AdvisoryIdGenerator;
 use Doctrine\ORM\Mapping as ORM;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 
@@ -26,6 +27,11 @@ class SecurityAdvisory
      * @ORM\GeneratedValue(strategy="AUTO")
      */
     private $id;
+
+    /**
+     * @ORM\Column(type="string", unique=true, nullable=true)
+     */
+    private ?string $packagistAdvisoryId = null;
 
     /**
      * @ORM\Column(type="string")
@@ -80,6 +86,7 @@ class SecurityAdvisory
     public function __construct(RemoteSecurityAdvisory $advisory, string $source)
     {
         $this->source = $source;
+        $this->assignPackagistAdvisoryId();
         $this->updateAdvisory($advisory);
     }
 
@@ -141,5 +148,63 @@ class SecurityAdvisory
     public function getSource(): string
     {
         return $this->source;
+    }
+
+    public function calculateDifferenceScore(RemoteSecurityAdvisory $advisory): int
+    {
+        $score = 0;
+        if ($advisory->getId() !== $this->getRemoteId()) {
+            $score++;
+        }
+
+        if ($advisory->getPackageName() !== $this->getPackageName()) {
+            $score += 99;
+        }
+
+        if ($advisory->getTitle() !== $this->getTitle()) {
+            $score++;
+        }
+
+        if ($advisory->getLink() !== $this->getLink()) {
+            $score++;
+        }
+
+        if ($advisory->getCve() !== $this->getCve()) {
+            $score++;
+
+            // CVE ID changed from not null to different not-null value
+            if ($advisory->getCve() !== null && $this->getCve() !== null) {
+                $score += 99;
+            }
+        }
+
+        if ($advisory->getAffectedVersions() !== $this->getAffectedVersions()) {
+            $score++;
+        }
+
+        if ($advisory->getComposerRepository() !== $this->composerRepository) {
+            $score++;
+        }
+
+        if ($advisory->getDate() !== $this->reportedAt) {
+            $score++;
+        }
+
+        return $score;
+    }
+
+    public function hasPackagistAdvisoryId(): bool
+    {
+        return (bool) $this->packagistAdvisoryId;
+    }
+
+    public function assignPackagistAdvisoryId(): void
+    {
+        if ($this->hasPackagistAdvisoryId()) {
+            throw new \RuntimeException('Packagist advisory id already assigned');
+        }
+
+        $this->updatedAt = new \DateTime();
+        $this->packagistAdvisoryId = AdvisoryIdGenerator::generate();
     }
 }

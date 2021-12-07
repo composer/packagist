@@ -64,6 +64,14 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->method('getId')
             ->willReturn('remote-id-1');
 
+        $advisory2New
+            ->method('getId')
+            ->willReturn('remote-id-2');
+
+        $advisory2New
+            ->method('getPackageName')
+            ->willReturn('package/new');
+
         $existingAdvisory1 = $this->getMockBuilder(SecurityAdvisory::class)->disableOriginalConstructor()->getMock();
         $existingAdvisory1
             ->method('getRemoteId')
@@ -78,6 +86,10 @@ class SecurityAdvisoryWorkerTest extends TestCase
         $existingAdvisory2ToBeDeleted
             ->method('getRemoteId')
             ->willReturn('to-be-deleted');
+
+        $existingAdvisory2ToBeDeleted
+            ->method('getPackageName')
+            ->willReturn('vendor/delete');
 
         $this->source
             ->expects($this->once())
