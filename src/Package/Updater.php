@@ -631,7 +631,7 @@ class Updater
             'img.src', 'img.title', 'img.alt', 'img.width', 'img.height', 'img.style',
             'a.href', 'a.target', 'a.rel', 'a.id',
             'td.colspan', 'td.rowspan', 'th.colspan', 'th.rowspan',
-            '*.class', 'details.open'
+            '*.class', '*.align', 'details.open',
         ];
 
         // detect base path if the github readme is located in a subfolder like docs/README.md
