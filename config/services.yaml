@@ -14,7 +14,7 @@ parameters:
     packagist_dumper_compress: 0
     trusted_ip_header: ''
     github.webhook_secret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
-    google_analytics: null
+    fallback_gh_tokens: []
 
 services:
     # default configuration for services in *this* file
@@ -41,6 +41,7 @@ services:
             $recaptchaEnabled: "%env(bool:APP_RECAPTCHA_ENABLED)%"
             $mailFromEmail: "%env(APP_MAILER_FROM_EMAIL)%"
             $mailFromName: "%env(APP_MAILER_FROM_NAME)%"
+            $fallbackGhTokens: "%fallback_gh_tokens%"
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

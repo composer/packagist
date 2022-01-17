@@ -58,6 +58,8 @@ class UpdaterWorker
         PackageManager $packageManager,
         DownloadManager $downloadManager,
         private StatsDClient $statsd,
+        /** @var list<string> */
+        private array $fallbackGhTokens,
     ) {
         $this->logger = $logger;
         $this->doctrine = $doctrine;
@@ -131,6 +133,10 @@ class UpdaterWorker
                 $io->setAuthentication('github.com', $newGithubToken, 'x-oauth-basic');
                 break;
             }
+        }
+
+        if ($usesPackagistToken && $this->fallbackGhTokens) {
+            $io->setAuthentication('github.com', $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)], 'x-oauth-basic');
         }
 
         $httpDownloader = new LoggingHttpDownloader($io, $config, $this->statsd, $usesPackagistToken, $packageVendor);

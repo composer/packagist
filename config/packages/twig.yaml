@@ -6,7 +6,6 @@ twig:
     form_themes:
         - 'forms.html.twig'
     globals:
-        google_analytics: '%google_analytics%'
         packagist_host: '%env(APP_HOSTNAME)%'
         recaptcha_site_key: '%env(APP_RECAPTCHA_SITE_KEY)%'
         algolia:

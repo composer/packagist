@@ -21,14 +21,12 @@ nelmio_security:
                 - 'unsafe-inline'
                 - 'unsafe-eval'
                 - 'https://cdn.jsdelivr.net/'
-                - 'https://www.google-analytics.com/'
                 - 'https://www.google.com/recaptcha/api.js'
                 - 'https://www.gstatic.com/recaptcha/'
             connect-src:
                 - 'self'
                 - 'https://*.algolia.net'
                 - 'https://*.algolianet.com'
-                - 'https://www.google-analytics.com/'
             img-src:
                 - 'self'
                 - 'https:'
