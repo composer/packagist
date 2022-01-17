@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\User;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Composer\Pcre\Preg;
 use Psr\Log\LoggerInterface;
@@ -136,7 +137,15 @@ class UpdaterWorker
         }
 
         if ($usesPackagistToken && $this->fallbackGhTokens) {
-            $io->setAuthentication('github.com', $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)], 'x-oauth-basic');
+            $fallbackUser = $em->getRepository(User::class)->findOneBy(['username' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
+            if (null === $fallbackUser) {
+                throw new \LogicException('Invalid fallback user was not found');
+            }
+            $fallbackToken = $fallbackUser->getGithubToken();
+            if (null === $fallbackToken) {
+                throw new \LogicException('Invalid fallback user '.$fallbackUser->getUsername().' has no token');
+            }
+            $io->setAuthentication('github.com', $fallbackToken, 'x-oauth-basic');
         }
 
         $httpDownloader = new LoggingHttpDownloader($io, $config, $this->statsd, $usesPackagistToken, $packageVendor);

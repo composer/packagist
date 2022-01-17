@@ -46,6 +46,11 @@ class GitHubUserMigrationWorker
 
             return ['status' => Job::STATUS_COMPLETED, 'message' => 'User was deleted, skipped'];
         }
+        if (null === $user->getGithubToken()) {
+            $this->logger->info('User has no GitHub token setup, skipping', ['id' => $id]);
+
+            return ['status' => Job::STATUS_ERRORED, 'message' => 'User has no GitHub token setup, skipped'];
+        }
 
         try {
             $results = ['hooks_setup' => 0, 'hooks_failed' => [], 'hooks_ok_unchanged' => 0];

@@ -46,13 +46,18 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
     /**
      * @inheritDoc
      */
-    public function refreshUser(UserInterface $user)
+    public function refreshUser(UserInterface $user): User
     {
         if (!$user instanceof User) {
             throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
         }
 
-        return $this->getRepo()->find($user->getId());
+        $user = $this->getRepo()->find($user->getId());
+        if (null === $user) {
+            throw new \RuntimeException('The user could not be reloaded as it does not exist anymore in the database');
+        }
+
+        return $user;
     }
 
     public function upgradePassword(UserInterface $user, string $newEncodedPassword): void
