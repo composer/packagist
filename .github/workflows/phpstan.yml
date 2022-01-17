@@ -6,7 +6,7 @@ on:
 
 env:
   COMPOSER_FLAGS: "--ansi --no-interaction --no-progress --prefer-dist"
-  APP_ENV: test
+  APP_ENV: dev
 
 jobs:
   tests:
