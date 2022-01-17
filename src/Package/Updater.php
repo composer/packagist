@@ -15,9 +15,11 @@ namespace App\Package;
 use App\Entity\Dependent;
 use cebe\markdown\GithubMarkdown;
 use Composer\Package\AliasPackage;
+use Composer\Pcre\Preg;
 use Composer\Repository\RepositoryInterface;
 use Composer\Repository\VcsRepository;
 use Composer\Repository\Vcs\GitHubDriver;
+use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Util\ErrorHandler;
 use Composer\Util\HttpDownloader;
@@ -102,11 +104,12 @@ class Updater
         $em = $this->getEM();
         $rootIdentifier = null;
 
-        if (!$repository->getDriver()) {
+        $driver = $repository->getDriver();
+        if (!$driver) {
             throw new \RuntimeException('Driver could not be established for package '.$package->getName().' ('.$package->getRepository().')');
         }
 
-        $rootIdentifier = $repository->getDriver()->getRootIdentifier();
+        $rootIdentifier = $driver->getRootIdentifier();
 
         // always update the master branch / root identifier, as in case a package gets archived
         // we want to mark it abandoned automatically, but there will not be a new commit to trigger
@@ -237,10 +240,10 @@ class Updater
             }
         }
 
-        if (preg_match('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
-            $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $repository);
+        if (Preg::isMatch('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
+            $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver);
         } else {
-            $this->updateReadme($io, $package, $repository);
+            $this->updateReadme($io, $package, $driver);
         }
 
         // make sure the package exists in the package list if for some reason adding it on submit failed
@@ -432,7 +435,7 @@ class Updater
             foreach ($data->{$opts['method']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
                 if (false !== strpos($constraint, ',') && false !== strpos($constraint, '@')) {
-                    $constraint = preg_replace_callback('{([><]=?\s*[^@]+?)@([a-z]+)}i', function ($matches) {
+                    $constraint = Preg::replaceCallback('{([><]=?\s*[^@]+?)@([a-z]+)}i', function ($matches) {
                         if ($matches[2] === 'stable') {
                             return $matches[1];
                         }
@@ -500,12 +503,8 @@ class Updater
 
     /**
      * Update the readme for $package from $repository.
-     *
-     * @param IOInterface $io
-     * @param Package $package
-     * @param VcsRepository $repository
      */
-    private function updateReadme(IOInterface $io, Package $package, VcsRepository $repository)
+    private function updateReadme(IOInterface $io, Package $package, VcsDriverInterface $driver): void
     {
         $package->setGitHubStars(null);
         $package->setGitHubWatches(null);
@@ -513,9 +512,8 @@ class Updater
         $package->setGitHubOpenIssues(null);
 
         try {
-            $driver = $repository->getDriver();
             $composerInfo = $driver->getComposerInformation($driver->getRootIdentifier());
-            if (isset($composerInfo['readme'])) {
+            if (isset($composerInfo['readme']) && is_string($composerInfo['readme'])) {
                 $readmeFile = $composerInfo['readme'];
             } else {
                 $readmeFile = 'README.md';
@@ -536,11 +534,13 @@ class Updater
 
                 case '.md':
                     $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
-                    $parser = new GithubMarkdown();
-                    $readme = $parser->parse($source);
+                    if (!empty($source)) {
+                        $parser = new GithubMarkdown();
+                        $readme = $parser->parse($source);
 
-                    if (!empty($readme)) {
-                        $package->setReadme($this->prepareReadme($readme));
+                        if (!empty($readme)) {
+                            $package->setReadme($this->prepareReadme($readme));
+                        }
                     }
                     break;
             }
@@ -554,14 +554,13 @@ class Updater
         }
     }
 
-    private function updateGitHubInfo(HttpDownloader $httpDownloader, Package $package, $owner, $repo, VcsRepository $repository)
+    private function updateGitHubInfo(HttpDownloader $httpDownloader, Package $package, string $owner, string $repo, VcsDriverInterface $driver): void
     {
-        $baseApiUrl = 'https://api.github.com/repos/'.$owner.'/'.$repo;
-
-        $driver = $repository->getDriver();
         if (!$driver instanceof GitHubDriver) {
             return;
         }
+
+        $baseApiUrl = 'https://api.github.com/repos/'.$owner.'/'.$repo;
 
         $repoData = $driver->getRepoData();
 
@@ -579,33 +578,27 @@ class Updater
             $package->setReadme($this->prepareReadme($readme, true, $owner, $repo));
         }
 
-        if (!empty($repoData['language'])) {
+        if (!empty($repoData['language']) && is_string($repoData['language'])) {
             $package->setLanguage($repoData['language']);
         }
-        if (isset($repoData['stargazers_count'])) {
-            $package->setGitHubStars($repoData['stargazers_count']);
+        if (isset($repoData['stargazers_count']) && is_numeric($repoData['stargazers_count'])) {
+            $package->setGitHubStars((int) $repoData['stargazers_count']);
         }
-        if (isset($repoData['subscribers_count'])) {
-            $package->setGitHubWatches($repoData['subscribers_count']);
+        if (isset($repoData['subscribers_count']) && is_numeric($repoData['subscribers_count'])) {
+            $package->setGitHubWatches((int) $repoData['subscribers_count']);
         }
-        if (isset($repoData['network_count'])) {
-            $package->setGitHubForks($repoData['network_count']);
+        if (isset($repoData['network_count']) && is_numeric($repoData['network_count'])) {
+            $package->setGitHubForks((int) $repoData['network_count']);
         }
-        if (isset($repoData['open_issues_count'])) {
-            $package->setGitHubOpenIssues($repoData['open_issues_count']);
+        if (isset($repoData['open_issues_count']) && is_numeric($repoData['open_issues_count'])) {
+            $package->setGitHubOpenIssues((int) $repoData['open_issues_count']);
         }
     }
 
     /**
      * Prepare the readme by stripping elements and attributes that are not supported .
-     *
-     * @param string $readme
-     * @param bool $isGithub
-     * @param null $owner
-     * @param null $repo
-     * @return string
      */
-    private function prepareReadme($readme, $isGithub = false, $owner = null, $repo = null)
+    private function prepareReadme(string $readme, bool $isGithub = false, ?string $owner = null, ?string $repo = null): string
     {
         $elements = [
             'p',
@@ -636,7 +629,7 @@ class Updater
 
         // detect base path if the github readme is located in a subfolder like docs/README.md
         $basePath = '';
-        if ($isGithub && preg_match('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
+        if ($isGithub && Preg::isMatch('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
             $basePath = dirname($match[1]);
         }
         if ($basePath) {
@@ -716,8 +709,8 @@ class Updater
     private function sanitize($str)
     {
         // remove escape chars
-        $str = preg_replace("{\x1B(?:\[.)?}u", '', $str);
+        $str = Preg::replace("{\x1B(?:\[.)?}u", '', $str);
 
-        return preg_replace("{[\x01-\x1A]}u", '', $str);
+        return Preg::replace("{[\x01-\x1A]}u", '', $str);
     }
 }

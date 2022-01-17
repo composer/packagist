@@ -402,6 +402,9 @@
     "spomky-labs/otphp": {
         "version": "v10.0.1"
     },
+    "staabm/phpstan-dba": {
+        "version": "0.1.12"
+    },
     "symfony/asset": {
         "version": "v4.4.16"
     },

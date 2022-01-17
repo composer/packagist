@@ -21,6 +21,7 @@ use App\Model\VersionIdCache;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\UserAgentParser;
+use Composer\Pcre\Preg;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -291,7 +292,7 @@ class ApiController extends Controller
 
     private function extractMinorVersion(string $version): string
     {
-        return preg_replace('{^(\d+\.\d+).*}', '$1', $version);
+        return Preg::replace('{^(\d+\.\d+).*}', '$1', $version);
     }
 
     /**
@@ -357,7 +358,7 @@ class ApiController extends Controller
     protected function receivePost(Request $request, $url, $urlRegex, $remoteId, string $githubWebhookSecret)
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
-        if (!preg_match($urlRegex, $url, $match)) {
+        if (!Preg::isMatch($urlRegex, $url, $match)) {
             return new Response(json_encode(['status' => 'error', 'message' => 'Could not parse payload repository URL']), 406);
         }
 
@@ -476,7 +477,7 @@ class ApiController extends Controller
      */
     protected function findPackagesByUrl(User $user, $url, $urlRegex, $remoteId)
     {
-        if (!preg_match($urlRegex, $url, $matched)) {
+        if (!Preg::isMatch($urlRegex, $url, $matched)) {
             return [];
         }
 
@@ -485,7 +486,7 @@ class ApiController extends Controller
             if (
                 $url === 'https://packagist.org/packages/'.$package->getName()
                 || (
-                    preg_match($urlRegex, $package->getRepository(), $candidate)
+                    Preg::isMatch($urlRegex, $package->getRepository(), $candidate)
                     && strtolower($candidate['host']) === strtolower($matched['host'])
                     && strtolower($candidate['path']) === strtolower($matched['path'])
                 )

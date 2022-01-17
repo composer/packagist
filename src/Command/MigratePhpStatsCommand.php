@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Entity\PhpStat;
 use App\Util\DoctrineTrait;
+use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -64,9 +65,9 @@ class MigratePhpStatsCommand extends Command
             });
 
             // sort by package id then version
-            usort($keysToUpdate, function ($a, $b) {
-                $amin = preg_replace('{^php(?:platform)?:(\d+).*}', '$1', $a);
-                $bmin = preg_replace('{^php(?:platform)?:(\d+).*}', '$1', $b);
+            usort($keysToUpdate, function (string $a, string $b) {
+                $amin = Preg::replace('{^php(?:platform)?:(\d+).*}', '$1', $a);
+                $bmin = Preg::replace('{^php(?:platform)?:(\d+).*}', '$1', $b);
 
                 if ($amin !== $bmin) {
                     return strcmp($amin, $bmin);
@@ -83,7 +84,7 @@ class MigratePhpStatsCommand extends Command
             $lastPackageId = null;
             while ($keysToUpdate) {
                 $key = array_shift($keysToUpdate);
-                if (!preg_match('{^php(?:platform)?:(\d+)}', $key, $m)) {
+                if (!Preg::isMatch('{^php(?:platform)?:(\d+)}', $key, $m)) {
                     $this->logger->error('Invalid php key found: '.$key);
                     continue;
                 }

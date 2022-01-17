@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -27,7 +28,7 @@ class UserRepository extends ServiceEntityRepository
 
     public function findOneByUsernameOrEmail(string $usernameOrEmail): ?User
     {
-        if (preg_match('/^.+\@\S+\.\S+$/', $usernameOrEmail)) {
+        if (Preg::isMatch('/^.+\@\S+\.\S+$/', $usernameOrEmail)) {
             $user = $this->findOneBy(['emailCanonical' => $usernameOrEmail]);
             if (null !== $user) {
                 return $user;

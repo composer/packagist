@@ -4,6 +4,8 @@ includes:
     - phpstan-baseline.neon
     - vendor/phpstan/phpstan-doctrine/extension.neon
     - vendor/phpstan/phpstan-doctrine/rules.neon
+# needs the lib to become more useful before enabling for good, and PHPStan CI workflow should have mysql enabled too
+#    - vendor/staabm/phpstan-dba/config/dba.neon
 
 parameters:
     level: 8
@@ -14,6 +16,9 @@ parameters:
 
     paths:
         - src/
+
+#    bootstrapFiles:
+#        - phpstan-bootstrap.php
 
     doctrine:
         objectManagerLoader: tests/object-manager.php

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -120,7 +121,7 @@ class PhpStatRepository extends ServiceEntityRepository
 
         foreach ($keys as $index => $key) {
             // strip php minor version and date from the key to get the primary prefix (i.e. type:package-version:*)
-            $prefix = preg_replace('{:\d+\.\d+:\d+$}', ':', $key);
+            $prefix = Preg::replace('{:\d+\.\d+:\d+$}', ':', $key);
 
             if ($lastPrefix && $prefix !== $lastPrefix && $buffer) {
                 $addedData = $this->createDbRecordsForKeys($package, $buffer, $now) || $addedData;
@@ -156,7 +157,7 @@ class PhpStatRepository extends ServiceEntityRepository
         $majorRecord = null;
         $record = $this->createOrUpdateRecord($package, $info['type'], $info['version'], $keys, $now);
         // create an aggregate major version data point by summing up all the minor versions under it
-        if ($record && $record->getDepth() === PhpStat::DEPTH_MINOR && preg_match('{^\d+}', $record->getVersion(), $match)) {
+        if ($record && $record->getDepth() === PhpStat::DEPTH_MINOR && Preg::isMatch('{^\d+}', $record->getVersion(), $match)) {
             $majorRecord = $this->createOrUpdateRecord($package, $info['type'], $match[0], $keys, $now);
         }
 
@@ -246,7 +247,7 @@ class PhpStatRepository extends ServiceEntityRepository
      */
     private function getKeyInfo(Package $package, string $key): array
     {
-        if (!preg_match('{^php(?<platform>platform)?:(?<package>\d+)-(?<version>.+):(?<phpversion>\d+\.\d+|hhvm):(?<date>\d+)$}', $key, $match)) {
+        if (!Preg::isMatch('{^php(?<platform>platform)?:(?<package>\d+)-(?<version>.+):(?<phpversion>\d+\.\d+|hhvm):(?<date>\d+)$}', $key, $match)) {
             throw new \LogicException('Could not parse key: '.$key);
         }
 

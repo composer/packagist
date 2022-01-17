@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use Composer\Pcre\Preg;
 use Composer\Repository\VersionCacheInterface;
 use App\Entity\Package;
 use App\Entity\Version;
@@ -53,7 +54,7 @@ class VersionCache implements VersionCacheInterface
     {
         foreach (array_keys($this->versionCache) as $v) {
             $v = (string) $v;
-            if (preg_replace('{\.x-dev$}', '', $v) === $version || preg_replace('{-dev$}', '', $v) === $version || preg_replace('{^dev-}', '', $v) === $version) {
+            if (Preg::replace('{\.x-dev$}', '', $v) === $version || Preg::replace('{-dev$}', '', $v) === $version || Preg::replace('{^dev-}', '', $v) === $version) {
                 unset($this->versionCache[$v]);
             }
         }

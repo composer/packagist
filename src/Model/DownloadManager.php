@@ -12,6 +12,7 @@
 
 namespace App\Model;
 
+use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Entity\Package;
@@ -208,7 +209,7 @@ class DownloadManager
 
         $versionsWithDownloads = [];
         foreach ($keys as $key) {
-            if (preg_match('{^dl:'.$packageId.'-(\d+):\d+$}', $key, $match)) {
+            if (Preg::isMatch('{^dl:'.$packageId.'-(\d+):\d+$}', $key, $match)) {
                 $versionsWithDownloads[(int) $match[1]] = true;
             }
         }
@@ -229,7 +230,7 @@ class DownloadManager
         $lastPrefix = null;
 
         foreach ($keys as $index => $key) {
-            $prefix = preg_replace('{:\d+$}', ':', $key);
+            $prefix = Preg::replace('{:\d+$}', ':', $key);
 
             if ($lastPrefix && $prefix !== $lastPrefix && $buffer) {
                 $this->createDbRecordsForKeys($package, $buffer, $versionIds, $now);
@@ -276,7 +277,7 @@ class DownloadManager
         $record->setLastUpdated($now);
 
         foreach ($keys as $key => $val) {
-            $date = preg_replace('{^.*?:(\d+)$}', '$1', $key);
+            $date = Preg::replace('{^.*?:(\d+)$}', '$1', $key);
             if ($val) {
                 $record->setDataPoint($date, $val);
             }
@@ -292,11 +293,11 @@ class DownloadManager
 
     private function getKeyInfo(string $key): array
     {
-        if (preg_match('{^dl:(\d+):}', $key, $match)) {
+        if (Preg::isMatch('{^dl:(\d+):}', $key, $match)) {
             return [(int) $match[1], Download::TYPE_PACKAGE];
         }
 
-        if (preg_match('{^dl:\d+-(\d+):}', $key, $match)) {
+        if (Preg::isMatch('{^dl:\d+-(\d+):}', $key, $match)) {
             return [(int) $match[1], Download::TYPE_VERSION];
         }
 

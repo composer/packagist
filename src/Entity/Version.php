@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use Composer\Package\Version\VersionParser;
+use Composer\Pcre\Preg;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -469,7 +470,7 @@ class Version
      */
     public function getRequireVersion()
     {
-        return preg_replace('{^v(\d)}', '$1', str_replace('.x-dev', '.*@dev', $this->getVersion()));
+        return Preg::replace('{^v(\d)}', '$1', str_replace('.x-dev', '.*@dev', $this->getVersion()));
     }
 
     /**
@@ -1042,7 +1043,7 @@ class Version
         if (isset($extra['branch-alias'][$this->getVersion()])) {
             $parser = new VersionParser;
             $version = $parser->normalizeBranch(str_replace('-dev', '', $extra['branch-alias'][$this->getVersion()]));
-            return preg_replace('{(\.9{7})+}', '.x', $version);
+            return Preg::replace('{(\.9{7})+}', '.x', $version);
         }
 
         return '';

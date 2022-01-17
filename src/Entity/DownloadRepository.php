@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -38,7 +39,7 @@ class DownloadRepository extends ServiceEntityRepository
 
         $series = [];
         foreach ($result as $row) {
-            $name = preg_replace('{^(\d+\.\d+)(\.|$).*}', '$1', $row['normalizedVersion']);
+            $name = Preg::replace('{^(\d+\.\d+)(\.|$).*}', '$1', $row['normalizedVersion']);
             $series[$name][] = $row['data'] ? json_decode($row['data'], true) : [];
         }
 
@@ -64,7 +65,7 @@ class DownloadRepository extends ServiceEntityRepository
 
         $series = [];
         foreach ($result as $row) {
-            $name = preg_replace('{^(\d+)(\.|$).*}', '$1', $row['normalizedVersion']);
+            $name = Preg::replace('{^(\d+)(\.|$).*}', '$1', $row['normalizedVersion']);
             $series[$name][] = $row['data'] ? json_decode($row['data'], true) : [];
         }
 

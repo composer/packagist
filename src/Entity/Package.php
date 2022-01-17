@@ -18,6 +18,7 @@ use App\Validator\Copyright;
 use Composer\Downloader\TransportException;
 use Composer\Factory;
 use Composer\IO\NullIO;
+use Composer\Pcre\Preg;
 use Composer\Repository\VcsRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
@@ -262,12 +263,12 @@ class Package
         $property = 'repository';
         $driver = $this->vcsDriver;
         if (!is_object($driver)) {
-            if (preg_match('{^http://}', $this->repository)) {
+            if (Preg::isMatch('{^http://}', $this->repository)) {
                 $context->buildViolation('Non-secure HTTP URLs are not supported, make sure you use an HTTPS or SSH URL')
                     ->atPath($property)
                     ->addViolation()
                 ;
-            } elseif (preg_match('{https?://.+@}', $this->repository)) {
+            } elseif (Preg::isMatch('{https?://.+@}', $this->repository)) {
                 $context->buildViolation('URLs with user@host are not supported, use a read-only public URL')
                     ->atPath($property)
                     ->addViolation()
@@ -287,7 +288,7 @@ class Package
         }
         try {
             $information = $driver->getComposerInformation($driver->getRootIdentifier());
-            if (empty($information['name'])) {
+            if (empty($information['name']) || !is_string($information['name'])) {
                 $context->buildViolation('The package name was not found in the composer.json, make sure there is a name present.')
                     ->atPath($property)
                     ->addViolation()
@@ -295,7 +296,7 @@ class Package
                 return;
             }
 
-            if (!preg_match('{^[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*$}iD', $information['name'])) {
+            if (!Preg::isMatch('{^[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*$}iD', $information['name'])) {
                 $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is invalid, it should have a vendor name, a forward slash, and a package name. The vendor and package name can be words separated by -, . or _. The complete name should match "[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*".')
                     ->atPath($property)
                     ->addViolation()
@@ -304,8 +305,8 @@ class Package
             }
 
             if (
-                preg_match('{(free.*watch|watch.*free|(stream|online).*anschauver.*pelicula|ver.*completa|pelicula.*complet|season.*episode.*online|film.*(complet|entier)|(voir|regarder|guarda|assistir).*(film|complet)|full.*movie|online.*(free|tv|full.*hd)|(free|full|gratuit).*stream|movie.*free|free.*(movie|hack)|watch.*movie|watch.*full|generate.*resource|generate.*unlimited|hack.*coin|coin.*(hack|generat)|vbucks|hack.*cheat|hack.*generat|generat.*hack|hack.*unlimited|cheat.*(unlimited|generat)|(mod|cheat|apk).*(hack|cheat|mod)|hack.*(apk|mod|free|gold|gems|diamonds|coin)|putlocker|generat.*free|coins.*generat|(download|telecharg).*album|album.*(download|telecharg)|album.*(free|gratuit)|generat.*coins|unlimited.*coins|(fortnite|pubg|apex.*legend|t[1i]k.*t[o0]k).*(free|gratuit|generat|unlimited|coins|mobile|hack|follow))}i', str_replace(['.', '-'], '', $information['name']))
-                && !preg_match('{^(hexmode|calgamo|liberty_code(_module)?|dvi|thelia|clayfreeman|watchfulli|assaneonline|awema-pl|magemodules?|simplepleb|modullo|modernmt|modina|havefnubb|lucid-modules|cointavia|magento-hackathon)/}', $information['name'])
+                Preg::isMatch('{(free.*watch|watch.*free|(stream|online).*anschauver.*pelicula|ver.*completa|pelicula.*complet|season.*episode.*online|film.*(complet|entier)|(voir|regarder|guarda|assistir).*(film|complet)|full.*movie|online.*(free|tv|full.*hd)|(free|full|gratuit).*stream|movie.*free|free.*(movie|hack)|watch.*movie|watch.*full|generate.*resource|generate.*unlimited|hack.*coin|coin.*(hack|generat)|vbucks|hack.*cheat|hack.*generat|generat.*hack|hack.*unlimited|cheat.*(unlimited|generat)|(mod|cheat|apk).*(hack|cheat|mod)|hack.*(apk|mod|free|gold|gems|diamonds|coin)|putlocker|generat.*free|coins.*generat|(download|telecharg).*album|album.*(download|telecharg)|album.*(free|gratuit)|generat.*coins|unlimited.*coins|(fortnite|pubg|apex.*legend|t[1i]k.*t[o0]k).*(free|gratuit|generat|unlimited|coins|mobile|hack|follow))}i', str_replace(['.', '-'], '', $information['name']))
+                && !Preg::isMatch('{^(hexmode|calgamo|liberty_code(_module)?|dvi|thelia|clayfreeman|watchfulli|assaneonline|awema-pl|magemodules?|simplepleb|modullo|modernmt|modina|havefnubb|lucid-modules|cointavia|magento-hackathon)/}', $information['name'])
             ) {
                 $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is blocked, if you think this is a mistake please get in touch with us.')
                     ->atPath($property)
@@ -334,7 +335,7 @@ class Package
                 return;
             }
 
-            if (preg_match('{\.json$}', $information['name'])) {
+            if (Preg::isMatch('{\.json$}', $information['name'])) {
                 $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is invalid, package names can not end in .json, consider renaming it or perhaps using a -json suffix instead.')
                     ->atPath($property)
                     ->addViolation()
@@ -342,8 +343,8 @@ class Package
                 return;
             }
 
-            if (preg_match('{[A-Z]}', $information['name'])) {
-                $suggestName = preg_replace('{(?:([a-z])([A-Z])|([A-Z])([A-Z][a-z]))}', '\\1\\3-\\2\\4', $information['name']);
+            if (Preg::isMatch('{[A-Z]}', $information['name'])) {
+                $suggestName = Preg::replace('{(?:([a-z])([A-Z])|([A-Z])([A-Z][a-z]))}', '\\1\\3-\\2\\4', $information['name']);
                 $suggestName = strtolower($suggestName);
 
                 $context->buildViolation('The package name '.htmlentities($information['name'], ENT_COMPAT, 'utf-8').' is invalid, it should not contain uppercase characters. We suggest using '.$suggestName.' instead.')
@@ -443,7 +444,7 @@ class Package
      */
     public function getVendor()
     {
-        return preg_replace('{/.*$}', '', $this->name);
+        return Preg::replace('{/.*$}', '', $this->name);
     }
 
     /**
@@ -453,7 +454,7 @@ class Package
      */
     public function getPackageName()
     {
-        return preg_replace('{^[^/]*/}', '', $this->name);
+        return Preg::replace('{^[^/]*/}', '', $this->name);
     }
 
     /**
@@ -605,35 +606,35 @@ class Package
         $this->vcsDriver = null;
 
         // prevent local filesystem URLs
-        if (preg_match('{^(\.|[a-z]:|/)}i', $repoUrl)) {
+        if (Preg::isMatch('{^(\.|[a-z]:|/)}i', $repoUrl)) {
             return;
         }
 
-        $repoUrl = preg_replace('{^git@github.com:}i', 'https://github.com/', $repoUrl);
-        $repoUrl = preg_replace('{^git://github.com/}i', 'https://github.com/', $repoUrl);
-        $repoUrl = preg_replace('{^(https://github.com/.*?)\.git$}i', '$1', $repoUrl);
+        $repoUrl = Preg::replace('{^git@github.com:}i', 'https://github.com/', $repoUrl);
+        $repoUrl = Preg::replace('{^git://github.com/}i', 'https://github.com/', $repoUrl);
+        $repoUrl = Preg::replace('{^(https://github.com/.*?)\.git$}i', '$1', $repoUrl);
 
-        $repoUrl = preg_replace('{^git@gitlab.com:}i', 'https://gitlab.com/', $repoUrl);
-        $repoUrl = preg_replace('{^(https://gitlab.com/.*?)\.git$}i', '$1', $repoUrl);
+        $repoUrl = Preg::replace('{^git@gitlab.com:}i', 'https://gitlab.com/', $repoUrl);
+        $repoUrl = Preg::replace('{^(https://gitlab.com/.*?)\.git$}i', '$1', $repoUrl);
 
-        $repoUrl = preg_replace('{^git@+bitbucket.org:}i', 'https://bitbucket.org/', $repoUrl);
-        $repoUrl = preg_replace('{^bitbucket.org:}i', 'https://bitbucket.org/', $repoUrl);
-        $repoUrl = preg_replace('{^https://[a-z0-9_-]*@bitbucket.org/}i', 'https://bitbucket.org/', $repoUrl);
-        $repoUrl = preg_replace('{^(https://bitbucket.org/[^/]+/[^/]+)/src/[^.]+}i', '$1.git', $repoUrl);
+        $repoUrl = Preg::replace('{^git@+bitbucket.org:}i', 'https://bitbucket.org/', $repoUrl);
+        $repoUrl = Preg::replace('{^bitbucket.org:}i', 'https://bitbucket.org/', $repoUrl);
+        $repoUrl = Preg::replace('{^https://[a-z0-9_-]*@bitbucket.org/}i', 'https://bitbucket.org/', $repoUrl);
+        $repoUrl = Preg::replace('{^(https://bitbucket.org/[^/]+/[^/]+)/src/[^.]+}i', '$1.git', $repoUrl);
 
         // normalize protocol case
-        $repoUrl = preg_replace_callback('{^(https?|git|svn)://}i', function ($match) { return strtolower($match[1]) . '://'; }, $repoUrl);
+        $repoUrl = Preg::replaceCallback('{^(https?|git|svn)://}i', fn ($match) => strtolower($match[1]) . '://', $repoUrl);
 
         $this->repository = $repoUrl;
         $this->remoteId = null;
 
         // avoid user@host URLs
-        if (preg_match('{https?://.+@}', $repoUrl)) {
+        if (Preg::isMatch('{https?://.+@}', $repoUrl)) {
             return;
         }
 
         // validate that this is a somewhat valid URL
-        if (!preg_match('{^([a-z0-9][^@\s]+@[a-z0-9-_.]+:\S+ | [a-z0-9]+://\S+)$}Dx', $repoUrl)) {
+        if (!Preg::isMatch('{^([a-z0-9][^@\s]+@[a-z0-9-_.]+:\S+ | [a-z0-9]+://\S+)$}Dx', $repoUrl)) {
             return;
         }
 
@@ -649,7 +650,7 @@ class Package
                 return;
             }
             $information = $driver->getComposerInformation($driver->getRootIdentifier());
-            if (!isset($information['name'])) {
+            if (!isset($information['name']) || !is_string($information['name'])) {
                 return;
             }
             if ('' === $this->name) {
@@ -683,11 +684,11 @@ class Package
      */
     public function getBrowsableRepository()
     {
-        if (preg_match('{(://|@)bitbucket.org[:/]}i', $this->repository)) {
-            return preg_replace('{^(?:git@|https://|git://)bitbucket.org[:/](.+?)(?:\.git)?$}i', 'https://bitbucket.org/$1', $this->repository);
+        if (Preg::isMatch('{(://|@)bitbucket.org[:/]}i', $this->repository)) {
+            return Preg::replace('{^(?:git@|https://|git://)bitbucket.org[:/](.+?)(?:\.git)?$}i', 'https://bitbucket.org/$1', $this->repository);
         }
 
-        return preg_replace('{^(git://github.com/|git@github.com:)}', 'https://github.com/', $this->repository);
+        return Preg::replace('{^(git://github.com/|git@github.com:)}', 'https://github.com/', $this->repository);
     }
 
     /**
@@ -930,14 +931,14 @@ class Package
 
         // use branch alias for sorting if one is provided
         if (isset($a->getExtra()['branch-alias'][$aVersion])) {
-            $aVersion = preg_replace('{(.x)?-dev$}', '.9999999-dev', $a->getExtra()['branch-alias'][$aVersion]);
+            $aVersion = Preg::replace('{(.x)?-dev$}', '.9999999-dev', $a->getExtra()['branch-alias'][$aVersion]);
         }
         if (isset($b->getExtra()['branch-alias'][$bVersion])) {
-            $bVersion = preg_replace('{(.x)?-dev$}', '.9999999-dev', $b->getExtra()['branch-alias'][$bVersion]);
+            $bVersion = Preg::replace('{(.x)?-dev$}', '.9999999-dev', $b->getExtra()['branch-alias'][$bVersion]);
         }
 
-        $aVersion = preg_replace('{^dev-.*}', '0.0.0-alpha', $aVersion);
-        $bVersion = preg_replace('{^dev-.*}', '0.0.0-alpha', $bVersion);
+        $aVersion = Preg::replace('{^dev-.*}', '0.0.0-alpha', $aVersion);
+        $bVersion = Preg::replace('{^dev-.*}', '0.0.0-alpha', $bVersion);
 
         // sort default branch first if it is non numeric
         if ($aVersion === '0.0.0-alpha' && $a->isDefaultBranch()) {

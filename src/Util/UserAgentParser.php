@@ -2,6 +2,8 @@
 
 namespace App\Util;
 
+use Composer\Pcre\Preg;
+
 class UserAgentParser
 {
     private ?string $composerVersion = null;
@@ -13,14 +15,14 @@ class UserAgentParser
 
     public function __construct(?string $userAgent)
     {
-        if ($userAgent && preg_match('#^Composer/(?P<composer>[a-z0-9.+-]+) \((?P<os>[^\s;]+)[^;]*?; [^;]*?; (?P<engine>HHVM|PHP) (?P<php>[0-9.]+)[^;]*(?:; (?P<http>streams|curl \d+\.\d+)[^;)]*)?(?:; Platform-PHP (?P<platform_php>[0-9.]+)[^;]*)?(?P<ci>; CI)?#i', $userAgent, $matches)) {
-            if ($matches['composer'] === 'source' || preg_match('{^[a-f0-9]{40}$}', $matches['composer'])) {
+        if ($userAgent && Preg::isMatch('#^Composer/(?P<composer>[a-z0-9.+-]+) \((?P<os>[^\s;]+)[^;]*?; [^;]*?; (?P<engine>HHVM|PHP) (?P<php>[0-9.]+)[^;]*(?:; (?P<http>streams|curl \d+\.\d+)[^;)]*)?(?:; Platform-PHP (?P<platform_php>[0-9.]+)[^;]*)?(?P<ci>; CI)?#i', $userAgent, $matches)) {
+            if ($matches['composer'] === 'source' || Preg::isMatch('{^[a-f0-9]{40}$}', $matches['composer'])) {
                 $matches['composer'] = 'pre-1.8.5';
             }
-            $this->composerVersion = preg_replace('{\+[a-f0-9]{40}}', '', $matches['composer']);
+            $this->composerVersion = Preg::replace('{\+[a-f0-9]{40}}', '', $matches['composer']);
             $this->phpVersion = (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['php'];
             $this->platformPhpVersion = !empty($matches['platform_php']) ? (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['platform_php'] : null;
-            $this->os = preg_replace('{^cygwin_nt-.*}', 'cygwin', strtolower($matches['os']));
+            $this->os = Preg::replace('{^cygwin_nt-.*}', 'cygwin', strtolower($matches['os']));
             $this->httpVersion = !empty($matches['http']) ? strtolower($matches['http']) : null;
             $this->ci = (bool) ($matches['ci'] ?? null);
         }
@@ -64,7 +66,7 @@ class UserAgentParser
             return 'hhvm';
         }
 
-        $version = preg_replace('{^(\d+\.\d+).*}', '$1', $this->phpVersion);
+        $version = Preg::replace('{^(\d+\.\d+).*}', '$1', $this->phpVersion);
 
         return $this->isValidMinorVersion($version) ? $version : null;
     }
@@ -79,7 +81,7 @@ class UserAgentParser
             return 'hhvm';
         }
 
-        $version = preg_replace('{^(\d+\.\d+).*}', '$1', $this->platformPhpVersion);
+        $version = Preg::replace('{^(\d+\.\d+).*}', '$1', $this->platformPhpVersion);
 
         return $this->isValidMinorVersion($version) ? $version : null;
     }
@@ -91,7 +93,7 @@ class UserAgentParser
         }
 
         // TODO update for php 9
-        if (preg_match('{^(5\.[23456]|7\.[01234]|8\.[0123456])$}', $version)) {
+        if (Preg::isMatch('{^(5\.[23456]|7\.[01234]|8\.[0123456])$}', $version)) {
             return true;
         }
 

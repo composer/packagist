@@ -16,6 +16,7 @@ use Algolia\AlgoliaSearch\SearchClient;
 use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use Composer\Pcre\Preg;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -198,7 +199,7 @@ class IndexPackagesCommand extends Command
             'name' => $package->getName(),
             'package_organisation' => $package->getVendor(),
             'package_name' => $package->getPackageName(),
-            'description' => preg_replace('{[\x00-\x1f]+}u', '', strip_tags($package->getDescription())),
+            'description' => Preg::replace('{[\x00-\x1f]+}u', '', strip_tags($package->getDescription())),
             'type' => $package->getType(),
             'repository' => $package->getRepository(),
             'language' => $package->getLanguage(),
@@ -233,8 +234,8 @@ class IndexPackagesCommand extends Command
             'id' => $provided,
             'objectID' => 'virtual:'.$provided,
             'name' => $provided,
-            'package_organisation' => preg_replace('{/.*$}', '', $provided),
-            'package_name' => preg_replace('{^[^/]*/}', '', $provided),
+            'package_organisation' => Preg::replace('{/.*$}', '', $provided),
+            'package_name' => Preg::replace('{^[^/]*/}', '', $provided),
             'description' => '',
             'type' => 'virtual-package',
             'repository' => '',
@@ -278,7 +279,7 @@ class IndexPackagesCommand extends Command
         }
 
         return array_values(array_unique(array_map(function ($tag) {
-            return preg_replace('{[\s-]+}u', ' ', mb_strtolower(preg_replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8'));
+            return Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8'));
         }, $tags)));
     }
 

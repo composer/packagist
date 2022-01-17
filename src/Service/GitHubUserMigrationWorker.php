@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use Composer\Pcre\Preg;
 use Psr\Log\LoggerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
@@ -76,7 +77,7 @@ class GitHubUserMigrationWorker
 
     public function setupWebHook(string $token, Package $package)
     {
-        if (!preg_match('#^(?:(?:https?|git)://([^/]+)/|git@([^:]+):)(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git|/)?$#', $package->getRepository(), $match)) {
+        if (!Preg::isMatch('#^(?:(?:https?|git)://([^/]+)/|git@([^:]+):)(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git|/)?$#', $package->getRepository(), $match)) {
             return null;
         }
 
@@ -136,8 +137,8 @@ class GitHubUserMigrationWorker
                 }
             }
 
-            if (count($hooks) && !preg_match('{^https://api\.github\.com/repos/'.$repoKey.'/hooks/}', $hooks[0]['url'])) {
-                if (preg_match('{https://api\.github\.com/repos/([^/]+/[^/]+)/hooks}', $hooks[0]['url'], $match)) {
+            if (count($hooks) && !Preg::isMatch('{^https://api\.github\.com/repos/'.$repoKey.'/hooks/}', $hooks[0]['url'])) {
+                if (Preg::isMatch('{https://api\.github\.com/repos/([^/]+/[^/]+)/hooks}', $hooks[0]['url'], $match)) {
                     $package->setRepository('https://github.com/'.$match[1]);
                     $this->getEM()->flush($package);
                 }
@@ -159,7 +160,7 @@ class GitHubUserMigrationWorker
 
     public function deleteWebHook(string $token, Package $package): bool
     {
-        if (!preg_match('#^(?:(?:https?|git)://([^/]+)/|git@([^:]+):)(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git|/)?$#', $package->getRepository(), $match)) {
+        if (!Preg::isMatch('#^(?:(?:https?|git)://([^/]+)/|git@([^:]+):)(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git|/)?$#', $package->getRepository(), $match)) {
             return true;
         }
 
@@ -199,7 +200,7 @@ class GitHubUserMigrationWorker
             $hooks = array_merge($hooks, json_decode((string) $resp->getBody(), true));
             $hasNext = false;
             foreach ($resp->getHeader('Link') as $header) {
-                if (preg_match('{<https://api.github.com/resource?page=(?P<page>\d+)>; rel="next"}', $header, $match)) {
+                if (Preg::isMatch('{<https://api.github.com/resource?page=(?P<page>\d+)>; rel="next"}', $header, $match)) {
                     $hasNext = true;
                     $page = '?page='.$match['page'];
                 }

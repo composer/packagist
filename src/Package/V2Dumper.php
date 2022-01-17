@@ -12,6 +12,7 @@
 
 namespace App\Package;
 
+use Composer\Pcre\Preg;
 use Symfony\Component\Filesystem\Filesystem;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Doctrine\Persistence\ManagerRegistry;
@@ -195,7 +196,7 @@ class V2Dumper
 
         foreach ($finder as $vendorDir) {
             foreach (glob(((string) $vendorDir).'/*.json') as $file) {
-                if (!preg_match('{/([^/]+/[^/]+?)(~dev)?\.json$}', strtr($file, '\\', '/'), $match)) {
+                if (!Preg::isMatch('{/([^/]+/[^/]+?)(~dev)?\.json$}', strtr($file, '\\', '/'), $match)) {
                     throw new \LogicException('Could not match package name from '.$file);
                 }
 
@@ -276,7 +277,7 @@ class V2Dumper
         file_put_contents($path.'.tmp', $contents);
         rename($path.'.tmp', $path);
 
-        if (!preg_match('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
+        if (!Preg::isMatch('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
             throw new \LogicException('Could not match package name from '.$path);
         }
 

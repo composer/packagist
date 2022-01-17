@@ -8,6 +8,7 @@ use App\Util\Killswitch;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use Composer\Package\Version\VersionParser;
+use Composer\Pcre\Preg;
 use Composer\Semver\Constraint\Constraint;
 use DateTimeImmutable;
 use Doctrine\ORM\NoResultException;
@@ -112,7 +113,7 @@ class PackageController extends Controller
             $packageFilter = '{^'.str_replace('\\*', '.*?', preg_quote($req->query->get('filter'))).'$}i';
             $filtered = [];
             foreach ($names as $name) {
-                if (preg_match($packageFilter, $name)) {
+                if (Preg::isMatch($packageFilter, $name)) {
                     $filtered[] = $name;
                 }
             }
@@ -455,7 +456,7 @@ class PackageController extends Controller
         $verified = [];
         foreach ($packages as $pkg) {
             $dls = $data['meta']['downloads'][$pkg['id']] ?? 0;
-            $vendor = preg_replace('{/.*$}', '', $pkg['name']);
+            $vendor = Preg::replace('{/.*$}', '', $pkg['name']);
             if ($dls > 10 && !in_array($vendor, $verified, true)) {
                 $vendorRepo->verify($vendor);
                 $this->addFlash('success', 'Marked '.$vendor.' with '.$dls.' downloads.');
@@ -519,7 +520,7 @@ class PackageController extends Controller
             $req->getSession()->save();
         }
 
-        if (preg_match('{^(?P<pkg>ext-[a-z0-9_.-]+?)/(?P<method>dependents|suggesters)$}i', $name, $match)) {
+        if (Preg::isMatch('{^(?P<pkg>ext-[a-z0-9_.-]+?)/(?P<method>dependents|suggesters)$}i', $name, $match)) {
             return $this->{$match['method'].'Action'}($req, $match['pkg']);
         }
 
@@ -1232,7 +1233,7 @@ class PackageController extends Controller
             if ($version['version'] === '') {
                 $label = 'All';
             } elseif (str_ends_with($version['version'], '.9999999')) {
-                $label = preg_replace('{\.9999999$}', '.x-dev', $version['version']);
+                $label = Preg::replace('{\.9999999$}', '.x-dev', $version['version']);
             } elseif (in_array($version['depth'], [PhpStat::DEPTH_MINOR, PhpStat::DEPTH_MAJOR], true)) {
                 $label = $version['version'].'.*';
             } else {

@@ -12,6 +12,7 @@
 
 namespace App\Package;
 
+use Composer\Pcre\Preg;
 use Symfony\Component\Filesystem\Filesystem;
 use Composer\Util\Filesystem as ComposerFilesystem;
 use Doctrine\Persistence\ManagerRegistry;
@@ -215,7 +216,7 @@ class SymlinkDumper
 
                         foreach ($files as $file) {
                             if (substr_count($file, '/') > 1) { // handle old .files with p/*/*.json paths
-                                $file = preg_replace('{^p/}', '', $file);
+                                $file = Preg::replace('{^p/}', '', $file);
                             }
                             $this->loadIndividualFile($buildDir.'/'.$file, $file);
                             if (isset($this->individualFiles[$file]['packages'][$name])) {
@@ -233,7 +234,7 @@ class SymlinkDumper
                     $versionData = $versionRepo->getVersionData($versionIds);
                     foreach ($package->getVersions() as $version) {
                         foreach (array_slice($version->getNames($versionData), 0, 150) as $versionName) {
-                            if (!preg_match('{^[A-Za-z0-9_-][A-Za-z0-9_.-]*/[A-Za-z0-9_-][A-Za-z0-9_.-]*$}', $versionName) || strpos($versionName, '..')) {
+                            if (!Preg::isMatch('{^[A-Za-z0-9_-][A-Za-z0-9_.-]*/[A-Za-z0-9_-][A-Za-z0-9_.-]*$}', $versionName) || strpos($versionName, '..')) {
                                 continue;
                             }
 

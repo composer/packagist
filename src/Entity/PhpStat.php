@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use Composer\Pcre\Preg;
 use Doctrine\ORM\Mapping as ORM;
 use DateTimeInterface;
 use Symfony\Bridge\Doctrine\IdGenerator\UlidGenerator;
@@ -90,9 +91,9 @@ class PhpStat
 
         if ('' === $version) {
             $this->depth = self::DEPTH_PACKAGE;
-        } elseif (preg_match('{^\d+$}', $version)) {
+        } elseif (Preg::isMatch('{^\d+$}', $version)) {
             $this->depth = self::DEPTH_MAJOR;
-        } elseif (preg_match('{^\d+\.\d+$}', $version)) {
+        } elseif (Preg::isMatch('{^\d+\.\d+$}', $version)) {
             $this->depth = self::DEPTH_MINOR;
         } else {
             $this->depth = self::DEPTH_EXACT;

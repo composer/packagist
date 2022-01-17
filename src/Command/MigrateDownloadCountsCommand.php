@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -65,9 +66,9 @@ class MigrateDownloadCountsCommand extends Command
             });
 
             // sort by package id, then package datapoint first followed by version datapoints
-            usort($keysToUpdate, function ($a, $b) {
-                $amin = preg_replace('{^(dl:\d+).*}', '$1', $a);
-                $bmin = preg_replace('{^(dl:\d+).*}', '$1', $b);
+            usort($keysToUpdate, function (string $a, string $b) {
+                $amin = Preg::replace('{^(dl:\d+).*}', '$1', $a);
+                $bmin = Preg::replace('{^(dl:\d+).*}', '$1', $b);
 
                 if ($amin !== $bmin) {
                     return strcmp($amin, $bmin);
@@ -82,7 +83,7 @@ class MigrateDownloadCountsCommand extends Command
             $lastPackageId = null;
             while ($keysToUpdate) {
                 $key = array_shift($keysToUpdate);
-                if (!preg_match('{^dl:(\d+)}', $key, $m)) {
+                if (!Preg::isMatch('{^dl:(\d+)}', $key, $m)) {
                     $this->logger->error('Invalid dl key found: '.$key);
                     continue;
                 }

@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
+use Composer\Pcre\Preg;
 use Psr\Log\LoggerInterface;
 use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
@@ -94,7 +95,7 @@ class UpdaterWorker
         $io->loadConfiguration($config);
 
         $usesPackagistToken = false;
-        if (preg_match('{\bgithub\.com\b}i', $package->getRepository())) {
+        if (Preg::isMatch('{\bgithub\.com\b}i', $package->getRepository())) {
             $usesPackagistToken = true;
             $apc = extension_loaded('apcu');
 
@@ -190,7 +191,8 @@ class UpdaterWorker
             $em->flush($emptyRefCache);
 
             // github update downgraded to a git clone, this should not happen, so check through API whether the package still exists
-            if (preg_match('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository(), $match) && 0 === strpos($repository->getDriver()->getUrl(), 'git@')) {
+            $driver = $repository->getDriver();
+            if ($driver && Preg::isMatch('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository(), $match) && str_starts_with($driver->getUrl(), 'git@')) {
                 if ($result = $this->checkForDeadGitHubPackage($package, $match, $httpDownloader, $io->getOutput())) {
                     return $result;
                 }
@@ -246,33 +248,33 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Please ask the owner to check their account')) {
                 // git clone says account is disabled on github for private repos(?) if cloning via https
                 $found404 = true;
-            } elseif ($e instanceof TransportException && preg_match('{https://api.bitbucket.org/2.0/repositories/[^/]+/.+?\?fields=-project}i', $e->getMessage()) && $e->getStatusCode() == 404) {
+            } elseif ($e instanceof TransportException && Preg::isMatch('{https://api.bitbucket.org/2.0/repositories/[^/]+/.+?\?fields=-project}i', $e->getMessage()) && $e->getStatusCode() == 404) {
                 // bitbucket api root returns a 404
                 $found404 = true;
-            } elseif ($e instanceof \RuntimeException && preg_match('{fatal: repository \'[^\']+\' not found\n}i', $e->getMessage())) {
+            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{fatal: repository \'[^\']+\' not found\n}i', $e->getMessage())) {
                 // random git clone failures
                 $found404 = true;
-            } elseif ($e instanceof \RuntimeException && preg_match('{fatal: Authentication failed}i', $e->getMessage())) {
+            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{fatal: Authentication failed}i', $e->getMessage())) {
                 // git clone failed because repo now requires auth
                 $found404 = true;
-            } elseif ($e instanceof \RuntimeException && preg_match('{Driver could not be established for package}i', $e->getMessage())) {
+            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{Driver could not be established for package}i', $e->getMessage())) {
                 // no driver found as it is a custom hosted git most likely on a server that is now unreachable or similar
                 $found404 = true;
             } elseif ($e instanceof \RuntimeException && (
-                preg_match('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
-                || preg_match('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
-                || preg_match('{Can\'t connect to host \'[^\']+\': Connection timed out}i', $e->getMessage())
+                Preg::isMatch('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
+                || Preg::isMatch('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
+                || Preg::isMatch('{Can\'t connect to host \'[^\']+\': Connection timed out}i', $e->getMessage())
             )) {
                 // unreachable host, skip for a week as this may be a temporary failure
                 $found404 = new \DateTime('+7 days');
-            } elseif ($e instanceof TransportException && $e->getStatusCode() === 409 && preg_match('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?/git/refs/heads\?per_page=100" file could not be downloaded \(HTTP/2 409 \)}', $e->getMessage())) {
+            } elseif ($e instanceof TransportException && $e->getStatusCode() === 409 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?/git/refs/heads\?per_page=100" file could not be downloaded \(HTTP/2 409 \)}', $e->getMessage())) {
                 $found404 = true;
-            } elseif ($e instanceof TransportException && $e->getStatusCode() === 451 && preg_match('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded \(HTTP/2 451 \)}', $e->getMessage())) {
+            } elseif ($e instanceof TransportException && $e->getStatusCode() === 451 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded \(HTTP/2 451 \)}', $e->getMessage())) {
                 $found404 = true;
             }
 
             // github 404'ed, check through API whether the package still exists and delete if not
-            if ($found404 && preg_match('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository(), $match)) {
+            if ($found404 && Preg::isMatch('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository(), $match)) {
                 if ($result = $this->checkForDeadGitHubPackage($package, $match, $httpDownloader, $output)) {
                     return $result;
                 }
@@ -334,7 +336,7 @@ class UpdaterWorker
 
     private function cleanupOutput($str)
     {
-        return preg_replace('{
+        return Preg::replace('{
             Reading\ composer.json\ of\ <span(.+?)>(?P<pkg>[^<]+)</span>\ \(<span(.+?)>(?P<version>[^<]+)</span>\)\r?\n
             (?P<cache>Found\ cached\ composer.json\ of\ <span(.+?)>(?P=pkg)</span>\ \(<span(.+?)>(?P=version)</span>\)\r?\n)
         }x', '$5', $str);

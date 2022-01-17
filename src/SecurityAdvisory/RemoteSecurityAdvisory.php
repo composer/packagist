@@ -3,6 +3,7 @@
 namespace App\SecurityAdvisory;
 
 use App\Entity\SecurityAdvisory;
+use Composer\Pcre\Preg;
 
 class RemoteSecurityAdvisory
 {
@@ -71,9 +72,9 @@ class RemoteSecurityAdvisory
     {
         $date = null;
         $fallbackYearDate = null;
-        if (preg_match('#(\d{4}-\d{2}-\d{2})#', basename($fileNameWithPath), $matches)) {
+        if (Preg::isMatch('#(\d{4}-\d{2}-\d{2})#', basename($fileNameWithPath), $matches)) {
             $date = new \DateTime($matches[1] . ' 00:00:00');
-        } elseif (preg_match('#CVE-(2\d{3})-\d#', basename($fileNameWithPath), $matches)) {
+        } elseif (Preg::isMatch('#CVE-(2\d{3})-\d#', basename($fileNameWithPath), $matches)) {
             $fallbackYearDate = new \DateTime($matches[1] . '-01-01 00:00:00');
         }
 

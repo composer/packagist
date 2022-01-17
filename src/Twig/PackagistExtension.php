@@ -4,6 +4,7 @@ namespace App\Twig;
 
 use App\Model\ProviderManager;
 use App\Security\RecaptchaHelper;
+use Composer\Pcre\Preg;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Composer\Repository\PlatformRepository;
 use Twig\Extension\AbstractExtension;
@@ -57,7 +58,7 @@ class PackagistExtension extends AbstractExtension
 
     public function getVendor(string $packageName): string
     {
-        return preg_replace('{/.*$}', '', $packageName);
+        return Preg::replace('{/.*$}', '', $packageName);
     }
 
     public function numericTest($val)
@@ -67,7 +68,7 @@ class PackagistExtension extends AbstractExtension
 
     public function packageExistsTest($package)
     {
-        if (!preg_match('/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/', $package)) {
+        if (!Preg::isMatch('/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/', $package)) {
             return false;
         }
 
@@ -81,7 +82,7 @@ class PackagistExtension extends AbstractExtension
 
     public function prettifySourceReference($sourceReference)
     {
-        if (preg_match('/^[a-f0-9]{40}$/', $sourceReference)) {
+        if (Preg::isMatch('/^[a-f0-9]{40}$/', $sourceReference)) {
             return substr($sourceReference, 0, 7);
         }
 
@@ -96,17 +97,17 @@ class PackagistExtension extends AbstractExtension
     public function sortLinks(array $links)
     {
         usort($links, function ($a, $b) {
-            $aPlatform = preg_match(PlatformRepository::PLATFORM_PACKAGE_REGEX, $a->getPackageName());
-            $bPlatform = preg_match(PlatformRepository::PLATFORM_PACKAGE_REGEX, $b->getPackageName());
+            $aPlatform = Preg::isMatch(PlatformRepository::PLATFORM_PACKAGE_REGEX, $a->getPackageName());
+            $bPlatform = Preg::isMatch(PlatformRepository::PLATFORM_PACKAGE_REGEX, $b->getPackageName());
 
             if ($aPlatform !== $bPlatform) {
                 return $aPlatform ? -1 : 1;
             }
 
-            if (preg_match('{^php(?:-64bit|-ipv6|-zts|-debug)?$}iD', $a->getPackageName())) {
+            if (Preg::isMatch('{^php(?:-64bit|-ipv6|-zts|-debug)?$}iD', $a->getPackageName())) {
                 return -1;
             }
-            if (preg_match('{^php(?:-64bit|-ipv6|-zts|-debug)?$}iD', $b->getPackageName())) {
+            if (Preg::isMatch('{^php(?:-64bit|-ipv6|-zts|-debug)?$}iD', $b->getPackageName())) {
                 return 1;
             }
 
