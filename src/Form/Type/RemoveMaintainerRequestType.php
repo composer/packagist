@@ -12,6 +12,7 @@
 
 namespace App\Form\Type;
 
+use App\Entity\Package;
 use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Form\Model\MaintainerRequest;
@@ -25,7 +26,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class RemoveMaintainerRequestType extends AbstractType
 {
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    /**
+     * @param array{package: Package, excludeUser: User} $options
+     */
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('user', EntityType::class, [
             'class' => User::class,
@@ -35,7 +39,7 @@ class RemoveMaintainerRequestType extends AbstractType
         ]);
     }
 
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setRequired(['package']);
         $resolver->setDefaults([
@@ -44,10 +48,7 @@ class RemoveMaintainerRequestType extends AbstractType
         ]);
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'remove_maintainer_form';
     }

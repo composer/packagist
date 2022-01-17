@@ -6,6 +6,7 @@ use staabm\PHPStanDba\QueryReflection\QueryReflection;
 use staabm\PHPStanDba\QueryReflection\RecordingQueryReflector;
 use staabm\PHPStanDba\QueryReflection\ReplayQueryReflector;
 use staabm\PHPStanDba\QueryReflection\ReflectionCache;
+use Symfony\Component\Dotenv\Dotenv;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -14,8 +15,7 @@ $cacheFile = __DIR__.'/.phpstan-dba.cache';
 $config = new RuntimeConfiguration();
 // $config->debugMode(true);
 
-$env = new \Symfony\Component\Dotenv\Dotenv();
-$env->load(__DIR__.'/.env', __DIR__.'/.env.local');
+(new Dotenv())->bootEnv(__DIR__ . '/../.env');
 $dsn = parse_url($_SERVER['DATABASE_URL']);
 
 QueryReflection::setupReflector(

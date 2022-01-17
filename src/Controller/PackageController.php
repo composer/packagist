@@ -479,16 +479,15 @@ class PackageController extends Controller
      *     methods={"POST"}
      * )
      */
-    public function markSafeAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager)
+    public function markSafeAction(Request $req)
     {
         if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
             throw new NotFoundHttpException();
         }
 
-        $expectedToken = $csrfTokenManager->getToken('mark_safe')->getValue();
-
-        $vendors = array_filter((array) $req->request->get('vendor'));
-        if (!hash_equals($expectedToken, $req->request->get('token'))) {
+        /** @var string[] $vendors */
+        $vendors = array_filter($req->request->all('vendor'));
+        if (!$this->isCsrfTokenValid('mark_safe', $req->request->get('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
         }
 

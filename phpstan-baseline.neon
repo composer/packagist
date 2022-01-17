@@ -36,11 +36,6 @@ parameters:
 			path: src/Command/ClearVersionsCommand.php
 
 		-
-			message: "#^Parameter \\#1 \\$string of function trim expects string, array\\<string\\>\\|string\\|true given\\.$#"
-			count: 1
-			path: src/Command/ClearVersionsCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$version of method App\\\\Entity\\\\VersionRepository\\:\\:remove\\(\\) expects App\\\\Entity\\\\Version, mixed given\\.$#"
 			count: 2
 			path: src/Command/ClearVersionsCommand.php
@@ -316,11 +311,6 @@ parameters:
 			path: src/Command/RegenerateMainPhpStatsCommand.php
 
 		-
-			message: "#^Parameter \\#1 \\$datetime of class DateTimeImmutable constructor expects string, array\\<string\\>\\|string\\|null given\\.$#"
-			count: 1
-			path: src/Command/RegenerateMainPhpStatsCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$package of method App\\\\Entity\\\\PhpStatRepository\\:\\:createOrUpdateMainRecord\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
 			count: 2
 			path: src/Command/RegenerateMainPhpStatsCommand.php
@@ -329,11 +319,6 @@ parameters:
 			message: "#^Property App\\\\Command\\\\RegenerateMainPhpStatsCommand\\:\\:\\$redis is never read, only written\\.$#"
 			count: 1
 			path: src/Command/RegenerateMainPhpStatsCommand.php
-
-		-
-			message: "#^Binary operation \"\\.\" between 'packagist_run_' and array\\<string\\>\\|bool\\|string\\|null results in an error\\.$#"
-			count: 1
-			path: src/Command/RunWorkersCommand.php
 
 		-
 			message: "#^Method App\\\\Command\\\\RunWorkersCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
@@ -551,13 +536,8 @@ parameters:
 			path: src/Controller/ApiController.php
 
 		-
-			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
+			message: "#^Parameter \\#1 \\$json of function json_decode expects string, bool\\|float\\|int\\|string\\|null given\\.$#"
 			count: 2
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#1 \\$json of function json_decode expects string, resource\\|string given\\.$#"
-			count: 4
 			path: src/Controller/ApiController.php
 
 		-
@@ -578,11 +558,6 @@ parameters:
 		-
 			message: "#^Parameter \\#1 \\$user of method App\\\\Controller\\\\ApiController\\:\\:findPackagesByUrl\\(\\) expects App\\\\Entity\\\\User, object given\\.$#"
 			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#2 \\$data of function hash_hmac expects string, resource\\|string given\\.$#"
-			count: 2
 			path: src/Controller/ApiController.php
 
 		-
@@ -767,11 +742,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$userId of method App\\\\Service\\\\Scheduler\\:\\:scheduleUserScopeMigration\\(\\) expects int, int\\|null given\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Parameter \\#2 \\$user_string of function hash_equals expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Controller/GitHubLoginController.php
 
@@ -1196,18 +1166,8 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
-			message: "#^Parameter \\#1 \\$vendor of method App\\\\Entity\\\\VendorRepository\\:\\:verify\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#2 \\$token of method Symfony\\\\Bundle\\\\FrameworkBundle\\\\Controller\\\\AbstractController\\:\\:isCsrfTokenValid\\(\\) expects string\\|null, mixed given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#2 \\$user_string of function hash_equals expects string, mixed given\\.$#"
-			count: 1
+			message: "#^Parameter \\#2 \\$token of method Symfony\\\\Bundle\\\\FrameworkBundle\\\\Controller\\\\AbstractController\\:\\:isCsrfTokenValid\\(\\) expects string\\|null, bool\\|float\\|int\\|string\\|null given\\.$#"
+			count: 2
 			path: src/Controller/PackageController.php
 
 		-
@@ -1227,11 +1187,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#3 \\$version of method App\\\\Controller\\\\PackageController\\:\\:overallStatsAction\\(\\) expects App\\\\Entity\\\\Version\\|null, object given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#4 \\$orderBy of method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Controller/PackageController.php
 
@@ -1456,23 +1411,33 @@ parameters:
 			path: src/Controller/UserController.php
 
 		-
-			message: "#^Parameter \\#2 \\$default of method Symfony\\\\Component\\\\HttpFoundation\\\\InputBag\\:\\:get\\(\\) expects string\\|null, int given\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
 			message: "#^Parameter \\#2 \\$package of method App\\\\Model\\\\FavoriteManager\\:\\:markFavorite\\(\\) expects App\\\\Entity\\\\Package, object\\|null given\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Parameter \\#2 \\$user_string of function hash_equals expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Controller/UserController.php
 
 		-
 			message: "#^Call to an undefined method object\\:\\:getName\\(\\)\\.$#"
 			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Cannot access offset 'order' on mixed\\.$#"
+			count: 2
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Cannot access offset 'orderBys' on array\\|bool\\|float\\|int\\|string\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Cannot access offset 'query' on array\\|bool\\|float\\|int\\|string\\.$#"
+			count: 1
+			path: src/Controller/WebController.php
+
+		-
+			message: "#^Cannot access offset 'sort' on mixed\\.$#"
+			count: 2
 			path: src/Controller/WebController.php
 
 		-
@@ -3621,16 +3586,6 @@ parameters:
 			path: src/EventListener/CacheListener.php
 
 		-
-			message: "#^Method App\\\\Form\\\\ChangePasswordFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/ChangePasswordFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\ChangePasswordFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/ChangePasswordFormType.php
-
-		-
 			message: "#^Method App\\\\Form\\\\Model\\\\MaintainerRequest\\:\\:setUser\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Form/Model/MaintainerRequest.php
@@ -3711,47 +3666,12 @@ parameters:
 			path: src/Form/RegistrationFormType.php
 
 		-
-			message: "#^Method App\\\\Form\\\\RegistrationFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/RegistrationFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\RegistrationFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/RegistrationFormType.php
-
-		-
 			message: "#^Method App\\\\Form\\\\RegistrationFormType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Form/RegistrationFormType.php
 
 		-
-			message: "#^Method App\\\\Form\\\\ResetPasswordFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/ResetPasswordFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\ResetPasswordFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/ResetPasswordFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\ResetPasswordRequestFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/ResetPasswordRequestFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\ResetPasswordRequestFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/ResetPasswordRequestFormType.php
-
-		-
 			message: "#^Method App\\\\Form\\\\Type\\\\AbandonedType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/AbandonedType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\AbandonedType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
 			count: 1
 			path: src/Form/Type/AbandonedType.php
 
@@ -3766,32 +3686,12 @@ parameters:
 			path: src/Form/Type/AddMaintainerRequestType.php
 
 		-
-			message: "#^Method App\\\\Form\\\\Type\\\\AddMaintainerRequestType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/Type/AddMaintainerRequestType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\AddMaintainerRequestType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/Type/AddMaintainerRequestType.php
-
-		-
 			message: "#^Method App\\\\Form\\\\Type\\\\AddMaintainerRequestType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Form/Type/AddMaintainerRequestType.php
 
 		-
 			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/EnableTwoFactorAuthType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/Type/EnableTwoFactorAuthType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Form/Type/EnableTwoFactorAuthType.php
 
@@ -3806,32 +3706,12 @@ parameters:
 			path: src/Form/Type/OrderByType.php
 
 		-
-			message: "#^Method App\\\\Form\\\\Type\\\\OrderByType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/Type/OrderByType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\OrderByType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/Type/OrderByType.php
-
-		-
 			message: "#^Method App\\\\Form\\\\Type\\\\OrderByType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Form/Type/OrderByType.php
 
 		-
 			message: "#^Method App\\\\Form\\\\Type\\\\PackageType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/PackageType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\PackageType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/Type/PackageType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\PackageType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Form/Type/PackageType.php
 
@@ -3851,52 +3731,12 @@ parameters:
 			path: src/Form/Type/ProfileFormType.php
 
 		-
-			message: "#^Method App\\\\Form\\\\Type\\\\ProfileFormType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/Type/ProfileFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\ProfileFormType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/Type/ProfileFormType.php
-
-		-
 			message: "#^Method App\\\\Form\\\\Type\\\\ProfileFormType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Form/Type/ProfileFormType.php
 
 		-
-			message: "#^Method App\\\\Form\\\\Type\\\\RemoveMaintainerRequestType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/RemoveMaintainerRequestType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\RemoveMaintainerRequestType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/Type/RemoveMaintainerRequestType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\RemoveMaintainerRequestType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/Type/RemoveMaintainerRequestType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\RemoveMaintainerRequestType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/RemoveMaintainerRequestType.php
-
-		-
 			message: "#^Method App\\\\Form\\\\Type\\\\SearchQueryType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/SearchQueryType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\SearchQueryType\\:\\:buildForm\\(\\) has parameter \\$builder with no value type specified in iterable type Symfony\\\\Component\\\\Form\\\\FormBuilderInterface\\.$#"
-			count: 1
-			path: src/Form/Type/SearchQueryType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\SearchQueryType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Form/Type/SearchQueryType.php
 
@@ -5056,11 +4896,6 @@ parameters:
 			path: src/Security/GitHubAuthenticator.php
 
 		-
-			message: "#^PHPDoc tag @var has no value type specified in iterable type Symfony\\\\Component\\\\HttpFoundation\\\\Session\\\\Session\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
 			message: "#^Parameter \\#1 \\$accessToken of method KnpU\\\\OAuth2ClientBundle\\\\Client\\\\Provider\\\\GithubClient\\:\\:fetchUserFromToken\\(\\) expects League\\\\OAuth2\\\\Client\\\\Token\\\\AccessToken, mixed given\\.$#"
 			count: 1
 			path: src/Security/GitHubAuthenticator.php
@@ -5146,11 +4981,6 @@ parameters:
 			path: src/Security/TwoFactorAuthManager.php
 
 		-
-			message: "#^PHPDoc tag @var has no value type specified in iterable type Symfony\\\\Component\\\\HttpFoundation\\\\Session\\\\Session\\.$#"
-			count: 1
-			path: src/Security/TwoFactorAuthManager.php
-
-		-
 			message: "#^Parameter \\#1 \\.\\.\\.\\$addresses of method Symfony\\\\Component\\\\Mime\\\\Email\\:\\:to\\(\\) expects string\\|Symfony\\\\Component\\\\Mime\\\\Address, string\\|null given\\.$#"
 			count: 2
 			path: src/Security/TwoFactorAuthManager.php
@@ -5159,11 +4989,6 @@ parameters:
 			message: "#^Property App\\\\Security\\\\TwoFactorAuthManager\\:\\:\\$options type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Security/TwoFactorAuthManager.php
-
-		-
-			message: "#^Method App\\\\Security\\\\TwoFactorAuthRateLimiter\\:\\:getSubscribedEvents\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Security/TwoFactorAuthRateLimiter.php
 
 		-
 			message: "#^Method App\\\\Security\\\\TwoFactorAuthRateLimiter\\:\\:onAuthAttempt\\(\\) has no return type specified\\.$#"

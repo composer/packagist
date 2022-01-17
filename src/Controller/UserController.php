@@ -166,7 +166,7 @@ class UserController extends Controller
 
         $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage(max(1, (int) $req->query->get('page', 1)));
+        $paginator->setCurrentPage(max(1, $req->query->getInt('page', 1)));
 
         return ['packages' => $paginator, 'user' => $user];
     }
