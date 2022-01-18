@@ -20,6 +20,7 @@ use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -32,7 +33,7 @@ use DateTimeInterface;
  * @UniqueEntity(fields={"usernameCanonical"}, message="There is already an account with this username", errorPath="username")
  * @UniqueEntity(fields={"emailCanonical"}, message="There is already an account with this email", errorPath="email")
  */
-class User implements UserInterface, Serializable, TwoFactorInterface, BackupCodeInterface, EquatableInterface
+class User implements UserInterface, Serializable, TwoFactorInterface, BackupCodeInterface, EquatableInterface, PasswordAuthenticatedUserInterface
 {
     /**
      * @ORM\Id
@@ -366,9 +367,14 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
     {
     }
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->usernameCanonical;
     }
 
     public function getUsername(): ?string
@@ -501,7 +507,7 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         }
     }
 
-    public function isEqualTo(UserInterface $user)
+    public function isEqualTo(UserInterface $user): bool
     {
         if (!$user instanceof User) {
             return false;

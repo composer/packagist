@@ -326,11 +326,6 @@ parameters:
 			path: src/Command/RunWorkersCommand.php
 
 		-
-			message: "#^Parameter \\#5 \\$default of method Symfony\\\\Component\\\\Console\\\\Command\\\\Command\\:\\:addOption\\(\\) expects array\\<string\\>\\|bool\\|string\\|null, int given\\.$#"
-			count: 1
-			path: src/Command/RunWorkersCommand.php
-
-		-
 			message: "#^Method App\\\\Command\\\\SymlinkMetadataMirrorCommand\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Command/SymlinkMetadataMirrorCommand.php
@@ -381,18 +376,8 @@ parameters:
 			path: src/Controller/AboutController.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:getApiToken\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
 			message: "#^Call to an undefined method object\\:\\:getRemoteId\\(\\)\\.$#"
 			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:isEnabled\\(\\)\\.$#"
-			count: 2
 			path: src/Controller/ApiController.php
 
 		-
@@ -491,11 +476,6 @@ parameters:
 			path: src/Controller/ApiController.php
 
 		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:findUser\\(\\) should return App\\\\Entity\\\\User\\|null but returns object\\|null\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
 			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:getJobAction\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Controller/ApiController.php
@@ -556,11 +536,6 @@ parameters:
 			path: src/Controller/ApiController.php
 
 		-
-			message: "#^Parameter \\#1 \\$user of method App\\\\Controller\\\\ApiController\\:\\:findPackagesByUrl\\(\\) expects App\\\\Entity\\\\User, object given\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
 			message: "#^Parameter \\#2 \\$ip of method App\\\\Model\\\\DownloadManager\\:\\:addDownloads\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Controller/ApiController.php
@@ -571,17 +546,7 @@ parameters:
 			path: src/Controller/ApiController.php
 
 		-
-			message: "#^Parameter \\#2 \\$userId of method App\\\\Entity\\\\PackageRepository\\:\\:isPackageMaintainedBy\\(\\) expects int, int\\|null given\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
 			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#3 \\$user of method App\\\\Controller\\\\ApiController\\:\\:findPackagesByRepository\\(\\) expects App\\\\Entity\\\\User\\|null, object given\\.$#"
 			count: 1
 			path: src/Controller/ApiController.php
 
@@ -596,22 +561,12 @@ parameters:
 			path: src/Controller/ApiDocController.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:setPassword\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ChangePasswordController.php
-
-		-
 			message: "#^Method App\\\\Controller\\\\ChangePasswordController\\:\\:changePasswordAction\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Controller/ChangePasswordController.php
 
 		-
-			message: "#^Parameter \\#1 \\$user of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:encodePassword\\(\\) expects Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface, object given\\.$#"
-			count: 1
-			path: src/Controller/ChangePasswordController.php
-
-		-
-			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:encodePassword\\(\\) expects string, mixed given\\.$#"
+			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\PasswordHasher\\\\Hasher\\\\UserPasswordHasherInterface\\:\\:hashPassword\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: src/Controller/ChangePasswordController.php
 
@@ -621,13 +576,8 @@ parameters:
 			path: src/Controller/Controller.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:fetchColumn\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ExploreController.php
-
-		-
 			message: "#^Cannot cast mixed to int\\.$#"
-			count: 2
+			count: 3
 			path: src/Controller/ExploreController.php
 
 		-
@@ -646,12 +596,12 @@ parameters:
 			path: src/Controller/ExploreController.php
 
 		-
-			message: "#^Parameter \\#1 \\$currentPage of method Pagerfanta\\\\Pagerfanta\\:\\:setCurrentPage\\(\\) expects int, mixed given\\.$#"
+			message: "#^Parameter \\#1 \\$nbResults of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects int\\<0, max\\>, int given\\.$#"
 			count: 1
 			path: src/Controller/ExploreController.php
 
 		-
-			message: "#^Parameter \\#2 \\$results of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects iterable, mixed given\\.$#"
+			message: "#^Parameter \\#2 \\$results of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects iterable\\<\\(int\\|string\\), mixed\\>, mixed given\\.$#"
 			count: 1
 			path: src/Controller/ExploreController.php
 
@@ -696,11 +646,6 @@ parameters:
 			path: src/Controller/FeedController.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:getGithubId\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
 			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:connect\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Controller/GitHubLoginController.php
@@ -732,16 +677,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$accessToken of method KnpU\\\\OAuth2ClientBundle\\\\Client\\\\Provider\\\\GithubClient\\:\\:fetchUserFromToken\\(\\) expects League\\\\OAuth2\\\\Client\\\\Token\\\\AccessToken, League\\\\OAuth2\\\\Client\\\\Token\\\\AccessTokenInterface given\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Parameter \\#1 \\$user of method App\\\\Controller\\\\GitHubLoginController\\:\\:disconnectUser\\(\\) expects App\\\\Entity\\\\User, object given\\.$#"
-			count: 2
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Parameter \\#1 \\$userId of method App\\\\Service\\\\Scheduler\\:\\:scheduleUserScopeMigration\\(\\) expects int, int\\|null given\\.$#"
 			count: 1
 			path: src/Controller/GitHubLoginController.php
 
@@ -818,11 +753,6 @@ parameters:
 		-
 			message: "#^Call to an undefined method object\\:\\:getData\\(\\)\\.$#"
 			count: 3
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getGithubToken\\(\\)\\.$#"
-			count: 2
 			path: src/Controller/PackageController.php
 
 		-
@@ -1136,8 +1066,8 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
-			message: "#^Parameter \\#1 \\$maintainer of method App\\\\Entity\\\\Package\\:\\:addMaintainer\\(\\) expects App\\\\Entity\\\\User, object given\\.$#"
-			count: 2
+			message: "#^Parameter \\#1 \\$nbResults of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects int\\<0, max\\>, int given\\.$#"
+			count: 1
 			path: src/Controller/PackageController.php
 
 		-
@@ -1161,7 +1091,7 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
-			message: "#^Parameter \\#1 \\$user of method App\\\\Model\\\\FavoriteManager\\:\\:isMarked\\(\\) expects App\\\\Entity\\\\User, object given\\.$#"
+			message: "#^Parameter \\#1 \\$user of method App\\\\Model\\\\FavoriteManager\\:\\:isMarked\\(\\) expects App\\\\Entity\\\\User, Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface given\\.$#"
 			count: 1
 			path: src/Controller/PackageController.php
 
@@ -1196,8 +1126,8 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:getId\\(\\)\\.$#"
-			count: 2
+			message: "#^Call to an undefined method Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\:\\:getId\\(\\)\\.$#"
+			count: 1
 			path: src/Controller/ProfileController.php
 
 		-
@@ -1221,27 +1151,12 @@ parameters:
 			path: src/Controller/ProfileController.php
 
 		-
-			message: "#^Parameter \\#2 \\$user of method App\\\\Controller\\\\ProfileController\\:\\:getUserPackages\\(\\) expects App\\\\Entity\\\\User, object given\\.$#"
-			count: 1
-			path: src/Controller/ProfileController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\RegistrationController\\:\\:confirmEmail\\(\\) should return Symfony\\\\Component\\\\HttpFoundation\\\\Response but returns Symfony\\\\Component\\\\HttpFoundation\\\\Response\\|null\\.$#"
-			count: 1
-			path: src/Controller/RegistrationController.php
-
-		-
-			message: "#^Parameter \\#1 \\$user of method Symfony\\\\Component\\\\Security\\\\Guard\\\\GuardAuthenticatorHandler\\:\\:authenticateUserAndHandleSuccess\\(\\) expects Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface, object given\\.$#"
-			count: 1
-			path: src/Controller/RegistrationController.php
-
-		-
 			message: "#^Parameter \\#1 \\.\\.\\.\\$addresses of method Symfony\\\\Component\\\\Mime\\\\Email\\:\\:to\\(\\) expects string\\|Symfony\\\\Component\\\\Mime\\\\Address, string\\|null given\\.$#"
 			count: 1
 			path: src/Controller/RegistrationController.php
 
 		-
-			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:encodePassword\\(\\) expects string, mixed given\\.$#"
+			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\PasswordHasher\\\\Hasher\\\\UserPasswordHasherInterface\\:\\:hashPassword\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: src/Controller/RegistrationController.php
 
@@ -1249,51 +1164,6 @@ parameters:
 			message: "#^Property App\\\\Controller\\\\RegistrationController\\:\\:\\$emailVerifier has no type specified\\.$#"
 			count: 1
 			path: src/Controller/RegistrationController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:clearConfirmationToken\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:hasRole\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:isPasswordRequestExpired\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setEnabled\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setPassword\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setPasswordRequestedAt\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ResetPasswordController\\:\\:reset\\(\\) should return Symfony\\\\Component\\\\HttpFoundation\\\\Response but returns Symfony\\\\Component\\\\HttpFoundation\\\\Response\\|null\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Parameter \\#1 \\$user of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:encodePassword\\(\\) expects Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface, object given\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Parameter \\#1 \\$user of method Symfony\\\\Component\\\\Security\\\\Guard\\\\GuardAuthenticatorHandler\\:\\:authenticateUserAndHandleSuccess\\(\\) expects Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface, object given\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
 
 		-
 			message: "#^Parameter \\#1 \\$userEmail of method App\\\\Controller\\\\ResetPasswordController\\:\\:processSendingPasswordResetEmail\\(\\) expects string, mixed given\\.$#"
@@ -1306,7 +1176,7 @@ parameters:
 			path: src/Controller/ResetPasswordController.php
 
 		-
-			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:encodePassword\\(\\) expects string, mixed given\\.$#"
+			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\PasswordHasher\\\\Hasher\\\\UserPasswordHasherInterface\\:\\:hashPassword\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: src/Controller/ResetPasswordController.php
 
@@ -1321,22 +1191,12 @@ parameters:
 			path: src/Controller/UserController.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:getGithubScope\\(\\)\\.$#"
-			count: 2
+			message: "#^Call to an undefined method Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\:\\:getId\\(\\)\\.$#"
+			count: 7
 			path: src/Controller/UserController.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:getGithubToken\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getId\\(\\)\\.$#"
-			count: 8
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Cannot call method getId\\(\\) on object\\|null\\.$#"
+			message: "#^Cannot call method getId\\(\\) on Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\|null\\.$#"
 			count: 1
 			path: src/Controller/UserController.php
 
@@ -1846,7 +1706,7 @@ parameters:
 			path: src/Entity/JobRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:getLastGitHubSyncJob\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:getLastGitHubSyncJob\\(\\) should return App\\\\Entity\\\\Job\\|null but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/JobRepository.php
 
@@ -2221,16 +2081,6 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Cannot call method getMaintainers\\(\\) on mixed\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Cannot call method getVersions\\(\\) on mixed\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Cannot cast mixed to int\\.$#"
 			count: 4
 			path: src/Entity/PackageRepository.php
@@ -2262,6 +2112,11 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getCountByYearMonth\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependentCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -2436,6 +2291,11 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuspectPackageCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuspectPackages\\(\\) has parameter \\$limit with no type specified\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
@@ -2458,21 +2318,6 @@ parameters:
 		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:iterateStaleDownloadCountPackageIds\\(\\) has no return type specified\\.$#"
 			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Parameter \\#1 \\$class of class ReflectionProperty constructor expects object\\|string, mixed given\\.$#"
-			count: 2
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Parameter \\#1 \\$entity of method Doctrine\\\\ORM\\\\EntityManager\\:\\:refresh\\(\\) expects object, mixed given\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Parameter \\#1 \\$objectOrValue of method ReflectionProperty\\:\\:setValue\\(\\) expects object\\|null, mixed given\\.$#"
-			count: 2
 			path: src/Entity/PackageRepository.php
 
 		-
@@ -2909,21 +2754,6 @@ parameters:
 			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$usernameCanonical \\(string\\) does not accept string\\|null\\.$#"
 			count: 1
 			path: src/Entity/User.php
-
-		-
-			message: "#^Class App\\\\Entity\\\\UserRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/UserRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\UserRepository\\:\\:findOneByUsernameOrEmail\\(\\) should return App\\\\Entity\\\\User\\|null but returns object\\.$#"
-			count: 1
-			path: src/Entity/UserRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\UserRepository\\:\\:findOneByUsernameOrEmail\\(\\) should return App\\\\Entity\\\\User\\|null but returns object\\|null\\.$#"
-			count: 1
-			path: src/Entity/UserRepository.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\UserRepository\\:\\:findUsersMissingApiToken\\(\\) should return array\\<int, App\\\\Entity\\\\User\\> but returns mixed\\.$#"
@@ -3516,6 +3346,11 @@ parameters:
 			path: src/Entity/VersionRepository.php
 
 		-
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getEntityManager\\(\\) should return Doctrine\\\\ORM\\\\EntityManager but returns Doctrine\\\\ORM\\\\EntityManagerInterface\\.$#"
+			count: 1
+			path: src/Entity/VersionRepository.php
+
+		-
 			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getFullVersion\\(\\) should return App\\\\Entity\\\\Version but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
@@ -3581,7 +3416,7 @@ parameters:
 			path: src/EventListener/CacheListener.php
 
 		-
-			message: "#^Parameter \\#2 \\$values of method Symfony\\\\Component\\\\HttpFoundation\\\\ResponseHeaderBag\\:\\:set\\(\\) expects array\\<string\\>\\|string, mixed given\\.$#"
+			message: "#^Parameter \\#2 \\$values of method Symfony\\\\Component\\\\HttpFoundation\\\\ResponseHeaderBag\\:\\:set\\(\\) expects array\\<string\\>\\|string\\|null, string\\|true given\\.$#"
 			count: 1
 			path: src/EventListener/CacheListener.php
 
@@ -3769,11 +3604,6 @@ parameters:
 			message: "#^Generator expects value type Symfony\\\\Component\\\\HttpKernel\\\\Bundle\\\\BundleInterface, object given\\.$#"
 			count: 1
 			path: src/Kernel.php
-
-		-
-			message: "#^Cannot call method getUsername\\(\\) on string\\|Stringable\\|Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\.$#"
-			count: 1
-			path: src/Menu/MenuBuilder.php
 
 		-
 			message: "#^Method App\\\\Menu\\\\MenuBuilder\\:\\:addProfileMenu\\(\\) has no return type specified\\.$#"
@@ -4052,11 +3882,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:__construct\\(\\) has parameter \\$model with no type specified\\.$#"
-			count: 1
-			path: src/Model/RedisAdapter.php
-
-		-
-			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:getSlice\\(\\) return type has no value type specified in iterable type iterable\\.$#"
 			count: 1
 			path: src/Model/RedisAdapter.php
 
@@ -4796,42 +4621,12 @@ parameters:
 			path: src/Redis/FailedLoginCounter.php
 
 		-
-			message: "#^Cannot access offset 'password' on mixed\\.$#"
-			count: 2
-			path: src/Security/BruteForceLoginFormAuthenticator.php
-
-		-
-			message: "#^Cannot access offset 'username' on mixed\\.$#"
-			count: 1
-			path: src/Security/BruteForceLoginFormAuthenticator.php
-
-		-
-			message: "#^Method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:getPassword\\(\\) should return string\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Security/BruteForceLoginFormAuthenticator.php
-
-		-
-			message: "#^Method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:onAuthenticationSuccess\\(\\) has parameter \\$providerKey with no type specified\\.$#"
+			message: "#^Method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:getCredentials\\(\\) should return array\\{username\\: string, password\\: string, ip\\: string\\|null, recaptcha\\: string\\} but returns array\\{username\\: string, password\\: bool\\|float\\|int\\|string\\|null, ip\\: string\\|null, recaptcha\\: bool\\|float\\|int\\|string\\|null\\}\\.$#"
 			count: 1
 			path: src/Security/BruteForceLoginFormAuthenticator.php
 
 		-
 			message: "#^Method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:validateRecaptcha\\(\\) has parameter \\$credentials with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Security/BruteForceLoginFormAuthenticator.php
-
-		-
-			message: "#^Parameter \\#1 \\$credentials of method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:validateRecaptcha\\(\\) expects array, mixed given\\.$#"
-			count: 1
-			path: src/Security/BruteForceLoginFormAuthenticator.php
-
-		-
-			message: "#^Parameter \\#1 \\$username of method Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserProviderInterface\\:\\:loadUserByUsername\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: src/Security/BruteForceLoginFormAuthenticator.php
-
-		-
-			message: "#^Parameter \\#2 \\$raw of method Symfony\\\\Component\\\\Security\\\\Core\\\\Encoder\\\\UserPasswordEncoderInterface\\:\\:isPasswordValid\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: src/Security/BruteForceLoginFormAuthenticator.php
 
@@ -4844,16 +4639,6 @@ parameters:
 			message: "#^Property App\\\\Security\\\\EmailVerifier\\:\\:\\$verifyEmailHelper has no type specified\\.$#"
 			count: 1
 			path: src/Security/EmailVerifier.php
-
-		-
-			message: "#^Class App\\\\Security\\\\ExceptionListener extends @final class Symfony\\\\Component\\\\Security\\\\Http\\\\Firewall\\\\ExceptionListener\\.$#"
-			count: 1
-			path: src/Security/ExceptionListener.php
-
-		-
-			message: "#^Method App\\\\Security\\\\ExceptionListener\\:\\:setTargetPath\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Security/ExceptionListener.php
 
 		-
 			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
@@ -4872,31 +4657,6 @@ parameters:
 
 		-
 			message: "#^Cannot access offset 'verified' on mixed\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Cannot call method getToken\\(\\) on mixed\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Cannot call method getValues\\(\\) on mixed\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Method App\\\\Security\\\\GitHubAuthenticator\\:\\:getUser\\(\\) should return Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\|null but returns object\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Method App\\\\Security\\\\GitHubAuthenticator\\:\\:onAuthenticationSuccess\\(\\) has parameter \\$providerKey with no type specified\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Parameter \\#1 \\$accessToken of method KnpU\\\\OAuth2ClientBundle\\\\Client\\\\Provider\\\\GithubClient\\:\\:fetchUserFromToken\\(\\) expects League\\\\OAuth2\\\\Client\\\\Token\\\\AccessToken, mixed given\\.$#"
 			count: 1
 			path: src/Security/GitHubAuthenticator.php
 
@@ -4926,27 +4686,7 @@ parameters:
 			path: src/Security/GitHubAuthenticator.php
 
 		-
-			message: "#^Parameter \\#3 \\$token of method League\\\\OAuth2\\\\Client\\\\Provider\\\\AbstractProvider\\:\\:getAuthenticatedRequest\\(\\) expects League\\\\OAuth2\\\\Client\\\\Token\\\\AccessTokenInterface\\|string, mixed given\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
 			message: "#^Method App\\\\Security\\\\Provider\\\\UserProvider\\:\\:loadUserByUsername\\(\\) has parameter \\$usernameOrEmail with no type specified\\.$#"
-			count: 1
-			path: src/Security/Provider/UserProvider.php
-
-		-
-			message: "#^Method App\\\\Security\\\\Provider\\\\UserProvider\\:\\:loadUserByUsername\\(\\) should return Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface but returns App\\\\Entity\\\\User\\|null\\.$#"
-			count: 1
-			path: src/Security/Provider/UserProvider.php
-
-		-
-			message: "#^Method App\\\\Security\\\\Provider\\\\UserProvider\\:\\:refreshUser\\(\\) should return Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface but returns object\\|null\\.$#"
-			count: 1
-			path: src/Security/Provider/UserProvider.php
-
-		-
-			message: "#^Method App\\\\Security\\\\Provider\\\\UserProvider\\:\\:supportsClass\\(\\) has parameter \\$class with no type specified\\.$#"
 			count: 1
 			path: src/Security/Provider/UserProvider.php
 
@@ -4991,16 +4731,6 @@ parameters:
 			path: src/Security/TwoFactorAuthManager.php
 
 		-
-			message: "#^Method App\\\\Security\\\\TwoFactorAuthRateLimiter\\:\\:onAuthAttempt\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Security/TwoFactorAuthRateLimiter.php
-
-		-
-			message: "#^Method App\\\\Security\\\\TwoFactorAuthRateLimiter\\:\\:onAuthFailure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Security/TwoFactorAuthRateLimiter.php
-
-		-
 			message: "#^Call to an undefined method object\\:\\:getId\\(\\)\\.$#"
 			count: 1
 			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
@@ -5031,21 +4761,6 @@ parameters:
 			path: src/SecurityAdvisory/RemoteSecurityAdvisory.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:getGithubToken\\(\\)\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getUsername\\(\\)\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Cannot call method getBody\\(\\) on Psr\\\\Http\\\\Message\\\\ResponseInterface\\|null\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
 			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:getGitHubHookData\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Service/GitHubUserMigrationWorker.php
@@ -5072,11 +4787,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:setupWebHook\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Parameter \\#2 \\.\\.\\.\\$arrays of function array_merge expects array, mixed given\\.$#"
 			count: 1
 			path: src/Service/GitHubUserMigrationWorker.php
 
@@ -5362,71 +5072,6 @@ parameters:
 
 		-
 			message: "#^Cannot call method getClientIp\\(\\) on Symfony\\\\Component\\\\HttpFoundation\\\\Request\\|null\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:generateGravatarHash\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:generateGravatarHash\\(\\) has parameter \\$email with no type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:getName\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:numericTest\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:numericTest\\(\\) has parameter \\$val with no type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:packageExistsTest\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:packageExistsTest\\(\\) has parameter \\$package with no type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:prettifySourceReference\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:prettifySourceReference\\(\\) has parameter \\$sourceReference with no type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:providerExistsTest\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:providerExistsTest\\(\\) has parameter \\$package with no type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:sortLinks\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Twig\\\\PackagistExtension\\:\\:sortLinks\\(\\) has parameter \\$links with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Twig/PackagistExtension.php
 

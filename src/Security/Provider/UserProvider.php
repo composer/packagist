@@ -16,6 +16,7 @@ use App\Entity\UserRepository;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\User;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
@@ -35,12 +36,21 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         $this->scheduler = $scheduler;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function loadUserByUsername($usernameOrEmail)
+    public function loadUserByIdentifier(string $usernameOrEmail): User
     {
-        return $this->getRepo()->findOneByUsernameOrEmail((string) $usernameOrEmail);
+        $user = $this->getRepo()->findOneByUsernameOrEmail((string) $usernameOrEmail);
+
+        if (null === $user) {
+            throw new UserNotFoundException();
+        }
+
+        return $user;
+    }
+
+    // TODO delete in Symfony6
+    public function loadUserByUsername($usernameOrEmail): User
+    {
+        return $this->loadUserByIdentifier($usernameOrEmail);
     }
 
     /**
@@ -72,10 +82,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         $this->getEM()->flush();
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function supportsClass($class)
+    public function supportsClass(string $class): bool
     {
         return User::class === $class || is_subclass_of($class, User::class);
     }

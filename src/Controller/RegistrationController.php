@@ -7,6 +7,7 @@ use App\Form\RegistrationFormType;
 use App\Security\EmailVerifier;
 use App\Security\BruteForceLoginFormAuthenticator;
 use App\Entity\UserRepository;
+use App\Security\UserChecker;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use Doctrine\Persistence\ManagerRegistry;
@@ -14,9 +15,11 @@ use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Guard\GuardAuthenticatorHandler;
+use Symfony\Component\Security\Http\Authentication\UserAuthenticatorInterface;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
 class RegistrationController extends Controller
@@ -31,7 +34,7 @@ class RegistrationController extends Controller
     /**
      * @Route("/register/", name="register")
      */
-    public function register(Request $request, UserPasswordEncoderInterface $passwordEncoder, string $mailFromEmail, string $mailFromName, RecaptchaVerifier $recaptchaVerifier): Response
+    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, string $mailFromEmail, string $mailFromName, RecaptchaVerifier $recaptchaVerifier): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('home');
@@ -52,7 +55,7 @@ class RegistrationController extends Controller
 
             // encode the plain password
             $user->setPassword(
-                $passwordEncoder->encodePassword(
+                $passwordHasher->hashPassword(
                     $user,
                     $form->get('plainPassword')->getData()
                 )
@@ -85,7 +88,7 @@ class RegistrationController extends Controller
     /**
      * @Route("/register/verify", name="register_confirm_email")
      */
-    public function confirmEmail(Request $request, UserRepository $userRepository, GuardAuthenticatorHandler $guardHandler, BruteForceLoginFormAuthenticator $authenticator): Response
+    public function confirmEmail(Request $request, UserRepository $userRepository, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator): Response
     {
         $id = $request->get('id');
 
@@ -110,11 +113,16 @@ class RegistrationController extends Controller
 
         $this->addFlash('success', 'Your email address has been verified. You are now logged in.');
 
-        return $guardHandler->authenticateUserAndHandleSuccess(
-            $user,
-            $request,
-            $authenticator,
-            'main' // firewall name in security.yaml
-        );
+        try {
+            $userChecker->checkPreAuth($user);
+        } catch (AuthenticationException $e) {
+            // skip authenticating if any pre-auth check does not pass
+        }
+
+        if ($response = $userAuthenticator->authenticateUser($user, $authenticator, $request)) {
+            return $response;
+        }
+
+        return $this->redirectToRoute('home');
     }
 }

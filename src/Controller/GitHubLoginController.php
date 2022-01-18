@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class GitHubLoginController extends Controller
 {
@@ -63,16 +64,12 @@ class GitHubLoginController extends Controller
      *
      * @Route("/connect/github/check", name="connect_github_check")
      */
-    public function connectCheck(Request $request, ClientRegistry $clientRegistry, Scheduler $scheduler)
+    public function connectCheck(Request $request, ClientRegistry $clientRegistry, Scheduler $scheduler, #[CurrentUser] User $user)
     {
         /** @var \KnpU\OAuth2ClientBundle\Client\Provider\GithubClient $client */
         $client = $clientRegistry->getClient('github');
         try {
             $token = $client->getAccessToken();
-            $user = $this->getUser();
-            if (!$user instanceof User) {
-                throw $this->createAccessDeniedException('This user does not have access to this section.');
-            }
             if ($user->getGithubId()) {
                 $this->addFlash('error', 'You must disconnect your GitHub account before you can connect a new one.');
 
@@ -130,11 +127,9 @@ class GitHubLoginController extends Controller
     /**
      * @Route("/oauth/github/disconnect", name="user_github_disconnect")
      */
-    public function disconnect(Request $req, CsrfTokenManagerInterface $csrfTokenManager)
+    public function disconnect(Request $req, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] User $user)
     {
-        $user = $this->getUser();
-        $token = $csrfTokenManager->getToken('unlink_github')->getValue();
-        if (!hash_equals($token, $req->query->get('token', '')) || !$user) {
+        if (!$this->isCsrfTokenValid('unlink_github', $req->query->get('token', ''))) {
             throw new AccessDeniedException('Invalid CSRF token');
         }
 

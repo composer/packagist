@@ -37,7 +37,7 @@ class AddMaintainerRequestType extends AbstractType
     /**
      * @inheritDoc
      */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'add_maintainer_form';
     }

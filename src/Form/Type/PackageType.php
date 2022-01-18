@@ -44,7 +44,7 @@ class PackageType extends AbstractType
     /**
      * @inheritDoc
      */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'package';
     }

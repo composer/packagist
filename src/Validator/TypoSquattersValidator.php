@@ -71,7 +71,7 @@ class TypoSquattersValidator extends ConstraintValidator
                     return;
                 }
 
-                $req = $this->requestStack->getMasterRequest();
+                $req = $this->requestStack->getMainRequest();
                 if ($req && $req->attributes->get('_route') !== 'submit.fetch_info') {
                     $message = (new Email())
                         ->subject($value->getName().' is suspiciously close to '.$existingPackage['name'])

@@ -35,7 +35,7 @@ class JobRepository extends ServiceEntityRepository
         ]);
     }
 
-    public function getLastGitHubSyncJob(int $userId)
+    public function getLastGitHubSyncJob(int $userId): ?Job
     {
         return $this->createQueryBuilder('j')
             ->where('j.packageId = :userId')

@@ -39,6 +39,7 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Predis\Client as RedisClient;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Endroid\QrCode\Builder\Builder;
@@ -63,13 +64,8 @@ class UserController extends Controller
     /**
      * @Route("/trigger-github-sync/", name="user_github_sync")
      */
-    public function triggerGitHubSyncAction()
+    public function triggerGitHubSyncAction(#[CurrentUser] User $user)
     {
-        $user = $this->getUser();
-        if (!$user) {
-            throw new AccessDeniedException();
-        }
-
         if (!$user->getGithubToken()) {
             $this->addFlash('error', 'You must connect your user account to github to sync packages.');
 
@@ -361,8 +357,7 @@ class UserController extends Controller
             throw new AccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        $token = $csrfTokenManager->getToken('disable_2fa')->getValue();
-        if (hash_equals($token, $req->query->get('token', ''))) {
+        if ($this->isCsrfTokenValid('disable_2fa', $req->query->get('token', ''))) {
             $authManager->disableTwoFactorAuth($user, 'Manually disabled');
 
             $this->addFlash('success', 'Two-factor authentication has been disabled.');

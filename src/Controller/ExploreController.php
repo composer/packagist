@@ -40,14 +40,12 @@ class ExploreController extends Controller
      */
     public function exploreAction(RedisClient $redis)
     {
-        /** @var PackageRepository $pkgRepo */
-        $pkgRepo = $this->doctrine->getRepository(Package::class);
-        /** @var VersionRepository $verRepo */
-        $verRepo = $this->doctrine->getRepository(Version::class);
+        $pkgRepo = $this->getEM()->getRepository(Package::class);
+        $verRepo = $this->getEM()->getRepository(Version::class);
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
             ->getQuery()->enableResultCache(60)->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
-        $maxId = $this->doctrine->getConnection()->fetchColumn('SELECT max(id) FROM package');
+        $maxId = (int) $this->getEM()->getConnection()->fetchOne('SELECT max(id) FROM package');
         $random = $pkgRepo
             ->createQueryBuilder('p')->where('p.id >= :randId')->andWhere('p.abandoned = 0')
             ->setParameter('randId', rand(1, $maxId))->setMaxResults(10)
@@ -90,15 +88,15 @@ class ExploreController extends Controller
                     ], 400);
                 }
 
-                $perPage = max(0, min(100, $perPage));
             }
+            $perPage = max(1, min(100, $perPage));
 
             $popularIds = $redis->zrevrange(
                 'downloads:trending',
                 (max(1, (int) $req->get('page', 1)) - 1) * $perPage,
                 max(1, (int) $req->get('page', 1)) * $perPage - 1
             );
-            $popular = $this->doctrine->getRepository(Package::class)
+            $popular = $this->getEM()->getRepository(Package::class)
                 ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
                 ->getQuery()->enableResultCache(900)->getResult();
             usort($popular, function ($a, $b) use ($popularIds) {
@@ -108,7 +106,7 @@ class ExploreController extends Controller
             $packages = new Pagerfanta(new FixedAdapter($redis->zcard('downloads:trending'), $popular));
             $packages->setNormalizeOutOfRangePages(true);
             $packages->setMaxPerPage($perPage);
-            $packages->setCurrentPage($req->get('page', 1));
+            $packages->setCurrentPage(max(1, $req->query->getInt('page', 1)));
         } catch (ConnectionException $e) {
             $packages = new Pagerfanta(new FixedAdapter(0, []));
         }

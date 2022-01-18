@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Form\ResetPasswordFormType;
 use App\Form\ResetPasswordRequestFormType;
 use App\Security\BruteForceLoginFormAuthenticator;
+use App\Security\UserChecker;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -15,9 +16,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
-use Symfony\Component\Security\Guard\GuardAuthenticatorHandler;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Http\Authentication\UserAuthenticatorInterface;
 
 class ResetPasswordController extends Controller
 {
@@ -76,7 +78,7 @@ class ResetPasswordController extends Controller
      *
      * @Route("/reset-password/reset/{token}", name="do_pwd_reset")
      */
-    public function reset(Request $request, UserPasswordEncoderInterface $passwordEncoder, GuardAuthenticatorHandler $guardHandler, BruteForceLoginFormAuthenticator $authenticator, string $token = null): Response
+    public function reset(Request $request, UserPasswordHasherInterface $passwordHasher, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator, string $token = null): Response
     {
         if (null === $token) {
             throw $this->createNotFoundException('No reset password token found in the URL or in the session.');
@@ -101,20 +103,26 @@ class ResetPasswordController extends Controller
             }
 
             // Encode the plain password, and set it.
-            $encodedPassword = $passwordEncoder->encodePassword(
+            $encodedPassword = $passwordHasher->hashPassword(
                 $user,
                 $form->get('plainPassword')->getData()
             );
 
             $user->setPassword($encodedPassword);
+            $this->getEM()->persist($user);
             $this->getEM()->flush();
 
-            return $guardHandler->authenticateUserAndHandleSuccess(
-                $user,
-                $request,
-                $authenticator,
-                'main' // firewall name in security.yaml
-            );
+            try {
+                $userChecker->checkPreAuth($user);
+            } catch (AuthenticationException $e) {
+                // skip authenticating if any pre-auth check does not pass
+            }
+
+            if ($response = $userAuthenticator->authenticateUser($user, $authenticator, $request)) {
+                return $response;
+            }
+
+            return $this->redirectToRoute('home');
         }
 
         return $this->render('reset_password/reset.html.twig', [

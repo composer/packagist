@@ -46,7 +46,7 @@ class CopyrightValidator extends ConstraintValidator
             'symfony' => 'fabien@symfony.com',
         ];
 
-        $req = $this->requestStack->getMasterRequest();
+        $req = $this->requestStack->getMainRequest();
         if (!$req || $req->attributes->get('_route') === 'submit.fetch_info') {
             return;
         }

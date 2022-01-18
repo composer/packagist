@@ -10,8 +10,11 @@ use App\Entity\User;
 use App\Entity\Job;
 use App\Util\DoctrineTrait;
 use Seld\Signal\SignalHandler;
-use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Response;
+use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
+use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class GitHubUserMigrationWorker
 {
@@ -20,17 +23,12 @@ class GitHubUserMigrationWorker
     const HOOK_URL = 'https://packagist.org/api/github';
     const HOOK_URL_ALT = 'https://packagist.org/api/update-package';
 
-    private LoggerInterface $logger;
-    private ManagerRegistry $doctrine;
-    private Client $guzzle;
-    private string $githubWebhookSecret;
-
-    public function __construct(LoggerInterface $logger, ManagerRegistry $doctrine, Client $guzzle, string $githubWebhookSecret)
-    {
-        $this->logger = $logger;
-        $this->doctrine = $doctrine;
-        $this->guzzle = $guzzle;
-        $this->githubWebhookSecret = $githubWebhookSecret;
+    public function __construct(
+        private LoggerInterface $logger,
+        private ManagerRegistry $doctrine,
+        private NoPrivateNetworkHttpClient $httpClient,
+        private string $githubWebhookSecret,
+    ) {
     }
 
     public function process(Job $job, SignalHandler $signal): array
@@ -65,7 +63,7 @@ class GitHubUserMigrationWorker
                 }
                 // null result means not processed as not a github-like URL
             }
-        } catch (\GuzzleHttp\Exception\ServerException | \GuzzleHttp\Exception\ConnectException $e) {
+        } catch (TransportExceptionInterface | DecodingExceptionInterface | HttpExceptionInterface $e) {
             return [
                 'status' => Job::STATUS_RESCHEDULE,
                 'message' => 'Got error, rescheduling: '.$e->getMessage(),
@@ -137,7 +135,7 @@ class GitHubUserMigrationWorker
                 $this->logger->debug('Creating hook');
                 $resp = $this->request($token, 'POST', 'repos/'.$repoKey.'/hooks', $hookData);
                 if ($resp->getStatusCode() === 201) {
-                    $hooks[] = json_decode((string) $resp->getBody(), true);
+                    $hooks[] = $resp->toArray();
                     $changed = true;
                 }
             }
@@ -148,14 +146,14 @@ class GitHubUserMigrationWorker
                     $this->getEM()->flush($package);
                 }
             }
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
+        } catch (HttpExceptionInterface $e) {
             if ($msg = $this->isAcceptableException($e)) {
                 $this->logger->debug($msg);
 
                 return $msg;
             }
 
-            $this->logger->error('Rejected GitHub hook request', ['response' => (string) $e->getResponse()->getBody()]);
+            $this->logger->error('Rejected GitHub hook request', ['response' => (string) $e->getResponse()->getContent(false)]);
 
             throw $e;
         }
@@ -182,7 +180,7 @@ class GitHubUserMigrationWorker
                     $this->request($token, 'DELETE', 'repos/'.$repoKey.'/hooks/'.$hook['id']);
                 }
             }
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
+        } catch (HttpExceptionInterface $e) {
             if ($msg = $this->isAcceptableException($e)) {
                 $this->logger->debug($msg);
 
@@ -202,9 +200,9 @@ class GitHubUserMigrationWorker
 
         do {
             $resp = $this->request($token, 'GET', 'repos/'.$repoKey.'/hooks'.$page);
-            $hooks = array_merge($hooks, json_decode((string) $resp->getBody(), true));
+            $hooks = array_merge($hooks, $resp->toArray());
             $hasNext = false;
-            foreach ($resp->getHeader('Link') as $header) {
+            foreach ($resp->getHeaders()['link'] ?? [] as $header) {
                 if (Preg::isMatch('{<https://api.github.com/resource?page=(?P<page>\d+)>; rel="next"}', $header, $match)) {
                     $hasNext = true;
                     $page = '?page='.$match['page'];
@@ -215,18 +213,17 @@ class GitHubUserMigrationWorker
         return $hooks;
     }
 
-    private function request(string $token, string $method, string $url, array $json = null): Response
+    private function request(string $token, string $method, string $url, array $json = null): ResponseInterface
     {
         $opts = [
-            'headers' => ['Accept' => 'application/vnd.github.v3+json', 'Authorization' => 'token '.$token],
+            'headers' => ['Accept: application/vnd.github.v3+json', 'Authorization: token '.$token],
         ];
 
         if ($json) {
             $opts['json'] = $json;
         }
 
-        /** @var Response $response */
-        $response = $this->guzzle->request($method, 'https://api.github.com/' . $url, $opts);
+        $response = $this->httpClient->request($method, 'https://api.github.com/' . $url, $opts);
 
         return $response;
     }
@@ -248,15 +245,25 @@ class GitHubUserMigrationWorker
         ];
     }
 
-    private function isAcceptableException(\Throwable $e)
+    private function isAcceptableException(HttpExceptionInterface $e)
     {
+        $message = $e->getResponse()->toArray(false)['message'];
+
         // repo not found probably means the user does not have admin access to it on github
         if ($e->getCode() === 404) {
             return 'GitHub user has no admin access to the repository, or Packagist was not granted access to the organization (<a href="https://github.com/settings/connections/applications/a059f127e1c09c04aa5a">check here</a>)';
         }
 
-        if ($e->getCode() === 403 && strpos($e->getMessage(), 'Repository was archived so is read-only') !== false) {
+        if ($e->getCode() === 403 && str_contains($message, 'Repository was archived so is read-only')) {
             return 'The repository is archived and read-only';
+        }
+
+        if ($e->getCode() === 403) {
+            return $message;
+        }
+
+        if ($e->getCode() === 401 && str_contains($message, 'Bad credentials')) {
+            return 'Invalid credentials to access this repository';
         }
 
         return false;

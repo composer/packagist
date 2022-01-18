@@ -45,7 +45,7 @@ class AbandonedType extends AbstractType
     /**
      * @inheritDoc
      */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'package';
     }

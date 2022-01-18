@@ -131,7 +131,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
      *
      * @return bool
      */
-    public function isBackupCode($user, string $code): bool
+    public function isBackupCode(object $user, string $code): bool
     {
         if ($user instanceof BackupCodeInterface) {
             return $user->isBackupCode($code);
@@ -148,7 +148,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
      * @param User   $user
      * @param string $code
      */
-    public function invalidateBackupCode($user, string $code): void
+    public function invalidateBackupCode(object $user, string $code): void
     {
         if ($user instanceof BackupCodeInterface) {
             $this->disableTwoFactorAuth($user, 'Backup code used');

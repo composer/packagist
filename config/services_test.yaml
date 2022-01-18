@@ -9,4 +9,3 @@ services:
 
     App\Service\Scheduler:
         public: true
-

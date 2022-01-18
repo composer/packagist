@@ -26,9 +26,6 @@
     "cebe/markdown": {
         "version": "1.2.1"
     },
-    "clue/stream-filter": {
-        "version": "v1.5.0"
-    },
     "composer/ca-bundle": {
         "version": "1.2.9"
     },
@@ -197,9 +194,6 @@
     "laminas/laminas-stdlib": {
         "version": "3.3.1"
     },
-    "laminas/laminas-zendframework-bridge": {
-        "version": "1.1.1"
-    },
     "lcobucci/clock": {
         "version": "2.0.0"
     },
@@ -253,45 +247,6 @@
     },
     "paragonie/constant_time_encoding": {
         "version": "v2.4.0"
-    },
-    "php-http/client-common": {
-        "version": "2.3.0"
-    },
-    "php-http/discovery": {
-        "version": "1.13.0"
-    },
-    "php-http/guzzle6-adapter": {
-        "version": "v2.0.1"
-    },
-    "php-http/httplug": {
-        "version": "2.2.0"
-    },
-    "php-http/httplug-bundle": {
-        "version": "1.6",
-        "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
-            "version": "1.6",
-            "ref": "87b3d491d593d2c6e3b90bf0689ac69a188bfa5f"
-        },
-        "files": [
-            "config/packages/httplug.yaml"
-        ]
-    },
-    "php-http/logger-plugin": {
-        "version": "1.2.1"
-    },
-    "php-http/message": {
-        "version": "1.10.0"
-    },
-    "php-http/message-factory": {
-        "version": "v1.0.2"
-    },
-    "php-http/promise": {
-        "version": "1.1.0"
-    },
-    "php-http/stopwatch-plugin": {
-        "version": "1.4.0"
     },
     "phpdocumentor/reflection-common": {
         "version": "2.2.0"
@@ -583,6 +538,9 @@
     "symfony/options-resolver": {
         "version": "v4.4.16"
     },
+    "symfony/password-hasher": {
+        "version": "v5.4.2"
+    },
     "symfony/phpunit-bridge": {
         "version": "5.1",
         "recipe": {
@@ -621,6 +579,9 @@
     },
     "symfony/polyfill-php80": {
         "version": "v1.22.0"
+    },
+    "symfony/polyfill-php81": {
+        "version": "v1.24.0"
     },
     "symfony/process": {
         "version": "v4.4.16"
