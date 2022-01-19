@@ -20,6 +20,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method Suggester|null findOneBy(array $criteria, array $orderBy = null)
  * @method Suggester[]    findAll()
  * @method Suggester[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends ServiceEntityRepository<Suggester>
  */
 class SuggesterRepository extends ServiceEntityRepository
 {

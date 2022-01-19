@@ -29,9 +29,7 @@ class Scheduler
         }
 
         $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateEqualRefs, $deleteBefore);
-        if ($pendingJobId) {
-            $pendingJob = $this->getEM()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId]);
-
+        if ($pendingJobId && ($pendingJob = $this->getEM()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId])) !== null) {
             // pending job will execute before the one we are trying to schedule so skip scheduling
             if (
                 (!$pendingJob->getExecuteAfter() && $executeAfter)

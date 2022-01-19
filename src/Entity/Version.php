@@ -15,6 +15,8 @@ namespace App\Entity;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use DateTimeInterface;
@@ -38,33 +40,34 @@ class Version
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue(strategy="AUTO")
      */
-    private $id;
+    private int $id;
 
     /**
      * @ORM\Column
      * @Assert\NotBlank()
      */
-    private $name;
+    private string $name;
 
     /**
      * @ORM\Column(type="text", nullable=true)
      */
-    private $description;
+    private string|null $description = null;
 
     /**
      * @ORM\Column(nullable=true)
      */
-    private $type;
+    private string|null $type = null;
 
     /**
      * @ORM\Column(nullable=true)
      */
-    private $targetDir;
+    private string|null $targetDir = null;
 
     /**
      * @ORM\Column(type="array", nullable=true)
+     * @var array<mixed>
      */
-    private $extra = [];
+    private array $extra = [];
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\Tag", inversedBy="versions")
@@ -72,43 +75,44 @@ class Version
      *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
      *     inverseJoinColumns={@ORM\JoinColumn(name="tag_id", referencedColumnName="id")}
      * )
+     * @var Collection<int, Tag>&Selectable<int, Tag>
      */
-    private $tags;
+    private Collection $tags;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Package", fetch="EAGER", inversedBy="versions")
      * @Assert\Type(type="App\Entity\Package")
      */
-    private $package;
+    private Package $package;
 
     /**
      * @ORM\Column(nullable=true)
      * @Assert\Url()
      */
-    private $homepage;
+    private string|null $homepage = null;
 
     /**
      * @ORM\Column
      * @Assert\NotBlank()
      */
-    private $version;
+    private string $version;
 
     /**
      * @ORM\Column(length=191)
      * @Assert\NotBlank()
      */
-    private $normalizedVersion;
+    private string $normalizedVersion;
 
     /**
      * @ORM\Column(type="boolean")
      * @Assert\NotBlank()
      */
-    private $development;
+    private bool $development;
 
     /**
      * @ORM\Column(type="text", nullable=true)
      */
-    private $license;
+    private string $license;
 
     /**
      * Deprecated relation table, use the authorJson property instead
@@ -118,83 +122,92 @@ class Version
      *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
      *     inverseJoinColumns={@ORM\JoinColumn(name="author_id", referencedColumnName="id")}
      * )
+     * @var Collection<int, Author>&Selectable<int, Author>
      */
-    private $authors;
+    private Collection $authors;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\RequireLink", mappedBy="version")
+     * @var Collection<int, RequireLink>&Selectable<int, RequireLink>
      */
-    private $require;
+    private Collection $require;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\ReplaceLink", mappedBy="version")
+     * @var Collection<int, ReplaceLink>&Selectable<int, ReplaceLink>
      */
-    private $replace;
+    private Collection $replace;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\ConflictLink", mappedBy="version")
+     * @var Collection<int, ConflictLink>&Selectable<int, ConflictLink>
      */
-    private $conflict;
+    private Collection $conflict;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\ProvideLink", mappedBy="version")
+     * @var Collection<int, ProvideLink>&Selectable<int, ProvideLink>
      */
-    private $provide;
+    private Collection $provide;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\DevRequireLink", mappedBy="version")
+     * @var Collection<int, DevRequireLink>&Selectable<int, DevRequireLink>
      */
-    private $devRequire;
+    private Collection $devRequire;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\SuggestLink", mappedBy="version")
+     * @var Collection<int, SuggestLink>&Selectable<int, SuggestLink>
      */
-    private $suggest;
+    private Collection $suggest;
 
     /**
      * @ORM\Column(type="text", nullable=true)
      */
-    private $source;
+    private string|null $source = null;
 
     /**
      * @ORM\Column(type="text", nullable=true)
      */
-    private $dist;
+    private string|null $dist = null;
 
     /**
      * @ORM\Column(type="text", nullable=true)
      */
-    private $autoload;
+    private string $autoload;
 
     /**
      * @ORM\Column(type="text", nullable=true)
      */
-    private $binaries;
+    private string|null $binaries = null;
 
     /**
      * @ORM\Column(type="text", nullable=true)
      */
-    private $includePaths;
+    private string|null $includePaths = null;
 
     /**
      * @ORM\Column(type="text", nullable=true)
      */
-    private $support;
+    private string|null $support = null;
 
     /**
      * @ORM\Column(type="json", nullable=true)
+     * @var array<array{type?: string, url?: string}>|null
      */
-    private $funding;
+    private array|null $funding = null;
 
     /**
      * @ORM\Column(name="authors", type="json", nullable=true)
+     * @var array<array{name?: string, homepage?: string, email?: string, role?: string}>|null
      */
-    private $authorJson;
+    private array|null $authorJson = null;
 
     /**
      * @ORM\Column(name="defaultBranch", type="boolean", options={"default": false})
      */
-    private $isDefaultBranch = false;
+    private bool $isDefaultBranch = false;
 
     /**
      * @ORM\Column(type="datetime")
@@ -204,7 +217,7 @@ class Version
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private ?DateTimeInterface $softDeletedAt = null;
+    private DateTimeInterface|null $softDeletedAt = null;
 
     /**
      * @ORM\Column(type="datetime")
@@ -214,7 +227,7 @@ class Version
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private ?DateTimeInterface $releasedAt = null;
+    private DateTimeInterface|null $releasedAt = null;
 
     public function __construct()
     {
@@ -226,8 +239,8 @@ class Version
         $this->devRequire = new ArrayCollection();
         $this->suggest = new ArrayCollection();
         $this->authors = new ArrayCollection();
-        $this->createdAt = new \DateTime;
-        $this->updatedAt = new \DateTime;
+        $this->createdAt = new \DateTimeImmutable;
+        $this->updatedAt = new \DateTimeImmutable;
     }
 
     public function toArray(array $versionData, bool $serializeForApi = false)
@@ -348,37 +361,25 @@ class Version
             && strtolower($version->getNormalizedVersion()) === strtolower($this->getNormalizedVersion());
     }
 
-    /**
-     * Get id
-     *
-     * @return string $id
-     */
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
 
-    /**
-     * Set name
-     *
-     * @param string $name
-     */
-    public function setName($name)
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
 
-    /**
-     * Get name
-     *
-     * @return string $name
-     */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
-    public function getNames(array $versionData = null)
+    /**
+     * @return list<string>
+     */
+    public function getNames(array $versionData = null): array
     {
         $names = [
             strtolower($this->name) => true
@@ -405,258 +406,157 @@ class Version
         return array_keys($names);
     }
 
-    /**
-     * Set description
-     *
-     * @param string $description
-     */
-    public function setDescription($description)
+    public function setDescription(string|null $description): void
     {
         $this->description = $description;
     }
 
-    /**
-     * Get description
-     *
-     * @return string $description
-     */
-    public function getDescription()
+    public function getDescription(): string|null
     {
         return $this->description;
     }
 
-    /**
-     * Set homepage
-     *
-     * @param string $homepage
-     */
-    public function setHomepage($homepage)
+    public function setHomepage(string|null $homepage): void
     {
         $this->homepage = $homepage;
     }
 
-    /**
-     * Get homepage
-     *
-     * @return string $homepage
-     */
-    public function getHomepage()
+    public function getHomepage(): string|null
     {
         return $this->homepage;
     }
 
-    /**
-     * Set version
-     *
-     * @param string $version
-     */
-    public function setVersion($version)
+    public function setVersion(string $version): void
     {
         $this->version = $version;
     }
 
-    /**
-     * Get version
-     *
-     * @return string $version
-     */
-    public function getVersion()
+    public function getVersion(): string
     {
         return $this->version;
     }
 
-    /**
-     * @return string
-     */
-    public function getRequireVersion()
+    public function getRequireVersion(): string
     {
         return Preg::replace('{^v(\d)}', '$1', str_replace('.x-dev', '.*@dev', $this->getVersion()));
     }
 
-    /**
-     * Set normalizedVersion
-     *
-     * @param string $normalizedVersion
-     */
-    public function setNormalizedVersion($normalizedVersion)
+    public function setNormalizedVersion(string $normalizedVersion): void
     {
         $this->normalizedVersion = $normalizedVersion;
     }
 
-    /**
-     * Get normalizedVersion
-     *
-     * @return string $normalizedVersion
-     */
-    public function getNormalizedVersion()
+    public function getNormalizedVersion(): string
     {
         return $this->normalizedVersion;
     }
 
-    /**
-     * Set license
-     *
-     * @param array $license
-     */
-    public function setLicense(array $license)
+    public function setLicense(array $license): void
     {
-        $this->license = json_encode($license);
+        $this->license = json_encode($license, JSON_THROW_ON_ERROR);
     }
 
-    /**
-     * Get license
-     *
-     * @return array $license
-     */
-    public function getLicense()
+    public function getLicense(): array
     {
         return json_decode($this->license, true);
     }
 
-    /**
-     * Set source
-     *
-     * @param array $source
-     */
-    public function setSource($source)
+    public function setSource(array|null $source): void
     {
-        $this->source = null === $source ? $source : json_encode($source);
+        $this->source = null === $source ? $source : json_encode($source, JSON_THROW_ON_ERROR);
     }
 
-    /**
-     * Get source
-     *
-     * @return array|null
-     */
-    public function getSource()
+    public function getSource(): array|null
     {
+        if ($this->source === null) {
+            return null;
+        }
         return json_decode($this->source, true);
     }
 
-    /**
-     * Set dist
-     *
-     * @param array $dist
-     */
-    public function setDist($dist)
+    public function setDist(array|null $dist): void
     {
-        $this->dist = null === $dist ? $dist : json_encode($dist);
+        $this->dist = null === $dist ? $dist : json_encode($dist, JSON_THROW_ON_ERROR);
     }
 
-    /**
-     * Get dist
-     *
-     * @return array|null
-     */
-    public function getDist()
+    public function getDist(): array|null
     {
+        if ($this->dist === null) {
+            return null;
+        }
         return json_decode($this->dist, true);
     }
 
-    /**
-     * Set autoload
-     *
-     * @param array $autoload
-     */
-    public function setAutoload($autoload)
+    public function setAutoload(array $autoload): void
     {
-        $this->autoload = json_encode($autoload);
+        $this->autoload = json_encode($autoload, JSON_THROW_ON_ERROR);
     }
 
-    /**
-     * Get autoload
-     *
-     * @return array|null
-     */
-    public function getAutoload()
+    public function getAutoload(): array
     {
         return json_decode($this->autoload, true);
     }
 
-    /**
-     * Set binaries
-     *
-     * @param array $binaries
-     */
-    public function setBinaries($binaries)
+    public function setBinaries(array|null $binaries): void
     {
-        $this->binaries = null === $binaries ? $binaries : json_encode($binaries);
+        $this->binaries = null === $binaries ? $binaries : json_encode($binaries, JSON_THROW_ON_ERROR);
     }
 
-    /**
-     * Get binaries
-     *
-     * @return array|null
-     */
-    public function getBinaries()
+    public function getBinaries(): array|null
     {
+        if ($this->binaries === null) {
+            return null;
+        }
         return json_decode($this->binaries, true);
     }
 
-    /**
-     * Set include paths.
-     *
-     * @param array $paths
-     */
-    public function setIncludePaths($paths)
+    public function setIncludePaths(array|null $paths): void
     {
-        $this->includePaths = $paths ? json_encode($paths) : null;
+        $this->includePaths = $paths ? json_encode($paths, JSON_THROW_ON_ERROR) : null;
     }
 
-    /**
-     * Get include paths.
-     *
-     * @return array|null
-     */
-    public function getIncludePaths()
+    public function getIncludePaths(): array|null
     {
+        if ($this->includePaths === null) {
+            return null;
+        }
         return json_decode($this->includePaths, true);
     }
 
-    /**
-     * Set support
-     *
-     * @param array $support
-     */
-    public function setSupport($support)
+    public function setSupport(array|null $support): void
     {
-        $this->support = $support ? json_encode($support) : null;
+        $this->support = $support ? json_encode($support, JSON_THROW_ON_ERROR) : null;
     }
 
-    /**
-     * Get support
-     *
-     * @return array|null
-     */
-    public function getSupport()
+    public function getSupport(): array|null
     {
+        if ($this->support === null) {
+            return null;
+        }
         return json_decode($this->support, true);
     }
 
     /**
-     * Set Funding
-     *
-     * @param array $funding
+     * @param array<array{type?: string, url?: string}>|null $funding
      */
-    public function setFunding($funding)
+    public function setFunding(array|null $funding): void
     {
         $this->funding = $funding;
     }
 
     /**
-     * Get funding
-     *
-     * @return array|null
+     * @return array<array{type?: string, url?: string}>|null
      */
-    public function getFunding()
+    public function getFunding(): array|null
     {
         return $this->funding;
     }
 
     /**
      * Get funding, sorted to help the V2 metadata compression algo
+     * @return array<array{type?: string, url?: string}>|null
      */
-    public function getFundingSorted()
+    public function getFundingSorted(): array|null
     {
         if ($this->funding === null) {
             return null;
@@ -683,32 +583,22 @@ class Version
         return $this->createdAt;
     }
 
-    public function setReleasedAt(?DateTimeInterface $releasedAt): void
+    public function setReleasedAt(DateTimeInterface|null $releasedAt): void
     {
         $this->releasedAt = $releasedAt;
     }
 
-    public function getReleasedAt(): ?DateTimeInterface
+    public function getReleasedAt(): DateTimeInterface|null
     {
         return $this->releasedAt;
     }
 
-    /**
-     * Set package
-     *
-     * @param Package $package
-     */
-    public function setPackage(Package $package)
+    public function setPackage(Package $package): void
     {
         $this->package = $package;
     }
 
-    /**
-     * Get package
-     *
-     * @return Package
-     */
-    public function getPackage()
+    public function getPackage(): Package
     {
         return $this->package;
     }
@@ -716,14 +606,14 @@ class Version
     /**
      * Get tags
      *
-     * @return ArrayCollection<Tag>
+     * @return Collection<int, Tag>&Selectable<int, Tag>
      */
-    public function getTags()
+    public function getTags(): Collection
     {
         return $this->tags;
     }
 
-    public function setUpdatedAt(DateTimeInterface $updatedAt)
+    public function setUpdatedAt(DateTimeInterface $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
     }
@@ -733,12 +623,12 @@ class Version
         return $this->updatedAt;
     }
 
-    public function setSoftDeletedAt(?DateTimeInterface $softDeletedAt)
+    public function setSoftDeletedAt(DateTimeInterface|null $softDeletedAt): void
     {
         $this->softDeletedAt = $softDeletedAt;
     }
 
-    public function getSoftDeletedAt(): ?DateTimeInterface
+    public function getSoftDeletedAt(): DateTimeInterface|null
     {
         return $this->softDeletedAt;
     }
@@ -746,19 +636,25 @@ class Version
     /**
      * Get authors
      *
-     * @return ArrayCollection<Author>
+     * @return Collection<int, Author>&Selectable<int, Author>
      */
-    public function getAuthors()
+    public function getAuthors(): Collection
     {
         return $this->authors;
     }
 
-    public function getAuthorJson(): ?array
+    /**
+     * @return array<array{name?: string, homepage?: string, email?: string, role?: string}>|null
+     */
+    public function getAuthorJson(): array|null
     {
         return $this->authorJson;
     }
 
-    public function setAuthorJson(?array $authors): void
+    /**
+     * @param array<array{name?: string, homepage?: string, email?: string, role?: string}>|null $authors
+     */
+    public function setAuthorJson(array|null $authors): void
     {
         $this->authorJson = $authors ?: [];
     }
@@ -797,120 +693,62 @@ class Version
         return $authors;
     }
 
-    /**
-     * Set type
-     *
-     * @param string $type
-     */
-    public function setType($type)
+    public function setType(string|null $type): void
     {
         $this->type = $type;
     }
 
-    /**
-     * Get type
-     *
-     * @return string
-     */
-    public function getType()
+    public function getType(): string|null
     {
         return $this->type;
     }
 
-    /**
-     * Set targetDir
-     *
-     * @param string $targetDir
-     */
-    public function setTargetDir($targetDir)
+    public function setTargetDir(string|null $targetDir): void
     {
         $this->targetDir = $targetDir;
     }
 
-    /**
-     * Get targetDir
-     *
-     * @return string
-     */
-    public function getTargetDir()
+    public function getTargetDir(): string|null
     {
         return $this->targetDir;
     }
 
-    /**
-     * Set extra
-     *
-     * @param array $extra
-     */
-    public function setExtra($extra)
+    public function setExtra(array $extra): void
     {
         $this->extra = $extra;
     }
 
-    /**
-     * Get extra
-     *
-     * @return array
-     */
-    public function getExtra()
+    public function getExtra(): array
     {
         return $this->extra;
     }
 
-    /**
-     * Set development
-     *
-     * @param Boolean $development
-     */
-    public function setDevelopment($development)
+    public function setDevelopment(bool $development): void
     {
         $this->development = $development;
     }
 
-    /**
-     * Get development
-     *
-     * @return Boolean
-     */
-    public function getDevelopment()
+    public function getDevelopment(): bool
     {
         return $this->development;
     }
 
-    /**
-     * @return Boolean
-     */
-    public function isDevelopment()
+    public function isDevelopment(): bool
     {
         return $this->getDevelopment();
     }
 
-    /**
-     * Add tag
-     *
-     * @param Tag $tag
-     */
-    public function addTag(Tag $tag)
+    public function addTag(Tag $tag): void
     {
         $this->tags[] = $tag;
     }
 
-    /**
-     * Add authors
-     *
-     * @param Author $author
-     */
-    public function addAuthor(Author $author)
+    public function addAuthor(Author $author): void
     {
         $this->authors[] = $author;
     }
 
-    /**
-     * Add require
-     *
-     * @param RequireLink $require
-     */
-    public function addRequireLink(RequireLink $require)
+    public function addRequireLink(RequireLink $require): void
     {
         $this->require[] = $require;
     }
@@ -918,19 +756,14 @@ class Version
     /**
      * Get require
      *
-     * @return ArrayCollection<RequireLink>
+     * @return Collection<int, RequireLink>&Selectable<int, RequireLink>
      */
-    public function getRequire()
+    public function getRequire(): Collection
     {
         return $this->require;
     }
 
-    /**
-     * Add replace
-     *
-     * @param ReplaceLink $replace
-     */
-    public function addReplaceLink(ReplaceLink $replace)
+    public function addReplaceLink(ReplaceLink $replace): void
     {
         $this->replace[] = $replace;
     }
@@ -938,19 +771,14 @@ class Version
     /**
      * Get replace
      *
-     * @return ArrayCollection<ReplaceLink>
+     * @return Collection<int, ReplaceLink>&Selectable<int, ReplaceLink>
      */
-    public function getReplace()
+    public function getReplace(): Collection
     {
         return $this->replace;
     }
 
-    /**
-     * Add conflict
-     *
-     * @param ConflictLink $conflict
-     */
-    public function addConflictLink(ConflictLink $conflict)
+    public function addConflictLink(ConflictLink $conflict): void
     {
         $this->conflict[] = $conflict;
     }
@@ -958,19 +786,14 @@ class Version
     /**
      * Get conflict
      *
-     * @return ArrayCollection<ConflictLink>
+     * @return Collection<int, ConflictLink>&Selectable<int, ConflictLink>
      */
-    public function getConflict()
+    public function getConflict(): Collection
     {
         return $this->conflict;
     }
 
-    /**
-     * Add provide
-     *
-     * @param ProvideLink $provide
-     */
-    public function addProvideLink(ProvideLink $provide)
+    public function addProvideLink(ProvideLink $provide): void
     {
         $this->provide[] = $provide;
     }
@@ -978,19 +801,14 @@ class Version
     /**
      * Get provide
      *
-     * @return ArrayCollection<ProvideLink>
+     * @return Collection<int, ProvideLink>&Selectable<int, ProvideLink>
      */
-    public function getProvide()
+    public function getProvide(): Collection
     {
         return $this->provide;
     }
 
-    /**
-     * Add devRequire
-     *
-     * @param DevRequireLink $devRequire
-     */
-    public function addDevRequireLink(DevRequireLink $devRequire)
+    public function addDevRequireLink(DevRequireLink $devRequire): void
     {
         $this->devRequire[] = $devRequire;
     }
@@ -998,19 +816,14 @@ class Version
     /**
      * Get devRequire
      *
-     * @return ArrayCollection<DevRequireLink>
+     * @return Collection<int, DevRequireLink>&Selectable<int, DevRequireLink>
      */
-    public function getDevRequire()
+    public function getDevRequire(): Collection
     {
         return $this->devRequire;
     }
 
-    /**
-     * Add suggest
-     *
-     * @param SuggestLink $suggest
-     */
-    public function addSuggestLink(SuggestLink $suggest)
+    public function addSuggestLink(SuggestLink $suggest): void
     {
         $this->suggest[] = $suggest;
     }
@@ -1018,25 +831,19 @@ class Version
     /**
      * Get suggest
      *
-     * @return ArrayCollection<SuggestLink>
+     * @return Collection<int, SuggestLink>&Selectable<int, SuggestLink>
      */
-    public function getSuggest()
+    public function getSuggest(): Collection
     {
         return $this->suggest;
     }
 
-    /**
-     * @return Boolean
-     */
-    public function hasVersionAlias()
+    public function hasVersionAlias(): bool
     {
         return $this->getDevelopment() && $this->getVersionAlias();
     }
 
-    /**
-     * @return string
-     */
-    public function getVersionAlias()
+    public function getVersionAlias(): string
     {
         $extra = $this->getExtra();
 
@@ -1049,20 +856,17 @@ class Version
         return '';
     }
 
-    /**
-     * @return string
-     */
-    public function getRequireVersionAlias()
+    public function getRequireVersionAlias(): string
     {
         return str_replace('.x-dev', '.*@dev', $this->getVersionAlias());
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->name.' '.$this->version.' ('.$this->normalizedVersion.')';
     }
 
-    private function sortAuthorKeys($a, $b)
+    private function sortAuthorKeys(string $a, string $b): int
     {
         static $order = ['name' => 1, 'email' => 2, 'homepage' => 3, 'role' => 4];
         $aIndex = $order[$a] ?? 5;

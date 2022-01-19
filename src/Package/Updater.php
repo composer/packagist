@@ -213,7 +213,7 @@ class Updater
         }
 
         if ($dependentSuggesterSource) {
-            $em->getRepository(Dependent::class)->updateDependentSuggesters($package->getId(), $dependentSuggesterSource);
+            $this->doctrine->getRepository(Dependent::class)->updateDependentSuggesters($package->getId(), $dependentSuggesterSource);
         }
 
         // mark versions that did not update as updated to avoid them being pruned
@@ -225,19 +225,25 @@ class Updater
 
         // remove outdated versions
         foreach ($existingVersions as $version) {
-            if (!is_null($version['softDeletedAt']) && new \DateTime($version['softDeletedAt']) < $deleteDate) {
-                $versionRepository->remove($versionRepository->find($version['id']));
-            } elseif ($version['normalizedVersion'] === '9999999-dev') {
-                // removed v1 normalized versions of dev-master/trunk/default immediately as they have been recreated as dev-master/trunk/default in a non-normalized way
-                $versionRepository->remove($versionRepository->find($version['id']));
-            } else {
-                // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
-                // version is still missing it will be really removed
-                $em->getConnection()->executeStatement(
-                    'UPDATE package_version SET softDeletedAt = :now WHERE id = :id',
-                    ['now' => date('Y-m-d H:i:s'), 'id' => $version['id']]
-                );
+            if (
+                // soft-deleted versions are really purged after a day
+                (!is_null($version['softDeletedAt']) && new \DateTime($version['softDeletedAt']) < $deleteDate)
+                // remove v1 normalized versions of dev-master/trunk/default immediately as they have been recreated as dev-master/trunk/default in a non-normalized way
+                || ($version['normalizedVersion'] === '9999999-dev')
+            ) {
+                $versionEntity = $versionRepository->find($version['id']);
+                if (null !== $versionEntity) {
+                    $versionRepository->remove($versionEntity);
+                }
+                continue;
             }
+
+            // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
+            // version is still missing it will be really removed
+            $em->getConnection()->executeStatement(
+                'UPDATE package_version SET softDeletedAt = :now WHERE id = :id',
+                ['now' => date('Y-m-d H:i:s'), 'id' => $version['id']]
+            );
         }
 
         if (Preg::isMatch('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
@@ -278,6 +284,7 @@ class Updater
     {
         $em = $this->getEM();
         $version = new Version();
+        $versionId = null;
 
         $normVersion = $data->getVersion();
 
@@ -295,8 +302,15 @@ class Updater
                 || ($data->isDefaultBranch() !== $version->isDefaultBranch())
             ) {
                 $version = $versionRepo->find($existingVersion['id']);
+                if (null === $version) {
+                    throw new \LogicException('At this point a version should always be found');
+                }
+                $versionId = $version->getId();
             } elseif ($existingVersion['needs_author_migration']) {
                 $version = $versionRepo->find($existingVersion['id']);
+                if (null === $version) {
+                    throw new \LogicException('At this point a version should always be found');
+                }
 
                 $version->setAuthorJson($version->getAuthorData());
                 $version->getAuthors()->clear();
@@ -498,7 +512,7 @@ class Updater
             $version->getSuggest()->clear();
         }
 
-        return ['updated' => true, 'id' => $version->getId(), 'version' => strtolower($normVersion), 'object' => $version];
+        return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version];
     }
 
     /**

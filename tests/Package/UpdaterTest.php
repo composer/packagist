@@ -2,6 +2,8 @@
 
 namespace App\Tests\Package;
 
+use App\Entity\Dependent;
+use App\Entity\DependentRepository;
 use Composer\Config;
 use Composer\IO\IOInterface;
 use Composer\IO\NullIO;
@@ -55,27 +57,31 @@ class UpdaterTest extends TestCase
         $providerManagerMock  = $this->getMockBuilder(ProviderManager::class)->disableOriginalConstructor()->getMock();
         $emMock               = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
         $connectionMock       = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
-        $packageMock          = $this->getMockBuilder(CompletePackage::class)->disableOriginalConstructor()->getMock();
+        $package              = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
         $this->driverMock     = $this->getMockBuilder(GitDriver::class)->disableOriginalConstructor()->getMock();
         $versionRepoMock      = $this->getMockBuilder(VersionRepository::class)->disableOriginalConstructor()->getMock();
+        $dependentRepoMock    = $this->getMockBuilder(DependentRepository::class)->disableOriginalConstructor()->getMock();
         $authorRepoMock      = $this->getMockBuilder(AuthorRepository::class)->disableOriginalConstructor()->getMock();
 
         $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn(array());
         $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
         $emMock->expects($this->any())->method('merge')->will($this->returnCallback(function ($package) { return $package; }));
+        $emMock->expects($this->any())->method('persist')->will($this->returnCallback(function ($object) {
+            if ($reflProperty = new \ReflectionProperty($object, 'id')) {
+                $reflProperty->setAccessible(true);
+                $reflProperty->setValue($object, random_int(0, 10000));
+            }
+        }));
 
-        $registryMock->expects($this->any())->method('getManager')->willReturn($emMock);
-        $registryMock->expects($this->at(1))->method('getRepository')->with(Version::class)->willReturn($versionRepoMock);
+        $registryMock->method('getManager')->willReturn($emMock);
+        $registryMock->method('getRepository')->willReturnMap([
+            [Version::class, null, $versionRepoMock],
+            [Dependent::class, null, $dependentRepoMock],
+        ]);
         $this->repositoryMock->expects($this->any())->method('getPackages')->willReturn([
-            $packageMock
+            $package
         ]);
         $this->repositoryMock->expects($this->any())->method('getDriver')->willReturn($this->driverMock);
-        $packageMock->expects($this->any())->method('getRequires')->willReturn([]);
-        $packageMock->expects($this->any())->method('getConflicts')->willReturn([]);
-        $packageMock->expects($this->any())->method('getProvides')->willReturn([]);
-        $packageMock->expects($this->any())->method('getReplaces')->willReturn([]);
-        $packageMock->expects($this->any())->method('getDevRequires')->willReturn([]);
-        $packageMock->expects($this->any())->method('isDefaultBranch')->willReturn(false);
 
         $versionIdCache = $this->getMockBuilder(VersionIdCache::class)->disableOriginalConstructor()->getMock();
 

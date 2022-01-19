@@ -114,13 +114,17 @@ EOF
 
         if ($force) {
             // mark packages as recently crawled so that they get updated
-            $packageRepo = $this->getEM()->getRepository(Package::class);
+            $em = $this->getEM();
+            $packageRepo = $em->getRepository(Package::class);
             foreach ($packageNames as $name) {
                 $package = $packageRepo->findOneBy(['name' => $name]);
-                $package->setCrawledAt(new \DateTime);
+                if ($package !== null) {
+                    $package->setCrawledAt(new \DateTime);
+                    $em->persist($package);
+                }
             }
 
-            $this->getEM()->flush();
+            $em->flush();
         }
 
         return 0;

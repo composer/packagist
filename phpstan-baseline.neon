@@ -26,11 +26,6 @@ parameters:
 			path: src/Command/ClearVersionsCommand.php
 
 		-
-			message: "#^Cannot call method setCrawledAt\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Command/ClearVersionsCommand.php
-
-		-
 			message: "#^Method App\\\\Command\\\\ClearVersionsCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Command/ClearVersionsCommand.php
@@ -136,32 +131,7 @@ parameters:
 			path: src/Command/GenerateTokensCommand.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:getId\\(\\)\\.$#"
-			count: 2
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getName\\(\\)\\.$#"
-			count: 3
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getReplacementPackage\\(\\)\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:isAbandoned\\(\\)\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
 			message: "#^Cannot access offset 'name' on mixed\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Cannot call method getId\\(\\) on object\\|null\\.$#"
 			count: 1
 			path: src/Command/IndexPackagesCommand.php
 
@@ -217,21 +187,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$num of function log expects float, string given\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Command\\\\IndexPackagesCommand\\:\\:getProviders\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Command\\\\IndexPackagesCommand\\:\\:getTags\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Command\\\\IndexPackagesCommand\\:\\:packageToSearchableArray\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
 			count: 1
 			path: src/Command/IndexPackagesCommand.php
 
@@ -311,11 +266,6 @@ parameters:
 			path: src/Command/RegenerateMainPhpStatsCommand.php
 
 		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Entity\\\\PhpStatRepository\\:\\:createOrUpdateMainRecord\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 2
-			path: src/Command/RegenerateMainPhpStatsCommand.php
-
-		-
 			message: "#^Property App\\\\Command\\\\RegenerateMainPhpStatsCommand\\:\\:\\$redis is never read, only written\\.$#"
 			count: 1
 			path: src/Command/RegenerateMainPhpStatsCommand.php
@@ -346,11 +296,6 @@ parameters:
 			path: src/Command/SymlinkMetadataMirrorCommand.php
 
 		-
-			message: "#^Cannot call method getId\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Command/UpdatePackagesCommand.php
-
-		-
 			message: "#^Method App\\\\Command\\\\UpdatePackagesCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Command/UpdatePackagesCommand.php
@@ -374,21 +319,6 @@ parameters:
 			message: "#^Method App\\\\Controller\\\\AboutController\\:\\:aboutComposerFallbackAction\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Controller/AboutController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getRemoteId\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setRemoteId\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setRepository\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
 
 		-
 			message: "#^Cannot access offset 'absolute_url' on mixed\\.$#"
@@ -522,11 +452,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$maintainer of method App\\\\Entity\\\\Package\\:\\:addMaintainer\\(\\) expects App\\\\Entity\\\\User, App\\\\Entity\\\\User\\|null given\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Entity\\\\PackageRepository\\:\\:isPackageMaintainedBy\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
 			count: 1
 			path: src/Controller/ApiController.php
 
@@ -744,36 +669,6 @@ parameters:
 			message: "#^Method App\\\\Controller\\\\MirrorsController\\:\\:indexAction\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Controller/MirrorsController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:addMaintainer\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getData\\(\\)\\.$#"
-			count: 3
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getMaintainers\\(\\)\\.$#"
-			count: 3
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getName\\(\\)\\.$#"
-			count: 4
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getNormalizedVersion\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getVersion\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
 
 		-
 			message: "#^If condition is always true\\.$#"
@@ -1081,16 +976,6 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Controller\\\\PackageController\\:\\:createAddMaintainerForm\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Controller\\\\PackageController\\:\\:createRemoveMaintainerForm\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
 			message: "#^Parameter \\#1 \\$user of method App\\\\Model\\\\FavoriteManager\\:\\:isMarked\\(\\) expects App\\\\Entity\\\\User, Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface given\\.$#"
 			count: 1
 			path: src/Controller/PackageController.php
@@ -1112,11 +997,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#3 \\$version of method App\\\\Controller\\\\PackageController\\:\\:overallStatsAction\\(\\) expects App\\\\Entity\\\\Version\\|null, object given\\.$#"
 			count: 1
 			path: src/Controller/PackageController.php
 
@@ -1269,16 +1149,6 @@ parameters:
 			message: "#^Parameter \\#2 \\$code of method Scheb\\\\TwoFactorBundle\\\\Security\\\\TwoFactor\\\\Provider\\\\Totp\\\\TotpAuthenticatorInterface\\:\\:checkCode\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Controller/UserController.php
-
-		-
-			message: "#^Parameter \\#2 \\$package of method App\\\\Model\\\\FavoriteManager\\:\\:markFavorite\\(\\) expects App\\\\Entity\\\\Package, object\\|null given\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getName\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
 
 		-
 			message: "#^Cannot access offset 'order' on mixed\\.$#"
@@ -1476,11 +1346,6 @@ parameters:
 			path: src/Entity/Author.php
 
 		-
-			message: "#^Class App\\\\Entity\\\\AuthorRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/AuthorRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\AuthorRepository\\:\\:findOneByNameAndPackage\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/AuthorRepository.php
@@ -1494,11 +1359,6 @@ parameters:
 			message: "#^Property App\\\\Entity\\\\ConflictLink\\:\\:\\$version has no type specified\\.$#"
 			count: 1
 			path: src/Entity/ConflictLink.php
-
-		-
-			message: "#^Class App\\\\Entity\\\\DependentRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/DependentRepository.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\DependentRepository\\:\\:deletePackageDependentSuggesters\\(\\) has no return type specified\\.$#"
@@ -1596,11 +1456,6 @@ parameters:
 			path: src/Entity/Download.php
 
 		-
-			message: "#^Class App\\\\Entity\\\\DownloadRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/DownloadRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:deletePackageDownloads\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/DownloadRepository.php
@@ -1694,16 +1549,6 @@ parameters:
 			message: "#^Property App\\\\Entity\\\\Job\\:\\:\\$status type mapping mismatch\\: database can contain string but property expects 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'reschedule'\\|'started'\\|'timeout'\\.$#"
 			count: 1
 			path: src/Entity/Job.php
-
-		-
-			message: "#^Class App\\\\Entity\\\\JobRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/JobRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:findLatestExecutedJob\\(\\) should return App\\\\Entity\\\\Job\\|null but returns object\\|null\\.$#"
-			count: 1
-			path: src/Entity/JobRepository.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:getLastGitHubSyncJob\\(\\) should return App\\\\Entity\\\\Job\\|null but returns mixed\\.$#"
@@ -2086,11 +1931,6 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Class App\\\\Entity\\\\PackageRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:addFilters\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
@@ -2391,37 +2231,12 @@ parameters:
 			path: src/Entity/PhpStat.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:addDataPoint\\(\\)\\.$#"
-			count: 1
-			path: src/Entity/PhpStatRepository.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setDataPoint\\(\\)\\.$#"
-			count: 1
-			path: src/Entity/PhpStatRepository.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setLastUpdated\\(\\)\\.$#"
-			count: 2
-			path: src/Entity/PhpStatRepository.php
-
-		-
 			message: "#^Cannot access offset int on array\\<int, mixed\\>\\|false\\.$#"
 			count: 2
 			path: src/Entity/PhpStatRepository.php
 
 		-
-			message: "#^Class App\\\\Entity\\\\PhpStatRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/PhpStatRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:createOrUpdateRecord\\(\\) has parameter \\$keys with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/PhpStatRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:createOrUpdateRecord\\(\\) should return App\\\\Entity\\\\PhpStat\\|null but returns object\\.$#"
 			count: 1
 			path: src/Entity/PhpStatRepository.php
 
@@ -2438,16 +2253,6 @@ parameters:
 		-
 			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:transferStatsToDb\\(\\) has parameter \\$keys with no value type specified in iterable type array\\.$#"
 			count: 1
-			path: src/Entity/PhpStatRepository.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Entity\\\\PhpStatRepository\\:\\:createDbRecordsForKeys\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 2
-			path: src/Entity/PhpStatRepository.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Entity\\\\PhpStatRepository\\:\\:createOrUpdateMainRecord\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 2
 			path: src/Entity/PhpStatRepository.php
 
 		-
@@ -2536,11 +2341,6 @@ parameters:
 			path: src/Entity/SecurityAdvisory.php
 
 		-
-			message: "#^Class App\\\\Entity\\\\SecurityAdvisoryRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/SecurityAdvisoryRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\SecurityAdvisoryRepository\\:\\:getPackageSecurityAdvisories\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/SecurityAdvisoryRepository.php
@@ -2559,11 +2359,6 @@ parameters:
 			message: "#^Property App\\\\Entity\\\\SuggestLink\\:\\:\\$version has no type specified\\.$#"
 			count: 1
 			path: src/Entity/SuggestLink.php
-
-		-
-			message: "#^Class App\\\\Entity\\\\SuggesterRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/SuggesterRepository.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\Tag\\:\\:__construct\\(\\) has parameter \\$name with no type specified\\.$#"
@@ -2786,54 +2581,9 @@ parameters:
 			path: src/Entity/Vendor.php
 
 		-
-			message: "#^Class App\\\\Entity\\\\VendorRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
-			path: src/Entity/VendorRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\VendorRepository\\:\\:verify\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/VendorRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:addAuthor\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:addConflictLink\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:addDevRequireLink\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:addProvideLink\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:addReplaceLink\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:addRequireLink\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:addSuggestLink\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:addTag\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:equals\\(\\) has no return type specified\\.$#"
@@ -2846,22 +2596,12 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAuthorJson\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAuthors\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAutoload\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAutoload\\(\\) should return array\\|null but returns mixed\\.$#"
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAutoload\\(\\) should return array but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -2872,16 +2612,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getBinaries\\(\\) should return array\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getConflict\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getDevRequire\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -2897,16 +2627,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getExtra\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getFunding\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getFundingSorted\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -2931,27 +2651,7 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getNames\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getNames\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getProvide\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getReplace\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getRequire\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -2966,11 +2666,6 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSuggest\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSupport\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
@@ -2981,27 +2676,7 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getTags\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setAuthorJson\\(\\) has parameter \\$authors with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setAutoload\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:setAutoload\\(\\) has parameter \\$autoload with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setBinaries\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -3011,27 +2686,7 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setDescription\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setDevelopment\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setDist\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:setDist\\(\\) has parameter \\$dist with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setExtra\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -3041,32 +2696,7 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setFunding\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setFunding\\(\\) has parameter \\$funding with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setHomepage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setIncludePaths\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:setIncludePaths\\(\\) has parameter \\$paths with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setLicense\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -3076,77 +2706,12 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setName\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setNormalizedVersion\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setPackage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSoftDeletedAt\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSource\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSource\\(\\) has parameter \\$source with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSupport\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:setSupport\\(\\) has parameter \\$support with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setTargetDir\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setType\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setUpdatedAt\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:setVersion\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:sortAuthorKeys\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:sortAuthorKeys\\(\\) has parameter \\$a with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:sortAuthorKeys\\(\\) has parameter \\$b with no type specified\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -3171,163 +2736,28 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$authorJson has no type specified\\.$#"
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$autoload type mapping mismatch\\: database can contain string\\|null but property expects string\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$authors has no type specified\\.$#"
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$extra type mapping mismatch\\: database can contain array\\|null but property expects array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$autoload has no type specified\\.$#"
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$license type mapping mismatch\\: database can contain string\\|null but property expects string\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$binaries has no type specified\\.$#"
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$package type mapping mismatch\\: database can contain App\\\\Entity\\\\Package\\|null but property expects App\\\\Entity\\\\Package\\.$#"
 			count: 1
 			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$conflict has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$description has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$devRequire has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$development has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$dist has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$extra has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$funding has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$homepage has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$id has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$includePaths has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$isDefaultBranch has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$license has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$name has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$normalizedVersion has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$package has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$provide has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$replace has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$require has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$source has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$suggest has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$support has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$tags has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$targetDir has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$type has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$version has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getId\\(\\)\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
 			count: 2
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Class App\\\\Entity\\\\VersionRepository extends generic class Doctrine\\\\Bundle\\\\DoctrineBundle\\\\Repository\\\\ServiceEntityRepository but does not specify its types\\: TEntityClass$#"
-			count: 1
 			path: src/Entity/VersionRepository.php
 
 		-
@@ -3377,11 +2807,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionMetadataForUpdate\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:refreshVersions\\(\\) should return array\\<App\\\\Entity\\\\Version\\> but returns array\\<int, object\\>\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
 
@@ -3626,31 +3051,6 @@ parameters:
 			path: src/Menu/MenuBuilder.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:computeSum\\(\\)\\.$#"
-			count: 1
-			path: src/Model/DownloadManager.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getData\\(\\)\\.$#"
-			count: 2
-			path: src/Model/DownloadManager.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getTotal\\(\\)\\.$#"
-			count: 1
-			path: src/Model/DownloadManager.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setDataPoint\\(\\)\\.$#"
-			count: 1
-			path: src/Model/DownloadManager.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setLastUpdated\\(\\)\\.$#"
-			count: 1
-			path: src/Model/DownloadManager.php
-
-		-
 			message: "#^Method App\\\\Model\\\\DownloadManager\\:\\:addDownloads\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Model/DownloadManager.php
@@ -3693,11 +3093,6 @@ parameters:
 		-
 			message: "#^Parameter \\#1 \\$key of method App\\\\Model\\\\DownloadManager\\:\\:getKeyInfo\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
-			path: src/Model/DownloadManager.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Model\\\\DownloadManager\\:\\:createDbRecordsForKeys\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 2
 			path: src/Model/DownloadManager.php
 
 		-
@@ -4276,162 +3671,7 @@ parameters:
 			path: src/Package/Updater.php
 
 		-
-			message: "#^Cannot call method addSuggestLink\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method addTag\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method getAuthorData\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method getAuthors\\(\\) on object\\|null\\.$#"
-			count: 2
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method getId\\(\\) on object\\|null\\.$#"
-			count: 2
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method getSuggest\\(\\) on object\\|null\\.$#"
-			count: 5
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method getTags\\(\\) on object\\|null\\.$#"
-			count: 5
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method getVersion\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
 			message: "#^Cannot call method removeChild\\(\\) on DOMNode\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setAuthorJson\\(\\) on object\\|null\\.$#"
-			count: 3
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setAutoload\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setBinaries\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setDescription\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setDevelopment\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setDist\\(\\) on object\\|null\\.$#"
-			count: 2
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setExtra\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setFunding\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setHomepage\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setIncludePaths\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setIsDefaultBranch\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setLicense\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setName\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setNormalizedVersion\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setPackage\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setReleasedAt\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setSoftDeletedAt\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setSource\\(\\) on object\\|null\\.$#"
-			count: 2
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setSupport\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setTargetDir\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setType\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setUpdatedAt\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Cannot call method setVersion\\(\\) on object\\|null\\.$#"
 			count: 1
 			path: src/Package/Updater.php
 
@@ -4476,11 +3716,6 @@ parameters:
 			path: src/Package/Updater.php
 
 		-
-			message: "#^Parameter \\#1 \\$entity of method Doctrine\\\\ORM\\\\EntityManager\\:\\:persist\\(\\) expects object, object\\|null given\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
 			message: "#^Parameter \\#1 \\$haystack of function strpos expects string, string\\|false given\\.$#"
 			count: 1
 			path: src/Package/Updater.php
@@ -4508,16 +3743,6 @@ parameters:
 		-
 			message: "#^Parameter \\#1 \\$val of method App\\\\Entity\\\\Package\\:\\:setGitHubWatches\\(\\) expects int, null given\\.$#"
 			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Parameter \\#1 \\$version of method App\\\\Entity\\\\PackageLink\\:\\:setVersion\\(\\) expects App\\\\Entity\\\\Version, object\\|null given\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Parameter \\#1 \\$version of method App\\\\Entity\\\\VersionRepository\\:\\:remove\\(\\) expects App\\\\Entity\\\\Version, object\\|null given\\.$#"
-			count: 2
 			path: src/Package/Updater.php
 
 		-
@@ -4731,16 +3956,6 @@ parameters:
 			path: src/Security/TwoFactorAuthManager.php
 
 		-
-			message: "#^Call to an undefined method object\\:\\:getId\\(\\)\\.$#"
-			count: 1
-			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:toArray\\(\\)\\.$#"
-			count: 1
-			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
-
-		-
 			message: "#^Parameter \\#1 \\$filename of function file_get_contents expects string, string\\|false given\\.$#"
 			count: 1
 			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
@@ -4826,41 +4041,6 @@ parameters:
 			path: src/Service/Locker.php
 
 		-
-			message: "#^Cannot call method complete\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Service/QueueWorker.php
-
-		-
-			message: "#^Cannot call method getCreatedAt\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Service/QueueWorker.php
-
-		-
-			message: "#^Cannot call method getExecuteAfter\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Service/QueueWorker.php
-
-		-
-			message: "#^Cannot call method getId\\(\\) on object\\|null\\.$#"
-			count: 4
-			path: src/Service/QueueWorker.php
-
-		-
-			message: "#^Cannot call method getPayload\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Service/QueueWorker.php
-
-		-
-			message: "#^Cannot call method getType\\(\\) on object\\|null\\.$#"
-			count: 5
-			path: src/Service/QueueWorker.php
-
-		-
-			message: "#^Cannot call method reschedule\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Service/QueueWorker.php
-
-		-
 			message: "#^Method App\\\\Service\\\\QueueWorker\\:\\:__construct\\(\\) has parameter \\$jobWorkers with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Service/QueueWorker.php
@@ -4877,21 +4057,6 @@ parameters:
 
 		-
 			message: "#^Cannot access offset 'update_equal_refs' on mixed\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Cannot call method complete\\(\\) on object\\|null\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Cannot call method getExecuteAfter\\(\\) on object\\|null\\.$#"
-			count: 4
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Cannot call method start\\(\\) on object\\|null\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
 
@@ -4951,11 +4116,6 @@ parameters:
 			path: src/Service/Scheduler.php
 
 		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:scheduleUpdate\\(\\) should return App\\\\Entity\\\\Job but returns object\\|null\\.$#"
-			count: 2
-			path: src/Service/Scheduler.php
-
-		-
 			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
@@ -4974,36 +4134,6 @@ parameters:
 			message: "#^Method App\\\\Service\\\\SecurityAdvisoryWorker\\:\\:process\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Service/SecurityAdvisoryWorker.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getId\\(\\)\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getMaintainers\\(\\)\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getName\\(\\)\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getRepository\\(\\)\\.$#"
-			count: 3
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:getVendor\\(\\)\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Call to an undefined method object\\:\\:setCrawledAt\\(\\)\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
 
 		-
 			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:checkForDeadGitHubPackage\\(\\) has parameter \\$match with no type specified\\.$#"
@@ -5032,36 +4162,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:process\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of class App\\\\Entity\\\\EmptyReferenceCache constructor expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of class App\\\\Service\\\\VersionCache constructor expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Entity\\\\VersionRepository\\:\\:getVersionMetadataForUpdate\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Model\\\\PackageManager\\:\\:notifyUpdateFailure\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Service\\\\UpdaterWorker\\:\\:checkForDeadGitHubPackage\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Parameter \\#3 \\$package of method App\\\\Package\\\\Updater\\:\\:update\\(\\) expects App\\\\Entity\\\\Package, object given\\.$#"
 			count: 1
 			path: src/Service/UpdaterWorker.php
 

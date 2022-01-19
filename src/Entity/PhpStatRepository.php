@@ -9,6 +9,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
 use DateTimeImmutable;
 
+/**
+ * @extends ServiceEntityRepository<PhpStat>
+ */
 class PhpStatRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry, private Client $redis)

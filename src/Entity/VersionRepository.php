@@ -22,6 +22,7 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ * @extends ServiceEntityRepository<Version>
  */
 class VersionRepository extends ServiceEntityRepository
 {

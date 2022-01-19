@@ -177,13 +177,13 @@ class UserController extends Controller
             throw new AccessDeniedException('You can only change your own favorites');
         }
 
-        $package = $req->request->get('package');
-        try {
-            $package = $this->getEM()
-                ->getRepository(Package::class)
-                ->findOneBy(['name' => $package]);
-        } catch (NoResultException $e) {
-            throw new NotFoundHttpException('The given package "'.$package.'" was not found.');
+        $packageName = $req->request->get('package');
+        $package = $this->getEM()
+            ->getRepository(Package::class)
+            ->findOneBy(['name' => $packageName]);
+
+        if ($package === null) {
+            throw new NotFoundHttpException('The given package "'.$packageName.'" was not found.');
         }
 
         $favoriteManager->markFavorite($user, $package);
