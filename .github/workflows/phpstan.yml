@@ -37,8 +37,18 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      - name: "Install latest dependencies"
+      - name: "Start MySQL"
+        run: |
+          sudo systemctl start mysql.service
+          echo 'DATABASE_URL="mysql://root:root@127.0.0.1:3306/packagist?serverVersion=8.0"' > .env.dev.local
+
+      - name: "Install dependencies"
         run: "composer install ${{ env.COMPOSER_FLAGS }}"
+
+      - name: "Setup DB"
+        run: |
+          bin/console doctrine:database:create -n
+          bin/console doctrine:schema:create -n
 
       - name: Run PHPStan
         run: composer phpstan
