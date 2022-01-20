@@ -4,8 +4,10 @@ namespace App\Util;
 
 use Composer\Config;
 use Composer\IO\IOInterface;
+use Composer\Util\Http\Response;
 use Composer\Util\HttpDownloader;
 use Graze\DogStatsD\Client as StatsDClient;
+use React\Promise\PromiseInterface;
 
 class LoggingHttpDownloader extends HttpDownloader
 {
@@ -19,28 +21,28 @@ class LoggingHttpDownloader extends HttpDownloader
         parent::__construct($io, $config);
     }
 
-    public function get($url, $options = array())
+    public function get($url, $options = array()): Response
     {
         $this->track($url);
 
         return parent::get($url, $options);
     }
 
-    public function add($url, $options = array())
+    public function add($url, $options = array()): PromiseInterface
     {
         $this->track($url);
 
         return parent::add($url, $options);
     }
 
-    public function copy($url, $to, $options = array())
+    public function copy($url, $to, $options = array()): Response
     {
         $this->track($url);
 
         return parent::copy($url, $to, $options);
     }
 
-    public function addCopy($url, $to, $options = array())
+    public function addCopy($url, $to, $options = array()): PromiseInterface
     {
         $this->track($url);
 

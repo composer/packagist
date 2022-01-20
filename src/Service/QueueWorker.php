@@ -98,6 +98,9 @@ class QueueWorker
         }
 
         $job = $repo->find($jobId);
+        if (null === $job) {
+            throw new \LogicException('At this point a job should always be found');
+        }
 
         $this->logger->pushProcessor(function ($record) use ($job) {
             $record['extra']['job-id'] = $job->getId();
@@ -169,6 +172,9 @@ class QueueWorker
         }
 
         $job = $repo->find($jobId);
+        if (null === $job) {
+            throw new \LogicException('At this point a job should always be found');
+        }
         $job->complete($result);
 
         $this->redis->setex('job-'.$job->getId(), 600, json_encode($result));

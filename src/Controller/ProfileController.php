@@ -15,6 +15,7 @@ use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -24,13 +25,8 @@ class ProfileController extends Controller
     /**
      * @Route("/profile/", name="my_profile")
      */
-    public function myProfile(Request $req, FavoriteManager $favMgr, DownloadManager $dlMgr)
+    public function myProfile(Request $req, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $user)
     {
-        $user = $this->getUser();
-        if (!is_object($user)) {
-            throw $this->createAccessDeniedException('This user does not have access to this section.');
-        }
-
         $packages = $this->getUserPackages($req, $user);
         $lastGithubSync = $this->doctrine->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
 
@@ -142,6 +138,9 @@ class ProfileController extends Controller
         ));
     }
 
+    /**
+     * @return Pagerfanta<Package>
+     */
     protected function getUserPackages(Request $req, User $user): Pagerfanta
     {
         $packages = $this->getEM()

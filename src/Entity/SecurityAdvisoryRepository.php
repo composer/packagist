@@ -6,6 +6,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 
+/**
+ * @extends ServiceEntityRepository<SecurityAdvisory>
+ */
 class SecurityAdvisoryRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)

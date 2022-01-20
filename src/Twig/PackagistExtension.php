@@ -2,6 +2,8 @@
 
 namespace App\Twig;
 
+use App\Entity\Package;
+use App\Entity\PackageLink;
 use App\Model\ProviderManager;
 use App\Security\RecaptchaHelper;
 use Composer\Pcre\Preg;
@@ -25,7 +27,7 @@ class PackagistExtension extends AbstractExtension
         $this->requestStack = $requestStack;
     }
 
-    public function getTests()
+    public function getTests(): array
     {
         return [
             new TwigTest('existing_package', [$this, 'packageExistsTest']),
@@ -34,7 +36,7 @@ class PackagistExtension extends AbstractExtension
         ];
     }
 
-    public function getFilters()
+    public function getFilters(): array
     {
         return [
             new TwigFilter('prettify_source_reference', [$this, 'prettifySourceReference']),
@@ -44,14 +46,14 @@ class PackagistExtension extends AbstractExtension
         ];
     }
 
-    public function getFunctions()
+    public function getFunctions(): array
     {
         return [
             new TwigFunction('requires_recaptcha', [$this, 'requiresRecaptcha']),
         ];
     }
 
-    public function getName()
+    public function getName(): string
     {
         return 'packagist';
     }
@@ -61,13 +63,21 @@ class PackagistExtension extends AbstractExtension
         return Preg::replace('{/.*$}', '', $packageName);
     }
 
-    public function numericTest($val)
+    public function numericTest(mixed $val): bool
     {
+        if (!is_string($val) && !is_int($val)) {
+            return false;
+        }
+
         return ctype_digit((string) $val);
     }
 
-    public function packageExistsTest($package)
+    public function packageExistsTest(mixed $package): bool
     {
+        if (!is_string($package)) {
+            return false;
+        }
+
         if (!Preg::isMatch('/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/', $package)) {
             return false;
         }
@@ -75,12 +85,16 @@ class PackagistExtension extends AbstractExtension
         return $this->providerManager->packageExists($package);
     }
 
-    public function providerExistsTest($package)
+    public function providerExistsTest(mixed $package): bool
     {
+        if (!is_string($package)) {
+            return false;
+        }
+
         return $this->providerManager->packageIsProvided($package);
     }
 
-    public function prettifySourceReference($sourceReference)
+    public function prettifySourceReference(string $sourceReference): string
     {
         if (Preg::isMatch('/^[a-f0-9]{40}$/', $sourceReference)) {
             return substr($sourceReference, 0, 7);
@@ -89,14 +103,18 @@ class PackagistExtension extends AbstractExtension
         return $sourceReference;
     }
 
-    public function generateGravatarHash($email)
+    public function generateGravatarHash(string $email): string
     {
         return md5(strtolower($email));
     }
 
-    public function sortLinks(array $links)
+    /**
+     * @param PackageLink[] $links
+     * @return PackageLink[]
+     */
+    public function sortLinks(array $links): array
     {
-        usort($links, function ($a, $b) {
+        usort($links, function (PackageLink $a, PackageLink $b) {
             $aPlatform = Preg::isMatch(PlatformRepository::PLATFORM_PACKAGE_REGEX, $a->getPackageName());
             $bPlatform = Preg::isMatch(PlatformRepository::PLATFORM_PACKAGE_REGEX, $b->getPackageName());
 

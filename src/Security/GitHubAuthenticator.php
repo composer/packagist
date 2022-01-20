@@ -6,114 +6,159 @@ use App\Entity\User;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
 use KnpU\OAuth2ClientBundle\Client\Provider\GithubClient;
-use KnpU\OAuth2ClientBundle\Security\Authenticator\SocialAuthenticator;
+use KnpU\OAuth2ClientBundle\Security\Authenticator\OAuth2Authenticator;
 use KnpU\OAuth2ClientBundle\Client\Provider\FacebookClient;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use League\OAuth2\Client\Provider\GithubResourceOwner;
+use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
+use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+use Symfony\Component\Security\Http\HttpUtils;
 
-class GitHubAuthenticator extends SocialAuthenticator
+class GitHubAuthenticator extends OAuth2Authenticator
 {
     use DoctrineTrait;
 
-    private ClientRegistry $clientRegistry;
-    private ManagerRegistry $doctrine;
-    private UrlGeneratorInterface $router;
-    private UserPasswordEncoderInterface $passwordEncoder;
-
-    public function __construct(ClientRegistry $clientRegistry, ManagerRegistry $doctrine, UrlGeneratorInterface $router, UserPasswordEncoderInterface $passwordEncoder)
-    {
-        $this->clientRegistry = $clientRegistry;
-        $this->doctrine = $doctrine;
-        $this->router = $router;
-        $this->passwordEncoder = $passwordEncoder;
+    public function __construct(
+        private ClientRegistry $clientRegistry,
+        private ManagerRegistry $doctrine,
+        private HttpUtils $httpUtils,
+        private UserPasswordHasherInterface $passwordHasher,
+        private NoPrivateNetworkHttpClient $httpClient,
+    ) {
     }
 
-    public function supports(Request $request)
+    public function supports(Request $request): ?bool
     {
         // continue ONLY if the current ROUTE matches the check ROUTE
         return $request->attributes->get('_route') === 'login_github_check';
     }
 
-    public function getCredentials(Request $request)
+    /**
+     * @inheritDoc
+     */
+    public function authenticate(Request $request): Passport
     {
-        return $this->fetchAccessToken($this->getGitHubClient());
+        $accessToken = $this->fetchAccessToken($this->getGitHubClient());
+
+        // enable remember me for GH login
+        $request->attributes->set('_remember_me', true);
+
+        return new SelfValidatingPassport(
+            new UserBadge($accessToken->getToken(), function () use ($request, $accessToken) {
+                /** @var GithubResourceOwner $ghUser */
+                $ghUser = $this->getGitHubClient()->fetchUserFromToken($accessToken);
+                if (!$ghUser->getId() || $ghUser->getId() <= 0) {
+                    throw new \LogicException('Failed to load info from GitHub');
+                }
+
+                $userRepo = $this->getEM()->getRepository(User::class);
+
+                // Logged in with GitHub already
+                $existingUser = $userRepo->findOneBy(['githubId' => $ghUser->getId()]);
+                if ($existingUser) {
+                    // validate that the token we have on file is still correct
+                    $response = $this->httpClient->request('GET', 'https://api.github.com/user', ['headers' => ['Authorization: token '.$existingUser->getGithubToken()]]);
+                    if ($response->getStatusCode() === 401) {
+                        $existingUser->setGithubToken($accessToken->getToken());
+                        $this->getEM()->persist($existingUser);
+                        $this->getEM()->flush();
+                    }
+
+                    return $existingUser;
+                }
+
+                if ($userRepo->findOneBy(['usernameCanonical' => mb_strtolower($ghUser->getNickname())])) {
+                    throw new AccountUsernameExistsWithoutGitHubException($ghUser->getNickname());
+                }
+
+                $provider = $this->getGitHubClient()->getOAuth2Provider();
+                $authRequest = $provider->getAuthenticatedRequest('GET', 'https://api.github.com/user/emails', $accessToken);
+                $authResponse = $provider->getParsedResponse($authRequest);
+                $email = null;
+                foreach ($authResponse as $item) {
+                    if ($item['verified'] === true) {
+                        if ($userRepo->findOneBy(['emailCanonical' => mb_strtolower($item['email'])])) {
+                            throw new AccountEmailExistsWithoutGitHubException($item['email']);
+                        }
+
+                        if ($item['primary'] === true || $email === null) {
+                            $email = $item['email'];
+                        }
+                    }
+                }
+
+                if (!$email) {
+                    throw new NoVerifiedGitHubEmailFoundException();
+                }
+
+                $user = new User();
+                $user->setEmail($email);
+                $user->setUsername($ghUser->getNickname());
+                $user->setGithubId((string) $ghUser->getId());
+                $user->setGithubToken($accessToken->getToken());
+                $user->setGithubScope($accessToken->getValues()['scope']);
+
+                // encode the plain password
+                $user->setPassword(
+                    $this->passwordHasher->hashPassword(
+                        $user,
+                        hash('sha512', random_bytes(60))
+                    )
+                );
+
+                $user->setLastLogin(new \DateTimeImmutable());
+                $user->initializeApiToken();
+                $user->setEnabled(true);
+
+                $this->getEM()->persist($user);
+                $this->getEM()->flush();
+
+                $request->getSession()->getFlashBag()->add('success', 'A new account was automatically created. You are now logged in.');
+
+                return $user;
+            }),
+            [new RememberMeBadge()]
+        );
     }
 
-    public function getUser($credentials, UserProviderInterface $userProvider)
+    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        /** @var GithubResourceOwner $ghUser */
-        $ghUser = $this->getGitHubClient()->fetchUserFromToken($credentials);
-        if (!$ghUser->getId() || $ghUser->getId() <= 0) {
-            throw new \LogicException('Failed to load info from GitHub');
+        if ($token->getUser() instanceof User) {
+            $token->getUser()->setLastLogin(new \DateTimeImmutable());
+            $this->getEM()->persist($token->getUser());
+            $this->getEM()->flush();
         }
 
-        $userRepo = $this->getEM()->getRepository(User::class);
-
-        // Logged in with GitHub already
-        $existingUser = $userRepo->findOneBy(['githubId' => $ghUser->getId()]);
-        if ($existingUser) {
-            return $existingUser;
+        if (($targetPath = $request->getSession()->get('_security.'.$firewallName.'.target_path')) && is_string($targetPath)) {
+            return $this->httpUtils->createRedirectResponse($request, $targetPath, Response::HTTP_FOUND);
         }
 
-        if ($userRepo->findOneBy(['usernameCanonical' => mb_strtolower($ghUser->getNickname())])) {
-            throw new AccountUsernameExistsWithoutGitHubException($ghUser->getNickname());
+        return $this->httpUtils->createRedirectResponse($request, 'home', Response::HTTP_FOUND);
+    }
+
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
+    {
+        $message = strtr($exception->getMessageKey(), $exception->getMessageData());
+
+        if ($message === 'Username could not be found.') {
+            $message = 'No Packagist.org account found that is connected to your GitHub account. Please register an account and connect it to GitHub first.';
         }
 
-        $provider = $this->getGitHubClient()->getOAuth2Provider();
-        $request = $provider->getAuthenticatedRequest('GET', 'https://api.github.com/user/emails', $credentials);
-        $response = $provider->getParsedResponse($request);
-        $email = null;
-        foreach ($response as $item) {
-            if ($item['verified'] === true) {
-                if ($userRepo->findOneBy(['emailCanonical' => mb_strtolower($item['email'])])) {
-                    throw new AccountEmailExistsWithoutGitHubException($item['email']);
-                }
+        $request->getSession()->getFlashBag()->add('warning', $message);
 
-                if ($item['primary'] === true || $email === null) {
-                    $email = $item['email'];
-                }
-            }
-        }
-
-        if (!$email) {
-            throw new NoVerifiedGitHubEmailFoundException();
-        }
-
-        $user = new User();
-        $user->setEmail($email);
-        $user->setUsername($ghUser->getNickname());
-        $user->setGithubId((string) $ghUser->getId());
-        $user->setGithubToken($credentials->getToken());
-        $user->setGithubScope($credentials->getValues()['scope']);
-
-        // encode the plain password
-        $user->setPassword(
-            $this->passwordEncoder->encodePassword(
-                $user,
-                hash('sha512', random_bytes(60))
-            )
-        );
-
-        $user->setLastLogin(new \DateTimeImmutable());
-        $user->initializeApiToken();
-        $user->setEnabled(true);
-
-        $this->getEM()->persist($user);
-        $this->getEM()->flush();
-
-        // TODO when migrating to an authenticator should be able to set this on the session:
-        // $request->getSession()->addFlash('success', 'A new account was automatically created. You are now logged in.');
-
-        return $user;
+        return $this->httpUtils->createRedirectResponse($request, 'login', Response::HTTP_FOUND);
     }
 
     private function getGitHubClient(): GithubClient
@@ -123,37 +168,4 @@ class GitHubAuthenticator extends SocialAuthenticator
 
         return $client;
     }
-
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
-    {
-        $targetUrl = $this->router->generate('home');
-
-        return new RedirectResponse($targetUrl);
-    }
-
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
-    {
-        $message = strtr($exception->getMessageKey(), $exception->getMessageData());
-
-        if ($message === 'Username could not be found.') {
-            $message = 'No Packagist.org account found that is connected to your GitHub account. Please register an account and connect it to GitHub first.';
-        }
-
-        /** @var \Symfony\Component\HttpFoundation\Session\Session */
-        $session = $request->getSession();
-        $session->getFlashBag()->add('warning', $message);
-
-        return new RedirectResponse($this->router->generate('login'), Response::HTTP_TEMPORARY_REDIRECT);
-    }
-
-    /**
-     * Called when authentication is needed, but it's not sent.
-     * This redirects to the 'login'.
-     */
-    public function start(Request $request, AuthenticationException $authException = null)
-    {
-        return new RedirectResponse($this->router->generate('login'), Response::HTTP_TEMPORARY_REDIRECT);
-    }
-
-    // ...
 }

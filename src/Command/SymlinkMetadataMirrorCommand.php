@@ -48,7 +48,7 @@ class SymlinkMetadataMirrorCommand extends Command
     /**
      * @inheritDoc
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if (empty($this->awsMeta) || !$this->awsMeta['is_web'] || $this->awsMeta['primary']) {
             return 0;

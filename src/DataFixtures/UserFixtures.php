@@ -7,7 +7,7 @@ namespace App\DataFixtures;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
  * Creates a user to be assigned as the maintainer of packages.
@@ -16,11 +16,8 @@ class UserFixtures extends Fixture
 {
     public const PACKAGE_MAINTAINER = 'package-maintainer';
 
-    private UserPasswordEncoderInterface $passwordEncoder;
-
-    public function __construct(UserPasswordEncoderInterface $passwordEncoder)
+    public function __construct(private UserPasswordHasherInterface $passwordHasher)
     {
-        $this->passwordEncoder = $passwordEncoder;
     }
 
     public function load(ObjectManager $manager)
@@ -29,7 +26,7 @@ class UserFixtures extends Fixture
 
         $user->setEmail('dev@packagist.org');
         $user->setUsername('dev');
-        $user->setPassword($this->passwordEncoder->encodePassword($user, 'dev'));
+        $user->setPassword($this->passwordHasher->hashPassword($user, 'dev'));
         $user->setEnabled(true);
 
         $user->initializeApiToken();

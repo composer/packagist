@@ -7,59 +7,109 @@ use App\Util\DoctrineTrait;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
-use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
-use Symfony\Component\Security\Guard\Authenticator\AbstractFormLoginAuthenticator;
-use Symfony\Component\Security\Guard\PasswordAuthenticatedInterface;
+use Symfony\Component\Security\Http\Authentication\AuthenticationFailureHandlerInterface;
+use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface;
+use Symfony\Component\Security\Http\Authenticator\AbstractLoginFormAuthenticator;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\PasswordUpgradeBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Credentials\PasswordCredentials;
+use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
+use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
+use Symfony\Component\Security\Http\HttpUtils;
 use Symfony\Component\Security\Http\Util\TargetPathTrait;
 
-class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator implements PasswordAuthenticatedInterface
+class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator implements AuthenticationEntryPointInterface
 {
-    use TargetPathTrait;
     use DoctrineTrait;
 
-    public const LOGIN_ROUTE = 'login';
-
-    private ManagerRegistry $doctrine;
-
-    private UrlGeneratorInterface $urlGenerator;
-
-    private RecaptchaVerifier $recaptchaVerifier;
-
-    private UserPasswordEncoderInterface $passwordEncoder;
-
-    private RecaptchaHelper $recaptchaHelper;
-
     public function __construct(
-        UrlGeneratorInterface $urlGenerator,
-        RecaptchaVerifier $recaptchaVerifier,
-        UserPasswordEncoderInterface $passwordEncoder,
-        RecaptchaHelper $recaptchaHelper,
-        ManagerRegistry $doctrine
+        private HttpUtils $httpUtils,
+        private RecaptchaVerifier $recaptchaVerifier,
+        private UserProviderInterface $userProvider,
+        private RecaptchaHelper $recaptchaHelper,
+        private ManagerRegistry $doctrine,
     ) {
-        $this->urlGenerator = $urlGenerator;
-        $this->recaptchaVerifier = $recaptchaVerifier;
-        $this->passwordEncoder = $passwordEncoder;
-        $this->recaptchaHelper = $recaptchaHelper;
-        $this->doctrine = $doctrine;
     }
 
-    public function supports(Request $request)
+    protected function getLoginUrl(Request $request): string
     {
-        return self::LOGIN_ROUTE === $request->attributes->get('_route')
-            && $request->isMethod('POST');
+        return $this->httpUtils->generateUri($request, 'login');
     }
 
-    public function getCredentials(Request $request)
+    public function supports(Request $request): bool
+    {
+        return 'login' === $request->attributes->get('_route') && $request->isMethod('POST');
+    }
+
+    public function authenticate(Request $request): Passport
+    {
+        $credentials = $this->getCredentials($request);
+
+        $this->validateRecaptcha($credentials);
+
+        $passport = new Passport(
+            new UserBadge($credentials['username'], [$this->userProvider, 'loadUserByIdentifier']),
+            new PasswordCredentials($credentials['password']),
+            [new RememberMeBadge()]
+        );
+
+        if ($this->userProvider instanceof PasswordUpgraderInterface) {
+            $passport->addBadge(new PasswordUpgradeBadge($credentials['password'], $this->userProvider));
+        }
+
+        return $passport;
+    }
+
+    public function createToken(Passport $passport, string $firewallName): TokenInterface
+    {
+        return new UsernamePasswordToken($passport->getUser(), $firewallName, $passport->getUser()->getRoles());
+    }
+
+    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
+    {
+        $this->recaptchaHelper->clearCounter($request);
+
+        if ($token->getUser() instanceof User) {
+            $token->getUser()->setLastLogin(new \DateTimeImmutable());
+            $this->getEM()->persist($token->getUser());
+            $this->getEM()->flush();
+        }
+
+        if (($targetPath = $request->getSession()->get('_security.'.$firewallName.'.target_path')) && is_string($targetPath)) {
+            return $this->httpUtils->createRedirectResponse($request, $targetPath, Response::HTTP_FOUND);
+        }
+
+        return $this->httpUtils->createRedirectResponse($request, 'home', Response::HTTP_FOUND);
+    }
+
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
+    {
+        $this->recaptchaHelper->increaseCounter($request);
+
+        $request->getSession()->set(Security::AUTHENTICATION_ERROR, $exception);
+
+        return $this->httpUtils->createRedirectResponse($request, 'login', Response::HTTP_FOUND);
+    }
+
+    /**
+     * @return array{username: string, password: string, ip: string|null, recaptcha: string}
+     */
+    private function getCredentials(Request $request): array
     {
         $credentials = [
             'username' => $request->request->get('_username'),
@@ -67,29 +117,20 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator im
             'ip' => $request->getClientIp(),
             'recaptcha' => $request->request->get('g-recaptcha-response'),
         ];
-        $request->getSession()->set(
-            Security::LAST_USERNAME,
-            $credentials['username']
-        );
+
+        if (!\is_string($credentials['username'])) {
+            throw new BadRequestHttpException(sprintf('The key "_username" must be a string, "%s" given.', \gettype($credentials['username'])));
+        }
+
+        $credentials['username'] = trim($credentials['username']);
+
+        if (\strlen($credentials['username']) > Security::MAX_USERNAME_LENGTH) {
+            throw new BadCredentialsException('Invalid username.');
+        }
+
+        $request->getSession()->set(Security::LAST_USERNAME, $credentials['username']);
 
         return $credentials;
-    }
-
-    public function getPassword($credentials): ?string
-    {
-        return $credentials['password'];
-    }
-
-    public function getUser($credentials, UserProviderInterface $userProvider)
-    {
-        $this->validateRecaptcha($credentials);
-
-        try {
-            return $userProvider->loadUserByUsername($credentials['username']);
-        } catch (UsernameNotFoundException $e) {
-            // fail authentication with a custom error
-            throw new CustomUserMessageAuthenticationException('Invalid credentials.', [], 0, $e);
-        }
     }
 
     private function validateRecaptcha(array $credentials): void
@@ -107,37 +148,8 @@ class BruteForceLoginFormAuthenticator extends AbstractFormLoginAuthenticator im
         }
     }
 
-    public function checkCredentials($credentials, UserInterface $user)
+    public function start(Request $request, AuthenticationException $authException = null): Response
     {
-        return $this->passwordEncoder->isPasswordValid($user, $credentials['password']);
-    }
-
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
-    {
-        $this->recaptchaHelper->clearCounter($request);
-
-        if ($token->getUser() instanceof User) {
-            $token->getUser()->setLastLogin(new \DateTimeImmutable());
-            $this->getEM()->persist($token->getUser());
-            $this->getEM()->flush();
-        }
-
-        if ($targetPath = $this->getTargetPath($request->getSession(), $providerKey)) {
-            return new RedirectResponse($targetPath);
-        }
-
-        return new RedirectResponse($this->urlGenerator->generate('home'));
-    }
-
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
-    {
-        $this->recaptchaHelper->increaseCounter($request);
-
-        return parent::onAuthenticationFailure($request, $exception);
-    }
-
-    protected function getLoginUrl()
-    {
-        return $this->urlGenerator->generate(self::LOGIN_ROUTE);
+        return $this->httpUtils->createRedirectResponse($request, 'login', Response::HTTP_FOUND);
     }
 }

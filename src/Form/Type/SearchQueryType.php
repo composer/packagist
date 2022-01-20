@@ -47,7 +47,7 @@ class SearchQueryType extends AbstractType
     /**
      * @inheritDoc
      */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'search_query';
     }

@@ -4,8 +4,6 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
-    security.exception_listener.class: App\Security\ExceptionListener
-
     # default params which can be overriden by config/parameters.yaml
     force_ssl: false
     forced_ssl_hosts: []
@@ -65,9 +63,6 @@ services:
         resource: '../src/Entity/*Repository.php'
 
     Graze\DogStatsD\Client: ~
-
-    GuzzleHttp\Client:
-        arguments: [{timeout: 3}]
 
     App\EventListener\CacheListener:
         tags:
@@ -131,3 +126,5 @@ services:
 
     Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
         arguments: ['@snc_redis.cache', {prefix: 'sess:', ttl: 3600}]
+
+    Symfony\Component\HttpClient\NoPrivateNetworkHttpClient: ~

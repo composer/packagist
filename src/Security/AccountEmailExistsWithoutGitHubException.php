@@ -2,21 +2,18 @@
 
 namespace App\Security;
 
-use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 
-class AccountEmailExistsWithoutGitHubException extends UsernameNotFoundException
+class AccountEmailExistsWithoutGitHubException extends UserNotFoundException
 {
-    private string $email;
-
-    public function __construct(string $email)
+    public function __construct(private string $email)
     {
-        $this->email = $email;
     }
 
     /**
      * @inheritDoc
      */
-    public function getMessageKey()
+    public function getMessageKey(): string
     {
         return 'An account with your GitHub email ('.$this->email.') already exists on Packagist.org but it is not linked to your GitHub account. '
             . 'Please log in to it via username/password and then connect your GitHub account from the Profile > Settings page.';

@@ -68,7 +68,7 @@ class ProfileFormType extends AbstractType
     /**
      * @inheritDoc
      */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'packagist_user_profile';
     }

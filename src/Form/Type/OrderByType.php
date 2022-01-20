@@ -45,7 +45,7 @@ class OrderByType extends AbstractType
     /**
      * @inheritDoc
      */
-    public function getBlockPrefix()
+    public function getBlockPrefix(): string
     {
         return 'order_by';
     }

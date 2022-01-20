@@ -26,14 +26,11 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
     const MAX_ATTEMPTS = 5;
     const RATE_LIMIT_DURATION = 15; // in minutes
 
-    protected Client $redisCache;
-
-    public function __construct(Client $redisCache)
+    public function __construct(private Client $redisCache)
     {
-        $this->redisCache = $redisCache;
     }
 
-    public function onAuthAttempt(TwoFactorAuthenticationEvent $event)
+    public function onAuthAttempt(TwoFactorAuthenticationEvent $event): void
     {
         $key = '2fa-failures:'.$event->getToken()->getUsername();
         $count = (int)$this->redisCache->get($key);
@@ -43,7 +40,7 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
         }
     }
 
-    public function onAuthFailure(TwoFactorAuthenticationEvent $event)
+    public function onAuthFailure(TwoFactorAuthenticationEvent $event): void
     {
         $key = '2fa-failures:'.$event->getToken()->getUsername();
 
@@ -53,10 +50,7 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
         $this->redisCache->exec();
     }
 
-    /**
-     * @inheritDoc
-     */
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             TwoFactorAuthenticationEvents::FAILURE => 'onAuthFailure',

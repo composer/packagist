@@ -19,6 +19,7 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ * @extends ServiceEntityRepository<Package>
  */
 class PackageRepository extends ServiceEntityRepository
 {
@@ -284,7 +285,7 @@ class PackageRepository extends ServiceEntityRepository
 
         $pkg = $qb->getQuery()->getSingleResult();
 
-        if ($pkg) {
+        if ($pkg instanceof Package) {
             // then refresh the package to complete its data and inject the previously fetched versions/maintainers to
             // get a complete package
             $versions = $pkg->getVersions();
@@ -403,6 +404,9 @@ class PackageRepository extends ServiceEntityRepository
         $this->getEntityManager()->getConnection()->executeStatement($sql, ['suspect' => $package->getSuspect(), 'id' => $package->getId()]);
     }
 
+    /**
+     * @return int<0, max>
+     */
     public function getSuspectPackageCount(): int
     {
         $sql = 'SELECT COUNT(*) count FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam")';
@@ -421,6 +425,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @param string   $name Package name to find the dependents of
      * @param int|null $type One of Dependent::TYPE_*
+     * @return int<0, max>
      */
     public function getDependentCount(string $name, ?int $type = null): int
     {

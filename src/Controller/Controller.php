@@ -14,8 +14,6 @@ namespace App\Controller;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Pagerfanta\Doctrine\ORM\QueryAdapter;
-use Pagerfanta\Pagerfanta;
 use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
@@ -71,21 +69,5 @@ abstract class Controller extends AbstractController
         } catch (\Predis\Connection\ConnectionException $e) {}
 
         return ['downloads' => $downloads, 'favers' => $favorites];
-    }
-
-    /**
-     * Initializes the pager for a query.
-     *
-     * @param \Doctrine\ORM\QueryBuilder $query Query for packages
-     * @param int                        $page  Pagenumber to retrieve.
-     */
-    protected function setupPager($query, $page): Pagerfanta
-    {
-        $paginator = new Pagerfanta(new QueryAdapter($query, true));
-        $paginator->setNormalizeOutOfRangePages(true);
-        $paginator->setMaxPerPage(15);
-        $paginator->setCurrentPage($page);
-
-        return $paginator;
     }
 }

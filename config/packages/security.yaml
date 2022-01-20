@@ -1,5 +1,5 @@
 security:
-    encoders:
+    password_hashers:
         App\Entity\User:
             algorithm: auto
             cost: 12
@@ -9,6 +9,8 @@ security:
             algorithm:        sha512
             encode_as_base64: false
             iterations:       1
+
+    enable_authenticator_manager: true
 
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
     providers:
@@ -22,21 +24,18 @@ security:
         main:
             pattern:      .*
             user_checker: App\Security\UserChecker
-            guard:
-                provider: packagist
-                authenticators:
-                    - App\Security\BruteForceLoginFormAuthenticator
-                    - App\Security\GitHubAuthenticator
-                entry_point: App\Security\BruteForceLoginFormAuthenticator
+            custom_authenticators:
+                - App\Security\BruteForceLoginFormAuthenticator
+                - App\Security\GitHubAuthenticator
+            entry_point: App\Security\BruteForceLoginFormAuthenticator
             remember_me:
                 secret: '%env(APP_REMEMBER_ME_SECRET)%'
                 user_providers: packagist
                 name: pauth
-                always_remember_me: true
+                always_remember_me: false
                 secure: '%force_ssl%'
                 lifetime: 31104000 # 1y
             logout:       true
-            anonymous:    true
             lazy:         true
             two_factor:
                 auth_form_path: 2fa_login
@@ -56,8 +55,11 @@ security:
         - { path: ^/2fa, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
         # Members only parts of the site
         - { path: ^/packages/submit$, role: ROLE_USER }
+        - { path: ^/packages/fetch-info$, role: ROLE_USER }
         - { path: ^/profile(/|$), role: ROLE_USER }
+        - { path: ^/trigger-github-sync/?$, role: ROLE_USER }
         - { path: ^/connect(/|$), role: ROLE_USER }
+        - { path: ^/oauth/github/disconnect$, role: ROLE_USER }
 
     role_hierarchy:
         ROLE_UPDATE_PACKAGES: ~

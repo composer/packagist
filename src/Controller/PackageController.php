@@ -53,6 +53,7 @@ use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class PackageController extends Controller
 {
@@ -199,13 +200,8 @@ class PackageController extends Controller
      * @Template()
      * @Route("/packages/submit", name="submit")
      */
-    public function submitPackageAction(Request $req, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, LoggerInterface $logger, MailerInterface $mailer, string $mailFromEmail)
+    public function submitPackageAction(Request $req, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, LoggerInterface $logger, MailerInterface $mailer, string $mailFromEmail, #[CurrentUser] User $user)
     {
-        $user = $this->getUser();
-        if (!$user) {
-            throw $this->createAccessDeniedException('User required to submit packages.');
-        }
-
         $package = new Package;
         $package->setEntityRepository($this->getEM()->getRepository(Package::class));
         $package->setRouter($router);
@@ -245,13 +241,8 @@ class PackageController extends Controller
     /**
      * @Route("/packages/fetch-info", name="submit.fetch_info", defaults={"_format"="json"})
      */
-    public function fetchInfoAction(Request $req, RouterInterface $router)
+    public function fetchInfoAction(Request $req, RouterInterface $router, #[CurrentUser] User $user)
     {
-        $user = $this->getUser();
-        if (!$user) {
-            throw $this->createAccessDeniedException('User required to submit packages.');
-        }
-
         $package = new Package;
         $package->setEntityRepository($this->getEM()->getRepository(Package::class));
         $package->setRouter($router);

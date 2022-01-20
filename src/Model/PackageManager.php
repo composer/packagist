@@ -24,6 +24,9 @@ use Psr\Log\LoggerInterface;
 use Algolia\AlgoliaSearch\SearchClient;
 use Predis\Client;
 use App\Service\GitHubUserMigrationWorker;
+use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Twig\Environment;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -75,7 +78,7 @@ class PackageManager
                     if ($token && $this->githubWorker->deleteWebHook($token, $package)) {
                         break;
                     }
-                } catch (\GuzzleHttp\Exception\TransferException $e) {
+                } catch (TransportExceptionInterface | DecodingExceptionInterface | HttpExceptionInterface $e) {
                     // ignore
                 }
             }

@@ -6,6 +6,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 
+/**
+ * @extends ServiceEntityRepository<Job>
+ */
 class JobRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -35,7 +38,7 @@ class JobRepository extends ServiceEntityRepository
         ]);
     }
 
-    public function getLastGitHubSyncJob(int $userId)
+    public function getLastGitHubSyncJob(int $userId): ?Job
     {
         return $this->createQueryBuilder('j')
             ->where('j.packageId = :userId')

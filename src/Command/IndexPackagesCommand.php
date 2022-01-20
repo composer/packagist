@@ -92,7 +92,12 @@ class IndexPackagesCommand extends Command
         $index = $this->algolia->initIndex($this->algoliaIndexName);
 
         if ($package) {
-            $packages = [['id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()]];
+            $packageEntity = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package]);
+            if ($packageEntity === null) {
+                $output->writeln('<error>Package '.$package.' not found</error>');
+                return 1;
+            }
+            $packages = [['id' => $packageEntity->getId()]];
         } elseif ($force || $indexAll) {
             $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
             if ($force) {

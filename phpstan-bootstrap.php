@@ -15,7 +15,7 @@ $cacheFile = __DIR__.'/.phpstan-dba.cache';
 $config = new RuntimeConfiguration();
 // $config->debugMode(true);
 
-(new Dotenv())->bootEnv(__DIR__ . '/../.env');
+(new Dotenv())->bootEnv(__DIR__ . '/.env');
 $dsn = parse_url($_SERVER['DATABASE_URL']);
 
 QueryReflection::setupReflector(

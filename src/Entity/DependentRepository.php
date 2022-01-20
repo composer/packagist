@@ -20,6 +20,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method Dependent|null findOneBy(array $criteria, array $orderBy = null)
  * @method Dependent[]    findAll()
  * @method Dependent[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends ServiceEntityRepository<Dependent>
  */
 class DependentRepository extends ServiceEntityRepository
 {

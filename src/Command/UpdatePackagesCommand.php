@@ -73,7 +73,12 @@ class UpdatePackagesCommand extends Command
         }
 
         if ($package) {
-            $packages = [['id' => $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package])->getId()]];
+            $packageEntity = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package]);
+            if ($packageEntity === null) {
+                $output->writeln('<error>Package '.$package.' not found</error>');
+                return 1;
+            }
+            $packages = [['id' => $packageEntity->getId()]];
             if ($force) {
                 $updateEqualRefs = true;
             }

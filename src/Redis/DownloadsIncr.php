@@ -6,7 +6,7 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
 {
     private $args;
 
-    public function getKeysCount()
+    public function getKeysCount(): int
     {
         if (!$this->args) {
             throw new \LogicException('getKeysCount called before filterArguments');
@@ -15,14 +15,14 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
         return count($this->args) - 3;
     }
 
-    protected function filterArguments(array $arguments)
+    protected function filterArguments(array $arguments): array
     {
         $this->args = $arguments;
 
         return parent::filterArguments($arguments);
     }
 
-    public function getScript()
+    public function getScript(): string
     {
         return <<<LUA
 local doIncr = false;
