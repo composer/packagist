@@ -79,10 +79,11 @@ class PackageController extends Controller
     public function listAction(Request $req)
     {
         $repo = $this->getEM()->getRepository(Package::class);
-        $fields = (array) $req->query->get('fields');
+        $queryParams = $req->query->all();
+        $fields = (array) $queryParams['fields']; // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
 
-        if ($fields) {
+        if (count($fields) > 0) {
             $filters = array_filter([
                 'type' => $req->query->get('type'),
                 'vendor' => $req->query->get('vendor'),
