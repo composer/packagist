@@ -20,6 +20,7 @@ use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\LegacyPasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\EquatableInterface;
@@ -33,7 +34,7 @@ use DateTimeInterface;
  * @UniqueEntity(fields={"usernameCanonical"}, message="There is already an account with this username", errorPath="username")
  * @UniqueEntity(fields={"emailCanonical"}, message="There is already an account with this email", errorPath="email")
  */
-class User implements UserInterface, Serializable, TwoFactorInterface, BackupCodeInterface, EquatableInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, Serializable, TwoFactorInterface, BackupCodeInterface, EquatableInterface, PasswordAuthenticatedUserInterface, LegacyPasswordAuthenticatedUserInterface
 {
     /**
      * @ORM\Id
@@ -168,7 +169,6 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         $this->roles = array();
         $this->packages = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
-        $this->salt = hash('sha256', random_bytes(40));
     }
 
     public function __toString(): string

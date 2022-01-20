@@ -2,6 +2,7 @@ sensio_framework_extra:
     router:
         annotations: false
     request:
-        converters: true
-        auto_convert: true
-        disable: ['doctrine.orm']
+        converters: false
+        auto_convert: false
+    cache:
+        annotations: false

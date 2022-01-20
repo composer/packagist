@@ -22,7 +22,6 @@ use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\UserAgentParser;
 use Composer\Pcre\Preg;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -157,7 +156,6 @@ class ApiController extends Controller
      *     defaults={"_format" = "json"},
      *     methods={"PUT"}
      * )
-     * @ParamConverter("package", options={"mapping": {"package": "name"}})
      */
     public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator)
     {

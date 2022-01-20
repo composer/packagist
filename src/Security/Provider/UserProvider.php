@@ -77,6 +77,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         }
 
         $user->setPassword($newEncodedPassword);
+        $user->setSalt(null);
 
         $this->getEM()->persist($user);
         $this->getEM()->flush();

@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Attribute\VarName;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\User;
@@ -17,7 +18,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ProfileController extends Controller
@@ -49,9 +49,8 @@ class ProfileController extends Controller
 
     /**
      * @Route("/users/{name}/", name="user_profile")
-     * @ParamConverter("user", options={"mapping": {"name": "usernameCanonical"}})
      */
-    public function publicProfile(Request $req, User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
+    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
     {
         $packages = $this->getUserPackages($req, $user);
 
@@ -77,9 +76,8 @@ class ProfileController extends Controller
     /**
      * @Route("/users/{name}/packages/", name="user_packages")
      * @Route("/users/{name}/packages.json", name="user_packages_json", defaults={"_format": "json"})
-     * @ParamConverter("user", options={"mapping": {"name": "username"}})
      */
-    public function packagesAction(Request $req, User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
+    public function packagesAction(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
     {
         $packages = $this->getUserPackages($req, $user);
 
