@@ -288,6 +288,9 @@ class IndexPackagesCommand extends Command
         }, $tags)));
     }
 
+    /**
+     * @param int[] $idsToUpdate
+     */
     private function updateIndexedAt(array $idsToUpdate, string $time)
     {
         $retries = 5;

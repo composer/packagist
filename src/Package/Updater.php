@@ -274,11 +274,12 @@ class Updater
     }
 
     /**
-     * @return array with keys:
-     *                    - updated (whether the version was updated or needs to be marked as updated)
-     *                    - id (version id, can be null for newly created versions)
-     *                    - version (normalized version from the composer package)
-     *                    - object (Version instance if it was updated)
+     * @return array{updated: bool, id: int|null, version: string, object: Version|null}
+     *
+     * - updated (whether the version was updated or needs to be marked as updated)
+     * - id (version id, can be null for newly created versions)
+     * - version (normalized version from the composer package)
+     * - object (Version instance if it was updated)
      */
     private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, $flags, $rootIdentifier)
     {

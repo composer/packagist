@@ -27,6 +27,9 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->fetchAllAssociative($sql, ['name' => $name]);
     }
 
+    /**
+     * @param string[] $packageNames
+     */
     public function searchSecurityAdvisories(array $packageNames, int $updatedSince): array
     {
         $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository

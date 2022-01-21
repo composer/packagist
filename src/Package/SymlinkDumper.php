@@ -104,8 +104,8 @@ class SymlinkDumper
      * Dump a set of packages to the web root
      *
      * @param int[]   $packageIds
-     * @param Boolean $force
-     * @param Boolean $verbose
+     * @param boolean $force
+     * @param boolean $verbose
      */
     public function dump(array $packageIds, $force = false, $verbose = false)
     {
