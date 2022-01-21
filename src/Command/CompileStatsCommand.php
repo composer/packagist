@@ -12,6 +12,7 @@
 
 namespace App\Command;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -93,10 +94,10 @@ class CompileStatsCommand extends Command
         return 0;
     }
 
-    protected function sumLastNDays($days, $id, \DateTime $yesterday, $conn)
+    protected function sumLastNDays(int $days, int $id, \DateTime $yesterday, Connection $conn)
     {
         $date = clone $yesterday;
-        $row = $conn->fetchAssoc('SELECT data FROM download WHERE id = :id AND type = :type', ['id' => $id, 'type' => Download::TYPE_PACKAGE]);
+        $row = $conn->fetchAssociative('SELECT data FROM download WHERE id = :id AND type = :type', ['id' => $id, 'type' => Download::TYPE_PACKAGE]);
         if (!$row) {
             return 0;
         }
