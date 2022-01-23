@@ -601,7 +601,7 @@ class PackageController extends Controller
 
             if (
                 !$package->isSuspect()
-                && ($data['downloads']['total'] ?? 0) <= 10 && ($data['downloads']['views'] ?? 0) >= 100
+                && $data['downloads']['total'] <= 10 && ($data['downloads']['views'] ?? 0) >= 100
                 && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
             ) {
                 $vendorRepo = $this->getEM()->getRepository(Vendor::class);

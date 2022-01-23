@@ -308,7 +308,7 @@ class PackageRepository extends ServiceEntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'm')
-            ->from('App\Entity\Package', 'p')
+            ->from(Package::class, 'p')
             ->leftJoin('p.maintainers', 'm')
             ->where('p.name = ?0')
             ->setParameters([$name]);
@@ -323,7 +323,7 @@ class PackageRepository extends ServiceEntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'v')
-            ->from('App\Entity\Package', 'p')
+            ->from(Package::class, 'p')
             ->leftJoin('p.versions', 'v')
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC');
@@ -338,11 +338,15 @@ class PackageRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getGitHubStars(array $ids)
+    /**
+     * @param int[] $ids
+     * @return array<array{gitHubStars: int|null, id: int}>
+     */
+    public function getGitHubStars(array $ids): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p.gitHubStars', 'p.id')
-            ->from('App\Entity\Package', 'p')
+            ->from(Package::class, 'p')
             ->where($qb->expr()->in('p.id', ':ids'))
             ->setParameter('ids', $ids);
 
@@ -353,7 +357,7 @@ class PackageRepository extends ServiceEntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
-            ->from('App\Entity\Package', 'p');
+            ->from(Package::class, 'p');
 
         if (isset($filters['tag'])) {
             $qb->leftJoin('p.versions', 'v');

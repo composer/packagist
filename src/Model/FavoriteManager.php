@@ -23,18 +23,14 @@ use Predis\Client;
  */
 class FavoriteManager
 {
-    protected Client $redis;
-    protected PackageRepository $packageRepo;
-    protected UserRepository $userRepo;
-
-    public function __construct(Client $redis, PackageRepository $packageRepo, UserRepository $userRepo)
-    {
-        $this->redis = $redis;
-        $this->packageRepo = $packageRepo;
-        $this->userRepo = $userRepo;
+    public function __construct(
+        private Client $redis,
+        private PackageRepository $packageRepo,
+        private UserRepository $userRepo
+    ) {
     }
 
-    public function markFavorite(User $user, Package $package)
+    public function markFavorite(User $user, Package $package): void
     {
         if (!$this->isMarked($user, $package)) {
             $this->redis->zadd('pkg:'.$package->getId().':fav', [$user->getId() => time()]);
@@ -42,37 +38,47 @@ class FavoriteManager
         }
     }
 
-    public function removeFavorite(User $user, Package $package)
+    public function removeFavorite(User $user, Package $package): void
     {
         $this->redis->zrem('pkg:'.$package->getId().':fav', $user->getId());
         $this->redis->zrem('usr:'.$user->getId().':fav', $package->getId());
     }
 
-    public function getFavorites(User $user, $limit = 0, $offset = 0)
+    /**
+     * @return Package[]
+     */
+    public function getFavorites(User $user, int $limit = 0, int $offset = 0): array
     {
         $favoriteIds = $this->redis->zrevrange('usr:'.$user->getId().':fav', $offset, $offset + $limit - 1);
 
         return $this->packageRepo->findBy(['id' => $favoriteIds]);
     }
 
-    public function getFavoriteCount(User $user)
+    public function getFavoriteCount(User $user): int
     {
         return $this->redis->zcard('usr:'.$user->getId().':fav');
     }
 
-    public function getFavers(Package $package, $offset = 0, $limit = 100)
+    /**
+     * @return User[]
+     */
+    public function getFavers(Package $package, int $offset = 0, int $limit = 100): array
     {
         $faverIds = $this->redis->zrevrange('pkg:'.$package->getId().':fav', $offset, $offset + $limit - 1);
 
         return $this->userRepo->findBy(['id' => $faverIds]);
     }
 
-    public function getFaverCount(Package $package)
+    public function getFaverCount(Package $package): int
     {
         return $this->redis->zcard('pkg:'.$package->getId().':fav') + $package->getGitHubStars();
     }
 
-    public function getFaverCounts(array $packageIds)
+    /**
+     * @param array<int> $packageIds
+     * @return array<int, int>
+     */
+    public function getFaverCounts(array $packageIds): array
     {
         $res = [];
 
@@ -91,7 +97,7 @@ class FavoriteManager
         return $res;
     }
 
-    public function isMarked(User $user, Package $package)
+    public function isMarked(User $user, Package $package): bool
     {
         return null !== $this->redis->zrank('usr:'.$user->getId().':fav', $package->getId());
     }
