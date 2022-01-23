@@ -19,6 +19,7 @@ use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Twig\Environment;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -29,30 +30,21 @@ use Symfony\Component\Mime\Email;
  */
 class TwoFactorAuthManager implements BackupCodeManagerInterface
 {
-    protected ManagerRegistry $doctrine;
-    protected MailerInterface $mailer;
-    protected Environment $twig;
-    protected LoggerInterface $logger;
-    protected RequestStack $requestStack;
-    protected array $options;
-
-    public function __construct(ManagerRegistry $doctrine, MailerInterface $mailer, Environment $twig, LoggerInterface $logger, RequestStack $requestStack, array $options)
-    {
-        $this->doctrine = $doctrine;
-        $this->mailer = $mailer;
-        $this->twig = $twig;
-        $this->logger = $logger;
-        $this->requestStack = $requestStack;
-        $this->options = $options;
+    public function __construct(
+        private ManagerRegistry $doctrine,
+        private MailerInterface $mailer,
+        private Environment $twig,
+        private LoggerInterface $logger,
+        private RequestStack $requestStack,
+        /** @var array{from: string, fromName: string} */
+        private array $options
+    ) {
     }
 
     /**
      * Enable two-factor auth on the given user account and send confirmation email.
-     *
-     * @param User   $user
-     * @param string $secret
      */
-    public function enableTwoFactorAuth(User $user, string $secret)
+    public function enableTwoFactorAuth(User $user, string $secret): void
     {
         $user->setTotpSecret($secret);
         $this->doctrine->getManager()->flush();
@@ -64,13 +56,13 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $message = (new Email())
             ->subject('[Packagist] Two-factor authentication enabled')
             ->from(new Address($this->options['from'], $this->options['fromName']))
-            ->to($user->getEmail())
+            ->to((string) $user->getEmail())
             ->text($body)
         ;
 
         try {
             $this->mailer->send($message);
-        } catch (\Symfony\Component\Mailer\Exception\TransportExceptionInterface $e) {
+        } catch (TransportExceptionInterface $e) {
             $this->logger->error('['.get_class($e).'] '.$e->getMessage());
         }
     }
@@ -81,7 +73,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
      * @param User   $user
      * @param string $reason
      */
-    public function disableTwoFactorAuth(User $user, string $reason)
+    public function disableTwoFactorAuth(User $user, string $reason): void
     {
         $user->setTotpSecret(null);
         $user->invalidateAllBackupCodes();
@@ -95,13 +87,13 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $message = (new Email())
             ->subject('[Packagist] Two-factor authentication disabled')
             ->from(new Address($this->options['from'], $this->options['fromName']))
-            ->to($user->getEmail())
+            ->to((string) $user->getEmail())
             ->text($body)
         ;
 
         try {
             $this->mailer->send($message);
-        } catch (\Symfony\Component\Mailer\Exception\TransportExceptionInterface $e) {
+        } catch (TransportExceptionInterface $e) {
             $this->logger->error('['.get_class($e).'] '.$e->getMessage());
         }
     }
@@ -150,11 +142,17 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
      */
     public function invalidateBackupCode(object $user, string $code): void
     {
-        if ($user instanceof BackupCodeInterface) {
-            $this->disableTwoFactorAuth($user, 'Backup code used');
-            /** @var \Symfony\Component\HttpFoundation\Session\Session */
-            $session = $this->requestStack->getCurrentRequest()->getSession();
-            $session->getFlashBag()->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
+        if (!$user instanceof BackupCodeInterface) {
+            return;
         }
+
+        $this->disableTwoFactorAuth($user, 'Backup code used');
+        $session = $this->requestStack->getCurrentRequest()?->getSession();
+
+        if (null === $session) {
+            return;
+        }
+
+        $session->getFlashBag()->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
     }
 }

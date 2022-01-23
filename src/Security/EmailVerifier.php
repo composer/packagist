@@ -17,15 +17,11 @@ class EmailVerifier
 {
     use DoctrineTrait;
 
-    private $verifyEmailHelper;
-    private $mailer;
-    private ManagerRegistry $doctrine;
-
-    public function __construct(VerifyEmailHelperInterface $helper, MailerInterface $mailer, ManagerRegistry $doctrine)
-    {
-        $this->verifyEmailHelper = $helper;
-        $this->mailer = $mailer;
-        $this->doctrine = $doctrine;
+    public function __construct(
+        private VerifyEmailHelperInterface $verifyEmailHelper,
+        private MailerInterface $mailer,
+        private ManagerRegistry $doctrine,
+    ) {
     }
 
     public function sendEmailConfirmation(string $verifyEmailRouteName, UserInterface $user, TemplatedEmail $email): void
@@ -34,10 +30,15 @@ class EmailVerifier
             throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
         }
 
+        $mail = $user->getEmail();
+        if (null === $mail) {
+            throw new \InvalidArgumentException('User needs to have an email address set.');
+        }
+
         $signatureComponents = $this->verifyEmailHelper->generateSignature(
             $verifyEmailRouteName,
-            $user->getId(),
-            $user->getEmail(),
+            (string) $user->getId(),
+            $mail,
             ['id' => $user->getId()]
         );
 
@@ -60,7 +61,12 @@ class EmailVerifier
             throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
         }
 
-        $this->verifyEmailHelper->validateEmailConfirmation($request->getUri(), $user->getId(), $user->getEmail());
+        $mail = $user->getEmail();
+        if (null === $mail) {
+            throw new \InvalidArgumentException('User needs to have an email address set.');
+        }
+
+        $this->verifyEmailHelper->validateEmailConfirmation($request->getUri(), (string) $user->getId(), $mail);
 
         if (!$user->hasRole('ROLE_SPAMMER')) {
             $user->setEnabled(true);
