@@ -11592,16 +11592,16 @@
         },
         {
             "name": "phpstan/phpstan-doctrine",
-            "version": "1.2.2",
+            "version": "1.2.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-doctrine.git",
-                "reference": "5fa8fefdf7d3b41ada096c0271250e2faf1d6adc"
+                "reference": "16cb23af853014620473a0c72d188cf76b9a9401"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-doctrine/zipball/5fa8fefdf7d3b41ada096c0271250e2faf1d6adc",
-                "reference": "5fa8fefdf7d3b41ada096c0271250e2faf1d6adc",
+                "url": "https://api.github.com/repos/phpstan/phpstan-doctrine/zipball/16cb23af853014620473a0c72d188cf76b9a9401",
+                "reference": "16cb23af853014620473a0c72d188cf76b9a9401",
                 "shasum": ""
             },
             "require": {
@@ -11657,9 +11657,9 @@
             "description": "Doctrine extensions for PHPStan",
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-doctrine/issues",
-                "source": "https://github.com/phpstan/phpstan-doctrine/tree/1.2.2"
+                "source": "https://github.com/phpstan/phpstan-doctrine/tree/1.2.3"
             },
-            "time": "2022-01-21T21:06:44+00:00"
+            "time": "2022-01-23T12:35:08+00:00"
         },
         {
             "name": "phpstan/phpstan-symfony",
@@ -13124,12 +13124,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/staabm/phpstan-dba.git",
-                "reference": "9bcdb595085d1461d65721e90d2f25ee3e4b9fc1"
+                "reference": "7bfd7f0963f43d79850694506052498a927f9f12"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/9bcdb595085d1461d65721e90d2f25ee3e4b9fc1",
-                "reference": "9bcdb595085d1461d65721e90d2f25ee3e4b9fc1",
+                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/7bfd7f0963f43d79850694506052498a927f9f12",
+                "reference": "7bfd7f0963f43d79850694506052498a927f9f12",
                 "shasum": ""
             },
             "require": {
@@ -13171,7 +13171,7 @@
                 "issues": "https://github.com/staabm/phpstan-dba/issues",
                 "source": "https://github.com/staabm/phpstan-dba/tree/main"
             },
-            "time": "2022-01-23T10:12:14+00:00"
+            "time": "2022-01-23T13:01:07+00:00"
         },
         {
             "name": "symfony/browser-kit",
