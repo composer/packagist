@@ -3,31 +3,22 @@
 namespace App\Menu;
 
 use Knp\Menu\FactoryInterface;
+use Knp\Menu\ItemInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class MenuBuilder
 {
-    private FactoryInterface $factory;
     private string $username;
-    private TranslatorInterface $translator;
 
-    /**
-     * @param FactoryInterface      $factory
-     * @param TokenStorageInterface $tokenStorage
-     * @param TranslatorInterface   $translator
-     */
-    public function __construct(FactoryInterface $factory, TokenStorageInterface $tokenStorage, TranslatorInterface $translator)
+    public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator)
     {
-        $this->factory = $factory;
-        $this->translator = $translator;
-
         if ($tokenStorage->getToken() && $tokenStorage->getToken()->getUser()) {
             $this->username = $tokenStorage->getToken()->getUser()->getUsername();
         }
     }
 
-    public function createUserMenu()
+    public function createUserMenu(): ItemInterface
     {
         $menu = $this->factory->createItem('root');
         $menu->setChildrenAttribute('class', 'list-unstyled');
@@ -39,7 +30,7 @@ class MenuBuilder
         return $menu;
     }
 
-    public function createProfileMenu()
+    public function createProfileMenu(): ItemInterface
     {
         $menu = $this->factory->createItem('root');
         $menu->setChildrenAttribute('class', 'nav nav-tabs nav-stacked');
@@ -49,7 +40,7 @@ class MenuBuilder
         return $menu;
     }
 
-    private function addProfileMenu($menu)
+    private function addProfileMenu(ItemInterface $menu): void
     {
         $menu->addChild($this->translator->trans('menu.profile'), ['label' => '<span class="icon-vcard"></span>' . $this->translator->trans('menu.profile'), 'route' => 'my_profile', 'extras' => ['safe_label' => true]]);
         $menu->addChild($this->translator->trans('menu.settings'), ['label' => '<span class="icon-tools"></span>' . $this->translator->trans('menu.settings'), 'route' => 'edit_profile', 'extras' => ['safe_label' => true]]);
