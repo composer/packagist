@@ -72,7 +72,7 @@ class UpdaterWorker
     }
 
     /**
-     * @return array{status: string, message?: string, after?: \DateTime, vendor?: string, details?: string, e?: \Exception|\Throwable}
+     * @return array{status: string, message?: string, after?: \DateTimeInterface, vendor?: string, details?: string, e?: \Throwable}
      */
     public function process(Job $job, SignalHandler $signal): array
     {

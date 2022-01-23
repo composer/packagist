@@ -242,7 +242,7 @@ class GitHubUserMigrationWorker
     }
 
     /**
-     * @param array<int|string, mixed> $json
+     * @param array<int|string, mixed>|null $json
      */
     private function request(string $token, string $method, string $url, array $json = null): ResponseInterface
     {

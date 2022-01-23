@@ -3891,12 +3891,12 @@ parameters:
 			path: src/SecurityAdvisory/RemoteSecurityAdvisory.php
 
 		-
-			message: "#^Offset 'after' does not exist on array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTime, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTime, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, exception\\?\\: Throwable\\}\\.$#"
+			message: "#^Offset 'after' does not exist on array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, exception\\?\\: Throwable\\}\\.$#"
 			count: 1
 			path: src/Service/QueueWorker.php
 
 		-
-			message: "#^Offset 'status' on array\\{status\\: 'errored', message\\: 'An unexpected…', exception\\: Throwable\\}\\|array\\{status\\: string, message\\: string, after\\?\\: DateTime, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: string, message\\: string, after\\?\\: DateTime, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			message: "#^Offset 'status' on array\\{status\\: 'errored', message\\: 'An unexpected…', exception\\: Throwable\\}\\|array\\{status\\: string, message\\: string, after\\?\\: DateTime, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: string, message\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\} in isset\\(\\) always exists and is not nullable\\.$#"
 			count: 1
 			path: src/Service/QueueWorker.php
 
