@@ -23,27 +23,24 @@ use Symfony\Component\Console\Output\ConsoleOutput;
  */
 class PackageFixtures extends Fixture implements DependentFixtureInterface
 {
-    private ProviderManager $providerManager;
-
-    private UpdaterWorker $updateWorker;
-
     private SignalHandler $signalHandler;
 
-    public function __construct(ProviderManager $providerManager, UpdaterWorker $updaterWorker, Logger $logger)
-    {
-        $this->providerManager = $providerManager;
-        $this->updateWorker = $updaterWorker;
+    public function __construct(
+        private ProviderManager $providerManager,
+        private UpdaterWorker $updaterWorker,
+        Logger $logger
+    ) {
         $this->signalHandler = SignalHandler::create(null, $logger);
     }
 
-    public function getDependencies()
+    public function getDependencies(): array
     {
         return [
             UserFixtures::class,
         ];
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         $output = new ConsoleOutput();
 
@@ -99,9 +96,12 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface
             'update_equal_refs' => false,
         ]);
 
-        $this->updateWorker->process($job, $this->signalHandler);
+        $this->updaterWorker->process($job, $this->signalHandler);
     }
 
+    /**
+     * @return array<array{0: string, 1: string}>
+     */
     private function getPackages(): array
     {
         return [

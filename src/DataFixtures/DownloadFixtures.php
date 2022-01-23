@@ -23,24 +23,20 @@ use Symfony\Component\Console\Output\ConsoleOutput;
  */
 class DownloadFixtures extends Fixture implements DependentFixtureInterface
 {
-    private Client $redis;
-
-    private MigrateDownloadCountsCommand $migrateDownloadCountsCommand;
-
-    public function __construct(Client $redis, MigrateDownloadCountsCommand $command)
-    {
-        $this->redis = $redis;
-        $this->migrateDownloadCountsCommand = $command;
+    public function __construct(
+        private Client $redis,
+        private MigrateDownloadCountsCommand $migrateDownloadCountsCommand
+    ) {
     }
 
-    public function getDependencies()
+    public function getDependencies(): array
     {
         return [
             PackageFixtures::class,
         ];
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
         $input  = new ArrayInput([]);
         $output = new ConsoleOutput();
