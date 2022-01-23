@@ -137,6 +137,12 @@ class PackagistExtension extends AbstractExtension
 
     public function requiresRecaptcha(?string $username): bool
     {
-        return $this->recaptchaHelper->requiresRecaptcha($this->requestStack->getCurrentRequest()->getClientIp(), $username);
+        $clientIp = $this->requestStack->getCurrentRequest()?->getClientIp();
+
+        if (null === $clientIp || null === $username) {
+            return false;
+        }
+
+        return $this->recaptchaHelper->requiresRecaptcha($clientIp, $username);
     }
 }
