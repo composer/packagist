@@ -68,6 +68,19 @@ class RemoteSecurityAdvisory
         return $this->composerRepository;
     }
 
+    /**
+     * @param array{
+     *     branches: array<array{
+     *        versions: string[],
+     *        time?: int|string|mixed
+     *     }>,
+     *     composer-repository?: false|string,
+     *     title: string,
+     *     reference: string,
+     *     link: string,
+     *     cve?: string
+     * } $info
+     */
     public static function createFromFriendsOfPhp(string $fileNameWithPath, array $info): RemoteSecurityAdvisory
     {
         $date = null;
