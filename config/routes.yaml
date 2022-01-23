@@ -1,3 +1,12 @@
-#index:
-#    path: /
-#    controller: App\Controller\DefaultController::index
+about:
+    path: '/about'
+    controller: 'Symfony\Bundle\FrameworkBundle\Controller\TemplateController'
+    defaults:
+        template: 'about/about.html.twig'
+
+about_composer:
+    path: '/about-composer'
+    controller: 'Symfony\Bundle\FrameworkBundle\Controller\RedirectController::urlRedirectAction'
+    defaults:
+        path: 'https://getcomposer.org/'
+        permanent: true
