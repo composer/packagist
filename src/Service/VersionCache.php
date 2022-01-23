@@ -12,19 +12,19 @@ class VersionCache implements VersionCacheInterface
     /** @var array<string, array{version: string, normalizedVersion: string, source: array{reference: string|null, type: string|null, url: string|null}}> */
     private array $versionCache;
 
+    /**
+     * @param array<string|int, array{version: string, normalizedVersion: string, source: array{reference: string|null, type: string|null, url: string|null}}> $existingVersions
+     * @param string[] $emptyReferences
+     */
     public function __construct(
         private Package $package,
-        /** @var array<string|int, array{version: string, normalizedVersion: string, source: array{reference: string|null, type: string|null, url: string|null}}> */
-        private array $existingVersions,
-        /** @var string[] */
+        array $existingVersions,
         private array $emptyReferences
     ) {
         $this->versionCache = [];
         foreach ($existingVersions as $version) {
             $this->versionCache[$version['version']] = $version;
         }
-        $this->package = $package;
-        $this->emptyReferences = $emptyReferences;
     }
 
     /**

@@ -31,6 +31,21 @@ class GitHubUserMigrationWorker
     ) {
     }
 
+    /**
+     * @return array{
+     *     status: string,
+     *     message: string,
+     *     after?: \DateTime,
+     *     results?: array{
+     *         hooks_setup: int,
+     *         hooks_failed: array<int, array{
+     *             package: string,
+     *             reason: mixed
+     *         }>,
+     *         hooks_ok_unchanged: int
+     *     }
+     * }
+     */
     public function process(Job $job, SignalHandler $signal): array
     {
         $em = $this->getEM();
@@ -78,7 +93,7 @@ class GitHubUserMigrationWorker
         ];
     }
 
-    public function setupWebHook(string $token, Package $package)
+    public function setupWebHook(string $token, Package $package): null|bool|string
     {
         if (!Preg::isMatch('#^(?:(?:https?|git)://([^/]+)/|git@([^:]+):)(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git|/)?$#', $package->getRepository(), $match)) {
             return null;
@@ -193,6 +208,19 @@ class GitHubUserMigrationWorker
         return true;
     }
 
+    /**
+     * @return array<int, array{
+     *     id: int,
+     *     name: string,
+     *     active: bool,
+     *     events: string[],
+     *     config: array{
+     *         url: string,
+     *         secret: string
+     *     },
+     *     updated_at: string
+     * }>
+     */
     private function getHooks(string $token, string $repoKey): array
     {
         $hooks = [];
@@ -213,6 +241,9 @@ class GitHubUserMigrationWorker
         return $hooks;
     }
 
+    /**
+     * @param array<int|string, mixed> $json
+     */
     private function request(string $token, string $method, string $url, array $json = null): ResponseInterface
     {
         $opts = [
@@ -223,11 +254,22 @@ class GitHubUserMigrationWorker
             $opts['json'] = $json;
         }
 
-        $response = $this->httpClient->request($method, 'https://api.github.com/' . $url, $opts);
-
-        return $response;
+        return $this->httpClient->request($method, 'https://api.github.com/' . $url, $opts);
     }
 
+    /**
+     * @return array{
+     *     name: string,
+     *     config: array{
+     *         url: string,
+     *         content_type: string,
+     *         secret: string,
+     *         insecure_ssl: int
+     *     },
+     *     events: string[],
+     *     active: bool
+     * }
+     */
     private function getGitHubHookData(): array
     {
         return [
@@ -245,7 +287,7 @@ class GitHubUserMigrationWorker
         ];
     }
 
-    private function isAcceptableException(HttpExceptionInterface $e)
+    private function isAcceptableException(HttpExceptionInterface $e): string|false
     {
         $message = $e->getResponse()->toArray(false)['message'];
 

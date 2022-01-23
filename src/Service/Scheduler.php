@@ -11,15 +11,15 @@ class Scheduler
 {
     use \App\Util\DoctrineTrait;
 
-    private ManagerRegistry $doctrine;
-    private RedisClient $redis;
-
-    public function __construct(RedisClient $redis, ManagerRegistry $doctrine)
-    {
-        $this->doctrine = $doctrine;
-        $this->redis = $redis;
+    public function __construct(
+        private RedisClient $redis,
+        private ManagerRegistry $doctrine
+    ) {
     }
 
+    /**
+     * @param Package|int $packageOrId
+     */
     public function scheduleUpdate($packageOrId, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeInterface $executeAfter = null, bool $forceDump = false): Job
     {
         if ($packageOrId instanceof Package) {
@@ -62,7 +62,7 @@ class Scheduler
         return $this->createJob('security:advisory', ['source' => $source], null, $executeAfter);
     }
 
-    private function getPendingUpdateJob(int $packageId, $updateEqualRefs = false, $deleteBefore = false): ?string
+    private function getPendingUpdateJob(int $packageId, bool $updateEqualRefs = false, bool $deleteBefore = false): ?string
     {
         $result = $this->getEM()->getConnection()->fetchAssociative(
             'SELECT id, payload FROM job WHERE packageId = :package AND status = :status AND type = :type LIMIT 1',
@@ -84,7 +84,7 @@ class Scheduler
     }
 
     /**
-     * @return array [status => x, message => y]
+     * @return array{status: string, message: string}
      */
     public function getJobStatus(string $jobId): array
     {
@@ -99,7 +99,7 @@ class Scheduler
 
     /**
      * @param  Job[]   $jobs
-     * @return array[]
+     * @return array<string, array{status: mixed}>
      */
     public function getJobsStatus(array $jobs): array
     {
@@ -119,6 +119,10 @@ class Scheduler
         return $results;
     }
 
+    /**
+     * @param int|null $packageId
+     * @param \DateTimeInterface|null $executeAfter
+     */
     private function createJob(string $type, array $payload, $packageId = null, $executeAfter = null): Job
     {
         $jobId = bin2hex(random_bytes(20));

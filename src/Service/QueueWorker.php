@@ -13,20 +13,16 @@ class QueueWorker
 {
     use \App\Util\DoctrineTrait;
 
-    private Redis $redis;
-    private Logger $logger;
-    private ManagerRegistry $doctrine;
-    private array $jobWorkers;
     private int $processedJobs = 0;
-    private StatsDClient $statsd;
 
-    public function __construct(Redis $redis, ManagerRegistry $doctrine, Logger $logger, array $jobWorkers, StatsDClient $statsd)
-    {
-        $this->redis = $redis;
-        $this->logger = $logger;
-        $this->doctrine = $doctrine;
-        $this->jobWorkers = $jobWorkers;
-        $this->statsd = $statsd;
+    public function __construct(
+        private Redis $redis,
+        private ManagerRegistry $doctrine,
+        private Logger $logger,
+        /** @var array<string, UpdaterWorker|GitHubUserMigrationWorker|SecurityAdvisoryWorker> */
+        private array $jobWorkers,
+        private StatsDClient $statsd
+    ) {
     }
 
     public function processMessages(int $count): void

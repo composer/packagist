@@ -71,6 +71,9 @@ class UpdaterWorker
         $this->downloadManager = $downloadManager;
     }
 
+    /**
+     * @return array{status: string, message?: string, after?: \DateTime, vendor?: string, details?: string, e?: \Exception|\Throwable}
+     */
     public function process(Job $job, SignalHandler $signal): array
     {
         $em = $this->getEM();
@@ -349,7 +352,7 @@ class UpdaterWorker
         ];
     }
 
-    private function cleanupOutput($str)
+    private function cleanupOutput(string $str): string
     {
         return Preg::replace('{
             Reading\ composer.json\ of\ <span(.+?)>(?P<pkg>[^<]+)</span>\ \(<span(.+?)>(?P<version>[^<]+)</span>\)\r?\n
@@ -357,7 +360,11 @@ class UpdaterWorker
         }x', '$5', $str);
     }
 
-    private function checkForDeadGitHubPackage(Package $package, $match, HttpDownloader $httpDownloader, $output): ?array
+    /**
+     * @param array<int, string> $match
+     * @return array{status: string, message: string, details: string, exception: TransportException, vendor: string}|null
+     */
+    private function checkForDeadGitHubPackage(Package $package, array $match, HttpDownloader $httpDownloader, string $output): ?array
     {
         try {
             $httpDownloader->get('https://api.github.com/repos/'.$match[1].'/git/refs/heads', ['retry-auth-failure' => false]);

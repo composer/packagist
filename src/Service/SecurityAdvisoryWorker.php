@@ -15,23 +15,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class SecurityAdvisoryWorker
 {
-    private Locker $locker;
-
-    private LoggerInterface $logger;
-
-    private ManagerRegistry $doctrine;
-
-    /** @var SecurityAdvisorySourceInterface[] */
-    private array $sources;
-
-    public function __construct(Locker $locker, LoggerInterface $logger, ManagerRegistry $doctrine, array $sources)
-    {
-        $this->locker = $locker;
-        $this->sources = $sources;
-        $this->logger = $logger;
-        $this->doctrine = $doctrine;
+    public function __construct(
+        private Locker $locker,
+        private LoggerInterface $logger,
+        private ManagerRegistry $doctrine,
+        /** @var SecurityAdvisorySourceInterface[] */
+        private array $sources
+    ) {
     }
 
+    /**
+     * @return array{status: string, after?: \DateTime, message?: string, details?: string}
+     */
     public function process(Job $job, SignalHandler $signal): array
     {
         $sourceName = $job->getPayload()['source'];
