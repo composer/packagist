@@ -274,7 +274,7 @@ class Updater
     }
 
     /**
-     * @return array{updated: bool, id: int|null, version: string, object: Version|null}
+     * @return array{updated: true, id: int|null, version: string, object: Version}|array{updated: false, id: int|null, version: string, object: null}
      *
      * - updated (whether the version was updated or needs to be marked as updated)
      * - id (version id, can be null for newly created versions)
