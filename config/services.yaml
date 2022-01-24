@@ -40,6 +40,7 @@ services:
             $mailFromEmail: "%env(APP_MAILER_FROM_EMAIL)%"
             $mailFromName: "%env(APP_MAILER_FROM_NAME)%"
             $fallbackGhTokens: "%fallback_gh_tokens%"
+            $configDir: '%kernel.project_dir%/config/'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

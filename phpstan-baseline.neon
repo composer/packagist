@@ -66,16 +66,6 @@ parameters:
 			path: src/Command/CompileStatsCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\ConfigureAlgoliaCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/ConfigureAlgoliaCommand.php
-
-		-
-			message: "#^Parameter \\#1 \\$input of static method Symfony\\\\Component\\\\Yaml\\\\Yaml\\:\\:parse\\(\\) expects string, string\\|false given\\.$#"
-			count: 1
-			path: src/Command/ConfigureAlgoliaCommand.php
-
-		-
 			message: "#^Method App\\\\Command\\\\DumpPackagesCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Command/DumpPackagesCommand.php
@@ -299,16 +289,6 @@ parameters:
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/UpdatePackagesCommand.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\AboutController\\:\\:aboutAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/AboutController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\AboutController\\:\\:aboutComposerFallbackAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/AboutController.php
 
 		-
 			message: "#^Cannot access offset 'absolute_url' on mixed\\.$#"
