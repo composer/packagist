@@ -13,39 +13,32 @@
 namespace App\Command;
 
 use Algolia\AlgoliaSearch\SearchClient;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Yaml\Yaml;
 
+#[AsCommand(name: 'algolia:configure', description: 'Configure Algolia index')]
 class ConfigureAlgoliaCommand extends Command
 {
-    private SearchClient $algolia;
-    private string $algoliaIndexName;
-
-    public function __construct(SearchClient $algolia, string $algoliaIndexName)
-    {
-        $this->algolia = $algolia;
-        $this->algoliaIndexName = $algoliaIndexName;
+    public function __construct(
+        private SearchClient $algolia,
+        private string $algoliaIndexName,
+        private string $configDir,
+    ) {
         parent::__construct();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function configure()
-    {
-        $this
-            ->setName('algolia:configure')
-            ->setDescription('Configure Algolia index')
-        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $settings = Yaml::parse(
-            file_get_contents(__DIR__.'/../config/algolia_settings.yml')
-        );
+        $yaml = file_get_contents($this->configDir.'algolia_settings.yml');
+
+        if (!$yaml) {
+            throw new \RuntimeException('Algolia config file not readable.');
+        }
+
+        $settings = Yaml::parse($yaml);
 
         $index = $this->algolia->initIndex($this->algoliaIndexName);
 
