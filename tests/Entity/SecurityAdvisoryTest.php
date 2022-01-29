@@ -10,7 +10,7 @@ class SecurityAdvisoryTest extends TestCase
 {
     public function testCalculateDifferenceScore(): void
     {
-        $remoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('3f/pygmentize/2017-05-15.yaml', [
+        $data = [
             'title' => 'Remote Code Execution',
             'link' => 'https://github.com/dedalozzo/pygmentize/issues/1',
             'cve' => null,
@@ -21,11 +21,14 @@ class SecurityAdvisoryTest extends TestCase
                 ],
             ],
             'reference' => 'composer://3f/pygmentize'
-        ]);
+        ];
+
+        $remoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('3f/pygmentize/2017-05-15.yaml', $data);
+        $updatedAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('3f/pygmentize/2017-05-15.yaml', $data);
 
         $advisory = new SecurityAdvisory($remoteAdvisory, 'source');
 
-        $this->assertSame(0, $advisory->calculateDifferenceScore($remoteAdvisory));
+        $this->assertSame(0, $advisory->calculateDifferenceScore($updatedAdvisory));
     }
 
     public function testCalculateDifferenceScoreChangeNameAndCVE(): void
@@ -64,6 +67,55 @@ class SecurityAdvisoryTest extends TestCase
                 ],
             ],
             'reference' => 'composer://league/flysystem'
+        ]);
+
+        $this->assertSame(3, $advisory->calculateDifferenceScore($updatedRemoteAdvisory));
+    }
+
+    public function testCalculateDifferenceScoreCveXXXX(): void
+    {
+        $remoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('symfony/framework-bundle/CVE-2022-xxxx.yaml', [
+            'title' => 'CVE-2022-xxxx: CSRF token missing in forms',
+            'link' => 'https://symfony.com/cve-2022-xxxx',
+            'cve' => 'CVE-2022-xxxx',
+            'branches' => [
+                '5.3.x' => [
+                    'time' => '2022-01-29 12:00:00',
+                    'versions' => ['>=5.3.14', '<=5.3.14'],
+                ],
+                '5.4.x' => [
+                    'time' => '2022-01-29 12:00:00',
+                    'versions' => ['>=5.4.3', '<=5.4.3'],
+                ],
+                '6.0.x' => [
+                    'time' => '2022-01-29 12:00:00',
+                    'versions' => ['>=6.0.3', '<=6.0.3'],
+                ],
+            ],
+            'reference' => 'composer://symfony/framework-bundle'
+        ]);
+
+        $advisory = new SecurityAdvisory($remoteAdvisory, 'source');
+
+        $updatedRemoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('symfony/framework-bundle/CVE-2022-99999999999.yaml', [
+            'title' => 'CVE-2022-99999999999: CSRF token missing in forms',
+            'link' => 'https://symfony.com/cve-2022-99999999999',
+            'cve' => 'CVE-2022-99999999999',
+            'branches' => [
+                '5.3.x' => [
+                    'time' => '2022-01-29 12:00:00',
+                    'versions' => ['>=5.3.14', '<=5.3.14'],
+                ],
+                '5.4.x' => [
+                    'time' => '2022-01-29 12:00:00',
+                    'versions' => ['>=5.4.3', '<=5.4.3'],
+                ],
+                '6.0.x' => [
+                    'time' => '2022-01-29 12:00:00',
+                    'versions' => ['>=6.0.3', '<=6.0.3'],
+                ],
+            ],
+            'reference' => 'composer://symfony/framework-bundle'
         ]);
 
         $this->assertSame(3, $advisory->calculateDifferenceScore($updatedRemoteAdvisory));
