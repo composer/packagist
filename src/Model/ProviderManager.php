@@ -18,22 +18,18 @@ use Predis\Client;
 
 class ProviderManager
 {
-    protected Client $redis;
-    protected PackageRepository $repo;
     protected bool $initializedProviders = false;
 
-    public function __construct(Client $redis, PackageRepository $repo)
+    public function __construct(private Client $redis, private PackageRepository $repo)
     {
-        $this->redis = $redis;
-        $this->repo = $repo;
     }
 
-    public function packageExists($name)
+    public function packageExists(string $name): bool
     {
         return (bool) $this->redis->sismember('set:packages', strtolower($name));
     }
 
-    public function packageIsProvided($name)
+    public function packageIsProvided(string $name): bool
     {
         if (false === $this->initializedProviders) {
             if (!$this->redis->scard('set:providers')) {
@@ -45,7 +41,10 @@ class ProviderManager
         return (bool) $this->redis->sismember('set:providers', strtolower($name));
     }
 
-    public function getPackageNames()
+    /**
+     * @return string[]
+     */
+    public function getPackageNames(): array
     {
         if (!$this->redis->scard('set:packages')) {
             $names = $this->repo->getPackageNames();
@@ -61,17 +60,17 @@ class ProviderManager
         return $names;
     }
 
-    public function insertPackage(Package $package)
+    public function insertPackage(Package $package): void
     {
         $this->redis->sadd('set:packages', strtolower($package->getName()));
     }
 
-    public function deletePackage(Package $package)
+    public function deletePackage(Package $package): void
     {
         $this->redis->srem('set:packages', strtolower($package->getName()));
     }
 
-    private function populateProviders()
+    private function populateProviders(): void
     {
         $names = $this->repo->getProvidedNames();
         while ($names) {

@@ -12,6 +12,7 @@
 
 namespace App\Model;
 
+use App\Redis\DownloadsIncr;
 use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
@@ -21,6 +22,7 @@ use App\Entity\Download;
 use App\Util\DoctrineTrait;
 use Predis\Client;
 use DateTimeImmutable;
+use Predis\Profile\RedisProfile;
 
 /**
  * Manages the download counts for packages.
@@ -29,24 +31,18 @@ class DownloadManager
 {
     use DoctrineTrait;
 
-    protected Client $redis;
-    protected ManagerRegistry $doctrine;
     protected bool $redisCommandLoaded = false;
 
-    public function __construct(Client $redis, ManagerRegistry $doctrine)
+    public function __construct(private Client $redis, private ManagerRegistry $doctrine)
     {
-        $this->redis = $redis;
-        $this->doctrine = $doctrine;
     }
 
     /**
      * Gets the total, monthly, and daily download counts for an entire package or optionally a version.
      *
-     * @param \App\Entity\Package|int      $package
-     * @param \App\Entity\Version|int|null $version
-     * @return array
+     * @return array{total: int, monthly: int, daily: float, views?: int}
      */
-    public function getDownloads($package, $version = null, bool $incrViews = false)
+    public function getDownloads(Package|int $package, Version|int $version = null, bool $incrViews = false): array
     {
         if ($package instanceof Package) {
             $package = $package->getId();
@@ -111,7 +107,7 @@ class DownloadManager
     /**
      * Gets the total download count for a package.
      *
-     * @param \App\Entity\Package|int $package
+     * @param Package|int $package
      * @return int
      */
     public function getTotalDownloads($package)
@@ -126,10 +122,10 @@ class DownloadManager
     /**
      * Gets total download counts for multiple package IDs.
      *
-     * @param array $packageIds
-     * @return array a map of package ID to download count
+     * @param array<int> $packageIds
+     * @return array<int, int> a map of package ID to download count
      */
-    public function getPackagesDownloads(array $packageIds)
+    public function getPackagesDownloads(array $packageIds): array
     {
         $keys = [];
 
@@ -152,14 +148,15 @@ class DownloadManager
      *
      * @param list<array{id: int, vid: int, minor: string}> $jobs Each job contains id (package id), vid (version id) and ip keys
      */
-    public function addDownloads(array $jobs, string $ip, string $phpMinor, string $phpMinorPlatform)
+    public function addDownloads(array $jobs, string $ip, string $phpMinor, string $phpMinorPlatform): void
     {
         $day = date('Ymd');
         $month = date('Ym');
 
         if (!$this->redisCommandLoaded) {
-            /** @phpstan-ignore-next-line */
-            $this->redis->getProfile()->defineCommand('downloadsIncr', 'App\Redis\DownloadsIncr');
+            $profile = $this->redis->getProfile();
+            assert($profile instanceof RedisProfile);
+            $profile->defineCommand('downloadsIncr', DownloadsIncr::class);
             $this->redisCommandLoaded = true;
         }
 
@@ -198,7 +195,10 @@ class DownloadManager
         $this->redis->downloadsIncr(...$args);
     }
 
-    public function transferDownloadsToDb(int $packageId, array $keys, DateTimeImmutable $now)
+    /**
+     * @param string[] $keys
+     */
+    public function transferDownloadsToDb(int $packageId, array $keys, DateTimeImmutable $now): void
     {
         $package = $this->getEM()->getRepository(Package::class)->find($packageId);
         // package was deleted in the meantime, abort
@@ -254,10 +254,10 @@ class DownloadManager
      * @param array<string, int> $keys array of keys => dl count
      * @param list<int>    $validVersionIds
      */
-    private function createDbRecordsForKeys(Package $package, array $keys, array $validVersionIds, DateTimeImmutable $now)
+    private function createDbRecordsForKeys(Package $package, array $keys, array $validVersionIds, DateTimeImmutable $now): void
     {
         reset($keys);
-        list($id, $type) = $this->getKeyInfo(key($keys));
+        [$id, $type] = $this->getKeyInfo((string) key($keys));
 
         // skip if the version was deleted in the meantime
         if ($type === Download::TYPE_VERSION && !in_array($id, $validVersionIds, true)) {
@@ -291,6 +291,9 @@ class DownloadManager
         $record->computeSum();
     }
 
+    /**
+     * @return array{0: int, 1: int}
+     */
     private function getKeyInfo(string $key): array
     {
         if (Preg::isMatch('{^dl:(\d+):}', $key, $match)) {

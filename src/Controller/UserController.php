@@ -155,7 +155,7 @@ class UserController extends Controller
         }
 
         $paginator = new Pagerfanta(
-            new RedisAdapter($favoriteManager, $user, 'getFavorites', 'getFavoriteCount')
+            new RedisAdapter($favoriteManager, $user)
         );
 
         $paginator->setNormalizeOutOfRangePages(true);
