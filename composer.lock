@@ -3849,16 +3849,16 @@
         },
         {
             "name": "pagerfanta/core",
-            "version": "v3.5.1",
+            "version": "v3.5.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Pagerfanta/core.git",
-                "reference": "ef508747e3626ea456313412b082080c5c6ab77a"
+                "reference": "6a6b909a614bb080588472c1f29c26eba8787a96"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Pagerfanta/core/zipball/ef508747e3626ea456313412b082080c5c6ab77a",
-                "reference": "ef508747e3626ea456313412b082080c5c6ab77a",
+                "url": "https://api.github.com/repos/Pagerfanta/core/zipball/6a6b909a614bb080588472c1f29c26eba8787a96",
+                "reference": "6a6b909a614bb080588472c1f29c26eba8787a96",
                 "shasum": ""
             },
             "require": {
@@ -3869,7 +3869,7 @@
             },
             "require-dev": {
                 "phpunit/phpunit": "^9.5",
-                "symfony/phpunit-bridge": "^5.3 || ^6.0"
+                "symfony/phpunit-bridge": "^5.4 || ^6.0"
             },
             "type": "library",
             "autoload": {
@@ -3889,22 +3889,22 @@
                 "pagerfanta"
             ],
             "support": {
-                "source": "https://github.com/Pagerfanta/core/tree/v3.5.1"
+                "source": "https://github.com/Pagerfanta/core/tree/v3.5.2"
             },
-            "time": "2021-12-01T23:47:09+00:00"
+            "time": "2022-01-24T23:38:50+00:00"
         },
         {
             "name": "pagerfanta/doctrine-orm-adapter",
-            "version": "v3.5.1",
+            "version": "v3.5.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Pagerfanta/doctrine-orm-adapter.git",
-                "reference": "88dbbd98088cf3591e1bb3dcfc599f618cb8c2e4"
+                "reference": "89db5b603ff107e2eb265cf09046824967163f68"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Pagerfanta/doctrine-orm-adapter/zipball/88dbbd98088cf3591e1bb3dcfc599f618cb8c2e4",
-                "reference": "88dbbd98088cf3591e1bb3dcfc599f618cb8c2e4",
+                "url": "https://api.github.com/repos/Pagerfanta/doctrine-orm-adapter/zipball/89db5b603ff107e2eb265cf09046824967163f68",
+                "reference": "89db5b603ff107e2eb265cf09046824967163f68",
                 "shasum": ""
             },
             "require": {
@@ -3917,8 +3917,8 @@
                 "doctrine/annotations": "^1.11.1",
                 "doctrine/cache": "^1.11 || ^2.0",
                 "phpunit/phpunit": "^9.5",
-                "symfony/cache": "^4.4 || ^5.3 || ^6.0",
-                "symfony/phpunit-bridge": "^5.3 || ^6.0"
+                "symfony/cache": "^4.4 || ^5.4 || ^6.0",
+                "symfony/phpunit-bridge": "^5.4 || ^6.0"
             },
             "type": "library",
             "autoload": {
@@ -3940,22 +3940,22 @@
                 "pagerfanta"
             ],
             "support": {
-                "source": "https://github.com/Pagerfanta/doctrine-orm-adapter/tree/v3.5.1"
+                "source": "https://github.com/Pagerfanta/doctrine-orm-adapter/tree/v3.5.2"
             },
-            "time": "2021-11-25T23:29:09+00:00"
+            "time": "2022-01-18T04:22:14+00:00"
         },
         {
             "name": "pagerfanta/twig",
-            "version": "v3.5.1",
+            "version": "v3.5.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Pagerfanta/twig.git",
-                "reference": "b818605c814dd1b18c42a4f047cc75352152841b"
+                "reference": "0d7af77b027ffd613212abb434a40f4520f4e9d5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Pagerfanta/twig/zipball/b818605c814dd1b18c42a4f047cc75352152841b",
-                "reference": "b818605c814dd1b18c42a4f047cc75352152841b",
+                "url": "https://api.github.com/repos/Pagerfanta/twig/zipball/0d7af77b027ffd613212abb434a40f4520f4e9d5",
+                "reference": "0d7af77b027ffd613212abb434a40f4520f4e9d5",
                 "shasum": ""
             },
             "require": {
@@ -3966,7 +3966,7 @@
             },
             "require-dev": {
                 "phpunit/phpunit": "^9.5",
-                "symfony/phpunit-bridge": "^5.3 || ^6.0"
+                "symfony/phpunit-bridge": "^5.4 || ^6.0"
             },
             "type": "library",
             "autoload": {
@@ -3986,9 +3986,9 @@
                 "pagerfanta"
             ],
             "support": {
-                "source": "https://github.com/Pagerfanta/twig/tree/v3.5.1"
+                "source": "https://github.com/Pagerfanta/twig/tree/v3.5.2"
             },
-            "time": "2021-12-01T23:47:09+00:00"
+            "time": "2022-01-18T04:22:14+00:00"
         },
         {
             "name": "paragonie/constant_time_encoding",
@@ -11585,16 +11585,16 @@
         },
         {
             "name": "phpstan/phpstan-doctrine",
-            "version": "1.1.1",
+            "version": "1.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-doctrine.git",
-                "reference": "830789b82e7e0fadbeca9ad55e7fb62c43fb69d1"
+                "reference": "c49475b7b5b8bf08a15114b86899099575bf7545"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-doctrine/zipball/830789b82e7e0fadbeca9ad55e7fb62c43fb69d1",
-                "reference": "830789b82e7e0fadbeca9ad55e7fb62c43fb69d1",
+                "url": "https://api.github.com/repos/phpstan/phpstan-doctrine/zipball/c49475b7b5b8bf08a15114b86899099575bf7545",
+                "reference": "c49475b7b5b8bf08a15114b86899099575bf7545",
                 "shasum": ""
             },
             "require": {
@@ -11612,11 +11612,11 @@
                 "doctrine/annotations": "^1.11.0",
                 "doctrine/collections": "^1.6",
                 "doctrine/common": "^2.7 || ^3.0",
-                "doctrine/dbal": "^2.13.7",
+                "doctrine/dbal": "^2.13.7 || ^3.0",
                 "doctrine/lexer": "^1.2.1",
                 "doctrine/mongodb-odm": "^1.3 || ^2.1",
                 "doctrine/orm": "^2.11.0",
-                "doctrine/persistence": "^1.1 || ^2.0",
+                "doctrine/persistence": "^1.3.8 || ^2.2.1",
                 "nesbot/carbon": "^2.49",
                 "nikic/php-parser": "^4.13.2",
                 "php-parallel-lint/php-parallel-lint": "^1.2",
@@ -11629,7 +11629,7 @@
             "type": "phpstan-extension",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.1-dev"
+                    "dev-master": "1.2-dev"
                 },
                 "phpstan": {
                     "includes": [
@@ -11650,9 +11650,9 @@
             "description": "Doctrine extensions for PHPStan",
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-doctrine/issues",
-                "source": "https://github.com/phpstan/phpstan-doctrine/tree/1.1.1"
+                "source": "https://github.com/phpstan/phpstan-doctrine/tree/1.2.8"
             },
-            "time": "2022-01-19T07:18:34+00:00"
+            "time": "2022-01-28T11:06:16+00:00"
         },
         {
             "name": "phpstan/phpstan-symfony",
@@ -13837,5 +13837,5 @@
     "platform-overrides": {
         "php": "8.0.5"
     },
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.3.0"
 }

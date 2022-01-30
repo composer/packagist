@@ -46,11 +46,6 @@ parameters:
 			path: src/Command/CompileStatsCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\CompileStatsCommand\\:\\:sumLastNDays\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/CompileStatsCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/CompileStatsCommand.php
@@ -486,17 +481,7 @@ parameters:
 			path: src/Controller/ExploreController.php
 
 		-
-			message: "#^Parameter \\#1 \\$array of function usort expects array, mixed given\\.$#"
-			count: 2
-			path: src/Controller/ExploreController.php
-
-		-
 			message: "#^Parameter \\#1 \\$nbResults of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects int\\<0, max\\>, int given\\.$#"
-			count: 1
-			path: src/Controller/ExploreController.php
-
-		-
-			message: "#^Parameter \\#2 \\$results of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects iterable\\<\\(int\\|string\\), mixed\\>, mixed given\\.$#"
 			count: 1
 			path: src/Controller/ExploreController.php
 
@@ -931,11 +916,6 @@ parameters:
 			path: src/Controller/ProfileController.php
 
 		-
-			message: "#^Parameter \\#1 \\.\\.\\.\\$addresses of method Symfony\\\\Component\\\\Mime\\\\Email\\:\\:to\\(\\) expects string\\|Symfony\\\\Component\\\\Mime\\\\Address, string\\|null given\\.$#"
-			count: 1
-			path: src/Controller/RegistrationController.php
-
-		-
 			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\PasswordHasher\\\\Hasher\\\\UserPasswordHasherInterface\\:\\:hashPassword\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: src/Controller/RegistrationController.php
@@ -947,11 +927,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$userEmail of method App\\\\Controller\\\\ResetPasswordController\\:\\:processSendingPasswordResetEmail\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Parameter \\#1 \\.\\.\\.\\$addresses of method Symfony\\\\Component\\\\Mime\\\\Email\\:\\:to\\(\\) expects string\\|Symfony\\\\Component\\\\Mime\\\\Address, string\\|null given\\.$#"
 			count: 1
 			path: src/Controller/ResetPasswordController.php
 
@@ -1791,33 +1766,8 @@ parameters:
 			path: src/Entity/PackageLink.php
 
 		-
-			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Cannot access offset 'createdAt' on mixed\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Cannot access offset 'id' on mixed\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Cannot access offset 'lastUpdated' on mixed\\.$#"
-			count: 2
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Cannot access offset 'user_id' on mixed\\.$#"
 			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Cannot call method format\\(\\) on mixed\\.$#"
-			count: 2
 			path: src/Entity/PackageRepository.php
 
 		-
@@ -1872,16 +1822,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getGitHubPackagesByMaintainer\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getGitHubStars\\(\\) has parameter \\$ids with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getGitHubStars\\(\\) should return array\\<array\\{gitHubStars\\: int\\|null, id\\: int\\}\\> but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -1957,11 +1897,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithVersions\\(\\) has parameter \\$ids with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithVersions\\(\\) should return array\\<App\\\\Entity\\\\Package\\> but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -2371,22 +2306,12 @@ parameters:
 			path: src/Entity/User.php
 
 		-
-			message: "#^Parameter \\#1 \\$string of function strtolower expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
 			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$email has no type specified\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
 		-
 			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$emailCanonical \\(string\\) does not accept mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$emailCanonical \\(string\\) does not accept string\\|null\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
@@ -2431,24 +2356,9 @@ parameters:
 			path: src/Entity/User.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$username \\(string\\) does not accept string\\|null\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
 			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$usernameCanonical \\(string\\) does not accept mixed\\.$#"
 			count: 1
 			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$usernameCanonical \\(string\\) does not accept string\\|null\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\UserRepository\\:\\:findUsersMissingApiToken\\(\\) should return array\\<int, App\\\\Entity\\\\User\\> but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/UserRepository.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\UserRepository\\:\\:getPackageMaintainersQueryBuilder\\(\\) has no return type specified\\.$#"
@@ -3521,41 +3431,6 @@ parameters:
 			path: src/Security/EmailVerifier.php
 
 		-
-			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Cannot access offset 'email' on mixed\\.$#"
-			count: 3
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Cannot access offset 'primary' on mixed\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Cannot access offset 'verified' on mixed\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Parameter \\#1 \\$email of class App\\\\Security\\\\AccountEmailExistsWithoutGitHubException constructor expects string, mixed given\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Parameter \\#1 \\$email of method App\\\\Entity\\\\User\\:\\:setEmail\\(\\) expects string\\|null, mixed given\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Parameter \\#1 \\$string of function mb_strtolower expects string, mixed given\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
 			message: "#^Parameter \\#1 \\$string of function mb_strtolower expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Security/GitHubAuthenticator.php
@@ -3598,11 +3473,6 @@ parameters:
 		-
 			message: "#^Method App\\\\Security\\\\TwoFactorAuthManager\\:\\:enableTwoFactorAuth\\(\\) has no return type specified\\.$#"
 			count: 1
-			path: src/Security/TwoFactorAuthManager.php
-
-		-
-			message: "#^Parameter \\#1 \\.\\.\\.\\$addresses of method Symfony\\\\Component\\\\Mime\\\\Email\\:\\:to\\(\\) expects string\\|Symfony\\\\Component\\\\Mime\\\\Address, string\\|null given\\.$#"
-			count: 2
 			path: src/Security/TwoFactorAuthManager.php
 
 		-

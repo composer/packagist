@@ -106,11 +106,8 @@ class DownloadManager
 
     /**
      * Gets the total download count for a package.
-     *
-     * @param Package|int $package
-     * @return int
      */
-    public function getTotalDownloads($package)
+    public function getTotalDownloads(Package|int $package): int
     {
         if ($package instanceof Package) {
             $package = $package->getId();

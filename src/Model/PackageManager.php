@@ -141,7 +141,7 @@ class PackageManager
             foreach ($package->getMaintainers() as $maintainer) {
                 $mail = $maintainer->getEmail();
                 if ($mail && $maintainer->isNotifiableForFailures()) {
-                    $recipients[$mail] = new Address($mail, $maintainer->getUsername() ?? '');
+                    $recipients[$mail] = new Address($mail, $maintainer->getUsername());
                 }
             }
 

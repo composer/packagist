@@ -85,6 +85,7 @@ class GitHubAuthenticator extends OAuth2Authenticator
 
                 $provider = $this->getGitHubClient()->getOAuth2Provider();
                 $authRequest = $provider->getAuthenticatedRequest('GET', 'https://api.github.com/user/emails', $accessToken);
+                /** @var array<array{verified: bool, email: string, primary: bool}> $authResponse */
                 $authResponse = $provider->getParsedResponse($authRequest);
                 $email = null;
                 foreach ($authResponse as $item) {
@@ -99,13 +100,17 @@ class GitHubAuthenticator extends OAuth2Authenticator
                     }
                 }
 
-                if (!$email) {
+                if (null === $email) {
                     throw new NoVerifiedGitHubEmailFoundException();
+                }
+                $nickname = $ghUser->getNickname();
+                if (null === $nickname) {
+                    throw new NoGitHubNicknameFoundException();
                 }
 
                 $user = new User();
                 $user->setEmail($email);
-                $user->setUsername($ghUser->getNickname());
+                $user->setUsername($nickname);
                 $user->setGithubId((string) $ghUser->getId());
                 $user->setGithubToken($accessToken->getToken());
                 $user->setGithubScope($accessToken->getValues()['scope']);

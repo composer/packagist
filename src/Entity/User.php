@@ -377,12 +377,12 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         return $this->usernameCanonical;
     }
 
-    public function getUsername(): ?string
+    public function getUsername(): string
     {
         return $this->username;
     }
 
-    public function getUsernameCanonical(): ?string
+    public function getUsernameCanonical(): string
     {
         return $this->usernameCanonical;
     }
@@ -392,12 +392,12 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         return $this->salt;
     }
 
-    public function getEmail(): ?string
+    public function getEmail(): string
     {
         return $this->email;
     }
 
-    public function getEmailCanonical(): ?string
+    public function getEmailCanonical(): string
     {
         return $this->emailCanonical;
     }
@@ -443,15 +443,15 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         }
     }
 
-    public function setUsername(?string $username)
+    public function setUsername(string $username)
     {
         $this->username = $username;
         $this->setUsernameCanonical($username);
     }
 
-    public function setUsernameCanonical(?string $usernameCanonical): void
+    public function setUsernameCanonical(string $usernameCanonical): void
     {
-        $this->usernameCanonical = null === $usernameCanonical ? null : mb_strtolower($usernameCanonical);
+        $this->usernameCanonical = mb_strtolower($usernameCanonical);
     }
 
     public function setSalt($salt): void
@@ -459,15 +459,15 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         $this->salt = $salt;
     }
 
-    public function setEmail(?string $email): void
+    public function setEmail(string $email): void
     {
         $this->email = $email;
         $this->setEmailCanonical($email);
     }
 
-    public function setEmailCanonical(?string $emailCanonical): void
+    public function setEmailCanonical(string $emailCanonical): void
     {
-        $this->emailCanonical = null === $emailCanonical ? null : mb_strtolower($emailCanonical);
+        $this->emailCanonical = mb_strtolower($emailCanonical);
     }
 
     public function setEnabled(bool $boolean): void
