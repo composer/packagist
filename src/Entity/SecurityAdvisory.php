@@ -171,7 +171,7 @@ class SecurityAdvisory
             $increase = 1;
 
             // Do not increase the score if the title was just renamed to add a CVE e.g. from CVE-2022-xxx to CVE-2022-99999999
-            if (Preg::match('#^(CVE-[0-9]{4}-[x]+:)(.*)$#', $this->getTitle(), $matches) && str_contains($advisory->getTitle(), $matches[2])) {
+            if (Preg::match('#^(CVE-[0-9x*?]{1,4}-?[0x*?]+:)(.*)$#', $this->getTitle(), $matches) && str_contains($advisory->getTitle(), $matches[2])) {
                 $increase = 0;
             }
 
