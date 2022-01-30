@@ -94,7 +94,7 @@ class CompileStatsCommand extends Command
         return 0;
     }
 
-    protected function sumLastNDays(int $days, int $id, \DateTime $yesterday, Connection $conn)
+    protected function sumLastNDays(int $days, int $id, \DateTime $yesterday, Connection $conn): int
     {
         $date = clone $yesterday;
         $row = $conn->fetchAssociative('SELECT data FROM download WHERE id = :id AND type = :type', ['id' => $id, 'type' => Download::TYPE_PACKAGE]);

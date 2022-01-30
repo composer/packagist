@@ -54,6 +54,7 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 
 class PackageController extends Controller
 {
@@ -463,13 +464,10 @@ class PackageController extends Controller
      *     defaults={"_format"="html"},
      *     methods={"POST"}
      * )
+     * @IsGranted("ROLE_ANTISPAM")
      */
     public function markSafeAction(Request $req)
     {
-        if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
-            throw new NotFoundHttpException();
-        }
-
         /** @var string[] $vendors */
         $vendors = array_filter($req->request->all('vendor'));
         if (!$this->isCsrfTokenValid('mark_safe', $req->request->get('token'))) {

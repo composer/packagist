@@ -124,7 +124,7 @@
                             {% endif %}
                             {% if is_granted('ROLE_ANTISPAM') and package.isSuspect() %}
                                 <form class="action" action="{{ path("mark_nospam") }}" method="POST">
-                                    <input type="hidden" name="vendor" value="{{ package.vendor }}" />
+                                    <input type="hidden" name="vendor[]" value="{{ package.vendor }}" />
                                     <input type="hidden" name="token" value="{{ markSafeCsrfToken }}" />
                                     <input class="btn btn-danger" type="submit" value="Mark Not Spam" />
                                 </form>
