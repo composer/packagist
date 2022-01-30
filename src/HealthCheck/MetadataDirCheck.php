@@ -8,11 +8,14 @@ use Laminas\Diagnostics\Result\ResultInterface;
 use Laminas\Diagnostics\Result\Success;
 use Symfony\Component\Process\Process;
 
+/**
+ * @phpstan-type AwsMetadata array{}|array{ec2_node: string, ip: string, region: string, primary: bool, has_instance_store: bool, is_worker: bool, is_web: bool}
+ */
 class MetadataDirCheck implements CheckInterface
 {
 
     /**
-     * @param array<string, mixed> $awsMetadata
+     * @phpstan-param AwsMetadata $awsMetadata
      */
     public function __construct(private array $awsMetadata)
     {
@@ -24,7 +27,7 @@ class MetadataDirCheck implements CheckInterface
     }
 
     /**
-     * @param array<string, mixed> $awsMeta
+     * @phpstan-param AwsMetadata $awsMeta
      */
     public static function isMetadataStoreMounted(array $awsMeta): bool
     {

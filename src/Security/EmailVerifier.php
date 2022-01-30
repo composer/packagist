@@ -30,15 +30,10 @@ class EmailVerifier
             throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
         }
 
-        $mail = $user->getEmail();
-        if (null === $mail) {
-            throw new \InvalidArgumentException('User needs to have an email address set.');
-        }
-
         $signatureComponents = $this->verifyEmailHelper->generateSignature(
             $verifyEmailRouteName,
             (string) $user->getId(),
-            $mail,
+            $user->getEmail(),
             ['id' => $user->getId()]
         );
 
@@ -61,12 +56,7 @@ class EmailVerifier
             throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
         }
 
-        $mail = $user->getEmail();
-        if (null === $mail) {
-            throw new \InvalidArgumentException('User needs to have an email address set.');
-        }
-
-        $this->verifyEmailHelper->validateEmailConfirmation($request->getUri(), (string) $user->getId(), $mail);
+        $this->verifyEmailHelper->validateEmailConfirmation($request->getUri(), (string) $user->getId(), $user->getEmail());
 
         if (!$user->hasRole('ROLE_SPAMMER')) {
             $user->setEnabled(true);

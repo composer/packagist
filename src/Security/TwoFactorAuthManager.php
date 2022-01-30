@@ -56,7 +56,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $message = (new Email())
             ->subject('[Packagist] Two-factor authentication enabled')
             ->from(new Address($this->options['from'], $this->options['fromName']))
-            ->to((string) $user->getEmail())
+            ->to($user->getEmail())
             ->text($body)
         ;
 
@@ -87,7 +87,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $message = (new Email())
             ->subject('[Packagist] Two-factor authentication disabled')
             ->from(new Address($this->options['from'], $this->options['fromName']))
-            ->to((string) $user->getEmail())
+            ->to($user->getEmail())
             ->text($body)
         ;
 
