@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\SecurityAdvisory\AdvisoryIdGenerator;
+use Composer\Pcre\Preg;
 use Doctrine\ORM\Mapping as ORM;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 
@@ -137,6 +138,11 @@ class SecurityAdvisory
 
     public function getCve(): ?string
     {
+        // Cleanup invalid CVE ids stored in the database
+        if ($this->cve && !Preg::match('#^CVE-[0-9]{4}-[0-9]{4,}$#', $this->cve)) {
+            $this->cve = null;
+        }
+
         return $this->cve;
     }
 
@@ -162,7 +168,14 @@ class SecurityAdvisory
         }
 
         if ($advisory->getTitle() !== $this->getTitle()) {
-            $score++;
+            $increase = 1;
+
+            // Do not increase the score if the title was just renamed to add a CVE e.g. from CVE-2022-xxx to CVE-2022-99999999
+            if (Preg::match('#^(CVE-[0-9x*?]{1,4}-?[0x*?]+:)(.*)$#', $this->getTitle(), $matches) && str_contains($advisory->getTitle(), $matches[2])) {
+                $increase = 0;
+            }
+
+            $score += $increase;
         }
 
         if ($advisory->getLink() !== $this->getLink()) {
@@ -186,7 +199,7 @@ class SecurityAdvisory
             $score++;
         }
 
-        if ($advisory->getDate() !== $this->reportedAt) {
+        if ($advisory->getDate() != $this->reportedAt) {
             $score++;
         }
 

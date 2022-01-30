@@ -119,13 +119,18 @@ class RemoteSecurityAdvisory
             }
         }
 
+        $cve = null;
+        if ($info['cve'] && Preg::match('#^CVE-[0-9]{4}-[0-9]{4,}$#', $info['cve'])) {
+            $cve = $info['cve'];
+        }
+
         return new RemoteSecurityAdvisory(
             $fileNameWithPath,
             $info['title'],
             str_replace('composer://', '', $info['reference']),
             implode('|', $affectedVersions),
             $info['link'],
-            $info['cve'] ?? null,
+            $cve,
             $date,
             $composerRepository
         );
