@@ -13,7 +13,7 @@ class AdvisoryParser
 
     public static function titleWithoutCve(string $title): string
     {
-        if (Preg::match('#^(CVE-[0-9x*?]{1,4}-?[0-9a-z-]+:)(.*)$#i', $title, $matches)) {
+        if (Preg::match('#^(CVE-[0-9a-z*?-]+:)(.*)$#i', $title, $matches)) {
             return trim($matches[2]);
         }
 
