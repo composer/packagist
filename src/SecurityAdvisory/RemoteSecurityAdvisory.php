@@ -120,7 +120,7 @@ class RemoteSecurityAdvisory
         }
 
         $cve = null;
-        if ($info['cve'] && Preg::match('#^CVE-[0-9]{4}-[0-9]{4,}$#', $info['cve'])) {
+        if (AdvisoryParser::isValidCve((string) $info['cve'])) {
             $cve = $info['cve'];
         }
 
