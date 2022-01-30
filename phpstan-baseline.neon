@@ -3871,77 +3871,12 @@ parameters:
 			path: src/SecurityAdvisory/RemoteSecurityAdvisory.php
 
 		-
-			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:getGitHubHookData\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:getHooks\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:isAcceptableException\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:process\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:request\\(\\) has parameter \\$json with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:setupWebHook\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Locker\\:\\:getConn\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/Locker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/Locker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Locker\\:\\:lockPackageUpdate\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/Locker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Locker\\:\\:lockSecurityAdvisory\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/Locker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/Locker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Locker\\:\\:unlockPackageUpdate\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/Locker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Locker\\:\\:unlockSecurityAdvisory\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/Locker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\QueueWorker\\:\\:__construct\\(\\) has parameter \\$jobWorkers with no value type specified in iterable type array\\.$#"
+			message: "#^Offset 'after' does not exist on array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, exception\\?\\: Throwable\\}\\.$#"
 			count: 1
 			path: src/Service/QueueWorker.php
 
 		-
-			message: "#^Property App\\\\Service\\\\QueueWorker\\:\\:\\$jobWorkers type has no value type specified in iterable type array\\.$#"
+			message: "#^Offset 'status' on array\\{status\\: 'errored', message\\: 'An unexpected…', exception\\: Throwable\\}\\|array\\{status\\: string, message\\: string, after\\?\\: DateTime, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: string, message\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\} in isset\\(\\) always exists and is not nullable\\.$#"
 			count: 1
 			path: src/Service/QueueWorker.php
 
@@ -3956,57 +3891,22 @@ parameters:
 			path: src/Service/Scheduler.php
 
 		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:createJob\\(\\) has parameter \\$executeAfter with no type specified\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:createJob\\(\\) has parameter \\$packageId with no type specified\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
 			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:createJob\\(\\) has parameter \\$payload with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
 
 		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobStatus\\(\\) return type has no value type specified in iterable type array\\.$#"
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobStatus\\(\\) should return array\\{status\\: string, message\\: string\\} but returns mixed\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
 
 		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobStatus\\(\\) should return array but returns mixed\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobsStatus\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobsStatus\\(\\) should return array\\<array\\> but returns array\\<string, mixed\\>\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getPendingUpdateJob\\(\\) has parameter \\$deleteBefore with no type specified\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getPendingUpdateJob\\(\\) has parameter \\$updateEqualRefs with no type specified\\.$#"
+			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobsStatus\\(\\) should return array\\<string, array\\{status\\: mixed\\}\\> but returns array\\<string, mixed\\>\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
 
 		-
 			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getPendingUpdateJob\\(\\) should return string\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:scheduleUpdate\\(\\) has parameter \\$packageOrId with no type specified\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
 
@@ -4019,51 +3919,6 @@ parameters:
 			message: "#^Parameter \\#2 \\$values of method Predis\\\\ClientInterface\\:\\:lpush\\(\\) expects array, string given\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\SecurityAdvisoryWorker\\:\\:__construct\\(\\) has parameter \\$sources with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/SecurityAdvisoryWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\SecurityAdvisoryWorker\\:\\:process\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/SecurityAdvisoryWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:checkForDeadGitHubPackage\\(\\) has parameter \\$match with no type specified\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:checkForDeadGitHubPackage\\(\\) has parameter \\$output with no type specified\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:checkForDeadGitHubPackage\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:cleanupOutput\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:cleanupOutput\\(\\) has parameter \\$str with no type specified\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\UpdaterWorker\\:\\:process\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/UpdaterWorker.php
-
-		-
-			message: "#^Property App\\\\Service\\\\VersionCache\\:\\:\\$existingVersions is never read, only written\\.$#"
-			count: 1
-			path: src/Service/VersionCache.php
 
 		-
 			message: "#^Cannot call method getClientIp\\(\\) on Symfony\\\\Component\\\\HttpFoundation\\\\Request\\|null\\.$#"
