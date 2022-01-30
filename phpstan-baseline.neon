@@ -2856,11 +2856,6 @@ parameters:
 			path: src/Menu/MenuBuilder.php
 
 		-
-			message: "#^Parameter \\#2 \\$members of method Predis\\\\ClientInterface\\:\\:sadd\\(\\) expects array, string given\\.$#"
-			count: 1
-			path: src/Model/ProviderManager.php
-
-		-
 			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:getNbResults\\(\\) should return int\\<0, max\\> but returns int\\.$#"
 			count: 1
 			path: src/Model/RedisAdapter.php

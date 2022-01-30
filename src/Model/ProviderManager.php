@@ -62,7 +62,7 @@ class ProviderManager
 
     public function insertPackage(Package $package): void
     {
-        $this->redis->sadd('set:packages', strtolower($package->getName()));
+        $this->redis->sadd('set:packages', [strtolower($package->getName())]);
     }
 
     public function deletePackage(Package $package): void
