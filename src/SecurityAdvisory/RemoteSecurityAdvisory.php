@@ -120,7 +120,7 @@ class RemoteSecurityAdvisory
         }
 
         $cve = null;
-        if (AdvisoryParser::isValidCve((string) $info['cve'])) {
+        if (isset($info['cve']) && AdvisoryParser::isValidCve((string) $info['cve'])) {
             $cve = $info['cve'];
         }
 
