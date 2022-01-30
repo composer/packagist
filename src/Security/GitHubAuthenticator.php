@@ -79,8 +79,13 @@ class GitHubAuthenticator extends OAuth2Authenticator
                     return $existingUser;
                 }
 
-                if ($userRepo->findOneBy(['usernameCanonical' => mb_strtolower($ghUser->getNickname())])) {
-                    throw new AccountUsernameExistsWithoutGitHubException($ghUser->getNickname());
+                $nickname = $ghUser->getNickname();
+                if (null === $nickname) {
+                    throw new NoGitHubNicknameFoundException();
+                }
+
+                if ($userRepo->findOneBy(['usernameCanonical' => mb_strtolower($nickname)])) {
+                    throw new AccountUsernameExistsWithoutGitHubException($nickname);
                 }
 
                 $provider = $this->getGitHubClient()->getOAuth2Provider();
@@ -102,10 +107,6 @@ class GitHubAuthenticator extends OAuth2Authenticator
 
                 if (null === $email) {
                     throw new NoVerifiedGitHubEmailFoundException();
-                }
-                $nickname = $ghUser->getNickname();
-                if (null === $nickname) {
-                    throw new NoGitHubNicknameFoundException();
                 }
 
                 $user = new User();

@@ -4,6 +4,7 @@ namespace App\Security;
 
 use App\Redis\FailedLoginCounter;
 use Predis\Client;
+use Predis\Profile\RedisProfile;
 use Symfony\Component\HttpFoundation\Request;
 
 class RecaptchaHelper
@@ -43,22 +44,34 @@ class RecaptchaHelper
 
     public function increaseCounter(Request $request): void
     {
-        if ($this->recaptchaEnabled) {
-            // @phpstan-ignore-next-line
-            $this->redisCache->getProfile()->defineCommand('incrFailedLoginCounter', FailedLoginCounter::class);
-
-            $ipKey = self::LOGIN_BASE_KEY_IP . $request->getClientIp();
-            $userKey = self::LOGIN_BASE_KEY_USER . strtolower((string) $request->get('_username'));
-            // @phpstan-ignore-next-line
-            $this->redisCache->incrFailedLoginCounter($ipKey, $userKey);
+        if (!$this->recaptchaEnabled) {
+            return;
         }
+
+        $profile = $this->redisCache->getProfile();
+        assert($profile instanceof RedisProfile);
+        $profile->defineCommand('incrFailedLoginCounter', FailedLoginCounter::class);
+
+        $ipKey = self::LOGIN_BASE_KEY_IP . $request->getClientIp();
+        $userKey = $this->getUserKey($request);
+        /** @phpstan-ignore-next-line */
+        $this->redisCache->incrFailedLoginCounter($ipKey, $userKey);
     }
 
     public function clearCounter(Request $request): void
     {
-        if ($this->recaptchaEnabled) {
-            $userKey = self::LOGIN_BASE_KEY_USER . strtolower((string) $request->get('_username'));
-            $this->redisCache->del([$userKey]);
+        if (!$this->recaptchaEnabled) {
+            return;
         }
+
+        $userKey = $this->getUserKey($request);
+        $this->redisCache->del([$userKey]);
+    }
+
+    private function getUserKey(Request $request): string
+    {
+        $username = (string) $request->request->get('_username');
+
+        return self::LOGIN_BASE_KEY_USER . strtolower($username);
     }
 }

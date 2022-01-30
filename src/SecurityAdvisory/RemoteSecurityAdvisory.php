@@ -5,6 +5,19 @@ namespace App\SecurityAdvisory;
 use App\Entity\SecurityAdvisory;
 use Composer\Pcre\Preg;
 
+/**
+ * @phpstan-type FriendsOfPhpSecurityAdvisory array{
+ *     title: string,
+ *     link: string,
+ *     reference: string,
+ *     branches: array<array{
+ *        versions: string[],
+ *        time?: int|string
+ *     }>,
+ *     cve?: string|null,
+ *     composer-repository?: false|string
+ * }
+ */
 class RemoteSecurityAdvisory
 {
     private string $id;
@@ -68,6 +81,9 @@ class RemoteSecurityAdvisory
         return $this->composerRepository;
     }
 
+    /**
+     * @phpstan-param FriendsOfPhpSecurityAdvisory $info
+     */
     public static function createFromFriendsOfPhp(string $fileNameWithPath, array $info): RemoteSecurityAdvisory
     {
         $date = null;

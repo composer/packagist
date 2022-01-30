@@ -396,11 +396,6 @@ parameters:
 			path: src/Controller/ApiController.php
 
 		-
-			message: "#^Offset 'downloaded' on array\\{name\\: string, version\\: string, id\\: int, vid\\: int\\} in isset\\(\\) does not exist\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
 			message: "#^PHPDoc tag @var for variable \\$advisories has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Controller/ApiController.php
@@ -1101,29 +1096,9 @@ parameters:
 			path: src/DataFixtures/DownloadFixtures.php
 
 		-
-			message: "#^Method App\\\\DataFixtures\\\\DownloadFixtures\\:\\:load\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/DataFixtures/DownloadFixtures.php
-
-		-
 			message: "#^Parameter \\#1 \\$object of static method DateTimeImmutable\\:\\:createFromMutable\\(\\) expects DateTime, DateTimeInterface given\\.$#"
 			count: 1
 			path: src/DataFixtures/DownloadFixtures.php
-
-		-
-			message: "#^Method App\\\\DataFixtures\\\\PackageFixtures\\:\\:getPackages\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/DataFixtures/PackageFixtures.php
-
-		-
-			message: "#^Method App\\\\DataFixtures\\\\PackageFixtures\\:\\:load\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/DataFixtures/PackageFixtures.php
-
-		-
-			message: "#^Method App\\\\DataFixtures\\\\UserFixtures\\:\\:load\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/DataFixtures/UserFixtures.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\Author\\:\\:addVersion\\(\\) has no return type specified\\.$#"
@@ -2641,16 +2616,6 @@ parameters:
 			path: src/Entity/VersionRepository.php
 
 		-
-			message: "#^Method App\\\\EventListener\\\\CacheListener\\:\\:onResponse\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/EventListener/CacheListener.php
-
-		-
-			message: "#^Parameter \\#2 \\$values of method Symfony\\\\Component\\\\HttpFoundation\\\\ResponseHeaderBag\\:\\:set\\(\\) expects array\\<string\\>\\|string\\|null, string\\|true given\\.$#"
-			count: 1
-			path: src/EventListener/CacheListener.php
-
-		-
 			message: "#^Method App\\\\Form\\\\Model\\\\MaintainerRequest\\:\\:setUser\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Form/Model/MaintainerRequest.php
@@ -2811,49 +2776,9 @@ parameters:
 			path: src/Form/Type/SearchQueryType.php
 
 		-
-			message: "#^Method App\\\\HealthCheck\\\\MetadataDirCheck\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/HealthCheck/MetadataDirCheck.php
-
-		-
-			message: "#^Method App\\\\HealthCheck\\\\MetadataDirCheck\\:\\:isMetadataStoreMounted\\(\\) has parameter \\$awsMeta with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/HealthCheck/MetadataDirCheck.php
-
-		-
-			message: "#^Parameter \\#1 \\$string of function substr expects string, string\\|false given\\.$#"
-			count: 1
-			path: src/HealthCheck/MetadataDirCheck.php
-
-		-
-			message: "#^Property App\\\\HealthCheck\\\\MetadataDirCheck\\:\\:\\$awsMeta type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/HealthCheck/MetadataDirCheck.php
-
-		-
 			message: "#^Generator expects value type Symfony\\\\Component\\\\HttpKernel\\\\Bundle\\\\BundleInterface, object given\\.$#"
 			count: 1
 			path: src/Kernel.php
-
-		-
-			message: "#^Method App\\\\Menu\\\\MenuBuilder\\:\\:addProfileMenu\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Menu/MenuBuilder.php
-
-		-
-			message: "#^Method App\\\\Menu\\\\MenuBuilder\\:\\:addProfileMenu\\(\\) has parameter \\$menu with no type specified\\.$#"
-			count: 1
-			path: src/Menu/MenuBuilder.php
-
-		-
-			message: "#^Method App\\\\Menu\\\\MenuBuilder\\:\\:createProfileMenu\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Menu/MenuBuilder.php
-
-		-
-			message: "#^Method App\\\\Menu\\\\MenuBuilder\\:\\:createUserMenu\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Menu/MenuBuilder.php
 
 		-
 			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:getNbResults\\(\\) should return int\\<0, max\\> but returns int\\.$#"
@@ -3406,94 +3331,9 @@ parameters:
 			path: src/Redis/FailedLoginCounter.php
 
 		-
-			message: "#^Method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:getCredentials\\(\\) should return array\\{username\\: string, password\\: string, ip\\: string\\|null, recaptcha\\: string\\} but returns array\\{username\\: string, password\\: bool\\|float\\|int\\|string\\|null, ip\\: string\\|null, recaptcha\\: bool\\|float\\|int\\|string\\|null\\}\\.$#"
-			count: 1
-			path: src/Security/BruteForceLoginFormAuthenticator.php
-
-		-
-			message: "#^Method App\\\\Security\\\\BruteForceLoginFormAuthenticator\\:\\:validateRecaptcha\\(\\) has parameter \\$credentials with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Security/BruteForceLoginFormAuthenticator.php
-
-		-
-			message: "#^Property App\\\\Security\\\\EmailVerifier\\:\\:\\$mailer has no type specified\\.$#"
-			count: 1
-			path: src/Security/EmailVerifier.php
-
-		-
-			message: "#^Property App\\\\Security\\\\EmailVerifier\\:\\:\\$verifyEmailHelper has no type specified\\.$#"
-			count: 1
-			path: src/Security/EmailVerifier.php
-
-		-
-			message: "#^Parameter \\#1 \\$string of function mb_strtolower expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Parameter \\#1 \\$username of class App\\\\Security\\\\AccountUsernameExistsWithoutGitHubException constructor expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Security/GitHubAuthenticator.php
-
-		-
-			message: "#^Method App\\\\Security\\\\Provider\\\\UserProvider\\:\\:loadUserByUsername\\(\\) has parameter \\$usernameOrEmail with no type specified\\.$#"
-			count: 1
-			path: src/Security/Provider/UserProvider.php
-
-		-
-			message: "#^Property App\\\\Security\\\\Provider\\\\UserProvider\\:\\:\\$scheduler is never read, only written\\.$#"
-			count: 1
-			path: src/Security/Provider/UserProvider.php
-
-		-
-			message: "#^Cannot cast mixed to string\\.$#"
-			count: 2
-			path: src/Security/RecaptchaHelper.php
-
-		-
-			message: "#^Cannot call method getSession\\(\\) on Symfony\\\\Component\\\\HttpFoundation\\\\Request\\|null\\.$#"
-			count: 1
-			path: src/Security/TwoFactorAuthManager.php
-
-		-
-			message: "#^Method App\\\\Security\\\\TwoFactorAuthManager\\:\\:__construct\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Security/TwoFactorAuthManager.php
-
-		-
-			message: "#^Method App\\\\Security\\\\TwoFactorAuthManager\\:\\:disableTwoFactorAuth\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Security/TwoFactorAuthManager.php
-
-		-
-			message: "#^Method App\\\\Security\\\\TwoFactorAuthManager\\:\\:enableTwoFactorAuth\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Security/TwoFactorAuthManager.php
-
-		-
-			message: "#^Property App\\\\Security\\\\TwoFactorAuthManager\\:\\:\\$options type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Security/TwoFactorAuthManager.php
-
-		-
-			message: "#^Parameter \\#1 \\$filename of function file_get_contents expects string, string\\|false given\\.$#"
+			message: "#^Parameter \\#2 \\$info of static method App\\\\SecurityAdvisory\\\\RemoteSecurityAdvisory\\:\\:createFromFriendsOfPhp\\(\\) expects array\\{branches\\: array\\<array\\{versions\\: array\\<string\\>, time\\?\\: mixed\\}\\>, composer\\-repository\\?\\: string\\|false, title\\: string, reference\\: string, link\\: string, cve\\?\\: string\\}, mixed given\\.$#"
 			count: 1
 			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
-
-		-
-			message: "#^Parameter \\#1 \\$input of static method Symfony\\\\Component\\\\Yaml\\\\Yaml\\:\\:parse\\(\\) expects string, string\\|false given\\.$#"
-			count: 1
-			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
-
-		-
-			message: "#^Parameter \\#2 \\$info of static method App\\\\SecurityAdvisory\\\\RemoteSecurityAdvisory\\:\\:createFromFriendsOfPhp\\(\\) expects array, mixed given\\.$#"
-			count: 1
-			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
-
-		-
-			message: "#^Method App\\\\SecurityAdvisory\\\\RemoteSecurityAdvisory\\:\\:createFromFriendsOfPhp\\(\\) has parameter \\$info with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/SecurityAdvisory/RemoteSecurityAdvisory.php
 
 		-
 			message: "#^Offset 'after' does not exist on array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, exception\\?\\: Throwable\\}\\.$#"
@@ -3544,24 +3384,4 @@ parameters:
 			message: "#^Parameter \\#2 \\$values of method Predis\\\\ClientInterface\\:\\:lpush\\(\\) expects array, string given\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Cannot call method getClientIp\\(\\) on Symfony\\\\Component\\\\HttpFoundation\\\\Request\\|null\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Parameter \\#1 \\$ip of method App\\\\Security\\\\RecaptchaHelper\\:\\:requiresRecaptcha\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Parameter \\#2 \\$username of method App\\\\Security\\\\RecaptchaHelper\\:\\:requiresRecaptcha\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Twig/PackagistExtension.php
-
-		-
-			message: "#^Method App\\\\Validator\\\\Password\\:\\:getConstraints\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Validator/Password.php
 

@@ -33,6 +33,9 @@ use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface
 use Symfony\Component\Security\Http\HttpUtils;
 use Symfony\Component\Security\Http\Util\TargetPathTrait;
 
+/**
+ * @phpstan-type Credentials array{username: string, password: string, ip: string|null, recaptcha: string}
+ */
 class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator implements AuthenticationEntryPointInterface
 {
     use DoctrineTrait;
@@ -107,15 +110,15 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
     }
 
     /**
-     * @return array{username: string, password: string, ip: string|null, recaptcha: string}
+     * @return Credentials
      */
     private function getCredentials(Request $request): array
     {
         $credentials = [
             'username' => $request->request->get('_username'),
-            'password' => $request->request->get('_password'),
+            'password' => (string) $request->request->get('_password'),
             'ip' => $request->getClientIp(),
-            'recaptcha' => $request->request->get('g-recaptcha-response'),
+            'recaptcha' => (string) $request->request->get('g-recaptcha-response'),
         ];
 
         if (!\is_string($credentials['username'])) {
@@ -133,9 +136,12 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
         return $credentials;
     }
 
+    /**
+     * @param Credentials $credentials
+     */
     private function validateRecaptcha(array $credentials): void
     {
-        if ($this->recaptchaHelper->requiresRecaptcha($credentials['ip'], $credentials['username'])) {
+        if ($this->recaptchaHelper->requiresRecaptcha($credentials['ip'] ?? '', $credentials['username'])) {
             if (!$credentials['recaptcha']) {
                 throw new CustomUserMessageAuthenticationException('We detected too many failed login attempts. Please log in again with ReCaptcha.');
             }

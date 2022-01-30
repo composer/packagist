@@ -8,13 +8,17 @@ use Laminas\Diagnostics\Result\ResultInterface;
 use Laminas\Diagnostics\Result\Success;
 use Symfony\Component\Process\Process;
 
+/**
+ * @phpstan-type AwsMetadata array{}|array{ec2_node: string, ip: string, region: string, primary: bool, has_instance_store: bool, is_worker: bool, is_web: bool}
+ */
 class MetadataDirCheck implements CheckInterface
 {
-    private array $awsMeta;
 
-    public function __construct(array $awsMetadata)
+    /**
+     * @phpstan-param AwsMetadata $awsMetadata
+     */
+    public function __construct(private array $awsMetadata)
     {
-        $this->awsMeta = $awsMetadata;
     }
 
     public function getLabel(): string
@@ -22,6 +26,9 @@ class MetadataDirCheck implements CheckInterface
         return 'Check if Packagist metadata dir is present.';
     }
 
+    /**
+     * @phpstan-param AwsMetadata $awsMeta
+     */
     public static function isMetadataStoreMounted(array $awsMeta): bool
     {
         if (empty($awsMeta)) {
@@ -40,13 +47,13 @@ class MetadataDirCheck implements CheckInterface
 
     public function check(): ResultInterface
     {
-        if (empty($this->awsMeta)) {
+        if (empty($this->awsMetadata)) {
             return new Success('No AWS metadata given');
         }
 
-        if ($this->awsMeta['primary']) {
-            if ($this->awsMeta['has_instance_store']) {
-                if (!self::isMetadataStoreMounted($this->awsMeta)) {
+        if ($this->awsMetadata['primary']) {
+            if ($this->awsMetadata['has_instance_store']) {
+                if (!self::isMetadataStoreMounted($this->awsMetadata)) {
                     return new Failure('Instance store needs configuring');
                 }
             }
@@ -67,7 +74,10 @@ class MetadataDirCheck implements CheckInterface
         if (!is_link($packagesJson)) {
             return new Failure($packagesJson.' is not a symlink');
         }
-        if (substr(file_get_contents($packagesJson), 0, 1) !== '{') {
+        if (!$fileContent = file_get_contents($packagesJson)) {
+            return new Failure($packagesJson.' is not readable');
+        }
+        if (substr($fileContent, 0, 1) !== '{') {
             return new Failure($packagesJson.' does not look like it has json in it');
         }
         $metaDir = __DIR__ . '/../../web/p';

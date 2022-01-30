@@ -17,6 +17,9 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
 
+/**
+ * @phpstan-import-type FriendsOfPhpSecurityAdvisory from RemoteSecurityAdvisory
+ */
 class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
 {
     public const SOURCE_NAME = 'FriendsOfPHP/security-advisories';
@@ -67,7 +70,11 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
             $finder->name('*.yaml');
             $advisories = [];
             foreach ($finder->in($localDir) as $file) {
-                $content = Yaml::parse(file_get_contents($file->getRealPath()));
+                if (!$file->getRealPath() || !($yaml = file_get_contents($file->getRealPath()))) {
+                    continue;
+                }
+                /** @phpstan-var FriendsOfPhpSecurityAdvisory $content */
+                $content = Yaml::parse($yaml);
                 $advisories[] = RemoteSecurityAdvisory::createFromFriendsOfPhp($file->getRelativePathname(), $content);
             }
         } catch (TransportException $e) {

@@ -10,6 +10,9 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class Password extends Compound
 {
+    /**
+     * @param array<string, mixed> $options
+     */
     protected function getConstraints(array $options): array
     {
         return [

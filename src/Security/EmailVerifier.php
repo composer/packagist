@@ -17,15 +17,11 @@ class EmailVerifier
 {
     use DoctrineTrait;
 
-    private $verifyEmailHelper;
-    private $mailer;
-    private ManagerRegistry $doctrine;
-
-    public function __construct(VerifyEmailHelperInterface $helper, MailerInterface $mailer, ManagerRegistry $doctrine)
-    {
-        $this->verifyEmailHelper = $helper;
-        $this->mailer = $mailer;
-        $this->doctrine = $doctrine;
+    public function __construct(
+        private VerifyEmailHelperInterface $verifyEmailHelper,
+        private MailerInterface $mailer,
+        private ManagerRegistry $doctrine,
+    ) {
     }
 
     public function sendEmailConfirmation(string $verifyEmailRouteName, UserInterface $user, TemplatedEmail $email): void
@@ -36,7 +32,7 @@ class EmailVerifier
 
         $signatureComponents = $this->verifyEmailHelper->generateSignature(
             $verifyEmailRouteName,
-            $user->getId(),
+            (string) $user->getId(),
             $user->getEmail(),
             ['id' => $user->getId()]
         );
@@ -60,7 +56,7 @@ class EmailVerifier
             throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
         }
 
-        $this->verifyEmailHelper->validateEmailConfirmation($request->getUri(), $user->getId(), $user->getEmail());
+        $this->verifyEmailHelper->validateEmailConfirmation($request->getUri(), (string) $user->getId(), $user->getEmail());
 
         if (!$user->hasRole('ROLE_SPAMMER')) {
             $user->setEnabled(true);
