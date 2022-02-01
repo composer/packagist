@@ -19,7 +19,6 @@ use App\Entity\Package;
 use App\Entity\Version;
 use App\Package\Updater;
 use App\Entity\VersionRepository;
-use App\Entity\AuthorRepository;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use PHPUnit\Framework\TestCase;
@@ -62,7 +61,6 @@ class UpdaterTest extends TestCase
         $this->driverMock     = $this->getMockBuilder(GitDriver::class)->disableOriginalConstructor()->getMock();
         $versionRepoMock      = $this->getMockBuilder(VersionRepository::class)->disableOriginalConstructor()->getMock();
         $dependentRepoMock    = $this->getMockBuilder(DependentRepository::class)->disableOriginalConstructor()->getMock();
-        $authorRepoMock      = $this->getMockBuilder(AuthorRepository::class)->disableOriginalConstructor()->getMock();
 
         $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn(array());
         $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);

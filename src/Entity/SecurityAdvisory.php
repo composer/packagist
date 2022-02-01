@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\SecurityAdvisory\AdvisoryIdGenerator;
 use App\SecurityAdvisory\AdvisoryParser;
 use Composer\Pcre\Preg;
+use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
@@ -90,7 +92,10 @@ class SecurityAdvisory
     {
         $this->source = $source;
         $this->assignPackagistAdvisoryId();
-        $this->updateAdvisory($advisory);
+
+        $this->updatedAt = new DateTimeImmutable();
+
+        $this->copyAdvisory($advisory, true);
     }
 
     public function updateAdvisory(RemoteSecurityAdvisory $advisory): void
@@ -105,10 +110,14 @@ class SecurityAdvisory
             $this->reportedAt != $advisory->getDate() ||
             $this->composerRepository !== $advisory->getComposerRepository()
         ) {
-            $this->updatedAt = new \DateTime();
-            $this->reportedAt = $advisory->getDate();
+            $this->updatedAt = new DateTime();
         }
 
+        $this->copyAdvisory($advisory, false);
+    }
+
+    private function copyAdvisory(RemoteSecurityAdvisory $advisory, bool $initialCopy): void
+    {
         $this->remoteId = $advisory->getId();
         $this->packageName = $advisory->getPackageName();
         $this->title = $advisory->getTitle();
@@ -116,6 +125,11 @@ class SecurityAdvisory
         $this->cve = $advisory->getCve();
         $this->affectedVersions = $advisory->getAffectedVersions();
         $this->composerRepository = $advisory->getComposerRepository();
+
+        // only update if the date is different to avoid ending up with a new datetime object which doctrine will want to update in the DB for nothing
+        if ($initialCopy || $this->reportedAt != $advisory->getDate()) {
+            $this->reportedAt = $advisory->getDate();
+        }
     }
 
     public function getRemoteId(): string
