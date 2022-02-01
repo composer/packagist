@@ -310,16 +310,6 @@ class Updater
                     throw new \LogicException('At this point a version should always be found');
                 }
                 $versionId = $version->getId();
-            } elseif ($existingVersion['needs_author_migration']) {
-                $version = $versionRepo->find($existingVersion['id']);
-                if (null === $version) {
-                    throw new \LogicException('At this point a version should always be found');
-                }
-
-                $version->setAuthorJson($version->getAuthorData());
-                $version->getAuthors()->clear();
-
-                return ['updated' => true, 'id' => $version->getId(), 'version' => strtolower($normVersion), 'object' => $version];
             } else {
                 return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
             }
@@ -421,8 +411,7 @@ class Updater
             $version->getTags()->clear();
         }
 
-        $version->getAuthors()->clear();
-        $version->setAuthorJson([]);
+        $version->setAuthors([]);
         if ($data->getAuthors()) {
             $authors = [];
             foreach ($data->getAuthors() as $authorData) {
@@ -444,7 +433,7 @@ class Updater
 
                 $authors[] = $author;
             }
-            $version->setAuthorJson($authors);
+            $version->setAuthors($authors);
         }
 
         // handle links

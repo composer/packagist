@@ -33,7 +33,7 @@ class VendorRepository extends ServiceEntityRepository
         return $result === '1';
     }
 
-    public function verify(string $vendor)
+    public function verify(string $vendor): void
     {
         $this->getEntityManager()->getConnection()->executeStatement(
             'INSERT INTO vendor (name, verified) VALUES (:vendor, 1) ON DUPLICATE KEY UPDATE verified=1',

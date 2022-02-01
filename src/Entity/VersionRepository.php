@@ -61,7 +61,6 @@ class VersionRepository extends ServiceEntityRepository
 
         $this->versionIdCache->deleteVersion($package, $version);
 
-        $em->getConnection()->executeQuery('DELETE FROM version_author WHERE version_id=:id', ['id' => $version->getId()]);
         $em->getConnection()->executeQuery('DELETE FROM version_tag WHERE version_id=:id', ['id' => $version->getId()]);
         $em->getConnection()->executeQuery('DELETE FROM link_suggest WHERE version_id=:id', ['id' => $version->getId()]);
         $em->getConnection()->executeQuery('DELETE FROM link_conflict WHERE version_id=:id', ['id' => $version->getId()]);
@@ -137,7 +136,6 @@ class VersionRepository extends ServiceEntityRepository
                 'conflict' => [],
                 'provide' => [],
                 'replace' => [],
-                'authors' => [],
                 'tags' => [],
             ];
         }
@@ -151,17 +149,6 @@ class VersionRepository extends ServiceEntityRepository
             foreach ($rows as $row) {
                 $result[$row['version_id']][$link][] = $row;
             }
-        }
-
-        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT va.version_id, name, email, homepage, role FROM author a JOIN version_author va ON va.author_id = a.id WHERE va.version_id IN (:ids)',
-            ['ids' => $versionIds],
-            ['ids' => Connection::PARAM_INT_ARRAY]
-        );
-        foreach ($rows as $row) {
-            $versionId = $row['version_id'];
-            unset($row['version_id']);
-            $result[$versionId]['authors'][] = array_filter($row);
         }
 
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
@@ -180,7 +167,7 @@ class VersionRepository extends ServiceEntityRepository
     public function getVersionMetadataForUpdate(Package $package)
     {
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT id, version, normalizedVersion, source, softDeletedAt, `authors` IS NULL as needs_author_migration FROM package_version v WHERE v.package_id = :id',
+            'SELECT id, version, normalizedVersion, source, softDeletedAt FROM package_version v WHERE v.package_id = :id',
             ['id' => $package->getId()]
         );
 
@@ -189,7 +176,6 @@ class VersionRepository extends ServiceEntityRepository
             if ($row['source']) {
                 $row['source'] = json_decode($row['source'], true);
             }
-            $row['needs_author_migration'] = (int) $row['needs_author_migration'];
             $versions[strtolower($row['normalizedVersion'])] = $row;
         }
 
@@ -202,10 +188,9 @@ class VersionRepository extends ServiceEntityRepository
     public function getFullVersion(int $versionId): Version
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('v', 't', 'a')
+        $qb->select('v', 't')
             ->from('App\Entity\Version', 'v')
             ->leftJoin('v.tags', 't')
-            ->leftJoin('v.authors', 'a')
             ->where('v.id = :id')
             ->setParameter('id', $versionId);
 

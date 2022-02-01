@@ -32,14 +32,19 @@ class Vendor
      * @ORM\Id
      * @ORM\Column(length=191)
      */
-    private $name;
+    private string $name;
 
     /**
      * @ORM\Column(type="boolean")
      */
-    private $verified = false;
+    private bool $verified = false;
 
-    public function setName(string $name)
+    public function __construct(string $name)
+    {
+        $this->name = $name;
+    }
+
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
@@ -49,7 +54,7 @@ class Vendor
         return $this->name;
     }
 
-    public function setVerified(bool $verified)
+    public function setVerified(bool $verified): void
     {
         $this->verified = $verified;
     }

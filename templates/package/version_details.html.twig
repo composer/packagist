@@ -36,10 +36,10 @@
 <div class="metadata">
     <p class="license"><i class="glyphicon glyphicon-copyright-mark" title="License"></i> {% if not version.license %}<span class="unknown">{% endif %}{{ version.license ? version.license|join(', ') : 'Unknown License' }}{% if not version.license %}</span>{% endif %} <span class="source-reference"><i class="glyphicon glyphicon-bookmark" title="Source Reference"></i> {{ version.source.reference }}</span></p>
 
-    {% if version.authorData|length %}
+    {% if version.authors|length %}
         <i class="glyphicon glyphicon-user" title="Authors"></i>
         <ul class="authors">
-            {% for author in version.authorData %}
+            {% for author in version.authors %}
                 <li>
                     {%- if author.homepage|default(false) -%}
                         <a rel="nofollow noopener external noindex ugc" href="{{ author.homepage }}">{{ author.name }}</a>

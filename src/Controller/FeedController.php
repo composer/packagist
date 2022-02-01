@@ -247,7 +247,7 @@ class FeedController extends Controller
         $entry->setDateModified($version->getReleasedAt());
         $entry->setDateCreated($version->getReleasedAt());
 
-        foreach ($version->getAuthorData() as $author) {
+        foreach ($version->getAuthors() as $author) {
             if (!empty($author['name'])) {
                 $entry->addAuthor([
                     'name' => $author['name']

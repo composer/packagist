@@ -110,21 +110,10 @@ class Version
     private bool $development;
 
     /**
+     * TODO set column non-nullable
      * @ORM\Column(type="text", nullable=true)
      */
     private string $license;
-
-    /**
-     * Deprecated relation table, use the authorJson property instead
-     *
-     * @ORM\ManyToMany(targetEntity="App\Entity\Author", inversedBy="versions")
-     * @ORM\JoinTable(name="version_author",
-     *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
-     *     inverseJoinColumns={@ORM\JoinColumn(name="author_id", referencedColumnName="id")}
-     * )
-     * @var Collection<int, Author>&Selectable<int, Author>
-     */
-    private Collection $authors;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\RequireLink", mappedBy="version")
@@ -199,10 +188,10 @@ class Version
     private array|null $funding = null;
 
     /**
-     * @ORM\Column(name="authors", type="json", nullable=true)
-     * @var array<array{name?: string, homepage?: string, email?: string, role?: string}>|null
+     * @ORM\Column(name="authors", type="json")
+     * @var array<array{name?: string, homepage?: string, email?: string, role?: string}>
      */
-    private array|null $authorJson = null;
+    private array $authors = [];
 
     /**
      * @ORM\Column(name="defaultBranch", type="boolean", options={"default": false})
@@ -238,7 +227,6 @@ class Version
         $this->provide = new ArrayCollection();
         $this->devRequire = new ArrayCollection();
         $this->suggest = new ArrayCollection();
-        $this->authors = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable;
         $this->updatedAt = new \DateTimeImmutable;
     }
@@ -254,18 +242,7 @@ class Version
             }
         }
 
-        if (!is_null($this->getAuthorJson())) {
-            $authors = $this->getAuthorJson();
-        } else {
-            if (isset($versionData[$this->id]['authors'])) {
-                $authors = $versionData[$this->id]['authors'];
-            } else {
-                $authors = [];
-                foreach ($this->getAuthors() as $author) {
-                    $authors[] = $author->toArray();
-                }
-            }
-        }
+        $authors = $this->getAuthors();
         foreach ($authors as &$author) {
             uksort($author, [$this, 'sortAuthorKeys']);
         }
@@ -634,29 +611,19 @@ class Version
     }
 
     /**
-     * Get authors
-     *
-     * @return Collection<int, Author>&Selectable<int, Author>
+     * @return array<array{name?: string, homepage?: string, email?: string, role?: string}>
      */
-    public function getAuthors(): Collection
+    public function getAuthors(): array
     {
         return $this->authors;
     }
 
     /**
-     * @return array<array{name?: string, homepage?: string, email?: string, role?: string}>|null
-     */
-    public function getAuthorJson(): ?array
-    {
-        return $this->authorJson;
-    }
-
-    /**
      * @param array<array{name?: string, homepage?: string, email?: string, role?: string}>|null $authors
      */
-    public function setAuthorJson(array|null $authors): void
+    public function setAuthors(array $authors): void
     {
-        $this->authorJson = $authors ?: [];
+        $this->authors = $authors;
     }
 
     public function isDefaultBranch(): bool
@@ -667,30 +634,6 @@ class Version
     public function setIsDefaultBranch(bool $isDefaultBranch): void
     {
         $this->isDefaultBranch = $isDefaultBranch;
-    }
-
-    /**
-     * Get authors
-     *
-     * @return array[]
-     */
-    public function getAuthorData(): array
-    {
-        if (!is_null($this->getAuthorJson())) {
-            return $this->getAuthorJson();
-        }
-
-        $authors = [];
-        foreach ($this->getAuthors() as $author) {
-            $authors[] = array_filter([
-                'name' => $author->getName(),
-                'homepage' => $author->getHomepage(),
-                'email' => $author->getEmail(),
-                'role' => $author->getRole(),
-            ]);
-        }
-
-        return $authors;
     }
 
     public function setType(string|null $type): void
@@ -741,11 +684,6 @@ class Version
     public function addTag(Tag $tag): void
     {
         $this->tags[] = $tag;
-    }
-
-    public function addAuthor(Author $author): void
-    {
-        $this->authors[] = $author;
     }
 
     public function addRequireLink(RequireLink $require): void
