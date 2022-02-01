@@ -18,63 +18,59 @@ use DateTimeInterface;
  */
 class Download
 {
-    const TYPE_PACKAGE = 1;
-    const TYPE_VERSION = 2;
+    public const TYPE_PACKAGE = 1;
+    public const TYPE_VERSION = 2;
 
     /**
      * @ORM\Id
      * @ORM\Column(type="bigint")
      */
-    public $id;
+    public string $id;
 
     /**
      * @ORM\Id
      * @ORM\Column(type="smallint")
+     * @var int one of self::TYPE_*
      */
-    public $type;
+    public int $type;
 
     /**
      * @ORM\Column(type="json")
+     * @var array<int|numeric-string, int> Data is keyed by date in form of YYYYMMDD and as such the keys are technically seen as ints by PHP
      */
-    public $data;
+    public array $data = [];
 
     /**
      * @ORM\Column(type="integer")
      */
-    public $total;
+    public int $total = 0;
 
     /**
      * @ORM\Column(type="datetime")
      */
-    public $lastUpdated;
+    public DateTimeInterface $lastUpdated;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Package", inversedBy="downloads")
      */
-    public $package;
+    public Package|null $package = null;
 
-    public function __construct()
-    {
-        $this->data = [];
-        $this->total = 0;
-    }
-
-    public function computeSum()
+    public function computeSum(): void
     {
         $this->total = array_sum($this->data);
     }
 
-    public function setId(int $id)
+    public function setId(string $id): void
     {
         $this->id = $id;
     }
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }
 
-    public function setType(int $type)
+    public function setType(int $type): void
     {
         $this->type = $type;
     }
@@ -84,16 +80,25 @@ class Download
         return $this->type;
     }
 
-    public function setData(array $data)
+    /**
+     * @param array<int|numeric-string, int> $data
+     */
+    public function setData(array $data): void
     {
         $this->data = $data;
     }
 
-    public function setDataPoint($key, $value)
+    /**
+     * @param numeric-string $key
+     */
+    public function setDataPoint(string $key, int $value): void
     {
         $this->data[$key] = $value;
     }
 
+    /**
+     * @return array<int|numeric-string, int>
+     */
     public function getData(): array
     {
         return $this->data;
@@ -104,7 +109,7 @@ class Download
         return $this->total;
     }
 
-    public function setLastUpdated(DateTimeInterface $lastUpdated)
+    public function setLastUpdated(DateTimeInterface $lastUpdated): void
     {
         $this->lastUpdated = $lastUpdated;
     }
@@ -114,12 +119,12 @@ class Download
         return $this->lastUpdated;
     }
 
-    public function setPackage(Package $package)
+    public function setPackage(Package $package): void
     {
         $this->package = $package;
     }
 
-    public function getPackage(): Package
+    public function getPackage(): Package|null
     {
         return $this->package;
     }

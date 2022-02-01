@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\SecurityAdvisory\AdvisoryIdGenerator;
 use App\SecurityAdvisory\AdvisoryParser;
 use Composer\Pcre\Preg;
+use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 
@@ -28,7 +29,7 @@ class SecurityAdvisory
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue(strategy="AUTO")
      */
-    private $id;
+    private int $id;
 
     /**
      * @ORM\Column(type="string", unique=true)
@@ -38,52 +39,52 @@ class SecurityAdvisory
     /**
      * @ORM\Column(type="string")
      */
-    private $remoteId;
+    private string $remoteId;
 
     /**
      * @ORM\Column(type="string")
      */
-    private $packageName;
+    private string $packageName;
 
     /**
      * @ORM\Column(type="string")
      */
-    private $title;
+    private string $title;
 
     /**
      * @ORM\Column(type="string", nullable=true)
      */
-    private $link;
+    private string|null $link = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
      */
-    private $cve;
+    private string|null $cve = null;
 
     /**
      * @ORM\Column(type="text")
      */
-    private $affectedVersions;
+    private string $affectedVersions;
 
     /**
      * @ORM\Column(type="string")
      */
-    private $source;
+    private string $source;
 
     /**
      * @ORM\Column(type="datetime")
      */
-    private $reportedAt;
+    private DateTimeInterface $reportedAt;
 
     /**
      * @ORM\Column(type="datetime")
      */
-    private $updatedAt;
+    private DateTimeInterface $updatedAt;
 
     /**
      * @ORM\Column(type="string", nullable=true)
      */
-    private $composerRepository;
+    private string|null $composerRepository = null;
 
     public function __construct(RemoteSecurityAdvisory $advisory, string $source)
     {

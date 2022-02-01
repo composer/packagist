@@ -976,189 +976,9 @@ parameters:
 			path: src/DataFixtures/DownloadFixtures.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Author\\:\\:addVersion\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Author\\:\\:setCreatedAt\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Author\\:\\:setEmail\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Author\\:\\:setHomepage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Author\\:\\:setName\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Author\\:\\:setOwner\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Author\\:\\:setRole\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Author\\:\\:setUpdatedAt\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Author\\:\\:toArray\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$createdAt has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$email has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$homepage has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$name has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$owner has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$role has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$updatedAt has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$versions has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\AuthorRepository\\:\\:findOneByNameAndPackage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/AuthorRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\AuthorRepository\\:\\:findOneByNameAndPackage\\(\\) has parameter \\$author with no type specified\\.$#"
-			count: 1
-			path: src/Entity/AuthorRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\DependentRepository\\:\\:deletePackageDependentSuggesters\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/DependentRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:computeSum\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:getData\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:setData\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:setData\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:setDataPoint\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:setDataPoint\\(\\) has parameter \\$key with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:setDataPoint\\(\\) has parameter \\$value with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:setId\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:setLastUpdated\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:setPackage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Download\\:\\:setType\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$data has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$id has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$lastUpdated has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$package has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$total has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Download\\:\\:\\$type has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Download.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:deletePackageDownloads\\(\\) has no return type specified\\.$#"
@@ -1176,32 +996,7 @@ parameters:
 			path: src/Entity/DownloadRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:getEmptyReferences\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/EmptyReferenceCache.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:setEmptyReferences\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/EmptyReferenceCache.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:setEmptyReferences\\(\\) has parameter \\$emptyReferences with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/EmptyReferenceCache.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:setPackage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/EmptyReferenceCache.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\EmptyReferenceCache\\:\\:\\$emptyReferences has no type specified\\.$#"
-			count: 1
-			path: src/Entity/EmptyReferenceCache.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\EmptyReferenceCache\\:\\:\\$package has no type specified\\.$#"
 			count: 1
 			path: src/Entity/EmptyReferenceCache.php
 
@@ -1307,11 +1102,6 @@ parameters:
 
 		-
 			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$cachedVersions type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$downloads is never written, only read\\.$#"
 			count: 1
 			path: src/Entity/Package.php
 
@@ -1571,61 +1361,6 @@ parameters:
 			path: src/Entity/PhpStatRepository.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$affectedVersions has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$composerRepository has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$cve has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$id has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$link has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$packageName has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$remoteId has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$reportedAt has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$source has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$title has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$updatedAt has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisory.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\SecurityAdvisoryRepository\\:\\:getPackageSecurityAdvisories\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/SecurityAdvisoryRepository.php
@@ -1651,27 +1386,12 @@ parameters:
 			path: src/Entity/User.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\User\\:\\:addPackage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\User\\:\\:eraseCredentials\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\User\\:\\:getGithubUsername\\(\\) should return string\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\User\\:\\:getPackages\\(\\) return type with generic interface Doctrine\\\\Common\\\\Collections\\\\Collection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\User\\:\\:setRoles\\(\\) has parameter \\$roles with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
@@ -1686,17 +1406,7 @@ parameters:
 			path: src/Entity/User.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\User\\:\\:toArray\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
 			message: "#^Parameter \\#1 \\$secret of class Scheb\\\\TwoFactorBundle\\\\Model\\\\Totp\\\\TotpConfiguration constructor expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$email has no type specified\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
@@ -1711,27 +1421,7 @@ parameters:
 			path: src/Entity/User.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$id has no type specified\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$packages with generic interface Doctrine\\\\Common\\\\Collections\\\\Collection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
 			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$password \\(string\\) does not accept mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$password \\(string\\) does not accept string\\|null\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$roles has no type specified\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
@@ -1756,42 +1446,12 @@ parameters:
 			path: src/Entity/UserRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Vendor\\:\\:setName\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Vendor.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Vendor\\:\\:setVerified\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Vendor.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Vendor\\:\\:\\$name has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Vendor.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Vendor\\:\\:\\$verified has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Vendor.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VendorRepository\\:\\:verify\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/VendorRepository.php
-
-		-
 			message: "#^Strict comparison using \\=\\=\\= between int\\<\\-128, 127\\> and '1' will always evaluate to false\\.$#"
 			count: 1
 			path: src/Entity/VendorRepository.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:equals\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAuthorData\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -1932,21 +1592,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:toV2Array\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$autoload type mapping mismatch\\: database can contain string\\|null but property expects string\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$extra type mapping mismatch\\: database can contain array\\|null but property expects array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$license type mapping mismatch\\: database can contain string\\|null but property expects string\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 

@@ -265,7 +265,7 @@ class DownloadManager
         $isNewRecord = false;
         if (!$record) {
             $record = new Download();
-            $record->setId($id);
+            $record->setId((string) $id);
             $record->setType($type);
             $record->setPackage($package);
             $isNewRecord = true;
@@ -274,8 +274,13 @@ class DownloadManager
         $record->setLastUpdated($now);
 
         foreach ($keys as $key => $val) {
-            $date = Preg::replace('{^.*?:(\d+)$}', '$1', $key);
-            if ($val) {
+            $date = null;
+            if (Preg::isMatch('{:(\d+)$}', $key, $match)) {
+                $date = $match[1];
+            } else {
+                throw new \LogicException('Malformed key does not end with a date stamp in form YYYYMMDD');
+            }
+            if ($val > 0) {
                 $record->setDataPoint($date, $val);
             }
         }

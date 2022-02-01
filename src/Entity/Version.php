@@ -64,7 +64,7 @@ class Version
     private string|null $targetDir = null;
 
     /**
-     * @ORM\Column(type="array", nullable=true)
+     * @ORM\Column(type="array")
      * @var array<mixed>
      */
     private array $extra = [];
@@ -110,8 +110,7 @@ class Version
     private bool $development;
 
     /**
-     * TODO set column non-nullable
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(type="text")
      */
     private string $license;
 
@@ -162,7 +161,7 @@ class Version
     private string|null $dist = null;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(type="text")
      */
     private string $autoload;
 
@@ -619,7 +618,7 @@ class Version
     }
 
     /**
-     * @param array<array{name?: string, homepage?: string, email?: string, role?: string}>|null $authors
+     * @param array<array{name?: string, homepage?: string, email?: string, role?: string}> $authors
      */
     public function setAuthors(array $authors): void
     {

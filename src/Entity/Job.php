@@ -22,15 +22,15 @@ use DateTimeInterface;
  */
 class Job
 {
-    const STATUS_QUEUED = 'queued';
-    const STATUS_STARTED = 'started';
-    const STATUS_COMPLETED = 'completed';
-    const STATUS_PACKAGE_GONE = 'package_gone';
-    const STATUS_PACKAGE_DELETED = 'package_deleted';
-    const STATUS_FAILED = 'failed'; // failed in an expected/correct way
-    const STATUS_ERRORED = 'errored'; // unexpected failure
-    const STATUS_TIMEOUT = 'timeout'; // job was marked timed out
-    const STATUS_RESCHEDULE = 'reschedule';
+    public const STATUS_QUEUED = 'queued';
+    public const STATUS_STARTED = 'started';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_PACKAGE_GONE = 'package_gone';
+    public const STATUS_PACKAGE_DELETED = 'package_deleted';
+    public const STATUS_FAILED = 'failed'; // failed in an expected/correct way
+    public const STATUS_ERRORED = 'errored'; // unexpected failure
+    public const STATUS_TIMEOUT = 'timeout'; // job was marked timed out
+    public const STATUS_RESCHEDULE = 'reschedule';
 
     /**
      * @ORM\Id
@@ -69,22 +69,22 @@ class Job
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private ?DateTimeInterface $startedAt = null;
+    private DateTimeInterface|null $startedAt = null;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private ?DateTimeInterface $completedAt = null;
+    private DateTimeInterface|null $completedAt = null;
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
      */
-    private ?DateTimeInterface $executeAfter = null;
+    private DateTimeInterface|null $executeAfter = null;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
      */
-    private ?int $packageId = null;
+    private int|null $packageId = null;
 
     public function __construct(string $id, string $type, array $payload)
     {
@@ -119,12 +119,12 @@ class Job
         return $this->id;
     }
 
-    public function setPackageId(?int $packageId): void
+    public function setPackageId(int|null $packageId): void
     {
         $this->packageId = $packageId;
     }
 
-    public function getPackageId(): ?int
+    public function getPackageId(): int|null
     {
         return $this->packageId;
     }
@@ -164,22 +164,22 @@ class Job
         return $this->createdAt;
     }
 
-    public function getStartedAt(): ?DateTimeInterface
+    public function getStartedAt(): DateTimeInterface|null
     {
         return $this->startedAt;
     }
 
-    public function setExecuteAfter(?DateTimeInterface $executeAfter): void
+    public function setExecuteAfter(DateTimeInterface|null $executeAfter): void
     {
         $this->executeAfter = $executeAfter;
     }
 
-    public function getExecuteAfter(): ?DateTimeInterface
+    public function getExecuteAfter(): DateTimeInterface|null
     {
         return $this->executeAfter;
     }
 
-    public function getCompletedAt(): ?DateTimeInterface
+    public function getCompletedAt(): DateTimeInterface|null
     {
         return $this->completedAt;
     }
