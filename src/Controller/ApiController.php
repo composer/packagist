@@ -279,7 +279,7 @@ class ApiController extends Controller
                 // and only if composer version or php minor are missing, if only composer major is invalid it's irrelevant
                 || !$uaParser->getComposerVersion() || !$uaParser->getPhpMinorVersion()
             ) {
-                $this->logger->error('Could not parse UA: '.$request->headers->get('User-Agent').' with '.$request->getContent().' from '.$request->getClientIp());
+                $this->logger->warning('Could not parse UA: '.$request->headers->get('User-Agent').' with '.$request->getContent().' from '.$request->getClientIp());
                 $statsd->increment('installs.invalid-ua');
             }
         }
