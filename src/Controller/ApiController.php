@@ -163,7 +163,7 @@ class ApiController extends Controller
     public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator)
     {
         $user = $this->findUser($request);
-        if (!$package->getMaintainers()->contains($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
+        if ((!$user || !$package->getMaintainers()->contains($user)) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
@@ -326,7 +326,7 @@ class ApiController extends Controller
      * @param string $name
      * @return array{id: int, vid: int}|false
      */
-    protected function getDefaultPackageAndVersionId($name)
+    protected function getDefaultPackageAndVersionId($name): array|false
     {
         /** @var array{id: string, vid: string}|false $result */
         $result = $this->getEM()->getConnection()->fetchAssociative(
@@ -436,11 +436,8 @@ class ApiController extends Controller
 
     /**
      * Find a user by his username and API token
-     *
-     * @param Request $request
-     * @return User|null the found user or null otherwise
      */
-    protected function findUser(Request $request)
+    protected function findUser(Request $request): ?User
     {
         $username = $request->request->has('username') ?
             $request->request->get('username') :

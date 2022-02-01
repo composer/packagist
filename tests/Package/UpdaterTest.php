@@ -47,6 +47,7 @@ class UpdaterTest extends TestCase
         $this->config  = new Config();
         $this->package = new Package();
         $this->package->setName('test/pkg');
+        $this->package->setRepository('https://example.com/test/pkg');
         $reflProp = new \ReflectionProperty(Package::class, 'id');
         $reflProp->setAccessible(true);
         $reflProp->setValue($this->package, 1);

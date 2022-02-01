@@ -319,7 +319,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return Package[]
      */
-    public function getPackagesWithVersions(array $ids = null, $filters = [])
+    public function getPackagesWithVersions(array $ids = null, $filters = []): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'v')
@@ -564,7 +564,7 @@ class PackageRepository extends ServiceEntityRepository
      *
      * @return QueryBuilder
      */
-    public function getQueryBuilderForNewestPackages()
+    public function getQueryBuilderForNewestPackages(): QueryBuilder
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')

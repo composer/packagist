@@ -24,5 +24,5 @@ class ProvideLink extends PackageLink
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Version", inversedBy="provide")
      */
-    protected $version;
+    protected Version|null $version = null;
 }

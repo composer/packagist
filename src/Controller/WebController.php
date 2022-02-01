@@ -381,11 +381,9 @@ class WebController extends Controller
     }
 
     /**
-     * @param Request $req
-     *
-     * @return array
+     * @return array<array{sort: 'downloads'|'favers', order: 'asc'|'desc'}>
      */
-    protected function getFilteredOrderedBys(Request $req)
+    protected function getFilteredOrderedBys(Request $req): array
     {
         $orderBys = $req->query->all()['orderBys'] ?? [];
         if (!$orderBys) {
@@ -406,11 +404,14 @@ class WebController extends Controller
             $filteredOrderBys = [];
 
             foreach ((array) $orderBys as $orderBy) {
-                if (isset($orderBy['sort'])
+                if (
+                    is_array($orderBy)
+                    && isset($orderBy['sort'])
                     && isset($allowedSorts[$orderBy['sort']])
                     && isset($orderBy['order'])
-                    && isset($allowedOrders[$orderBy['order']])) {
-                    $filteredOrderBys[] = $orderBy;
+                    && isset($allowedOrders[$orderBy['order']])
+                ) {
+                    $filteredOrderBys[] = ['order' => $orderBy['order'], 'sort' => $orderBy['sort']];
                 }
             }
         } else {

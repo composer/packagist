@@ -32,7 +32,7 @@ class VersionCache implements VersionCacheInterface
      * @param string $identifier
      * @return array{name: string, version: string, version_normalized: string, source: array{reference: string|null, type: string|null, url: string|null}}|false|null
      */
-    public function getVersionPackage($version, $identifier)
+    public function getVersionPackage($version, $identifier): array|false|null
     {
         if (!empty($this->versionCache[$version]['source']['reference']) && $this->versionCache[$version]['source']['reference'] === $identifier) {
             return [

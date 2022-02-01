@@ -27,7 +27,7 @@ class Author
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue(strategy="AUTO")
      */
-    private $id;
+    private int $id;
 
     /**
      * Unique package name
@@ -97,12 +97,7 @@ class Author
         return $data;
     }
 
-    /**
-     * Get id
-     *
-     * @return string $id
-     */
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
@@ -122,7 +117,7 @@ class Author
      *
      * @return string $name
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -142,7 +137,7 @@ class Author
      *
      * @return \DateTime $createdAt
      */
-    public function getCreatedAt()
+    public function getCreatedAt(): \DateTime
     {
         return $this->createdAt;
     }
@@ -162,7 +157,7 @@ class Author
      *
      * @return Version[]
      */
-    public function getVersions()
+    public function getVersions(): array
     {
         return $this->versions;
     }
@@ -182,7 +177,7 @@ class Author
      *
      * @return \DateTime $updatedAt
      */
-    public function getUpdatedAt()
+    public function getUpdatedAt(): \DateTime
     {
         return $this->updatedAt;
     }
@@ -202,7 +197,7 @@ class Author
      *
      * @return string
      */
-    public function getEmail()
+    public function getEmail(): string
     {
         return $this->email;
     }
@@ -222,7 +217,7 @@ class Author
      *
      * @return string
      */
-    public function getHomepage()
+    public function getHomepage(): string
     {
         return $this->homepage;
     }
@@ -242,7 +237,7 @@ class Author
      *
      * @return string $role
      */
-    public function getRole()
+    public function getRole(): string
     {
         return $this->role;
     }
@@ -262,7 +257,7 @@ class Author
      *
      * @return User
      */
-    public function getOwner()
+    public function getOwner(): User
     {
         return $this->owner;
     }

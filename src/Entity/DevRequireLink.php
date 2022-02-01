@@ -27,5 +27,5 @@ class DevRequireLink extends PackageLink
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Version", inversedBy="devRequire")
      */
-    protected $version;
+    protected Version|null $version = null;
 }

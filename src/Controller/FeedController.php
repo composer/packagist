@@ -153,10 +153,9 @@ class FeedController extends Controller
 
     /**
      * Limits a query to the desired number of results
-     *
-     * @return array|\Traversable
+     * @return iterable
      */
-    protected function getLimitedResults(QueryBuilder $queryBuilder)
+    protected function getLimitedResults(QueryBuilder $queryBuilder): iterable
     {
         $query = $queryBuilder
             ->getQuery()
@@ -168,9 +167,9 @@ class FeedController extends Controller
     /**
      * Builds the desired feed
      *
-     * @param list<Package|Version> $items
+     * @param iterable<Package|Version> $items
      */
-    protected function buildFeed(Request $req, string $title, string $description, string $url, array $items): Feed
+    protected function buildFeed(Request $req, string $title, string $description, string $url, iterable $items): Feed
     {
         $feed = new Feed();
         $feed->setTitle($title);

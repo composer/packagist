@@ -15,6 +15,7 @@ namespace App\Entity;
 use App\Model\VersionIdCache;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\DBAL\Connection;
+use Doctrine\ORM\QueryBuilder;
 use Predis\Client;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\EntityManager;
@@ -216,9 +217,9 @@ class VersionRepository extends ServiceEntityRepository
      *
      * @param string $vendor optional vendor filter
      * @param string $package optional vendor/package filter
-     * @return \Doctrine\ORM\QueryBuilder
+     * @return QueryBuilder
      */
-    public function getQueryBuilderForLatestVersionWithPackage($vendor = null, $package = null)
+    public function getQueryBuilderForLatestVersionWithPackage($vendor = null, $package = null): QueryBuilder
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('v')

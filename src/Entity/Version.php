@@ -547,7 +547,7 @@ class Version
     /**
      * @return array<array{type?: string, url?: string}>|null
      */
-    public function getFunding(): array|null
+    public function getFunding(): ?array
     {
         return $this->funding;
     }
@@ -556,7 +556,7 @@ class Version
      * Get funding, sorted to help the V2 metadata compression algo
      * @return array<array{type?: string, url?: string}>|null
      */
-    public function getFundingSorted(): array|null
+    public function getFundingSorted(): ?array
     {
         if ($this->funding === null) {
             return null;
@@ -646,7 +646,7 @@ class Version
     /**
      * @return array<array{name?: string, homepage?: string, email?: string, role?: string}>|null
      */
-    public function getAuthorJson(): array|null
+    public function getAuthorJson(): ?array
     {
         return $this->authorJson;
     }

@@ -27,5 +27,5 @@ class SuggestLink extends PackageLink
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Version", inversedBy="suggest")
      */
-    protected $version;
+    protected Version|null $version = null;
 }

@@ -25,95 +25,63 @@ abstract class PackageLink
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue(strategy="AUTO")
      */
-    private $id;
+    private int $id;
 
     /**
      * @ORM\Column(length=191)
      */
-    private $packageName;
+    private string $packageName;
 
     /**
      * @ORM\Column(type="text")
      */
-    private $packageVersion;
+    private string $packageVersion;
 
     /**
      * Base property holding the version - this must remain protected since it
      * is redefined with an annotation in the child class
      */
-    protected $version;
+    protected Version|null $version = null;
 
-    public function toArray()
+    /**
+     * @return array<string, string>
+     */
+    public function toArray(): array
     {
         return [$this->getPackageName() => $this->getPackageVersion()];
     }
 
-    public function setId($id)
-    {
-        $this->id = $id;
-    }
-
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
 
-    /**
-     * Set packageName
-     *
-     * @param string $packageName
-     */
-    public function setPackageName($packageName)
+    public function setPackageName(string $packageName): void
     {
         $this->packageName = $packageName;
     }
 
-    /**
-     * Get packageName
-     *
-     * @return string
-     */
-    public function getPackageName()
+    public function getPackageName(): string
     {
         return $this->packageName;
     }
 
-    /**
-     * Set packageVersion
-     *
-     * @param string $packageVersion
-     */
-    public function setPackageVersion($packageVersion)
+    public function setPackageVersion(string $packageVersion): void
     {
         $this->packageVersion = $packageVersion;
     }
 
-    /**
-     * Get packageVersion
-     *
-     * @return string
-     */
-    public function getPackageVersion()
+    public function getPackageVersion(): string
     {
         return $this->packageVersion;
     }
 
-    /**
-     * Set version
-     *
-     * @param Version $version
-     */
-    public function setVersion(Version $version)
+    public function setVersion(Version $version): void
     {
         $this->version = $version;
     }
 
-    /**
-     * Get version
-     *
-     * @return Version
-     */
-    public function getVersion()
+    public function getVersion(): Version|null
     {
         return $this->version;
     }

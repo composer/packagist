@@ -24,5 +24,5 @@ class ConflictLink extends PackageLink
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Version", inversedBy="conflict")
      */
-    protected $version;
+    protected Version|null $version = null;
 }

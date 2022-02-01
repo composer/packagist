@@ -24,5 +24,5 @@ class ReplaceLink extends PackageLink
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Version", inversedBy="replace")
      */
-    protected $version;
+    protected Version|null $version = null;
 }

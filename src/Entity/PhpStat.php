@@ -22,13 +22,13 @@ use Symfony\Bridge\Doctrine\IdGenerator\UlidGenerator;
  */
 class PhpStat
 {
-    const TYPE_PHP = 1;
-    const TYPE_PLATFORM = 2;
+    public const TYPE_PHP = 1;
+    public const TYPE_PLATFORM = 2;
 
-    const DEPTH_PACKAGE = 0;
-    const DEPTH_MAJOR = 1;
-    const DEPTH_MINOR = 2;
-    const DEPTH_EXACT = 3;
+    public const DEPTH_PACKAGE = 0;
+    public const DEPTH_MAJOR = 1;
+    public const DEPTH_MINOR = 2;
+    public const DEPTH_EXACT = 3;
 
     /**
      * Version prefix
@@ -124,27 +124,33 @@ class PhpStat
         return $this->depth;
     }
 
-    public function setData(array $data)
+    /**
+     * @param array<string, array<string, int>> $data
+     */
+    public function setData(array $data): void
     {
         $this->data = $data;
     }
 
-    public function addDataPoint($phpMinor, $date, $value)
+    public function addDataPoint(string $phpMinor, string $date, int $value): void
     {
         $this->data[$phpMinor][$date] = ($this->data[$phpMinor][$date] ?? 0) + $value;
     }
 
-    public function setDataPoint($phpMinor, $date, $value)
+    public function setDataPoint(string $phpMinor, string $date, int $value): void
     {
         $this->data[$phpMinor][$date] = $value;
     }
 
+    /**
+     * @return array<string, array<string, int>>
+     */
     public function getData(): array
     {
         return $this->data;
     }
 
-    public function setLastUpdated(DateTimeInterface $lastUpdated)
+    public function setLastUpdated(DateTimeInterface $lastUpdated): void
     {
         $this->lastUpdated = $lastUpdated;
     }

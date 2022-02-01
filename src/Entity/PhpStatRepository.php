@@ -213,6 +213,7 @@ class PhpStatRepository extends ServiceEntityRepository
             ['package' => $package->getId(), 'type' => $type, 'exact' => PhpStat::DEPTH_EXACT, 'major' => PhpStat::DEPTH_MAJOR]
         );
 
+        $minorPhpVersions = array_filter($minorPhpVersions, fn($version) => is_string($version));
         if (!$minorPhpVersions) {
             return;
         }
@@ -235,8 +236,8 @@ class PhpStatRepository extends ServiceEntityRepository
         assert(is_array($sums));
 
         foreach ($minorPhpVersions as $index => $version) {
-            if ($sums[$index]) {
-                $record->setDataPoint($version, $dataPointDate, $sums[$index]);
+            if (is_numeric($sums[$index]) && $sums[$index] > 0) {
+                $record->setDataPoint($version, $dataPointDate, (int) $sums[$index]);
             }
         }
 

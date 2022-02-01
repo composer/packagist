@@ -113,7 +113,7 @@ class WebControllerTest extends WebTestCase
      *
      * @return array
      */
-    protected function getJsonResult($package, $downloads, $favers)
+    protected function getJsonResult($package, $downloads, $favers): array
     {
         return array(
             'name' => $package,

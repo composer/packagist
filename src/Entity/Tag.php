@@ -12,6 +12,8 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -31,20 +33,21 @@ class Tag
      * @ORM\Column(type="integer")
      * @ORM\GeneratedValue(strategy="AUTO")
      */
-    private $id;
+    private int $id;
 
     /**
      * @ORM\Column(length=191)
      * @Assert\NotBlank()
      */
-    private $name;
+    private string $name;
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\Version", mappedBy="tags")
+     * @var Collection<int, Version>&Selectable<int, Version>
      */
-    private $versions;
+    private Collection $versions;
 
-    public function __construct($name = null)
+    public function __construct(string $name)
     {
         $this->name = $name;
     }
@@ -57,7 +60,7 @@ class Tag
      * @return Tag
      * @throws \Doctrine\ORM\NoResultException
      */
-    public static function getByName(EntityManager $em, $name, $create = false)
+    public static function getByName(EntityManager $em, $name, $create = false): Tag
     {
         try {
             $qb = $em->createQueryBuilder();
@@ -79,47 +82,35 @@ class Tag
         }
     }
 
-    public function setId($id)
-    {
-        $this->id = $id;
-    }
-
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
 
-    public function setName($name)
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
 
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * Add versions
-     *
-     * @param Version $versions
-     */
-    public function addVersions(Version $versions)
+    public function addVersions(Version $versions): void
     {
         $this->versions[] = $versions;
     }
 
     /**
-     * Get versions
-     *
-     * @return Version[]
+     * @return Collection<int, Version>&Selectable<int, Version>
      */
-    public function getVersions()
+    public function getVersions(): Collection
     {
         return $this->versions;
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return (string) $this->name;
     }

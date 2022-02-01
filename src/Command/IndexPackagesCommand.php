@@ -204,7 +204,7 @@ class IndexPackagesCommand extends Command
             'name' => $package->getName(),
             'package_organisation' => $package->getVendor(),
             'package_name' => $package->getPackageName(),
-            'description' => Preg::replace('{[\x00-\x1f]+}u', '', strip_tags($package->getDescription())),
+            'description' => Preg::replace('{[\x00-\x1f]+}u', '', strip_tags((string) $package->getDescription())),
             'type' => $package->getType(),
             'repository' => $package->getRepository(),
             'language' => $package->getLanguage(),

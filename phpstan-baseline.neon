@@ -381,22 +381,12 @@ parameters:
 			path: src/Controller/FeedController.php
 
 		-
-			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) return type has no value type specified in iterable type Traversable\\.$#"
+			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) return type has no value type specified in iterable type iterable\\.$#"
 			count: 1
 			path: src/Controller/FeedController.php
 
 		-
-			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Controller/FeedController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) return type has no value type specified in iterable type array\\|Traversable\\.$#"
-			count: 1
-			path: src/Controller/FeedController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) should return array\\|Traversable but returns mixed\\.$#"
+			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) should return iterable but returns mixed\\.$#"
 			count: 1
 			path: src/Controller/FeedController.php
 
@@ -408,11 +398,6 @@ parameters:
 		-
 			message: "#^Parameter \\#2 \\$type of method Laminas\\\\Feed\\\\Writer\\\\AbstractFeed\\:\\:setFeedLink\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
-			path: src/Controller/FeedController.php
-
-		-
-			message: "#^Parameter \\#5 \\$items of method App\\\\Controller\\\\FeedController\\:\\:buildFeed\\(\\) expects array\\<int, App\\\\Entity\\\\Package\\|App\\\\Entity\\\\Version\\>, array\\|Traversable given\\.$#"
-			count: 4
 			path: src/Controller/FeedController.php
 
 		-
@@ -736,6 +721,16 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
+			message: "#^Parameter \\#1 \\$element of method Doctrine\\\\Common\\\\Collections\\\\Collection\\<int,App\\\\Entity\\\\User\\>\\:\\:contains\\(\\) expects App\\\\Entity\\\\User, Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface given\\.$#"
+			count: 5
+			path: src/Controller/PackageController.php
+
+		-
+			message: "#^Parameter \\#1 \\$element of method Doctrine\\\\Common\\\\Collections\\\\Collection\\<int,App\\\\Entity\\\\User\\>\\:\\:contains\\(\\) expects App\\\\Entity\\\\User, Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\|null given\\.$#"
+			count: 4
+			path: src/Controller/PackageController.php
+
+		-
 			message: "#^Parameter \\#1 \\$nbResults of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects int\\<0, max\\>, int given\\.$#"
 			count: 1
 			path: src/Controller/PackageController.php
@@ -911,11 +906,6 @@ parameters:
 			path: src/Controller/UserController.php
 
 		-
-			message: "#^Cannot access offset 'order' on mixed\\.$#"
-			count: 2
-			path: src/Controller/WebController.php
-
-		-
 			message: "#^Cannot access offset 'orderBys' on array\\|bool\\|float\\|int\\|string\\.$#"
 			count: 1
 			path: src/Controller/WebController.php
@@ -923,11 +913,6 @@ parameters:
 		-
 			message: "#^Cannot access offset 'query' on array\\|bool\\|float\\|int\\|string\\.$#"
 			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Cannot access offset 'sort' on mixed\\.$#"
-			count: 2
 			path: src/Controller/WebController.php
 
 		-
@@ -947,11 +932,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Controller\\\\WebController\\:\\:computeSearchQuery\\(\\) has parameter \\$filteredOrderBys with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\WebController\\:\\:getFilteredOrderedBys\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Controller/WebController.php
 
@@ -1056,11 +1036,6 @@ parameters:
 			path: src/Entity/Author.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$id has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Author.php
-
-		-
 			message: "#^Property App\\\\Entity\\\\Author\\:\\:\\$name has no type specified\\.$#"
 			count: 1
 			path: src/Entity/Author.php
@@ -1096,19 +1071,9 @@ parameters:
 			path: src/Entity/AuthorRepository.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\ConflictLink\\:\\:\\$version has no type specified\\.$#"
-			count: 1
-			path: src/Entity/ConflictLink.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\DependentRepository\\:\\:deletePackageDependentSuggesters\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/DependentRepository.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\DevRequireLink\\:\\:\\$version has no type specified\\.$#"
-			count: 1
-			path: src/Entity/DevRequireLink.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\Download\\:\\:computeSum\\(\\) has no return type specified\\.$#"
@@ -1296,112 +1261,7 @@ parameters:
 			path: src/Entity/JobRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:addMaintainer\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:addVersions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:getMaintainers\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:getVersion\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:getVersion\\(\\) has parameter \\$normalizedVersion with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:getVersions\\(\\) return type with generic class Doctrine\\\\Common\\\\Collections\\\\ArrayCollection does not specify its types\\: TKey, T$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:isPackageUnique\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:isRepositoryValid\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:isVendorWritable\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Package\\:\\:setAbandoned\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setAutoUpdated\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setDescription\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setEntityRepository\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setEntityRepository\\(\\) has parameter \\$repository with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setGitHubForks\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setGitHubOpenIssues\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setGitHubStars\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setGitHubWatches\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setLanguage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setName\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setReadme\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setRemoteId\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/Package.php
 
@@ -1411,22 +1271,7 @@ parameters:
 			path: src/Entity/Package.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setRouter\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setRouter\\(\\) has parameter \\$router with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Package\\:\\:setSuspect\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setType\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/Package.php
 
@@ -1461,22 +1306,7 @@ parameters:
 			path: src/Entity/Package.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$autoUpdated has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
 			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$cachedVersions type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$description has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$downloads has no type specified\\.$#"
 			count: 1
 			path: src/Entity/Package.php
 
@@ -1491,72 +1321,7 @@ parameters:
 			path: src/Entity/Package.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$gitHubForks has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$gitHubOpenIssues has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$gitHubStars has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$gitHubWatches has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$id has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$language has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$maintainers has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$readme has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$remoteId has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$repository has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
 			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$router has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$suspect has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$type has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$updateFailureNotified has no type specified\\.$#"
 			count: 1
 			path: src/Entity/Package.php
 
@@ -1564,66 +1329,6 @@ parameters:
 			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$vcsDriverError has no type specified\\.$#"
 			count: 1
 			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$versions has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:getId\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setId\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setId\\(\\) has parameter \\$id with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setPackageName\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setPackageVersion\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:setVersion\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageLink\\:\\:toArray\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\PackageLink\\:\\:\\$id has no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\PackageLink\\:\\:\\$packageName has no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\PackageLink\\:\\:\\$packageVersion has no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\PackageLink\\:\\:\\$version has no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageLink.php
 
 		-
 			message: "#^Cannot access offset 'user_id' on mixed\\.$#"
@@ -1831,76 +1536,6 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:addDataPoint\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:addDataPoint\\(\\) has parameter \\$date with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:addDataPoint\\(\\) has parameter \\$phpMinor with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:addDataPoint\\(\\) has parameter \\$value with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:getData\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setData\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setData\\(\\) has parameter \\$data with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setDataPoint\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setDataPoint\\(\\) has parameter \\$date with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setDataPoint\\(\\) has parameter \\$phpMinor with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setDataPoint\\(\\) has parameter \\$value with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PhpStat\\:\\:setLastUpdated\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\PhpStat\\:\\:\\$data \\(array\\<string, array\\<string, int\\>\\>\\) does not accept array\\<int\\|string, array\\<int\\|string, \\(float\\|int\\)\\>\\>\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\PhpStat\\:\\:\\$data \\(array\\<string, array\\<string, int\\>\\>\\) does not accept array\\<int\\|string, array\\<int\\|string, mixed\\>\\>\\.$#"
-			count: 1
-			path: src/Entity/PhpStat.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:createOrUpdateRecord\\(\\) has parameter \\$keys with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/PhpStatRepository.php
@@ -1934,21 +1569,6 @@ parameters:
 			message: "#^Parameter \\#2 \\$type of class App\\\\Entity\\\\PhpStat constructor expects 1\\|2, int given\\.$#"
 			count: 2
 			path: src/Entity/PhpStatRepository.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\ProvideLink\\:\\:\\$version has no type specified\\.$#"
-			count: 1
-			path: src/Entity/ProvideLink.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\ReplaceLink\\:\\:\\$version has no type specified\\.$#"
-			count: 1
-			path: src/Entity/ReplaceLink.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\RequireLink\\:\\:\\$version has no type specified\\.$#"
-			count: 1
-			path: src/Entity/RequireLink.php
 
 		-
 			message: "#^Property App\\\\Entity\\\\SecurityAdvisory\\:\\:\\$affectedVersions has no type specified\\.$#"
@@ -2016,67 +1636,7 @@ parameters:
 			path: src/Entity/SecurityAdvisoryRepository.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\SuggestLink\\:\\:\\$version has no type specified\\.$#"
-			count: 1
-			path: src/Entity/SuggestLink.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Tag\\:\\:__construct\\(\\) has parameter \\$name with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Tag\\:\\:addVersions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Tag\\:\\:getByName\\(\\) should return App\\\\Entity\\\\Tag but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Tag\\:\\:getId\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Tag\\:\\:getName\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Tag\\:\\:setId\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Tag\\:\\:setId\\(\\) has parameter \\$id with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Tag\\:\\:setName\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Tag\\:\\:setName\\(\\) has parameter \\$name with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Tag\\:\\:\\$id has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Tag\\:\\:\\$name has no type specified\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Tag\\:\\:\\$versions has no type specified\\.$#"
 			count: 1
 			path: src/Entity/Tag.php
 
@@ -3032,26 +2592,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$string of function substr expects string, string\\|false given\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Parameter \\#1 \\$val of method App\\\\Entity\\\\Package\\:\\:setGitHubForks\\(\\) expects int, null given\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Parameter \\#1 \\$val of method App\\\\Entity\\\\Package\\:\\:setGitHubOpenIssues\\(\\) expects int, null given\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Parameter \\#1 \\$val of method App\\\\Entity\\\\Package\\:\\:setGitHubStars\\(\\) expects int, null given\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Parameter \\#1 \\$val of method App\\\\Entity\\\\Package\\:\\:setGitHubWatches\\(\\) expects int, null given\\.$#"
 			count: 1
 			path: src/Package/Updater.php
 
