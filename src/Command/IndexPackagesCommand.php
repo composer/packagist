@@ -269,7 +269,7 @@ class IndexPackagesCommand extends Command
 
     private function getTags(Package $package): array
     {
-        $tags = $this->getEM()->getConnection()->fetchAllAssociative(
+        $rows = $this->getEM()->getConnection()->fetchAllAssociative(
             'SELECT t.name FROM package p
                             JOIN package_version pv ON p.id = pv.package_id
                             JOIN version_tag vt ON vt.version_id = pv.id
@@ -279,16 +279,21 @@ class IndexPackagesCommand extends Command
             ['id' => $package->getId()]
         );
 
-        foreach ($tags as $idx => $tag) {
-            $tags[$idx] = $tag['name'];
+        $tags = [];
+        foreach ($rows as $idx => $tag) {
+            $tags[] = $tag['name'];
         }
 
-        return array_values(array_unique(array_map(function ($tag) {
-            return Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8'));
-        }, $tags)));
+        return array_values(array_unique(array_map(
+            fn (string $tag) => Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8')),
+            $tags
+        )));
     }
 
-    private function updateIndexedAt(array $idsToUpdate, string $time)
+    /**
+     * @param int[] $idsToUpdate
+     */
+    private function updateIndexedAt(array $idsToUpdate, string $time): void
     {
         $retries = 5;
         // retry loop in case of a lock timeout

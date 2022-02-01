@@ -94,7 +94,7 @@ class Updater
      * @param VcsRepository $repository the repository instance used to update from
      * @param int $flags a few of the constants of this class
      */
-    public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, $flags = 0, array $existingVersions = null, VersionCache $versionCache = null): Package
+    public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, int $flags = 0, array $existingVersions = null, VersionCache $versionCache = null): Package
     {
         $httpDownloader = new HttpDownloader($io, $config);
 
@@ -187,25 +187,26 @@ class Updater
             $processedVersions[strtolower($version->getVersion())] = $version;
 
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
-            $lastUpdated = $result['updated'];
-
-            if ($lastUpdated) {
+            $versionId = false;
+            if ($result['updated']) {
+                assert($result['object'] instanceof Version);
                 $em->flush();
                 $em->clear();
                 $package = $em->merge($package);
 
                 $this->versionIdCache->insertVersion($package, $result['object']);
+                $versionId = $result['object']->getId();
             } else {
                 $idsToMarkUpdated[] = $result['id'];
             }
 
             // use the first version which should be the highest stable version by default
             if (null === $dependentSuggesterSource) {
-                $dependentSuggesterSource = $lastUpdated ? $result['object']->getId() : false;
+                $dependentSuggesterSource = $versionId;
             }
             // if default branch is present however we prefer that as the canonical source of dependent/suggester
             if ($version->isDefaultBranch()) {
-                $dependentSuggesterSource = $lastUpdated ? $result['object']->getId() : false;
+                $dependentSuggesterSource = $versionId;
             }
 
             // mark the version processed so we can prune leftover ones
@@ -274,13 +275,16 @@ class Updater
     }
 
     /**
-     * @return array with keys:
-     *                    - updated (whether the version was updated or needs to be marked as updated)
-     *                    - id (version id, can be null for newly created versions)
-     *                    - version (normalized version from the composer package)
-     *                    - object (Version instance if it was updated)
+     * Keys info:
+     *
+     *  - updated (whether the version was updated or needs to be marked as updated)
+     *  - id (version id, can be null for newly created versions)
+     *  - version (normalized version from the composer package)
+     *  - object (Version instance if it was updated)
+     *
+     * @return array{updated: true, id: int|null, version: string, object: Version}|array{updated: false, id: int|null, version: string, object: null}
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, $flags, $rootIdentifier)
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, $rootIdentifier): array
     {
         $em = $this->getEM();
         $version = new Version();

@@ -473,7 +473,7 @@ class PackageRepository extends ServiceEntityRepository
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args);
     }
 
-    public function getSuggestCount($name): int
+    public function getSuggestCount(string $name): int
     {
         $sql = 'SELECT COUNT(*) count FROM suggester WHERE packageName = :name';
         $args = ['name' => $name];
@@ -481,7 +481,10 @@ class PackageRepository extends ServiceEntityRepository
         return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args);
     }
 
-    public function getSuggests($name, $offset = 0, $limit = 15)
+    /**
+     * @return array<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
+     */
+    public function getSuggests(string $name, int $offset = 0, int $limit = 15): array
     {
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (

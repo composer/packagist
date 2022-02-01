@@ -72,8 +72,11 @@ class ApiController extends Controller
     public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator)
     {
         $payload = json_decode($request->getContent(), true);
-        if (!$payload) {
+        if (!$payload || !is_array($payload)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
+        }
+        if (!isset($payload['repository']['url']) || !is_string($payload['repository']['url'])) {
+            return new JsonResponse(['status' => 'error', 'message' => '{repository: {url: string}} expected in payload'], 406);
         }
         $url = $payload['repository']['url'];
         $package = new Package;
@@ -120,7 +123,7 @@ class ApiController extends Controller
             $payload = json_decode($request->getContent(), true);
         }
 
-        if (!$payload) {
+        if (!$payload || !is_array($payload)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
         }
 
@@ -132,7 +135,7 @@ class ApiController extends Controller
             $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>[\w.-]+(?:/[\w.-]+?)*)(?:\.git|/)?$}i';
             $url = $payload['repository']['url'];
             $url = str_replace('https://api.github.com/repos', 'https://github.com', $url);
-            $remoteId = $payload['repository']['id'] ?? null;
+            $remoteId = isset($payload['repository']['id']) && (is_string($payload['repository']['id']) || is_int($payload['repository']['id'])) ? $payload['repository']['id'] : null;
         } elseif (isset($payload['repository']['links']['html']['href'])) { // bitbucket push event payload
             $urlRegex = '{^(?:https?://|git://|git@)?(?:api\.)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
             $url = $payload['repository']['links']['html']['href'];
@@ -303,16 +306,14 @@ class ApiController extends Controller
      */
     public function securityAdvisoryAction(Request $request): JsonResponse
     {
-        $packageNames = array_filter((array) $request->get('packages'));
+        $packageNames = array_filter((array) $request->get('packages'), fn($name) => is_string($name) && $name !== '');
         if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);
         }
 
         $updatedSince = $request->query->getInt('updatedSince', 0);
 
-        /** @var array[] $advisories */
         $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
-
         $response = ['advisories' => []];
         foreach ($advisories as $advisory) {
             $response['advisories'][$advisory['packageName']][] = $advisory;
@@ -348,12 +349,10 @@ class ApiController extends Controller
     /**
      * Perform the package update
      *
-     * @param Request $request the current request
      * @param string $url the repository's URL (deducted from the request)
-     * @param string $urlRegex the regex used to split the user packages into domain and path
-     * @return Response
+     * @param non-empty-string $urlRegex the regex used to split the user packages into domain and path
      */
-    protected function receivePost(Request $request, $url, $urlRegex, $remoteId, string $githubWebhookSecret)
+    protected function receivePost(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret): Response
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!Preg::isMatch($urlRegex, $url, $match)) {
@@ -468,12 +467,10 @@ class ApiController extends Controller
     /**
      * Find a user package given by its full URL
      *
-     * @param User $user
-     * @param string $url
-     * @param string $urlRegex
-     * @return array the packages found
+     * @param non-empty-string $urlRegex
+     * @return list<Package>
      */
-    protected function findPackagesByUrl(User $user, $url, $urlRegex, $remoteId)
+    protected function findPackagesByUrl(User $user, string $url, string $urlRegex, string|int|null $remoteId): array
     {
         if (!Preg::isMatch($urlRegex, $url, $matched)) {
             return [];
@@ -490,8 +487,8 @@ class ApiController extends Controller
                 )
             ) {
                 $packages[] = $package;
-                if ($remoteId && !$package->getRemoteId()) {
-                    $package->setRemoteId($remoteId);
+                if (null !== $remoteId && '' !== $remoteId && !$package->getRemoteId()) {
+                    $package->setRemoteId((string) $remoteId);
                 }
             }
         }

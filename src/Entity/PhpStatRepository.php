@@ -232,6 +232,7 @@ class PhpStatRepository extends ServiceEntityRepository
             'SELECT '.implode(', ', $sumQueries).' FROM php_stat p WHERE p.package_id = :package AND p.type = :type AND p.depth IN (:exact, :major)',
             ['package' => $package->getId(), 'type' => $type, 'exact' => PhpStat::DEPTH_EXACT, 'major' => PhpStat::DEPTH_MAJOR]
         );
+        assert(is_array($sums));
 
         foreach ($minorPhpVersions as $index => $version) {
             if ($sums[$index]) {
