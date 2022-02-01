@@ -104,10 +104,8 @@ class SymlinkDumper
      * Dump a set of packages to the web root
      *
      * @param int[]   $packageIds
-     * @param Boolean $force
-     * @param Boolean $verbose
      */
-    public function dump(array $packageIds, $force = false, $verbose = false)
+    public function dump(array $packageIds, bool $force = false, bool $verbose = false): bool
     {
         if (!MetadataDirCheck::isMetadataStoreMounted($this->awsMeta)) {
             throw new \RuntimeException('Metadata store not mounted, can not dump metadata');

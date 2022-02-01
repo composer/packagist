@@ -113,6 +113,9 @@ class VersionRepository extends ServiceEntityRepository
         return $res;
     }
 
+    /**
+     * @param int[] $versionIds
+     */
     public function getVersionData(array $versionIds)
     {
         $links = [

@@ -56,11 +56,6 @@ parameters:
 			path: src/Command/CompileStatsCommand.php
 
 		-
-			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
-			count: 1
-			path: src/Command/CompileStatsCommand.php
-
-		-
 			message: "#^Method App\\\\Command\\\\DumpPackagesCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Command/DumpPackagesCommand.php
@@ -106,11 +101,6 @@ parameters:
 			path: src/Command/GenerateTokensCommand.php
 
 		-
-			message: "#^Cannot access offset 'name' on mixed\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
 			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Command/IndexPackagesCommand.php
@@ -141,16 +131,6 @@ parameters:
 			path: src/Command/IndexPackagesCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:updateIndexedAt\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:updateIndexedAt\\(\\) has parameter \\$idsToUpdate with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/IndexPackagesCommand.php
@@ -167,11 +147,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$string of function strlen expects string, int\\<0, max\\> given\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Parameter \\#3 \\$subject of static method Composer\\\\Pcre\\\\Preg\\:\\:replace\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: src/Command/IndexPackagesCommand.php
 
@@ -217,11 +192,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Command\\\\PopulateDependentsSuggestersCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/PopulateDependentsSuggestersCommand.php
-
-		-
-			message: "#^Parameter \\#2 \\$versionId of method App\\\\Entity\\\\DependentRepository\\:\\:updateDependentSuggesters\\(\\) expects int, mixed given\\.$#"
 			count: 1
 			path: src/Command/PopulateDependentsSuggestersCommand.php
 
@@ -286,53 +256,8 @@ parameters:
 			path: src/Command/UpdatePackagesCommand.php
 
 		-
-			message: "#^Cannot access offset 'absolute_url' on mixed\\.$#"
-			count: 2
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Cannot access offset 'canon_url' on mixed\\.$#"
-			count: 2
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Cannot access offset 'git_http_url' on mixed\\.$#"
-			count: 2
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Cannot access offset 'href' on mixed\\.$#"
-			count: 2
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Cannot access offset 'html' on mixed\\.$#"
-			count: 2
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Cannot access offset 'id' on mixed\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Cannot access offset 'links' on mixed\\.$#"
-			count: 2
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Cannot access offset 'project' on mixed\\.$#"
-			count: 2
-			path: src/Controller/ApiController.php
-
-		-
 			message: "#^Cannot access offset 'repository' on mixed\\.$#"
-			count: 9
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Cannot access offset 'url' on mixed\\.$#"
-			count: 3
+			count: 1
 			path: src/Controller/ApiController.php
 
 		-
@@ -361,16 +286,6 @@ parameters:
 			path: src/Controller/ApiController.php
 
 		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:findPackagesByUrl\\(\\) has parameter \\$remoteId with no type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:findPackagesByUrl\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
 			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:getJobAction\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Controller/ApiController.php
@@ -381,22 +296,12 @@ parameters:
 			path: src/Controller/ApiController.php
 
 		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:receivePost\\(\\) has parameter \\$remoteId with no type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
 			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:trackDownloadsAction\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Controller/ApiController.php
 
 		-
 			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:updatePackageAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^PHPDoc tag @var for variable \\$advisories has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Controller/ApiController.php
 
@@ -417,21 +322,11 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$repoUrl of method App\\\\Entity\\\\Package\\:\\:setRepository\\(\\) expects string, mixed given\\.$#"
-			count: 2
+			count: 1
 			path: src/Controller/ApiController.php
 
 		-
 			message: "#^Parameter \\#2 \\$ip of method App\\\\Model\\\\DownloadManager\\:\\:addDownloads\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#2 \\$url of method App\\\\Controller\\\\ApiController\\:\\:receivePost\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, mixed given\\.$#"
 			count: 1
 			path: src/Controller/ApiController.php
 
@@ -1316,16 +1211,6 @@ parameters:
 			path: src/Entity/DownloadRepository.php
 
 		-
-			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
-			count: 2
-			path: src/Entity/DownloadRepository.php
-
-		-
-			message: "#^Parameter \\#3 \\$subject of static method Composer\\\\Pcre\\\\Preg\\:\\:replace\\(\\) expects string, mixed given\\.$#"
-			count: 2
-			path: src/Entity/DownloadRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:getEmptyReferences\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/EmptyReferenceCache.php
@@ -1747,7 +1632,7 @@ parameters:
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
-			count: 4
+			count: 1
 			path: src/Entity/PackageRepository.php
 
 		-
@@ -1911,31 +1796,6 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggestCount\\(\\) has parameter \\$name with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggests\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggests\\(\\) has parameter \\$limit with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggests\\(\\) has parameter \\$name with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggests\\(\\) has parameter \\$offset with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuspectPackageCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
@@ -1962,6 +1822,11 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:iterateStaleDownloadCountPackageIds\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Query error\\: Unknown column 'd\\.total' in 'order clause' \\(1054\\)\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -2034,11 +1899,6 @@ parameters:
 			message: "#^Property App\\\\Entity\\\\PhpStat\\:\\:\\$data \\(array\\<string, array\\<string, int\\>\\>\\) does not accept array\\<int\\|string, array\\<int\\|string, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/PhpStat.php
-
-		-
-			message: "#^Cannot access offset int on array\\<int, mixed\\>\\|false\\.$#"
-			count: 2
-			path: src/Entity/PhpStatRepository.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:createOrUpdateRecord\\(\\) has parameter \\$keys with no value type specified in iterable type array\\.$#"
@@ -2147,11 +2007,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\SecurityAdvisoryRepository\\:\\:getPackageSecurityAdvisories\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisoryRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\SecurityAdvisoryRepository\\:\\:searchSecurityAdvisories\\(\\) has parameter \\$packageNames with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/SecurityAdvisoryRepository.php
 
@@ -2366,6 +2221,11 @@ parameters:
 			path: src/Entity/VendorRepository.php
 
 		-
+			message: "#^Strict comparison using \\=\\=\\= between int\\<\\-128, 127\\> and '1' will always evaluate to false\\.$#"
+			count: 1
+			path: src/Entity/VendorRepository.php
+
+		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:equals\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/Version.php
@@ -2536,11 +2396,6 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Cannot cast mixed to int\\.$#"
-			count: 2
-			path: src/Entity/VersionRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:detachToArray\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
@@ -2581,27 +2436,12 @@ parameters:
 			path: src/Entity/VersionRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionData\\(\\) has parameter \\$versionIds with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionMetadataForUpdate\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:remove\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Parameter \\#1 \\$string of function strtolower expects string, mixed given\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
 
@@ -2872,11 +2712,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:copyWriteLog\\(\\) has parameter \\$to with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dump\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Package/SymlinkDumper.php
 
@@ -3181,17 +3016,7 @@ parameters:
 			path: src/Package/Updater.php
 
 		-
-			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateInformation\\(\\) has parameter \\$flags with no type specified\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
 			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateInformation\\(\\) has parameter \\$rootIdentifier with no type specified\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Method App\\\\Package\\\\Updater\\:\\:updateInformation\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Package/Updater.php
 
@@ -3331,11 +3156,6 @@ parameters:
 			path: src/Redis/FailedLoginCounter.php
 
 		-
-			message: "#^Parameter \\#2 \\$info of static method App\\\\SecurityAdvisory\\\\RemoteSecurityAdvisory\\:\\:createFromFriendsOfPhp\\(\\) expects array\\{branches\\: array\\<array\\{versions\\: array\\<string\\>, time\\?\\: mixed\\}\\>, composer\\-repository\\?\\: string\\|false, title\\: string, reference\\: string, link\\: string, cve\\?\\: string\\}, mixed given\\.$#"
-			count: 1
-			path: src/SecurityAdvisory/FriendsOfPhpSecurityAdvisoriesSource.php
-
-		-
 			message: "#^Offset 'after' does not exist on array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, exception\\?\\: Throwable\\}\\.$#"
 			count: 1
 			path: src/Service/QueueWorker.php
@@ -3367,16 +3187,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobsStatus\\(\\) should return array\\<string, array\\{status\\: mixed\\}\\> but returns array\\<string, mixed\\>\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getPendingUpdateJob\\(\\) should return string\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Parameter \\#1 \\$json of function json_decode expects string, mixed given\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
 
