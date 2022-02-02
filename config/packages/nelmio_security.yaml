@@ -35,10 +35,8 @@ nelmio_security:
                 - 'self'
                 - 'unsafe-inline'
                 - 'https://cdn.jsdelivr.net/'
-                - 'https://fonts.googleapis.com/'
             font-src:
                 - 'self'
-                - 'https://fonts.gstatic.com/'
             frame-src:
                 - 'https://www.google.com/recaptcha/'
             block-all-mixed-content: true # defaults to false, blocks HTTP content over HTTPS transport
