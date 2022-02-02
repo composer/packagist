@@ -28,9 +28,7 @@ class VendorRepository extends ServiceEntityRepository
 
     public function isVerified(string $vendor): bool
     {
-        $result = $this->getEntityManager()->getConnection()->fetchOne('SELECT verified FROM vendor WHERE name = :vendor', ['vendor' => $vendor]);
-
-        return $result === '1';
+        return (bool) $this->getEntityManager()->getConnection()->fetchOne('SELECT verified FROM vendor WHERE name = :vendor', ['vendor' => $vendor]);
     }
 
     public function verify(string $vendor): void
