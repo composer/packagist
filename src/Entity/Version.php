@@ -110,9 +110,9 @@ class Version
     private bool $development;
 
     /**
-     * @ORM\Column(type="text")
+     * @ORM\Column(type="json")
      */
-    private string $license;
+    private array $license;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\RequireLink", mappedBy="version")
@@ -151,34 +151,34 @@ class Version
     private Collection $suggest;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(type="json", nullable=true)
      */
-    private string|null $source = null;
+    private array|null $source = null;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(type="json", nullable=true)
      */
-    private string|null $dist = null;
+    private array|null $dist = null;
 
     /**
-     * @ORM\Column(type="text")
+     * @ORM\Column(type="json")
      */
-    private string $autoload;
+    private array $autoload;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(type="json", nullable=true)
      */
-    private string|null $binaries = null;
+    private array|null $binaries = null;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(type="json", nullable=true)
      */
-    private string|null $includePaths = null;
+    private array|null $includePaths = null;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(type="json", nullable=true)
      */
-    private string|null $support = null;
+    private array|null $support = null;
 
     /**
      * @ORM\Column(type="json", nullable=true)
@@ -429,87 +429,72 @@ class Version
 
     public function setLicense(array $license): void
     {
-        $this->license = json_encode($license, JSON_THROW_ON_ERROR);
+        $this->license = $license;
     }
 
     public function getLicense(): array
     {
-        return json_decode($this->license, true);
+        return $this->license;
     }
 
     public function setSource(array|null $source): void
     {
-        $this->source = null === $source ? $source : json_encode($source, JSON_THROW_ON_ERROR);
+        $this->source = $source;
     }
 
     public function getSource(): array|null
     {
-        if ($this->source === null) {
-            return null;
-        }
-        return json_decode($this->source, true);
+        return $this->source;
     }
 
     public function setDist(array|null $dist): void
     {
-        $this->dist = null === $dist ? $dist : json_encode($dist, JSON_THROW_ON_ERROR);
+        $this->dist = $dist;
     }
 
     public function getDist(): array|null
     {
-        if ($this->dist === null) {
-            return null;
-        }
-        return json_decode($this->dist, true);
+        return $this->dist;
     }
 
     public function setAutoload(array $autoload): void
     {
-        $this->autoload = json_encode($autoload, JSON_THROW_ON_ERROR);
+        $this->autoload = $autoload;
     }
 
     public function getAutoload(): array
     {
-        return json_decode($this->autoload, true);
+        return $this->autoload;
     }
 
     public function setBinaries(array|null $binaries): void
     {
-        $this->binaries = null === $binaries ? $binaries : json_encode($binaries, JSON_THROW_ON_ERROR);
+        $this->binaries = $binaries;
     }
 
     public function getBinaries(): array|null
     {
-        if ($this->binaries === null) {
-            return null;
-        }
-        return json_decode($this->binaries, true);
+        return $this->binaries;
     }
 
     public function setIncludePaths(array|null $paths): void
     {
-        $this->includePaths = $paths ? json_encode($paths, JSON_THROW_ON_ERROR) : null;
+        $this->includePaths = $paths;
     }
 
     public function getIncludePaths(): array|null
     {
-        if ($this->includePaths === null) {
-            return null;
-        }
-        return json_decode($this->includePaths, true);
+        return $this->includePaths;
     }
 
     public function setSupport(array|null $support): void
     {
-        $this->support = $support ? json_encode($support, JSON_THROW_ON_ERROR) : null;
+        $this->support = $support;
     }
 
     public function getSupport(): array|null
     {
-        if ($this->support === null) {
-            return null;
-        }
-        return json_decode($this->support, true);
+        return $this->support;
     }
 
     /**
