@@ -1446,11 +1446,6 @@ parameters:
 			path: src/Entity/UserRepository.php
 
 		-
-			message: "#^Strict comparison using \\=\\=\\= between int\\<\\-128, 127\\> and '1' will always evaluate to false\\.$#"
-			count: 1
-			path: src/Entity/VendorRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:equals\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/Version.php
@@ -1461,27 +1456,12 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAutoload\\(\\) should return array but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getBinaries\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getBinaries\\(\\) should return array\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getDist\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getDist\\(\\) should return array\\|null but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -1496,17 +1476,7 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getIncludePaths\\(\\) should return array\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getLicense\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getLicense\\(\\) should return array but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -1521,17 +1491,7 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSource\\(\\) should return array\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSupport\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:getSupport\\(\\) should return array\\|null but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -1596,7 +1556,17 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$dist \\(array\\{type\\: string\\|null, url\\: string\\|null, reference\\: string\\|null, shasum\\: string\\|null\\}\\|null\\) does not accept array\\|null\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
 			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$package type mapping mismatch\\: database can contain App\\\\Entity\\\\Package\\|null but property expects App\\\\Entity\\\\Package\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$source \\(array\\{type\\: string\\|null, url\\: string\\|null, reference\\: string\\|null\\}\\|null\\) does not accept array\\|null\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 

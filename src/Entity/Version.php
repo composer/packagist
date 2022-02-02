@@ -111,6 +111,7 @@ class Version
 
     /**
      * @ORM\Column(type="json")
+     * @var array<string>
      */
     private array $license;
 
@@ -152,31 +153,37 @@ class Version
 
     /**
      * @ORM\Column(type="json", nullable=true)
+     * @var array{type: string|null, url: string|null, reference: string|null}|null
      */
     private array|null $source = null;
 
     /**
      * @ORM\Column(type="json", nullable=true)
+     * @var array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null
      */
     private array|null $dist = null;
 
     /**
      * @ORM\Column(type="json")
+     * @var array{psr-0?: array<string, string|string[]>, psr-4?: array<string, string|string[]>, classmap?: list<string>, files?: list<string>}
      */
     private array $autoload;
 
     /**
      * @ORM\Column(type="json", nullable=true)
+     * @var array<string>|null
      */
     private array|null $binaries = null;
 
     /**
      * @ORM\Column(type="json", nullable=true)
+     * @var array<string>
      */
     private array|null $includePaths = null;
 
     /**
      * @ORM\Column(type="json", nullable=true)
+     * @var array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string}|null
      */
     private array|null $support = null;
 
