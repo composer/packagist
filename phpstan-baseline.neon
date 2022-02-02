@@ -1071,7 +1071,7 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumping\\(\\) should return array\\<int, string\\> but returns array\\<int\\<0, max\\>, int\\<0, 4294967295\\>\\>\\.$#"
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumping\\(\\) should return array\\<int, string\\> but returns array\\<int, mixed\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
