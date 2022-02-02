@@ -5,9 +5,7 @@ namespace App\Entity;
 use App\SecurityAdvisory\AdvisoryIdGenerator;
 use App\SecurityAdvisory\AdvisoryParser;
 use Composer\Pcre\Preg;
-use DateTime;
 use DateTimeImmutable;
-use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 
@@ -74,14 +72,14 @@ class SecurityAdvisory
     private string $source;
 
     /**
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(type="datetime_immutable")
      */
-    private DateTimeInterface $reportedAt;
+    private DateTimeImmutable $reportedAt;
 
     /**
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(type="datetime_immutable")
      */
-    private DateTimeInterface $updatedAt;
+    private DateTimeImmutable $updatedAt;
 
     /**
      * @ORM\Column(type="string", nullable=true)
@@ -110,7 +108,7 @@ class SecurityAdvisory
             $this->reportedAt != $advisory->getDate() ||
             $this->composerRepository !== $advisory->getComposerRepository()
         ) {
-            $this->updatedAt = new DateTime();
+            $this->updatedAt = new DateTimeImmutable();
         }
 
         $this->copyAdvisory($advisory, false);

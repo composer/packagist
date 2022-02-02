@@ -4,6 +4,7 @@ namespace App\SecurityAdvisory;
 
 use App\Entity\SecurityAdvisory;
 use Composer\Pcre\Preg;
+use DateTimeImmutable;
 
 /**
  * @phpstan-type FriendsOfPhpSecurityAdvisory array{
@@ -26,10 +27,10 @@ class RemoteSecurityAdvisory
     private string $affectedVersions;
     private string $link;
     private ?string $cve;
-    private \DateTime $date;
+    private DateTimeImmutable $date;
     private ?string $composerRepository;
 
-    public function __construct(string $id, string $title, string $packageName, string $affectedVersions, string $link, ?string $cve, \DateTime $date, ?string $composerRepository)
+    public function __construct(string $id, string $title, string $packageName, string $affectedVersions, string $link, ?string $cve, DateTimeImmutable $date, ?string $composerRepository)
     {
         $this->id = $id;
         $this->title = $title;
@@ -71,7 +72,7 @@ class RemoteSecurityAdvisory
         return $this->cve;
     }
 
-    public function getDate(): \DateTime
+    public function getDate(): DateTimeImmutable
     {
         return $this->date;
     }
@@ -89,9 +90,9 @@ class RemoteSecurityAdvisory
         $date = null;
         $fallbackYearDate = null;
         if (Preg::isMatch('#(\d{4}-\d{2}-\d{2})#', basename($fileNameWithPath), $matches)) {
-            $date = new \DateTime($matches[1] . ' 00:00:00');
+            $date = new DateTimeImmutable($matches[1] . ' 00:00:00');
         } elseif (Preg::isMatch('#CVE-(2\d{3})-\d#', basename($fileNameWithPath), $matches)) {
-            $fallbackYearDate = new \DateTime($matches[1] . '-01-01 00:00:00');
+            $fallbackYearDate = new DateTimeImmutable($matches[1] . '-01-01 00:00:00');
         }
 
         $affectedVersions = [];
@@ -107,7 +108,7 @@ class RemoteSecurityAdvisory
                 }
 
                 if ($timestamp) {
-                    $branchDate = new \DateTime('@' . $timestamp);
+                    $branchDate = new DateTimeImmutable('@' . $timestamp);
                     if (!$lowestBranchDate || $branchDate < $lowestBranchDate) {
                         $lowestBranchDate = $branchDate;
                     }
@@ -121,7 +122,7 @@ class RemoteSecurityAdvisory
             } elseif ($fallbackYearDate) {
                 $date = $fallbackYearDate;
             } else {
-                $date = (new \DateTime())->setTime(0, 0, 0);
+                $date = (new \DateTimeImmutable())->setTime(0, 0, 0);
             }
         }
 
