@@ -19,10 +19,10 @@ class SearchQuery
     /**
      * @Assert\NotBlank()
      */
-    public string $query = '';
+    public ?string $query = null;
 
     /**
-     * @var array{sort: 'downloads'|'favers', order: 'asc'|'desc'}
+     * @var array{sort: 'downloads'|'favers', order: 'asc'|'desc'}|null
      */
-    public array $orderBys;
+    public ?array $orderBys = null;
 }
