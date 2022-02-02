@@ -38,7 +38,7 @@ class EmptyReferenceCache
         $this->package = $package;
     }
 
-    public function setPackage(Package $package)
+    public function setPackage(Package $package): void
     {
         $this->package = $package;
     }

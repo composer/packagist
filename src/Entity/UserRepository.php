@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -49,7 +50,7 @@ class UserRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getPackageMaintainersQueryBuilder(Package $package, User $excludeUser=null)
+    public function getPackageMaintainersQueryBuilder(Package $package, User $excludeUser=null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('u')
             ->select('u')

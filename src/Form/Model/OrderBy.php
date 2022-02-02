@@ -20,30 +20,10 @@ class OrderBy
     /**
      * @var string
      */
-    protected $sort;
+    public string $sort;
 
     /**
      * @var string
      */
-    protected $order;
-
-    public function setSort($sort)
-    {
-        $this->sort = $sort;
-    }
-
-    public function getSort()
-    {
-        return $this->sort;
-    }
-
-    public function setOrder($order)
-    {
-        $this->order = $order;
-    }
-
-    public function getOrder()
-    {
-        return $this->order;
-    }
+    public string $order;
 }

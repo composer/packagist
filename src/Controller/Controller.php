@@ -30,7 +30,7 @@ abstract class Controller extends AbstractController
     /**
      * @required
      */
-    public function setDeps(ManagerRegistry $doctrine)
+    public function setDeps(ManagerRegistry $doctrine): void
     {
         $this->doctrine = $doctrine;
     }

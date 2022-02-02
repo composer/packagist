@@ -23,7 +23,10 @@ class DownloadRepository extends ServiceEntityRepository
         $conn->executeStatement('DELETE FROM download WHERE package_id = :id', ['id' => $package->getId()]);
     }
 
-    public function findDataByMajorVersion(Package $package, int $majorVersion)
+    /**
+     * @return array<string, list<array<int|numeric-string, int>>>
+     */
+    public function findDataByMajorVersion(Package $package, int $majorVersion): array
     {
         $sql = '
             SELECT v.normalizedVersion, d.data
@@ -49,7 +52,10 @@ class DownloadRepository extends ServiceEntityRepository
         return $series;
     }
 
-    public function findDataByMajorVersions(Package $package)
+    /**
+     * @return array<string, list<array<int|numeric-string, int>>>
+     */
+    public function findDataByMajorVersions(Package $package): array
     {
         $sql = '
             SELECT v.normalizedVersion, d.data

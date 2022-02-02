@@ -19,30 +19,10 @@ class SearchQuery
     /**
      * @Assert\NotBlank()
      */
-    protected $query;
+    public string $query;
 
     /**
-     * @var array
+     * @var array{sort: 'downloads'|'favers', order: 'asc'|'desc'}
      */
-    protected $orderBys;
-
-    public function setQuery($query)
-    {
-        $this->query = $query;
-    }
-
-    public function getQuery()
-    {
-        return $this->query;
-    }
-
-    public function setOrderBys($orderBys)
-    {
-        $this->orderBys = $orderBys;
-    }
-
-    public function getOrderBys()
-    {
-        return $this->orderBys;
-    }
+    public array $orderBys;
 }

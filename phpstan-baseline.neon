@@ -1,11 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Method App\\\\Command\\\\CleanIndexCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/CleanIndexCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/CleanIndexCommand.php
@@ -26,11 +21,6 @@ parameters:
 			path: src/Command/ClearVersionsCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\ClearVersionsCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/ClearVersionsCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$version of method App\\\\Entity\\\\VersionRepository\\:\\:remove\\(\\) expects App\\\\Entity\\\\Version, mixed given\\.$#"
 			count: 2
 			path: src/Command/ClearVersionsCommand.php
@@ -41,11 +31,6 @@ parameters:
 			path: src/Command/CompileStatsCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\CompileStatsCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/CompileStatsCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/CompileStatsCommand.php
@@ -54,11 +39,6 @@ parameters:
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:unlockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/CompileStatsCommand.php
-
-		-
-			message: "#^Method App\\\\Command\\\\DumpPackagesCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/DumpPackagesCommand.php
 
 		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
@@ -76,11 +56,6 @@ parameters:
 			path: src/Command/DumpPackagesCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\DumpPackagesV2Command\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/DumpPackagesV2Command.php
-
-		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/DumpPackagesV2Command.php
@@ -96,17 +71,7 @@ parameters:
 			path: src/Command/DumpPackagesV2Command.php
 
 		-
-			message: "#^Method App\\\\Command\\\\GenerateTokensCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/GenerateTokensCommand.php
-
-		-
-			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/IndexPackagesCommand.php
-
-		-
-			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:createSearchableProvider\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:createSearchableProvider\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Command/IndexPackagesCommand.php
 
@@ -121,12 +86,12 @@ parameters:
 			path: src/Command/IndexPackagesCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:packageToSearchableArray\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:packageToSearchableArray\\(\\) has parameter \\$tags with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Command/IndexPackagesCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:packageToSearchableArray\\(\\) has parameter \\$tags with no value type specified in iterable type array\\.$#"
+			message: "#^Method App\\\\Command\\\\IndexPackagesCommand\\:\\:packageToSearchableArray\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Command/IndexPackagesCommand.php
 
@@ -151,11 +116,6 @@ parameters:
 			path: src/Command/IndexPackagesCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\MigrateDownloadCountsCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/MigrateDownloadCountsCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/MigrateDownloadCountsCommand.php
@@ -171,11 +131,6 @@ parameters:
 			path: src/Command/MigrateDownloadCountsCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\MigratePhpStatsCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/MigratePhpStatsCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/MigratePhpStatsCommand.php
@@ -189,11 +144,6 @@ parameters:
 			message: "#^Parameter \\#1 \\$packageId of method App\\\\Entity\\\\PhpStatRepository\\:\\:transferStatsToDb\\(\\) expects int, int\\|null given\\.$#"
 			count: 1
 			path: src/Command/MigratePhpStatsCommand.php
-
-		-
-			message: "#^Method App\\\\Command\\\\PopulateDependentsSuggestersCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/PopulateDependentsSuggestersCommand.php
 
 		-
 			message: "#^Method App\\\\Command\\\\RegenerateMainPhpStatsCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
@@ -216,17 +166,7 @@ parameters:
 			path: src/Command/RegenerateMainPhpStatsCommand.php
 
 		-
-			message: "#^Method App\\\\Command\\\\RunWorkersCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/RunWorkersCommand.php
-
-		-
 			message: "#^Method App\\\\Command\\\\SymlinkMetadataMirrorCommand\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Command/SymlinkMetadataMirrorCommand.php
-
-		-
-			message: "#^Method App\\\\Command\\\\SymlinkMetadataMirrorCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Command/SymlinkMetadataMirrorCommand.php
 
@@ -239,11 +179,6 @@ parameters:
 			message: "#^Property App\\\\Command\\\\SymlinkMetadataMirrorCommand\\:\\:\\$webDir \\(string\\) does not accept string\\|false\\.$#"
 			count: 1
 			path: src/Command/SymlinkMetadataMirrorCommand.php
-
-		-
-			message: "#^Method App\\\\Command\\\\UpdatePackagesCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Command/UpdatePackagesCommand.php
 
 		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
@@ -349,11 +284,6 @@ parameters:
 			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\PasswordHasher\\\\Hasher\\\\UserPasswordHasherInterface\\:\\:hashPassword\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: src/Controller/ChangePasswordController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\Controller\\:\\:setDeps\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/Controller.php
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
@@ -986,19 +916,14 @@ parameters:
 			path: src/Entity/DownloadRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:findDataByMajorVersion\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:findDataByMajorVersion\\(\\) should return array\\<string, array\\<int, array\\<int\\|numeric\\-string, int\\>\\>\\> but returns array\\<string, non\\-empty\\-array\\<int, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/DownloadRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:findDataByMajorVersions\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:findDataByMajorVersions\\(\\) should return array\\<string, array\\<int, array\\<int\\|numeric\\-string, int\\>\\>\\> but returns array\\<string, non\\-empty\\-array\\<int, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/DownloadRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\EmptyReferenceCache\\:\\:setPackage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/EmptyReferenceCache.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\Job\\:\\:__construct\\(\\) has parameter \\$payload with no value type specified in iterable type array\\.$#"
@@ -1051,52 +976,7 @@ parameters:
 			path: src/Entity/JobRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:markTimedOutJobs\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/JobRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setAbandoned\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setReplacementPackage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setSuspect\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setUpdateFailureNotified\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:setUpdatedAt\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:sortVersions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:sortVersions\\(\\) has parameter \\$a with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:sortVersions\\(\\) has parameter \\$b with no type specified\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Package\\:\\:toArray\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:toArray\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Package.php
 
@@ -1131,21 +1011,6 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:addFilters\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:addFilters\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:findProviders\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:findProviders\\(\\) has parameter \\$name with no type specified\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
@@ -1161,22 +1026,7 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getFilteredQueryBuilder\\(\\) has parameter \\$filters with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getFilteredQueryBuilder\\(\\) has parameter \\$orderByName with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getGitHubPackagesByMaintainer\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) should return array\\<array\\{id\\: int, name\\: string, description\\: string, language\\: string\\|null, abandoned\\: int, replacementPackage\\: string\\|null\\}\\> but returns array\\<int, array\\<string, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -1191,22 +1041,7 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNames\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesByType\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesByType\\(\\) has parameter \\$type with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesByVendor\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -1216,42 +1051,7 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesForQuery\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesForQuery\\(\\) has parameter \\$query with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesUpdatedSince\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithFields\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithFields\\(\\) has parameter \\$fields with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithFields\\(\\) has parameter \\$filters with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithVersions\\(\\) has parameter \\$filters with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithVersions\\(\\) has parameter \\$ids with no value type specified in iterable type array\\.$#"
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackagesWithFields\\(\\) should return array\\<array\\<string, bool\\|int\\|string\\>\\> but returns array\\<string, array\\<string, bool\\|string\\|null\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -1266,27 +1066,22 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getProvidedNames\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackages\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumping\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumping\\(\\) should return array\\<int, string\\> but returns array\\<int\\<0, max\\>, int\\<0, 4294967295\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumpingV2\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumpingV2\\(\\) should return array\\<int, string\\> but returns array\\<int, mixed\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForIndexing\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForIndexing\\(\\) should return array\\<int, array\\{id\\: string\\}\\> but returns array\\<int, array\\<string, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -1311,12 +1106,7 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:isVendorTaken\\(\\) has parameter \\$vendor with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:iterateStaleDownloadCountPackageIds\\(\\) has no return type specified\\.$#"
+			message: "#^Parameter \\#1 \\$parameters of method Doctrine\\\\ORM\\\\AbstractQuery\\<mixed\\>\\:\\:setParameters\\(\\) expects array\\|Doctrine\\\\Common\\\\Collections\\\\ArrayCollection\\<\\(int\\|string\\), mixed\\>, non\\-empty\\-array\\<string, bool\\|int\\|string\\> given\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -1386,22 +1176,12 @@ parameters:
 			path: src/Entity/User.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\User\\:\\:eraseCredentials\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\User\\:\\:getGithubUsername\\(\\) should return string\\|null but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\User\\:\\:setSalt\\(\\) has parameter \\$salt with no type specified\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\User\\:\\:setUsername\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
@@ -1439,16 +1219,6 @@ parameters:
 			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$usernameCanonical \\(string\\) does not accept mixed\\.$#"
 			count: 1
 			path: src/Entity/User.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\UserRepository\\:\\:getPackageMaintainersQueryBuilder\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/UserRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:equals\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAutoload\\(\\) return type has no value type specified in iterable type array\\.$#"
@@ -1536,17 +1306,12 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:toArray\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:toArray\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:toV2Array\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:toArray\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -1556,12 +1321,12 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$dist \\(array\\{type\\: string\\|null, url\\: string\\|null, reference\\: string\\|null, shasum\\: string\\|null\\}\\|null\\) does not accept array\\|null\\.$#"
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:toV2Array\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$package type mapping mismatch\\: database can contain App\\\\Entity\\\\Package\\|null but property expects App\\\\Entity\\\\Package\\.$#"
+			message: "#^Property App\\\\Entity\\\\Version\\:\\:\\$dist \\(array\\{type\\: string\\|null, url\\: string\\|null, reference\\: string\\|null, shasum\\: string\\|null\\}\\|null\\) does not accept array\\|null\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -1606,134 +1371,19 @@ parameters:
 			path: src/Entity/VersionRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionData\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionData\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionMetadataForUpdate\\(\\) has no return type specified\\.$#"
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionMetadataForUpdate\\(\\) should return array\\<string, array\\{id\\: int, version\\: string, normalizedVersion\\: string, source\\: array\\{type\\: string\\|null, url\\: string\\|null, reference\\: string\\|null\\}\\|null, softDeletedAt\\: string\\|null\\}\\> but returns array\\<string, array\\{id\\: int\\<0, 4294967295\\>, version\\: string, normalizedVersion\\: string, source\\: mixed, softDeletedAt\\: string\\|null\\}\\>\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:remove\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\VersionRepository\\:\\:\\$redis has no type specified\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\VersionRepository\\:\\:\\$supportedLinkTypes has no type specified\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\MaintainerRequest\\:\\:setUser\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Model/MaintainerRequest.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:getOrder\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Model/OrderBy.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:getSort\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Model/OrderBy.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:setOrder\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Model/OrderBy.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:setOrder\\(\\) has parameter \\$order with no type specified\\.$#"
-			count: 1
-			path: src/Form/Model/OrderBy.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:setSort\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Model/OrderBy.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\OrderBy\\:\\:setSort\\(\\) has parameter \\$sort with no type specified\\.$#"
-			count: 1
-			path: src/Form/Model/OrderBy.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:getOrderBys\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Model/SearchQuery.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:getQuery\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Model/SearchQuery.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:setOrderBys\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Model/SearchQuery.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:setOrderBys\\(\\) has parameter \\$orderBys with no type specified\\.$#"
-			count: 1
-			path: src/Form/Model/SearchQuery.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:setQuery\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Model/SearchQuery.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Model\\\\SearchQuery\\:\\:setQuery\\(\\) has parameter \\$query with no type specified\\.$#"
-			count: 1
-			path: src/Form/Model/SearchQuery.php
-
-		-
-			message: "#^Property App\\\\Form\\\\Model\\\\SearchQuery\\:\\:\\$orderBys type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/Model/SearchQuery.php
-
-		-
-			message: "#^Property App\\\\Form\\\\Model\\\\SearchQuery\\:\\:\\$query has no type specified\\.$#"
-			count: 1
-			path: src/Form/Model/SearchQuery.php
-
-		-
-			message: "#^Method App\\\\Form\\\\RegistrationFormType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/RegistrationFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\RegistrationFormType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/RegistrationFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\AbandonedType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/AbandonedType.php
 
 		-
 			message: "#^Method App\\\\Form\\\\Type\\\\AbandonedType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Form/Type/AbandonedType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\AddMaintainerRequestType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/AddMaintainerRequestType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\AddMaintainerRequestType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/AddMaintainerRequestType.php
 
 		-
 			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
@@ -1746,49 +1396,9 @@ parameters:
 			path: src/Form/Type/EnableTwoFactorAuthType.php
 
 		-
-			message: "#^Method App\\\\Form\\\\Type\\\\OrderByType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/OrderByType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\OrderByType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/OrderByType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\PackageType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/PackageType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\PackageType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/PackageType.php
-
-		-
 			message: "#^Cannot call method getGithubId\\(\\) on mixed\\.$#"
 			count: 1
 			path: src/Form/Type/ProfileFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\ProfileFormType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/ProfileFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\ProfileFormType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/ProfileFormType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\SearchQueryType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/SearchQueryType.php
-
-		-
-			message: "#^Method App\\\\Form\\\\Type\\\\SearchQueryType\\:\\:configureOptions\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Form/Type/SearchQueryType.php
 
 		-
 			message: "#^Generator expects value type Symfony\\\\Component\\\\HttpKernel\\\\Bundle\\\\BundleInterface, object given\\.$#"
@@ -1831,247 +1441,7 @@ parameters:
 			path: src/Package/SymlinkDumper.php
 
 		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cleanOldFiles\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cleanOldFiles\\(\\) has parameter \\$buildDir with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cleanOldFiles\\(\\) has parameter \\$oldBuildDir with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cleanOldFiles\\(\\) has parameter \\$safeFiles with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:clearDirectory\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:clearDirectory\\(\\) has parameter \\$path with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cloneDir\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cloneDir\\(\\) has parameter \\$source with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:cloneDir\\(\\) has parameter \\$target with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:copyWriteLog\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:copyWriteLog\\(\\) has parameter \\$from with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:copyWriteLog\\(\\) has parameter \\$to with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFile\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFile\\(\\) has parameter \\$key with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFile\\(\\) has parameter \\$path with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFiles\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpIndividualFiles\\(\\) has parameter \\$buildDir with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpListing\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpListing\\(\\) has parameter \\$path with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpRootFile\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpRootFile\\(\\) has parameter \\$file with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has parameter \\$file with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has parameter \\$key with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has parameter \\$versionData with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:gc\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:getTargetListing\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:getTargetListing\\(\\) has parameter \\$file with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:getTargetListingBlocks\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:getTargetListingBlocks\\(\\) has parameter \\$now with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:loadIndividualFile\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:loadIndividualFile\\(\\) has parameter \\$key with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:loadIndividualFile\\(\\) has parameter \\$path with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:removeDirectory\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:removeDirectory\\(\\) has parameter \\$path with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:switchActiveWebDir\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:switchActiveWebDir\\(\\) has parameter \\$buildDir with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:switchActiveWebDir\\(\\) has parameter \\$webDir with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFile\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFile\\(\\) has parameter \\$contents with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFile\\(\\) has parameter \\$mtime with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFile\\(\\) has parameter \\$path with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFileNonAtomic\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFileNonAtomic\\(\\) has parameter \\$contents with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:writeFileNonAtomic\\(\\) has parameter \\$path with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#1 \\$data of function gzencode expects string, string\\|false given\\.$#"
-			count: 2
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#1 \\$directory of function rmdir expects string, string\\|false given\\.$#"
-			count: 2
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#1 \\$dirs of method Symfony\\\\Component\\\\Finder\\\\Finder\\:\\:in\\(\\) expects array\\<string\\>\\|string, string\\|false given\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#1 \\$haystack of function substr_count expects string, mixed given\\.$#"
+			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Package/SymlinkDumper.php
 
@@ -2086,27 +1456,12 @@ parameters:
 			path: src/Package/SymlinkDumper.php
 
 		-
-			message: "#^Parameter \\#1 \\$target of function symlink expects string, string\\|false given\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#2 \\$data of function hash expects string, string\\|false given\\.$#"
-			count: 2
-			path: src/Package/SymlinkDumper.php
-
-		-
 			message: "#^Parameter \\#2 \\$replace of function str_replace expects array\\|string, mixed given\\.$#"
 			count: 1
 			path: src/Package/SymlinkDumper.php
 
 		-
 			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, mixed given\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#3 \\$subject of static method Composer\\\\Pcre\\\\Preg\\:\\:replace\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: src/Package/SymlinkDumper.php
 
@@ -2171,16 +1526,6 @@ parameters:
 			path: src/Package/Updater.php
 
 		-
-			message: "#^Method App\\\\Package\\\\Updater\\:\\:sanitize\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Method App\\\\Package\\\\Updater\\:\\:sanitize\\(\\) has parameter \\$str with no type specified\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
 			message: "#^Method App\\\\Package\\\\Updater\\:\\:update\\(\\) has parameter \\$existingVersions with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Package/Updater.php
@@ -2217,11 +1562,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#3 \\$length of function substr expects int\\|null, int\\|false given\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Property App\\\\Package\\\\Updater\\:\\:\\$supportedLinkTypes type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Package/Updater.php
 
@@ -2279,36 +1619,6 @@ parameters:
 			message: "#^Property App\\\\Package\\\\V2Dumper\\:\\:\\$webDir \\(string\\) does not accept string\\|false\\.$#"
 			count: 1
 			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Method App\\\\Redis\\\\DownloadsIncr\\:\\:filterArguments\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Redis/DownloadsIncr.php
-
-		-
-			message: "#^Method App\\\\Redis\\\\DownloadsIncr\\:\\:filterArguments\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Redis/DownloadsIncr.php
-
-		-
-			message: "#^Property App\\\\Redis\\\\DownloadsIncr\\:\\:\\$args has no type specified\\.$#"
-			count: 1
-			path: src/Redis/DownloadsIncr.php
-
-		-
-			message: "#^Method App\\\\Redis\\\\FailedLoginCounter\\:\\:filterArguments\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Redis/FailedLoginCounter.php
-
-		-
-			message: "#^Method App\\\\Redis\\\\FailedLoginCounter\\:\\:filterArguments\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Redis/FailedLoginCounter.php
-
-		-
-			message: "#^Property App\\\\Redis\\\\FailedLoginCounter\\:\\:\\$args has no type specified\\.$#"
-			count: 1
-			path: src/Redis/FailedLoginCounter.php
 
 		-
 			message: "#^Offset 'after' does not exist on array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\}\\|array\\{status\\: 'reschedule', message\\?\\: string, exception\\?\\: Throwable\\}\\.$#"

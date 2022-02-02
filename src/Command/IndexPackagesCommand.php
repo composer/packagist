@@ -53,7 +53,7 @@ class IndexPackagesCommand extends Command
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('packagist:index')
@@ -189,7 +189,7 @@ class IndexPackagesCommand extends Command
         return 0;
     }
 
-    private function packageToSearchableArray(Package $package, array $tags)
+    private function packageToSearchableArray(Package $package, array $tags): array
     {
         $faversCount = $this->favoriteManager->getFaverCount($package);
         $downloads = $this->downloadManager->getDownloads($package);
@@ -233,7 +233,7 @@ class IndexPackagesCommand extends Command
         return $record;
     }
 
-    private function createSearchableProvider(string $provided)
+    private function createSearchableProvider(string $provided): array
     {
         return [
             'id' => $provided,

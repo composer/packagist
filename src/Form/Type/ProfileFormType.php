@@ -28,7 +28,7 @@ use Symfony\Component\Form\Extension\Core\Type\PasswordType;
  */
 class ProfileFormType extends AbstractType
 {
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('username', null, array('label' => 'Username'))
@@ -57,7 +57,7 @@ class ProfileFormType extends AbstractType
         $builder->add('failureNotifications', null, ['required' => false, 'label' => 'Notify me of package update failures']);
     }
 
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults(array(
             'data_class' => User::class,

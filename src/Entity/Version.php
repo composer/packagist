@@ -83,7 +83,7 @@ class Version
      * @ORM\ManyToOne(targetEntity="App\Entity\Package", fetch="EAGER", inversedBy="versions")
      * @Assert\Type(type="App\Entity\Package")
      */
-    private Package $package;
+    private Package|null $package;
 
     /**
      * @ORM\Column(nullable=true)
@@ -237,7 +237,7 @@ class Version
         $this->updatedAt = new \DateTimeImmutable;
     }
 
-    public function toArray(array $versionData, bool $serializeForApi = false)
+    public function toArray(array $versionData, bool $serializeForApi = false): array
     {
         if (isset($versionData[$this->id]['tags'])) {
             $tags = $versionData[$this->id]['tags'];
@@ -326,7 +326,7 @@ class Version
         return $data;
     }
 
-    public function toV2Array(array $versionData)
+    public function toV2Array(array $versionData): array
     {
         $array = $this->toArray($versionData);
 
@@ -338,7 +338,7 @@ class Version
         return $array;
     }
 
-    public function equals(Version $version)
+    public function equals(Version $version): bool
     {
         return strtolower($version->getName()) === strtolower($this->getName())
             && strtolower($version->getNormalizedVersion()) === strtolower($this->getNormalizedVersion());
@@ -568,6 +568,7 @@ class Version
 
     public function getPackage(): Package
     {
+        assert($this->package instanceof Package);
         return $this->package;
     }
 

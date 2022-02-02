@@ -27,7 +27,7 @@ class JobRepository extends ServiceEntityRepository
         ]);
     }
 
-    public function markTimedOutJobs()
+    public function markTimedOutJobs(): void
     {
         $conn = $this->getEntityManager()->getConnection();
 

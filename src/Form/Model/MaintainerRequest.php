@@ -18,7 +18,7 @@ class MaintainerRequest
 {
     private ?string $user = null;
 
-    public function setUser(string $username)
+    public function setUser(string $username): void
     {
         $this->user = $username;
     }

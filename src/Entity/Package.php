@@ -224,7 +224,7 @@ class Package
         $this->createdAt = new \DateTime;
     }
 
-    public function toArray(VersionRepository $versionRepo, bool $serializeForApi = false)
+    public function toArray(VersionRepository $versionRepo, bool $serializeForApi = false): array
     {
         $maintainers = [];
         foreach ($this->getMaintainers() as $maintainer) {
@@ -464,7 +464,7 @@ class Package
         return Preg::replace('{^[^/]*/}', '', $this->name);
     }
 
-    public function setDescription(string $description): void
+    public function setDescription(string|null $description): void
     {
         $this->description = $description;
     }
@@ -675,7 +675,7 @@ class Package
         return null;
     }
 
-    public function setUpdatedAt(DateTimeInterface $updatedAt)
+    public function setUpdatedAt(DateTimeInterface $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
         $this->setUpdateFailureNotified(false);
@@ -796,7 +796,7 @@ class Package
      *
      * @param Boolean $updateFailureNotified
      */
-    public function setUpdateFailureNotified($updateFailureNotified)
+    public function setUpdateFailureNotified($updateFailureNotified): void
     {
         $this->updateFailureNotified = $updateFailureNotified;
     }
@@ -811,7 +811,7 @@ class Package
         return $this->updateFailureNotified;
     }
 
-    public function setSuspect(?string $reason)
+    public function setSuspect(?string $reason): void
     {
         $this->suspect = $reason;
     }
@@ -837,7 +837,7 @@ class Package
     /**
      * @param boolean $abandoned
      */
-    public function setAbandoned($abandoned)
+    public function setAbandoned($abandoned): void
     {
         $this->abandoned = $abandoned;
     }
@@ -847,12 +847,12 @@ class Package
         return $this->replacementPackage;
     }
 
-    public function setReplacementPackage(?string $replacementPackage)
+    public function setReplacementPackage(?string $replacementPackage): void
     {
         $this->replacementPackage = $replacementPackage;
     }
 
-    public static function sortVersions($a, $b)
+    public static function sortVersions(Version $a, Version $b): int
     {
         $aVersion = $a->getNormalizedVersion();
         $bVersion = $b->getNormalizedVersion();

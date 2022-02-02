@@ -36,7 +36,7 @@ class ClearVersionsCommand extends Command
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('packagist:clear:versions')

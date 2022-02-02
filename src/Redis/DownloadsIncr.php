@@ -4,7 +4,10 @@ namespace App\Redis;
 
 class DownloadsIncr extends \Predis\Command\ScriptCommand
 {
-    private $args;
+    /**
+     * @var array<string|int>
+     */
+    private array $args;
 
     public function getKeysCount(): int
     {
@@ -15,6 +18,10 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
         return count($this->args) - 3;
     }
 
+    /**
+     * @param  array<string|int> $arguments
+     * @return array<string|int>
+     */
     protected function filterArguments(array $arguments): array
     {
         $this->args = $arguments;

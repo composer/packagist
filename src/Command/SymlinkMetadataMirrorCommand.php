@@ -33,10 +33,7 @@ class SymlinkMetadataMirrorCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * @inheritDoc
-     */
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('packagist:symlink-metadata')
@@ -45,9 +42,6 @@ class SymlinkMetadataMirrorCommand extends Command
         ;
     }
 
-    /**
-     * @inheritDoc
-     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if (empty($this->awsMeta) || !$this->awsMeta['is_web'] || $this->awsMeta['primary']) {

@@ -42,7 +42,7 @@ class DumpPackagesV2Command extends Command
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('packagist:dump-v2')
@@ -101,6 +101,8 @@ class DumpPackagesV2Command extends Command
                 if ($ids || $force) {
                     ini_set('memory_limit', -1);
                     gc_enable();
+
+                    $ids = array_map('intval', $ids);
 
                     $this->dumper->dump($ids, $force, $verbose);
                 }

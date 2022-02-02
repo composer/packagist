@@ -28,7 +28,7 @@ class MigratePhpStatsCommand extends Command
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('packagist:migrate-php-stats')

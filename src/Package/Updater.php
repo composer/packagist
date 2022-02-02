@@ -48,10 +48,7 @@ class Updater
     const DELETE_BEFORE = 2;
     const FORCE_DUMP = 4;
 
-    /**
-     * Supported link types
-     */
-    protected array $supportedLinkTypes = [
+    private const SUPPORTED_LINK_TYPES = [
         'require'     => [
             'method' => 'getRequires',
             'entity' => 'RequireLink',
@@ -74,15 +71,10 @@ class Updater
         ],
     ];
 
-    /**
-     * Constructor
-     *
-     * @param ManagerRegistry $doctrine
-     */
     public function __construct(
         private ManagerRegistry $doctrine,
         private ProviderManager $providerManager,
-        private VersionIdCache $versionIdCache
+        private VersionIdCache $versionIdCache,
     ) {
         ErrorHandler::register();
     }
@@ -437,7 +429,7 @@ class Updater
         }
 
         // handle links
-        foreach ($this->supportedLinkTypes as $linkType => $opts) {
+        foreach (self::SUPPORTED_LINK_TYPES as $linkType => $opts) {
             $links = [];
             foreach ($data->{$opts['method']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
@@ -715,8 +707,17 @@ class Updater
         return str_replace("\r\n", "\n", $readme);
     }
 
-    private function sanitize($str)
+    /**
+     * @template T of string|null
+     * @phpstan-param T $str
+     * @phpstan-return T
+     */
+    private function sanitize(string|null $str): string|null
     {
+        if (null === $str) {
+            return null;
+        }
+
         // remove escape chars
         $str = Preg::replace("{\x1B(?:\[.)?}u", '', $str);
 

@@ -27,30 +27,20 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class VersionRepository extends ServiceEntityRepository
 {
-    private $redis;
-
-    protected $supportedLinkTypes = [
-        'require',
-        'conflict',
-        'provide',
-        'replace',
-        'devRequire',
-        'suggest',
-    ];
-
     public function getEntityManager(): EntityManager
     {
         return parent::getEntityManager();
     }
 
-    public function __construct(ManagerRegistry $registry, Client $redisCache, private VersionIdCache $versionIdCache)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+        private Client $redisCache,
+        private VersionIdCache $versionIdCache,
+    ) {
         parent::__construct($registry, Version::class);
-
-        $this->redis = $redisCache;
     }
 
-    public function remove(Version $version)
+    public function remove(Version $version): void
     {
         $em = $this->getEntityManager();
         $package = $version->getPackage();
@@ -116,7 +106,7 @@ class VersionRepository extends ServiceEntityRepository
     /**
      * @param int[] $versionIds
      */
-    public function getVersionData(array $versionIds)
+    public function getVersionData(array $versionIds): array
     {
         $links = [
             'require' => 'link_require',
@@ -164,7 +154,10 @@ class VersionRepository extends ServiceEntityRepository
         return $result;
     }
 
-    public function getVersionMetadataForUpdate(Package $package)
+    /**
+     * @return array<string, array{id: int, version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null, softDeletedAt: string|null}>
+     */
+    public function getVersionMetadataForUpdate(Package $package): array
     {
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             'SELECT id, version, normalizedVersion, source, softDeletedAt FROM package_version v WHERE v.package_id = :id',
@@ -232,7 +225,7 @@ class VersionRepository extends ServiceEntityRepository
 
     public function getLatestReleases($count = 10)
     {
-        if ($cached = $this->redis->get('new_releases')) {
+        if ($cached = $this->redisCache->get('new_releases')) {
             return json_decode($cached, true);
         }
 
@@ -246,7 +239,7 @@ class VersionRepository extends ServiceEntityRepository
             ->setParameter('now', date('Y-m-d H:i:s'));
 
         $res = $qb->getQuery()->getResult();
-        $this->redis->setex('new_releases', 600, json_encode($res));
+        $this->redisCache->setex('new_releases', 600, json_encode($res));
 
         return $res;
     }

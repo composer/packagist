@@ -82,6 +82,7 @@ class PackageController extends Controller
         $repo = $this->getEM()->getRepository(Package::class);
         $queryParams = $req->query->all();
         $fields = (array) $queryParams['fields']; // support single or multiple fields
+        /** @var string[] $fields */
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
 
         if (count($fields) > 0) {
@@ -380,7 +381,7 @@ class PackageController extends Controller
                 /** @var Package $package */
                 $trendiness[$package->getId()] = (int) $redis->zscore('downloads:trending', $package->getId());
             }
-            usort($providers, function ($a, $b) use ($trendiness) {
+            usort($providers, function (Package $a, Package $b) use ($trendiness) {
                 if ($trendiness[$a->getId()] === $trendiness[$b->getId()]) {
                     return strcmp($a->getName(), $b->getName());
                 }
@@ -389,15 +390,16 @@ class PackageController extends Controller
         } catch (ConnectionException $e) {}
 
         if ($req->getRequestFormat() === 'json') {
-            foreach ($providers as $index => $package) {
-                $providers[$index] = [
+            $response = [];
+            foreach ($providers as $package) {
+                $response[] = [
                     'name' => $package->getName(),
                     'description' => $package->getDescription(),
                     'type' => $package->getType(),
                 ];
             }
 
-            return new JsonResponse(['providers' => $providers]);
+            return new JsonResponse(['providers' => $response]);
         }
 
         return $this->render('package/providers.html.twig', [

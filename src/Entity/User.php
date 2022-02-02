@@ -368,7 +368,7 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         ) = $data;
     }
 
-    public function eraseCredentials()
+    public function eraseCredentials(): void
     {
     }
 
@@ -448,7 +448,7 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         }
     }
 
-    public function setUsername(string $username)
+    public function setUsername(string $username): void
     {
         $this->username = $username;
         $this->setUsernameCanonical($username);
