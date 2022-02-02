@@ -19,7 +19,7 @@ class SearchQuery
     /**
      * @Assert\NotBlank()
      */
-    public string $query;
+    public string $query = '';
 
     /**
      * @var array{sort: 'downloads'|'favers', order: 'asc'|'desc'}
