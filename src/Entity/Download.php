@@ -97,7 +97,7 @@ class Download
     }
 
     /**
-     * @return array<int|numeric-string, int>
+     * @return array<int, int> Key is "YYYYMMDD" which means it always gets converted to an int by php
      */
     public function getData(): array
     {

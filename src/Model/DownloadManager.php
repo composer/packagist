@@ -67,7 +67,7 @@ class DownloadManager
 
         $keyBase .= ':';
         $date = new \DateTime();
-        $todayDate = $date->format('Ymd');
+        $todayDate = (int) $date->format('Ymd');
         $yesterdayDate = date('Ymd', ((int) $date->format('U')) - 86400);
 
         // fetch today, yesterday and the latest total from redis
@@ -76,9 +76,9 @@ class DownloadManager
         for ($i = 0; $i < 30; $i++) {
             // current day and previous day might not be in db yet or incomplete, so we take the data from redis if there is still data there
             if ($i <= 1) {
-                $monthly += $redisData[$i] ?? $dlData[$date->format('Ymd')] ?? 0;
+                $monthly += $redisData[$i] ?? $dlData[(int) $date->format('Ymd')] ?? 0;
             } else {
-                $monthly += $dlData[$date->format('Ymd')] ?? 0;
+                $monthly += $dlData[(int) $date->format('Ymd')] ?? 0;
             }
             $date->modify('-1 day');
         }
