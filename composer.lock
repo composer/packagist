@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3de41ec7691a0c19ac9edc225e1c8ef1",
+    "content-hash": "8af5d7de0722eb1e4da38ec0ecf34da4",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -3412,41 +3412,43 @@
         },
         {
             "name": "lcobucci/jwt",
-            "version": "4.1.5",
+            "version": "4.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lcobucci/jwt.git",
-                "reference": "fe2d89f2eaa7087af4aa166c6f480ef04e000582"
+                "reference": "55564265fddf810504110bd68ca311932324b0e9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lcobucci/jwt/zipball/fe2d89f2eaa7087af4aa166c6f480ef04e000582",
-                "reference": "fe2d89f2eaa7087af4aa166c6f480ef04e000582",
+                "url": "https://api.github.com/repos/lcobucci/jwt/zipball/55564265fddf810504110bd68ca311932324b0e9",
+                "reference": "55564265fddf810504110bd68ca311932324b0e9",
                 "shasum": ""
             },
             "require": {
-                "ext-hash": "*",
-                "ext-json": "*",
                 "ext-mbstring": "*",
                 "ext-openssl": "*",
-                "ext-sodium": "*",
                 "lcobucci/clock": "^2.0",
                 "php": "^7.4 || ^8.0"
             },
             "require-dev": {
-                "infection/infection": "^0.21",
+                "infection/infection": "^0.20",
                 "lcobucci/coding-standard": "^6.0",
-                "mikey179/vfsstream": "^1.6.7",
-                "phpbench/phpbench": "^1.0",
+                "mikey179/vfsstream": "^1.6",
+                "phpbench/phpbench": "^0.17",
                 "phpstan/extension-installer": "^1.0",
                 "phpstan/phpstan": "^0.12",
                 "phpstan/phpstan-deprecation-rules": "^0.12",
                 "phpstan/phpstan-phpunit": "^0.12",
                 "phpstan/phpstan-strict-rules": "^0.12",
                 "phpunit/php-invoker": "^3.1",
-                "phpunit/phpunit": "^9.5"
+                "phpunit/phpunit": "^9.4"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.0-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "Lcobucci\\JWT\\": "src"
@@ -3470,7 +3472,7 @@
             ],
             "support": {
                 "issues": "https://github.com/lcobucci/jwt/issues",
-                "source": "https://github.com/lcobucci/jwt/tree/4.1.5"
+                "source": "https://github.com/lcobucci/jwt/tree/4.0.4"
             },
             "funding": [
                 {
@@ -3482,7 +3484,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2021-09-28T19:34:56+00:00"
+            "time": "2021-09-28T19:18:28+00:00"
         },
         {
             "name": "league/oauth2-client",
@@ -13120,16 +13122,16 @@
         },
         {
             "name": "staabm/phpstan-dba",
-            "version": "0.2.11",
+            "version": "dev-debug",
             "source": {
                 "type": "git",
                 "url": "https://github.com/staabm/phpstan-dba.git",
-                "reference": "4a9573582a4c4cf5785c7a5a62e89e540eb64078"
+                "reference": "dd465db5e3c4f5c304e9ffb36b682b0d1e6745cf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/4a9573582a4c4cf5785c7a5a62e89e540eb64078",
-                "reference": "4a9573582a4c4cf5785c7a5a62e89e540eb64078",
+                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/dd465db5e3c4f5c304e9ffb36b682b0d1e6745cf",
+                "reference": "dd465db5e3c4f5c304e9ffb36b682b0d1e6745cf",
                 "shasum": ""
             },
             "require": {
@@ -13168,9 +13170,9 @@
             ],
             "support": {
                 "issues": "https://github.com/staabm/phpstan-dba/issues",
-                "source": "https://github.com/staabm/phpstan-dba/tree/0.2.11"
+                "source": "https://github.com/staabm/phpstan-dba/tree/debug"
             },
-            "time": "2022-01-27T20:00:00+00:00"
+            "time": "2022-02-02T18:15:44+00:00"
         },
         {
             "name": "symfony/browser-kit",
@@ -13831,7 +13833,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "composer/composer": 20
+        "composer/composer": 20,
+        "staabm/phpstan-dba": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
@@ -13844,5 +13847,5 @@
     "platform-overrides": {
         "php": "8.0.5"
     },
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.2.0"
 }
