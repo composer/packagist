@@ -114,7 +114,8 @@ class WebController extends Controller
             ], 400))->setCallback($req->query->get('callback'));
         }
 
-        $form = $this->createForm(SearchQueryType::class, new SearchQuery());
+        $searchQuery = new SearchQuery();
+        $form = $this->createForm(SearchQueryType::class, $searchQuery);
 
         $index = $algolia->initIndex($algoliaIndexName);
         $query = '';
@@ -147,7 +148,7 @@ class WebController extends Controller
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
-            $query = $form->getData()->getQuery();
+            $query = $searchQuery->query;
         }
 
         $perPage = max(1, (int) $req->query->getInt('per_page', 15));
@@ -206,7 +207,7 @@ class WebController extends Controller
         if ($results['nbPages'] > $results['page'] + 1) {
             $params = [
                 '_format' => 'json',
-                'q' => $form->getData()->getQuery(),
+                'q' => $searchQuery->query,
                 'page' => $results['page'] + 2,
             ];
             if ($tagsFilter) {

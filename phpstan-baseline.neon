@@ -846,11 +846,6 @@ parameters:
 			path: src/Controller/WebController.php
 
 		-
-			message: "#^Cannot call method getQuery\\(\\) on mixed\\.$#"
-			count: 2
-			path: src/Controller/WebController.php
-
-		-
 			message: "#^Method App\\\\Controller\\\\WebController\\:\\:checkForQueryMatch\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Controller/WebController.php
