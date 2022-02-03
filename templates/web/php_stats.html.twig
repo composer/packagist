@@ -35,7 +35,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('build/charts.js') }}"></script>
+    <script nonce="{{ csp_nonce('script') }}" src="{{ asset('build/charts.js') }}"></script>
     <script nonce="{{ csp_nonce('script') }}">
         (function () {
             initGlobalPhpStats('.js-php-daily-stats', {{ dailyData|json_encode|raw }});

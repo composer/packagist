@@ -58,7 +58,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('build/charts.js') }}"></script>
+    <script nonce="{{ csp_nonce('script') }}" src="{{ asset('build/charts.js') }}"></script>
     <script nonce="{{ csp_nonce('script') }}">
         (function () {
             var average = {{ average|json_encode|raw }};

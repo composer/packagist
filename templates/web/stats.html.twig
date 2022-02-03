@@ -55,5 +55,5 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ asset('build/charts.js') }}"></script>
+    <script nonce="{{ csp_nonce('script') }}" src="{{ asset('build/charts.js') }}"></script>
 {% endblock %}
