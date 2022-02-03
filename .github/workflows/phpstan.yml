@@ -52,4 +52,4 @@ jobs:
           bin/console doctrine:schema:create -n
 
       - name: Run PHPStan
-        run: composer phpstan -- --debug
+        run: composer phpstan
