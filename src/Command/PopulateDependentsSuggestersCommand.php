@@ -13,6 +13,7 @@
 namespace App\Command;
 
 use App\Entity\Dependent;
+use App\Entity\Package;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -52,7 +53,6 @@ class PopulateDependentsSuggestersCommand extends Command
 
         // fetch existing ids
         $ids = $conn->fetchFirstColumn('SELECT id FROM package ORDER BY id ASC');
-        /** @var list<int> $ids */
         $ids = array_map('intval', $ids);
 
         $total = count($ids);
@@ -69,10 +69,10 @@ class PopulateDependentsSuggestersCommand extends Command
 
             try {
                 $defaultVersionId = $conn->fetchOne('SELECT id FROM package_version WHERE package_id = :id ORDER BY defaultBranch DESC, releasedAt DESC LIMIT 1', ['id' => $id]);
-                if (!$defaultVersionId) {
+                if (false === $defaultVersionId) {
                     continue;
                 }
-                $this->getEM()->getRepository(Dependent::class)->updateDependentSuggesters($id, $defaultVersionId);
+                $this->getEM()->getRepository(Dependent::class)->updateDependentSuggesters($id, (int) $defaultVersionId);
             } finally {
                 $this->locker->unlockPackageUpdate($id);
             }

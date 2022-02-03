@@ -522,7 +522,12 @@ class PackageRepository extends ServiceEntityRepository
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
             ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
 
-        return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args);
+        $res = [];
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
+            $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
+        }
+
+        return $res;
     }
 
     public function getSuggestCount(string $name): int
@@ -543,7 +548,12 @@ class PackageRepository extends ServiceEntityRepository
                 SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
             ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
 
-        return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]);
+        $res = [];
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]) as $row) {
+            $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
+        }
+
+        return $res;
     }
 
     public function getTotal(): int

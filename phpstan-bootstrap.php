@@ -13,6 +13,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 // phpstan-dba
 $cacheFile = __DIR__.'/.phpstan-dba.cache';
 $config = new RuntimeConfiguration();
+$config->stringifyTypes(true); // TODO remove when upgrading to PHP 8.1
 // $config->debugMode(true);
 
 (new Dotenv())->bootEnv(__DIR__ . '/.env');

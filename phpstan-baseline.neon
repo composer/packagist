@@ -146,6 +146,11 @@ parameters:
 			path: src/Command/MigratePhpStatsCommand.php
 
 		-
+			message: "#^Strict comparison using \\=\\=\\= between false and numeric\\-string will always evaluate to false\\.$#"
+			count: 1
+			path: src/Command/PopulateDependentsSuggestersCommand.php
+
+		-
 			message: "#^Method App\\\\Command\\\\RegenerateMainPhpStatsCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Command/RegenerateMainPhpStatsCommand.php
@@ -1002,7 +1007,7 @@ parameters:
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
-			count: 1
+			count: 3
 			path: src/Entity/PackageRepository.php
 
 		-
@@ -1021,7 +1026,7 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) should return array\\<array\\{id\\: int, name\\: string, description\\: string, language\\: string\\|null, abandoned\\: int, replacementPackage\\: string\\|null\\}\\> but returns array\\<int, array\\<string, mixed\\>\\>\\.$#"
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) should return array\\<array\\{id\\: int, name\\: string, description\\: string, language\\: string\\|null, abandoned\\: int, replacementPackage\\: string\\|null\\}\\> but returns array\\<int, non\\-empty\\-array\\<string, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -1366,7 +1371,7 @@ parameters:
 			path: src/Entity/VersionRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionMetadataForUpdate\\(\\) should return array\\<string, array\\{id\\: int, version\\: string, normalizedVersion\\: string, source\\: array\\{type\\: string\\|null, url\\: string\\|null, reference\\: string\\|null\\}\\|null, softDeletedAt\\: string\\|null\\}\\> but returns array\\<string, array\\{id\\: int\\<0, 4294967295\\>, version\\: string, normalizedVersion\\: string, source\\: mixed, softDeletedAt\\: string\\|null\\}\\>\\.$#"
+			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionMetadataForUpdate\\(\\) should return array\\<string, array\\{id\\: numeric\\-string, version\\: string, normalizedVersion\\: string, source\\: array\\{type\\: string\\|null, url\\: string\\|null, reference\\: string\\|null\\}\\|null, softDeletedAt\\: string\\|null\\}\\> but returns array\\<string, array\\{id\\: numeric\\-string, version\\: string, normalizedVersion\\: string, source\\: mixed, softDeletedAt\\: string\\|null\\}\\>\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
 
