@@ -11663,16 +11663,16 @@
         },
         {
             "name": "phpstan/phpstan-symfony",
-            "version": "1.1.3",
+            "version": "1.1.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-symfony.git",
-                "reference": "11221afa283a3fa679a1678449fed0f5a81926b9"
+                "reference": "51488c9c3000a07db3e543bc6e8f2de9c0a9037d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-symfony/zipball/11221afa283a3fa679a1678449fed0f5a81926b9",
-                "reference": "11221afa283a3fa679a1678449fed0f5a81926b9",
+                "url": "https://api.github.com/repos/phpstan/phpstan-symfony/zipball/51488c9c3000a07db3e543bc6e8f2de9c0a9037d",
+                "reference": "51488c9c3000a07db3e543bc6e8f2de9c0a9037d",
                 "shasum": ""
             },
             "require": {
@@ -11729,9 +11729,9 @@
             "description": "Symfony Framework extensions and rules for PHPStan",
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-symfony/issues",
-                "source": "https://github.com/phpstan/phpstan-symfony/tree/1.1.3"
+                "source": "https://github.com/phpstan/phpstan-symfony/tree/1.1.4"
             },
-            "time": "2022-02-01T12:17:17+00:00"
+            "time": "2022-02-03T11:35:02+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -13120,16 +13120,16 @@
         },
         {
             "name": "staabm/phpstan-dba",
-            "version": "0.2.11",
+            "version": "0.2.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/staabm/phpstan-dba.git",
-                "reference": "4a9573582a4c4cf5785c7a5a62e89e540eb64078"
+                "reference": "fdb8265e6c677d7d326c1be342710a3b40ec0722"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/4a9573582a4c4cf5785c7a5a62e89e540eb64078",
-                "reference": "4a9573582a4c4cf5785c7a5a62e89e540eb64078",
+                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/fdb8265e6c677d7d326c1be342710a3b40ec0722",
+                "reference": "fdb8265e6c677d7d326c1be342710a3b40ec0722",
                 "shasum": ""
             },
             "require": {
@@ -13168,9 +13168,9 @@
             ],
             "support": {
                 "issues": "https://github.com/staabm/phpstan-dba/issues",
-                "source": "https://github.com/staabm/phpstan-dba/tree/0.2.11"
+                "source": "https://github.com/staabm/phpstan-dba/tree/0.2.13"
             },
-            "time": "2022-01-27T20:00:00+00:00"
+            "time": "2022-02-03T11:46:27+00:00"
         },
         {
             "name": "symfony/browser-kit",
