@@ -88,7 +88,7 @@
         "phpstan/phpstan-doctrine": "^1",
         "phpstan/phpstan-symfony": "^1.1",
         "phpunit/phpunit": "^9.5",
-        "staabm/phpstan-dba": "dev-debug",
+        "staabm/phpstan-dba": "^0.2.12",
         "symfony/browser-kit": "^5.2",
         "symfony/css-selector": "^5.2",
         "symfony/debug-bundle": "^5.2",
