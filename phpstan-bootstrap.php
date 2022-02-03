@@ -13,7 +13,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 // phpstan-dba
 $cacheFile = __DIR__.'/.phpstan-dba.cache';
 $config = new RuntimeConfiguration();
-// $config->debugMode(true);
+$config->debugMode(true);
 
 (new Dotenv())->bootEnv(__DIR__ . '/.env');
 $dsn = parse_url($_SERVER['DATABASE_URL']);
