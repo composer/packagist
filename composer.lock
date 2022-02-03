@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8af5d7de0722eb1e4da38ec0ecf34da4",
+    "content-hash": "1da5ab8248802c3845e1915355374c94",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -13122,16 +13122,16 @@
         },
         {
             "name": "staabm/phpstan-dba",
-            "version": "dev-debug",
+            "version": "0.2.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/staabm/phpstan-dba.git",
-                "reference": "0462c6d104787656b97a8b1277776dd9d69876f8"
+                "reference": "5227c735a826b11d0b233387b6288f1e40a2da45"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/0462c6d104787656b97a8b1277776dd9d69876f8",
-                "reference": "0462c6d104787656b97a8b1277776dd9d69876f8",
+                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/5227c735a826b11d0b233387b6288f1e40a2da45",
+                "reference": "5227c735a826b11d0b233387b6288f1e40a2da45",
                 "shasum": ""
             },
             "require": {
@@ -13170,9 +13170,9 @@
             ],
             "support": {
                 "issues": "https://github.com/staabm/phpstan-dba/issues",
-                "source": "https://github.com/staabm/phpstan-dba/tree/debug"
+                "source": "https://github.com/staabm/phpstan-dba/tree/0.2.12"
             },
-            "time": "2022-02-03T11:03:48+00:00"
+            "time": "2022-02-03T09:34:59+00:00"
         },
         {
             "name": "symfony/browser-kit",
@@ -13833,8 +13833,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "composer/composer": 20,
-        "staabm/phpstan-dba": 20
+        "composer/composer": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
