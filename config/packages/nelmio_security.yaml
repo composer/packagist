@@ -18,7 +18,8 @@ nelmio_security:
                 - 'self'
             script-src:
                 - 'unsafe-eval' # TODO get rid of this, but it requires getting rid of hogan (part of instantsearch, maybe upgrade to v4 will fix this)
-                - 'https://www.gstatic.com/recaptcha/'
+                - 'https://www.gstatic.com/recaptcha/' # TODO could be replaced by simply 'https:' for simplicity's sake once strict-dynamic support is more broadly available 75% in early 2022 per https://caniuse.com/?search=csp%20strict-dynamic
+                - 'strict-dynamic'
             connect-src:
                 - 'self'
                 - 'https://*.algolia.net'
