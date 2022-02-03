@@ -1,3 +1,6 @@
+import instantsearch from 'instantsearch.js';
+import {searchBox, hits, pagination, currentRefinedValues, menu, refinementList} from "instantsearch.js/es/widgets";
+
 document.getElementById('search_query_query').addEventListener('keydown', function (e) {
     if (e.keyCode === 13) {
         e.preventDefault();
@@ -52,15 +55,15 @@ var search = instantsearch({
         },
     },
     searchFunction: function(helper) {
-        var searchResults = $('#search-container');
+        var searchResults = document.querySelector('#search-container');
 
         if (helper.state.query === ''
             && helper.state.hierarchicalFacetsRefinements.type === undefined
             && (helper.state.disjunctiveFacetsRefinements.tags === undefined || helper.state.disjunctiveFacetsRefinements.tags.length === 0)
         ) {
-            searchResults.addClass('hidden');
+            searchResults.classList.add('hidden');
         } else {
-            searchResults.removeClass('hidden');
+            searchResults.classList.remove('hidden');
         }
 
         if (searchThrottle) {
@@ -79,7 +82,7 @@ if (location.pathname == "/" || location.pathname == "/explore/") {
     autofocus = true;
 }
 search.addWidget(
-    instantsearch.widgets.searchBox({
+    searchBox({
         container: '#search_query_query',
         magnifier: false,
         reset: false,
@@ -89,7 +92,7 @@ search.addWidget(
 );
 
 search.addWidget(
-    instantsearch.widgets.hits({
+    hits({
         container: '.search-list',
         transformData: function (hit) {
             hit.url = '/packages/' + hit.name;
@@ -101,9 +104,9 @@ search.addWidget(
             if (hit._highlightResult && hit._highlightResult.description.value && hit._highlightResult.description.value.length > 200) {
                 hit._highlightResult.description.value = hit._highlightResult.description.value.substring(0, 200).replace(/<[a-z ]+$/, '');
             }
-            
+
             hit.replacementPackageUrl = null
-            
+
             if (hit.replacementPackage) {
                 hit.replacementPackageUrl = hit.replacementPackage.indexOf('://') !== -1 ? hit.replacementPackage : ('/packages/' + hit.replacementPackage)
             }
@@ -156,7 +159,7 @@ search.addWidget(
 );
 
 search.addWidget(
-    instantsearch.widgets.pagination({
+    pagination({
         container: '.pagination',
         maxPages: 200,
         scrollTo: document.getElementById('search_query_query'),
@@ -165,7 +168,7 @@ search.addWidget(
 );
 
 search.addWidget(
-    instantsearch.widgets.currentRefinedValues({
+    currentRefinedValues({
         container: '.search-facets-active-filters',
         clearAll: 'before',
         clearsQuery: false,
@@ -187,7 +190,7 @@ search.addWidget(
 );
 
 search.addWidget(
-    instantsearch.widgets.menu({
+    menu({
         container: '.search-facets-type',
         attributeName: 'type',
         limit: 15,
@@ -199,7 +202,7 @@ search.addWidget(
 );
 
 search.addWidget(
-    instantsearch.widgets.refinementList({
+    refinementList({
         container: '.search-facets-tags',
         attributeName: 'tags',
         limit: 15,

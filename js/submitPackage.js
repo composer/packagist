@@ -1,4 +1,6 @@
-(function ($) {
+import jQuery from "jquery";
+
+const init = function ($) {
     var showSimilarMax = 5;
     var onSubmit = function(e) {
         var success;
@@ -48,5 +50,8 @@
     });
 
     $('#package_repository').triggerHandler('change');
-})(jQuery);
+};
 
+if (document.querySelector('#submit-package-page')) {
+    init(jQuery);
+}

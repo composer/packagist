@@ -1,15 +1,11 @@
 {% extends "layout.html.twig" %}
 
-{% block scripts %}
-    <script src="{{ asset('js/submitPackage.js')}}"></script>
-{% endblock %}
-
 {% set showSearchDesc = 'hide' %}
 
 {% block content %}
 <h2 class="title">{{ 'submit.title'|trans }}</h2>
 
-<section class="row">
+<section class="row" id="submit-package-page">
     {{ form_start(form, { attr: { class: 'col-md-6', 'data-check-url': path('submit.fetch_info'), id: 'submit-package-form' } }) }}
         {{ form_widget(form) }}
 

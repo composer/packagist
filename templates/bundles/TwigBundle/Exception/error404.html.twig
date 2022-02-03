@@ -13,5 +13,7 @@
 {% endblock %}
 
 {% block script_init %}
-var trackPageload = false;
+<script nonce="{{ csp_nonce('script') }}">
+    var trackPageload = false;
+</script>
 {% endblock %}

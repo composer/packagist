@@ -21,10 +21,6 @@
     {% endif %}
 {% endblock %}
 
-{% block scripts %}
-    <script src="{{ asset('js/view.js')}}"></script>
-{% endblock %}
-
 {% block description -%}
     {{ package.description|u.truncate(300) }}
 {%- endblock %}
@@ -32,7 +28,7 @@
 {% set hasActions = is_granted('ROLE_EDIT_PACKAGES') or is_granted('ROLE_ANTISPAM') or is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
 
 {% block content %}
-    <div class="row">
+    <div class="row" id="view-package-page">
         <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %} data-force-crawl="true"{% endif %}>
             <div class="package-header">
 

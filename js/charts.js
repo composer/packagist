@@ -1,3 +1,9 @@
+import d3 from 'd3';
+import nv from 'nvd3';
+import jQuery from 'jquery';
+import 'nvd3/build/nv.d3.min.css';
+import '../css/charts.css';
+
 (function ($) {
     "use strict";
 

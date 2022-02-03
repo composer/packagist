@@ -1,11 +1,15 @@
 import Plausible from 'plausible-tracker'
 import jQuery from "jquery";
+import notifier from './notifier';
+import './search';
+import './view';
+import './submitPackage';
 
 import '../css/app.css';
 
 window.jQuery = window.$ = jQuery;
 
-(function ($, humane) {
+(function ($) {
     "use strict";
 
     /**
@@ -13,9 +17,9 @@ window.jQuery = window.$ = jQuery;
      */
     $.ajaxSetup({
         error: function (xhr) {
-            var resp, message, details = '';
+            var resp, message, details = undefined;
 
-            humane.remove();
+            notifier.remove();
 
             if (xhr.responseText) {
                 try {
@@ -29,7 +33,7 @@ window.jQuery = window.$ = jQuery;
                 }
             }
 
-            humane.log(details ? [message, details] : message, {timeout: 0, clickToClose: true});
+            notifier.log(message, {}, details);
         }
     });
 
@@ -55,7 +59,7 @@ window.jQuery = window.$ = jQuery;
             scrollTo(0, $($(e.target).attr('href')).offset().top - 65);
         }, 0);
     });
-})(jQuery, humane);
+})(jQuery);
 
 if (window.trackPageload !== false && location.host === 'packagist.org') {
     const plausible = Plausible({

@@ -18,9 +18,7 @@ nelmio_security:
                 - 'self'
             script-src:
                 - 'self'
-                - 'unsafe-inline'
-                - 'unsafe-eval'
-                - 'https://cdn.jsdelivr.net/'
+                - 'unsafe-eval' # TODO get rid of this, but it requires getting rid of hogan (part of instantsearch, maybe upgrade to v4 will fix this)
                 - 'https://www.google.com/recaptcha/api.js'
                 - 'https://www.gstatic.com/recaptcha/'
             connect-src:
@@ -31,10 +29,11 @@ nelmio_security:
                 - 'self'
                 - 'https:'
                 - 'data:'
+            object-src:
+                - 'none'
             style-src:
                 - 'self'
                 - 'unsafe-inline'
-                - 'https://cdn.jsdelivr.net/'
             font-src:
                 - 'self'
             frame-src:

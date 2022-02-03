@@ -1,5 +1,7 @@
-/*jslint nomen: true, browser: true*/
-(function ($, humane) {
+import jQuery from "jquery";
+import notifier from './notifier';
+
+const init = function ($) {
     "use strict";
 
     var versionCache = {},
@@ -64,7 +66,7 @@
         if ($(form).is('.' + className)) {
             return;
         }
-        $.ajax(options).complete(function () { $(form).removeClass(className); });
+        $.ajax(options).then(() => { $(form).removeClass(className); });
         $(form).addClass(className);
     }
 
@@ -97,7 +99,7 @@
                             cache: false,
                             success: function (data) {
                                 if (data.status == 'completed' || data.status == 'errored' || data.status == 'failed' || data.status == 'package_deleted') {
-                                    humane.remove();
+                                    notifier.remove();
 
                                     var message = data.message;
                                     var details = '';
@@ -109,9 +111,9 @@
                                     }
 
                                     if (details) {
-                                        humane.log([message, details], {timeout: 0, clickToClose: false});
+                                        notifier.log(message, {}, details);
                                     } else {
-                                        humane.log(message, {timeout: 2, clickToClose: true});
+                                        notifier.log(message, {timeout: 2000});
                                         setTimeout(function () {
                                             document.location.reload(true);
                                         }, 700);
@@ -164,7 +166,7 @@
         e.preventDefault();
         if (window.confirm('Are you sure you want to delete this package?')) {
             dispatchAjaxForm(this, function () {
-                humane.log('Package successfully deleted', {timeout: 0, clickToClose: true});
+                notifier.log('Package successfully deleted');
                 setTimeout(function () {
                     document.location.href = document.location.href.replace(/\/[^\/]+$/, '/');
                 })
@@ -175,7 +177,7 @@
         e.preventDefault();
         const message = e.target.dataset.msg;
         const details = e.target.dataset.details;
-        humane.log([message, details], {timeout: 0, clickToClose: true});
+        notifier.log(message, {}, details);
     });
     $('.package .delete-version .submit').on('click', function (e) {
         e.preventDefault();
@@ -189,7 +191,7 @@
         var form = this;
         if (window.confirm('Are you sure you want to delete ' + $(form).prev().text() + '?')) {
             dispatchAjaxForm(this, function () {
-                humane.log('Version successfully deleted', {timeout: 3000, clickToClose: true});
+                notifier.log('Version successfully deleted', {timeout: 3000});
                 $(form).closest('.version').remove();
             }, 'request-sent');
         }
@@ -222,4 +224,8 @@
             $(versionsList).css('max-height', 'inherit');
         });
     }
-}(jQuery, humane));
+};
+
+if (document.querySelector('#view-package-page')) {
+    init(jQuery);
+}

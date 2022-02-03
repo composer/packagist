@@ -15,7 +15,6 @@
         <link rel="stylesheet" href="{{ asset('libs/bootstrap-3.3.5/css/bootstrap.min.css') }}" />
         <link rel="stylesheet" href="{{ asset('libs/bootstrap-3.3.5/css/bootstrap-theme.min.css') }}" />
         <link rel="stylesheet" href="{{ asset('build/app.css') }}" />
-        <link rel="stylesheet" href="{{ asset('css/humane/jackedup.css') }}" />
         {% block stylesheets %}{% endblock %}
 
         {% block head_feeds %}
@@ -28,7 +27,7 @@
         {% if requiresRecaptcha|default(false) or (not app.user and requires_recaptcha(lastUsername|default)) %}
             <script src="https://www.google.com/recaptcha/api.js?render=explicit&amp;onload=onloadRecaptchaCallback" async defer></script>
 
-            <script type="text/javascript">
+            <script nonce="{{ csp_nonce('script') }}">
                 var onloadRecaptchaCallback = function() {
                     const forms = [
                         {submit: '_submit', form: 'page_login'},
@@ -233,16 +232,17 @@
             </nav>
         </footer>
 
-        <script>
+        <script nonce="{{ csp_nonce('script') }}">
             var algoliaConfig = {{ algolia|json_encode|raw }};
-            {% block script_init %}{% endblock %}
+            {# For Aloglia instantsearch 2.x, can be dropped once we upgrade to 4.x #}
+            window.process = {
+                env: { DEBUG: undefined },
+            };
         </script>
+        {% block script_init %}{% endblock %}
 
-        <script src="{{ asset('libs/humane-3.2.2.min.js') }}"></script>
         <script src="{{ asset('build/app.js') }}"></script>
         <script src="{{ asset('libs/bootstrap-3.3.5/js/bootstrap.min.js')}}"></script>
-        <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@2.7.4/dist/instantsearch.min.js"></script>
-        <script src="{{ asset('js/search.js') }}"></script>
 
         {% block scripts %}{% endblock %}
     </body>
