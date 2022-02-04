@@ -146,11 +146,6 @@ parameters:
 			path: src/Command/MigratePhpStatsCommand.php
 
 		-
-			message: "#^Strict comparison using \\=\\=\\= between false and numeric\\-string will always evaluate to false\\.$#"
-			count: 1
-			path: src/Command/PopulateDependentsSuggestersCommand.php
-
-		-
 			message: "#^Method App\\\\Command\\\\RegenerateMainPhpStatsCommand\\:\\:configure\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Command/RegenerateMainPhpStatsCommand.php
@@ -292,7 +287,7 @@ parameters:
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
-			count: 3
+			count: 2
 			path: src/Controller/ExploreController.php
 
 		-
@@ -1007,7 +1002,7 @@ parameters:
 
 		-
 			message: "#^Cannot cast mixed to int\\.$#"
-			count: 3
+			count: 2
 			path: src/Entity/PackageRepository.php
 
 		-
@@ -1067,21 +1062,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackages\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumping\\(\\) should return array\\<int, string\\> but returns array\\<int, mixed\\>\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForDumpingV2\\(\\) should return array\\<int, string\\> but returns array\\<int, mixed\\>\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getStalePackagesForIndexing\\(\\) should return array\\<int, array\\{id\\: string\\}\\> but returns array\\<int, array\\<string, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
