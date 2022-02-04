@@ -15,6 +15,7 @@ $cacheFile = __DIR__.'/.phpstan-dba.cache';
 $config = new RuntimeConfiguration();
 $config->stringifyTypes(true); // TODO remove when upgrading to PHP 8.1
 // $config->debugMode(true);
+$config->stringifyTypes(true);
 
 (new Dotenv())->bootEnv(__DIR__ . '/.env');
 $dsn = parse_url($_SERVER['DATABASE_URL']);
