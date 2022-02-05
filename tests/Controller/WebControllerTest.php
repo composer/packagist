@@ -2,6 +2,8 @@
 
 namespace App\Tests\Controller;
 
+use Algolia\AlgoliaSearch\SearchClient;
+use Algolia\AlgoliaSearch\SearchIndex;
 use Exception;
 use App\Entity\Package;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -15,6 +17,105 @@ class WebControllerTest extends WebTestCase
 
         $crawler = $client->request('GET', '/');
         $this->assertEquals('Getting Started', $crawler->filter('.getting-started h2')->text());
+    }
+
+    public function testRedirectsOnMatch(): void
+    {
+        $client = self::createClient();
+
+        $this->initializePackages($client->getContainer());
+
+        $client->request('GET', '/', ['query' => 'twig/twig']);
+        static::assertResponseRedirects('/packages/twig/twig', 302);
+    }
+
+    public function testHomepageDoesntRedirectsOnNoMatch(): void
+    {
+        $client = self::createClient();
+
+        $crawler = $client->request('GET', '/', ['q' => 'symfony/process']);
+        static::assertResponseIsSuccessful();
+        static::assertEquals('symfony/process', $crawler->filter('input[type=search]')->attr('value'));
+    }
+
+    public function testSearchRedirectsOnMatch(): void
+    {
+        $client = self::createClient();
+
+        $this->initializePackages($client->getContainer());
+
+        $client->request('GET', '/search/', ['query' => 'twig/twig']);
+        static::assertResponseRedirects('/packages/twig/twig', 302);
+    }
+
+    public function testSearchRendersEmptyOnHtml(): void
+    {
+        $client = self::createClient();
+
+        $crawler = $client->request('GET', '/search/');
+        static::assertResponseIsSuccessful();
+        static::assertEquals('Search by', $crawler->filter('.content')->text());
+
+        $crawler = $client->request('GET', '/search.html');
+        static::assertResponseIsSuccessful();
+        static::assertEquals('Search by', $crawler->filter('.content')->text());
+    }
+
+    public function testSearchJsonWithoutQuery(): void
+    {
+        $client = self::createClient();
+
+        $client->request('GET', '/search.json');
+        static::assertResponseStatusCodeSame(400);
+        static::assertStringContainsString('Missing search query', $client->getResponse()->getContent());
+    }
+
+    public function testSearchJsonWithQuery(): void
+    {
+        $client = self::createClient();
+
+        $this->setupSearchFixture(
+            $client->getContainer(),
+            'monolog',
+            ['hitsPerPage' => 15, 'page' => 0],
+            __DIR__.'/fixtures/search-with-query.php',
+        );
+
+        $client->request('GET', '/search.json', ['q' => 'monolog']);
+        static::assertResponseStatusCodeSame(200);
+        static::assertJsonStringEqualsJsonFile(__DIR__.'/fixtures/search-with-query.json', $client->getResponse()->getContent());
+    }
+
+    public function testSearchJsonWithQueryAndTag(): void
+    {
+        $client = self::createClient();
+
+        $this->setupSearchFixture(
+            $client->getContainer(),
+            'pro',
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing")'],
+            __DIR__.'/fixtures/search-with-query-tag.php',
+        );
+
+        $client->request('GET', '/search.json', ['q' => 'pro', 'tags' => 'testing']);
+        static::assertResponseStatusCodeSame(200);
+        static::assertJsonStringEqualsJsonFile(__DIR__.'/fixtures/search-with-query-tag.json', $client->getResponse()->getContent());
+    }
+
+    public function testSearchJsonWithQueryAndTagsAndTypes(): void
+    {
+        $client = self::createClient();
+
+        $this->setupSearchFixture(
+            $client->getContainer(),
+            'pro',
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:library AND (tags:"testing" OR tags:"mock")'],
+            __DIR__.'/fixtures/search-with-query-tags.php',
+        );
+
+        $client->request('GET', '/search.json', ['q' => 'pro', 'tags' => ['testing', 'mock'], 'type' => 'library']);
+        static::assertResponseStatusCodeSame(200);
+        static::assertJsonStringEqualsJsonFile(__DIR__.'/fixtures/search-with-query-tags.json', $client->getResponse()->getContent());
     }
 
     public function testPackages()
@@ -106,36 +207,23 @@ class WebControllerTest extends WebTestCase
         }
     }
 
-    /**
-     * @param string $package
-     * @param int $downloads
-     * @param int $favers
-     *
-     * @return array
-     */
-    protected function getJsonResult($package, $downloads, $favers): array
-    {
-        return array(
-            'name' => $package,
-            'description' => '',
-            'url' => 'http://localhost/packages/' . $package,
-            'repository' => 'https://github.com/' . $package,
-            'downloads' => $downloads,
-            'favers' => $favers,
-        );
-    }
+    private function setupSearchFixture(
+        ContainerInterface $container,
+        string $query,
+        array $queryParams,
+        string $resultFile,
+    ): void {
+        $indexMock = $this->createMock(SearchIndex::class);
+        $indexMock
+            ->method('search')
+            ->with($query, $queryParams)
+            ->willReturn(include $resultFile);
 
-    /**
-     * @param array $results
-     *
-     * @return array
-     */
-    protected function getJsonResults(
-        array $results
-    ) {
-        return array(
-            'results' => $results,
-            'total' => count($results)
-        );
+        $searchMock = $this->createMock(SearchClient::class);
+        $searchMock
+            ->method('initIndex')
+            ->willReturn($indexMock);
+
+        $container->set(SearchClient::class, $searchMock);
     }
 }

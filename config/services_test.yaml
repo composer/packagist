@@ -9,3 +9,7 @@ services:
 
     App\Service\Scheduler:
         public: true
+
+    Algolia\AlgoliaSearch\SearchClient:
+        public: true
+        factory: ['Algolia\AlgoliaSearch\SearchClient', create]
