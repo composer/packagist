@@ -12,20 +12,20 @@
 
 namespace App\Controller;
 
-use Algolia\AlgoliaSearch\SearchClient;
+use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use App\Entity\Version;
-use App\Form\Model\SearchQuery;
-use App\Form\Type\SearchQueryType;
 use App\Entity\Package;
 use App\Entity\PhpStat;
+use App\Search\Algolia;
+use App\Search\Query;
 use App\Util\Killswitch;
 use Predis\Connection\ConnectionException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Predis\Client as RedisClient;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 
@@ -34,66 +34,29 @@ use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
  */
 class WebController extends Controller
 {
-    /**
-     * @Template()
-     * @Route("/", name="home")
-     */
-    public function indexAction(Request $req)
+    #[Template, Route('/', name: 'home')]
+    public function index(Request $req): RedirectResponse|null
     {
         if ($resp = $this->checkForQueryMatch($req)) {
             return $resp;
         }
 
-        return ['page' => 'home'];
+        return null;
     }
 
-    /**
-     * Rendered by views/Web/search_section.html.twig
-     */
-    public function searchFormAction(Request $req)
-    {
-        $form = $this->createForm(SearchQueryType::class, new SearchQuery(), [
-            'action' => $this->generateUrl('search.ajax'),
-        ]);
-
-        $filteredOrderBys = $this->getFilteredOrderedBys($req);
-
-        $this->computeSearchQuery($req, $filteredOrderBys);
-
-        $form->handleRequest($req);
-
-        return $this->render('web/search_form.html.twig', [
-            'searchQuery' => $req->query->all()['search_query']['query'] ?? '',
-        ]);
-    }
-
-    private function checkForQueryMatch(Request $req)
-    {
-        $q = $req->query->get('query');
-        if ($q) {
-            $package = $this->doctrine->getRepository(Package::class)->findOneBy(['name' => $q]);
-            if ($package) {
-                return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
-            }
-        }
-    }
-
-    /**
-     * @Route("/search/", name="search.ajax", methods={"GET"})
-     * @Route("/search.{_format}", requirements={"_format"="(html|json)"}, name="search", defaults={"_format"="html"}, methods={"GET"})
-     */
-    public function searchAction(Request $req, SearchClient $algolia, string $algoliaIndexName)
+    #[Template, Route('/search/', name: 'search_web')]
+    public function search(Request $req): RedirectResponse|null
     {
         if ($resp = $this->checkForQueryMatch($req)) {
             return $resp;
         }
 
-        if ($req->getRequestFormat() !== 'json') {
-            return $this->render('web/search.html.twig', [
-                'packages' => [],
-            ]);
-        }
+        return null;
+    }
 
+    #[Route('/search.json', name: 'search_api', methods: 'GET')]
+    public function searchApi(Request $req, Algolia $algolia): JsonResponse
+    {
         $blockList = ['2400:6180:100:d0::83b:b001', '34.235.38.170'];
         if (in_array($req->getClientIp(), $blockList, true)) {
             return (new JsonResponse([
@@ -101,125 +64,28 @@ class WebController extends Controller
             ], 400))->setCallback($req->query->get('callback'));
         }
 
-        $typeFilter = str_replace('%type%', '', $req->query->get('type'));
-        $tagsFilter = $req->query->get('tags');
-
-        $filteredOrderBys = $this->getFilteredOrderedBys($req);
-
-        $this->computeSearchQuery($req, $filteredOrderBys);
-
-        if (!$req->query->has('search_query') && !$typeFilter && !$tagsFilter) {
-            return (new JsonResponse([
-                'error' => 'Missing search query, example: ?q=example'
-            ], 400))->setCallback($req->query->get('callback'));
-        }
-
-        $searchQuery = new SearchQuery();
-        $form = $this->createForm(SearchQueryType::class, $searchQuery);
-
-        $index = $algolia->initIndex($algoliaIndexName);
-        $query = '';
-        $queryParams = [];
-
-        // filter by type
-        if ($typeFilter) {
-            $queryParams['filters'][] = 'type:'.$typeFilter;
-        }
-
-        // filter by tags
-        if ($tagsFilter) {
-            $tags = [];
-            foreach ((array) $tagsFilter as $tag) {
-                $tag = strtr($tag, '-', ' ');
-                $tags[] = 'tags:"'.$tag.'"';
-                if (false !== strpos($tag, ' ')) {
-                    $tags[] = 'tags:"'.strtr($tag, ' ', '-').'"';
-                }
-            }
-            $queryParams['filters'][] = '(' . implode(' OR ', $tags) . ')';
-        }
-
-        if (!empty($filteredOrderBys)) {
+        try {
+            $query = new Query(
+                $req->query->has('q') ? $req->query->get('q') : $req->query->get('query', ''),
+                $req->query->get('tags', ''),
+                $req->query->get('type', ''),
+                $req->query->getInt('per_page', 15),
+                $req->query->getInt('page', 1)
+            );
+        } catch (\InvalidArgumentException $e) {
             return (new JsonResponse([
                 'status' => 'error',
-                'message' => 'Search sorting is not available anymore',
+                'message' => $e->getMessage(),
             ], 400))->setCallback($req->query->get('callback'));
         }
-
-        $form->handleRequest($req);
-        if ($form->isSubmitted() && $form->isValid()) {
-            $query = $searchQuery->query;
-        }
-
-        $perPage = max(1, (int) $req->query->getInt('per_page', 15));
-        if ($perPage <= 0 || $perPage > 100) {
-            return (new JsonResponse([
-                'status' => 'error',
-                'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-            ], 400))->setCallback($req->query->get('callback'));
-        }
-
-        if (isset($queryParams['filters'])) {
-            $queryParams['filters'] = implode(' AND ', $queryParams['filters']);
-        }
-        $queryParams['hitsPerPage'] = $perPage;
-        $queryParams['page'] = max(1, $req->query->getInt('page', 1)) - 1;
 
         try {
-            $results = $index->search($query, $queryParams);
-        } catch (\Throwable $e) {
+            $result = $algolia->search($query);
+        } catch (AlgoliaException) {
             return (new JsonResponse([
                 'status' => 'error',
                 'message' => 'Could not connect to the search server',
             ], 500))->setCallback($req->query->get('callback'));
-        }
-
-        $result = [
-            'results' => [],
-            'total' => $results['nbHits'],
-        ];
-
-        foreach ($results['hits'] as $package) {
-            if (ctype_digit((string) $package['id'])) {
-                $url = $this->generateUrl('view_package', ['name' => $package['name']], UrlGeneratorInterface::ABSOLUTE_URL);
-            } else {
-                $url = $this->generateUrl('view_providers', ['name' => $package['name']], UrlGeneratorInterface::ABSOLUTE_URL);
-            }
-
-            $row = [
-                'name' => $package['name'],
-                'description' => $package['description'] ?: '',
-                'url' => $url,
-                'repository' => $package['repository'],
-            ];
-            if (ctype_digit((string) $package['id'])) {
-                $row['downloads'] = $package['meta']['downloads'];
-                $row['favers'] = $package['meta']['favers'];
-            } else {
-                $row['virtual'] = true;
-            }
-            if (!empty($package['abandoned'])) {
-                $row['abandoned'] = isset($package['replacementPackage']) && $package['replacementPackage'] !== '' ? $package['replacementPackage'] : true;
-            }
-            $result['results'][] = $row;
-        }
-
-        if ($results['nbPages'] > $results['page'] + 1) {
-            $params = [
-                '_format' => 'json',
-                'q' => $searchQuery->query,
-                'page' => $results['page'] + 2,
-            ];
-            if ($tagsFilter) {
-                $params['tags'] = (array) $tagsFilter;
-            }
-            if ($typeFilter) {
-                $params['type'] = $typeFilter;
-            }
-            if ($perPage !== 15) {
-                $params['per_page'] = $perPage;
-            }
-            $result['next'] = $this->generateUrl('search', $params, UrlGeneratorInterface::ABSOLUTE_URL);
         }
 
         $response = (new JsonResponse($result))->setCallback($req->query->get('callback'));
@@ -381,71 +247,19 @@ class WebController extends Controller
         return new JsonResponse(['totals' => $totals], 200);
     }
 
-    /**
-     * @return array<array{sort: 'downloads'|'favers', order: 'asc'|'desc'}>
-     */
-    protected function getFilteredOrderedBys(Request $req): array
+    private function checkForQueryMatch(Request $req): RedirectResponse|null
     {
-        $orderBys = $req->query->all()['orderBys'] ?? [];
-        if (!$orderBys) {
-            $orderBys = $req->query->all()['search_query']['orderBys'] ?? [];
+        $q = $req->query->get('query');
+
+        if (null === $q) {
+            return null;
         }
 
-        if ($orderBys) {
-            $allowedSorts = [
-                'downloads' => 1,
-                'favers' => 1
-            ];
-
-            $allowedOrders = [
-                'asc' => 1,
-                'desc' => 1,
-            ];
-
-            $filteredOrderBys = [];
-
-            foreach ((array) $orderBys as $orderBy) {
-                if (
-                    is_array($orderBy)
-                    && isset($orderBy['sort'])
-                    && isset($allowedSorts[$orderBy['sort']])
-                    && isset($orderBy['order'])
-                    && isset($allowedOrders[$orderBy['order']])
-                ) {
-                    $filteredOrderBys[] = ['order' => $orderBy['order'], 'sort' => $orderBy['sort']];
-                }
-            }
-        } else {
-            $filteredOrderBys = [];
+        $package = $this->doctrine->getRepository(Package::class)->findOneBy(['name' => $q]);
+        if (null === $package) {
+            return null;
         }
 
-        return $filteredOrderBys;
-    }
-
-    /**
-     * @param Request $req
-     * @param array $filteredOrderBys
-     */
-    private function computeSearchQuery(Request $req, array $filteredOrderBys)
-    {
-        // transform q=search shortcut
-        if ($req->query->has('q') || $req->query->has('orderBys')) {
-            $searchQuery = [];
-
-            $q = $req->query->get('q');
-
-            if ($q !== null) {
-                $searchQuery['query'] = $q;
-            }
-
-            if (!empty($filteredOrderBys)) {
-                $searchQuery['orderBys'] = $filteredOrderBys;
-            }
-
-            $req->query->set(
-                'search_query',
-                $searchQuery
-            );
-        }
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 }

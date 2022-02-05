@@ -1,14 +1,20 @@
 <section class="wrapper wrapper-search">
-    <div class="container {% if showSearchDesc == 'show' %}with-description{% endif %}">
-        {{ render(controller('App\\Controller\\WebController::searchFormAction', { req: app.request })) }}
+    <div class="container with-description">
+        <form name="search_query" method="get" action="{{ path('search_web') }}" id="search-form" autocomplete="off">
+            <div class="sortable row">
+                <div class="col-xs-12 js-search-field-wrapper col-md-9">
+                    {% set query = app.request.query %}
+                    {% set searchQuery = query.has('q') ? query.get('q') : query.get('query') %}
+                    <input type="search" id="search_query_query" name="query" required="required" autocomplete="off" placeholder="Search packages..." tabindex="1" class=" form-control" value="{{ searchQuery }}" />
+                </div>
+            </div>
+        </form>
 
-        {%- if showSearchDesc == 'show' %}
         <div class="row">
             <div class="col-sm-9 hidden-xs">
                 <img src="{{ asset('img/logo-small.png') }}" class="logo">
                 <p>{{ 'search.claim_html'|trans|raw }}</p>
             </div>
         </div>
-        {%- endif %}
     </div>
 </section>

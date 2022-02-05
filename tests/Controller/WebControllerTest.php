@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class WebControllerTest extends WebTestCase
 {
-    public function testHomepage()
+    public function testHomepage(): void
     {
         $client = self::createClient();
 
@@ -53,10 +53,6 @@ class WebControllerTest extends WebTestCase
         $client = self::createClient();
 
         $crawler = $client->request('GET', '/search/');
-        static::assertResponseIsSuccessful();
-        static::assertEquals('Search by', $crawler->filter('.content')->text());
-
-        $crawler = $client->request('GET', '/search.html');
         static::assertResponseIsSuccessful();
         static::assertEquals('Search by', $crawler->filter('.content')->text());
     }
