@@ -1,16 +1,18 @@
-Packagist
-=========
+# Packagist
 
-Package Repository Website for Composer, see the [about page](https://packagist.org/about) on [packagist.org](https://packagist.org/) for more.
+Package Repository Website for Composer, see the
+[about page](https://packagist.org/about) on
+[packagist.org](https://packagist.org/) for more.
 
 **This project is not meant for re-use.**
 
-It is open source to make it easy to contribute. We provide no support if you want to run your own, and will do breaking changes without notice.
+It is open source to make it easy to contribute. We provide no support
+if you want to run your own, and will do breaking changes without notice.
 
-Check out [Private Packagist](https://packagist.com/) if you want to host your own packages.
+Check out [Private Packagist](https://packagist.com/) if you want to
+host your own packages.
 
-Development
-------------
+## Development
 
 These steps are provided for development purposes only.
 
@@ -33,7 +35,8 @@ These steps are provided for development purposes only.
    composer install
    npm install
    ```
-   The composer install will prompt you for the database connection details on first install.
+   The `composer install` command will prompt you for the database connection
+   details on first install. The connection url is stored in the `.env` files.
 4. Setup the database:
    ```bash
    bin/console doctrine:schema:create
@@ -43,7 +46,6 @@ These steps are provided for development purposes only.
    symfony serve
    ```
 6. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
-
 7. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files.
 
 You should now be able to access the site, create a user, etc.
@@ -56,4 +58,6 @@ You can get test data by running the fixtures:
 bin/console doctrine:fixtures:load
  ```
 
-This will create 100 packages from packagist.org, update them from GitHub, populate them with fake download stats, and assign a user named `dev` (password: `dev`) as their maintainer.
+This will create 100 packages from packagist.org, update them from GitHub,
+populate them with fake download stats, and assign a user named `dev`
+(with password: `dev`) as their maintainer.
