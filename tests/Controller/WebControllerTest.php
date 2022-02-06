@@ -4,6 +4,8 @@ namespace App\Tests\Controller;
 
 use Algolia\AlgoliaSearch\SearchClient;
 use Algolia\AlgoliaSearch\SearchIndex;
+use App\Search\Query;
+use App\Tests\Search\AlgoliaMock;
 use Exception;
 use App\Entity\Package;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -70,48 +72,33 @@ class WebControllerTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $this->setupSearchFixture(
-            $client->getContainer(),
-            'monolog',
-            ['hitsPerPage' => 15, 'page' => 0],
-            __DIR__.'/fixtures/search-with-query.php',
-        );
+        AlgoliaMock::setup($client, new Query('monolog', [], '', 15, 0), 'search-with-query');
 
         $client->request('GET', '/search.json', ['q' => 'monolog']);
         static::assertResponseStatusCodeSame(200);
-        static::assertJsonStringEqualsJsonFile(__DIR__.'/fixtures/search-with-query.json', $client->getResponse()->getContent());
+        static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query.json', $client->getResponse()->getContent());
     }
 
     public function testSearchJsonWithQueryAndTag(): void
     {
         $client = self::createClient();
 
-        $this->setupSearchFixture(
-            $client->getContainer(),
-            'pro',
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing")'],
-            __DIR__.'/fixtures/search-with-query-tag.php',
-        );
+        AlgoliaMock::setup($client, new Query('pro', ['testing'], '', 15, 0), 'search-with-query-tag');
 
         $client->request('GET', '/search.json', ['q' => 'pro', 'tags' => 'testing']);
         static::assertResponseStatusCodeSame(200);
-        static::assertJsonStringEqualsJsonFile(__DIR__.'/fixtures/search-with-query-tag.json', $client->getResponse()->getContent());
+        static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query-tag.json', $client->getResponse()->getContent());
     }
 
     public function testSearchJsonWithQueryAndTagsAndTypes(): void
     {
         $client = self::createClient();
 
-        $this->setupSearchFixture(
-            $client->getContainer(),
-            'pro',
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:library AND (tags:"testing" OR tags:"mock")'],
-            __DIR__.'/fixtures/search-with-query-tags.php',
-        );
+        AlgoliaMock::setup($client, new Query('pro', ['testing', 'mock'], 'library', 15, 0), 'search-with-query-tags');
 
         $client->request('GET', '/search.json', ['q' => 'pro', 'tags' => ['testing', 'mock'], 'type' => 'library']);
         static::assertResponseStatusCodeSame(200);
-        static::assertJsonStringEqualsJsonFile(__DIR__.'/fixtures/search-with-query-tags.json', $client->getResponse()->getContent());
+        static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query-tags.json', $client->getResponse()->getContent());
     }
 
     public function testPackages()
@@ -201,25 +188,5 @@ class WebControllerTest extends WebTestCase
                 )
             );
         }
-    }
-
-    private function setupSearchFixture(
-        ContainerInterface $container,
-        string $query,
-        array $queryParams,
-        string $resultFile,
-    ): void {
-        $indexMock = $this->createMock(SearchIndex::class);
-        $indexMock
-            ->method('search')
-            ->with($query, $queryParams)
-            ->willReturn(include $resultFile);
-
-        $searchMock = $this->createMock(SearchClient::class);
-        $searchMock
-            ->method('initIndex')
-            ->willReturn($indexMock);
-
-        $container->set(SearchClient::class, $searchMock);
     }
 }
