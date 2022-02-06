@@ -680,12 +680,12 @@ class Updater
                 $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
             } elseif ('mailto:' === substr($link->getAttribute('href'), 0, 7)) {
                 // do nothing
-            } elseif ($host === 'github.com' && false === strpos($link->getAttribute('href'), '//')) {
+            } elseif ($host === 'github.com' && !str_contains($link->getAttribute('href'), '//')) {
                 $link->setAttribute(
                     'href',
                     'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$basePath.$link->getAttribute('href')
                 );
-            } elseif ($host === 'gitlab.com' && false === strpos($link->getAttribute('href'), '//')) {
+            } elseif ($host === 'gitlab.com' && !str_contains($link->getAttribute('href'), '//')) {
                 $link->setAttribute(
                     'href',
                     'https://gitlab.com/'.$owner.'/'.$repo.'/-/blob/HEAD/'.$basePath.$link->getAttribute('href')
@@ -693,14 +693,16 @@ class Updater
             }
         }
 
-        if ($host === 'github.com' || $host === 'gitlab.com') {
+        if (in_array($host, ['github.com', 'gitlab.com'], true)) {
             // convert relative to absolute images
             $images = $dom->getElementsByTagName('img');
             foreach ($images as $img) {
-                if (false === strpos($img->getAttribute('src'), '//')) {
-                    $imgSrc = ($host === 'github.com')?
-                        'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$basePath.$img->getAttribute('src') :
-                        'https://gitlab.com/'.$owner.'/'.$repo.'/-/raw/HEAD/'.$basePath.$img->getAttribute('src');
+                if (!str_contains($img->getAttribute('src'), '//')) {
+                    $imgSrc = match ($host) {
+                        'github.com' => 'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$basePath.$img->getAttribute('src'),
+                        'gitlab.com' => 'https://gitlab.com/'.$owner.'/'.$repo.'/-/raw/HEAD/'.$basePath.$img->getAttribute('src'),
+                        default => $img->getAttribute('src'),
+                    };
                     $img->setAttribute('src', $imgSrc);
                 }
             }
