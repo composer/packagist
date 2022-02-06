@@ -6,8 +6,8 @@ final class Query
 {
     public function __construct(
         public string $query,
-        /** @var string|list<string> */
-        public array|string $tags,
+        /** @var list<string> */
+        public array $tags,
         public string $type,
         public int $perPage,
         public int $page,
@@ -44,7 +44,7 @@ final class Query
         // filter by tags
         if ($this->tags) {
             $tags = [];
-            foreach ((array) $this->tags as $tag) {
+            foreach ($this->tags as $tag) {
                 $tag = strtr($tag, '-', ' ');
                 $tags[] = 'tags:"'.$tag.'"';
                 if (str_contains($tag, ' ')) {

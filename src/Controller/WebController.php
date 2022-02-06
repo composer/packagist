@@ -67,7 +67,7 @@ class WebController extends Controller
         try {
             $query = new Query(
                 $req->query->has('q') ? $req->query->get('q') : $req->query->get('query', ''),
-                $req->query->get('tags', ''),
+                (array) $req->query->get('tags'),
                 $req->query->get('type', ''),
                 $req->query->getInt('per_page', 15),
                 $req->query->getInt('page', 1)

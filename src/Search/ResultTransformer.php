@@ -20,7 +20,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  *     }>
  * }
  */
-class ResultTransformer
+final class ResultTransformer
 {
     public function __construct(private UrlGeneratorInterface $urlGenerator)
     {
@@ -82,7 +82,7 @@ class ResultTransformer
                 'page' => $results['page'] + 2,
             ];
             if ($query->tags) {
-                $params['tags'] = (array) $query->tags;
+                $params['tags'] = $query->tags;
             }
             if ($query->type) {
                 $params['type'] = $query->type;
