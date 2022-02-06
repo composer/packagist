@@ -139,7 +139,7 @@
             </nav>
         </header>
 
-        {{ include("web/search_section.html.twig") }}
+        {{ include("web/search_section.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
 
         {% block flashMessages %}
             {%- if app.request.hasPreviousSession and app.session.flashbag.peekAll()|length > 0 %}

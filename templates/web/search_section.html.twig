@@ -10,11 +10,13 @@
             </div>
         </form>
 
-        <div class="row">
-            <div class="col-sm-9 hidden-xs">
-                <img src="{{ asset('img/logo-small.png') }}" class="logo">
-                <p>{{ 'search.claim_html'|trans|raw }}</p>
+        {%- if showSearchDesc == 'show' %}
+            <div class="row">
+                <div class="col-sm-9 hidden-xs">
+                    <img src="{{ asset('img/logo-small.png') }}" class="logo">
+                    <p>{{ 'search.claim_html'|trans|raw }}</p>
+                </div>
             </div>
-        </div>
+        {%- endif %}
     </div>
 </section>
