@@ -505,6 +505,7 @@ class Updater
      */
     private function updateReadme(IOInterface $io, Package $package, VcsDriverInterface $driver): void
     {
+        // GitHub readme & info handled separately in updateGitHubInfo, sweep the special attributes
         $package->setGitHubStars(null);
         $package->setGitHubWatches(null);
         $package->setGitHubForks(null);
@@ -538,7 +539,11 @@ class Updater
                         $readme = $parser->parse($source);
 
                         if (!empty($readme)) {
-                            $package->setReadme($this->prepareReadme($readme));
+                            if (Preg::isMatch('{^(?:git://|git@|https?://)(gitlab.com|bitbucket.org)[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
+                                $package->setReadme($this->prepareReadme($readme, $match[1], $match[2], $match[3]));
+                            } else {
+                                $package->setReadme($this->prepareReadme($readme));
+                            }
                         }
                     }
                     break;
@@ -574,7 +579,9 @@ class Updater
         }
 
         if (!empty($readme)) {
-            $package->setReadme($this->prepareReadme($readme, true, $owner, $repo));
+            // The content of all readmes, regardless of file type,
+            // is returned as HTML by GitHub API
+            $package->setReadme($this->prepareReadme($readme, 'github.com', $owner, $repo));
         }
 
         if (!empty($repoData['language']) && is_string($repoData['language'])) {
@@ -597,7 +604,7 @@ class Updater
     /**
      * Prepare the readme by stripping elements and attributes that are not supported .
      */
-    private function prepareReadme(string $readme, bool $isGithub = false, ?string $owner = null, ?string $repo = null): string
+    private function prepareReadme(string $readme, ?string $host = null, ?string $owner = null, ?string $repo = null): string
     {
         $elements = [
             'p',
@@ -628,9 +635,9 @@ class Updater
             '*.class', 'details.open',
         ];
 
-        // detect base path if the github readme is located in a subfolder like docs/README.md
+        // detect base path for github readme if file is located in a subfolder like docs/README.md
         $basePath = '';
-        if ($isGithub && Preg::isMatch('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
+        if ($host === 'github.com' && Preg::isMatch('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
             $basePath = dirname($match[1]);
         }
         if ($basePath) {
@@ -665,23 +672,29 @@ class Updater
                 $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
             } elseif ('mailto:' === substr($link->getAttribute('href'), 0, 7)) {
                 // do nothing
-            } elseif ($isGithub && false === strpos($link->getAttribute('href'), '//')) {
+            } elseif ($host === 'github.com' && !str_contains($link->getAttribute('href'), '//')) {
                 $link->setAttribute(
                     'href',
                     'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$basePath.$link->getAttribute('href')
                 );
+            } elseif ($host === 'gitlab.com' && !str_contains($link->getAttribute('href'), '//')) {
+                $link->setAttribute(
+                    'href',
+                    'https://gitlab.com/'.$owner.'/'.$repo.'/-/blob/HEAD/'.$basePath.$link->getAttribute('href')
+                );
             }
         }
 
-        if ($isGithub) {
+        if (in_array($host, ['github.com', 'gitlab.com'], true)) {
             // convert relative to absolute images
             $images = $dom->getElementsByTagName('img');
             foreach ($images as $img) {
-                if (false === strpos($img->getAttribute('src'), '//')) {
-                    $img->setAttribute(
-                        'src',
-                        'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$basePath.$img->getAttribute('src')
-                    );
+                if (!str_contains($img->getAttribute('src'), '//')) {
+                    $imgSrc = match ($host) {
+                        'github.com' => 'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$basePath.$img->getAttribute('src'),
+                        'gitlab.com' => 'https://gitlab.com/'.$owner.'/'.$repo.'/-/raw/HEAD/'.$basePath.$img->getAttribute('src'),
+                    };
+                    $img->setAttribute('src', $imgSrc);
                 }
             }
         }
