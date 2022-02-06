@@ -701,7 +701,6 @@ class Updater
                     $imgSrc = match ($host) {
                         'github.com' => 'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$basePath.$img->getAttribute('src'),
                         'gitlab.com' => 'https://gitlab.com/'.$owner.'/'.$repo.'/-/raw/HEAD/'.$basePath.$img->getAttribute('src'),
-                        default => $img->getAttribute('src'),
                     };
                     $img->setAttribute('src', $imgSrc);
                 }
