@@ -12,14 +12,14 @@ indent_style = space
 indent_size = 4
 
 [*.md]
-trim_trailing_whitespace = false
-indent_size = 2
+trim_trailing_whitespace = true
+indent_size = 4
 
 [{*.css,*.less,*.js}]
-indent_size = 2
+indent_size = 4
 
 [{*.json,*.yml,*.yaml}]
-indent_size = 2
+indent_size = 4
 
 [composer.json]
 indent_size = 4
