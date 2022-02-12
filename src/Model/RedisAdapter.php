@@ -33,6 +33,6 @@ class RedisAdapter implements AdapterInterface
 
     public function getSlice(int $offset, int $length): iterable
     {
-        return $this->model->getFavorites($this->instance, $offset, $length);
+        return $this->model->getFavorites($this->instance, $length, $offset);
     }
 }
