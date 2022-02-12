@@ -222,18 +222,22 @@ class UserController extends Controller
 
         $form->submit($req->request->all('form'));
         if ($form->isSubmitted() && $form->isValid()) {
+            $selfDelete = $user->getId() === $loggedUser->getId();
+
             $em = $this->getEM();
             $em->remove($user);
             $em->flush();
 
             // programmatic logout
-            $logoutEvent = new LogoutEvent($req, $storage->getToken());
-            $mainEventDispatcher->dispatch($logoutEvent);
-            $response = $logoutEvent->getResponse();
-            if (!$response instanceof Response) {
-                throw new \RuntimeException('No logout listener set the Response, make sure at least the DefaultLogoutListener is registered.');
+            if ($selfDelete) {
+                $logoutEvent = new LogoutEvent($req, $storage->getToken());
+                $mainEventDispatcher->dispatch($logoutEvent);
+                $response = $logoutEvent->getResponse();
+                if (!$response instanceof Response) {
+                    throw new \RuntimeException('No logout listener set the Response, make sure at least the DefaultLogoutListener is registered.');
+                }
+                $storage->setToken(null);
             }
-            $storage->setToken(null);
 
             return $this->redirectToRoute('home');
         }
