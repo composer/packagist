@@ -10,7 +10,7 @@ includes:
 
 parameters:
     level: 8
-    checkExplicitMixed: true
+    checkExplicitMixedMissingReturn: true
 
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: false
