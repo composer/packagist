@@ -651,7 +651,11 @@ class SymlinkDumper
 
         $this->fs->mkdir(dirname($path));
 
-        $json = json_encode($this->individualFiles[$key], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+        $flags = 0;
+        if (count($this->individualFiles[$key]['packages']) === 0) {
+            $flags = JSON_FORCE_OBJECT;
+        }
+        $json = json_encode($this->individualFiles[$key], $flags | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $this->writeFile($path, $json, $this->individualFilesMtime[$key]);
 
         // write the hashed provider file
