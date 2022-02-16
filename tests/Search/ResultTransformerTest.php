@@ -4,19 +4,16 @@ namespace App\Tests\Search;
 
 use App\Search\Query;
 use App\Search\ResultTransformer;
-use PHPUnit\Framework\TestCase;
-use Symfony\Component\Routing\Generator\CompiledUrlGenerator;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\RequestContext;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
-final class ResultTransformerTest extends TestCase
+final class ResultTransformerTest extends KernelTestCase
 {
     /**
      * @dataProvider provideQueryWithResults
      */
     public function testTransform(Query $query, array $result, array $expectedResult): void
     {
-        $transformer = new ResultTransformer(new UrlGeneratorMock());
+        $transformer = static::getContainer()->get(ResultTransformer::class);
         $actualResult = $transformer->transform($query, $result);
 
         static::assertSame($expectedResult, $actualResult);
