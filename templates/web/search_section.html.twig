@@ -1,5 +1,5 @@
 <section class="wrapper wrapper-search">
-    <div class="container with-description">
+    <div class="container {% if showSearchDesc == 'show' %}with-description{% endif %}">
         <form name="search_query" method="get" action="{{ path('search_web') }}" id="search-form" autocomplete="off">
             <div class="sortable row">
                 <div class="col-xs-12 js-search-field-wrapper col-md-9">
