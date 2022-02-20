@@ -11,26 +11,6 @@ parameters:
 			path: src/Command/CleanIndexCommand.php
 
 		-
-			message: "#^Cannot call method getName\\(\\) on mixed\\.$#"
-			count: 4
-			path: src/Command/ClearVersionsCommand.php
-
-		-
-			message: "#^Cannot call method getVersion\\(\\) on mixed\\.$#"
-			count: 2
-			path: src/Command/ClearVersionsCommand.php
-
-		-
-			message: "#^Parameter \\#1 \\$version of method App\\\\Entity\\\\VersionRepository\\:\\:remove\\(\\) expects App\\\\Entity\\\\Version, mixed given\\.$#"
-			count: 2
-			path: src/Command/ClearVersionsCommand.php
-
-		-
-			message: "#^Cannot access offset string on mixed\\.$#"
-			count: 1
-			path: src/Command/CompileStatsCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$command of method App\\\\Service\\\\Locker\\:\\:lockCommand\\(\\) expects string, string\\|null given\\.$#"
 			count: 1
 			path: src/Command/CompileStatsCommand.php
@@ -191,244 +171,9 @@ parameters:
 			path: src/Command/UpdatePackagesCommand.php
 
 		-
-			message: "#^Cannot access offset 'repository' on mixed\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Cannot call method getGithubToken\\(\\) on App\\\\Entity\\\\User\\|null\\.$#"
-			count: 2
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:createPackageAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:editPackageAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:findPackagesByRepository\\(\\) has parameter \\$remoteId with no type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:findPackagesByRepository\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:getJobAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:packagesAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:trackDownloadsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiController\\:\\:updatePackageAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#1 \\$content of class Symfony\\\\Component\\\\HttpFoundation\\\\Response constructor expects string\\|null, string\\|false given\\.$#"
-			count: 6
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#1 \\$json of function json_decode expects string, bool\\|float\\|int\\|string\\|null given\\.$#"
-			count: 2
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#1 \\$maintainer of method App\\\\Entity\\\\Package\\:\\:addMaintainer\\(\\) expects App\\\\Entity\\\\User, App\\\\Entity\\\\User\\|null given\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#1 \\$repoUrl of method App\\\\Entity\\\\Package\\:\\:setRepository\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Parameter \\#2 \\$ip of method App\\\\Model\\\\DownloadManager\\:\\:addDownloads\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Ternary operator condition is always true\\.$#"
-			count: 3
-			path: src/Controller/ApiController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ApiDocController\\:\\:indexAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ApiDocController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ChangePasswordController\\:\\:changePasswordAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ChangePasswordController.php
-
-		-
-			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\PasswordHasher\\\\Hasher\\\\UserPasswordHasherInterface\\:\\:hashPassword\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/ChangePasswordController.php
-
-		-
-			message: "#^Cannot cast mixed to int\\.$#"
-			count: 2
-			path: src/Controller/ExploreController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ExploreController\\:\\:exploreAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ExploreController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ExploreController\\:\\:popularAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ExploreController.php
-
-		-
 			message: "#^Parameter \\#1 \\$nbResults of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects int\\<0, max\\>, int given\\.$#"
 			count: 1
 			path: src/Controller/ExploreController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:feedsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/FeedController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) return type has no value type specified in iterable type iterable\\.$#"
-			count: 1
-			path: src/Controller/FeedController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\FeedController\\:\\:getLimitedResults\\(\\) should return iterable but returns mixed\\.$#"
-			count: 1
-			path: src/Controller/FeedController.php
-
-		-
-			message: "#^Parameter \\#1 \\$type of method Laminas\\\\Feed\\\\Writer\\\\Feed\\:\\:export\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Controller/FeedController.php
-
-		-
-			message: "#^Parameter \\#2 \\$type of method Laminas\\\\Feed\\\\Writer\\\\AbstractFeed\\:\\:setFeedLink\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Controller/FeedController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:connect\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:connectCheck\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:disconnect\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:disconnectUser\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:login\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\GitHubLoginController\\:\\:loginCheck\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Parameter \\#1 \\$accessToken of method KnpU\\\\OAuth2ClientBundle\\\\Client\\\\Provider\\\\GithubClient\\:\\:fetchUserFromToken\\(\\) expects League\\\\OAuth2\\\\Client\\\\Token\\\\AccessToken, League\\\\OAuth2\\\\Client\\\\Token\\\\AccessTokenInterface given\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Parameter \\#3 \\$newScope of method App\\\\Service\\\\Scheduler\\:\\:scheduleUserScopeMigration\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Controller/GitHubLoginController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:healthCheckAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:logResults\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:logResults\\(\\) has parameter \\$msg with no type specified\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\HealthCheckController\\:\\:logResults\\(\\) has parameter \\$results with no type specified\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Parameter \\#1 \\$haystack of function strpos expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Parameter \\#1 \\$string of function trim expects string, string\\|false\\|null given\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Parameter \\#2 \\$username of class Laminas\\\\Diagnostics\\\\Check\\\\PDOCheck constructor expects string, string\\|false\\|null given\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Parameter \\#3 \\$password of class Laminas\\\\Diagnostics\\\\Check\\\\PDOCheck constructor expects string, string\\|false\\|null given\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, class\\-string\\|false given\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Property App\\\\Controller\\\\HealthCheckController\\:\\:\\$awsMeta type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Controller/HealthCheckController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\MirrorsController\\:\\:indexAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/MirrorsController.php
 
 		-
 			message: "#^If condition is always true\\.$#"
@@ -436,228 +181,8 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:abandonAction\\(\\) has no return type specified\\.$#"
+			message: "#^Offset string on array\\<int, int\\> on left side of \\?\\? does not exist\\.$#"
 			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:allAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createAddMaintainerForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createDatePoints\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createDatePoints\\(\\) has parameter \\$average with no type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createDeletePackageForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createMaintainerAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:createRemoveMaintainerForm\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:deletePackageAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:deletePackageVersionAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:dependentsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:editAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:fetchInfoAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:getStatsInterval\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:getStatsInterval\\(\\) has parameter \\$average with no type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:guessStatsAverage\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:guessStatsStartDate\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:guessStatsStartDate\\(\\) has parameter \\$packageOrVersion with no type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:listAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:majorVersionStatsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:markSafeAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:metadataChangesAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:overallStatsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:overallStatsAction\\(\\) has parameter \\$majorVersion with no type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:phpStatsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:removeMaintainerAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:securityAdvisoriesAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:statsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:submitPackageAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:suggestersAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:unabandonAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:updatePackageAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:updatedSinceAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:versionPhpStatsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:versionStatsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageAliasAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageDownloadsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewPackageVersionAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewProvidersAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewSpamAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\PackageController\\:\\:viewVendorAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#1 \\$content of class Symfony\\\\Component\\\\HttpFoundation\\\\Response constructor expects string\\|null, string\\|false given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#1 \\$element of method Doctrine\\\\Common\\\\Collections\\\\Collection\\<int,App\\\\Entity\\\\User\\>\\:\\:contains\\(\\) expects App\\\\Entity\\\\User, Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface given\\.$#"
-			count: 5
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#1 \\$element of method Doctrine\\\\Common\\\\Collections\\\\Collection\\<int,App\\\\Entity\\\\User\\>\\:\\:contains\\(\\) expects App\\\\Entity\\\\User, Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\|null given\\.$#"
-			count: 4
 			path: src/Controller/PackageController.php
 
 		-
@@ -666,174 +191,9 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
-			message: "#^Parameter \\#1 \\$object of static method DateTimeImmutable\\:\\:createFromMutable\\(\\) expects DateTime, DateTimeInterface given\\.$#"
-			count: 2
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#1 \\$object of static method DateTimeImmutable\\:\\:createFromMutable\\(\\) expects DateTime, DateTimeInterface\\|null given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#1 \\$user of method App\\\\Model\\\\FavoriteManager\\:\\:isMarked\\(\\) expects App\\\\Entity\\\\User, Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#2 \\$token of method Symfony\\\\Bundle\\\\FrameworkBundle\\\\Controller\\\\AbstractController\\:\\:isCsrfTokenValid\\(\\) expects string\\|null, bool\\|float\\|int\\|string\\|null given\\.$#"
-			count: 2
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#3 \\$packages of method App\\\\Controller\\\\Controller\\:\\:getPackagesMetadata\\(\\) expects iterable\\<App\\\\Entity\\\\Package\\|array\\{id\\: int\\}\\>, mixed given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#3 \\$referenceType of method Symfony\\\\Bundle\\\\FrameworkBundle\\\\Controller\\\\AbstractController\\:\\:generateUrl\\(\\) expects int, true given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
 			message: "#^Unreachable statement \\- code above always terminates\\.$#"
 			count: 1
 			path: src/Controller/PackageController.php
-
-		-
-			message: "#^Call to an undefined method Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\:\\:getId\\(\\)\\.$#"
-			count: 1
-			path: src/Controller/ProfileController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ProfileController\\:\\:editAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ProfileController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ProfileController\\:\\:myProfile\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ProfileController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ProfileController\\:\\:packagesAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ProfileController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\ProfileController\\:\\:publicProfile\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/ProfileController.php
-
-		-
-			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\PasswordHasher\\\\Hasher\\\\UserPasswordHasherInterface\\:\\:hashPassword\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/RegistrationController.php
-
-		-
-			message: "#^Property App\\\\Controller\\\\RegistrationController\\:\\:\\$emailVerifier has no type specified\\.$#"
-			count: 1
-			path: src/Controller/RegistrationController.php
-
-		-
-			message: "#^Parameter \\#1 \\$userEmail of method App\\\\Controller\\\\ResetPasswordController\\:\\:processSendingPasswordResetEmail\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Parameter \\#2 \\$plainPassword of method Symfony\\\\Component\\\\PasswordHasher\\\\Hasher\\\\UserPasswordHasherInterface\\:\\:hashPassword\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: src/Controller/ResetPasswordController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\SecurityController\\:\\:logout\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/SecurityController.php
-
-		-
-			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Cannot call method getId\\(\\) on Symfony\\\\Component\\\\Security\\\\Core\\\\User\\\\UserInterface\\|null\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Cannot call method getVersions\\(\\) on mixed\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Cannot cast mixed to string\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:configureTwoFactorAuthAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:confirmTwoFactorAuthAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:deleteFavoriteAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:deleteUserAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:disableTwoFactorAuthAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:enableTwoFactorAuthAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:favoritesAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:markSpammerAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:postFavoriteAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\UserController\\:\\:triggerGitHubSyncAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Parameter \\#1 \\$package of method App\\\\Model\\\\ProviderManager\\:\\:deletePackage\\(\\) expects App\\\\Entity\\\\Package, mixed given\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
-
-		-
-			message: "#^Parameter \\#2 \\$code of method Scheb\\\\TwoFactorBundle\\\\Security\\\\TwoFactor\\\\Provider\\\\Totp\\\\TotpAuthenticatorInterface\\:\\:checkCode\\(\\) expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Controller/UserController.php
 
 		-
 			message: "#^Cannot access offset 'orderBys' on array\\|bool\\|float\\|int\\|string\\.$#"
@@ -891,11 +251,6 @@ parameters:
 			path: src/Controller/WebController.php
 
 		-
-			message: "#^Method App\\\\DataFixtures\\\\DownloadFixtures\\:\\:getLatestPackageVersion\\(\\) should return App\\\\Entity\\\\Version but returns mixed\\.$#"
-			count: 1
-			path: src/DataFixtures/DownloadFixtures.php
-
-		-
 			message: "#^Parameter \\#1 \\$object of static method DateTimeImmutable\\:\\:createFromMutable\\(\\) expects DateTime, DateTimeInterface given\\.$#"
 			count: 1
 			path: src/DataFixtures/DownloadFixtures.php
@@ -907,16 +262,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:deletePackageDownloads\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/DownloadRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:findDataByMajorVersion\\(\\) should return array\\<string, array\\<int, array\\<int, int\\>\\>\\> but returns array\\<string, array\\<int, mixed\\>\\>\\.$#"
-			count: 1
-			path: src/Entity/DownloadRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\DownloadRepository\\:\\:findDataByMajorVersions\\(\\) should return array\\<string, array\\<int, array\\<int, int\\>\\>\\> but returns array\\<string, array\\<int, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/DownloadRepository.php
 
@@ -961,11 +306,6 @@ parameters:
 			path: src/Entity/Job.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:getLastGitHubSyncJob\\(\\) should return App\\\\Entity\\\\Job\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/JobRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\JobRepository\\:\\:getScheduledJobIds\\(\\) return type has no value type specified in iterable type Generator\\.$#"
 			count: 1
 			path: src/Entity/JobRepository.php
@@ -996,16 +336,6 @@ parameters:
 			path: src/Entity/Package.php
 
 		-
-			message: "#^Cannot access offset 'user_id' on mixed\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Cannot cast mixed to int\\.$#"
-			count: 2
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:findProviders\\(\\) has parameter \\$name with no type specified\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
@@ -1031,11 +361,6 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageByName\\(\\) should return App\\\\Entity\\\\Package but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPackageNamesByType\\(\\) has parameter \\$type with no type specified\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
@@ -1052,11 +377,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPartialPackageByNameWithVersions\\(\\) has parameter \\$name with no type specified\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getPartialPackageByNameWithVersions\\(\\) should return App\\\\Entity\\\\Package but returns mixed\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -1101,11 +421,6 @@ parameters:
 			path: src/Entity/PhpStatRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:getStatVersions\\(\\) should return array\\<int, array\\{version\\: string, depth\\: 0\\|1\\|2\\|3\\}\\> but returns array\\.$#"
-			count: 1
-			path: src/Entity/PhpStatRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PhpStatRepository\\:\\:transferStatsToDb\\(\\) has parameter \\$keys with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/PhpStatRepository.php
@@ -1136,62 +451,12 @@ parameters:
 			path: src/Entity/SecurityAdvisoryRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Tag\\:\\:getByName\\(\\) should return App\\\\Entity\\\\Tag but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/Tag.php
-
-		-
-			message: "#^Cannot access offset 'login' on mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Cannot use array destructuring on mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\User\\:\\:getGithubUsername\\(\\) should return string\\|null but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\User\\:\\:setSalt\\(\\) has parameter \\$salt with no type specified\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
 		-
 			message: "#^Parameter \\#1 \\$secret of class Scheb\\\\TwoFactorBundle\\\\Model\\\\Totp\\\\TotpConfiguration constructor expects string, string\\|null given\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$emailCanonical \\(string\\) does not accept mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$enabled \\(bool\\) does not accept mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$password \\(string\\) does not accept mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$salt \\(string\\|null\\) does not accept mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$username \\(string\\) does not accept mixed\\.$#"
-			count: 1
-			path: src/Entity/User.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\User\\:\\:\\$usernameCanonical \\(string\\) does not accept mixed\\.$#"
 			count: 1
 			path: src/Entity/User.php
 
@@ -1331,11 +596,6 @@ parameters:
 			path: src/Entity/VersionRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getFullVersion\\(\\) should return App\\\\Entity\\\\Version but returns mixed\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getLatestReleases\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
@@ -1347,11 +607,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionData\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionMetadataForUpdate\\(\\) should return array\\<string, array\\{id\\: numeric\\-string, version\\: string, normalizedVersion\\: string, source\\: array\\{type\\: string\\|null, url\\: string\\|null, reference\\: string\\|null\\}\\|null, softDeletedAt\\: string\\|null\\}\\> but returns array\\<string, array\\{id\\: numeric\\-string, version\\: string, normalizedVersion\\: string, source\\: mixed, softDeletedAt\\: string\\|null\\}\\>\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
 
@@ -1371,11 +626,6 @@ parameters:
 			path: src/Form/Type/EnableTwoFactorAuthType.php
 
 		-
-			message: "#^Cannot call method getGithubId\\(\\) on mixed\\.$#"
-			count: 1
-			path: src/Form/Type/ProfileFormType.php
-
-		-
 			message: "#^Generator expects value type Symfony\\\\Component\\\\HttpKernel\\\\Bundle\\\\BundleInterface, object given\\.$#"
 			count: 1
 			path: src/Kernel.php
@@ -1388,26 +638,6 @@ parameters:
 		-
 			message: "#^Argument of an invalid type array\\|false supplied for foreach, only iterables are supported\\.$#"
 			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\\.$#"
-			count: 3
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Cannot access offset 'provider\\-includes' on mixed\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Cannot access offset 'providers' on mixed\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Cannot access offset 'sha256' on mixed\\.$#"
-			count: 2
 			path: src/Package/SymlinkDumper.php
 
 		-
@@ -1428,16 +658,6 @@ parameters:
 		-
 			message: "#^Parameter \\#1 \\$str of function strtr expects string, array\\|string given\\.$#"
 			count: 2
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#2 \\$replace of function str_replace expects array\\|string, mixed given\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, mixed given\\.$#"
-			count: 1
 			path: src/Package/SymlinkDumper.php
 
 		-
@@ -1606,27 +826,7 @@ parameters:
 			path: src/Service/QueueWorker.php
 
 		-
-			message: "#^Cannot access offset 'delete_before' on mixed\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Cannot access offset 'update_equal_refs' on mixed\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
 			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:createJob\\(\\) has parameter \\$payload with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobStatus\\(\\) should return array\\{status\\: string, message\\: string\\} but returns mixed\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:getJobsStatus\\(\\) should return array\\<string, array\\{status\\: mixed\\}\\> but returns array\\<string, mixed\\>\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
 
