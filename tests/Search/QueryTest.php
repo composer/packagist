@@ -45,6 +45,30 @@ final class QueryTest extends TestCase
         static::assertEmpty($query->type);
     }
 
+    /**
+     * @dataProvider provideQueryForEscaping
+     */
+    public function testConstructQueryEscaping(string $query, string $expected): void
+    {
+        $query = new Query($query, [], '', 15, 1);
+
+        static::assertSame($expected, $query->query);
+    }
+
+    /**
+     * @return array<array{0: string, 1: string}>
+     */
+    public function provideQueryForEscaping(): array
+    {
+        return [
+            ['symfony/property', 'symfony/property'],
+            ['symfony/property -info', 'symfony/property -info'],
+            ['symfony/property-info', 'symfony/property\-info'],
+            ['symfony/property-info-info', 'symfony/property\-info\-info'],
+            ['symfony/property-info-info -info', 'symfony/property\-info\-info -info'],
+        ];
+    }
+
     public function testConstructReplaceOnType(): void
     {
         $query = new Query('', [], 'idont%type%know', 15, 1);
