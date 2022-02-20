@@ -5,6 +5,9 @@ namespace App\Tests\Search;
 use App\Search\Query;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @phpstan-import-type SearchOptions from \App\Search\Query
+ */
 final class QueryTest extends TestCase
 {
     public function testConstructWithoutQueryTypeTags(): void
@@ -101,13 +104,18 @@ final class QueryTest extends TestCase
 
     /**
      * @dataProvider provideQueryWithOptions
+     *
+     * @phpstan-param SearchOptions $expectedOptions
      */
-    public function testGetOptions(Query $query, $expectedOptions): void
+    public function testGetOptions(Query $query, array $expectedOptions): void
     {
         static::assertSame($expectedOptions, $query->getOptions());
     }
 
-    public function provideQueryWithOptions(): \Generator
+    /**
+     * @phpstan-return iterable<string, array{0: Query, 1: SearchOptions}>
+     */
+    public function provideQueryWithOptions(): iterable
     {
         yield 'empty_tag_type' => [
             new Query('monolog', [], '', 15, 1),

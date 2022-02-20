@@ -2,6 +2,9 @@
 
 namespace App\Search;
 
+/**
+ * @phpstan-type SearchOptions array{hitsPerPage: int, page: int, filters?: string}
+ */
 final class Query
 {
     public function __construct(
@@ -26,7 +29,7 @@ final class Query
     }
 
     /**
-     * @return array{hitsPerPage: int, page: int, filters?: string}
+     * @phpstan-return SearchOptions
      */
     public function getOptions(): array
     {
