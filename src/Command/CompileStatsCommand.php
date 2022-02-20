@@ -51,7 +51,7 @@ class CompileStatsCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $lockAcquired = $this->locker->lockCommand($this->getName());
+        $lockAcquired = $this->locker->lockCommand(__CLASS__);
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
@@ -89,7 +89,7 @@ class CompileStatsCommand extends Command
         $this->redis->rename('downloads:trending:new', 'downloads:trending');
         $this->redis->rename('downloads:absolute:new', 'downloads:absolute');
 
-        $this->locker->unlockCommand($this->getName());
+        $this->locker->unlockCommand(__CLASS__);
 
         return 0;
     }

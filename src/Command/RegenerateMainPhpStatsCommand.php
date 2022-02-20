@@ -41,7 +41,7 @@ class RegenerateMainPhpStatsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // another migrate command is still active
-        $lockAcquired = $this->locker->lockCommand($this->getName());
+        $lockAcquired = $this->locker->lockCommand(__CLASS__);
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
@@ -84,7 +84,7 @@ class RegenerateMainPhpStatsCommand extends Command
                 }
             }
         } finally {
-            $this->locker->unlockCommand($this->getName());
+            $this->locker->unlockCommand(__CLASS__);
         }
 
         return 0;

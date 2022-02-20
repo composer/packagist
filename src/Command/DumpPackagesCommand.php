@@ -73,7 +73,7 @@ class DumpPackagesCommand extends Command
         if ($gc) {
             $lockName .= '-gc';
         }
-        if (!$this->locker->lockCommand($lockName)) {
+        if (!$this->locker->lockCommand(__CLASS__)) {
             if ($verbose) {
                 $output->writeln('Aborting, another task is running already');
             }
@@ -84,7 +84,7 @@ class DumpPackagesCommand extends Command
             try {
                 $this->dumper->gc();
             } finally {
-                $this->locker->unlockCommand($lockName);
+                $this->locker->unlockCommand(__CLASS__);
             }
             return 0;
         }
@@ -116,7 +116,7 @@ class DumpPackagesCommand extends Command
             $ids = array_map('intval', $ids);
             $result = $this->dumper->dump($ids, $force, $verbose);
         } finally {
-            $this->locker->unlockCommand($lockName);
+            $this->locker->unlockCommand(__CLASS__);
         }
 
         return $result ? 0 : 1;

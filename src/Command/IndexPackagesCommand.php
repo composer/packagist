@@ -81,7 +81,7 @@ class IndexPackagesCommand extends Command
             return 0;
         }
 
-        $lockAcquired = $this->locker->lockCommand($this->getName());
+        $lockAcquired = $this->locker->lockCommand(__CLASS__);
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
@@ -184,7 +184,7 @@ class IndexPackagesCommand extends Command
             $this->updateIndexedAt($idsToUpdate, $indexTime->format('Y-m-d H:i:s'));
         }
 
-        $this->locker->unlockCommand($this->getName());
+        $this->locker->unlockCommand(__CLASS__);
 
         return 0;
     }
