@@ -32,9 +32,7 @@ use App\Model\ProviderManager;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Connection\ConnectionException;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -54,8 +52,6 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Address;
-use Symfony\Component\Mime\Email;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 
@@ -74,7 +70,7 @@ class PackageController extends Controller
      */
     public function allAction(): RedirectResponse
     {
-        return new RedirectResponse($this->generateUrl('browse'), Response::HTTP_MOVED_PERMANENTLY);
+        return $this->redirectToRoute('browse', [], Response::HTTP_MOVED_PERMANENTLY);
     }
 
     /**
@@ -226,7 +222,7 @@ class PackageController extends Controller
 
                 $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
 
-                return new RedirectResponse($this->generateUrl('view_package', ['name' => $package->getName()]));
+                return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
             } catch (\Exception $e) {
                 $logger->critical($e->getMessage(), ['exception', $e]);
                 $this->addFlash('error', $package->getName().' could not be saved.');
@@ -961,7 +957,7 @@ class PackageController extends Controller
 
                     $this->addFlash('success', $user->getUsername().' is no longer a '.$package->getName().' maintainer.');
 
-                    return new RedirectResponse($this->generateUrl('view_package', ['name' => $package->getName()]));
+                    return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
                 }
                 $this->addFlash('error', 'The user could not be found.');
             } catch (\Exception $e) {

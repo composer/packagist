@@ -9,15 +9,12 @@ use App\Entity\User;
 use App\Form\Type\ProfileFormType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
-use App\Util\DoctrineTrait;
-use Doctrine\Persistence\ManagerRegistry;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ProfileController extends Controller

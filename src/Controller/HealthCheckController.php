@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use Laminas\Diagnostics\Check\CheckInterface;
 use Laminas\Diagnostics\Result\Collection;
 use Laminas\Diagnostics\Result\ResultInterface;
 use Symfony\Component\Routing\Annotation\Route;

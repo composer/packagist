@@ -9,7 +9,6 @@ use KnpU\OAuth2ClientBundle\Exception\InvalidStateException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Provider\GithubResourceOwner;
 use League\OAuth2\Client\Token\AccessToken;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Finder\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
