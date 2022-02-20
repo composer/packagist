@@ -11,6 +11,7 @@ use App\Model\FavoriteManager;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use Composer\Semver\Constraint\Constraint;
+use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\NoResultException;
 use App\Entity\Download;
@@ -33,6 +34,8 @@ use Pagerfanta\Pagerfanta;
 use Predis\Connection\ConnectionException;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Form;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -69,7 +72,7 @@ class PackageController extends Controller
     /**
      * @Route("/packages/", name="allPackages")
      */
-    public function allAction()
+    public function allAction(): RedirectResponse
     {
         return new RedirectResponse($this->generateUrl('browse'), Response::HTTP_MOVED_PERMANENTLY);
     }
@@ -77,7 +80,7 @@ class PackageController extends Controller
     /**
      * @Route("/packages/list.json", name="list", defaults={"_format"="json"}, methods={"GET"})
      */
-    public function listAction(Request $req)
+    public function listAction(Request $req): JsonResponse
     {
         $repo = $this->getEM()->getRepository(Package::class);
         $queryParams = $req->query->all();
@@ -129,7 +132,7 @@ class PackageController extends Controller
      *
      * @Route("/packages/updated.json", name="updated_packages", defaults={"_format"="json"}, methods={"GET"})
      */
-    public function updatedSinceAction(Request $req, RedisClient $redis)
+    public function updatedSinceAction(Request $req, RedisClient $redis): JsonResponse
     {
         $lastDumpTime = $redis->get('last_metadata_dump_time') ?: (time() - 60);
 
@@ -154,7 +157,7 @@ class PackageController extends Controller
     /**
      * @Route("/metadata/changes.json", name="metadata_changes", defaults={"_format"="json"}, methods={"GET"})
      */
-    public function metadataChangesAction(Request $req, RedisClient $redis)
+    public function metadataChangesAction(Request $req, RedisClient $redis): JsonResponse
     {
         $topDump = $redis->zrevrange('metadata-dumps', 0, 0, ['WITHSCORES' => true]) ?: ['foo' => 0];
         $topDelete = $redis->zrevrange('metadata-deletes', 0, 0, ['WITHSCORES' => true]) ?: ['foo' => 0];
@@ -193,10 +196,9 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template()
      * @Route("/packages/submit", name="submit")
      */
-    public function submitPackageAction(Request $req, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, LoggerInterface $logger, MailerInterface $mailer, string $mailFromEmail, #[CurrentUser] User $user)
+    public function submitPackageAction(Request $req, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, LoggerInterface $logger, MailerInterface $mailer, string $mailFromEmail, #[CurrentUser] User $user): Response
     {
         $package = new Package;
         $package->setEntityRepository($this->getEM()->getRepository(Package::class));
@@ -231,13 +233,13 @@ class PackageController extends Controller
             }
         }
 
-        return ['form' => $form->createView(), 'page' => 'submit'];
+        return $this->render('package/submit_package.html.twig', ['form' => $form->createView(), 'page' => 'submit']);
     }
 
     /**
      * @Route("/packages/fetch-info", name="submit.fetch_info", defaults={"_format"="json"})
      */
-    public function fetchInfoAction(Request $req, RouterInterface $router, #[CurrentUser] User $user)
+    public function fetchInfoAction(Request $req, RouterInterface $router, #[CurrentUser] User $user): JsonResponse
     {
         $package = new Package;
         $package->setEntityRepository($this->getEM()->getRepository(Package::class));
@@ -259,7 +261,7 @@ class PackageController extends Controller
             foreach ($existingPackages as $existingPackage) {
                 $similar[] = [
                     'name' => $existingPackage['name'],
-                    'url' => $this->generateUrl('view_package', ['name' => $existingPackage['name']], true),
+                    'url' => $this->generateUrl('view_package', ['name' => $existingPackage['name']], UrlGeneratorInterface::ABSOLUTE_URL),
                 ];
             }
 
@@ -292,10 +294,9 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template()
      * @Route("/packages/{vendor}/", name="view_vendor", requirements={"vendor"="[A-Za-z0-9_.-]+"})
      */
-    public function viewVendorAction(string $vendor)
+    public function viewVendorAction(string $vendor): Response
     {
         $packages = $this->getEM()
             ->getRepository(Package::class)
@@ -304,15 +305,15 @@ class PackageController extends Controller
             ->getResult();
 
         if (!$packages) {
-            return $this->redirect($this->generateUrl('search', ['q' => $vendor, 'reason' => 'vendor_not_found']));
+            return $this->redirectToRoute('search', ['q' => $vendor, 'reason' => 'vendor_not_found']);
         }
 
-        return [
+        return $this->render('package/view_vendor.html.twig', [
             'packages' => $packages,
             'meta' => $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $packages),
             'vendor' => $vendor,
             'paginate' => false,
-        ];
+        ]);
     }
 
     /**
@@ -331,16 +332,16 @@ class PackageController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function viewPackageAliasAction(Request $req, string $name)
+    public function viewPackageAliasAction(Request $req, string $name): RedirectResponse
     {
         $format = $req->getRequestFormat();
         if ($format === 'html') {
             $format = null;
         }
-        if ($format === 'json' || (!$format && substr($name, -5) === '.json')) {
+        if ($format === 'json' || (!$format && str_ends_with($name, '.json'))) {
             throw new NotFoundHttpException('Package not found');
         }
-        if (false === strpos(trim($name, '/'), '/')) {
+        if (!str_contains(trim($name, '/'), '/')) {
             return $this->redirect($this->generateUrl('view_vendor', ['vendor' => $name, '_format' => $format]));
         }
 
@@ -356,7 +357,7 @@ class PackageController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function viewProvidersAction(Request $req, string $name, RedisClient $redis)
+    public function viewProvidersAction(Request $req, string $name, RedisClient $redis): Response
     {
         $repo = $this->getEM()->getRepository(Package::class);
         $providers = $repo->findProviders($name);
@@ -418,7 +419,7 @@ class PackageController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function viewSpamAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager)
+    public function viewSpamAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager): Response
     {
         if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
             throw new NotFoundHttpException();
@@ -468,11 +469,11 @@ class PackageController extends Controller
      * )
      * @IsGranted("ROLE_ANTISPAM")
      */
-    public function markSafeAction(Request $req)
+    public function markSafeAction(Request $req): RedirectResponse
     {
         /** @var string[] $vendors */
         $vendors = array_filter($req->request->all('vendor'));
-        if (!$this->isCsrfTokenValid('mark_safe', $req->request->get('token'))) {
+        if (!$this->isCsrfTokenValid('mark_safe', (string)$req->request->get('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
         }
 
@@ -485,7 +486,6 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template()
      * @Route(
      *     "/packages/{name}.{_format}",
      *     name="view_package",
@@ -494,7 +494,7 @@ class PackageController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function viewPackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager)
+    public function viewPackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] User $user = null): Response
     {
         if (!Killswitch::isEnabled(Killswitch::PAGES_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -562,10 +562,7 @@ class PackageController extends Controller
 
         $version = null;
         $expandedVersion = null;
-        $versions = $package->getVersions();
-        if (is_object($versions)) {
-            $versions = $versions->toArray();
-        }
+        $versions = $package->getVersions()->toArray();
 
         usort($versions, Package::class.'::sortVersions');
 
@@ -611,10 +608,10 @@ class PackageController extends Controller
                 }
             }
 
-            if ($this->getUser()) {
-                $data['is_favorite'] = $this->favoriteManager->isMarked($this->getUser(), $package);
+            if ($user) {
+                $data['is_favorite'] = $this->favoriteManager->isMarked($user, $package);
             }
-        } catch (\RuntimeException | ConnectionException $e) {
+        } catch (\RuntimeException | ConnectionException) {
         }
 
         $data['dependents'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getDependentCount($package->getName()) : 0;
@@ -653,20 +650,17 @@ class PackageController extends Controller
             $data['isVisibleToV1'] = $this->getEM()->getRepository(Package::class)->isPackageDumpableForV1($package);
         }
 
-        if ($this->getUser() && (
-                $this->isGranted('ROLE_DELETE_PACKAGES')
-                || $package->getMaintainers()->contains($this->getUser())
-            )) {
+        if ($this->isGranted('ROLE_DELETE_PACKAGES') || $package->isMaintainer($user)) {
             $data['deleteVersionCsrfToken'] = $csrfTokenManager->getToken('delete_version');
             $lastJob = $this->getEM()->getRepository(Job::class)->findLatestExecutedJob($package->getId(), 'package:updates');
             $data['lastJobWarning'] = null;
-            $data['lastJobStatus'] = $lastJob ? $lastJob->getStatus() : null;
+            $data['lastJobStatus'] = $lastJob?->getStatus();
             $data['lastJobMsg'] = $lastJob ? $lastJob->getResult()['message'] ?? '' : null;
             $data['lastJobDetails'] = $lastJob ? $lastJob->getResult()['details'] ?? '' : null;
             if ($lastJob) {
                 switch ($lastJob->getStatus()) {
                     case Job::STATUS_COMPLETED:
-                        if (false !== strpos($data['lastJobDetails'], 'does not match version')) {
+                        if (str_contains($data['lastJobDetails'], 'does not match version')) {
                             $data['lastJobWarning'] = 'Some tags were ignored because of a version mismatch in composer.json, <a href="https://blog.packagist.com/tagged-a-new-release-for-composer-and-it-wont-show-up-on-packagist/">read more</a>.';
                         }
                         break;
@@ -684,7 +678,7 @@ class PackageController extends Controller
             $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
         }
 
-        return $data;
+        return $this->render('package/view_package.html.twig', $data);
     }
 
     /**
@@ -695,7 +689,7 @@ class PackageController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function viewPackageDownloadsAction(Request $req, string $name)
+    public function viewPackageDownloadsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -705,7 +699,7 @@ class PackageController extends Controller
 
         try {
             $package = $repo->getPartialPackageByNameWithVersions($name);
-        } catch (NoResultException $e) {
+        } catch (NoResultException) {
             if ('json' === $req->getRequestFormat()) {
                 return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
             }
@@ -725,7 +719,7 @@ class PackageController extends Controller
         try {
             $data['downloads']['total'] = $this->downloadManager->getDownloads($package);
             $data['favers'] = $this->favoriteManager->getFaverCount($package);
-        } catch (ConnectionException $e) {
+        } catch (ConnectionException) {
             $data['downloads']['total'] = null;
             $data['favers'] = null;
         }
@@ -733,7 +727,7 @@ class PackageController extends Controller
         foreach ($versions as $version) {
             try {
                 $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version);
-            } catch (ConnectionException $e) {
+            } catch (ConnectionException) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
         }
@@ -753,7 +747,7 @@ class PackageController extends Controller
      *     methods={"GET"}
      * )
      */
-    public function viewPackageVersionAction(Request $req, int $versionId)
+    public function viewPackageVersionAction(Request $req, int $versionId): JsonResponse
     {
         if ($req->getSession()->isStarted()) {
             $req->getSession()->save();
@@ -777,22 +771,22 @@ class PackageController extends Controller
      *     methods={"DELETE"}
      * )
      */
-    public function deletePackageVersionAction(Request $req, int $versionId)
+    public function deletePackageVersionAction(Request $req, int $versionId, #[CurrentUser] User $user = null): Response
     {
         $repo = $this->getEM()->getRepository(Version::class);
 
         try {
             $version = $repo->getFullVersion($versionId);
-        } catch (NoResultException $e) {
+        } catch (NoResultException) {
             return new Response('Version '.$versionId.' not found', 404);
         }
         $package = $version->getPackage();
 
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_DELETE_PACKAGES')) {
+        if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_DELETE_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
-        if (!$this->isCsrfTokenValid('delete_version', $req->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('delete_version', (string)$req->request->get('_token'))) {
             throw new AccessDeniedException;
         }
 
@@ -806,14 +800,14 @@ class PackageController extends Controller
     /**
      * @Route("/packages/{name}", name="update_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, defaults={"_format" = "json"}, methods={"PUT"})
      */
-    public function updatePackageAction(Request $req, string $name)
+    public function updatePackageAction(Request $req, string $name): Response
     {
         try {
             $package = $this->getEM()
                 ->getRepository(Package::class)
                 ->getPackageByName($name);
-        } catch (NoResultException $e) {
-            return new Response(json_encode(['status' => 'error', 'message' => 'Package not found',]), 404);
+        } catch (NoResultException) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
         }
 
         if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
@@ -836,11 +830,11 @@ class PackageController extends Controller
         $user = $this->getUser() ?: $this->getEM()->getRepository(User::class)
             ->findOneBy(['usernameCanonical' => $username, 'apiToken' => $apiToken]);
 
-        if (!$user) {
+        if (!$user instanceof User) {
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
         }
 
-        $canUpdatePackage = $package->getMaintainers()->contains($user) || $this->isGranted('ROLE_UPDATE_PACKAGES');
+        $canUpdatePackage = $package->isMaintainer($user) || $this->isGranted('ROLE_UPDATE_PACKAGES');
         if ($canUpdatePackage || !$package->wasUpdatedInTheLast24Hours()) {
             // do not let non-maintainers execute update with those flags
             if (!$canUpdatePackage) {
@@ -864,22 +858,22 @@ class PackageController extends Controller
         }
 
         if ($package->wasUpdatedInTheLast24Hours()) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours',], 404);
+            return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours'], 404);
         }
 
-        return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)',], 404);
+        return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)'], 404);
     }
 
     /**
      * @Route("/packages/{name}", name="delete_package", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"}, methods={"DELETE"})
      */
-    public function deletePackageAction(Request $req, string $name)
+    public function deletePackageAction(Request $req, string $name): Response
     {
         try {
             $package = $this->getEM()
                 ->getRepository(Package::class)
                 ->getPartialPackageByNameWithVersions($name);
-        } catch (NoResultException $e) {
+        } catch (NoResultException) {
             throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
         }
 
@@ -901,23 +895,13 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template("package/view_package.html.twig")
      * @Route("/packages/{name}/maintainers/", name="add_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
-    public function createMaintainerAction(Request $req, #[VarName('name')] Package $package, LoggerInterface $logger)
+    public function createMaintainerAction(Request $req, #[VarName('name')] Package $package, LoggerInterface $logger): RedirectResponse
     {
         if (!$form = $this->createAddMaintainerForm($package)) {
             throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
         }
-
-        $data = [
-            'package' => $package,
-            'versions' => null,
-            'expandedVersion' => null,
-            'version' => null,
-            'addMaintainerForm' => $form->createView(),
-            'show_add_maintainer_form' => true,
-        ];
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -928,7 +912,7 @@ class PackageController extends Controller
                 }
 
                 if (!empty($user)) {
-                    if (!$package->getMaintainers()->contains($user)) {
+                    if (!$package->isMaintainer($user)) {
                         $package->addMaintainer($user);
                         $this->packageManager->notifyNewMaintainer($user, $package);
                     }
@@ -938,7 +922,7 @@ class PackageController extends Controller
 
                     $this->addFlash('success', $user->getUsername().' is now a '.$package->getName().' maintainer.');
 
-                    return new RedirectResponse($this->generateUrl('view_package', ['name' => $package->getName()]));
+                    return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
                 }
                 $this->addFlash('error', 'The user could not be found.');
             } catch (\Exception $e) {
@@ -951,23 +935,13 @@ class PackageController extends Controller
     }
 
     /**
-     * @Template("package/view_package.html.twig")
      * @Route("/packages/{name}/maintainers/delete", name="remove_maintainer", requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"})
      */
-    public function removeMaintainerAction(Request $req, #[VarName('name')] Package $package, LoggerInterface $logger)
+    public function removeMaintainerAction(Request $req, #[VarName('name')] Package $package, LoggerInterface $logger): Response
     {
         if (!$removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
             throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
         }
-
-        $data = [
-            'package' => $package,
-            'versions' => null,
-            'expandedVersion' => null,
-            'version' => null,
-            'removeMaintainerForm' => $removeMaintainerForm->createView(),
-            'show_remove_maintainer_form' => true,
-        ];
 
         $removeMaintainerForm->handleRequest($req);
         if ($removeMaintainerForm->isSubmitted() && $removeMaintainerForm->isValid()) {
@@ -978,7 +952,7 @@ class PackageController extends Controller
                 }
 
                 if (!empty($user)) {
-                    if ($package->getMaintainers()->contains($user)) {
+                    if ($package->isMaintainer($user)) {
                         $package->getMaintainers()->removeElement($user);
                     }
 
@@ -996,20 +970,26 @@ class PackageController extends Controller
             }
         }
 
-        return $data;
+        return $this->render('package/view_package.html.twig', [
+            'package' => $package,
+            'versions' => null,
+            'expandedVersion' => null,
+            'version' => null,
+            'removeMaintainerForm' => $removeMaintainerForm->createView(),
+            'show_remove_maintainer_form' => true,
+        ]);
     }
 
     /**
-     * @Template()
      * @Route(
      *     "/packages/{name}/edit",
      *     name="edit_package",
      *     requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
      * )
      */
-    public function editAction(Request $req, #[VarName('name')] Package $package)
+    public function editAction(Request $req, #[VarName('name')] Package $package, #[CurrentUser] User $user = null): Response
     {
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
@@ -1030,14 +1010,13 @@ class PackageController extends Controller
 
             $this->addFlash("success", "Changes saved.");
 
-            return $this->redirect(
-                $this->generateUrl("view_package", ["name" => $package->getName()])
-            );
+            return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
         }
 
-        return [
-            "package" => $package, "form" => $form->createView()
-        ];
+        return $this->render('package/edit.html.twig', [
+            'package' => $package,
+            'form' => $form->createView(),
+        ]);
     }
 
     /**
@@ -1046,11 +1025,10 @@ class PackageController extends Controller
      *      name="abandon_package",
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
      * )
-     * @Template()
      */
-    public function abandonAction(Request $request, #[VarName('name')] Package $package)
+    public function abandonAction(Request $request, #[VarName('name')] Package $package, #[CurrentUser] User $user = null): Response
     {
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
@@ -1060,8 +1038,8 @@ class PackageController extends Controller
             $package->setAbandoned(true);
             $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', $form->get('replacement')->getData()));
             $package->setIndexedAt(null);
-            $package->setCrawledAt(new \DateTime());
-            $package->setUpdatedAt(new \DateTime());
+            $package->setCrawledAt(new DateTime());
+            $package->setUpdatedAt(new DateTime());
             $package->setDumpedAt(null);
             $package->setDumpedAtV2(null);
 
@@ -1071,10 +1049,10 @@ class PackageController extends Controller
             return $this->redirect($this->generateUrl('view_package', ['name' => $package->getName()]));
         }
 
-        return [
+        return $this->render('package/abandon.html.twig', [
             'package' => $package,
-            'form'    => $form->createView()
-        ];
+            'form'    => $form->createView(),
+        ]);
     }
 
     /**
@@ -1084,24 +1062,24 @@ class PackageController extends Controller
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
      * )
      */
-    public function unabandonAction(#[VarName('name')] Package $package)
+    public function unabandonAction(#[VarName('name')] Package $package, #[CurrentUser] User $user = null): RedirectResponse
     {
-        if (!$package->getMaintainers()->contains($this->getUser()) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
         $package->setIndexedAt(null);
-        $package->setCrawledAt(new \DateTime());
-        $package->setUpdatedAt(new \DateTime());
+        $package->setCrawledAt(new DateTime());
+        $package->setUpdatedAt(new DateTime());
         $package->setDumpedAt(null);
         $package->setDumpedAtV2(null);
 
         $em = $this->getEM();
         $em->flush();
 
-        return $this->redirect($this->generateUrl('view_package', ['name' => $package->getName()]));
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
     /**
@@ -1111,9 +1089,8 @@ class PackageController extends Controller
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"},
      *      defaults={"_format"="html"}
      * )
-     * @Template()
      */
-    public function statsAction(Request $req, #[VarName('name')] Package $package)
+    public function statsAction(Request $req, #[VarName('name')] Package $package): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -1156,7 +1133,7 @@ class PackageController extends Controller
         $data['majorVersions'] = $majorVersions ? array_merge(['all'], array_unique($majorVersions)) : [];
         $data['expandedId'] = $majorVersions ? 'major/all' : ($expandedVersion ? $expandedVersion->getId() : false);
 
-        return $data;
+        return $this->render('package/stats.html.twig', $data);
     }
 
     /**
@@ -1166,9 +1143,8 @@ class PackageController extends Controller
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "_format"="(json)"},
      *      defaults={"_format"="html"}
      * )
-     * @Template()
      */
-    public function phpStatsAction(Request $req, #[VarName('name')] Package $package)
+    public function phpStatsAction(Request $req, #[VarName('name')] Package $package): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -1236,7 +1212,7 @@ class PackageController extends Controller
 
         $data['expandedVersion'] = $versionsFormatted ? reset($versionsFormatted)['version'] : null;
 
-        return $data;
+        return $this->render('package/php_stats.html.twig', $data);
     }
 
     /**
@@ -1246,7 +1222,7 @@ class PackageController extends Controller
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "type"="platform|effective", "version"=".+"}
      * )
      */
-    public function versionPhpStatsAction(Request $req, string $name, string $type, string $version)
+    public function versionPhpStatsAction(Request $req, string $name, string $type, string $version): JsonResponse
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new JsonResponse(['status' => 'error', 'message' => 'This page is temporarily disabled, please come back later.',], Response::HTTP_BAD_GATEWAY);
@@ -1357,7 +1333,7 @@ class PackageController extends Controller
      *      defaults={"_format"="html"}
      * )
      */
-    public function dependentsAction(Request $req, string $name)
+    public function dependentsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -1424,7 +1400,7 @@ class PackageController extends Controller
      *      defaults={"_format"="html"}
      * )
      */
-    public function suggestersAction(Request $req, string $name)
+    public function suggestersAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -1478,7 +1454,7 @@ class PackageController extends Controller
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}
      * )
      */
-    public function overallStatsAction(Request $req, #[VarName('name')] Package $package, Version $version = null, $majorVersion = null)
+    public function overallStatsAction(Request $req, #[VarName('name')] Package $package, Version $version = null, string $majorVersion = null): JsonResponse
     {
         if ($from = $req->query->get('from')) {
             $from = new DateTimeImmutable($from);
@@ -1513,7 +1489,7 @@ class PackageController extends Controller
         $datePoints = $this->createDatePoints($from, $to, $average);
         $series = [];
 
-        foreach ($datePoints as $label => $values) {
+        foreach ($datePoints as $values) {
             foreach ($dlData as $seriesName => $seriesData) {
                 $value = 0;
                 foreach ($values as $valueKey) {
@@ -1551,7 +1527,7 @@ class PackageController extends Controller
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "majorVersion"="(all|[0-9]+?)"}
      * )
      */
-    public function majorVersionStatsAction(Request $req, #[VarName('name')] Package $package, string $majorVersion)
+    public function majorVersionStatsAction(Request $req, #[VarName('name')] Package $package, string $majorVersion): JsonResponse
     {
         return $this->overallStatsAction($req, $package, null, $majorVersion);
     }
@@ -1563,7 +1539,7 @@ class PackageController extends Controller
      *      requirements={"name"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?", "version"=".+?"}
      * )
      */
-    public function versionStatsAction(Request $req, #[VarName('name')] Package $package, string $version)
+    public function versionStatsAction(Request $req, #[VarName('name')] Package $package, string $version): JsonResponse
     {
         $normalizer = new VersionParser;
         $normVersion = $normalizer->normalize($version);
@@ -1587,7 +1563,7 @@ class PackageController extends Controller
      *      requirements={"name"="([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)"}
      * )
      */
-    public function securityAdvisoriesAction(Request $request, string $name)
+    public function securityAdvisoriesAction(Request $request, string $name): Response
     {
         /** @var SecurityAdvisoryRepository $repo */
         $repo = $this->getEM()->getRepository(SecurityAdvisory::class);
@@ -1623,9 +1599,14 @@ class PackageController extends Controller
         return $this->render('package/security_advisories.html.twig', $data);
     }
 
-    private function createAddMaintainerForm(Package $package)
+    private function createAddMaintainerForm(Package $package): FormInterface|null
     {
-        if (!($user = $this->getUser()) || (!$this->isGranted('ROLE_EDIT_PACKAGES') && !$package->getMaintainers()->contains($user))) {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return null;
+        }
+
+        if (!$this->isGranted('ROLE_EDIT_PACKAGES') && !$package->isMaintainer($user)) {
             return null;
         }
 
@@ -1633,9 +1614,14 @@ class PackageController extends Controller
         return $this->createForm(AddMaintainerRequestType::class, $maintainerRequest);
     }
 
-    private function createRemoveMaintainerForm(Package $package)
+    private function createRemoveMaintainerForm(Package $package): FormInterface|null
     {
-        if (!($user = $this->getUser()) || 1 == $package->getMaintainers()->count() || (!$this->isGranted('ROLE_EDIT_PACKAGES') && !$package->getMaintainers()->contains($user))) {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return null;
+        }
+
+        if (1 === $package->getMaintainers()->count() || (!$this->isGranted('ROLE_EDIT_PACKAGES') && !$package->isMaintainer($user))) {
             return null;
         }
 
@@ -1645,16 +1631,17 @@ class PackageController extends Controller
         ]);
     }
 
-    private function createDeletePackageForm(Package $package)
+    private function createDeletePackageForm(Package $package): FormInterface|null
     {
-        if (!$user = $this->getUser()) {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
             return null;
         }
 
         // super admins bypass additional checks
         if (!$this->isGranted('ROLE_DELETE_PACKAGES')) {
             // non maintainers can not delete
-            if (!$package->getMaintainers()->contains($user)) {
+            if (!$package->isMaintainer($user)) {
                 return null;
             }
 
@@ -1673,7 +1660,10 @@ class PackageController extends Controller
         return $this->createFormBuilder([])->getForm();
     }
 
-    private function createDatePoints(DateTimeImmutable $from, DateTimeImmutable $to, $average)
+    /**
+     * @return array<string, string[]>
+     */
+    private function createDatePoints(DateTimeImmutable $from, DateTimeImmutable $to, string $average): array
     {
         $interval = $this->getStatsInterval($average);
 
@@ -1704,14 +1694,14 @@ class PackageController extends Controller
         return $datePoints;
     }
 
-    private function guessStatsStartDate($packageOrVersion)
+    private function guessStatsStartDate(Package|Version $packageOrVersion): DateTimeImmutable
     {
         if ($packageOrVersion instanceof Package) {
-            $date = DateTimeImmutable::createFromMutable($packageOrVersion->getCreatedAt());
-        } elseif ($packageOrVersion instanceof Version) {
-            $date = DateTimeImmutable::createFromMutable($packageOrVersion->getReleasedAt());
+            $date = DateTimeImmutable::createFromInterface($packageOrVersion->getCreatedAt());
+        } elseif ($packageOrVersion->getReleasedAt()) {
+            $date = DateTimeImmutable::createFromInterface($packageOrVersion->getReleasedAt());
         } else {
-            throw new \LogicException('Version or Package expected');
+            throw new \LogicException('Version with release date expected');
         }
 
         $statsRecordDate = new DateTimeImmutable('2012-04-13 00:00:00');
@@ -1724,7 +1714,7 @@ class PackageController extends Controller
 
     private function guessPhpStatsStartDate(Package $package): DateTimeImmutable
     {
-        $date = DateTimeImmutable::createFromMutable($package->getCreatedAt());
+        $date = DateTimeImmutable::createFromInterface($package->getCreatedAt());
 
         $statsRecordDate = new DateTimeImmutable('2021-05-18 00:00:00');
         if ($date < $statsRecordDate) {
@@ -1734,7 +1724,7 @@ class PackageController extends Controller
         return $date->setTime(0, 0, 0);
     }
 
-    private function guessStatsAverage(DateTimeImmutable $from, DateTimeImmutable $to = null)
+    private function guessStatsAverage(DateTimeImmutable $from, DateTimeImmutable $to = null): string
     {
         if ($to === null) {
             $to = new DateTimeImmutable('-2 days');
@@ -1750,7 +1740,7 @@ class PackageController extends Controller
         return $average;
     }
 
-    private function getStatsInterval($average)
+    private function getStatsInterval(string $average): string
     {
         $intervals = [
             'monthly' => '+1month',

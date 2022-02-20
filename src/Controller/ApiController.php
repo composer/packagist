@@ -49,16 +49,16 @@ class ApiController extends Controller
     /**
      * @Route("/packages.json", name="packages", defaults={"_format" = "json"}, methods={"GET"})
      */
-    public function packagesAction(string $webDir)
+    public function packagesAction(string $webDir): Response
     {
         // fallback if any of the dumped files exist
         $rootJson = $webDir.'/packages_root.json';
-        if (file_exists($rootJson)) {
-            return new Response(file_get_contents($rootJson));
+        if (file_exists($rootJson) && $content = file_get_contents($rootJson)) {
+            return new Response($content);
         }
         $rootJson = $webDir.'/packages.json';
-        if (file_exists($rootJson)) {
-            return new Response(file_get_contents($rootJson));
+        if (file_exists($rootJson) && $content = file_get_contents($rootJson)) {
+            return new Response($content);
         }
 
         $this->logger->alert('packages.json is missing and the fallback controller is being hit, you need to use app/console packagist:dump');
@@ -69,7 +69,7 @@ class ApiController extends Controller
     /**
      * @Route("/api/create-package", name="generic_create", defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator)
+    public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator): JsonResponse
     {
         $payload = json_decode($request->getContent(), true);
         if (!$payload || !is_array($payload)) {
@@ -78,11 +78,16 @@ class ApiController extends Controller
         if (!isset($payload['repository']['url']) || !is_string($payload['repository']['url'])) {
             return new JsonResponse(['status' => 'error', 'message' => '{repository: {url: string}} expected in payload'], 406);
         }
+
+        $user = $this->findUser($request);
+        if (null === $user) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing username or apiToken in request'], 406);
+        }
+
         $url = $payload['repository']['url'];
         $package = new Package;
         $package->setEntityRepository($this->getEM()->getRepository(Package::class));
         $package->setRouter($router);
-        $user = $this->findUser($request);
         $package->addMaintainer($user);
         $package->setRepository($url);
         $errors = $validator->validate($package, groups: ['Default', 'Create']);
@@ -115,10 +120,10 @@ class ApiController extends Controller
      * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"}, methods={"POST"})
      * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function updatePackageAction(Request $request, string $githubWebhookSecret)
+    public function updatePackageAction(Request $request, string $githubWebhookSecret): JsonResponse
     {
         // parse the payload
-        $payload = json_decode($request->request->get('payload'), true);
+        $payload = json_decode((string)$request->request->get('payload'), true);
         if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
             $payload = json_decode($request->getContent(), true);
         }
@@ -160,14 +165,14 @@ class ApiController extends Controller
      *     methods={"PUT"}
      * )
      */
-    public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator)
+    public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator): JsonResponse
     {
         $user = $this->findUser($request);
         if ((!$user || !$package->getMaintainers()->contains($user)) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
 
-        $payload = json_decode($request->request->get('payload'), true);
+        $payload = json_decode((string)$request->request->get('payload'), true);
         if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
             $payload = json_decode($request->getContent(), true);
         }
@@ -195,7 +200,7 @@ class ApiController extends Controller
     /**
      * @Route("/jobs/{id}", name="get_job", requirements={"id"="[a-f0-9]+"}, defaults={"_format" = "json"}, methods={"GET"})
      */
-    public function getJobAction(string $id)
+    public function getJobAction(string $id): JsonResponse
     {
         return new JsonResponse($this->scheduler->getJobStatus($id), 200);
     }
@@ -214,7 +219,7 @@ class ApiController extends Controller
      *
      * @Route("/downloads/", name="track_download_batch", defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function trackDownloadsAction(Request $request, StatsDClient $statsd, string $trustedIpHeader, DownloadManager $downloadManager, VersionIdCache $versionIdCache)
+    public function trackDownloadsAction(Request $request, StatsDClient $statsd, string $trustedIpHeader, DownloadManager $downloadManager, VersionIdCache $versionIdCache): JsonResponse
     {
         $contents = json_decode($request->getContent(), true);
         $invalidInputs = function ($item) {
@@ -262,12 +267,12 @@ class ApiController extends Controller
 
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
             if ($uaParser->getComposerVersion() && $uaParser->getPhpMinorVersion() && $uaParser->getComposerMajorVersion()) {
-                $downloadManager->addDownloads($jobs, $ip, $uaParser->getPhpMinorVersion(), $uaParser->getPhpMinorPlatformVersion() ?: $uaParser->getPhpMinorVersion());
+                $downloadManager->addDownloads($jobs, $ip ?? '', $uaParser->getPhpMinorVersion(), $uaParser->getPhpMinorPlatformVersion() ?: $uaParser->getPhpMinorVersion());
 
                 $statsd->increment('installs', 1, 1, [
-                    'composer' => $uaParser->getComposerVersion() ?: 'unknown',
-                    'composer_major' => $uaParser->getComposerMajorVersion() ?: 'unknown',
-                    'php_minor' => $uaParser->getPhpMinorVersion() ?: 'unknown',
+                    'composer' => $uaParser->getComposerVersion(),
+                    'composer_major' => $uaParser->getComposerMajorVersion(),
+                    'php_minor' => $uaParser->getPhpMinorVersion(),
                     'platform_php_minor' => $uaParser->getPhpMinorPlatformVersion() ?: 'unknown',
                     'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
                     'http' => $uaParser->getHttpVersion() ?: 'unknown',
@@ -275,7 +280,7 @@ class ApiController extends Controller
                 ]);
             } elseif (
                 // log only if user-agent header is well-formed (it sometimes contains the header name itself in the value)
-                0 !== strpos($request->headers->get('User-Agent'), 'User-Agent:')
+                !str_starts_with($request->headers->get('User-Agent'), 'User-Agent:')
                 // and only if composer version or php minor are missing, if only composer major is invalid it's irrelevant
                 || !$uaParser->getComposerVersion() || !$uaParser->getPhpMinorVersion()
             ) {
@@ -352,11 +357,11 @@ class ApiController extends Controller
      * @param string $url the repository's URL (deducted from the request)
      * @param non-empty-string $urlRegex the regex used to split the user packages into domain and path
      */
-    protected function receivePost(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret): Response
+    protected function receivePost(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret): JsonResponse
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!Preg::isMatch($urlRegex, $url, $match)) {
-            return new Response(json_encode(['status' => 'error', 'message' => 'Could not parse payload repository URL']), 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Could not parse payload repository URL'], 406);
         }
 
         if ($remoteId) {
@@ -377,11 +382,11 @@ class ApiController extends Controller
                 list($algo, $sig) = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
                 if (hash_equals($expected, $sig)) {
-                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], $remoteId, $user);
+                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], (string)$remoteId, $user);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
                 } else {
-                    return new Response(json_encode(['status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.']), 403);
+                    return new JsonResponse(['status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.'], 403);
                 }
             } else {
                 $user = null;
@@ -399,7 +404,7 @@ class ApiController extends Controller
                 list($algo, $sig) = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $githubWebhookSecret);
                 if (hash_equals($expected, $sig)) {
-                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], $remoteId);
+                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], (string)$remoteId);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_auto';
                 }
@@ -408,7 +413,7 @@ class ApiController extends Controller
 
         if (!$packages) {
             if (!$user) {
-                return new Response(json_encode(['status' => 'error', 'message' => 'Invalid credentials']), 403);
+                return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
             }
 
             // try to find the user package
@@ -416,7 +421,7 @@ class ApiController extends Controller
         }
 
         if (!$packages) {
-            return new Response(json_encode(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)']), 404);
+            return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)'], 404);
         }
 
         $jobs = [];
@@ -495,9 +500,9 @@ class ApiController extends Controller
 
     /**
      * @param string $url
-     * @return array the packages found
+     * @return Package[] the packages found
      */
-    protected function findPackagesByRepository(string $url, $remoteId, User $user = null): array
+    protected function findPackagesByRepository(string $url, string $remoteId, User $user = null): array
     {
         $packageRepo = $this->getEM()->getRepository(Package::class);
         $packages = $packageRepo->findBy(['repository' => $url]);

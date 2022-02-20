@@ -17,13 +17,11 @@ use App\Model\FavoriteManager;
 use Doctrine\DBAL\ConnectionException;
 use App\Entity\Package;
 use App\Entity\Version;
-use App\Entity\PackageRepository;
-use App\Entity\VersionRepository;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Predis\Client as RedisClient;
@@ -35,10 +33,9 @@ use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 class ExploreController extends Controller
 {
     /**
-     * @Template()
      * @Route("/", name="browse")
      */
-    public function exploreAction(RedisClient $redis)
+    public function exploreAction(RedisClient $redis): Response
     {
         $pkgRepo = $this->getEM()->getRepository(Package::class);
         $verRepo = $this->getEM()->getRepository(Version::class);
@@ -64,19 +61,18 @@ class ExploreController extends Controller
             $popular = [];
         }
 
-        return [
+        return $this->render('explore/explore.html.twig', [
             'newlySubmitted' => $newSubmitted,
             'newlyReleased' => $newReleases,
             'random' => $random,
             'popular' => $popular,
-        ];
+        ]);
     }
 
     /**
-     * @Template()
      * @Route("/popular.{_format}", name="browse_popular", defaults={"_format"="html"})
      */
-    public function popularAction(Request $req, RedisClient $redis, FavoriteManager $favMgr, DownloadManager $dlMgr)
+    public function popularAction(Request $req, RedisClient $redis, FavoriteManager $favMgr, DownloadManager $dlMgr): Response
     {
         $perPage = $req->query->getInt('per_page', 15);
         try {
@@ -153,6 +149,6 @@ class ExploreController extends Controller
             return $response;
         }
 
-        return $data;
+        return $this->render('explore/popular.html.twig', $data);
     }
 }
