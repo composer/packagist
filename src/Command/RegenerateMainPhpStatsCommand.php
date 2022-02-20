@@ -24,12 +24,11 @@ class RegenerateMainPhpStatsCommand extends Command
         private LoggerInterface $logger,
         private Locker $locker,
         private ManagerRegistry $doctrine,
-        private Client $redis,
     ) {
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('packagist:regenerate-main-php-stats')

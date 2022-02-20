@@ -108,7 +108,7 @@ class MigratePhpStatsCommand extends Command
             }
 
             // process last package
-            if ($buffer) {
+            if ($lastPackageId && $buffer) {
                 $phpStatRepo->transferStatsToDb($lastPackageId, $buffer, $now, $yesterday);
             }
         } finally {

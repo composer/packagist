@@ -107,7 +107,7 @@ class MigrateDownloadCountsCommand extends Command
             }
 
             // process last package
-            if ($buffer) {
+            if ($lastPackageId && $buffer) {
                 $this->downloadManager->transferDownloadsToDb($lastPackageId, $buffer, $now);
             }
         } finally {
