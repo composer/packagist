@@ -5,7 +5,7 @@ import './search';
 import './view';
 import './submitPackage';
 
-import '../css/app.css';
+import '../css/app.scss';
 
 window.jQuery = window.$ = jQuery;
 

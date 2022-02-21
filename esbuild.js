@@ -1,4 +1,5 @@
 const esbuild = require('esbuild');
+const sassPlugin = require('esbuild-plugin-sass');
 
 esbuild.build({
     logLevel: 'info',
@@ -17,5 +18,6 @@ esbuild.build({
         '.woff2':'file',
     },
     target: ['chrome58', 'firefox57', 'safari11', 'edge95'],
+    plugins: [sassPlugin()],
 })
 .catch(() => process.exit(1));
