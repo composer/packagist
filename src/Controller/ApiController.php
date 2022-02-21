@@ -22,6 +22,7 @@ use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\UserAgentParser;
 use Composer\Pcre\Preg;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,17 +54,17 @@ class ApiController extends Controller
     {
         // fallback if any of the dumped files exist
         $rootJson = $webDir.'/packages_root.json';
-        if (file_exists($rootJson) && $content = file_get_contents($rootJson)) {
-            return new Response($content);
+        if (file_exists($rootJson)) {
+            return new BinaryFileResponse($rootJson);
         }
         $rootJson = $webDir.'/packages.json';
-        if (file_exists($rootJson) && $content = file_get_contents($rootJson)) {
-            return new Response($content);
+        if (file_exists($rootJson)) {
+            return new BinaryFileResponse($rootJson);
         }
 
-        $this->logger->alert('packages.json is missing and the fallback controller is being hit, you need to use app/console packagist:dump');
+        $this->logger->alert('packages.json is missing and the fallback controller is being hit, you need to use bin/console packagist:dump');
 
-        return new Response('Horrible misconfiguration or the dumper script messed up, you need to use app/console packagist:dump', 404);
+        return new Response('Horrible misconfiguration or the dumper script messed up, you need to use bin/console packagist:dump', 404);
     }
 
     /**
