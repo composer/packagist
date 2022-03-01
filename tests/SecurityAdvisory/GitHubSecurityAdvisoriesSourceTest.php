@@ -6,12 +6,9 @@ use App\Entity\Package;
 use App\Entity\User;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use Composer\IO\BufferIO;
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 
 /**
  * @author Yanick Witschi <yanick.witschi@terminal42.ch>
@@ -20,7 +17,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
 {
     public function testNoAdvisoriesIfNoMaintainerHasAnyGitHubToken(): void
     {
-        $client = $this->createMock(Client::class);
+        $client = new MockHttpClient();
 
         $source = new GitHubSecurityAdvisoriesSource($client);
         $advisories = $source->getAdvisories(new BufferIO(), $this->getPackage());
@@ -30,24 +27,21 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
 
     public function testWithoutPagination(): void
     {
-        $transactions = [];
-        $history = Middleware::history($transactions);
-        $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json; charset=utf-8'], json_encode($this->getGraphQLResultFirstPage(false))),
-        ]);
-        $handlerStack = HandlerStack::create($mock);
-        $handlerStack->push($history);
-        $client = new Client(['handler' => $handlerStack]);
+        $responseFactory = function (string $method, string $url, array $options) {
+            $this->assertSame('POST', $method);
+            $this->assertSame('https://api.github.com/graphql', $url);
+            $this->assertArrayHasKey('authorization', $options['normalized_headers']);
+            $this->assertSame(['Authorization: Bearer github-token'], $options['normalized_headers']['authorization']);
+            $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,package:\u0022vendor\/package\u0022,first:100){nodes{advisory{summary,permalink,publishedAt,identifiers{type,value}},vulnerableVersionRange},pageInfo{hasNextPage,endCursor}}}"}', $options['body']);
+
+            return new MockResponse(json_encode($this->getGraphQLResultFirstPage(false)),['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+        };
+        $client = new MockHttpClient($responseFactory);
 
         $source = new GitHubSecurityAdvisoriesSource($client);
         $advisories = $source->getAdvisories(new BufferIO(), $this->getPackage('github-token'));
 
-        $this->assertCount(1, $transactions);
-        $this->assertSame('POST', $transactions[0]['request']->getMethod());
-        $this->assertSame('https://api.github.com/graphql', (string) $transactions[0]['request']->getUri());
-        $this->assertSame('Bearer github-token', $transactions[0]['request']->getHeader('Authorization')[0]);
-        $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,package:\"vendor\/package\",first:100){nodes{advisory{summary,permalink,publishedAt,identifiers{type,value}},vulnerableVersionRange},pageInfo{hasNextPage,endCursor}}}"}', $transactions[0]['request']->getBody()->getContents());
-
+        $this->assertSame(1, $client->getRequestsCount());
         $this->assertCount(2, $advisories);
 
         $this->assertSame('GHSA-h58v-c6rf-g9f7', $advisories[0]->getId());
@@ -71,28 +65,34 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
 
     public function testWithPagination(): void
     {
-        $transactions = [];
-        $history = Middleware::history($transactions);
-        $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json; charset=utf-8'], json_encode($this->getGraphQLResultFirstPage(true))),
-            new Response(200, ['Content-Type' => 'application/json; charset=utf-8'], json_encode($this->getGraphQLResultSecondPage())),
-        ]);
-        $handlerStack = HandlerStack::create($mock);
-        $handlerStack->push($history);
-        $client = new Client(['handler' => $handlerStack]);
+        $counter = 0;
+        $responseFactory = function (string $method, string $url, array $options) use (&$counter) {
+            $this->assertSame('POST', $method);
+            $this->assertSame('https://api.github.com/graphql', $url);
+            $this->assertArrayHasKey('authorization', $options['normalized_headers']);
+            $this->assertSame(['Authorization: Bearer github-token'], $options['normalized_headers']['authorization']);
 
+            $counter++;
+            switch ($counter) {
+                case 1:
+                    $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,package:\u0022vendor\/package\u0022,first:100){nodes{advisory{summary,permalink,publishedAt,identifiers{type,value}},vulnerableVersionRange},pageInfo{hasNextPage,endCursor}}}"}', $options['body']);
+
+                    return new MockResponse(json_encode($this->getGraphQLResultFirstPage(true)),['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+                case 2:
+                    $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,package:\u0022vendor\/package\u0022,first:100,after:\u0022Y3Vyc29yOnYyOpK5MjAyMC0wOS0yNFQxODoyMzo0MyswMjowMM0T9A==\u0022){nodes{advisory{summary,permalink,publishedAt,identifiers{type,value}},vulnerableVersionRange},pageInfo{hasNextPage,endCursor}}}"}', $options['body']);
+
+                    return new MockResponse(json_encode($this->getGraphQLResultSecondPage()),['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+            }
+
+
+            return new MockResponse(json_encode($this->getGraphQLResultFirstPage(false)),['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+        };
+
+        $client = new MockHttpClient($responseFactory);
         $source = new GitHubSecurityAdvisoriesSource($client);
         $advisories = $source->getAdvisories(new BufferIO(), $this->getPackage('github-token'));
 
-        $this->assertCount(2, $transactions);
-        $this->assertSame('POST', $transactions[0]['request']->getMethod());
-        $this->assertSame('https://api.github.com/graphql', (string) $transactions[0]['request']->getUri());
-        $this->assertSame('Bearer github-token', $transactions[0]['request']->getHeader('Authorization')[0]);
-        $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,package:\"vendor\/package\",first:100){nodes{advisory{summary,permalink,publishedAt,identifiers{type,value}},vulnerableVersionRange},pageInfo{hasNextPage,endCursor}}}"}', $transactions[0]['request']->getBody()->getContents());
-        $this->assertSame('POST', $transactions[1]['request']->getMethod());
-        $this->assertSame('https://api.github.com/graphql', (string) $transactions[1]['request']->getUri());
-        $this->assertSame('Bearer github-token', $transactions[1]['request']->getHeader('Authorization')[0]);
-        $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,package:\"vendor\/package\",first:100,after:\"Y3Vyc29yOnYyOpK5MjAyMC0wOS0yNFQxODoyMzo0MyswMjowMM0T9A==\"){nodes{advisory{summary,permalink,publishedAt,identifiers{type,value}},vulnerableVersionRange},pageInfo{hasNextPage,endCursor}}}"}', $transactions[1]['request']->getBody()->getContents());
+        $this->assertSame(2, $client->getRequestsCount());
 
         $this->assertCount(2, $advisories);
 

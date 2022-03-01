@@ -5,7 +5,8 @@ namespace App\SecurityAdvisory;
 
 use App\Entity\Package;
 use Composer\IO\ConsoleIO;
-use GuzzleHttp\Client;
+use Composer\Pcre\Preg;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * @author Yanick Witschi <yanick.witschi@terminal42.ch>
@@ -14,11 +15,11 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
 {
     public const SOURCE_NAME = 'GitHub';
 
-    private Client $guzzle;
+    private HttpClientInterface $httpClient;
 
-    public function __construct(Client $guzzle)
+    public function __construct(HttpClientInterface $guzzle)
     {
-        $this->guzzle = $guzzle;
+        $this->httpClient = $guzzle;
     }
 
     public function getAdvisories(ConsoleIO $io, Package $package): ?array
@@ -47,8 +48,8 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                 'json' => ['query' => $this->getQuery($package->getName(), $after)],
             ];
 
-            $response = $this->guzzle->request('POST', 'https://api.github.com/graphql', $opts);
-            $data = json_decode($response->getBody()->getContents(), true);
+            $response = $this->httpClient->request('POST', 'https://api.github.com/graphql', $opts);
+            $data = json_decode($response->getContent(), true, JSON_THROW_ON_ERROR);
             $data = $data['data'];
 
             foreach ($data['securityVulnerabilities']['nodes'] as $node) {
@@ -74,6 +75,11 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                     continue;
                 }
 
+                $date = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ISO8601,  $node['advisory']['publishedAt']);
+                if ($date === false) {
+                    throw new \InvalidArgumentException('Invalid date format returned from GitHub');
+                }
+
                 $advisories[$remoteId] = new RemoteSecurityAdvisory(
                     $remoteId,
                     $node['advisory']['summary'],
@@ -81,7 +87,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                     $node['vulnerableVersionRange'],
                     $node['advisory']['permalink'],
                     $cve,
-                    \DateTime::createFromFormat(\DateTimeInterface::ISO8601,  $node['advisory']['publishedAt']),
+                    $date,
                     null
                 );
             }
@@ -122,6 +128,6 @@ query {
 }
 QUERY;
 
-        return preg_replace('/[ \t\n]+/', '', sprintf($query, $packageName, $after));
+        return Preg::replace('/[ \t\n]+/', '', sprintf($query, $packageName, $after));
     }
 }
