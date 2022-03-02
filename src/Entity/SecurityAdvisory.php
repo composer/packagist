@@ -4,8 +4,11 @@ namespace App\Entity;
 
 use App\SecurityAdvisory\AdvisoryIdGenerator;
 use App\SecurityAdvisory\AdvisoryParser;
-use Composer\Pcre\Preg;
+use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 
@@ -13,7 +16,10 @@ use App\SecurityAdvisory\RemoteSecurityAdvisory;
  * @ORM\Entity(repositoryClass="App\Entity\SecurityAdvisoryRepository")
  * @ORM\Table(
  *     name="security_advisory",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="source_remoteid_idx", columns={"source","remoteId"})},
+ *     uniqueConstraints={
+ *          @ORM\UniqueConstraint(name="source_remoteid_idx", columns={"source","remoteId"}),
+ *          @ORM\UniqueConstraint(name="package_name_cve_idx", columns={"packageName","cve"})
+ *     },
  *     indexes={
  *         @ORM\Index(name="package_name_idx",columns={"packageName"}),
  *         @ORM\Index(name="updated_at_idx",columns={"updatedAt"})
@@ -86,18 +92,31 @@ class SecurityAdvisory
      */
     private string|null $composerRepository = null;
 
+    /**
+     * @ORM\OneToMany(targetEntity="SecurityAdvisorySource", mappedBy="securityAdvisory", cascade={"persist"})
+     * @var Collection<int, SecurityAdvisorySource>&Selectable<int, SecurityAdvisorySource>
+     */
+    private Collection $sources;
+
     public function __construct(RemoteSecurityAdvisory $advisory, string $source)
     {
+        $this->sources = new ArrayCollection();
+
         $this->source = $source;
         $this->assignPackagistAdvisoryId();
 
         $this->updatedAt = new DateTimeImmutable();
 
         $this->copyAdvisory($advisory, true);
+        $this->addSource($this->remoteId, $source);
     }
 
     public function updateAdvisory(RemoteSecurityAdvisory $advisory): void
     {
+        if (!in_array($advisory->getSource(), [null, $this->source], true)) {
+            return;
+        }
+
         if (
             $this->remoteId !== $advisory->getId() ||
             $this->packageName !== $advisory->getPackageName() ||
@@ -128,6 +147,15 @@ class SecurityAdvisory
         if ($initialCopy || $this->reportedAt != $advisory->getDate()) {
             $this->reportedAt = $advisory->getDate();
         }
+    }
+
+    public function getPackagistAdvisoryId(): string
+    {
+        if (!isset($this->packagistAdvisoryId)) {
+            $this->assignPackagistAdvisoryId();
+        }
+
+        return $this->packagistAdvisoryId;
     }
 
     public function getRemoteId(): string
@@ -172,6 +200,11 @@ class SecurityAdvisory
 
     public function calculateDifferenceScore(RemoteSecurityAdvisory $advisory): int
     {
+        // Regard advisories where CVE + package name match as identical as the remaining data on GitHub and FriendsOfPhp can be quite different
+        if ($advisory->getCve() === $this->getCve() && $advisory->getPackageName() === $this->getPackageName()) {
+            return 0;
+        }
+
         $score = 0;
         if ($advisory->getId() !== $this->getRemoteId()) {
             $score++;
@@ -192,7 +225,7 @@ class SecurityAdvisory
             $score += $increase;
         }
 
-        if ($advisory->getLink() !== $this->getLink()) {
+        if ($advisory->getLink() !== $this->getLink() && !in_array($this->getLink(), $advisory->getReferences(), true)) {
             $score++;
         }
 
@@ -228,5 +261,60 @@ class SecurityAdvisory
     private function assignPackagistAdvisoryId(): void
     {
         $this->packagistAdvisoryId = AdvisoryIdGenerator::generate();
+    }
+
+    public function hasSources(): bool
+    {
+        return !$this->sources->isEmpty();
+    }
+
+    public function addSource(string $remoteId, string $source): void
+    {
+        if (null === $this->getSourceRemoteId($source)) {
+            $this->sources->add(new SecurityAdvisorySource($this, $remoteId, $source));
+
+            // FriendsOfPhp source is curated by PHP developer, trust that data over data from GitHub
+            if ($source === FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME) {
+                $this->source = $source;
+                $this->remoteId = $remoteId;
+            }
+        }
+    }
+
+    public function removeSource(string $sourceName): bool
+    {
+        foreach ($this->sources as $source) {
+            if ($source->getSource() === $sourceName) {
+                $this->sources->removeElement($source);
+
+                // Removing the main source that is used synchronize all the data needs "promote" a new source to make sure the advisory keeps getting updated
+                if ($sourceName === $this->source && $newMainSource = $this->sources->first()) {
+                    $this->remoteId = $newMainSource->getRemoteId();
+                    $this->source = $newMainSource->getSource();
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getSourceRemoteId(string $source): ?string
+    {
+        foreach ($this->sources as $advisorySource) {
+            if ($advisorySource->getSource() === $source) {
+                return $advisorySource->getRemoteId();
+            }
+        }
+
+        return null;
+    }
+
+    public function setupSource(): void
+    {
+        if (!$this->getSourceRemoteId($this->source)) {
+            $this->addSource($this->remoteId, $this->source);
+        }
     }
 }

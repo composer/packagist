@@ -101,7 +101,7 @@ class RemoteSecurityAdvisoryTest extends TestCase
 
     public function testWithAddedAffectedVersion(): void
     {
-        $advisory = new RemoteSecurityAdvisory('id', 'foobar', 'foo/bar', '>=1', 'https://foobar.com', null, new \DateTimeImmutable(), null);
+        $advisory = new RemoteSecurityAdvisory('id', 'foobar', 'foo/bar', '>=1', 'https://foobar.com', null, new \DateTimeImmutable(), null, [], 'test');
         $advisory = $advisory->withAddedAffectedVersion('<2');
 
         $this->assertSame('>=1|<2', $advisory->getAffectedVersions());

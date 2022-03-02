@@ -2,7 +2,7 @@
 
 namespace App\Service;
 
-use App\Entity\Package;
+use App\SecurityAdvisory\SecurityAdvisoryResolver;
 use Composer\Console\HtmlOutputFormatter;
 use Composer\Factory;
 use Composer\IO\BufferIO;
@@ -16,12 +16,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class SecurityAdvisoryWorker
 {
+    private const ADVISORY_WORKER_RUN = 'run';
+
+    /**
+     * @param SecurityAdvisorySourceInterface[] $sources
+     */
     public function __construct(
         private Locker $locker,
         private LoggerInterface $logger,
         private ManagerRegistry $doctrine,
-        /** @var SecurityAdvisorySourceInterface[] */
-        private array $sources
+        private array $sources,
+        private SecurityAdvisoryResolver $securityAdvisoryResolver,
     ) {
     }
 
@@ -31,83 +36,38 @@ class SecurityAdvisoryWorker
     public function process(Job $job, SignalHandler $signal): array
     {
         $sourceName = $job->getPayload()['source'];
-        $package = $this->doctrine->getRepository(Package::class)->findOneBy(['id' => $job->getPackageId()]);
 
-        if (!$package instanceof Package) {
-            $this->logger->info('Security advisory update failed, skipping', ['packageId' => $job->getPackageId()]);
-
-            return ['status' => Job::STATUS_ERRORED, 'message' => 'Security advisory update failed, skipped'];
-        }
-
-        $lockAcquired = $this->locker->lockSecurityAdvisory($sourceName);
+        $lockAcquired = $this->locker->lockSecurityAdvisory(self::ADVISORY_WORKER_RUN);
         if (!$lockAcquired) {
-            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+5 minutes')];
+            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+2 minutes')];
         }
 
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
 
-        /** @var SecurityAdvisorySourceInterface $source */
         $source = $this->sources[$sourceName];
-        $remoteAdvisories = $source->getAdvisories($io, $package);
+        $remoteAdvisories = $source->getAdvisories($io);
         if (null === $remoteAdvisories) {
-            $this->logger->info('Security advisory update failed, skipping', ['source' => $source]);
+            $this->logger->info('Security advisory update failed, skipping', ['source' => $sourceName]);
 
             return ['status' => Job::STATUS_ERRORED, 'message' => 'Security advisory update failed, skipped'];
         }
 
-        /** @var SecurityAdvisory[] $existingAdvisoryMap */
-        $existingAdvisoryMap = [];
         /** @var SecurityAdvisory[] $existingAdvisories */
-        $existingAdvisories = $this->doctrine->getRepository(SecurityAdvisory::class)->findBy(['source' => $sourceName]);
-        foreach ($existingAdvisories as $advisory) {
-            $existingAdvisoryMap[$advisory->getRemoteId()] = $advisory;
+        $existingAdvisories = $this->doctrine->getRepository(SecurityAdvisory::class)->getPackageAdvisoriesWithSources($remoteAdvisories->getPackageNames(), $sourceName);
+
+        [$new, $removed] = $this->securityAdvisoryResolver->resolve($existingAdvisories, $remoteAdvisories, $sourceName);
+
+        foreach ($new as $advisory) {
+            $this->doctrine->getManager()->persist($advisory);
         }
 
-        $unmatchedRemoteAdvisories = [];
-        // Attempt to match existing advisories against remote id
-        foreach ($remoteAdvisories as $remoteAdvisory) {
-            if (isset($existingAdvisoryMap[$remoteAdvisory->getId()])) {
-                $existingAdvisoryMap[$remoteAdvisory->getId()]->updateAdvisory($remoteAdvisory);
-                unset($existingAdvisoryMap[$remoteAdvisory->getId()]);
-            } else {
-                $unmatchedRemoteAdvisories[$remoteAdvisory->getPackageName()][$remoteAdvisory->getId()] = $remoteAdvisory;
-            }
-        }
-
-        // Try to match remaining remote advisories with remaining local advisories in case the remote id changed
-        // Allow three changes e.g. filename, CVE, date on a rename
-        $requiredDifferenceScore = 3;
-        foreach ($existingAdvisoryMap as $existingAdvisory) {
-            $matchedAdvisory = null;
-            $lowestScore = 9999;
-            if (isset($unmatchedRemoteAdvisories[$existingAdvisory->getPackageName()])) {
-                foreach ($unmatchedRemoteAdvisories[$existingAdvisory->getPackageName()] as $unmatchedAdvisory) {
-                    $score = $existingAdvisory->calculateDifferenceScore($unmatchedAdvisory);
-                    if ($score < $lowestScore && $score <= $requiredDifferenceScore) {
-                        $matchedAdvisory = $unmatchedAdvisory;
-                        $lowestScore = $score;
-                    }
-                }
-            }
-
-            if ($matchedAdvisory === null) {
-                $this->doctrine->getManager()->remove($existingAdvisory);
-            } else {
-                $existingAdvisory->updateAdvisory($matchedAdvisory);
-                unset($unmatchedRemoteAdvisories[$matchedAdvisory->getPackageName()][$matchedAdvisory->getId()]);
-            }
-        }
-
-        // No similar existing advisories found. Store them as new advisories
-        foreach ($unmatchedRemoteAdvisories as $packageUnmatchedAdvisories) {
-            foreach ($packageUnmatchedAdvisories as $unmatchedAdvisory) {
-                $this->doctrine->getManager()->persist(new SecurityAdvisory($unmatchedAdvisory, $sourceName));
-            }
+        foreach ($removed as $advisory) {
+            $this->doctrine->getManager()->remove($advisory);
         }
 
         $this->doctrine->getManager()->flush();
 
-        $this->locker->unlockSecurityAdvisory($sourceName);
+        $this->locker->unlockSecurityAdvisory(self::ADVISORY_WORKER_RUN);
 
         return [
             'status' => Job::STATUS_COMPLETED,

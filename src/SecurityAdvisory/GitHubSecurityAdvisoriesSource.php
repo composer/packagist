@@ -1,11 +1,11 @@
-<?php
-
+<?php declare(strict_types=1);
 
 namespace App\SecurityAdvisory;
 
-use App\Entity\Package;
+use App\Entity\SecurityAdvisory;
 use Composer\IO\ConsoleIO;
 use Composer\Pcre\Preg;
+use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -15,46 +15,52 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
 {
     public const SOURCE_NAME = 'GitHub';
 
-    private HttpClientInterface $httpClient;
-
-    public function __construct(HttpClientInterface $guzzle)
-    {
-        $this->httpClient = $guzzle;
+    /**
+     * @param list<string> $fallbackGhTokens
+     */
+    public function __construct(
+        private HttpClientInterface $httpClient,
+        private LoggerInterface $logger,
+        private array $fallbackGhTokens,
+    ) {
     }
 
-    public function getAdvisories(ConsoleIO $io, Package $package): ?array
+    public function getAdvisories(ConsoleIO $io): ?RemoteSecurityAdvisoryCollection
     {
-        $githubToken = null;
-        $maintainers = $package->getMaintainers();
-        foreach ($maintainers as $maintainer) {
-            if ($maintainer->getGithubToken()) {
-                $githubToken = $maintainer->getGithubToken();
-                break;
-            }
-        }
-
-        if (null === $githubToken) {
-            return [];
-        }
-
         /** @var RemoteSecurityAdvisory[] $advisories */
         $advisories = [];
         $hasNextPage = true;
         $after = '';
 
         while ($hasNextPage) {
-            $opts = [
-                'headers' => ['Authorization' => 'Bearer ' . $githubToken],
-                'json' => ['query' => $this->getQuery($package->getName(), $after)],
-            ];
+            $headers = [];
+            if (count($this->fallbackGhTokens) > 0) {
+                $headers = ['Authorization' => 'token ' . $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]];
+            }
 
-            $response = $this->httpClient->request('POST', 'https://api.github.com/graphql', $opts);
+            try {
+                $response = $this->httpClient->request('POST', 'https://api.github.com/graphql', [
+                    'headers' => $headers,
+                    'json' => ['query' => $this->getQuery($after)],
+                ]);
+            } catch (\RuntimeException $e) {
+                $this->logger->error('Failed to fetch GitHub advisories', [
+                    'exception' => $e,
+                ]);
+
+                return null;
+            }
+
             $data = json_decode($response->getContent(), true, JSON_THROW_ON_ERROR);
             $data = $data['data'];
 
             foreach ($data['securityVulnerabilities']['nodes'] as $node) {
                 $remoteId = null;
                 $cve = null;
+
+                if (isset($node['advisory']['withdrawnAt'])) {
+                    continue;
+                }
 
                 foreach ($node['advisory']['identifiers'] as $identifier) {
                     if ('GHSA' === $identifier['type']) {
@@ -65,16 +71,25 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                         $cve = $identifier['value'];
                     }
                 }
-
                 if (null === $remoteId) {
                     continue;
                 }
 
+                // GitHub adds spaces everywhere e.g. > 1.0, adjust to be able to match other advisories
+                $versionRange = Preg::replace('#\s#', '', $node['vulnerableVersionRange']);
                 if (isset($advisories[$remoteId])) {
-                    $advisories[$remoteId] = $advisories[$remoteId]->withAddedAffectedVersion($node['vulnerableVersionRange']);
+                    $advisories[$remoteId] = $advisories[$remoteId]->withAddedAffectedVersion($versionRange);
                     continue;
                 }
 
+                $references = [];
+                foreach ($node['advisory']['references'] as $reference) {
+                    if (isset($reference['url'])) {
+                        $references[] = $reference['url'];
+                    }
+                }
+
+                // @todo not sure yet what to do here about PHPStan
                 $date = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ISO8601,  $node['advisory']['publishedAt']);
                 if ($date === false) {
                     throw new \InvalidArgumentException('Invalid date format returned from GitHub');
@@ -83,12 +98,14 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                 $advisories[$remoteId] = new RemoteSecurityAdvisory(
                     $remoteId,
                     $node['advisory']['summary'],
-                    $package->getName(),
-                    $node['vulnerableVersionRange'],
+                    $node['package']['name'],
+                    $versionRange,
                     $node['advisory']['permalink'],
                     $cve,
                     $date,
-                    null
+                    SecurityAdvisory::PACKAGIST_ORG, // @todo should probably check if package actually exists on packagist.org
+                    $references,
+                    self::SOURCE_NAME,
                 );
             }
 
@@ -96,10 +113,10 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
             $after = $data['securityVulnerabilities']['pageInfo']['endCursor'];
         }
 
-        return array_values($advisories);
+        return new RemoteSecurityAdvisoryCollection(array_values($advisories));
     }
 
-    private function getQuery(string $packageName, string $after = ''): string
+    private function getQuery(string $after = ''): string
     {
         if ('' !== $after) {
             $after = sprintf(',after:"%s"', $after);
@@ -107,18 +124,25 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
 
         $query = <<<QUERY
 query {
-  securityVulnerabilities(ecosystem:COMPOSER,package:"%s",first:100%s) {
+  securityVulnerabilities(ecosystem:COMPOSER,first:100%s) {
     nodes {
       advisory {
         summary,
         permalink,
         publishedAt,
+        withdrawnAt,
         identifiers {
           type,
           value
+        },
+        references {
+          url
         }
       },
-      vulnerableVersionRange
+      vulnerableVersionRange,
+      package {
+        name
+      }
     },
     pageInfo {
       hasNextPage,
@@ -128,6 +152,6 @@ query {
 }
 QUERY;
 
-        return Preg::replace('/[ \t\n]+/', '', sprintf($query, $packageName, $after));
+        return Preg::replace('/[ \t\n]+/', '', sprintf($query, $after));
     }
 }
