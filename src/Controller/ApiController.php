@@ -265,13 +265,19 @@ class ApiController extends Controller
                 $downloadManager->addDownloads($jobs, $ip, $uaParser->getPhpMinorVersion(), $uaParser->getPhpMinorPlatformVersion() ?: $uaParser->getPhpMinorVersion());
 
                 $statsd->increment('installs', 1, 1, [
-                    'composer' => $uaParser->getComposerVersion() ?: 'unknown',
                     'composer_major' => $uaParser->getComposerMajorVersion() ?: 'unknown',
                     'php_minor' => $uaParser->getPhpMinorVersion() ?: 'unknown',
                     'platform_php_minor' => $uaParser->getPhpMinorPlatformVersion() ?: 'unknown',
-                    'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
-                    'http' => $uaParser->getHttpVersion() ?: 'unknown',
                     'ci' => $uaParser->getCI() ? 'true' : 'false',
+                ]);
+                $statsd->increment('installs.composer', 1, 1, [
+                    'composer' => $uaParser->getComposerVersion() ?: 'unknown',
+                ]);
+                $statsd->increment('installs.http', 1, 1, [
+                    'http' => $uaParser->getHttpVersion() ?: 'unknown',
+                ]);
+                $statsd->increment('installs.php_patch', 1, 1, [
+                    'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
                 ]);
             } elseif (
                 // log only if user-agent header is well-formed (it sometimes contains the header name itself in the value)
