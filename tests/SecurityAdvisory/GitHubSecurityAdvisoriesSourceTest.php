@@ -3,9 +3,12 @@
 namespace App\Tests\SecurityAdvisory;
 
 use App\Entity\Package;
+use App\Entity\PackageRepository;
 use App\Entity\SecurityAdvisory;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use Composer\IO\BufferIO;
+use Doctrine\Persistence\ManagerRegistry;
+use PHPUnit\Framework\MockObject\MockObject as MockObjectAlias;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -16,6 +19,21 @@ use Symfony\Component\HttpClient\Response\MockResponse;
  */
 class GitHubSecurityAdvisoriesSourceTest extends TestCase
 {
+    private ManagerRegistry|MockObjectAlias $doctrine;
+    private PackageRepository|MockObjectAlias $packageRepository;
+
+    protected function setUp(): void
+    {
+        $this->doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
+        $this->packageRepository = $this->getMockBuilder(PackageRepository::class)->disableOriginalConstructor()->getMock();
+
+        $this->doctrine
+            ->expects($this->once())
+            ->method('getRepository')
+            ->with($this->equalTo(Package::class))
+            ->willReturn($this->packageRepository);
+    }
+
     public function testWithoutPagination(): void
     {
         $responseFactory = function (string $method, string $url, array $options) {
@@ -29,7 +47,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         };
         $client = new MockHttpClient($responseFactory);
 
-        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), ['token']);
+        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->doctrine, ['token']);
         $package = $this->getPackage();
         $advisoryCollection = $source->getAdvisories(new BufferIO());
 
@@ -46,7 +64,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         $this->assertSame('https://github.com/advisories/GHSA-h58v-c6rf-g9f7', $advisories[0]->getLink());
         $this->assertSame('CVE-2021-35210', $advisories[0]->getCve());
         $this->assertSame('2021-07-01T17:00:04+0000', $advisories[0]->getDate()->format(\DateTimeInterface::ISO8601));
-        $this->assertSame(SecurityAdvisory::PACKAGIST_ORG, $advisories[0]->getComposerRepository());
+        $this->assertNull($advisories[0]->getComposerRepository());
 
         $this->assertSame('GHSA-f7wm-x4gw-6m23', $advisories[1]->getId());
         $this->assertSame('Insert tag injection in forms', $advisories[1]->getTitle());
@@ -55,11 +73,17 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         $this->assertSame('https://github.com/advisories/GHSA-f7wm-x4gw-6m23', $advisories[1]->getLink());
         $this->assertSame('CVE-2020-25768', $advisories[1]->getCve());
         $this->assertSame('2020-09-24T16:23:54+0000', $advisories[1]->getDate()->format(\DateTimeInterface::ISO8601));
-        $this->assertSame(SecurityAdvisory::PACKAGIST_ORG, $advisories[1]->getComposerRepository());
+        $this->assertNull($advisories[1]->getComposerRepository());
     }
 
     public function testWithPagination(): void
     {
+        $this->packageRepository
+            ->expects($this->once())
+            ->method('getExistingPackageNames')
+            ->with($this->equalTo(['vendor/package']))
+            ->willReturn(['vendor/package']);
+
         $counter = 0;
         $responseFactory = function (string $method, string $url, array $options) use (&$counter) {
             $this->assertSame('POST', $method);
@@ -84,7 +108,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         };
 
         $client = new MockHttpClient($responseFactory);
-        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), ['token']);
+        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->doctrine, ['token']);
         $package = $this->getPackage();
         $advisoryCollection = $source->getAdvisories(new BufferIO());
 
