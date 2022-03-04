@@ -55,9 +55,14 @@ class LoggingHttpDownloader extends HttpDownloader
             return;
         }
 
-        $this->statsd->increment('github_api_request', tags: [
-            'vendor' => $this->vendor,
+        $tags = [
             'uses_packagist_token' => $this->usesPackagistToken ? '1' : '0',
-        ]);
+        ];
+
+        if ($this->usesPackagistToken) {
+            $tags['vendor'] = $this->vendor;
+        }
+
+        $this->statsd->increment('github_api_request', tags: $tags);
     }
 }
