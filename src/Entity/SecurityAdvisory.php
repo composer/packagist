@@ -206,7 +206,7 @@ class SecurityAdvisory
         }
 
         $score = 0;
-        if ($advisory->getId() !== $this->getRemoteId()) {
+        if ($advisory->getId() !== $this->getRemoteId() && $this->getSource() === $advisory->getSource()) {
             $score++;
         }
 

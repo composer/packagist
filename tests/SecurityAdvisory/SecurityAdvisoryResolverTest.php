@@ -25,6 +25,24 @@ class SecurityAdvisoryResolverTest extends TestCase
         $this->assertCount(1, $new);
     }
 
+    public function testResolveAddNewRemoveOldAdvisoryDifferentPackage(): void
+    {
+        $advisory = new SecurityAdvisory($this->createRemoteAdvisory('test', 'acme/other-package'), 'test');
+        [$new, $removed] = $this->resolver->resolve([$advisory], new RemoteSecurityAdvisoryCollection([$this->createRemoteAdvisory('test')]), 'test');
+
+        $this->assertSame([$advisory], $removed);
+        $this->assertCount(1, $new);
+    }
+
+    public function testResolveAddNewRemoveOldAdvisorySamePackage(): void
+    {
+        $advisory = new SecurityAdvisory($this->createRemoteAdvisory('test', 'acme/package', 'CVE-2022-1111'), 'test');
+        [$new, $removed] = $this->resolver->resolve([$advisory], new RemoteSecurityAdvisoryCollection([$this->createRemoteAdvisory('test', 'acme/package', 'CVE-2022-2222')]), 'test');
+
+        $this->assertSame([$advisory], $removed);
+        $this->assertCount(1, $new);
+    }
+
     public function testResolveRemoveOldAdvisory(): void
     {
         $advisory = new SecurityAdvisory($this->createRemoteAdvisory('test'), 'test');
@@ -78,8 +96,8 @@ class SecurityAdvisoryResolverTest extends TestCase
         $this->assertSame([], $removed);
     }
 
-    private function createRemoteAdvisory(string $source): RemoteSecurityAdvisory
+    private function createRemoteAdvisory(string $source, string $packageName = 'acme/package', string $cve = null): RemoteSecurityAdvisory
     {
-        return new RemoteSecurityAdvisory('', 'Security Advisory', 'acme/package', '^1.0', 'https://example.org', null, new \DateTimeImmutable(), null, [], $source);
+        return new RemoteSecurityAdvisory(uniqid('id-'), 'Security Advisory', $packageName, '^1.0', 'https://example.org', $cve, new \DateTimeImmutable(), null, [], $source);
     }
 }
