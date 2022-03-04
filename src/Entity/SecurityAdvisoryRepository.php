@@ -69,13 +69,24 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
     public function getPackageSecurityAdvisories(string $name): array
     {
-        $sql = 'SELECT s.*
+        $sql = 'SELECT s.*, sa.source
             FROM security_advisory s
+            INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
             WHERE s.packageName = :name
             ORDER BY s.reportedAt DESC, s.id DESC';
 
-        return $this->getEntityManager()->getConnection()
-            ->fetchAllAssociative($sql, ['name' => $name]);
+        $entries = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]);
+        $result = [];
+        foreach ($entries as $entry) {
+            if (!isset($result[$entry['id']])) {
+                $result[$entry['id']] = $entry;
+                $result[$entry['id']]['sources'] = [];
+            }
+
+            $result[$entry['id']]['sources'][] = $entry['source'];
+        }
+
+        return $result;
     }
 
     /**
