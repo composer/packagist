@@ -2,11 +2,10 @@
 
 namespace App\SecurityAdvisory;
 
-use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
+use App\Model\ProviderManager;
 use Composer\IO\ConsoleIO;
 use Composer\Pcre\Preg;
-use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -23,7 +22,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
     public function __construct(
         private HttpClientInterface $httpClient,
         private LoggerInterface $logger,
-        private ManagerRegistry $doctrine,
+        private ProviderManager $providerManager,
         private array $fallbackGhTokens,
     ) {
     }
@@ -35,8 +34,6 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
         $hasNextPage = true;
         $after = '';
 
-        $entries = [];
-        $packageNames = [];
         while ($hasNextPage) {
             $headers = [];
             if (count($this->fallbackGhTokens) > 0) {
@@ -60,70 +57,63 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
             $data = $data['data'];
 
             foreach ($data['securityVulnerabilities']['nodes'] as $node) {
-                $entries[] = $node;
-                $packageNames[] = strtolower($node['package']['name']);
+                $remoteId = null;
+                $cve = null;
+
+                if (isset($node['advisory']['withdrawnAt'])) {
+                    continue;
+                }
+
+                foreach ($node['advisory']['identifiers'] as $identifier) {
+                    if ('GHSA' === $identifier['type']) {
+                        $remoteId = $identifier['value'];
+                        continue;
+                    }
+                    if ('CVE' === $identifier['type']) {
+                        $cve = $identifier['value'];
+                    }
+                }
+                if (null === $remoteId) {
+                    continue;
+                }
+
+                // GitHub adds spaces everywhere e.g. > 1.0, adjust to be able to match other advisories
+                $versionRange = Preg::replace('#\s#', '', $node['vulnerableVersionRange']);
+                if (isset($advisories[$remoteId])) {
+                    $advisories[$remoteId] = $advisories[$remoteId]->withAddedAffectedVersion($versionRange);
+                    continue;
+                }
+
+                $references = [];
+                foreach ($node['advisory']['references'] as $reference) {
+                    if (isset($reference['url'])) {
+                        $references[] = $reference['url'];
+                    }
+                }
+
+                $date = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ISO8601, $node['advisory']['publishedAt']);
+                if ($date === false) {
+                    throw new \InvalidArgumentException('Invalid date format returned from GitHub');
+                }
+
+                $packageName = strtolower($node['package']['name']);
+                $advisories[$remoteId] = new RemoteSecurityAdvisory(
+                    $remoteId,
+                    $node['advisory']['summary'],
+                    $packageName,
+                    $versionRange,
+                    $node['advisory']['permalink'],
+                    $cve,
+                    $date,
+                    $this->providerManager->packageExists($packageName) ? SecurityAdvisory::PACKAGIST_ORG : null,
+                    $references,
+                    self::SOURCE_NAME,
+                );
             }
 
             $hasNextPage = $data['securityVulnerabilities']['pageInfo']['hasNextPage'];
             $after = $data['securityVulnerabilities']['pageInfo']['endCursor'];
         }
-
-        $availablePackageNames = $this->doctrine->getRepository(Package::class)->getExistingPackageNames(array_unique($packageNames));
-
-        foreach ($entries as $node) {
-            $remoteId = null;
-            $cve = null;
-
-            if (isset($node['advisory']['withdrawnAt'])) {
-                continue;
-            }
-
-            foreach ($node['advisory']['identifiers'] as $identifier) {
-                if ('GHSA' === $identifier['type']) {
-                    $remoteId = $identifier['value'];
-                    continue;
-                }
-                if ('CVE' === $identifier['type']) {
-                    $cve = $identifier['value'];
-                }
-            }
-            if (null === $remoteId) {
-                continue;
-            }
-
-            // GitHub adds spaces everywhere e.g. > 1.0, adjust to be able to match other advisories
-            $versionRange = Preg::replace('#\s#', '', $node['vulnerableVersionRange']);
-            if (isset($advisories[$remoteId])) {
-                $advisories[$remoteId] = $advisories[$remoteId]->withAddedAffectedVersion($versionRange);
-                continue;
-            }
-
-            $references = [];
-            foreach ($node['advisory']['references'] as $reference) {
-                if (isset($reference['url'])) {
-                    $references[] = $reference['url'];
-                }
-            }
-
-            $date = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ISO8601, $node['advisory']['publishedAt']);
-            if ($date === false) {
-                throw new \InvalidArgumentException('Invalid date format returned from GitHub');
-            }
-
-            $advisories[$remoteId] = new RemoteSecurityAdvisory(
-                $remoteId,
-                $node['advisory']['summary'],
-                $node['package']['name'],
-                $versionRange,
-                $node['advisory']['permalink'],
-                $cve,
-                $date,
-                \in_array(\strtolower($node['package']['name']), $availablePackageNames, true) ? SecurityAdvisory::PACKAGIST_ORG : null,
-                $references,
-                self::SOURCE_NAME,
-            );
-        }
-
         return new RemoteSecurityAdvisoryCollection(array_values($advisories));
     }
 

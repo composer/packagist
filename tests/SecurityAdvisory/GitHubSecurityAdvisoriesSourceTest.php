@@ -3,11 +3,10 @@
 namespace App\Tests\SecurityAdvisory;
 
 use App\Entity\Package;
-use App\Entity\PackageRepository;
 use App\Entity\SecurityAdvisory;
+use App\Model\ProviderManager;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use Composer\IO\BufferIO;
-use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject as MockObjectAlias;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -19,19 +18,11 @@ use Symfony\Component\HttpClient\Response\MockResponse;
  */
 class GitHubSecurityAdvisoriesSourceTest extends TestCase
 {
-    private ManagerRegistry|MockObjectAlias $doctrine;
-    private PackageRepository|MockObjectAlias $packageRepository;
+    private ProviderManager|MockObjectAlias $providerManager;
 
     protected function setUp(): void
     {
-        $this->doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
-        $this->packageRepository = $this->getMockBuilder(PackageRepository::class)->disableOriginalConstructor()->getMock();
-
-        $this->doctrine
-            ->expects($this->once())
-            ->method('getRepository')
-            ->with($this->equalTo(Package::class))
-            ->willReturn($this->packageRepository);
+        $this->providerManager = $this->getMockBuilder(ProviderManager::class)->disableOriginalConstructor()->getMock();
     }
 
     public function testWithoutPagination(): void
@@ -47,7 +38,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         };
         $client = new MockHttpClient($responseFactory);
 
-        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->doctrine, ['token']);
+        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->providerManager, ['token']);
         $package = $this->getPackage();
         $advisoryCollection = $source->getAdvisories(new BufferIO());
 
@@ -78,11 +69,10 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
 
     public function testWithPagination(): void
     {
-        $this->packageRepository
-            ->expects($this->once())
-            ->method('getExistingPackageNames')
-            ->with($this->equalTo(['vendor/package']))
-            ->willReturn(['vendor/package']);
+        $this->providerManager
+            ->method('packageExists')
+            ->with($this->equalTo('vendor/package'))
+            ->willReturn(true);
 
         $counter = 0;
         $responseFactory = function (string $method, string $url, array $options) use (&$counter) {
@@ -108,7 +98,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         };
 
         $client = new MockHttpClient($responseFactory);
-        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->doctrine, ['token']);
+        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->providerManager, ['token']);
         $package = $this->getPackage();
         $advisoryCollection = $source->getAdvisories(new BufferIO());
 

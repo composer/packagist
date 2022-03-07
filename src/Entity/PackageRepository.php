@@ -13,7 +13,6 @@
 namespace App\Entity;
 
 use DateTimeImmutable;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
@@ -639,21 +638,5 @@ class PackageRepository extends ServiceEntityRepository
             ->orderBy('p.id', 'DESC');
 
         return $qb;
-    }
-
-    /**
-     * @param list<string> $packageNames
-     * @return list<string>
-     */
-    public function getExistingPackageNames(array $packageNames): array
-    {
-        if (count($packageNames) === 0) {
-            return [];
-        }
-
-        return array_map(
-            fn (array $row): string => \strtolower($row['name']),
-            $this->getEntityManager()->getConnection()->fetchAllAssociative('SELECT p.name FROM package p WHERE p.name IN (:packageNames)', ['packageNames' => $packageNames], ['packageNames' => Connection::PARAM_STR_ARRAY])
-        );
     }
 }
