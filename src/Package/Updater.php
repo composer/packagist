@@ -685,14 +685,15 @@ class Updater
             }
         }
 
-        if (in_array($host, ['github.com', 'gitlab.com'], true)) {
-            // convert relative to absolute images
+        // embed images of selected hosts by converting relative links to accessible URLs
+        if (in_array($host, ['github.com', 'gitlab.com', 'bitbucket.org'], true)) {
             $images = $dom->getElementsByTagName('img');
             foreach ($images as $img) {
                 if (!str_contains($img->getAttribute('src'), '//')) {
                     $imgSrc = match ($host) {
                         'github.com' => 'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$basePath.$img->getAttribute('src'),
                         'gitlab.com' => 'https://gitlab.com/'.$owner.'/'.$repo.'/-/raw/HEAD/'.$basePath.$img->getAttribute('src'),
+                        'bitbucket.org' => 'https://bitbucket.org/'.$owner.'/'.$repo.'/raw/HEAD/'.$basePath.$img->getAttribute('src'),
                     };
                     $img->setAttribute('src', $imgSrc);
                 }
