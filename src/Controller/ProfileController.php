@@ -47,7 +47,7 @@ class ProfileController extends Controller
     /**
      * @Route("/users/{name}/", name="user_profile")
      */
-    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr): Response
+    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $loggedUser = null): Response
     {
         $packages = $this->getUserPackages($req, $user);
 
@@ -60,8 +60,7 @@ class ProfileController extends Controller
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['spammerForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
-        $isLoggedInUser = ($loggedUser = $this->getUser()) && $loggedUser instanceof User && $loggedUser->getId() === $user->getId();
-        if (!count($packages) && ($this->isGranted('ROLE_ADMIN') || $isLoggedInUser)) {
+        if (!count($packages) && ($this->isGranted('ROLE_ADMIN') || $loggedUser?->getId() === $user->getId())) {
             $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
 
