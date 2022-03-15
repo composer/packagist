@@ -36,3 +36,5 @@ parameters:
         - '~Property App\\Entity\\Dependent::\$type type mapping mismatch: database can contain int but property expects~'
         - '~Property App\\Entity\\PhpStat::\$type type mapping mismatch: database can contain int but property expects~'
         - '~Property App\\Entity\\PhpStat::\$depth type mapping mismatch: database can contain int but property expects~'
+        # Will vanish with PHP 8.1
+        - '~Parameter #2 \$value of function ini_set expects string, int given.~'
