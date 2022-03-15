@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use Laminas\Diagnostics\Result\Collection;
+use Laminas\Diagnostics\Result\ResultInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,13 +15,20 @@ use Predis\Client;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+/**
+ * @phpstan-import-type AwsMetadata from \App\HealthCheck\MetadataDirCheck
+ */
 class HealthCheckController
 {
     private LoggerInterface $logger;
     private Client $redisClient;
+    /** @var AwsMetadata */
     private array $awsMeta;
     private string $dbUrl;
 
+    /**
+     * @phpstan-param AwsMetadata $awsMetadata
+     */
     public function __construct(LoggerInterface $logger, Client $redis, array $awsMetadata, string $dbUrl)
     {
         $this->logger = $logger;
@@ -31,18 +40,18 @@ class HealthCheckController
     /**
      * @Route("/_aws_lb_check", name="health_check", methods={"GET"})
      */
-    public function healthCheckAction(Request $req)
+    public function healthCheckAction(Request $req): Response
     {
-        if ($req->headers->get('X-Forwarded-For') || 0 !== strpos($req->getClientIp(), '10.')) {
+        if ($req->headers->get('X-Forwarded-For') || !str_starts_with($req->getClientIp() ?? '', '10.')) {
             throw new NotFoundHttpException();
         }
 
         $runner = new Runner();
 
-        $dbhost = parse_url($this->dbUrl, PHP_URL_HOST);
-        $dbname = trim(parse_url($this->dbUrl, PHP_URL_PATH), '/');
-        $dbuser = parse_url($this->dbUrl, PHP_URL_USER);
-        $dbpass = parse_url($this->dbUrl, PHP_URL_PASS);
+        $dbhost = (string)parse_url($this->dbUrl, PHP_URL_HOST);
+        $dbname = trim((string)parse_url($this->dbUrl, PHP_URL_PATH), '/');
+        $dbuser = (string)parse_url($this->dbUrl, PHP_URL_USER);
+        $dbpass = (string)parse_url($this->dbUrl, PHP_URL_PASS);
 
         if (isset($this->awsMeta['ec2_node'])) {
             $machineName = $this->awsMeta['ec2_node'].' in '.$this->awsMeta['region'];
@@ -74,9 +83,10 @@ class HealthCheckController
         return new Response('ERRORS', 500);
     }
 
-    private function logResults($results, $msg)
+    private function logResults(Collection $results, string $msg): void
     {
         $this->logger->critical('Health Check '.$msg, array_map(function ($checker) use ($results) {
+            /** @var ResultInterface $result */
             $result = $results[$checker];
 
             return [

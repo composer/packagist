@@ -26,6 +26,7 @@ use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Composer\Repository\Vcs\GitHubDriver;
@@ -742,6 +743,15 @@ class Package
     public function getMaintainers(): Collection
     {
         return $this->maintainers;
+    }
+
+    public function isMaintainer(?User $user): bool
+    {
+        if (null === $user) {
+            return false;
+        }
+
+        return $this->maintainers->contains($user);
     }
 
     public function setType(string $type): void

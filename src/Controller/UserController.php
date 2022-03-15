@@ -14,7 +14,6 @@ namespace App\Controller;
 
 use App\Attribute\VarName;
 use App\Model\FavoriteManager;
-use Doctrine\ORM\NoResultException;
 use App\Entity\Package;
 use App\Entity\Version;
 use App\Entity\User;
@@ -31,12 +30,11 @@ use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Form\FormError;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Predis\Client as RedisClient;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -65,7 +63,7 @@ class UserController extends Controller
      * @Route("/trigger-github-sync/", name="user_github_sync")
      * @IsGranted("ROLE_USER")
      */
-    public function triggerGitHubSyncAction(#[CurrentUser] User $user)
+    public function triggerGitHubSyncAction(#[CurrentUser] User $user): RedirectResponse
     {
         if (!$user->getGithubToken()) {
             $this->addFlash('error', 'You must connect your user account to github to sync packages.');
@@ -91,7 +89,7 @@ class UserController extends Controller
     /**
      * @Route("/spammers/{name}/", name="mark_spammer", methods={"POST"})
      */
-    public function markSpammerAction(Request $req, #[VarName('name')] User $user)
+    public function markSpammerAction(Request $req, #[VarName('name')] User $user): RedirectResponse
     {
         if (!$this->isGranted('ROLE_ANTISPAM')) {
             throw $this->createAccessDeniedException('This user can not mark others as spammers');
@@ -141,7 +139,7 @@ class UserController extends Controller
     /**
      * @Route("/users/{name}/favorites/", name="user_favorites", methods={"GET"})
      */
-    public function favoritesAction(Request $req, #[VarName('name')] User $user, LoggerInterface $logger, RedisClient $redis, FavoriteManager $favoriteManager)
+    public function favoritesAction(Request $req, #[VarName('name')] User $user, LoggerInterface $logger, RedisClient $redis, FavoriteManager $favoriteManager): Response
     {
         try {
             if (!$redis->isConnected()) {
@@ -151,7 +149,7 @@ class UserController extends Controller
             $this->addFlash('error', 'Could not connect to the Redis database.');
             $logger->notice($e->getMessage(), ['exception' => $e]);
 
-            return ['user' => $user, 'packages' => []];
+            return $this->render('user/favorites.html.twig', ['user' => $user, 'packages' => []]);
         }
 
         $paginator = new Pagerfanta(
@@ -169,7 +167,7 @@ class UserController extends Controller
      * @Route("/users/{name}/favorites/", name="user_add_fav", defaults={"_format" = "json"}, methods={"POST"})
      * @IsGranted("ROLE_USER")
      */
-    public function postFavoriteAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, FavoriteManager $favoriteManager)
+    public function postFavoriteAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, FavoriteManager $favoriteManager): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You can only change your own favorites');
@@ -193,7 +191,7 @@ class UserController extends Controller
      * @Route("/users/{name}/favorites/{package}", name="user_remove_fav", defaults={"_format" = "json"}, requirements={"package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}, methods={"DELETE"})
      * @IsGranted("ROLE_USER")
      */
-    public function deleteFavoriteAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Package $package, FavoriteManager $favoriteManager)
+    public function deleteFavoriteAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Package $package, FavoriteManager $favoriteManager): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You can only change your own favorites');
@@ -208,7 +206,7 @@ class UserController extends Controller
      * @Route("/users/{name}/delete", name="user_delete", methods={"POST"})
      * @IsGranted("ROLE_USER")
      */
-    public function deleteUserAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req, TokenStorageInterface $storage, EventDispatcherInterface $mainEventDispatcher)
+    public function deleteUserAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req, TokenStorageInterface $storage, EventDispatcherInterface $mainEventDispatcher): RedirectResponse
     {
         if (!$this->isGranted('ROLE_ADMIN') && $user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot delete this user');
@@ -249,13 +247,13 @@ class UserController extends Controller
      * @Route("/users/{name}/2fa/", name="user_2fa_configure", methods={"GET"})
      * @IsGranted("ROLE_USER")
      */
-    public function configureTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req)
+    public function configureTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req): Response
     {
         if (!$this->isGranted('ROLE_DISABLE_2FA') && $user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        if ($user->getId() === $this->getUser()->getId()) {
+        if ($user->getId() === $loggedUser->getId()) {
             $backupCode = $req->getSession()->remove('backup_code');
         }
 
@@ -269,7 +267,7 @@ class UserController extends Controller
      * @Route("/users/{name}/2fa/enable", name="user_2fa_enable", methods={"GET", "POST"})
      * @IsGranted("ROLE_USER")
      */
-    public function enableTwoFactorAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, TotpAuthenticatorInterface $authenticator, TwoFactorAuthManager $authManager)
+    public function enableTwoFactorAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, TotpAuthenticatorInterface $authenticator, TwoFactorAuthManager $authManager): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
@@ -292,7 +290,7 @@ class UserController extends Controller
 
         if ($form->isSubmitted()) {
             // Validate the code using the secret that was submitted in the form
-            if (!$authenticator->checkCode($user, $enableRequest->getCode())) {
+            if (!$authenticator->checkCode($user, $enableRequest->getCode() ?? '')) {
                 $form->get('code')->addError(new FormError('Invalid authenticator code'));
             }
 
@@ -335,7 +333,7 @@ class UserController extends Controller
      * @Route("/users/{name}/2fa/confirm", name="user_2fa_confirm", methods={"GET"})
      * @IsGranted("ROLE_USER")
      */
-    public function confirmTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req)
+    public function confirmTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
@@ -357,7 +355,7 @@ class UserController extends Controller
      * @Route("/users/{name}/2fa/disable", name="user_2fa_disable", methods={"GET"})
      * @IsGranted("ROLE_USER")
      */
-    public function disableTwoFactorAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, CsrfTokenManagerInterface $csrfTokenManager, TwoFactorAuthManager $authManager)
+    public function disableTwoFactorAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, CsrfTokenManagerInterface $csrfTokenManager, TwoFactorAuthManager $authManager): Response
     {
         if (!$this->isGranted('ROLE_DISABLE_2FA') && $user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');

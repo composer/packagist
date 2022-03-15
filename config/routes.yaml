@@ -10,3 +10,15 @@ about_composer:
     defaults:
         path: 'https://getcomposer.org/'
         permanent: true
+
+api_doc:
+    path: '/apidoc'
+    controller: 'Symfony\Bundle\FrameworkBundle\Controller\TemplateController'
+    defaults:
+        template: 'api_doc/index.html.twig'
+
+mirrors:
+    path: '/mirrors'
+    controller: 'Symfony\Bundle\FrameworkBundle\Controller\TemplateController'
+    defaults:
+        template: 'mirrors/index.html.twig'

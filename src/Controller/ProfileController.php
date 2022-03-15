@@ -9,15 +9,12 @@ use App\Entity\User;
 use App\Form\Type\ProfileFormType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
-use App\Util\DoctrineTrait;
-use Doctrine\Persistence\ManagerRegistry;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ProfileController extends Controller
@@ -25,7 +22,7 @@ class ProfileController extends Controller
     /**
      * @Route("/profile/", name="my_profile")
      */
-    public function myProfile(Request $req, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $user)
+    public function myProfile(Request $req, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $user): Response
     {
         $packages = $this->getUserPackages($req, $user);
         $lastGithubSync = $this->doctrine->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
@@ -50,7 +47,7 @@ class ProfileController extends Controller
     /**
      * @Route("/users/{name}/", name="user_profile")
      */
-    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
+    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $loggedUser = null): Response
     {
         $packages = $this->getUserPackages($req, $user);
 
@@ -63,7 +60,7 @@ class ProfileController extends Controller
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['spammerForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
-        if (!count($packages) && ($this->isGranted('ROLE_ADMIN') || ($this->getUser() && $this->getUser()->getId() === $user->getId()))) {
+        if (!count($packages) && ($this->isGranted('ROLE_ADMIN') || $loggedUser?->getId() === $user->getId())) {
             $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
 
@@ -77,7 +74,7 @@ class ProfileController extends Controller
      * @Route("/users/{name}/packages/", name="user_packages")
      * @Route("/users/{name}/packages.json", name="user_packages_json", defaults={"_format": "json"})
      */
-    public function packagesAction(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr)
+    public function packagesAction(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr): Response
     {
         $packages = $this->getUserPackages($req, $user);
 
@@ -113,7 +110,7 @@ class ProfileController extends Controller
     /**
      * @Route("/profile/edit", name="edit_profile")
      */
-    public function editAction(Request $request)
+    public function editAction(Request $request): Response
     {
         $user = $this->getUser();
         if (!is_object($user)) {

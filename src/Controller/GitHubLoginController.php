@@ -8,8 +8,9 @@ use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use KnpU\OAuth2ClientBundle\Exception\InvalidStateException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Provider\GithubResourceOwner;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use League\OAuth2\Client\Token\AccessToken;
 use Symfony\Component\Finder\Exception\AccessDeniedException;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -23,7 +24,7 @@ class GitHubLoginController extends Controller
      *
      * @Route("/connect/github", name="connect_github_start")
      */
-    public function connect(ClientRegistry $clientRegistry)
+    public function connect(ClientRegistry $clientRegistry): RedirectResponse
     {
         $user = $this->getUser();
         if (!is_object($user)) {
@@ -45,7 +46,7 @@ class GitHubLoginController extends Controller
      *
      * @Route("/login/github", name="login_github_start")
      */
-    public function login(ClientRegistry $clientRegistry)
+    public function login(ClientRegistry $clientRegistry): RedirectResponse
     {
         return $clientRegistry
             ->getClient('github')
@@ -64,11 +65,12 @@ class GitHubLoginController extends Controller
      *
      * @Route("/connect/github/check", name="connect_github_check")
      */
-    public function connectCheck(Request $request, ClientRegistry $clientRegistry, Scheduler $scheduler, #[CurrentUser] User $user)
+    public function connectCheck(Request $request, ClientRegistry $clientRegistry, Scheduler $scheduler, #[CurrentUser] User $user): RedirectResponse
     {
         /** @var \KnpU\OAuth2ClientBundle\Client\Provider\GithubClient $client */
         $client = $clientRegistry->getClient('github');
         try {
+            /** @var AccessToken $token */
             $token = $client->getAccessToken();
             if ($user->getGithubId()) {
                 $this->addFlash('error', 'You must disconnect your GitHub account before you can connect a new one.');
@@ -103,7 +105,7 @@ class GitHubLoginController extends Controller
             $this->getEM()->persist($user);
             $this->getEM()->flush();
 
-            $scheduler->scheduleUserScopeMigration($user->getId(), $oldScope, $user->getGithubScope());
+            $scheduler->scheduleUserScopeMigration($user->getId(), $oldScope, $user->getGithubScope() ?? '');
 
             $this->addFlash('success', 'You have connected your GitHub account '.$ghUser->getNickname().' to your Packagist.org account.');
         } catch (IdentityProviderException | InvalidStateException $e) {
@@ -120,14 +122,14 @@ class GitHubLoginController extends Controller
      *
      * @Route("/login/github/check", name="login_github_check", defaults={"_format"="html"})
      */
-    public function loginCheck(Request $request, ClientRegistry $clientRegistry)
+    public function loginCheck(Request $request, ClientRegistry $clientRegistry): void
     {
     }
 
     /**
      * @Route("/oauth/github/disconnect", name="user_github_disconnect")
      */
-    public function disconnect(Request $req, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] User $user)
+    public function disconnect(Request $req, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] User $user): RedirectResponse
     {
         if (!$this->isCsrfTokenValid('unlink_github', $req->query->get('token', ''))) {
             throw new AccessDeniedException('Invalid CSRF token');
@@ -142,7 +144,7 @@ class GitHubLoginController extends Controller
         return $this->redirectToRoute('edit_profile');
     }
 
-    private function disconnectUser(User $user)
+    private function disconnectUser(User $user): void
     {
         $user->setGithubId(null);
         $user->setGithubToken(null);
