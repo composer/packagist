@@ -59,7 +59,7 @@ class CleanIndexCommand extends Command
             return 0;
         }
 
-        $lockAcquired = $this->locker->lockCommand($this->getName());
+        $lockAcquired = $this->locker->lockCommand(__CLASS__);
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
@@ -95,7 +95,7 @@ class CleanIndexCommand extends Command
             $page++;
         } while (count($results['hits']) >= $perPage);
 
-        $this->locker->unlockCommand($this->getName());
+        $this->locker->unlockCommand(__CLASS__);
 
         return 0;
     }

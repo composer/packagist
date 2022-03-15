@@ -18,18 +18,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ *
+ * @phpstan-import-type AwsMetadata from \App\HealthCheck\MetadataDirCheck
  */
 class SymlinkMetadataMirrorCommand extends Command
 {
-    private string $webDir;
-    private string $buildDir;
-    private array $awsMeta;
-
-    public function __construct(string $webDir, string $metadataDir, array $awsMetadata)
-    {
-        $this->webDir = realpath($webDir);
-        $this->buildDir = $metadataDir;
-        $this->awsMeta = $awsMetadata;
+    public function __construct(
+        private string $webDir,
+        private string $metadataDir,
+        /** @phpstan-var AwsMetadata */
+        private array $awsMetadata
+    ) {
         parent::__construct();
     }
 
@@ -44,17 +43,17 @@ class SymlinkMetadataMirrorCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (empty($this->awsMeta) || !$this->awsMeta['is_web'] || $this->awsMeta['primary']) {
+        if (empty($this->awsMetadata) || !$this->awsMetadata['is_web'] || $this->awsMetadata['primary']) {
             return 0;
         }
 
         $verbose = (bool) $input->getOption('verbose');
 
         $sources = [
-            $this->buildDir.'/p',
-            $this->buildDir.'/p2',
-            $this->buildDir.'/packages.json',
-            $this->buildDir.'/packages.json.gz',
+            $this->metadataDir.'/p',
+            $this->metadataDir.'/p2',
+            $this->metadataDir.'/packages.json',
+            $this->metadataDir.'/packages.json.gz',
         ];
 
         foreach ($sources as $source) {

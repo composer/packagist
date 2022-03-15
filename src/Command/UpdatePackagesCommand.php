@@ -65,7 +65,7 @@ class UpdatePackagesCommand extends Command
         $updateEqualRefs = false;
         $randomTimes = true;
 
-        if (!$this->locker->lockCommand($this->getName())) {
+        if (!$this->locker->lockCommand(__CLASS__)) {
             if ($verbose) {
                 $output->writeln('Aborting, another task is running already');
             }
@@ -115,7 +115,7 @@ class UpdatePackagesCommand extends Command
             }
         }
 
-        $this->locker->unlockCommand($this->getName());
+        $this->locker->unlockCommand(__CLASS__);
 
         return 0;
     }

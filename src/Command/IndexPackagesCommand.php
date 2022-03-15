@@ -81,7 +81,7 @@ class IndexPackagesCommand extends Command
             return 0;
         }
 
-        $lockAcquired = $this->locker->lockCommand($this->getName());
+        $lockAcquired = $this->locker->lockCommand(__CLASS__);
         if (!$lockAcquired) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
@@ -136,7 +136,7 @@ class IndexPackagesCommand extends Command
             foreach ($packages as $package) {
                 $current++;
                 if ($verbose) {
-                    $output->writeln('['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
+                    $output->writeln('['.sprintf('%'.strlen((string)$total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
                 }
 
                 // delete spam packages from the search index
@@ -184,11 +184,15 @@ class IndexPackagesCommand extends Command
             $this->updateIndexedAt($idsToUpdate, $indexTime->format('Y-m-d H:i:s'));
         }
 
-        $this->locker->unlockCommand($this->getName());
+        $this->locker->unlockCommand(__CLASS__);
 
         return 0;
     }
 
+    /**
+     * @param string[] $tags
+     * @return array<string, int|string|float|null|array<string, string|int>>
+     */
     private function packageToSearchableArray(Package $package, array $tags): array
     {
         $faversCount = $this->favoriteManager->getFaverCount($package);
@@ -196,7 +200,7 @@ class IndexPackagesCommand extends Command
         $downloadsLog = $downloads['monthly'] > 0 ? log($downloads['monthly'], 10) : 0;
         $starsLog = $package->getGitHubStars() > 0 ? log($package->getGitHubStars(), 10) : 0;
         $popularity = round($downloadsLog + $starsLog);
-        $trendiness = $this->redis->zscore('downloads:trending', $package->getId());
+        $trendiness = (float)$this->redis->zscore('downloads:trending', $package->getId());
 
         $record = [
             'id' => $package->getId(),
@@ -233,6 +237,9 @@ class IndexPackagesCommand extends Command
         return $record;
     }
 
+    /**
+     * @return array<string, string|int|array{}>
+     */
     private function createSearchableProvider(string $provided): array
     {
         return [
@@ -253,6 +260,9 @@ class IndexPackagesCommand extends Command
         ];
     }
 
+    /**
+     * @return array<array{packageName: string}>
+     */
     private function getProviders(Package $package): array
     {
         return $this->getEM()->getConnection()->fetchAllAssociative(
@@ -267,6 +277,9 @@ class IndexPackagesCommand extends Command
         );
     }
 
+    /**
+     * @return string[]
+     */
     private function getTags(Package $package): array
     {
         $rows = $this->getEM()->getConnection()->fetchAllAssociative(
@@ -280,7 +293,7 @@ class IndexPackagesCommand extends Command
         );
 
         $tags = [];
-        foreach ($rows as $idx => $tag) {
+        foreach ($rows as $tag) {
             $tags[] = $tag['name'];
         }
 
