@@ -159,7 +159,7 @@ const init = function ($) {
             options.data = {"package": $(this).data('package')};
             options.url = $(this).data('add-url');
         }
-        $.ajax(options).complete(function () { $(this).removeClass('loading'); });
+        $.ajax(options).then(function () { $(this).removeClass('loading'); });
         $(this).addClass('loading');
     });
     $('.package .delete').on('submit', function (e) {
