@@ -53,7 +53,7 @@ class WebController extends Controller
         return $this->render('web/search.html.twig');
     }
 
-    #[Route('/search.json', name: 'search_api', methods: 'GET')]
+    #[Route('/search.json', name: 'search_api', methods: 'GET', defaults: ['_format' => 'json'])]
     public function searchApi(Request $req, Algolia $algolia): JsonResponse
     {
         $blockList = ['2400:6180:100:d0::83b:b001', '34.235.38.170'];
