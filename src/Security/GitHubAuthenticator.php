@@ -4,6 +4,7 @@ namespace App\Security;
 
 use App\Entity\User;
 use App\Util\DoctrineTrait;
+use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use KnpU\OAuth2ClientBundle\Client\Provider\GithubClient;
 use KnpU\OAuth2ClientBundle\Security\Authenticator\OAuth2Authenticator;
@@ -68,9 +69,16 @@ class GitHubAuthenticator extends OAuth2Authenticator
                 // Logged in with GitHub already
                 $existingUser = $userRepo->findOneBy(['githubId' => $ghUser->getId()]);
                 if ($existingUser) {
+                    $validToken = true;
+                    // legacy token, update it with a new one
+                    if (!Preg::isMatch('{^gh[a-z]_}', (string) $existingUser->getGithubToken())) {
+                        $validToken = false;
+                    }
                     // validate that the token we have on file is still correct
-                    $response = $this->httpClient->request('GET', 'https://api.github.com/user', ['headers' => ['Authorization: token '.$existingUser->getGithubToken()]]);
-                    if ($response->getStatusCode() === 401) {
+                    if ($validToken && $this->httpClient->request('GET', 'https://api.github.com/user', ['headers' => ['Authorization: token '.$existingUser->getGithubToken()]])->getStatusCode() === 401) {
+                        $validToken = false;
+                    }
+                    if (!$validToken) {
                         $existingUser->setGithubToken($accessToken->getToken());
                         $this->getEM()->persist($existingUser);
                         $this->getEM()->flush();
