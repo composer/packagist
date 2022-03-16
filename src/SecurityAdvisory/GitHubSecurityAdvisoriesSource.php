@@ -3,9 +3,11 @@
 namespace App\SecurityAdvisory;
 
 use App\Entity\SecurityAdvisory;
+use App\Entity\User;
 use App\Model\ProviderManager;
 use Composer\IO\ConsoleIO;
 use Composer\Pcre\Preg;
+use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -24,6 +26,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
         private LoggerInterface $logger,
         private ProviderManager $providerManager,
         private array $fallbackGhTokens,
+        private ManagerRegistry $doctrine,
     ) {
     }
 
@@ -37,7 +40,10 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
         while ($hasNextPage) {
             $headers = [];
             if (count($this->fallbackGhTokens) > 0) {
-                $headers = ['Authorization' => 'token ' . $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]];
+                $fallbackUser = $this->doctrine->getRepository(User::class)->findOneBy(['username' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
+                if (null !== $fallbackUser?->getGithubToken()) {
+                    $headers = ['Authorization' => 'token ' . $fallbackUser->getGithubToken()];
+                }
             }
 
             try {
