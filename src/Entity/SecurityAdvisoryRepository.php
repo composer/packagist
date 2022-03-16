@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,15 +17,76 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
         parent::__construct($registry, SecurityAdvisory::class);
     }
 
+    /**
+     * @param string[] $packageNames
+     * @return SecurityAdvisory[]
+     */
+    public function getPackageAdvisoriesWithSources(array $packageNames, string $sourceName): array
+    {
+        if (count($packageNames) === 0) {
+            return [];
+        }
+
+        $advisories = $this
+            ->createQueryBuilder('a')
+            ->addSelect('s')
+            ->innerJoin('a.sources', 's')
+            ->innerJoin('a.sources', 'query')
+            ->where('query.source = :source OR a.packageName IN (:packageNames)')
+            ->setParameter('packageNames', $packageNames, Connection::PARAM_STR_ARRAY)
+            ->setParameter('source', $sourceName)
+            ->getQuery()
+            ->getResult();
+
+        if ($sourceName !== FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME || count($advisories) > 0) {
+            return $advisories;
+        }
+
+        // FriendsOfPHP advisories were not migrated yet
+        // Remove this once everything is set up
+        $allAdvisories = $this->getAllWithSources();
+        foreach ($allAdvisories as $advisory) {
+            $advisory->setupSource();
+        }
+
+        $this->getEntityManager()->flush();
+
+        return $this->getPackageAdvisoriesWithSources($packageNames, $sourceName);
+    }
+
+    /**
+     * @return SecurityAdvisory[]
+     */
+    private function getAllWithSources(): array
+    {
+        return $this
+            ->createQueryBuilder('a')
+            ->addSelect('s')
+            ->leftJoin('a.sources', 's')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function getPackageSecurityAdvisories(string $name): array
     {
-        $sql = 'SELECT s.*
+        $sql = 'SELECT s.*, sa.source
             FROM security_advisory s
+            INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
             WHERE s.packageName = :name
             ORDER BY s.reportedAt DESC, s.id DESC';
 
-        return $this->getEntityManager()->getConnection()
-            ->fetchAllAssociative($sql, ['name' => $name]);
+        $entries = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]);
+        $result = [];
+        foreach ($entries as $entry) {
+            if (!isset($result[$entry['id']])) {
+                $result[$entry['id']] = $entry;
+                $result[$entry['id']]['sources'] = [];
+            }
+
+            $result[$entry['id']]['sources'][] = $entry['source'];
+        }
+
+        return $result;
     }
 
     /**

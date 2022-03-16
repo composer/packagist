@@ -3,6 +3,7 @@
 namespace App\Tests\Entity;
 
 use App\Entity\SecurityAdvisory;
+use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use PHPUnit\Framework\TestCase;
 
@@ -50,7 +51,7 @@ class SecurityAdvisoryTest extends TestCase
             'reference' => 'composer://league/flysystem'
         ]);
 
-        $advisory = new SecurityAdvisory($remoteAdvisory, 'source');
+        $advisory = new SecurityAdvisory($remoteAdvisory, FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
 
         $updatedRemoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('league/flysystem/CVE-2021-32708.yaml', [
             'title' => 'TOCTOU Race Condition enabling remote code execution',
@@ -95,7 +96,7 @@ class SecurityAdvisoryTest extends TestCase
             'reference' => 'composer://symfony/framework-bundle'
         ]);
 
-        $advisory = new SecurityAdvisory($remoteAdvisory, 'source');
+        $advisory = new SecurityAdvisory($remoteAdvisory, FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
 
         $updatedRemoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('symfony/framework-bundle/CVE-2022-99999999999.yaml', [
             'title' => 'CVE-2022-99999999999: CSRF token missing in forms',

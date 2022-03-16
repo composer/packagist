@@ -29,18 +29,18 @@ class Locker
         $this->getConn()->fetchOne('SELECT RELEASE_LOCK(:id)', ['id' => 'package_update_'.$packageId]);
     }
 
-    public function lockSecurityAdvisory(string $source, int $timeout = 0): bool
+    public function lockSecurityAdvisory(string $processId, int $timeout = 0): bool
     {
         $this->ensurePrimaryConnection();
 
-        return (bool) $this->getConn()->fetchOne('SELECT GET_LOCK(:id, :timeout)', ['id' => 'security_advisory_'.$source, 'timeout' => $timeout]);
+        return (bool) $this->getConn()->fetchOne('SELECT GET_LOCK(:id, :timeout)', ['id' => 'security_advisory_'.$processId, 'timeout' => $timeout]);
     }
 
-    public function unlockSecurityAdvisory(string $source): void
+    public function unlockSecurityAdvisory(string $processId): void
     {
         $this->getConn()->connect();
 
-        $this->getConn()->fetchOne('SELECT RELEASE_LOCK(:id)', ['id' => 'security_advisory_'.$source]);
+        $this->getConn()->fetchOne('SELECT RELEASE_LOCK(:id)', ['id' => 'security_advisory_'.$processId]);
     }
 
     public function lockCommand(string $command, int $timeout = 0): bool

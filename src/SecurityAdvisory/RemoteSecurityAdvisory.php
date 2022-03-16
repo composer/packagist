@@ -21,25 +21,21 @@ use DateTimeImmutable;
  */
 class RemoteSecurityAdvisory
 {
-    private string $id;
-    private string $title;
-    private string $packageName;
-    private string $affectedVersions;
-    private string $link;
-    private ?string $cve;
-    private DateTimeImmutable $date;
-    private ?string $composerRepository;
-
-    public function __construct(string $id, string $title, string $packageName, string $affectedVersions, string $link, ?string $cve, DateTimeImmutable $date, ?string $composerRepository)
-    {
-        $this->id = $id;
-        $this->title = $title;
-        $this->packageName = $packageName;
-        $this->affectedVersions = $affectedVersions;
-        $this->link = $link;
-        $this->cve = $cve;
-        $this->date = $date;
-        $this->composerRepository = $composerRepository;
+    /**
+     * @param list<string> $references
+     */
+    public function __construct(
+        private string $id,
+        private string $title,
+        private string $packageName,
+        private string $affectedVersions,
+        private string $link,
+        private ?string $cve,
+        private DateTimeImmutable $date,
+        private ?string $composerRepository,
+        private array $references,
+        private string $source,
+    ) {
     }
 
     public function getId(): string
@@ -80,6 +76,35 @@ class RemoteSecurityAdvisory
     public function getComposerRepository(): ?string
     {
         return $this->composerRepository;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getReferences(): array
+    {
+        return $this->references;
+    }
+
+    public function getSource(): string
+    {
+        return $this->source;
+    }
+
+    public function withAddedAffectedVersion(string $version): self
+    {
+        return new self(
+            $this->getId(),
+            $this->getTitle(),
+            $this->getPackageName(),
+            implode('|', [$this->getAffectedVersions(), $version]),
+            $this->getLink(),
+            $this->getCve(),
+            $this->getDate(),
+            $this->getComposerRepository(),
+            $this->getReferences(),
+            $this->getSource(),
+        );
     }
 
     /**
@@ -149,7 +174,9 @@ class RemoteSecurityAdvisory
             $info['link'],
             $cve,
             $date,
-            $composerRepository
+            $composerRepository,
+            [],
+            FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME
         );
     }
 }

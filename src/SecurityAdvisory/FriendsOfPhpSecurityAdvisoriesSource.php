@@ -34,7 +34,7 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
         $this->logger = $logger;
     }
 
-    public function getAdvisories(ConsoleIO $io): ?array
+    public function getAdvisories(ConsoleIO $io): ?RemoteSecurityAdvisoryCollection
     {
         $package = $this->doctrine->getRepository(Package::class)->findOneBy(['name' => self::SECURITY_PACKAGE]);
         if (!$package || !($version = $this->doctrine->getRepository(Version::class)->findOneBy(['package' => $package->getId(), 'isDefaultBranch' => true]))) {
@@ -46,14 +46,13 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
         $composerPackage = $loader->load($version->toArray([]), CompletePackage::class);
 
         $localCwdDir = null;
-        $advisories = null;
         try {
             $localCwdDir = sys_get_temp_dir() . '/' . uniqid(self::SOURCE_NAME, true);
             $localDir = $localCwdDir . '/' . self::SOURCE_NAME;
             $config = Factory::createConfig($io, $localCwdDir);
             $process = new ProcessExecutor();
             $factory = new Factory();
-            $httpDownloader = $factory->createHttpDownloader($io, $config);
+            $httpDownloader = Factory::createHttpDownloader($io, $config);
             $loop = new Loop($httpDownloader, $process);
             $downloadManager = $factory->createDownloadManager($io, $config, $httpDownloader, $process);
             $downloader = $downloadManager->getDownloader('zip');
@@ -77,17 +76,19 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
                 $content = Yaml::parse($yaml);
                 $advisories[] = RemoteSecurityAdvisory::createFromFriendsOfPhp($file->getRelativePathname(), $content);
             }
+
+            return new RemoteSecurityAdvisoryCollection($advisories);
         } catch (TransportException $e) {
             $this->logger->error(sprintf('Failed to download "%s" zip file', self::SECURITY_PACKAGE), [
                 'exception' => $e,
             ]);
+
+            return null;
         } finally {
             if ($localCwdDir) {
                 $filesystem = new Filesystem();
                 $filesystem->remove($localCwdDir);
             }
         }
-
-        return $advisories;
     }
 }

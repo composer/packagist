@@ -129,6 +129,7 @@ services:
         bind:
             $sources:
                 'FriendsOfPHP/security-advisories': '@App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource'
+                'GitHub': '@App\SecurityAdvisory\GitHubSecurityAdvisoriesSource'
 
     Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
         arguments: ['@snc_redis.cache', {prefix: 'sess:', ttl: 3600}]
