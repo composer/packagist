@@ -7,7 +7,8 @@ use App\Entity\SecurityAdvisory;
 use App\Model\ProviderManager;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use Composer\IO\BufferIO;
-use PHPUnit\Framework\MockObject\MockObject as MockObjectAlias;
+use Doctrine\Persistence\ManagerRegistry;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -18,11 +19,13 @@ use Symfony\Component\HttpClient\Response\MockResponse;
  */
 class GitHubSecurityAdvisoriesSourceTest extends TestCase
 {
-    private ProviderManager|MockObjectAlias $providerManager;
+    private ProviderManager|MockObject $providerManager;
+    private ManagerRegistry|MockObject $doctrine;
 
     protected function setUp(): void
     {
         $this->providerManager = $this->getMockBuilder(ProviderManager::class)->disableOriginalConstructor()->getMock();
+        $this->doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
     }
 
     public function testWithoutPagination(): void
@@ -30,15 +33,13 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         $responseFactory = function (string $method, string $url, array $options) {
             $this->assertSame('POST', $method);
             $this->assertSame('https://api.github.com/graphql', $url);
-            $this->assertArrayHasKey('authorization', $options['normalized_headers']);
-            $this->assertSame(['Authorization: token token'], $options['normalized_headers']['authorization']);
             $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,first:100){nodes{advisory{summary,permalink,publishedAt,withdrawnAt,identifiers{type,value},references{url}},vulnerableVersionRange,package{name}},pageInfo{hasNextPage,endCursor}}}"}', $options['body']);
 
             return new MockResponse(json_encode($this->getGraphQLResultFirstPage(false)),['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
         };
         $client = new MockHttpClient($responseFactory);
 
-        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->providerManager, ['token']);
+        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->providerManager, [], $this->doctrine);
         $package = $this->getPackage();
         $advisoryCollection = $source->getAdvisories(new BufferIO());
 
@@ -78,8 +79,6 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         $responseFactory = function (string $method, string $url, array $options) use (&$counter) {
             $this->assertSame('POST', $method);
             $this->assertSame('https://api.github.com/graphql', $url);
-            $this->assertArrayHasKey('authorization', $options['normalized_headers']);
-            $this->assertSame(['Authorization: token token'], $options['normalized_headers']['authorization']);
 
             $counter++;
             switch ($counter) {
@@ -98,7 +97,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         };
 
         $client = new MockHttpClient($responseFactory);
-        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->providerManager, ['token']);
+        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->providerManager, [], $this->doctrine);
         $package = $this->getPackage();
         $advisoryCollection = $source->getAdvisories(new BufferIO());
 
