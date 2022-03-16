@@ -301,7 +301,7 @@ class PackageController extends Controller
             ->getResult();
 
         if (!$packages) {
-            return $this->redirectToRoute('search', ['q' => $vendor, 'reason' => 'vendor_not_found']);
+            return $this->redirectToRoute('search_web', ['q' => $vendor, 'reason' => 'vendor_not_found']);
         }
 
         return $this->render('package/view_vendor.html.twig', [
@@ -362,7 +362,7 @@ class PackageController extends Controller
                 return new JsonResponse(['providers' => []]);
             }
 
-            return $this->redirect($this->generateUrl('search', ['q' => $name, 'reason' => 'package_not_found']));
+            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
         }
 
         if ($req->getRequestFormat() !== 'json') {
@@ -518,7 +518,7 @@ class PackageController extends Controller
                 return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
             }
 
-            return $this->redirect($this->generateUrl('search', ['q' => $name, 'reason' => 'package_not_found']));
+            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
         }
 
         if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam' && !$this->isGranted('ROLE_ADMIN')) {
@@ -704,7 +704,7 @@ class PackageController extends Controller
                 return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
             }
 
-            return $this->redirect($this->generateUrl('search', ['q' => $name, 'reason' => 'package_not_found']));
+            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
         }
 
         $versions = $package->getVersions();
