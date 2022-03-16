@@ -6,3 +6,7 @@ sensio_framework_extra:
         auto_convert: false
     cache:
         annotations: false
+    view:
+        annotations: false
+    security:
+        annotations: true

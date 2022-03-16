@@ -20,7 +20,6 @@ use App\Search\Algolia;
 use App\Search\Query;
 use App\Util\Killswitch;
 use Predis\Connection\ConnectionException;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,24 +33,24 @@ use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
  */
 class WebController extends Controller
 {
-    #[Template, Route('/', name: 'home')]
-    public function index(Request $req): RedirectResponse|null
+    #[Route('/', name: 'home')]
+    public function index(Request $req): RedirectResponse|Response
     {
         if ($resp = $this->checkForQueryMatch($req)) {
             return $resp;
         }
 
-        return null;
+        return $this->render('web/index.html.twig');
     }
 
-    #[Template, Route('/search/', name: 'search_web')]
-    public function search(Request $req): RedirectResponse|null
+    #[Route('/search/', name: 'search_web')]
+    public function search(Request $req): RedirectResponse|Response
     {
         if ($resp = $this->checkForQueryMatch($req)) {
             return $resp;
         }
 
-        return null;
+        return $this->render('web/search.html.twig');
     }
 
     #[Route('/search.json', name: 'search_api', methods: 'GET')]
@@ -95,9 +94,7 @@ class WebController extends Controller
         return $response;
     }
 
-    /**
-     * @Route("/statistics", name="stats")
-     */
+    #[Route('/statistics', name: 'stats', methods: 'GET')]
     public function statsAction(RedisClient $redis)
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
@@ -185,9 +182,7 @@ class WebController extends Controller
         ]);
     }
 
-    /**
-     * @Route("/php-statistics", name="php_stats")
-     */
+    #[Route('/php-statistics', name: 'php_stats', methods: 'GET')]
     public function phpStatsAction(): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
@@ -225,9 +220,7 @@ class WebController extends Controller
         return $resp;
     }
 
-    /**
-     * @Route("/statistics.json", name="stats_json", defaults={"_format"="json"}, methods={"GET"})
-     */
+    #[Route('/statistics.json', name: 'stats_json', defaults: ['_format' => 'json'], methods: 'GET')]
     public function statsTotalsAction(RedisClient $redis)
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
