@@ -1,6 +1,11 @@
 parameters:
 	ignoreErrors:
 		-
+			message: "#^Offset 'downloaded' on array\\{name\\: string, version\\: string, id\\: int, vid\\: int\\} in isset\\(\\) does not exist\\.$#"
+			count: 1
+			path: src/Controller/ApiController.php
+
+		-
 			message: "#^Parameter \\#1 \\$nbResults of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects int\\<0, max\\>, int given\\.$#"
 			count: 1
 			path: src/Controller/ExploreController.php
@@ -26,57 +31,12 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
-			message: "#^Cannot access offset 'orderBys' on array\\|bool\\|float\\|int\\|string\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Cannot access offset 'query' on array\\|bool\\|float\\|int\\|string\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\WebController\\:\\:checkForQueryMatch\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\WebController\\:\\:computeSearchQuery\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\WebController\\:\\:computeSearchQuery\\(\\) has parameter \\$filteredOrderBys with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\WebController\\:\\:indexAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\WebController\\:\\:searchAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Method App\\\\Controller\\\\WebController\\:\\:searchFormAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
 			message: "#^Method App\\\\Controller\\\\WebController\\:\\:statsAction\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Controller/WebController.php
 
 		-
 			message: "#^Method App\\\\Controller\\\\WebController\\:\\:statsTotalsAction\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Controller/WebController.php
-
-		-
-			message: "#^Parameter \\#3 \\$subject of function str_replace expects array\\|string, string\\|null given\\.$#"
 			count: 1
 			path: src/Controller/WebController.php
 

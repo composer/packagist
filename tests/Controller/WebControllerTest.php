@@ -2,6 +2,10 @@
 
 namespace App\Tests\Controller;
 
+use Algolia\AlgoliaSearch\SearchClient;
+use Algolia\AlgoliaSearch\SearchIndex;
+use App\Search\Query;
+use App\Tests\Search\AlgoliaMock;
 use Exception;
 use App\Entity\Package;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -9,12 +13,92 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class WebControllerTest extends WebTestCase
 {
-    public function testHomepage()
+    public function testHomepage(): void
     {
         $client = self::createClient();
 
         $crawler = $client->request('GET', '/');
         $this->assertEquals('Getting Started', $crawler->filter('.getting-started h2')->text());
+    }
+
+    public function testRedirectsOnMatch(): void
+    {
+        $client = self::createClient();
+
+        $this->initializePackages($client->getContainer());
+
+        $client->request('GET', '/', ['query' => 'twig/twig']);
+        static::assertResponseRedirects('/packages/twig/twig', 302);
+    }
+
+    public function testHomepageDoesntRedirectsOnNoMatch(): void
+    {
+        $client = self::createClient();
+
+        $crawler = $client->request('GET', '/', ['q' => 'symfony/process']);
+        static::assertResponseIsSuccessful();
+        static::assertEquals('symfony/process', $crawler->filter('input[type=search]')->attr('value'));
+    }
+
+    public function testSearchRedirectsOnMatch(): void
+    {
+        $client = self::createClient();
+
+        $this->initializePackages($client->getContainer());
+
+        $client->request('GET', '/search/', ['query' => 'twig/twig']);
+        static::assertResponseRedirects('/packages/twig/twig', 302);
+    }
+
+    public function testSearchRendersEmptyOnHtml(): void
+    {
+        $client = self::createClient();
+
+        $crawler = $client->request('GET', '/search/');
+        static::assertResponseIsSuccessful();
+        static::assertEquals('Search by', $crawler->filter('.content')->text());
+    }
+
+    public function testSearchJsonWithoutQuery(): void
+    {
+        $client = self::createClient();
+
+        $client->request('GET', '/search.json');
+        static::assertResponseStatusCodeSame(400);
+        static::assertStringContainsString('Missing search query', $client->getResponse()->getContent());
+    }
+
+    public function testSearchJsonWithQuery(): void
+    {
+        $client = self::createClient();
+
+        AlgoliaMock::setup($client, new Query('monolog', [], '', 15, 0), 'search-with-query');
+
+        $client->request('GET', '/search.json', ['q' => 'monolog']);
+        static::assertResponseStatusCodeSame(200);
+        static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query.json', $client->getResponse()->getContent());
+    }
+
+    public function testSearchJsonWithQueryAndTag(): void
+    {
+        $client = self::createClient();
+
+        AlgoliaMock::setup($client, new Query('pro', ['testing'], '', 15, 0), 'search-with-query-tag');
+
+        $client->request('GET', '/search.json', ['q' => 'pro', 'tags' => 'testing']);
+        static::assertResponseStatusCodeSame(200);
+        static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query-tag.json', $client->getResponse()->getContent());
+    }
+
+    public function testSearchJsonWithQueryAndTagsAndTypes(): void
+    {
+        $client = self::createClient();
+
+        AlgoliaMock::setup($client, new Query('pro', ['testing', 'mock'], 'library', 15, 0), 'search-with-query-tags');
+
+        $client->request('GET', '/search.json', ['q' => 'pro', 'tags' => ['testing', 'mock'], 'type' => 'library']);
+        static::assertResponseStatusCodeSame(200);
+        static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query-tags.json', $client->getResponse()->getContent());
     }
 
     public function testPackages()
@@ -104,38 +188,5 @@ class WebControllerTest extends WebTestCase
                 )
             );
         }
-    }
-
-    /**
-     * @param string $package
-     * @param int $downloads
-     * @param int $favers
-     *
-     * @return array
-     */
-    protected function getJsonResult($package, $downloads, $favers): array
-    {
-        return array(
-            'name' => $package,
-            'description' => '',
-            'url' => 'http://localhost/packages/' . $package,
-            'repository' => 'https://github.com/' . $package,
-            'downloads' => $downloads,
-            'favers' => $favers,
-        );
-    }
-
-    /**
-     * @param array $results
-     *
-     * @return array
-     */
-    protected function getJsonResults(
-        array $results
-    ) {
-        return array(
-            'results' => $results,
-            'total' => count($results)
-        );
     }
 }
