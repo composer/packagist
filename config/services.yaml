@@ -69,6 +69,11 @@ services:
         tags:
             - { name: kernel.event_listener, event: kernel.response, method: onResponse }
 
+    App\ArgumentResolver\:
+        resource: '../src/ArgumentResolver/*.php'
+        tags:
+            - { name: controller.argument_value_resolver, priority: 101 } # Put these above RequestAttributeValueResolver
+
     App\Package\SymlinkDumper:
         arguments:
             $webDir: '%kernel.project_dir%/web/'

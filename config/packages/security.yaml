@@ -55,6 +55,7 @@ security:
         - { path: ^/2fa, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
         # Members only parts of the site
         - { path: ^/packages/submit$, role: ROLE_USER }
+        - { path: ^/users/[^/]+/(2fa|delete)(/|$), role: ROLE_USER }
         - { path: ^/packages/fetch-info$, role: ROLE_USER }
         - { path: ^/profile(/|$), role: ROLE_USER }
         - { path: ^/trigger-github-sync/?$, role: ROLE_USER }
