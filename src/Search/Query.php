@@ -17,7 +17,7 @@ final class Query
         public int $perPage,
         public int $page,
     ) {
-        $this->query = Preg::replace('{([^\s])-}', '$1\-', $query);
+        $this->query = Preg::replace('{([^\s])-}', '$1--', $query);
         $this->type = str_replace('%type%', '', $type);
         $this->perPage =  max(1, $perPage);
         $this->page =  max(1, $page) - 1;

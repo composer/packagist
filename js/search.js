@@ -22,7 +22,7 @@ var search = instantsearch({
         stateMapping: {
             stateToRoute: function (uiState) {
                 return {
-                    query: uiState.query && uiState.query.replace(new RegExp('\\-', 'g'), '-'),
+                    query: uiState.query && uiState.query.replace(new RegExp('([^\\s])--', 'g'), '$1-'),
                     type: uiState.menu && uiState.menu.type,
                     tags: uiState.refinementList && uiState.refinementList.tags && uiState.refinementList.tags.join('~'),
                     page: uiState.page,
@@ -70,7 +70,7 @@ var search = instantsearch({
             clearTimeout(searchThrottle);
         }
 
-        helper.state.query = helper.state.query.replace(new RegExp('([^\\s])-', 'g'), '$1\\-');
+        helper.state.query = helper.state.query.replace(new RegExp('([^\\s])-', 'g'), '$1--');
 
         searchThrottle = setTimeout(function () {
             helper.search();
