@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3de41ec7691a0c19ac9edc225e1c8ef1",
+    "content-hash": "b02302bb8709153e329a9c941c5fa0f5",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -490,52 +490,59 @@
         },
         {
             "name": "composer/composer",
-            "version": "2.2.x-dev",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "78bdd8127b91cfd5589955826d7ff9f6228f44c1"
+                "reference": "b0665981c2e80578b6692da8604edcda7b2093ab"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/78bdd8127b91cfd5589955826d7ff9f6228f44c1",
-                "reference": "78bdd8127b91cfd5589955826d7ff9f6228f44c1",
+                "url": "https://api.github.com/repos/composer/composer/zipball/b0665981c2e80578b6692da8604edcda7b2093ab",
+                "reference": "b0665981c2e80578b6692da8604edcda7b2093ab",
                 "shasum": ""
             },
             "require": {
                 "composer/ca-bundle": "^1.0",
                 "composer/metadata-minifier": "^1.0",
-                "composer/pcre": "^1.0",
+                "composer/pcre": "^2 || ^3",
                 "composer/semver": "^3.0",
                 "composer/spdx-licenses": "^1.2",
-                "composer/xdebug-handler": "^2.0 || ^3.0",
+                "composer/xdebug-handler": "^2.0.2 || ^3.0.3",
                 "justinrainbow/json-schema": "^5.2.11",
-                "php": "^5.3.2 || ^7.0 || ^8.0",
-                "psr/log": "^1.0 || ^2.0",
-                "react/promise": "^1.2 || ^2.7",
+                "php": "^7.2.5 || ^8.0",
+                "psr/log": "^1.0 || ^2.0 || ^3.0",
+                "react/promise": "^2.8",
                 "seld/jsonlint": "^1.4",
-                "seld/phar-utils": "^1.0",
-                "symfony/console": "^2.8.52 || ^3.4.35 || ^4.4 || ^5.0",
-                "symfony/filesystem": "^2.8.52 || ^3.4.35 || ^4.4 || ^5.0 || ^6.0",
-                "symfony/finder": "^2.8.52 || ^3.4.35 || ^4.4 || ^5.0 || ^6.0",
-                "symfony/process": "^2.8.52 || ^3.4.35 || ^4.4 || ^5.0 || ^6.0"
+                "seld/phar-utils": "^1.2",
+                "symfony/console": "^5.4.1 || ^6.0",
+                "symfony/filesystem": "^5.4 || ^6.0",
+                "symfony/finder": "^5.4 || ^6.0",
+                "symfony/polyfill-php73": "^1.24",
+                "symfony/polyfill-php80": "^1.24",
+                "symfony/process": "^5.4 || ^6.0"
             },
             "require-dev": {
-                "phpspec/prophecy": "^1.10",
-                "symfony/phpunit-bridge": "^4.2 || ^5.0 || ^6.0"
+                "phpstan/phpstan": "^1.4.1",
+                "phpstan/phpstan-deprecation-rules": "^1",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "phpstan/phpstan-strict-rules": "^1",
+                "phpstan/phpstan-symfony": "^1.1",
+                "symfony/phpunit-bridge": "^6.0"
             },
             "suggest": {
                 "ext-openssl": "Enabling the openssl extension allows you to access https URLs for repositories and packages",
                 "ext-zip": "Enabling the zip extension allows you to unzip archives",
                 "ext-zlib": "Allow gzip compression of HTTP requests"
             },
+            "default-branch": true,
             "bin": [
                 "bin/composer"
             ],
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "2.2-dev"
+                    "dev-main": "2.3-dev"
                 }
             },
             "autoload": {
@@ -569,7 +576,7 @@
             "support": {
                 "irc": "ircs://irc.libera.chat:6697/composer",
                 "issues": "https://github.com/composer/composer/issues",
-                "source": "https://github.com/composer/composer/tree/2.2"
+                "source": "https://github.com/composer/composer/tree/main"
             },
             "funding": [
                 {
@@ -585,7 +592,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-03-15T21:13:38+00:00"
+            "time": "2022-03-17T13:52:14+00:00"
         },
         {
             "name": "composer/metadata-minifier",
@@ -658,30 +665,30 @@
         },
         {
             "name": "composer/pcre",
-            "version": "1.0.1",
+            "version": "3.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/pcre.git",
-                "reference": "67a32d7d6f9f560b726ab25a061b38ff3a80c560"
+                "reference": "e300eb6c535192decd27a85bc72a9290f0d6b3bd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/pcre/zipball/67a32d7d6f9f560b726ab25a061b38ff3a80c560",
-                "reference": "67a32d7d6f9f560b726ab25a061b38ff3a80c560",
+                "url": "https://api.github.com/repos/composer/pcre/zipball/e300eb6c535192decd27a85bc72a9290f0d6b3bd",
+                "reference": "e300eb6c535192decd27a85bc72a9290f0d6b3bd",
                 "shasum": ""
             },
             "require": {
-                "php": "^5.3.2 || ^7.0 || ^8.0"
+                "php": "^7.4 || ^8.0"
             },
             "require-dev": {
                 "phpstan/phpstan": "^1.3",
                 "phpstan/phpstan-strict-rules": "^1.1",
-                "symfony/phpunit-bridge": "^4.2 || ^5"
+                "symfony/phpunit-bridge": "^5"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "3.x-dev"
                 }
             },
             "autoload": {
@@ -709,7 +716,7 @@
             ],
             "support": {
                 "issues": "https://github.com/composer/pcre/issues",
-                "source": "https://github.com/composer/pcre/tree/1.0.1"
+                "source": "https://github.com/composer/pcre/tree/3.0.0"
             },
             "funding": [
                 {
@@ -725,7 +732,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-01-21T20:24:37+00:00"
+            "time": "2022-02-25T20:21:48+00:00"
         },
         {
             "name": "composer/semver",
@@ -3846,16 +3853,16 @@
         },
         {
             "name": "pagerfanta/core",
-            "version": "v3.6.0",
+            "version": "v3.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Pagerfanta/core.git",
-                "reference": "b2b7dd66e0ddcefd6631ae22fad1ef98cdf70e5a"
+                "reference": "ed751ad06edea1d88451683405e4a207f20c26ac"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Pagerfanta/core/zipball/b2b7dd66e0ddcefd6631ae22fad1ef98cdf70e5a",
-                "reference": "b2b7dd66e0ddcefd6631ae22fad1ef98cdf70e5a",
+                "url": "https://api.github.com/repos/Pagerfanta/core/zipball/ed751ad06edea1d88451683405e4a207f20c26ac",
+                "reference": "ed751ad06edea1d88451683405e4a207f20c26ac",
                 "shasum": ""
             },
             "require": {
@@ -3886,13 +3893,13 @@
                 "pagerfanta"
             ],
             "support": {
-                "source": "https://github.com/Pagerfanta/core/tree/v3.6.0"
+                "source": "https://github.com/Pagerfanta/core/tree/v3.6.1"
             },
-            "time": "2022-03-09T00:03:03+00:00"
+            "time": "2022-03-15T23:30:46+00:00"
         },
         {
             "name": "pagerfanta/doctrine-orm-adapter",
-            "version": "v3.6.0",
+            "version": "v3.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Pagerfanta/doctrine-orm-adapter.git",
@@ -3937,13 +3944,13 @@
                 "pagerfanta"
             ],
             "support": {
-                "source": "https://github.com/Pagerfanta/doctrine-orm-adapter/tree/v3.6.0"
+                "source": "https://github.com/Pagerfanta/doctrine-orm-adapter/tree/v3.6.1"
             },
             "time": "2022-03-09T00:03:03+00:00"
         },
         {
             "name": "pagerfanta/twig",
-            "version": "v3.6.0",
+            "version": "v3.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Pagerfanta/twig.git",
@@ -3983,7 +3990,7 @@
                 "pagerfanta"
             ],
             "support": {
-                "source": "https://github.com/Pagerfanta/twig/tree/v3.6.0"
+                "source": "https://github.com/Pagerfanta/twig/tree/v3.6.1"
             },
             "time": "2022-01-18T04:22:14+00:00"
         },
@@ -5409,16 +5416,16 @@
         },
         {
             "name": "spomky-labs/otphp",
-            "version": "v10.0.2",
+            "version": "v10.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Spomky-Labs/otphp.git",
-                "reference": "cd6b57baf37e2551cfb6d8706201c153e5ac1a4d"
+                "reference": "9784d9f7c790eed26e102d6c78f12c754036c366"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Spomky-Labs/otphp/zipball/cd6b57baf37e2551cfb6d8706201c153e5ac1a4d",
-                "reference": "cd6b57baf37e2551cfb6d8706201c153e5ac1a4d",
+                "url": "https://api.github.com/repos/Spomky-Labs/otphp/zipball/9784d9f7c790eed26e102d6c78f12c754036c366",
+                "reference": "9784d9f7c790eed26e102d6c78f12c754036c366",
                 "shasum": ""
             },
             "require": {
@@ -5478,9 +5485,9 @@
             ],
             "support": {
                 "issues": "https://github.com/Spomky-Labs/otphp/issues",
-                "source": "https://github.com/Spomky-Labs/otphp/tree/v10.0.2"
+                "source": "https://github.com/Spomky-Labs/otphp/tree/v10.0.3"
             },
-            "time": "2022-02-15T08:38:37+00:00"
+            "time": "2022-03-17T08:00:35+00:00"
         },
         {
             "name": "symfony/asset",
@@ -13143,16 +13150,16 @@
         },
         {
             "name": "staabm/phpstan-dba",
-            "version": "0.2.22",
+            "version": "0.2.23",
             "source": {
                 "type": "git",
                 "url": "https://github.com/staabm/phpstan-dba.git",
-                "reference": "6fb6b071b38f0cf3c58ba6b9a73b3b0bcbd21f19"
+                "reference": "39966391af34161ca465d5f4e1670f713f283ddf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/6fb6b071b38f0cf3c58ba6b9a73b3b0bcbd21f19",
-                "reference": "6fb6b071b38f0cf3c58ba6b9a73b3b0bcbd21f19",
+                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/39966391af34161ca465d5f4e1670f713f283ddf",
+                "reference": "39966391af34161ca465d5f4e1670f713f283ddf",
                 "shasum": ""
             },
             "require": {
@@ -13192,9 +13199,9 @@
             ],
             "support": {
                 "issues": "https://github.com/staabm/phpstan-dba/issues",
-                "source": "https://github.com/staabm/phpstan-dba/tree/0.2.22"
+                "source": "https://github.com/staabm/phpstan-dba/tree/0.2.23"
             },
-            "time": "2022-03-02T17:11:21+00:00"
+            "time": "2022-03-06T20:37:27+00:00"
         },
         {
             "name": "symfony/browser-kit",

@@ -28,7 +28,7 @@
         "beelab/recaptcha2-bundle": "^2.3",
         "cebe/markdown": "^1.1",
         "composer/composer": "^2.0@dev",
-        "composer/pcre": "^1.0",
+        "composer/pcre": "^3.0",
         "doctrine/annotations": "^1.0",
         "doctrine/common": "^3",
         "doctrine/doctrine-bundle": "^2.2",

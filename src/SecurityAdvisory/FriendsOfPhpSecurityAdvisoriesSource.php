@@ -57,13 +57,9 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
             $downloadManager = $factory->createDownloadManager($io, $config, $httpDownloader, $process);
             $downloader = $downloadManager->getDownloader('zip');
             $promise = $downloader->download($composerPackage, $localDir);
-            if ($promise) {
-                $loop->wait([$promise]);
-            }
+            $loop->wait([$promise]);
             $promise = $downloader->install($composerPackage, $localDir);
-            if ($promise) {
-                $loop->wait([$promise]);
-            }
+            $loop->wait([$promise]);
 
             $finder = new Finder();
             $finder->name('*.yaml');
