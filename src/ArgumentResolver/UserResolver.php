@@ -20,7 +20,7 @@ class UserResolver implements ArgumentValueResolverInterface
 
     public function supports(Request $request, ArgumentMetadata $argument): bool
     {
-        return User::class === $argument->getType() && \count($argument->getAttributes(CurrentUser::class)) === 0;
+        return User::class === $argument->getType() && \count($argument->getAttributes(CurrentUser::class, ArgumentMetadata::IS_INSTANCEOF)) === 0;
     }
 
     /**
