@@ -63,9 +63,9 @@ final class QueryTest extends TestCase
         return [
             ['symfony/property', 'symfony/property'],
             ['symfony/property -info', 'symfony/property -info'],
-            ['symfony/property-info', 'symfony/property\-info'],
-            ['symfony/property-info-info', 'symfony/property\-info\-info'],
-            ['symfony/property-info-info -info', 'symfony/property\-info\-info -info'],
+            ['symfony/property-info', 'symfony/property--info'],
+            ['symfony/property-info-info', 'symfony/property--info--info'],
+            ['symfony/property-info-info -info', 'symfony/property--info--info -info'],
         ];
     }
 
