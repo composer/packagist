@@ -72,8 +72,10 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
     {
         $this->providerManager
             ->method('packageExists')
-            ->with($this->equalTo('vendor/package'))
-            ->willReturn(true);
+            ->willReturnMap([
+                ['vendor/package', true],
+                ['vendor/other-package', false],
+            ]);
 
         $counter = 0;
         $responseFactory = function (string $method, string $url, array $options) use (&$counter) {
@@ -103,6 +105,10 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
 
         $this->assertNotNull($advisoryCollection);
         $this->assertSame(2, $client->getRequestsCount());
+
+        $otherAdvisories = $advisoryCollection->getAdvisoriesForPackageName('vendor/other-package');
+        $this->assertCount(1, $otherAdvisories);
+        $this->assertSame('<5.11.0', $otherAdvisories[0]->getAffectedVersions());
 
         $advisories = $advisoryCollection->getAdvisoriesForPackageName($package->getName());
         $this->assertCount(2, $advisories);
@@ -141,54 +147,9 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
             'data' => [
                 'securityVulnerabilities' => [
                     'nodes' => [
-                        [
-                            'advisory' => [
-                                'summary' => 'Cross site scripting in the system log',
-                                'permalink' => 'https://github.com/advisories/GHSA-h58v-c6rf-g9f7',
-                                'publishedAt' => '2021-07-01T17:00:04Z',
-                                'identifiers' => [
-                                    ['type' => 'GHSA', 'value' => 'GHSA-h58v-c6rf-g9f7',],
-                                    ['type' => 'CVE', 'value' => 'CVE-2021-35210'],
-                                ],
-                                'references' => [],
-                            ],
-                            'vulnerableVersionRange' => '>= 4.10.0, < 4.11.5',
-                            'package' => [
-                                'name' => 'vendor/package',
-                            ],
-                        ],
-                        [
-                            'advisory' => [
-                                'summary' => 'Cross site scripting in the system log',
-                                'permalink' => 'https://github.com/advisories/GHSA-h58v-c6rf-g9f7',
-                                'publishedAt' => '2021-07-01T17:00:04Z',
-                                'identifiers' => [
-                                    ['type' => 'GHSA', 'value' => 'GHSA-h58v-c6rf-g9f7'],
-                                    ['type' => 'CVE', 'value' => 'CVE-2021-35210'],
-                                ],
-                                'references' => [],
-                            ],
-                            'vulnerableVersionRange' => '>= 4.5.0, < 4.9.16',
-                            'package' => [
-                                'name' => 'vendor/package',
-                            ],
-                        ],
-                        [
-                            'advisory' => [
-                                'summary' => 'Insert tag injection in forms',
-                                'permalink' => 'https://github.com/advisories/GHSA-f7wm-x4gw-6m23',
-                                'publishedAt' => '2020-09-24T16:23:54Z',
-                                'identifiers' => [
-                                    ['type' => 'GHSA', 'value' => 'GHSA-f7wm-x4gw-6m23',],
-                                    ['type' => 'CVE', 'value' => 'CVE-2020-25768'],
-                                ],
-                                'references' => [],
-                            ],
-                            'vulnerableVersionRange' => '= 4.10.0',
-                            'package' => [
-                                'name' => 'vendor/package',
-                            ],
-                        ],
+                        $this->graphQlPackageNode('GHSA-h58v-c6rf-g9f7', 'vendor/package', '>= 4.10.0, < 4.11.5', 'CVE-2021-35210', 'Cross site scripting in the system log', '2021-07-01T17:00:04Z'),
+                        $this->graphQlPackageNode('GHSA-h58v-c6rf-g9f7', 'vendor/package', '>= 4.5.0, < 4.9.16', 'CVE-2021-35210', 'Cross site scripting in the system log', '2021-07-01T17:00:04Z'),
+                        $this->graphQlPackageNode('GHSA-f7wm-x4gw-6m23', 'vendor/package', '= 4.10.0', 'CVE-2020-25768', 'Insert tag injection in forms', '2020-09-24T16:23:54Z'),
                     ],
                     'pageInfo' => [
                         'hasNextPage' => $hasNextPage,
@@ -205,28 +166,34 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
             'data' => [
                 'securityVulnerabilities' => [
                     'nodes' => [
-                        [
-                            'advisory' => [
-                                'summary' => 'Insert tag injection in forms',
-                                'permalink' => 'https://github.com/advisories/GHSA-f7wm-x4gw-6m23',
-                                'publishedAt' => '2020-09-24T16:23:54Z',
-                                'identifiers' => [
-                                    ['type' => 'GHSA', 'value' => 'GHSA-f7wm-x4gw-6m23',],
-                                    ['type' => 'CVE', 'value' => 'CVE-2020-25768'],
-                                ],
-                                'references' => [],
-                            ],
-                            'vulnerableVersionRange' => '< 4.11.0',
-                            'package' => [
-                                'name' => 'vendor/package',
-                            ],
-                        ],
+                        $this->graphQlPackageNode('GHSA-f7wm-x4gw-6m23', 'vendor/package', '< 4.11.0', 'CVE-2020-25768', 'Insert tag injection in forms', '2020-09-24T16:23:54Z'),
+                        $this->graphQlPackageNode('GHSA-f7wm-x4gw-6m23', 'vendor/other-package', '< 5.11.0', 'CVE-2020-25768', 'Insert tag injection in forms', '2020-09-24T16:23:54Z'),
                     ],
                     'pageInfo' => [
                         'hasNextPage' => false,
                         'endCursor' => 'Y3Vyc29yOnYyOpK5MjAxOS0xMi0xN1QyMDozNTozMSswMTowMM0LWQ==',
                     ],
                 ],
+            ],
+        ];
+    }
+
+    private function graphQlPackageNode(string $advisoryId, string $packageName, string $range, string $cve, string $summary, string $publishedAt): array
+    {
+        return [
+            'advisory' => [
+                'summary' => $summary,
+                'permalink' => 'https://github.com/advisories/' . $advisoryId,
+                'publishedAt' => $publishedAt,
+                'identifiers' => [
+                    ['type' => 'GHSA', 'value' => $advisoryId,],
+                    ['type' => 'CVE', 'value' => $cve],
+                ],
+                'references' => [],
+            ],
+            'vulnerableVersionRange' => $range,
+            'package' => [
+                'name' => $packageName,
             ],
         ];
     }

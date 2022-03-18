@@ -17,7 +17,7 @@ use App\SecurityAdvisory\RemoteSecurityAdvisory;
  * @ORM\Table(
  *     name="security_advisory",
  *     uniqueConstraints={
- *          @ORM\UniqueConstraint(name="source_remoteid_idx", columns={"source","remoteId"}),
+ *          @ORM\UniqueConstraint(name="source_remoteid_package_idx", columns={"source","remoteId", "packageName"}),
  *          @ORM\UniqueConstraint(name="package_name_cve_idx", columns={"packageName","cve"})
  *     },
  *     indexes={
