@@ -70,6 +70,7 @@
         "symfony/process": "^5.2",
         "symfony/property-access": "^5.2",
         "symfony/property-info": "^5.2",
+        "symfony/proxy-manager-bridge": "^5.2",
         "symfony/security-bundle": "^5.2",
         "symfony/serializer": "^5.2",
         "symfony/translation": "^5.2",
