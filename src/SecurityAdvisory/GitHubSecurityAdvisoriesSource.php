@@ -32,8 +32,8 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
 
     public function getAdvisories(ConsoleIO $io): ?RemoteSecurityAdvisoryCollection
     {
-        /** @var RemoteSecurityAdvisory[] $advisories */
-        $advisories = [];
+        /** @var array<string, array<string, RemoteSecurityAdvisory>> $advisoryMap */
+        $advisoryMap = [];
         $hasNextPage = true;
         $after = '';
 
@@ -83,10 +83,12 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                     continue;
                 }
 
+                $packageName = strtolower($node['package']['name']);
+
                 // GitHub adds spaces everywhere e.g. > 1.0, adjust to be able to match other advisories
                 $versionRange = Preg::replace('#\s#', '', $node['vulnerableVersionRange']);
-                if (isset($advisories[$remoteId])) {
-                    $advisories[$remoteId] = $advisories[$remoteId]->withAddedAffectedVersion($versionRange);
+                if (isset($advisoryMap[$packageName][$remoteId])) {
+                    $advisoryMap[$packageName][$remoteId] = $advisoryMap[$packageName][$remoteId]->withAddedAffectedVersion($versionRange);
                     continue;
                 }
 
@@ -102,8 +104,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                     throw new \InvalidArgumentException('Invalid date format returned from GitHub');
                 }
 
-                $packageName = strtolower($node['package']['name']);
-                $advisories[$remoteId] = new RemoteSecurityAdvisory(
+                $advisoryMap[$packageName][$remoteId] = new RemoteSecurityAdvisory(
                     $remoteId,
                     $node['advisory']['summary'],
                     $packageName,
@@ -120,7 +121,15 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
             $hasNextPage = $data['securityVulnerabilities']['pageInfo']['hasNextPage'];
             $after = $data['securityVulnerabilities']['pageInfo']['endCursor'];
         }
-        return new RemoteSecurityAdvisoryCollection(array_values($advisories));
+
+        $advisories = [];
+        foreach ($advisoryMap as $packageAdvisories) {
+            foreach ($packageAdvisories as $packageAdvisory) {
+                $advisories[] = $packageAdvisory;
+            }
+        }
+
+        return new RemoteSecurityAdvisoryCollection($advisories);
     }
 
     private function getQuery(string $after = ''): string
