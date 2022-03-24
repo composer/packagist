@@ -1,7 +1,19 @@
 version: '3'
 
 services:
+    database:
+        image: mysql:8.0
+        ports:
+            - 3306:3306
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+        volumes:
+            - data:/var/lib/mysql
+
     redis:
         image: redis:6.2-alpine
         ports:
             - 6379:6379
+
+volumes:
+    data:
