@@ -44,7 +44,8 @@ use DateTimeInterface;
  *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"}),
  *         @ORM\Index(name="dumped2_idx",columns={"dumpedAtV2"}),
  *         @ORM\Index(name="repository_idx",columns={"repository"}),
- *         @ORM\Index(name="remoteid_idx",columns={"remoteId"})
+ *         @ORM\Index(name="remoteid_idx",columns={"remoteId"}),
+ *         @ORM\Index(name="dumped2_crawled_idx",columns={"dumpedAtV2","crawledAt"})
  *     }
  * )
  * @Assert\Callback(callback="isPackageUnique", groups={"Create"})
