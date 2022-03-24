@@ -40,7 +40,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
         while ($hasNextPage) {
             $headers = [];
             if (count($this->fallbackGhTokens) > 0) {
-                $fallbackUser = $this->doctrine->getRepository(User::class)->findOneBy(['username' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
+                $fallbackUser = $this->doctrine->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
                 if (null !== $fallbackUser?->getGithubToken()) {
                     $headers = ['Authorization' => 'token ' . $fallbackUser->getGithubToken()];
                 }

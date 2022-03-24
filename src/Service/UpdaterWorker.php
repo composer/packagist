@@ -140,7 +140,7 @@ class UpdaterWorker
         }
 
         if ($usesPackagistToken && $this->fallbackGhTokens) {
-            $fallbackUser = $em->getRepository(User::class)->findOneBy(['username' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
+            $fallbackUser = $em->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
             if (null === $fallbackUser) {
                 throw new \LogicException('Invalid fallback user was not found');
             }
