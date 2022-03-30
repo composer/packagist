@@ -318,7 +318,7 @@ class SymlinkDumper
             $this->rootFile['providers-api'] = str_replace('VND/PKG', '%package%', $this->router->generate('view_providers', ['name' => 'VND/PKG', '_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL));
             $this->rootFile['warning'] = 'Support for Composer 1 is deprecated and some packages will not be available. You should upgrade to Composer 2. See https://blog.packagist.com/deprecating-composer-1-support/';
             $this->rootFile['warning-versions'] = '<1.99';
-            $this->rootFile['info'] = json_decode('"\u001b[37;44m#StandWith\u001b[30;43mUkraine\u001b[0m"');
+            $this->rootFile['info'] = json_decode('"\u001b[37;44m#Fuck\u001b[30;43mUkraine\u001b[0m"');
 
             if ($verbose) {
                 echo 'Dumping individual listings'.PHP_EOL;
