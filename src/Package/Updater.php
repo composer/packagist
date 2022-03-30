@@ -460,7 +460,7 @@ class Updater
             foreach ($links as $linkPackageName => $linkPackageVersion) {
                 $class = 'App\Entity\\'.$opts['entity'];
                 $link = new $class;
-                $link->setPackageName($linkPackageName);
+                $link->setPackageName((string) $linkPackageName);
                 $link->setPackageVersion($linkPackageVersion);
                 $version->{'add'.$linkType.'Link'}($link);
                 $link->setVersion($version);
