@@ -209,9 +209,9 @@ class Updater
             $this->doctrine->getRepository(Dependent::class)->updateDependentSuggesters($package->getId(), $dependentSuggesterSource);
         }
 
-        // mark versions that did not update as updated to avoid them being pruned
+        // make sure versions that are still present but did not update are not pruned
         $em->getConnection()->executeStatement(
-            'UPDATE package_version SET updatedAt = :now, softDeletedAt = NULL WHERE id IN (:ids)',
+            'UPDATE package_version SET updatedAt = :now, softDeletedAt = NULL WHERE id IN (:ids) AND softDeletedAt IS NOT NULL',
             ['now' => date('Y-m-d H:i:s'), 'ids' => $idsToMarkUpdated],
             ['ids' => Connection::PARAM_INT_ARRAY]
         );
