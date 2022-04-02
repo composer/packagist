@@ -17,6 +17,7 @@
     },
     "scripts": {
         "dev": "node esbuild.js --dev",
-        "build": "node esbuild.js"
+        "build": "node esbuild.js",
+        "analyze": "node esbuild.js --analyze"
     }
 }
