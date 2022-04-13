@@ -22,7 +22,7 @@ final class Query
         $this->perPage =  max(1, $perPage);
         $this->page =  max(1, $page) - 1;
 
-        if (!$this->query && !$this->type && !$this->tags) {
+        if ('' === $this->query && '' === $this->type && count($this->tags) === 0) {
             throw new \InvalidArgumentException('Missing search query, example: ?q=example');
         }
 
