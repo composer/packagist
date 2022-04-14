@@ -328,7 +328,21 @@ class ApiController extends Controller
         $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
         $response = ['advisories' => []];
         foreach ($advisories as $advisory) {
-            $response['advisories'][$advisory['packageName']][] = $advisory;
+            $source = [
+                'name' => $advisory['sourceSource'],
+                'remoteId' => $advisory['sourceRemoteId'],
+            ];
+            unset($advisory['sourceSource'], $advisory['sourceRemoteId']);
+            if (!isset($response['advisories'][$advisory['packageName']][$advisory['advisoryId']])) {
+                $advisory['sources'] = [];
+                $response['advisories'][$advisory['packageName']][$advisory['advisoryId']] = $advisory;
+            }
+
+            $response['advisories'][$advisory['packageName']][$advisory['advisoryId']]['sources'][] = $source;
+        }
+
+        foreach ($response['advisories'] as $packageName => $packageAdvisories) {
+            $response['advisories'][$packageName] = array_values($packageAdvisories);
         }
 
         return new JsonResponse($response, 200);
