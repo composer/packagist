@@ -40,7 +40,7 @@ for i, key in ipairs(KEYS) do
     elseif ((i - 6) % 6) == 0 then
         local requests = tonumber(redis.call("ZINCRBY", key, 1, ARGV[1]));
         if 1 == requests then
-            redis.call("EXPIREAT", key, ARGV[4]);
+            redis.call("PEXPIREAT", key, tonumber(ARGV[4]));
         end
 
         doIncr = false;

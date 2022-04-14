@@ -148,7 +148,7 @@ class DownloadManager
     public function addDownloads(array $jobs, string $ip, string $phpMinor, string $phpMinorPlatform): void
     {
         $now = time();
-        $throttleExpiry = strtotime('tomorrow 12:00:00', $now - 86400/2);
+        $throttleExpiry = strtotime('tomorrow 12:00:00', $now - 86400/2) * 1000;
         $throttleDay = date('Ymd', $throttleExpiry);
         $day = date('Ymd', $now);
         $month = date('Ym', $now);
