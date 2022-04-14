@@ -395,12 +395,18 @@ GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestam
       {
         "advisoryId": "[unique id]",
         "packageName": "[vendor]/[package]",
-        "remoteId": "[unique id per source]",
+        "remoteId": "[deprecated, use sources instead]",
         "title": "[title]",
         "link": "[url to issue disclosure]",
         "cve": "[cve if available]",
         "affectedVersions": [affected version in form of a composer constraint]",
-        "source": "[source where the issue was found]",
+        "source": "[deprecated, use sources instead]",
+        "sources": [
+            {
+                "name": "[Name of the source where the advisory was found e.g. GitHub or FriendsOfPHP/security-advisories]"
+                "remoteId": "[A reference to identify the advisory in the source e.g. the GitHub advisory id]"
+            }
+        ],
         "reportedAt": "[date the issue was reported]",
         "composerRepository": "[composer repository the package can be found in]"
       }

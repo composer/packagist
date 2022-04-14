@@ -96,8 +96,9 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
     {
         $filterByNames = count($packageNames) > 0;
 
-        $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository
+        $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId
             FROM security_advisory s
+            INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
             WHERE s.updatedAt >= :updatedSince '.
             ($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
             .' ORDER BY s.id DESC';
