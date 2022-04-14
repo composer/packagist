@@ -147,8 +147,11 @@ class DownloadManager
      */
     public function addDownloads(array $jobs, string $ip, string $phpMinor, string $phpMinorPlatform): void
     {
-        $day = date('Ymd');
-        $month = date('Ym');
+        $now = time();
+        $throttleExpiry = strtotime('tomorrow 12:00:00', $now - 86400/2);
+        $throttleDay = date('Ymd', $throttleExpiry);
+        $day = date('Ymd', $now);
+        $month = date('Ym', $now);
 
         if (!$this->redisCommandLoaded) {
             $profile = $this->redis->getProfile();
@@ -175,7 +178,7 @@ class DownloadManager
             $minorVersion = str_replace(':', '', $job['minor']);
 
             // throttle key
-            $args[] = 'throttle:'.$package.':'.$day;
+            $args[] = 'throttle:'.$package.':'.$throttleDay;
             // stats keys
             $args[] = 'dl:'.$package;
             $args[] = 'dl:'.$package.':'.$day;
@@ -187,6 +190,7 @@ class DownloadManager
         $args[] = $ip;
         $args[] = $day;
         $args[] = $month;
+        $args[] = $throttleExpiry;
 
         /** @phpstan-ignore-next-line */
         $this->redis->downloadsIncr(...$args);

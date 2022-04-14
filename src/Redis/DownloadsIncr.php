@@ -15,7 +15,7 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
             throw new \LogicException('getKeysCount called before filterArguments');
         }
 
-        return count($this->args) - 3;
+        return count($this->args) - 4;
     }
 
     /**
@@ -40,7 +40,7 @@ for i, key in ipairs(KEYS) do
     elseif ((i - 6) % 6) == 0 then
         local requests = tonumber(redis.call("ZINCRBY", key, 1, ARGV[1]));
         if 1 == requests then
-            redis.call("EXPIRE", key, 86400);
+            redis.call("EXPIREAT", key, ARGV[4]);
         end
 
         doIncr = false;
