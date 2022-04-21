@@ -22,10 +22,9 @@
         target: ['chrome58', 'firefox57', 'safari11', 'edge95'],
         plugins: [sassPlugin()],
     })
-    .catch(() => process.exit(1));
 
     if (process.argv.includes('--analyze')) {
         const text = await esbuild.analyzeMetafile(result.metafile)
         console.log(text);
     }
-})()
+})().catch(() => process.exit(1));
