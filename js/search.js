@@ -62,6 +62,7 @@ var search = instantsearch({
             && (helper.state.disjunctiveFacetsRefinements.tags === undefined || helper.state.disjunctiveFacetsRefinements.tags.length === 0)
         ) {
             searchResults.classList.add('hidden');
+            return;
         } else {
             searchResults.classList.remove('hidden');
         }
@@ -71,7 +72,9 @@ var search = instantsearch({
         }
 
         // force focus to prevent algolia from updating the search field input with the modified value
-        document.getElementById('search_query_query').focus();
+        if (helper.state.query.match(/-/)) {
+            document.getElementById('search_query_query').focus();
+        }
 
         helper.state.query = helper.state.query.replace(new RegExp('([^\\s])-', 'g'), '$1--');
 
