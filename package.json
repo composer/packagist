@@ -1,7 +1,7 @@
 {
     "name": "packagist.org",
     "dependencies": {
-        "bootstrap": "^3.3.5",
+        "bootstrap": "3.3.5",
         "d3": "^3.5.17",
         "instantsearch.js": "^2.7.4",
         "jquery": "^3.6.0",
@@ -16,8 +16,8 @@
         "esbuild-plugin-sass": "^1.0.1"
     },
     "scripts": {
-        "dev": "esbuild js/app.js js/charts.js --bundle --outdir=web/build --sourcemap --loader:.gif=file --loader:.eot=file --loader:.ttf=file --loader:.svg=file --loader:.woff=file --loader:.woff2=file --target=chrome58,firefox57,safari11,edge95 --watch",
-        "build": "esbuild js/app.js js/charts.js --bundle --outdir=web/build  --minify --loader:.gif=file --loader:.eot=file --loader:.ttf=file --loader:.svg=file --loader:.woff=file --loader:.woff2=file --target=chrome58,firefox57,safari11,edge95",
-        "analyze": "esbuild js/app.js js/charts.js --bundle --outdir=web/build  --minify --loader:.gif=file --loader:.eot=file --loader:.ttf=file --loader:.svg=file --loader:.woff=file --loader:.woff2=file --target=chrome58,firefox57,safari11,edge95 --analyze"
+        "dev": "node esbuild.js --dev",
+        "build": "node esbuild.js",
+        "analyze": "node esbuild.js --analyze"
     }
 }
