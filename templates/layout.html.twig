@@ -240,7 +240,6 @@
         {% block script_init %}{% endblock %}
 
         <script nonce="{{ csp_nonce('script') }}" src="{{ asset('build/app.js') }}"></script>
-        <script nonce="{{ csp_nonce('script') }}" src="{{ asset('libs/bootstrap-3.3.5/js/bootstrap.min.js')}}"></script>
 
         {% block scripts %}{% endblock %}
     </body>

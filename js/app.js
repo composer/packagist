@@ -4,6 +4,7 @@ import notifier from './notifier';
 import './search';
 import './view';
 import './submitPackage';
+import 'bootstrap';
 
 import '../css/app.scss';
 
