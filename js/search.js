@@ -70,6 +70,9 @@ var search = instantsearch({
             clearTimeout(searchThrottle);
         }
 
+        // force focus to prevent algolia from updating the search field input with the modified value
+        document.getElementById('search_query_query').focus();
+
         helper.state.query = helper.state.query.replace(new RegExp('([^\\s])-', 'g'), '$1--');
 
         searchThrottle = setTimeout(function () {
