@@ -22,6 +22,7 @@ use App\Entity\Version;
 use App\Entity\Download;
 use App\Entity\EmptyReferenceCache;
 use Psr\Log\LoggerInterface;
+use Composer\Pcre\Preg;
 use Algolia\AlgoliaSearch\SearchClient;
 use Predis\Client;
 use App\Service\GitHubUserMigrationWorker;
@@ -146,11 +147,16 @@ class PackageManager
             }
 
             if ($recipients) {
+                $details = strip_tags($details ?? '');
+                $details = Preg::replace('{(?<=\n|^)Found cached composer\.json .*\n}', '', $details);
+                $details = Preg::replace('{(?<=\n|^)Reading composer\.json .*\n}', '', $details);
+                $details = Preg::replace('{(?<=\n|^)Importing (tag|branch) .*\n}', '', $details);
+
                 $body = $this->twig->render('email/update_failed.txt.twig', [
                     'package' => $package,
                     'exception' => get_class($e),
                     'exceptionMessage' => $e->getMessage(),
-                    'details' => strip_tags($details ?? ''),
+                    'details' => $details,
                 ]);
 
                 $message = (new Email())
