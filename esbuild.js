@@ -27,4 +27,4 @@
         const text = await esbuild.analyzeMetafile(result.metafile)
         console.log(text);
     }
-})().catch(() => process.exit(1));
+})().catch((e) => console.error(e) || process.exit(1));
