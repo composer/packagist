@@ -1,12 +1,11 @@
 import Plausible from 'plausible-tracker'
-import jQuery from "jquery";
+import './jquery';
 import notifier from './notifier';
 import './search';
 import './view';
 import './submitPackage';
 import '../css/app.scss';
-
-window.jQuery = window.$ = jQuery;
+import 'bootstrap';
 
 (function ($) {
     "use strict";
