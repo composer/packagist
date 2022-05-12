@@ -429,7 +429,7 @@ class PackageRepository extends ServiceEntityRepository
         return $qb;
     }
 
-    public function isVendorTaken(string $vendor, User $user): bool
+    public function isVendorTaken(string $vendor, User $user = null): bool
     {
         $query = $this->getEntityManager()
             ->createQuery(
@@ -444,9 +444,11 @@ class PackageRepository extends ServiceEntityRepository
             return false;
         }
 
-        foreach ($rows as $row) {
-            if ($row['user_id'] === $user->getId()) {
-                return false;
+        if ($user instanceof User) {
+            foreach ($rows as $row) {
+                if ($row['user_id'] === $user->getId()) {
+                    return false;
+                }
             }
         }
 
