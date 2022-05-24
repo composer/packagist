@@ -458,6 +458,9 @@
     "staabm/phpstan-dba": {
         "version": "0.1.12"
     },
+    "stella-maris/clock": {
+        "version": "0.1.4"
+    },
     "symfony/asset": {
         "version": "v4.4.16"
     },
