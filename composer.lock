@@ -13433,12 +13433,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/staabm/phpstan-dba.git",
-                "reference": "dd55bf1ba4b76e84f39eedd55d3eb5d9e70b1b17"
+                "reference": "3735445684561267b7291d45b8aaac2419d00fe4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/dd55bf1ba4b76e84f39eedd55d3eb5d9e70b1b17",
-                "reference": "dd55bf1ba4b76e84f39eedd55d3eb5d9e70b1b17",
+                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/3735445684561267b7291d45b8aaac2419d00fe4",
+                "reference": "3735445684561267b7291d45b8aaac2419d00fe4",
                 "shasum": ""
             },
             "require": {
@@ -13480,7 +13480,7 @@
                 "issues": "https://github.com/staabm/phpstan-dba/issues",
                 "source": "https://github.com/staabm/phpstan-dba/tree/query-plan"
             },
-            "time": "2022-05-24T20:36:44+00:00"
+            "time": "2022-05-25T13:01:11+00:00"
         },
         {
             "name": "symfony/browser-kit",
