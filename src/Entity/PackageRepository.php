@@ -320,10 +320,9 @@ class PackageRepository extends ServiceEntityRepository
         // this helps for packages like https://packagist.org/packages/ccxt/ccxt
         // with huge amounts of versions
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('partial p.{id}', 'partial v.{id, version, normalizedVersion, development, releasedAt, extra, isDefaultBranch}', 'partial m.{id, username, email}')
+        $qb->select('partial p.{id}', 'partial v.{id, version, normalizedVersion, development, releasedAt, extra, isDefaultBranch}')
             ->from('App\Entity\Package', 'p')
             ->leftJoin('p.versions', 'v')
-            ->leftJoin('p.maintainers', 'm')
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC')
             ->where('p.name = ?0')
@@ -332,19 +331,14 @@ class PackageRepository extends ServiceEntityRepository
         $pkg = $qb->getQuery()->getSingleResult();
 
         if ($pkg instanceof Package) {
-            // then refresh the package to complete its data and inject the previously fetched versions/maintainers to
-            // get a complete package
+            // then refresh the package to complete its data and inject the previously
+            // fetched partial versions to get a complete package
             $versions = $pkg->getVersions();
-            $maintainers = $pkg->getMaintainers();
             $this->getEntityManager()->refresh($pkg);
 
             $prop = new \ReflectionProperty($pkg, 'versions');
             $prop->setAccessible(true);
             $prop->setValue($pkg, $versions);
-
-            $prop = new \ReflectionProperty($pkg, 'maintainers');
-            $prop->setAccessible(true);
-            $prop->setValue($pkg, $maintainers);
         }
 
         return $pkg;

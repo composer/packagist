@@ -427,7 +427,7 @@ class Package
     {
         try {
             $vendor = $this->getVendor();
-            if ($vendor && $this->entityRepository->isVendorTaken($vendor, $this->maintainers->first())) {
+            if ($vendor && $this->entityRepository->isVendorTaken($vendor, $this->maintainers->first() ?: null)) {
                 $context->buildViolation('The vendor name "'.$vendor.'" was already claimed by someone else on Packagist.org. '
                         . 'You may ask them to add your package and give you maintainership access. '
                         . 'If they add you as a maintainer on any package in that vendor namespace, '

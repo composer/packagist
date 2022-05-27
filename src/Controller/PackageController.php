@@ -507,7 +507,6 @@ class PackageController extends Controller
         $repo = $this->getEM()->getRepository(Package::class);
 
         try {
-            /** @var Package $package */
             $package = $repo->getPartialPackageByNameWithVersions($name);
         } catch (NoResultException $e) {
             if ('json' === $req->getRequestFormat()) {
@@ -564,18 +563,23 @@ class PackageController extends Controller
 
         if (count($versions)) {
             $versionRepo = $this->getEM()->getRepository(Version::class);
-            $this->getEM()->refresh(reset($versions));
-            $version = $versionRepo->getFullVersion(reset($versions)->getId());
 
-            $expandedVersion = reset($versions);
-            foreach ($versions as $v) {
-                if (!$v->isDevelopment()) {
-                    $expandedVersion = $v;
+            // load the default branch version as it is used to display the latest available source.* and homepage info
+            $version = reset($versions);
+            $this->getEM()->refresh($version);
+
+            $expandedVersion = $version;
+            foreach ($versions as $candidate) {
+                if (!$candidate->isDevelopment()) {
+                    $expandedVersion = $candidate;
                     break;
                 }
             }
 
-            $this->getEM()->refresh($expandedVersion);
+            // load the expanded version fully to be able to display all info including tags
+            if ($expandedVersion->getId() !== $version->getId()) {
+                $this->getEM()->refresh($expandedVersion);
+            }
             $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
         }
 
@@ -640,10 +644,6 @@ class PackageController extends Controller
             }
         } else {
             $data['hasVersionSecurityAdvisories'] = [];
-        }
-
-        if (date('Y') === '2021') {
-            $data['isVisibleToV1'] = $this->getEM()->getRepository(Package::class)->isPackageDumpableForV1($package);
         }
 
         if ($this->isGranted('ROLE_DELETE_PACKAGES') || $package->isMaintainer($user)) {
