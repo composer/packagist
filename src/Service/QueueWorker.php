@@ -145,6 +145,9 @@ class QueueWorker
         $repo = $em->getRepository(Job::class);
 
         if ($result['status'] === Job::STATUS_RESCHEDULE) {
+            if (!isset($result['after'])) {
+                throw new \LogicException('$result must have an "after" key when returning a reschedule status.');
+            }
             $job->reschedule($result['after']);
             $em->flush($job);
 

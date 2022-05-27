@@ -72,7 +72,7 @@ class UpdaterWorker
     }
 
     /**
-     * @return array{status: string, message?: string, after?: \DateTimeInterface, vendor?: string, details?: string, e?: \Throwable}
+     * @return array{status: Job::STATUS_*, message?: string, after?: \DateTimeInterface, vendor?: string, details?: string, e?: \Throwable}
      */
     public function process(Job $job, SignalHandler $signal): array
     {
@@ -362,7 +362,7 @@ class UpdaterWorker
 
     /**
      * @param array<int, string> $match
-     * @return array{status: string, message: string, details: string, exception: TransportException, vendor: string}|null
+     * @return array{status: Job::STATUS_*, message: string, details: string, exception: TransportException, vendor: string}|null
      */
     private function checkForDeadGitHubPackage(Package $package, array $match, HttpDownloader $httpDownloader, string $output): ?array
     {

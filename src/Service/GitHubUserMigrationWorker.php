@@ -33,7 +33,7 @@ class GitHubUserMigrationWorker
 
     /**
      * @return array{
-     *     status: string,
+     *     status: Job::STATUS_*,
      *     message: string,
      *     after?: \DateTime,
      *     results?: array{

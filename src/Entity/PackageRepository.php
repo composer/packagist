@@ -493,7 +493,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @param string   $name Package name to find the dependents of
      * @param int|null $type One of Dependent::TYPE_*
-     * @return array<array{id: int, name: string, description: string, language: string|null, abandoned: int, replacementPackage: string|null}>
+     * @return array<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
      */
     public function getDependents(string $name, int $offset = 0, int $limit = 15, string $orderBy = 'name', ?int $type = null): array
     {
