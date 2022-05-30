@@ -384,7 +384,7 @@ GET https://{{ packagist_host }}/statistics.json
 
   <h4 id="list-security-advisories-by-package">{{ 'api_doc.list_security_advisory'|trans }}</h4>
 
-    <p>This endpoint provides a list of security advisories. Either a list of packages as query or request parameter or a timestamp as updatedSince query parameter need to be passed.</p>
+    <p>This endpoint provides a list of security advisories. A list of packages as query or request parameter needs to be passed. An optional timestamp as updatedSince parameter can also be passed.</p>
 
     <pre>
 GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestamp]&amp;packages[]=[vendor/package]
