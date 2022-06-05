@@ -7,6 +7,26 @@ document.getElementById('search_query_query').addEventListener('keydown', functi
     }
 });
 
+// Add accessibility functionality:
+// "Press '/' to focus the searchbar".
+document.addEventListener('keydown', function (e) {
+    if (e.code && e.code !== 'Slash') {
+        return;
+    }
+    var searchInput = document.getElementById('search_query_query');
+    // Just ignore if we can't find the search input for some reason maybe we are on a page without it.
+    if (!searchInput) {
+        return;
+    }
+    // If we already have input focus ignore.
+    if (document.activeElement.tagName === 'INPUT') {
+        return;
+    }
+    searchInput.focus();
+    // Prevent '/' being inserted on focus.
+    e.preventDefault();
+});
+
 var searchParameters = {};
 
 if (decodeURI(location.search).match(/[<>]/)) {
