@@ -257,7 +257,10 @@ strong {
     display: none;
 }
 
-.navbar .nav > .nav-user > section:hover > .nav-user-menu, .navbar .nav > .nav-user > section:hover > .signin-box {
+.navbar .nav > .nav-user > section:hover > .nav-user-menu,
+.navbar .nav > .nav-user > section:hover > .signin-box,
+.navbar .nav > .nav-user > section:focus-within > .nav-user-menu,
+.navbar .nav > .nav-user > section:focus-within > .signin-box {
     display: block;
 }
 
