@@ -311,12 +311,12 @@ class ApiController extends Controller
     /**
      * @Route(
      *     "/api/security-advisories/",
-     *     name="api_security_adivosries",
+     *     name="api_security_advisories",
      *     defaults={"_format" = "json"},
      *     methods={"GET", "POST"}
      * )
      */
-    public function securityAdvisoryAction(Request $request): JsonResponse
+    public function securityAdvisoryAction(Request $request, ProviderManager $providerManager): JsonResponse
     {
         $packageNames = array_filter((array) $request->get('packages'), fn($name) => is_string($name) && $name !== '');
         if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
@@ -339,6 +339,14 @@ class ApiController extends Controller
             }
 
             $response['advisories'][$advisory['packageName']][$advisory['advisoryId']]['sources'][] = $source;
+        }
+
+        // Ensure known packages are returned even if no advisory is present to ensure they do not get retried by composer in lower prio repos
+        // Do a max of 1000 packages to prevent abuse
+        foreach (array_slice($packageNames, 0, 1000) as $name) {
+            if ($providerManager->packageExists($name)) {
+                $response['advisories'][$name] ??= [];
+            }
         }
 
         foreach ($response['advisories'] as $packageName => $packageAdvisories) {

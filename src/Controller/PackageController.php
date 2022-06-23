@@ -80,7 +80,7 @@ class PackageController extends Controller
     {
         $repo = $this->getEM()->getRepository(Package::class);
         $queryParams = $req->query->all();
-        $fields = (array) $queryParams['fields']; // support single or multiple fields
+        $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         /** @var string[] $fields */
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
 
