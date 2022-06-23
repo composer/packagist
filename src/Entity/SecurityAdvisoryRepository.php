@@ -137,7 +137,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
         $results = [];
         foreach ($rows as $row) {
-            $results[$row['packageName']] = ['id' => $row['id'], 'affectedVersions' => $row['affectedVersions']];
+            $results[$row['packageName']][] = ['advisoryId' => $row['advisoryId'], 'affectedVersions' => $row['affectedVersions']];
         }
 
         return $results;

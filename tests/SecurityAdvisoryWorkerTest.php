@@ -4,8 +4,10 @@ namespace App\Tests;
 
 use App\Entity\Package;
 use App\Entity\SecurityAdvisoryRepository;
+use App\EventListener\SecurityAdvisoryUpdateListener;
 use App\SecurityAdvisory\RemoteSecurityAdvisoryCollection;
 use App\SecurityAdvisory\SecurityAdvisoryResolver;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
 use App\Entity\Job;
@@ -36,13 +38,17 @@ class SecurityAdvisoryWorkerTest extends TestCase
         $this->source = $this->getMockBuilder(SecurityAdvisorySourceInterface::class)->disableOriginalConstructor()->getMock();
         $locker = $this->getMockBuilder(Locker::class)->disableOriginalConstructor()->getMock();
         $doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
-        $this->worker = new SecurityAdvisoryWorker($locker, new NullLogger(), $doctrine, ['test' => $this->source], new SecurityAdvisoryResolver());
+        $this->worker = new SecurityAdvisoryWorker($locker, new NullLogger(), $doctrine, ['test' => $this->source], new SecurityAdvisoryResolver(), new SecurityAdvisoryUpdateListener($doctrine));
 
         $this->em = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
 
         $doctrine
             ->method('getManager')
             ->willReturn($this->em);
+
+        $this->em
+            ->method('getConnection')
+            ->willReturn($this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock());
 
         $locker
             ->method('lockSecurityAdvisory')
