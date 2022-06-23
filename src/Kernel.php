@@ -9,6 +9,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
+ini_set('date.timezone', 'UTC');
+
 class Kernel extends BaseKernel
 {
     use MicroKernelTrait;

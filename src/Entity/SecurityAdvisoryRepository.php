@@ -112,4 +112,34 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $params, $types);
     }
+
+    /**
+     * @param string[] $packageNames
+     * @return array<string, array<array{advisoryId: string, affectedVersions: string}>>
+     */
+    public function getAdvisoryIdsAndVersions(array $packageNames): array
+    {
+        $filterByNames = count($packageNames) > 0;
+
+        $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.affectedVersions
+            FROM security_advisory s
+            WHERE s.packageName IN (:packageNames)
+            ORDER BY s.id DESC';
+
+        $params['packageNames'] = $packageNames;
+        $types['packageNames'] = Connection::PARAM_STR_ARRAY;
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            $sql,
+            ['packageNames' => $packageNames],
+            ['packageNames' => Connection::PARAM_STR_ARRAY]
+        );
+
+        $results = [];
+        foreach ($rows as $row) {
+            $results[$row['packageName']] = ['id' => $row['id'], 'affectedVersions' => $row['affectedVersions']];
+        }
+
+        return $results;
+    }
 }

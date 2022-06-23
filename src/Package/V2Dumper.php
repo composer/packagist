@@ -12,6 +12,7 @@
 
 namespace App\Package;
 
+use App\Entity\SecurityAdvisory;
 use Composer\Pcre\Preg;
 use Symfony\Component\Filesystem\Filesystem;
 use Composer\MetadataMinifier\MetadataMinifier;
@@ -102,6 +103,8 @@ class V2Dumper
         while ($packageIds) {
             $dumpTime = new \DateTime;
             $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions(array_splice($packageIds, 0, $step));
+            $packageNames = array_map(fn (Package $pkg) => $pkg->getName(), $packages);
+            $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
 
             if ($verbose) {
                 echo '['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.PHP_EOL;
@@ -125,7 +128,7 @@ class V2Dumper
                 $versionData = $versionRepo->getVersionData($versionIds);
 
                 // dump v2 format
-                $this->dumpPackageToV2File($buildDirV2, $package, $versionData);
+                $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? []);
 
                 $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
             }
@@ -212,7 +215,11 @@ class V2Dumper
         $this->redis->zremrangebyscore('metadata-deletes', 0, $time-1);
     }
 
-    private function dumpPackageToV2File(string $dir, Package $package, array $versionData): void
+    /**
+     * @param mixed[] $versionData
+     * @param array<array{advisoryId: string, affectedVersions: string}> $advisories
+     */
+    private function dumpPackageToV2File(string $dir, Package $package, array $versionData, array $advisories): void
     {
         $name = strtolower($package->getName());
         $forceDump = $package->getDumpedAtV2() === null;
@@ -234,11 +241,14 @@ class V2Dumper
             }
         }
 
-        $this->dumpVersionsToV2File($dir, $name.'.json', $name, $tags, $versionData, $forceDump);
+        $this->dumpVersionsToV2File($dir, $name.'.json', $name, $tags, $versionData, $forceDump, $advisories);
         $this->dumpVersionsToV2File($dir, $name.'~dev.json', $name, $branches, $versionData, $forceDump);
     }
 
-    private function dumpVersionsToV2File(string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump): void
+    /**
+     * @param array<array{advisoryId: string, affectedVersions: string}>|null $advisories
+     */
+    private function dumpVersionsToV2File(string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, array|null $advisories = null): void
     {
         $versionArrays = [];
         foreach ($versions as $version) {
@@ -253,6 +263,10 @@ class V2Dumper
                 $packageName => MetadataMinifier::minify($versionArrays),
             ],
         ];
+
+        if ($advisories !== null) {
+            $metadata['security-advisories'] = $advisories;
+        }
 
         $json = json_encode($metadata, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
         $this->writeV2File($path, $json, $forceDump);

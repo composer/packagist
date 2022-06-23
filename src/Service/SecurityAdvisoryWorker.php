@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\EventListener\SecurityAdvisoryUpdateListener;
 use App\SecurityAdvisory\SecurityAdvisoryResolver;
 use Composer\Console\HtmlOutputFormatter;
 use Composer\Factory;
@@ -27,6 +28,7 @@ class SecurityAdvisoryWorker
         private ManagerRegistry $doctrine,
         private array $sources,
         private SecurityAdvisoryResolver $securityAdvisoryResolver,
+        private SecurityAdvisoryUpdateListener $advisoryUpdateListener,
     ) {
     }
 
@@ -66,6 +68,8 @@ class SecurityAdvisoryWorker
         }
 
         $this->doctrine->getManager()->flush();
+
+        $this->advisoryUpdateListener->flushChangesToPackages();
 
         $this->locker->unlockSecurityAdvisory(self::ADVISORY_WORKER_RUN);
 
