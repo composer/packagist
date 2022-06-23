@@ -51,7 +51,7 @@ final class Query
         if ($this->tags) {
             $tags = [];
             foreach ($this->tags as $tag) {
-                $tag = strtr($tag, '-', ' ');
+                $tag = Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8'));
                 $tags[] = 'tags:"'.$tag.'"';
                 if (str_contains($tag, ' ')) {
                     $tags[] = 'tags:"'.strtr($tag, ' ', '-').'"';

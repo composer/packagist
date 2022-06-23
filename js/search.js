@@ -67,7 +67,7 @@ var search = instantsearch({
                         type: routeState.type
                     },
                     refinementList: {
-                        tags: routeState.tags && routeState.tags.split('~'),
+                        tags: routeState.tags && routeState.tags.replace(/[\s-]+/g, ' ').split('~'),
                     },
                     page: routeState.page
                 };
