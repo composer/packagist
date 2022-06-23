@@ -133,7 +133,7 @@ class V2Dumper
                 $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
             }
 
-            unset($packages, $package, $version);
+            unset($packages, $package, $version, $advisories, $packageNames);
             $this->getEM()->clear();
             $this->logger->reset();
         }

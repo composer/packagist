@@ -13,6 +13,7 @@
 namespace App\Package;
 
 use Composer\Pcre\Preg;
+use Seld\Signal\SignalHandler;
 use Symfony\Component\Filesystem\Filesystem;
 use Composer\Util\Filesystem as ComposerFilesystem;
 use Doctrine\Persistence\ManagerRegistry;
@@ -105,7 +106,7 @@ class SymlinkDumper
      *
      * @param int[]   $packageIds
      */
-    public function dump(array $packageIds, bool $force = false, bool $verbose = false): bool
+    public function dump(array $packageIds, bool $force = false, bool $verbose = false, ?SignalHandler $signal = null): bool
     {
         if (!MetadataDirCheck::isMetadataStoreMounted($this->awsMeta)) {
             throw new \RuntimeException('Metadata store not mounted, can not dump metadata');
@@ -271,6 +272,10 @@ class SymlinkDumper
                 unset($packages, $package, $version);
                 $this->getEM()->clear();
                 $this->logger->reset();
+
+                if ($signal !== null && $signal->isTriggered()) {
+                    $packageIds = [];
+                }
 
                 if ($current % 250 === 0 || !$packageIds || memory_get_usage() > 1024*1024*1024) {
                     if ($verbose) {

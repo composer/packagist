@@ -16,6 +16,8 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
 use App\Package\SymlinkDumper;
 use App\Service\Locker;
+use Psr\Log\LoggerInterface;
+use Seld\Signal\SignalHandler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -33,7 +35,7 @@ class DumpPackagesCommand extends Command
     private ManagerRegistry $doctrine;
     private string $cacheDir;
 
-    public function __construct(SymlinkDumper $dumper, Locker $locker, ManagerRegistry $doctrine, string $cacheDir)
+    public function __construct(SymlinkDumper $dumper, Locker $locker, ManagerRegistry $doctrine, string $cacheDir, private LoggerInterface $logger)
     {
         $this->dumper = $dumper;
         $this->locker = $locker;
@@ -98,8 +100,10 @@ class DumpPackagesCommand extends Command
                 AND (d.total > 1000 OR d.lastUpdated > :date)
                 ORDER BY p.id ASC
             ', ['date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
+            $signal = null;
         } else {
             $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumping();
+            $signal = SignalHandler::create(null, $this->logger);
         }
 
         if (!$ids && !$force) {
@@ -114,7 +118,7 @@ class DumpPackagesCommand extends Command
 
         try {
             $ids = array_map('intval', $ids);
-            $result = $this->dumper->dump($ids, $force, $verbose);
+            $result = $this->dumper->dump($ids, $force, $verbose, $signal);
         } finally {
             $this->locker->unlockCommand(__CLASS__);
         }
