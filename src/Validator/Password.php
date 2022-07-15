@@ -26,7 +26,7 @@ class Password extends Compound
                 // max length allowed by Symfony for security reasons
                 'max' => 4096,
             ]),
-            new Assert\NotCompromisedPassword(),
+            new Assert\NotCompromisedPassword(skipOnError: true),
         ];
     }
 }
