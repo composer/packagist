@@ -10,7 +10,7 @@ document.getElementById('search_query_query').addEventListener('keydown', functi
 // Add accessibility functionality:
 // "Press '/' to focus the searchbar".
 document.addEventListener('keydown', function (e) {
-    if (e.code !== 'Slash') {
+    if (e.key !== '/') {
         return;
     }
     var searchInput = document.getElementById('search_query_query');
