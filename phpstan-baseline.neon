@@ -16,6 +16,11 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
+			message: "#^Match expression does not handle remaining value\\: 3$#"
+			count: 1
+			path: src/Controller/PackageController.php
+
+		-
 			message: "#^Offset string on array\\<int, int\\> on left side of \\?\\? does not exist\\.$#"
 			count: 1
 			path: src/Controller/PackageController.php
@@ -526,11 +531,6 @@ parameters:
 			path: src/Package/V2Dumper.php
 
 		-
-			message: "#^Method App\\\\Package\\\\V2Dumper\\:\\:dumpPackageToV2File\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
 			message: "#^Method App\\\\Package\\\\V2Dumper\\:\\:dumpVersionsToV2File\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Package/V2Dumper.php
@@ -581,7 +581,7 @@ parameters:
 			path: src/Service/GitHubUserMigrationWorker.php
 
 		-
-			message: "#^Offset 'status' on array\\{status\\: 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'started'\\|'timeout', message\\: string, after\\?\\: DateTime, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'started'\\|'timeout', message\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\}\\|array\\{status\\: 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'started'\\|'timeout', message\\: string, exception\\: Throwable\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			message: "#^Offset 'status' on array\\{status\\: 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'reschedule'\\|'started'\\|'timeout', message\\: string, after\\?\\: DateTime, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'reschedule'\\|'started'\\|'timeout', message\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\}\\|array\\{status\\: 'errored', message\\: 'An unexpected…', exception\\: Throwable\\} in isset\\(\\) always exists and is not nullable\\.$#"
 			count: 1
 			path: src/Service/QueueWorker.php
 
