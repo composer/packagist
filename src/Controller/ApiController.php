@@ -121,7 +121,7 @@ class ApiController extends Controller
      * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"}, methods={"POST"})
      * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"}, methods={"POST"})
      */
-    public function updatePackageAction(Request $request, string $githubWebhookSecret): JsonResponse
+    public function updatePackageAction(Request $request, string $githubWebhookSecret, StatsDClient $statsd): JsonResponse
     {
         // parse the payload
         $payload = json_decode((string)$request->request->get('payload'), true);
@@ -154,6 +154,8 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid payload'], 406);
         }
 
+        $statsd->increment('update_pkg_api');
+
         return $this->receivePost($request, $url, $urlRegex, $remoteId, $githubWebhookSecret);
     }
 
@@ -166,12 +168,14 @@ class ApiController extends Controller
      *     methods={"PUT"}
      * )
      */
-    public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator): JsonResponse
+    public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
     {
         $user = $this->findUser($request);
         if ((!$user || !$package->getMaintainers()->contains($user)) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
         }
+
+        $statsd->increment('edit_package_api');
 
         $payload = json_decode((string)$request->request->get('payload'), true);
         if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
@@ -201,8 +205,10 @@ class ApiController extends Controller
     /**
      * @Route("/jobs/{id}", name="get_job", requirements={"id"="[a-f0-9]+"}, defaults={"_format" = "json"}, methods={"GET"})
      */
-    public function getJobAction(string $id): JsonResponse
+    public function getJobAction(string $id, StatsDClient $statsd): JsonResponse
     {
+        $statsd->increment('get_job_api');
+
         return new JsonResponse($this->scheduler->getJobStatus($id), 200);
     }
 
@@ -316,7 +322,7 @@ class ApiController extends Controller
      *     methods={"GET", "POST"}
      * )
      */
-    public function securityAdvisoryAction(Request $request, ProviderManager $providerManager): JsonResponse
+    public function securityAdvisoryAction(Request $request, ProviderManager $providerManager, StatsDClient $statsd): JsonResponse
     {
         $packageNames = array_filter((array) $request->get('packages'), fn($name) => is_string($name) && $name !== '');
         if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
@@ -324,6 +330,8 @@ class ApiController extends Controller
         }
 
         $updatedSince = $request->query->getInt('updatedSince', 0);
+
+        $statsd->increment('advisory_api');
 
         $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
         $response = ['advisories' => []];
