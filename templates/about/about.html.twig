@@ -90,8 +90,8 @@ v2.0.4-p1</code></pre>
         <section class="col-md-6">
             <h3 id="update-schedule">Update Schedule</h3>
             <p>New packages will be crawled <strong>immediately</strong> after submission if you have JS enabled.</p>
-            <p>Existing packages without auto-updating (GitHub/BitBucket/GitLab hook) will be crawled <strong>once a week</strong> for updates. When a hook is enabled, packages are crawled whenever you push, or at least once a month in case the crawl failed. You can also trigger a manual update on your package page if you are logged-in as a maintainer.</p>
-            <p>It is highly recommended to set up the <strong>GitHub/BitBucket/GitLab service hook</strong> for all your packages. This reduces the load on our side, and ensures your package is updated almost instantly. Check the how-to <a href="#how-to-update-packages">below</a>.</p>
+            <p>Existing packages without auto-updating (GitHub/BitBucket/GitLab/Gitea hook) will be crawled <strong>once a week</strong> for updates. When a hook is enabled, packages are crawled whenever you push, or at least once a month in case the crawl failed. You can also trigger a manual update on your package page if you are logged-in as a maintainer.</p>
+            <p>It is highly recommended to set up the <strong>GitHub/BitBucket/GitLab/Gitea service hook</strong> for all your packages. This reduces the load on our side, and ensures your package is updated almost instantly. Check the how-to <a href="#how-to-update-packages">below</a>.</p>
             <p>The search index is updated <strong>every five minutes</strong>. It will index (or reindex) any package that has been crawled since the last time the search indexer ran.</p>
         </section>
     </section>
@@ -130,7 +130,13 @@ v2.0.4-p1</code></pre>
             <h3>GitLab Service</h3>
             <p>To enable the GitLab service integration, go to your GitLab repository, open the Settings > Integrations page from the menu. Search for Packagist in the list of Project Services. Check the "Active" box, enter your packagist.org username and API token. Save your changes and you're done.</p>
         </section>
+        <section class="col-md-6">
+            <h3>Gitea Webhook</h3>
+            <p>Gitea supports automatic package updates on Packagist since v1.17.</p>
+            <p>To enable the Gitea webhook, go to your Gitea repository, open the Settings > Webhooks page and click on "Add Webhook". Select "Packagist" from the dropdown menu. You need to enter your packagist username, API token and the packagist URL of your package in the form. All other options can remain unchanged. Save your changes and you're done.</p>
+        </section>
 
+        <div class="clearfix"></div>
         <section class="col-md-6">
             <h3>Manual hook setup</h3>
             <p>If you do not use Bitbucket or GitHub there is a generic endpoint you can call manually from a git post-receive hook or similar. You have to do a <code>POST</code> request to <code>https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> with a request body looking like this: <code>{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}</code></p>
@@ -138,7 +144,6 @@ v2.0.4-p1</code></pre>
             <pre>curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN' -d'{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}'</pre>
         </section>
 
-        <div class="clearfix"></div>
         <section class="col-md-6">
             <h3>API Token</h3>
             <p>You can find your API token on <a href="{{ path('my_profile') }}">your profile page</a>.</p>
