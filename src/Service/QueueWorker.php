@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use Monolog\LogRecord;
 use Predis\Client as Redis;
 use Monolog\Logger;
 use Doctrine\Persistence\ManagerRegistry;
@@ -98,8 +99,8 @@ class QueueWorker
             throw new \LogicException('At this point a job should always be found');
         }
 
-        $this->logger->pushProcessor(function ($record) use ($job) {
-            $record['extra']['job-id'] = $job->getId();
+        $this->logger->pushProcessor(function (LogRecord $record) use ($job) {
+            $record->extra['job-id'] = $job->getId();
 
             return $record;
         });
