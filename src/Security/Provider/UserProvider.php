@@ -20,6 +20,7 @@ use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
@@ -43,12 +44,6 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         return $user;
     }
 
-    // TODO delete in Symfony6
-    public function loadUserByUsername(string $usernameOrEmail): User
-    {
-        return $this->loadUserByIdentifier($usernameOrEmail);
-    }
-
     /**
      * @inheritDoc
      */
@@ -66,7 +61,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         return $user;
     }
 
-    public function upgradePassword(UserInterface $user, string $newHashedPassword): void
+    public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
     {
         if (!$user instanceof User) {
             throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));

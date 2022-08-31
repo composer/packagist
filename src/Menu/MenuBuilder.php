@@ -2,6 +2,7 @@
 
 namespace App\Menu;
 
+use App\Entity\User;
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -13,7 +14,7 @@ class MenuBuilder
 
     public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator)
     {
-        if ($tokenStorage->getToken() && $tokenStorage->getToken()->getUser()) {
+        if ($tokenStorage->getToken() && $tokenStorage->getToken()->getUser() instanceof User) {
             $this->username = $tokenStorage->getToken()->getUser()->getUsername();
         }
     }

@@ -368,6 +368,40 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         ) = $data;
     }
 
+    /**
+     * @return array<mixed>
+     */
+    public function __serialize(): array
+    {
+        return [
+            $this->password,
+            $this->salt,
+            $this->usernameCanonical,
+            $this->username,
+            $this->enabled,
+            $this->id,
+            $this->email,
+            $this->emailCanonical,
+        ];
+    }
+
+    /**
+     * @param array<mixed> $data
+     */
+    public function __unserialize(array $data): void
+    {
+        [
+            $this->password,
+            $this->salt,
+            $this->usernameCanonical,
+            $this->username,
+            $this->enabled,
+            $this->id, // @phpstan-ignore-line
+            $this->email, // @phpstan-ignore-line
+            $this->emailCanonical
+        ] = $data;
+    }
+
     public function eraseCredentials(): void
     {
     }

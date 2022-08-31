@@ -22,18 +22,27 @@ class UserFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
+        $dev = new User;
+        $dev->setEmail('dev@example.org');
+        $dev->setUsername('dev');
+        $dev->setPassword($this->passwordHasher->hashPassword($dev, 'dev'));
+        $dev->setEnabled(true);
+        $dev->setRoles(['ROLE_SUPERADMIN']);
+        $dev->initializeApiToken();
+
+        $manager->persist($dev);
+
         $user = new User;
-
-        $user->setEmail('dev@packagist.org');
-        $user->setUsername('dev');
-        $user->setPassword($this->passwordHasher->hashPassword($user, 'dev'));
+        $user->setEmail('user@example.org');
+        $user->setUsername('user');
+        $user->setPassword($this->passwordHasher->hashPassword($user, 'user'));
         $user->setEnabled(true);
-
+        $user->setRoles([]);
         $user->initializeApiToken();
 
         $manager->persist($user);
         $manager->flush();
 
-        $this->addReference(self::PACKAGE_MAINTAINER, $user);
+        $this->addReference(self::PACKAGE_MAINTAINER, $dev);
     }
 }
