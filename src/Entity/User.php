@@ -368,7 +368,10 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         ) = $data;
     }
 
-    public function __serialize()
+    /**
+     * @return array<mixed>
+     */
+    public function __serialize(): array
     {
         return [
             $this->password,
@@ -382,7 +385,10 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         ];
     }
 
-    public function __unserialize(array $data)
+    /**
+     * @param array<mixed> $data
+     */
+    public function __unserialize(array $data): void
     {
         [
             $this->password,
