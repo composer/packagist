@@ -12,12 +12,12 @@
         "version": "v3.3.0"
     },
     "beelab/recaptcha2-bundle": {
-        "version": "2.0",
+        "version": "2.6",
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
+            "branch": "main",
             "version": "2.0",
-            "ref": "246da6d0e345e9ab6773dd2f46c8a138e2527ef6"
+            "ref": "ad714d23c3c754619d9f2e1bd7b621c0d6185165"
         },
         "files": [
             "config/packages/beelab_recaptcha2.yaml"
@@ -51,16 +51,14 @@
         "version": "1.0.3"
     },
     "doctrine/annotations": {
-        "version": "1.0",
+        "version": "1.13",
         "recipe": {
             "repo": "github.com/symfony/recipes",
-            "branch": "master",
-            "version": "1.0",
-            "ref": "a2759dd6123694c8d901d0ec80006e044c2e6457"
+            "branch": "main",
+            "version": "1.10",
+            "ref": "64d8583af5ea57b7afa4aba4b159907f3a148b05"
         },
-        "files": [
-            "config/routes/annotations.yaml"
-        ]
+        "files": []
     },
     "doctrine/cache": {
         "version": "1.10.2"
@@ -81,27 +79,26 @@
         "version": "v0.5.3"
     },
     "doctrine/doctrine-bundle": {
-        "version": "2.0",
+        "version": "2.7",
         "recipe": {
             "repo": "github.com/symfony/recipes",
-            "branch": "master",
-            "version": "2.0",
-            "ref": "40631978d2c4adc9b11220b13eba539b727c36a8"
+            "branch": "main",
+            "version": "2.4",
+            "ref": "da713d006953b90d1c085c1be480ecdd6c4a95e0"
         },
         "files": [
             "config/packages/doctrine.yaml",
-            "config/packages/prod/doctrine.yaml",
             "src/Entity/.gitignore",
             "src/Repository/.gitignore"
         ]
     },
     "doctrine/doctrine-fixtures-bundle": {
-        "version": "3.0",
+        "version": "3.4",
         "recipe": {
             "repo": "github.com/symfony/recipes",
-            "branch": "master",
+            "branch": "main",
             "version": "3.0",
-            "ref": "e5b542d4ef47d8a003c91beb35650c76907f7e53"
+            "ref": "1f5514cfa15b947298df4d771e694e578d4c204d"
         },
         "files": [
             "src/DataFixtures/AppFixtures.php"
@@ -141,12 +138,12 @@
         "version": "v1.0.7"
     },
     "google/recaptcha": {
-        "version": "1.1",
+        "version": "1.2",
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
+            "branch": "main",
             "version": "1.1",
-            "ref": "d087df3e087f50da3955f2def05079380da5894b"
+            "ref": "e5a4aa21f2e98d7440ae9aab6b56e307f99dd084"
         },
         "files": [
             "config/packages/google_recaptcha.yaml"
@@ -174,12 +171,12 @@
         "version": "v3.1.0"
     },
     "knpuniversity/oauth2-client-bundle": {
-        "version": "1.20",
+        "version": "2.10",
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
+            "branch": "main",
             "version": "1.20",
-            "ref": "80acc9223a205cbf5d9828fd616c82a374d281dd"
+            "ref": "1ff300d8c030f55c99219cc55050b97a695af3f6"
         },
         "files": [
             "config/packages/knpu_oauth2_client.yaml"
@@ -350,12 +347,12 @@
         "version": "v5.8.1"
     },
     "scheb/2fa-bundle": {
-        "version": "5.0",
+        "version": "6.2",
         "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
-            "version": "5.0",
-            "ref": "95d9da4bffdc29417c209141cae8292e40d6af19"
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "6.0",
+            "ref": "1e6f68089146853a790b5da9946fc5974f6fcd49"
         },
         "files": [
             "config/packages/scheb_2fa.yaml",
@@ -438,12 +435,12 @@
         ]
     },
     "snc/redis-bundle": {
-        "version": "2.0",
+        "version": "3.6",
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
-            "branch": "master",
+            "branch": "main",
             "version": "2.0",
-            "ref": "85bbdb3d2db531e20874de29bab0587f93604fa8"
+            "ref": "36b3d9ab65be62de4e085a25e6ca899efa96b1f3"
         },
         "files": [
             "config/packages/snc_redis.yaml"

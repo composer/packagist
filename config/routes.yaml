@@ -1,3 +1,7 @@
+controllers:
+    resource: ../src/Controller/
+    type: annotation
+
 about:
     path: '/about'
     controller: 'Symfony\Bundle\FrameworkBundle\Controller\TemplateController'

@@ -41,7 +41,7 @@ jobs:
       - name: "Start MySQL"
         run: |
           sudo systemctl start mysql.service
-          echo 'DATABASE_URL="mysql://root:root@127.0.0.1:3306/packagist_test?serverVersion=8.0"' > .env.test.local
+          echo 'DATABASE_URL="mysql://root:root@127.0.0.1:3306/packagist?serverVersion=8.0"' > .env.test.local
 
       - name: "Install dependencies"
         run: "composer install ${{ env.COMPOSER_FLAGS }}"
