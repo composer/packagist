@@ -31,3 +31,13 @@ framework:
                 max_retries: 3
             max_duration: 30 # default total duration timeout in seconds, override it per use case with more appropriate values
             timeout: 3
+
+    trusted_hosts: ['%env(string:default:default_trusted_hosts:TRUSTED_HOSTS)%']
+    # remote_addr is set to the correct client IP but we need to mark it trusted so that Symfony picks up the X-Forwarded-Host,
+    # X-Forwarded-Port and X-Forwarded-Proto headers correctly and sees the right request URL
+    trusted_proxies: '127.0.0.1,REMOTE_ADDR'
+    # Use all X-Forwarded-* headers from ELB except X-Forwarded-For as nginx handles the IP resolution
+    trusted_headers: ['x-forwarded-proto', 'x-forwarded-port']
+
+parameters:
+    default_trusted_hosts: '^.*$'

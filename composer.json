@@ -71,6 +71,7 @@
         "symfony/property-access": "^6",
         "symfony/property-info": "^6",
         "symfony/proxy-manager-bridge": "^6",
+        "symfony/runtime": "6.0.*",
         "symfony/security-bundle": "^6",
         "symfony/serializer": "^6",
         "symfony/translation": "^6",
@@ -108,7 +109,8 @@
             "php": "8.0.5"
         },
         "allow-plugins": {
-            "symfony/flex": true
+            "symfony/flex": true,
+            "symfony/runtime": true
         }
     },
     "autoload": {
