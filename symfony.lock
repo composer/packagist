@@ -272,9 +272,6 @@
     "phpdocumentor/type-resolver": {
         "version": "1.4.0"
     },
-    "phpspec/prophecy": {
-        "version": "v1.15.0"
-    },
     "phpstan/phpstan": {
         "version": "0.12.66"
     },

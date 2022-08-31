@@ -13,8 +13,6 @@ framework:
         cookie_secure: auto
         cookie_samesite: lax
         handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
-        # TODO remove in Symfony 6
-        storage_factory_id: session.storage.factory.native
 
     #esi: true
     fragments: true
