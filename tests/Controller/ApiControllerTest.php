@@ -33,7 +33,7 @@ class ApiControllerTest extends WebTestCase
         $this->executeCommand('php '.$projectDir . '/bin/console doctrine:database:drop --env=test --force -q', false);
         $this->executeCommand('php '.$projectDir . '/bin/console doctrine:database:create --env=test -q');
         $this->executeCommand('php '.$projectDir . '/bin/console doctrine:schema:create --env=test -q');
-        $this->executeCommand('php '.$projectDir . '/bin/console redis:flushall --env=test -n -q');
+        $this->executeCommand('php '.$projectDir . '/bin/console redis:query flushall --env=test -n -q');
 
         $package = new Package;
         $package->setName('test/'.md5(uniqid()));
