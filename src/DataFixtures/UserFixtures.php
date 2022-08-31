@@ -33,7 +33,7 @@ class UserFixtures extends Fixture
         $manager->persist($dev);
 
         $user = new User;
-        $user->setEmail('dev@example.org');
+        $user->setEmail('user@example.org');
         $user->setUsername('user');
         $user->setPassword($this->passwordHasher->hashPassword($user, 'user'));
         $user->setEnabled(true);
