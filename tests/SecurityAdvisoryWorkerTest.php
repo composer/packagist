@@ -17,6 +17,7 @@ use App\SecurityAdvisory\SecurityAdvisorySourceInterface;
 use App\Service\Locker;
 use App\Service\SecurityAdvisoryWorker;
 use PHPUnit\Framework\TestCase;
+use Predis\Client;
 use Psr\Log\NullLogger;
 use Seld\Signal\SignalHandler;
 use Doctrine\Persistence\ManagerRegistry;
@@ -38,7 +39,8 @@ class SecurityAdvisoryWorkerTest extends TestCase
         $this->source = $this->getMockBuilder(SecurityAdvisorySourceInterface::class)->disableOriginalConstructor()->getMock();
         $locker = $this->getMockBuilder(Locker::class)->disableOriginalConstructor()->getMock();
         $doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
-        $this->worker = new SecurityAdvisoryWorker($locker, new NullLogger(), $doctrine, ['test' => $this->source], new SecurityAdvisoryResolver(), new SecurityAdvisoryUpdateListener($doctrine));
+        $redis = $this->getMockBuilder(Client::class)->disableOriginalConstructor()->getMock();
+        $this->worker = new SecurityAdvisoryWorker($locker, new NullLogger(), $doctrine, ['test' => $this->source], new SecurityAdvisoryResolver(), new SecurityAdvisoryUpdateListener($doctrine, $redis));
 
         $this->em = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
 
