@@ -330,9 +330,6 @@ class ApiController extends Controller
         }
 
         $updatedSince = $request->query->getInt('updatedSince', 0);
-        if (count($packageNames) === 0 && $updatedSince === 0) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter, or a non-zero "updatedSince" parameter'], 400);
-        }
 
         $statsd->increment('advisory_api');
 

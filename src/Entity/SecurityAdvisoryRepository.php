@@ -86,14 +86,11 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
     {
         $packageNames = array_values(array_unique($packageNames));
         $filterByNames = count($packageNames) > 0;
-        $filterByUpdatedSince = $updatedSince > 0;
+        $useCache = $filterByNames;
         $advisories = [];
 
         // optimize the search by package name as this is massively used by Composer
-        if (!$filterByUpdatedSince) {
-            if (!$filterByNames) {
-                throw new \LogicException('This method must be called with a set of package names OR a valid (non-zero) updatedSince');
-            }
+        if ($useCache) {
             $redisKeys = array_map(fn ($pkg) => 'sec-adv:'.$pkg, $packageNames);
             $advisoryCache = $this->redisCache->mget($redisKeys);
             foreach ($packageNames as $index => $name) {
@@ -111,7 +108,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             $filterByNames = count($packageNames) > 0;
         }
 
-        if ($filterByUpdatedSince || $filterByNames) {
+        if (!$useCache || $filterByNames) {
             $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId
                 FROM security_advisory s
                 INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
@@ -141,7 +138,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
                 $advisories[$advisory['packageName']][$advisory['advisoryId']]['sources'][] = $source;
             }
 
-            if (!$filterByUpdatedSince) {
+            if ($useCache) {
                 $cacheData = [];
                 foreach ($packageNames as $name) {
                     if (isset($advisories[$name])) {
