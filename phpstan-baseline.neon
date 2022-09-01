@@ -406,11 +406,6 @@ parameters:
 			path: src/Form/Type/EnableTwoFactorAuthType.php
 
 		-
-			message: "#^Generator expects value type Symfony\\\\Component\\\\HttpKernel\\\\Bundle\\\\BundleInterface, object given\\.$#"
-			count: 1
-			path: src/Kernel.php
-
-		-
 			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:getNbResults\\(\\) should return int\\<0, max\\> but returns int\\.$#"
 			count: 1
 			path: src/Model/RedisAdapter.php
@@ -594,4 +589,3 @@ parameters:
 			message: "#^Parameter \\#2 \\$values of method Predis\\\\ClientInterface\\:\\:lpush\\(\\) expects array, string given\\.$#"
 			count: 1
 			path: src/Service/Scheduler.php
-

@@ -13,7 +13,7 @@ parameters:
     checkExplicitMixedMissingReturn: true
 
     treatPhpDocTypesAsCertain: false
-    reportUnmatchedIgnoredErrors: false
+    reportUnmatchedIgnoredErrors: true
 
     paths:
         - src/
