@@ -1,11 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Offset 'downloaded' on array\\{name\\: string, version\\: string, id\\: int, vid\\: int\\} in isset\\(\\) does not exist\\.$#"
-			count: 1
-			path: src/Controller/ApiController.php
-
-		-
 			message: "#^Parameter \\#1 \\$nbResults of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects int\\<0, max\\>, int given\\.$#"
 			count: 1
 			path: src/Controller/ExploreController.php

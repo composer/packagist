@@ -365,8 +365,8 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
             $this->usernameCanonical,
             $this->username,
             $this->enabled,
-            $this->id, // @phpstan-ignore-line
-            $this->email, // @phpstan-ignore-line
+            $this->id,
+            $this->email,
             $this->emailCanonical
         ] = $data;
     }
