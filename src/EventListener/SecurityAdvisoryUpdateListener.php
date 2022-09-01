@@ -6,6 +6,7 @@ use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
 use App\Util\DoctrineTrait;
 use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -20,11 +21,17 @@ class SecurityAdvisoryUpdateListener
         private ManagerRegistry $doctrine
     ) {}
 
+    /**
+     * @param LifecycleEventArgs<EntityManager> $event
+     */
     public function postUpdate(SecurityAdvisory $advisory, LifecycleEventArgs $event): void
     {
         $this->dumpPackage($advisory->getPackageName());
     }
 
+    /**
+     * @param LifecycleEventArgs<EntityManager> $event
+     */
     public function postPersist(SecurityAdvisory $advisory, LifecycleEventArgs $event): void
     {
         $this->dumpPackage($advisory->getPackageName());
