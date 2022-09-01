@@ -216,16 +216,6 @@ parameters:
 			path: src/Entity/PhpStatRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\SecurityAdvisoryRepository\\:\\:getPackageSecurityAdvisories\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisoryRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\SecurityAdvisoryRepository\\:\\:searchSecurityAdvisories\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/SecurityAdvisoryRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\User\\:\\:setSalt\\(\\) has parameter \\$salt with no type specified\\.$#"
 			count: 1
 			path: src/Entity/User.php

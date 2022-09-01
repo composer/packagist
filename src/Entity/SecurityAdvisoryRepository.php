@@ -6,14 +6,17 @@ use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
 
 /**
  * @extends ServiceEntityRepository<SecurityAdvisory>
  */
 class SecurityAdvisoryRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+        private Client $redisCache,
+    ) {
         parent::__construct($registry, SecurityAdvisory::class);
     }
 
@@ -67,50 +70,88 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @return array<string, array{advisoryId: string, packageName: string, remoteId: string, title: string, link: string|null, cve: string|null, affectedVersions: string, sources: array<array{name: string, remoteId: string}>, reportedAt: string, composerRepository: string|null}>
+     */
     public function getPackageSecurityAdvisories(string $name): array
     {
-        $sql = 'SELECT s.*, sa.source
-            FROM security_advisory s
-            INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
-            WHERE s.packageName = :name
-            ORDER BY s.reportedAt DESC, s.id DESC';
-
-        $entries = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]);
-        $result = [];
-        foreach ($entries as $entry) {
-            if (!isset($result[$entry['id']])) {
-                $result[$entry['id']] = $entry;
-                $result[$entry['id']]['sources'] = [];
-            }
-
-            $result[$entry['id']]['sources'][] = $entry['source'];
-        }
-
-        return $result;
+        return $this->searchSecurityAdvisories([$name], 0)[$name] ?? [];
     }
 
     /**
      * @param string[] $packageNames
+     * @return array<string, array<string, array{advisoryId: string, packageName: string, remoteId: string, title: string, link: string|null, cve: string|null, affectedVersions: string, sources: array<array{name: string, remoteId: string}>, reportedAt: string, composerRepository: string|null}>> An array of packageName => advisoryId => advisory-data
      */
     public function searchSecurityAdvisories(array $packageNames, int $updatedSince): array
     {
+        $packageNames = array_values(array_unique($packageNames));
         $filterByNames = count($packageNames) > 0;
+        $filterByUpdatedSince = $updatedSince > 0;
+        $advisories = [];
 
-        $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId
-            FROM security_advisory s
-            INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
-            WHERE s.updatedAt >= :updatedSince '.
-            ($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
-            .' ORDER BY s.id DESC';
+        // optimize the search by package name as this is massively used by Composer
+        if (!$filterByUpdatedSince) {
+            if (!$filterByNames) {
+                throw new \LogicException('This method must be called with a set of package names OR a valid (non-zero) updatedSince');
+            }
+            $redisKeys = array_map(fn ($pkg) => 'sec-adv:'.$pkg, $packageNames);
+            $advisoryCache = $this->redisCache->mget($redisKeys);
+            foreach ($packageNames as $index => $name) {
+                if (isset($advisoryCache[$index])) {
+                    unset($packageNames[$index]);
 
-        $params = ['updatedSince' => date('Y-m-d H:i:s', $updatedSince)];
-        $types = [];
-        if ($filterByNames) {
-            $params['packageNames'] = $packageNames;
-            $types['packageNames'] = Connection::PARAM_STR_ARRAY;
+                    // cache as false means the name does not have any advisories
+                    if ($advisoryCache[$index] !== 'false') {
+                        $advisories[$name] = json_decode($advisoryCache[$index], true, JSON_THROW_ON_ERROR);
+                    }
+                }
+            }
+
+            // check if we still need to query SQL
+            $filterByNames = count($packageNames) > 0;
         }
 
-        return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $params, $types);
+        if ($filterByUpdatedSince || $filterByNames) {
+            $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId
+                FROM security_advisory s
+                INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
+                WHERE s.updatedAt >= :updatedSince '.
+                ($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
+                .' ORDER BY '.($filterByNames ? 's.reportedAt DESC, ' : '').'s.id DESC';
+
+            $params = ['updatedSince' => date('Y-m-d H:i:s', $updatedSince)];
+            $types = [];
+            if ($filterByNames) {
+                $params['packageNames'] = $packageNames;
+                $types['packageNames'] = Connection::PARAM_STR_ARRAY;
+            }
+
+            $result = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $params, $types);
+            foreach ($result as $advisory) {
+                $source = [
+                    'name' => $advisory['sourceSource'],
+                    'remoteId' => $advisory['sourceRemoteId'],
+                ];
+                unset($advisory['sourceSource'], $advisory['sourceRemoteId']);
+                if (!isset($advisories[$advisory['packageName']][$advisory['advisoryId']])) {
+                    $advisory['sources'] = [];
+                    $advisories[$advisory['packageName']][$advisory['advisoryId']] = $advisory;
+                }
+
+                $advisories[$advisory['packageName']][$advisory['advisoryId']]['sources'][] = $source;
+            }
+
+            if (!$filterByUpdatedSince) {
+                $cacheData = [];
+                foreach ($packageNames as $name) {
+                    if (isset($advisories[$name])) {
+                        $this->redisCache->setex('sec-adv:'.$name, 86400 + random_int(0, 3600), isset($advisories[$name]) ? json_encode($advisories[$name], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) : 'false');
+                    }
+                }
+            }
+        }
+
+        return $advisories;
     }
 
     /**

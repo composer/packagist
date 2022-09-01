@@ -330,30 +330,20 @@ class ApiController extends Controller
         }
 
         $updatedSince = $request->query->getInt('updatedSince', 0);
+        if (count($packageNames) === 0 && $updatedSince === 0) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter, or a non-zero "updatedSince" parameter'], 400);
+        }
 
         $statsd->increment('advisory_api');
 
         $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
-        $response = ['advisories' => []];
-        foreach ($advisories as $advisory) {
-            $source = [
-                'name' => $advisory['sourceSource'],
-                'remoteId' => $advisory['sourceRemoteId'],
-            ];
-            unset($advisory['sourceSource'], $advisory['sourceRemoteId']);
-            if (!isset($response['advisories'][$advisory['packageName']][$advisory['advisoryId']])) {
-                $advisory['sources'] = [];
-                $response['advisories'][$advisory['packageName']][$advisory['advisoryId']] = $advisory;
-            }
-
-            $response['advisories'][$advisory['packageName']][$advisory['advisoryId']]['sources'][] = $source;
-        }
+        $response = ['advisories' => $advisories];
 
         // Ensure known packages are returned even if no advisory is present to ensure they do not get retried by composer in lower prio repos
         // Do a max of 1000 packages to prevent abuse
         foreach (array_slice($packageNames, 0, 1000) as $name) {
-            if ($providerManager->packageExists($name)) {
-                $response['advisories'][$name] ??= [];
+            if (!isset($response['advisories'][$name]) && $providerManager->packageExists($name)) {
+                $response['advisories'][$name] = [];
             }
         }
 

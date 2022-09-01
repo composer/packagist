@@ -74,6 +74,7 @@ services:
         tags:
             - { name: 'doctrine.orm.entity_listener', event: postUpdate, entity: App\Entity\SecurityAdvisory }
             - { name: 'doctrine.orm.entity_listener', event: postPersist, entity: App\Entity\SecurityAdvisory }
+            - { name: 'doctrine.orm.entity_listener', event: postRemove, entity: App\Entity\SecurityAdvisory }
 
     App\ArgumentResolver\:
         resource: '../src/ArgumentResolver/*.php'

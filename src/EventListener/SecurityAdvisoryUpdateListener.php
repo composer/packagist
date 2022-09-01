@@ -9,6 +9,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
 
 class SecurityAdvisoryUpdateListener
 {
@@ -18,7 +19,8 @@ class SecurityAdvisoryUpdateListener
     private $packagesToMarkStale = [];
 
     public function __construct(
-        private ManagerRegistry $doctrine
+        private ManagerRegistry $doctrine,
+        private Client $redisCache,
     ) {}
 
     /**
@@ -37,15 +39,27 @@ class SecurityAdvisoryUpdateListener
         $this->dumpPackage($advisory->getPackageName());
     }
 
+    /**
+     * @param LifecycleEventArgs<EntityManager> $event
+     */
+    public function postRemove(SecurityAdvisory $advisory, LifecycleEventArgs $event): void
+    {
+        $this->dumpPackage($advisory->getPackageName());
+    }
+
     public function flushChangesToPackages(): void
     {
+        $packageNames = array_keys($this->packagesToMarkStale);
         $pkg = $this->getEM()->getConnection()->executeStatement(
             'UPDATE package SET dumpedAtV2 = null WHERE name IN (:names)',
-            ['names' => array_keys($this->packagesToMarkStale)],
+            ['names' => $packageNames],
             ['names' => Connection::PARAM_STR_ARRAY]
         );
 
         $this->packagesToMarkStale = [];
+
+        $redisKeys = array_map(fn ($pkg) => 'sec-adv:'.$pkg, $packageNames);
+        $this->redisCache->del($redisKeys);
     }
 
     private function dumpPackage(string $packageName): void

@@ -11,6 +11,8 @@ use App\Model\FavoriteManager;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use Composer\Semver\Constraint\Constraint;
+use Composer\Semver\Constraint\MatchNoneConstraint;
+use Composer\Semver\Constraint\MultiConstraint;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\NoResultException;
@@ -622,14 +624,15 @@ class PackageController extends Controller
             $securityAdvisories = $securityAdvisoryRepository->getPackageSecurityAdvisories($package->getName());
             $data['securityAdvisories'] = count($securityAdvisories);
             $data['hasVersionSecurityAdvisories'] = [];
+            $versionParser = new VersionParser();
+            $affectedVersionsConstraint = new MatchNoneConstraint();
             foreach ($securityAdvisories as $advisory) {
-                $versionParser = new VersionParser();
-                $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
-                foreach ($versions as $version) {
-                    if (!isset($data['hasVersionSecurityAdvisories'][$version->getId()]) && $affectedVersionConstraint->matches(new Constraint('=',
-                            $version->getNormalizedVersion()))) {
-                        $data['hasVersionSecurityAdvisories'][$version->getId()] = true;
-                    }
+                $affectedVersionsConstraint = MultiConstraint::create([$affectedVersionsConstraint, $versionParser->parseConstraints($advisory['affectedVersions'])], false);
+            }
+
+            foreach ($versions as $version) {
+                if ($affectedVersionsConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
+                    $data['hasVersionSecurityAdvisories'][$version->getId()] = true;
                 }
             }
 
@@ -1568,7 +1571,6 @@ class PackageController extends Controller
         $data = [];
         $data['name'] = $name;
 
-        $data['matchingAdvisories'] = [];
         if ($versionId = $request->query->getInt('version')) {
             $version = $this->getEM()->getRepository(Version::class)->findOneBy([
                 'name' => $name,
