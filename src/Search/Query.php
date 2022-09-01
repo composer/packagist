@@ -3,6 +3,7 @@
 namespace App\Search;
 
 use Composer\Pcre\Preg;
+use Symfony\Component\String\UnicodeString;
 
 /**
  * @phpstan-type SearchOptions array{hitsPerPage: int, page: int, filters?: string}
@@ -17,10 +18,15 @@ final class Query
         public int $perPage,
         public int $page,
     ) {
-        $this->query = Preg::replace('{([^\s])-}', '$1--', $query);
-        $this->type = str_replace('%type%', '', $type);
+        $this->query = Preg::replace('{([^\s])-}', '$1--', (string) new UnicodeString($query));
+        $this->type = str_replace('%type%', '', (string) new UnicodeString($type));
         $this->perPage =  max(1, $perPage);
         $this->page =  max(1, $page) - 1;
+
+        // validate tags
+        foreach ($tags as $tag) {
+            new UnicodeString($tag);
+        }
 
         if ('' === $this->query && '' === $this->type && count($this->tags) === 0) {
             throw new \InvalidArgumentException('Missing search query, example: ?q=example');
