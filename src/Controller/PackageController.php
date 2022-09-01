@@ -296,7 +296,7 @@ class PackageController extends Controller
     {
         $packages = $this->getEM()
             ->getRepository(Package::class)
-            ->getFilteredQueryBuilder(['vendor' => $vendor.'/%'], true)
+            ->getFilteredQueryBuilder(['vendor' => $vendor], true)
             ->getQuery()
             ->getResult();
 

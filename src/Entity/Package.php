@@ -45,7 +45,8 @@ use DateTimeInterface;
  *         @ORM\Index(name="dumped2_idx",columns={"dumpedAtV2"}),
  *         @ORM\Index(name="repository_idx",columns={"repository"}),
  *         @ORM\Index(name="remoteid_idx",columns={"remoteId"}),
- *         @ORM\Index(name="dumped2_crawled_idx",columns={"dumpedAtV2","crawledAt"})
+ *         @ORM\Index(name="dumped2_crawled_idx",columns={"dumpedAtV2","crawledAt"}),
+ *         @ORM\Index(name="vendor_idx",columns={"vendor"})
  *     }
  * )
  * @Assert\Callback(callback="isPackageUnique", groups={"Create"})
@@ -74,6 +75,11 @@ class Package
      * @ORM\Column(length=191)
      */
     private string $name = '';
+
+    /**
+     * @ORM\Column(length=191)
+     */
+    private string $vendor = '';
 
     /**
      * @ORM\Column(nullable=true)
@@ -450,6 +456,7 @@ class Package
     public function setName(string $name): void
     {
         $this->name = $name;
+        $this->vendor = Preg::replace('{/.*$}', '', $this->name);
     }
 
     public function getName(): string
@@ -466,7 +473,7 @@ class Package
      */
     public function getVendor(): string
     {
-        return Preg::replace('{/.*$}', '', $this->name);
+        return $this->vendor;
     }
 
     /**

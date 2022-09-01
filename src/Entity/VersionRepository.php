@@ -213,8 +213,8 @@ class VersionRepository extends ServiceEntityRepository
         }
 
         if ($vendor) {
-            $qb->andWhere('p.name LIKE ?1');
-            $qb->setParameter(1, $vendor.'/%');
+            $qb->andWhere('p.vendor = ?1');
+            $qb->setParameter(1, $vendor);
         } elseif ($package) {
             $qb->andWhere('p.name = ?1')
                 ->setParameter(1, $package);

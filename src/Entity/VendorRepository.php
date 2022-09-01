@@ -38,8 +38,8 @@ class VendorRepository extends ServiceEntityRepository
             ['vendor' => $vendor]
         );
         $this->getEntityManager()->getConnection()->executeStatement(
-            'UPDATE package SET suspect = NULL WHERE name LIKE :vendor',
-            ['vendor' => $vendor.'/%']
+            'UPDATE package SET suspect = NULL WHERE vendor = :vendor',
+            ['vendor' => $vendor]
         );
     }
 }
