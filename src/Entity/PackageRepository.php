@@ -243,7 +243,7 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return list<array{id: string}>
+     * @return list<array{id: int}>
      */
     public function getStalePackagesForIndexing(): array
     {
@@ -253,7 +253,7 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return list<string>
+     * @return list<int>
      */
     public function getStalePackagesForDumping(): array
     {
@@ -283,7 +283,7 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return list<string>
+     * @return list<int>
      */
     public function getStalePackagesForDumpingV2(): array
     {
