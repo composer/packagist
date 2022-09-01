@@ -113,8 +113,8 @@ class PackageRepository extends ServiceEntityRepository
     public function getPackageNamesByVendor($vendor): array
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.name LIKE :vendor AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
-            ->setParameters(['vendor' => $vendor.'/%']);
+            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.vendor = :vendor AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
+            ->setParameters(['vendor' => $vendor]);
 
         return $this->getPackageNamesForQuery($query);
     }
@@ -167,12 +167,7 @@ class PackageRepository extends ServiceEntityRepository
 
         $where = '(p.replacementPackage IS NULL OR p.replacementPackage != :replacement)';
         foreach ($filters as $filter => $val) {
-            if ($filter === 'vendor') {
-                $where .= ' AND p.name LIKE :'.$filter;
-                $filters[$filter] = $val.'/%';
-            } else {
-                $where .= ' AND p.'.$filter.' = :'.$filter;
-            }
+            $where .= ' AND p.'.$filter.' = :'.$filter;
         }
         $filters['replacement'] = "spam/spam";
         $query = $this->getEntityManager()
@@ -430,8 +425,8 @@ class PackageRepository extends ServiceEntityRepository
                 "SELECT p.name, m.id user_id
                 FROM App\Entity\Package p
                 JOIN p.maintainers m
-                WHERE p.name LIKE :vendor")
-            ->setParameters(['vendor' => $vendor.'/%']);
+                WHERE p.vendor = :vendor")
+            ->setParameters(['vendor' => $vendor]);
 
         $rows = $query->getArrayResult();
         if (!$rows) {
@@ -608,7 +603,7 @@ class PackageRepository extends ServiceEntityRepository
                     break;
 
                 case 'vendor':
-                    $qb->andWhere('p.name LIKE :vendor');
+                    $qb->andWhere('p.vendor = :vendor');
                     break;
 
                 default:
