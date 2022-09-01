@@ -26,7 +26,6 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Serializable;
 use DateTimeInterface;
 
 /**
@@ -35,7 +34,7 @@ use DateTimeInterface;
  * @UniqueEntity(fields={"usernameCanonical"}, message="There is already an account with this username", errorPath="username")
  * @UniqueEntity(fields={"emailCanonical"}, message="There is already an account with this email", errorPath="email")
  */
-class User implements UserInterface, Serializable, TwoFactorInterface, BackupCodeInterface, EquatableInterface, PasswordAuthenticatedUserInterface, LegacyPasswordAuthenticatedUserInterface
+class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, EquatableInterface, PasswordAuthenticatedUserInterface, LegacyPasswordAuthenticatedUserInterface
 {
     /**
      * @ORM\Id
@@ -336,36 +335,6 @@ class User implements UserInterface, Serializable, TwoFactorInterface, BackupCod
         if (!in_array($role, $this->roles, true)) {
             $this->roles[] = $role;
         }
-    }
-
-    public function serialize()
-    {
-        return serialize(array(
-            $this->password,
-            $this->salt,
-            $this->usernameCanonical,
-            $this->username,
-            $this->enabled,
-            $this->id,
-            $this->email,
-            $this->emailCanonical,
-        ));
-    }
-
-    public function unserialize($serialized)
-    {
-        $data = unserialize($serialized);
-
-        list(
-            $this->password,
-            $this->salt,
-            $this->usernameCanonical,
-            $this->username,
-            $this->enabled,
-            $this->id, // @phpstan-ignore-line
-            $this->email, // @phpstan-ignore-line
-            $this->emailCanonical
-        ) = $data;
     }
 
     /**
