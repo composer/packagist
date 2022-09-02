@@ -12,7 +12,7 @@
         "zustand": "^3.6.9"
     },
     "devDependencies": {
-        "esbuild": "^0.14",
+        "esbuild": "^0.15",
         "esbuild-plugin-sass": "^1.0.1"
     },
     "scripts": {
