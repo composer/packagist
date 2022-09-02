@@ -11,11 +11,6 @@ parameters:
 			path: src/Controller/PackageController.php
 
 		-
-			message: "#^Match expression does not handle remaining value\\: 3$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
 			message: "#^Offset string on array\\<int, int\\> on left side of \\?\\? does not exist\\.$#"
 			count: 1
 			path: src/Controller/PackageController.php
