@@ -11,6 +11,7 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
@@ -27,6 +28,7 @@ class TypoSquattersValidator extends ConstraintValidator
         private RequestStack $requestStack,
         private string $mailFromEmail,
         private UrlGeneratorInterface $urlGenerator,
+        private Security $security,
     ) {}
 
     public function validate(mixed $value, Constraint $constraint): void
@@ -61,6 +63,16 @@ class TypoSquattersValidator extends ConstraintValidator
 
             $existingVendor = explode('/', $existingPackage['name'])[0];
             if (levenshtein($existingVendor, $value->getVendor()) <= 1) {
+                $existingPkg = $this->getEM()->getRepository(Package::class)->find($existingPackage['id']);
+                if ($existingPkg !== null) {
+                    foreach ($existingPkg->getMaintainers() as $maintainer) {
+                        // current user is maintainer of existing conflicting pkg, so probably a false alarm
+                        if ($maintainer === $this->security->getUser()) {
+                            return;
+                        }
+                    }
+                }
+
                 if ($this->downloadManager->getTotalDownloads($existingPackage['id']) >= 1_000_000) {
                     $this->context->buildViolation($constraint->message)
                         ->setParameter('{{ name }}', $value->getName())
