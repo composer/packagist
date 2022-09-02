@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -59,7 +59,7 @@ class WebController extends Controller
         $blockList = ['2400:6180:100:d0::83b:b001', '34.235.38.170'];
         if (in_array($req->getClientIp(), $blockList, true)) {
             return (new JsonResponse([
-                'error' => 'Too many requests, reach out to contact@packagist.org'
+                'error' => 'Too many requests, reach out to contact@packagist.org',
             ], 400))->setCallback($req->query->get('callback'));
         }
 
@@ -158,11 +158,11 @@ class WebController extends Controller
 
             $dlChart = [
                 'labels' => array_keys($dlChart),
-                'values' => $redis->mget(array_values($dlChart))
+                'values' => $redis->mget(array_values($dlChart)),
             ];
             $dlChartMonthly = [
                 'labels' => array_keys($dlChartMonthly),
-                'values' => $redis->mget(array_values($dlChartMonthly))
+                'values' => $redis->mget(array_values($dlChartMonthly)),
             ];
         } catch (ConnectionException $e) {
             $downloads = 'N/A';

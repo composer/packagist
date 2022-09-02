@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Tests\Security;
 
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
@@ -10,17 +20,14 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
-use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Http\HttpUtils;
 
 class BruteForceLoginFormAuthenticatorTest extends TestCase
 {
-    /** @var BruteForceLoginFormAuthenticator */
-    private $authenticator;
+    private BruteForceLoginFormAuthenticator $authenticator;
     /** @var HttpUtils&\PHPUnit\Framework\MockObject\MockObject */
     private $httpUtils;
     /** @var RecaptchaVerifier&\PHPUnit\Framework\MockObject\MockObject */

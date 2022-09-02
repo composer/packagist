@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Tests\Entity;
 
 use App\Entity\SecurityAdvisory;
@@ -21,7 +31,7 @@ class SecurityAdvisoryTest extends TestCase
                     'versions' => ['<1.2'],
                 ],
             ],
-            'reference' => 'composer://3f/pygmentize'
+            'reference' => 'composer://3f/pygmentize',
         ];
 
         $remoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('3f/pygmentize/2017-05-15.yaml', $data);
@@ -48,7 +58,7 @@ class SecurityAdvisoryTest extends TestCase
                     'versions' => ['>=2.0.0', '<2.1.1'],
                 ],
             ],
-            'reference' => 'composer://league/flysystem'
+            'reference' => 'composer://league/flysystem',
         ]);
 
         $advisory = new SecurityAdvisory($remoteAdvisory, FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
@@ -67,7 +77,7 @@ class SecurityAdvisoryTest extends TestCase
                     'versions' => ['>=2.0.0', '<2.1.1'],
                 ],
             ],
-            'reference' => 'composer://league/flysystem'
+            'reference' => 'composer://league/flysystem',
         ]);
 
         $this->assertSame(3, $advisory->calculateDifferenceScore($updatedRemoteAdvisory));
@@ -93,7 +103,7 @@ class SecurityAdvisoryTest extends TestCase
                     'versions' => ['>=6.0.3', '<=6.0.3'],
                 ],
             ],
-            'reference' => 'composer://symfony/framework-bundle'
+            'reference' => 'composer://symfony/framework-bundle',
         ]);
 
         $advisory = new SecurityAdvisory($remoteAdvisory, FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
@@ -116,7 +126,7 @@ class SecurityAdvisoryTest extends TestCase
                     'versions' => ['>=6.0.3', '<=6.0.3'],
                 ],
             ],
-            'reference' => 'composer://symfony/framework-bundle'
+            'reference' => 'composer://symfony/framework-bundle',
         ]);
 
         $this->assertSame(3, $advisory->calculateDifferenceScore($updatedRemoteAdvisory));

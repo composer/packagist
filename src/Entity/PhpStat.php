@@ -1,11 +1,20 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Entity;
 
 use Composer\Pcre\Preg;
 use Doctrine\ORM\Mapping as ORM;
 use DateTimeInterface;
-use Symfony\Bridge\Doctrine\IdGenerator\UlidGenerator;
 
 #[ORM\Entity(repositoryClass: 'App\Entity\PhpStatRepository')]
 #[ORM\Table(name: 'php_stat')]

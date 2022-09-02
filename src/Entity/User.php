@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -39,18 +39,12 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[ORM\Column(type: 'integer')]
     private int $id;
 
-    /**
-     * @var string
-     */
     #[ORM\Column(type: 'string', length: 191)]
     #[Assert\Length(min: 2, max: 191, groups: ['Profile', 'Registration'])]
     #[Assert\Regex(pattern: '{^[^/')]
     #[Assert\NotBlank(groups: ['Profile', 'Registration'])]
     private string $username;
 
-    /**
-     * @var string
-     */
     #[ORM\Column(type: 'string', name: 'username_canonical', length: 191, unique: true)]
     private string $usernameCanonical;
 
@@ -60,15 +54,9 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[Assert\NotBlank(groups: ['Profile', 'Registration'])]
     private string $email;
 
-    /**
-     * @var string
-     */
     #[ORM\Column(type: 'string', name: 'email_canonical', length: 191, unique: true)]
     private string $emailCanonical;
 
-    /**
-     * @var bool
-     */
     #[ORM\Column(type: 'boolean')]
     private bool $enabled = false;
 
@@ -76,7 +64,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
      * @var list<string>
      */
     #[ORM\Column(type: 'array')]
-    private array $roles = array();
+    private array $roles = [];
 
     /**
      * @var string The hashed password
@@ -477,7 +465,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
      */
     public function setRoles(array $roles): void
     {
-        $this->roles = array();
+        $this->roles = [];
 
         foreach ($roles as $role) {
             $this->addRole($role);

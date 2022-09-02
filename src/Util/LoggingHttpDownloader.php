@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Util;
 
 use Composer\Config;
@@ -21,28 +31,28 @@ class LoggingHttpDownloader extends HttpDownloader
         parent::__construct($io, $config);
     }
 
-    public function get($url, $options = array()): Response
+    public function get($url, $options = []): Response
     {
         $this->track($url);
 
         return parent::get($url, $options);
     }
 
-    public function add($url, $options = array()): PromiseInterface
+    public function add($url, $options = []): PromiseInterface
     {
         $this->track($url);
 
         return parent::add($url, $options);
     }
 
-    public function copy($url, $to, $options = array()): Response
+    public function copy($url, $to, $options = []): Response
     {
         $this->track($url);
 
         return parent::copy($url, $to, $options);
     }
 
-    public function addCopy($url, $to, $options = array()): PromiseInterface
+    public function addCopy($url, $to, $options = []): PromiseInterface
     {
         $this->track($url);
 

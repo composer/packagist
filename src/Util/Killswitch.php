@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Util;
 
 /**
@@ -8,19 +18,19 @@ namespace App\Util;
 class Killswitch
 {
     // package metadata update and other background workers
-    const WORKERS_ENABLED = true;
+    public const WORKERS_ENABLED = true;
 
     // dependent/suggester counts and pages
-    const LINKS_ENABLED = true;
+    public const LINKS_ENABLED = true;
 
     // download stats pages (global and per package)
-    const DOWNLOADS_ENABLED = true;
+    public const DOWNLOADS_ENABLED = true;
 
     // package page details (security advisories, forms, dependent/suggester counts)
-    const PAGE_DETAILS_ENABLED = true;
+    public const PAGE_DETAILS_ENABLED = true;
 
     // package pages
-    const PAGES_ENABLED = true;
+    public const PAGES_ENABLED = true;
 
     /**
      * Silly workaround to avoid phpstan reporting "this condition is always true/false" when using the constants directly

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -30,12 +30,13 @@ use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 class FeedController extends Controller
 {
     #[Route(path: '/', name: 'feeds')]
-    public function feedsAction() : Response
+    public function feedsAction(): Response
     {
         return $this->render('feed/feeds.html.twig');
     }
+
     #[Route(path: '/packages.{_format}', name: 'feed_packages', requirements: ['_format' => '(rss|atom)'], methods: ['GET'])]
-    public function packagesAction(Request $req) : Response
+    public function packagesAction(Request $req): Response
     {
         $repo = $this->doctrine->getRepository(Package::class);
         $packages = $this->getLimitedResults(
@@ -52,8 +53,9 @@ class FeedController extends Controller
 
         return $this->buildResponse($req, $feed);
     }
+
     #[Route(path: '/releases.{_format}', name: 'feed_releases', requirements: ['_format' => '(rss|atom)'], methods: ['GET'])]
-    public function releasesAction(Request $req) : Response
+    public function releasesAction(Request $req): Response
     {
         $repo = $this->doctrine->getRepository(Version::class);
         $packages = $this->getLimitedResults(
@@ -70,8 +72,9 @@ class FeedController extends Controller
 
         return $this->buildResponse($req, $feed);
     }
+
     #[Route(path: '/vendor.{vendor}.{_format}', name: 'feed_vendor', requirements: ['_format' => '(rss|atom)', 'vendor' => '[A-Za-z0-9_.-]+'], methods: ['GET'])]
-    public function vendorAction(Request $req, string $vendor) : Response
+    public function vendorAction(Request $req, string $vendor): Response
     {
         $repo = $this->doctrine->getRepository(Version::class);
         $packages = $this->getLimitedResults(
@@ -88,8 +91,9 @@ class FeedController extends Controller
 
         return $this->buildResponse($req, $feed);
     }
+
     #[Route(path: '/package.{package}.{_format}', name: 'feed_package', requirements: ['_format' => '(rss|atom)', 'package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'], methods: ['GET'])]
-    public function packageAction(Request $req, string $package) : Response
+    public function packageAction(Request $req, string $package): Response
     {
         $repo = $this->doctrine->getRepository(Version::class);
         $packages = $this->getLimitedResults(
@@ -199,8 +203,6 @@ class FeedController extends Controller
 
     /**
      * Populates a feed entry with data coming from Version objects.
-     *
-     * @param Version                 $version
      */
     protected function populateVersionData(Entry $entry, Version $version): void
     {
@@ -213,7 +215,7 @@ class FeedController extends Controller
         foreach ($version->getAuthors() as $author) {
             if (!empty($author['name'])) {
                 $entry->addAuthor([
-                    'name' => $author['name']
+                    'name' => $author['name'],
                 ]);
             }
         }

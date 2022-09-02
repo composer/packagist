@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -20,8 +20,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'by_type', columns: ['packageName', 'type'])]
 class Dependent
 {
-    const TYPE_REQUIRE = 1;
-    const TYPE_REQUIRE_DEV = 2;
+    public const TYPE_REQUIRE = 1;
+    public const TYPE_REQUIRE_DEV = 2;
 
     #[ORM\Id]
     #[ORM\ManyToOne(targetEntity: Package::class)]

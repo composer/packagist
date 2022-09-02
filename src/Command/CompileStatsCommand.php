@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -33,7 +33,7 @@ class CompileStatsCommand extends Command
         private Locker $locker,
         private ManagerRegistry $doctrine,
         private \Graze\DogStatsD\Client $statsd,
-   ) {
+    ) {
         parent::__construct();
     }
 
@@ -53,6 +53,7 @@ class CompileStatsCommand extends Command
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
             }
+
             return 0;
         }
 

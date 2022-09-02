@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -28,7 +28,7 @@ abstract class Controller extends AbstractController
     protected ManagerRegistry $doctrine;
 
     #[\Symfony\Contracts\Service\Attribute\Required]
-    public function setDeps(ManagerRegistry $doctrine) : void
+    public function setDeps(ManagerRegistry $doctrine): void
     {
         $this->doctrine = $doctrine;
     }
@@ -64,7 +64,8 @@ abstract class Controller extends AbstractController
             if ($search) {
                 $favorites = $favMgr->getFaverCounts($ids);
             }
-        } catch (\Predis\Connection\ConnectionException $e) {}
+        } catch (\Predis\Connection\ConnectionException $e) {
+        }
 
         return ['downloads' => $downloads, 'favers' => $favorites];
     }

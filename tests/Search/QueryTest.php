@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Tests\Search;
 
 use App\Search\Query;
@@ -143,37 +153,37 @@ final class QueryTest extends TestCase
     {
         yield 'empty_tag_type' => [
             new Query('monolog', [], '', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0]
+            ['hitsPerPage' => 15, 'page' => 0],
         ];
 
         yield 'with_single_tag' => [
             new Query('monolog', ['testing'], '', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing")']
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing")'],
         ];
 
         yield 'with_single_tag_but_space' => [
             new Query('monolog', ['testing mock'], '', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing mock" OR tags:"testing-mock")']
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing mock" OR tags:"testing-mock")'],
         ];
 
         yield 'with_multiple_tags' => [
             new Query('monolog', ['testing', 'mock'], '', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing" OR tags:"mock")']
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing" OR tags:"mock")'],
         ];
 
         yield 'with_type' => [
             new Query('monolog', [], 'symfony-bundle', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:symfony-bundle']
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:symfony-bundle'],
         ];
 
         yield 'with_single_tag_and_type' => [
             new Query('monolog', ['testing'], 'symfony-bundle', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:symfony-bundle AND (tags:"testing")']
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:symfony-bundle AND (tags:"testing")'],
         ];
 
         yield 'with_multiple_tags_and_type' => [
             new Query('monolog', ['testing', 'mock'], 'symfony-bundle', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:symfony-bundle AND (tags:"testing" OR tags:"mock")']
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:symfony-bundle AND (tags:"testing" OR tags:"mock")'],
         ];
     }
 }

@@ -1,4 +1,14 @@
-<?php
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace App\Validator;
 
@@ -29,7 +39,8 @@ class TypoSquattersValidator extends ConstraintValidator
         private string $mailFromEmail,
         private UrlGeneratorInterface $urlGenerator,
         private Security $security,
-    ) {}
+    ) {
+    }
 
     public function validate(mixed $value, Constraint $constraint): void
     {

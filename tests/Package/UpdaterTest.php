@@ -1,4 +1,14 @@
-<?php
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace App\Tests\Package;
 
@@ -26,14 +36,13 @@ use PHPUnit\Framework\TestCase;
 
 class UpdaterTest extends TestCase
 {
-    /** @var IOInterface */
-    private $ioMock;
-    /** @var Config */
-    private $config;
-    /** @var Package */
-    private $package;
-    /** @var Updater */
-    private $updater;
+    private IOInterface $ioMock;
+
+    private Config $config;
+
+    private Package $package;
+
+    private Updater $updater;
     /** @var RepositoryInterface&MockObject */
     private $repositoryMock;
     /** @var VcsDriverInterface&MockObject */
@@ -43,7 +52,7 @@ class UpdaterTest extends TestCase
     {
         parent::setUp();
 
-        $this->config  = new Config();
+        $this->config = new Config();
         $this->package = new Package();
         $this->package->setName('test/pkg');
         $this->package->setRepository('https://example.com/test/pkg');
@@ -51,21 +60,23 @@ class UpdaterTest extends TestCase
         $reflProp->setAccessible(true);
         $reflProp->setValue($this->package, 1);
 
-        $this->ioMock         = $this->createMock(NullIO::class);
+        $this->ioMock = $this->createMock(NullIO::class);
         $this->repositoryMock = $this->createMock(VcsRepository::class);
-        $registryMock         = $this->createMock(Registry::class);
-        $providerManagerMock  = $this->createMock(ProviderManager::class);
-        $emMock               = $this->createMock(EntityManager::class);
-        $connectionMock       = $this->createMock(Connection::class);
-        $package              = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
-        $this->driverMock     = $this->createMock(GitDriver::class);
-        $versionRepoMock      = $this->createMock(VersionRepository::class);
-        $dependentRepoMock    = $this->createMock(DependentRepository::class);
+        $registryMock = $this->createMock(Registry::class);
+        $providerManagerMock = $this->createMock(ProviderManager::class);
+        $emMock = $this->createMock(EntityManager::class);
+        $connectionMock = $this->createMock(Connection::class);
+        $package = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $this->driverMock = $this->createMock(GitDriver::class);
+        $versionRepoMock = $this->createMock(VersionRepository::class);
+        $dependentRepoMock = $this->createMock(DependentRepository::class);
 
-        $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn(array());
+        $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn([]);
         $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
-        $emMock->expects($this->any())->method('merge')->will($this->returnCallback(function ($package) { return $package; }));
-        $emMock->expects($this->any())->method('persist')->will($this->returnCallback(function ($object) {
+        $emMock->expects($this->any())->method('merge')->will($this->returnCallback(static function ($package) {
+            return $package;
+        }));
+        $emMock->expects($this->any())->method('persist')->will($this->returnCallback(static function ($object) {
             if ($reflProperty = new \ReflectionProperty($object, 'id')) {
                 $reflProperty->setAccessible(true);
                 $reflProperty->setValue($object, random_int(0, 10000));
@@ -78,7 +89,7 @@ class UpdaterTest extends TestCase
             [Dependent::class, null, $dependentRepoMock],
         ]);
         $this->repositoryMock->expects($this->any())->method('getPackages')->willReturn([
-            $package
+            $package,
         ]);
         $this->repositoryMock->expects($this->any())->method('getDriver')->willReturn($this->driverMock);
 

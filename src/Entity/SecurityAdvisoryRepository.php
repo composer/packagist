@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Entity;
 
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
@@ -91,7 +101,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
         // optimize the search by package name as this is massively used by Composer
         if ($useCache) {
-            $redisKeys = array_map(fn ($pkg) => 'sec-adv:'.$pkg, $packageNames);
+            $redisKeys = array_map(static fn ($pkg) => 'sec-adv:'.$pkg, $packageNames);
             $advisoryCache = $this->redisCache->mget($redisKeys);
             foreach ($packageNames as $index => $name) {
                 if (isset($advisoryCache[$index])) {
@@ -141,7 +151,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             if ($useCache) {
                 $cacheData = [];
                 foreach ($packageNames as $name) {
-                    $this->redisCache->setex('sec-adv:'.$name, 86400 + random_int(0, 3600), isset($advisories[$name]) ? json_encode($advisories[$name], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) : 'false');
+                    $this->redisCache->setex('sec-adv:'.$name, 86400 + random_int(0, 3600), isset($advisories[$name]) ? json_encode($advisories[$name], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : 'false');
                 }
             }
         }

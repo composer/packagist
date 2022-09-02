@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Service;
 
 use Doctrine\Persistence\ManagerRegistry;
@@ -119,11 +129,7 @@ class Scheduler
         return $results;
     }
 
-    /**
-     * @param int|null $packageId
-     * @param \DateTimeInterface|null $executeAfter
-     */
-    private function createJob(string $type, array $payload, $packageId = null, $executeAfter = null): Job
+    private function createJob(string $type, array $payload, ?int $packageId = null, ?\DateTimeInterface $executeAfter = null): Job
     {
         $jobId = bin2hex(random_bytes(20));
 

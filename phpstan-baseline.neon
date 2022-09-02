@@ -1,6 +1,11 @@
 parameters:
 	ignoreErrors:
 		-
+			message: "#^Parameter \\#1 \\$min \\(1\\) of function random_int expects lower number than parameter \\#2 \\$max \\(int\\<\\-2147483648, 2147483647\\>\\)\\.$#"
+			count: 1
+			path: src/Controller/ExploreController.php
+
+		-
 			message: "#^Parameter \\#1 \\$nbResults of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects int\\<0, max\\>, int given\\.$#"
 			count: 1
 			path: src/Controller/ExploreController.php
@@ -92,11 +97,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\Package\\:\\:toArray\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Package.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Package\\:\\:\\$cachedVersions type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Package.php
 
@@ -371,11 +371,6 @@ parameters:
 			path: src/Entity/VersionRepository.php
 
 		-
-			message: "#^Method App\\\\Form\\\\Type\\\\AbandonedType\\:\\:buildForm\\(\\) has parameter \\$options with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Form/Type/AbandonedType.php
-
-		-
 			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Form/Type/EnableTwoFactorAuthType.php
@@ -408,11 +403,6 @@ parameters:
 		-
 			message: "#^Parameter \\#1 \\$json of function json_decode expects string, string\\|false given\\.$#"
 			count: 4
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#1 \\$str of function strtr expects string, array\\|string given\\.$#"
-			count: 2
 			path: src/Package/SymlinkDumper.php
 
 		-
@@ -482,11 +472,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$string of function substr expects string, string\\|false given\\.$#"
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: "#^Parameter \\#2 \\$offset of function substr expects int, int\\|false given\\.$#"
 			count: 1
 			path: src/Package/Updater.php
 

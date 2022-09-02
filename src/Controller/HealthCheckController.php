@@ -1,4 +1,14 @@
-<?php
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace App\Controller;
 
@@ -38,7 +48,7 @@ class HealthCheckController
     }
 
     #[Route(path: '/_aws_lb_check', name: 'health_check', methods: ['GET'])]
-    public function healthCheckAction(Request $req) : Response
+    public function healthCheckAction(Request $req): Response
     {
         if ($req->headers->get('X-Forwarded-For') || !str_starts_with($req->getClientIp() ?? '', '10.')) {
             throw new NotFoundHttpException();
@@ -46,10 +56,10 @@ class HealthCheckController
 
         $runner = new Runner();
 
-        $dbhost = (string)parse_url($this->dbUrl, PHP_URL_HOST);
-        $dbname = trim((string)parse_url($this->dbUrl, PHP_URL_PATH), '/');
-        $dbuser = (string)parse_url($this->dbUrl, PHP_URL_USER);
-        $dbpass = (string)parse_url($this->dbUrl, PHP_URL_PASS);
+        $dbhost = (string) parse_url($this->dbUrl, PHP_URL_HOST);
+        $dbname = trim((string) parse_url($this->dbUrl, PHP_URL_PATH), '/');
+        $dbuser = (string) parse_url($this->dbUrl, PHP_URL_USER);
+        $dbpass = (string) parse_url($this->dbUrl, PHP_URL_PASS);
 
         if (isset($this->awsMeta['ec2_node'])) {
             $machineName = $this->awsMeta['ec2_node'].' in '.$this->awsMeta['region'];
@@ -83,7 +93,7 @@ class HealthCheckController
 
     private function logResults(Collection $results, string $msg): void
     {
-        $this->logger->critical('Health Check '.$msg, array_map(function ($checker) use ($results) {
+        $this->logger->critical('Health Check '.$msg, array_map(static function ($checker) use ($results) {
             /** @var ResultInterface $result */
             $result = $results[$checker];
 

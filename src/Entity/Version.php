@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -259,12 +259,12 @@ class Version
         }
 
         $supportedLinkTypes = [
-            'require'    => 'require',
+            'require' => 'require',
             'devRequire' => 'require-dev',
-            'suggest'    => 'suggest',
-            'conflict'   => 'conflict',
-            'provide'    => 'provide',
-            'replace'    => 'replace',
+            'suggest' => 'suggest',
+            'conflict' => 'conflict',
+            'provide' => 'provide',
+            'replace' => 'replace',
         ];
 
         if ($this->isDefaultBranch()) {
@@ -327,10 +327,10 @@ class Version
     /**
      * @return list<string>
      */
-    public function getNames(array $versionData = null): array
+    public function getNames(?array $versionData = null): array
     {
         $names = [
-            strtolower($this->name) => true
+            strtolower($this->name) => true,
         ];
 
         if (isset($versionData[$this->id])) {
@@ -496,7 +496,7 @@ class Version
         }
 
         $funding = $this->funding;
-        usort($funding, function ($a, $b) {
+        usort($funding, static function ($a, $b) {
             $keyA = ($a['type'] ?? '') . ($a['url'] ?? '');
             $keyB = ($b['type'] ?? '') . ($b['url'] ?? '');
 
@@ -534,6 +534,7 @@ class Version
     public function getPackage(): Package
     {
         assert($this->package instanceof Package);
+
         return $this->package;
     }
 
@@ -745,6 +746,7 @@ class Version
         if (isset($extra['branch-alias'][$this->getVersion()])) {
             $parser = new VersionParser;
             $version = $parser->normalizeBranch(str_replace('-dev', '', $extra['branch-alias'][$this->getVersion()]));
+
             return Preg::replace('{(\.9{7})+}', '.x', $version);
         }
 

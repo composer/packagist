@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Service;
 
 use Composer\Pcre\Preg;
@@ -20,8 +30,8 @@ class GitHubUserMigrationWorker
 {
     use DoctrineTrait;
 
-    const HOOK_URL = 'https://packagist.org/api/github';
-    const HOOK_URL_ALT = 'https://packagist.org/api/update-package';
+    public const HOOK_URL = 'https://packagist.org/api/github';
+    public const HOOK_URL_ALT = 'https://packagist.org/api/update-package';
 
     public function __construct(
         private LoggerInterface $logger,
@@ -109,13 +119,13 @@ class GitHubUserMigrationWorker
 
             $legacyHooks = array_values(array_filter(
                 $hooks,
-                function ($hook) {
+                static function ($hook) {
                     return $hook['name'] === 'packagist' && $hook['active'] === true;
                 }
             ));
             $currentHooks = array_values(array_filter(
                 $hooks,
-                function ($hook) {
+                static function ($hook) {
                     return $hook['name'] === 'web' && (strpos($hook['config']['url'], self::HOOK_URL) === 0 || strpos($hook['config']['url'], self::HOOK_URL_ALT) === 0);
                 }
             ));
@@ -244,7 +254,7 @@ class GitHubUserMigrationWorker
     /**
      * @param array<int|string, mixed>|null $json
      */
-    private function request(string $token, string $method, string $url, array $json = null): ResponseInterface
+    private function request(string $token, string $method, string $url, ?array $json = null): ResponseInterface
     {
         $opts = [
             'headers' => ['Accept: application/vnd.github.v3+json', 'Authorization: token '.$token],

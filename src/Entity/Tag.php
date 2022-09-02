@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -47,14 +47,9 @@ class Tag
     }
 
     /**
-     * @param \Doctrine\ORM\EntityManager $em
-     * @param string                      $name
-     * @param bool                        $create
-     *
-     * @return Tag
      * @throws \Doctrine\ORM\NoResultException
      */
-    public static function getByName(EntityManager $em, $name, $create = false): Tag
+    public static function getByName(EntityManager $em, string $name, bool $create = false): Tag
     {
         try {
             $qb = $em->createQueryBuilder();

@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Tests\SecurityAdvisory;
 
 use App\Entity\SecurityAdvisory;
@@ -96,7 +106,7 @@ class SecurityAdvisoryResolverTest extends TestCase
         $this->assertSame([], $removed);
     }
 
-    private function createRemoteAdvisory(string $source, string $packageName = 'acme/package', string $cve = null): RemoteSecurityAdvisory
+    private function createRemoteAdvisory(string $source, string $packageName = 'acme/package', ?string $cve = null): RemoteSecurityAdvisory
     {
         return new RemoteSecurityAdvisory(uniqid('id-'), 'Security Advisory', $packageName, '^1.0', 'https://example.org', $cve, new \DateTimeImmutable(), null, [], $source);
     }

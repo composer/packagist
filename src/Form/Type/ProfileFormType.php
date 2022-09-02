@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -31,9 +31,9 @@ class ProfileFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('username', null, array('label' => 'Username'))
-            ->add('email', EmailType::class, array('label' => 'Email'))
-            ->addEventListener(FormEvents::PRE_SET_DATA, function(FormEvent $event) {
+            ->add('username', null, ['label' => 'Username'])
+            ->add('email', EmailType::class, ['label' => 'Email'])
+            ->addEventListener(FormEvents::PRE_SET_DATA, static function (FormEvent $event) {
                 if (!($user = $event->getData())) {
                     return;
                 }
@@ -59,10 +59,10 @@ class ProfileFormType extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults(array(
+        $resolver->setDefaults([
             'data_class' => User::class,
             'csrf_token_id' => 'profile',
-        ));
+        ]);
     }
 
     /**

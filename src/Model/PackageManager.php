@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -123,7 +123,7 @@ class PackageManager
         } catch (\Predis\Connection\ConnectionException $e) {
         }
 
-        $this->redis->zadd('metadata-deletes', [strtolower($packageName) => round(microtime(true)*10000)]);
+        $this->redis->zadd('metadata-deletes', [strtolower($packageName) => round(microtime(true) * 10000)]);
 
         // attempt search index cleanup
         try {
@@ -135,7 +135,7 @@ class PackageManager
         }
     }
 
-    public function notifyUpdateFailure(Package $package, \Exception $e, string $details = null): bool
+    public function notifyUpdateFailure(Package $package, \Exception $e, ?string $details = null): bool
     {
         if (!$package->isUpdateFailureNotified()) {
             $recipients = [];
@@ -192,7 +192,7 @@ class PackageManager
     public function notifyNewMaintainer(User $user, Package $package): bool
     {
         $body = $this->twig->render('email/maintainer_added.txt.twig', [
-            'package_name' => $package->getName()
+            'package_name' => $package->getName(),
         ]);
 
         $message = (new Email)

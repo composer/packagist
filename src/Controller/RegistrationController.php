@@ -1,4 +1,14 @@
-<?php
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace App\Controller;
 
@@ -27,7 +37,7 @@ class RegistrationController extends Controller
     }
 
     #[Route(path: '/register/', name: 'register')]
-    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, string $mailFromEmail, string $mailFromName, RecaptchaVerifier $recaptchaVerifier) : Response
+    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, string $mailFromEmail, string $mailFromName, RecaptchaVerifier $recaptchaVerifier): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('home');
@@ -60,7 +70,9 @@ class RegistrationController extends Controller
             $this->getEM()->flush();
 
             // generate a signed url and email it to the user
-            $this->emailVerifier->sendEmailConfirmation('register_confirm_email', $user,
+            $this->emailVerifier->sendEmailConfirmation(
+                'register_confirm_email',
+                $user,
                 (new TemplatedEmail())
                     ->from(new Address($mailFromEmail, $mailFromName))
                     ->to($user->getEmail())
@@ -79,7 +91,7 @@ class RegistrationController extends Controller
     }
 
     #[Route(path: '/register/verify', name: 'register_confirm_email')]
-    public function confirmEmail(Request $request, UserRepository $userRepository, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator) : Response
+    public function confirmEmail(Request $request, UserRepository $userRepository, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator): Response
     {
         $id = $request->get('id');
 

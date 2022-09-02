@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -67,6 +67,7 @@ class DumpPackagesCommand extends Command
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
+
             return 0;
         }
 
@@ -79,6 +80,7 @@ class DumpPackagesCommand extends Command
             if ($verbose) {
                 $output->writeln('Aborting, another task is running already');
             }
+
             return 0;
         }
 
@@ -88,6 +90,7 @@ class DumpPackagesCommand extends Command
             } finally {
                 $this->locker->unlockCommand(__CLASS__);
             }
+
             return 0;
         }
 
@@ -110,6 +113,7 @@ class DumpPackagesCommand extends Command
             if ($verbose) {
                 $output->writeln('Aborting, no packages to dump and not doing a forced run');
             }
+
             return 0;
         }
 

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -137,6 +137,7 @@ class DownloadManager
         }
 
         $res = array_map('intval', $this->redis->mget(array_values($keys)));
+
         return array_combine(array_keys($keys), $res);
     }
 
@@ -148,7 +149,7 @@ class DownloadManager
     public function addDownloads(array $jobs, string $ip, string $phpMinor, string $phpMinorPlatform): void
     {
         $now = time();
-        $throttleExpiry = strtotime('tomorrow 12:00:00', $now - 86400/2) * 1000;
+        $throttleExpiry = strtotime('tomorrow 12:00:00', $now - 86400 / 2) * 1000;
         $throttleDay = date('Ymd', $throttleExpiry);
         $day = date('Ymd', $now);
         $month = date('Ym', $now);
@@ -205,6 +206,7 @@ class DownloadManager
         // package was deleted in the meantime, abort
         if (!$package) {
             $this->redis->del($keys);
+
             return;
         }
 

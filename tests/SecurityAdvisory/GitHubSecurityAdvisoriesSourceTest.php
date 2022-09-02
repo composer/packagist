@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Tests\SecurityAdvisory;
 
 use App\Entity\Package;
@@ -35,7 +45,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
             $this->assertSame('https://api.github.com/graphql', $url);
             $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,first:100){nodes{advisory{summary,permalink,publishedAt,withdrawnAt,identifiers{type,value},references{url}},vulnerableVersionRange,package{name}},pageInfo{hasNextPage,endCursor}}}"}', $options['body']);
 
-            return new MockResponse(json_encode($this->getGraphQLResultFirstPage(false)),['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+            return new MockResponse(json_encode($this->getGraphQLResultFirstPage(false)), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
         };
         $client = new MockHttpClient($responseFactory);
 
@@ -87,15 +97,14 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
                 case 1:
                     $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,first:100){nodes{advisory{summary,permalink,publishedAt,withdrawnAt,identifiers{type,value},references{url}},vulnerableVersionRange,package{name}},pageInfo{hasNextPage,endCursor}}}"}', $options['body']);
 
-                    return new MockResponse(json_encode($this->getGraphQLResultFirstPage(true)),['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+                    return new MockResponse(json_encode($this->getGraphQLResultFirstPage(true)), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
                 case 2:
                     $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,first:100,after:\u0022Y3Vyc29yOnYyOpK5MjAyMC0wOS0yNFQxODoyMzo0MyswMjowMM0T9A==\u0022){nodes{advisory{summary,permalink,publishedAt,withdrawnAt,identifiers{type,value},references{url}},vulnerableVersionRange,package{name}},pageInfo{hasNextPage,endCursor}}}"}', $options['body']);
 
-                    return new MockResponse(json_encode($this->getGraphQLResultSecondPage()),['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+                    return new MockResponse(json_encode($this->getGraphQLResultSecondPage()), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
             }
 
-
-            return new MockResponse(json_encode($this->getGraphQLResultFirstPage(false)),['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+            return new MockResponse(json_encode($this->getGraphQLResultFirstPage(false)), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
         };
 
         $client = new MockHttpClient($responseFactory);
@@ -131,7 +140,6 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         $this->assertSame('2020-09-24T16:23:54+0000', $advisories[1]->getDate()->format(\DateTimeInterface::ISO8601));
         $this->assertSame(SecurityAdvisory::PACKAGIST_ORG, $advisories[1]->getComposerRepository());
     }
-
 
     private function getPackage(): Package
     {
@@ -186,7 +194,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
                 'permalink' => 'https://github.com/advisories/' . $advisoryId,
                 'publishedAt' => $publishedAt,
                 'identifiers' => [
-                    ['type' => 'GHSA', 'value' => $advisoryId,],
+                    ['type' => 'GHSA', 'value' => $advisoryId],
                     ['type' => 'CVE', 'value' => $cve],
                 ],
                 'references' => [],

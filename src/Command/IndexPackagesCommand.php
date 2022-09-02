@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -70,6 +70,7 @@ class IndexPackagesCommand extends Command
             if ($verbose) {
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
+
             return 0;
         }
 
@@ -78,6 +79,7 @@ class IndexPackagesCommand extends Command
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
             }
+
             return 0;
         }
 
@@ -87,6 +89,7 @@ class IndexPackagesCommand extends Command
             $packageEntity = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package]);
             if ($packageEntity === null) {
                 $output->writeln('<error>Package '.$package.' not found</error>');
+
                 return 1;
             }
             $packages = [['id' => $packageEntity->getId()]];
@@ -130,7 +133,7 @@ class IndexPackagesCommand extends Command
             foreach ($packages as $package) {
                 $current++;
                 if ($verbose) {
-                    $output->writeln('['.sprintf('%'.strlen((string)$total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
+                    $output->writeln('['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
                 }
 
                 // delete spam packages from the search index
@@ -197,7 +200,7 @@ class IndexPackagesCommand extends Command
         $downloadsLog = $downloads['monthly'] > 0 ? log($downloads['monthly'], 10) : 0;
         $starsLog = $package->getGitHubStars() > 0 ? log($package->getGitHubStars(), 10) : 0;
         $popularity = round($downloadsLog + $starsLog);
-        $trendiness = (float)$this->redis->zscore('downloads:trending', $package->getId());
+        $trendiness = (float) $this->redis->zscore('downloads:trending', $package->getId());
 
         $record = [
             'id' => $package->getId(),
@@ -295,7 +298,7 @@ class IndexPackagesCommand extends Command
         }
 
         return array_values(array_unique(array_map(
-            fn (string $tag) => Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8')),
+            static fn (string $tag) => Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8')),
             $tags
         )));
     }

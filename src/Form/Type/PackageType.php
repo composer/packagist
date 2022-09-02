@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -27,9 +27,9 @@ class PackageType extends AbstractType
     {
         $builder->add('repository', TextType::class, [
             'label' => 'Repository URL (Git/Svn/Hg)',
-            'attr'  => [
+            'attr' => [
                 'placeholder' => 'e.g.: https://github.com/composer/composer',
-            ]
+            ],
         ]);
     }
 
@@ -37,7 +37,7 @@ class PackageType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Package::class,
-            'validation_groups' => ['Default', 'Create']
+            'validation_groups' => ['Default', 'Create'],
         ]);
     }
 

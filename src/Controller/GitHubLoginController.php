@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Controller;
 
 use App\Entity\User;
@@ -23,7 +33,7 @@ class GitHubLoginController extends Controller
      * Link to this controller to start the "connect" process
      */
     #[Route(path: '/connect/github', name: 'connect_github_start')]
-    public function connect(ClientRegistry $clientRegistry) : RedirectResponse
+    public function connect(ClientRegistry $clientRegistry): RedirectResponse
     {
         $user = $this->getUser();
         if (!is_object($user)) {
@@ -34,9 +44,9 @@ class GitHubLoginController extends Controller
             ->getClient('github')
             ->redirect([
                 // the scopes you want to access
-	            'admin:repo_hook', 'read:org', 'user:email',
+                'admin:repo_hook', 'read:org', 'user:email',
             ], [
-                'redirect_uri' => $this->generateUrl('connect_github_check', [], UrlGeneratorInterface::ABSOLUTE_URL)
+                'redirect_uri' => $this->generateUrl('connect_github_check', [], UrlGeneratorInterface::ABSOLUTE_URL),
             ]);
     }
 
@@ -44,15 +54,15 @@ class GitHubLoginController extends Controller
      * Link to this controller to start the "connect" process
      */
     #[Route(path: '/login/github', name: 'login_github_start')]
-    public function login(ClientRegistry $clientRegistry) : RedirectResponse
+    public function login(ClientRegistry $clientRegistry): RedirectResponse
     {
         return $clientRegistry
             ->getClient('github')
             ->redirect([
                 // the scopes you want to access
-	            'admin:repo_hook', 'read:org', 'user:email',
+                'admin:repo_hook', 'read:org', 'user:email',
             ], [
-                'redirect_uri' => $this->generateUrl('login_github_check', [], UrlGeneratorInterface::ABSOLUTE_URL)
+                'redirect_uri' => $this->generateUrl('login_github_check', [], UrlGeneratorInterface::ABSOLUTE_URL),
             ]);
     }
 
@@ -62,7 +72,7 @@ class GitHubLoginController extends Controller
      * in config/packages/knpu_oauth2_client.yaml
      */
     #[Route(path: '/connect/github/check', name: 'connect_github_check')]
-    public function connectCheck(Request $request, ClientRegistry $clientRegistry, Scheduler $scheduler, #[CurrentUser] User $user) : RedirectResponse
+    public function connectCheck(Request $request, ClientRegistry $clientRegistry, Scheduler $scheduler, #[CurrentUser] User $user): RedirectResponse
     {
         /** @var \KnpU\OAuth2ClientBundle\Client\Provider\GithubClient $client */
         $client = $clientRegistry->getClient('github');

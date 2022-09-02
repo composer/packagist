@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -103,7 +103,7 @@ class V2Dumper
         while ($packageIds) {
             $dumpTime = new \DateTime;
             $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions(array_splice($packageIds, 0, $step));
-            $packageNames = array_map(fn (Package $pkg) => $pkg->getName(), $packages);
+            $packageNames = array_map(static fn (Package $pkg) => $pkg->getName(), $packages);
             $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
 
             if ($verbose) {
@@ -211,8 +211,8 @@ class V2Dumper
 
         $time = (time() - 86400) * 10000;
         $this->redis->set('metadata-oldest', $time);
-        $this->redis->zremrangebyscore('metadata-dumps', 0, $time-1);
-        $this->redis->zremrangebyscore('metadata-deletes', 0, $time-1);
+        $this->redis->zremrangebyscore('metadata-dumps', 0, $time - 1);
+        $this->redis->zremrangebyscore('metadata-deletes', 0, $time - 1);
     }
 
     /**
@@ -268,7 +268,7 @@ class V2Dumper
             $metadata['security-advisories'] = $advisories;
         }
 
-        $json = json_encode($metadata, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+        $json = json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $this->writeV2File($path, $json, $forceDump);
     }
 
@@ -287,7 +287,7 @@ class V2Dumper
         $this->fs->mkdir(dirname($path));
 
         // get time before file_put_contents to be sure we return a time at least as old as the filemtime, if it is older it doesn't matter
-        $timestamp = round(microtime(true)*10000);
+        $timestamp = round(microtime(true) * 10000);
         file_put_contents($path.'.tmp', $contents);
         rename($path.'.tmp', $path);
 

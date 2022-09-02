@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -12,7 +12,6 @@
 
 namespace App\Model;
 
-use App\Entity\PackageRepository;
 use App\Entity\Package;
 use App\Entity\Version;
 use Predis\Client;
@@ -47,7 +46,7 @@ class VersionIdCache
 
         foreach ($results as $key => $result) {
             if ($result) {
-                list($id, $vid) = explode(',', $result);
+                [$id, $vid] = explode(',', $result);
                 $payload[$key]['id'] = (int) $id;
                 $payload[$key]['vid'] = (int) $vid;
             }

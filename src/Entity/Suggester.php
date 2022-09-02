@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -12,7 +12,6 @@
 
 namespace App\Entity;
 
-use App\Repository\DependentRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SuggesterRepository::class)]

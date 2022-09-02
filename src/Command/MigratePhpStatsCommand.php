@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Command;
 
 use App\Entity\PhpStat;
@@ -9,7 +19,6 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Seld\Signal\SignalHandler;
-use App\Model\DownloadManager;
 use App\Service\Locker;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
@@ -45,6 +54,7 @@ class MigratePhpStatsCommand extends Command
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
             }
+
             return 0;
         }
 
@@ -63,12 +73,12 @@ class MigratePhpStatsCommand extends Command
             $keysToUpdate = array_merge($keysToUpdate, $this->redis->keys('phpplatform:*:*:*'));
 
             // skip today datapoints as we will store that to the DB tomorrow
-            $keysToUpdate = array_filter($keysToUpdate, function ($key) use ($todaySuffix) {
+            $keysToUpdate = array_filter($keysToUpdate, static function ($key) use ($todaySuffix) {
                 return !str_ends_with($key, $todaySuffix);
             });
 
             // sort by package id then version
-            usort($keysToUpdate, function (string $a, string $b) {
+            usort($keysToUpdate, static function (string $a, string $b) {
                 $amin = Preg::replace('{^php(?:platform)?:(\d+).*}', '$1', $a);
                 $bmin = Preg::replace('{^php(?:platform)?:(\d+).*}', '$1', $b);
 

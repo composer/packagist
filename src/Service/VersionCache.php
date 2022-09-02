@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Service;
 
 use Composer\Pcre\Preg;
@@ -7,7 +17,6 @@ use Composer\Repository\VersionCacheInterface;
 use App\Entity\Package;
 use App\Entity\Version;
 use Composer\Semver\VersionParser;
-use DateTimeInterface;
 
 class VersionCache implements VersionCacheInterface
 {
@@ -29,11 +38,9 @@ class VersionCache implements VersionCacheInterface
     }
 
     /**
-     * @param string $version
-     * @param string $identifier
      * @return array{name: string, version: string, version_normalized: string, source: array{type: string|null, url: string|null, reference: string|null}|null}|false|null
      */
-    public function getVersionPackage($version, $identifier): array|false|null
+    public function getVersionPackage(string $version, string $identifier): array|false|null
     {
         if (!empty($this->versionCache[$version]['source']['reference']) && $this->versionCache[$version]['source']['reference'] === $identifier) {
             return [

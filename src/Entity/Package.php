@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -25,8 +25,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Composer\Repository\Vcs\GitHubDriver;
@@ -54,9 +52,9 @@ use DateTimeInterface;
 #[Copyright(groups: ['Create'])]
 class Package
 {
-    const AUTO_NONE = 0;
-    const AUTO_MANUAL_HOOK = 1;
-    const AUTO_GITHUB_HOOK = 2;
+    public const AUTO_NONE = 0;
+    public const AUTO_MANUAL_HOOK = 1;
+    public const AUTO_GITHUB_HOOK = 2;
 
     #[ORM\Id]
     #[ORM\Column(type: 'integer')]
@@ -146,9 +144,6 @@ class Package
     #[ORM\Column(type: 'smallint')]
     private int $autoUpdated = 0;
 
-    /**
-     * @var bool
-     */
     #[ORM\Column(type: 'boolean')]
     private bool $abandoned = false;
 
@@ -173,9 +168,9 @@ class Package
     private $vcsDriverError;
 
     /**
-     * @var array lookup table for versions
+     * @var array<string, Version>|null lookup table for versions
      */
-    private $cachedVersions;
+    private array|null $cachedVersions = null;
 
     public function __construct()
     {
@@ -199,7 +194,9 @@ class Package
 
             $slice = array_splice($partialVersions, 0, 100);
             $fullVersions = $versionRepo->refreshVersions($slice);
-            $versionData = $versionRepo->getVersionData(array_map(function ($v) { return $v->getId(); }, $fullVersions));
+            $versionData = $versionRepo->getVersionData(array_map(static function ($v) {
+                return $v->getId();
+            }, $fullVersions));
             $versions = array_merge($versions, $versionRepo->detachToArray($fullVersions, $versionData, $serializeForApi));
         }
 
@@ -256,6 +253,7 @@ class Package
                     ->addViolation()
                 ;
             }
+
             return;
         }
         try {
@@ -265,6 +263,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -273,6 +272,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -284,6 +284,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -295,6 +296,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -305,6 +307,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -315,6 +318,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -323,6 +327,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -334,6 +339,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
         } catch (\Exception $e) {
@@ -342,6 +348,7 @@ class Package
                     ->atPath($property)
                     ->addViolation()
                 ;
+
                 return;
             }
 
@@ -349,6 +356,7 @@ class Package
                 ->atPath($property)
                 ->addViolation()
             ;
+
             return;
         }
 
@@ -379,7 +387,8 @@ class Package
                     ->addViolation()
                 ;
             }
-        } catch (\Doctrine\ORM\NoResultException $e) {}
+        } catch (\Doctrine\ORM\NoResultException $e) {
+        }
     }
 
     public function isVendorWritable(ExecutionContextInterface $context): void
@@ -398,7 +407,8 @@ class Package
                     ->addViolation()
                 ;
             }
-        } catch (\Doctrine\ORM\NoResultException $e) {}
+        } catch (\Doctrine\ORM\NoResultException $e) {
+        }
     }
 
     public function getId(): int
@@ -551,7 +561,7 @@ class Package
         $repoUrl = Preg::replace('{^(https://bitbucket.org/[^/]+/[^/]+)/src/[^.]+}i', '$1.git', $repoUrl);
 
         // normalize protocol case
-        $repoUrl = Preg::replaceCallback('{^(https?|git|svn)://}i', fn ($match) => strtolower($match[1]) . '://', $repoUrl);
+        $repoUrl = Preg::replaceCallback('{^(https?|git|svn)://}i', static fn ($match) => strtolower($match[1]) . '://', $repoUrl);
 
         $this->repository = $repoUrl;
         $this->remoteId = null;
@@ -760,13 +770,12 @@ class Package
     public function getAutoUpdated(): int
     {
         assert(in_array($this->autoUpdated, [self::AUTO_NONE, self::AUTO_MANUAL_HOOK, self::AUTO_GITHUB_HOOK], true));
+
         return $this->autoUpdated;
     }
 
     /**
      * Get autoUpdated
-     *
-     * @return Boolean
      */
     public function isAutoUpdated(): bool
     {
@@ -775,18 +784,14 @@ class Package
 
     /**
      * Set updateFailureNotified
-     *
-     * @param Boolean $updateFailureNotified
      */
-    public function setUpdateFailureNotified($updateFailureNotified): void
+    public function setUpdateFailureNotified(bool $updateFailureNotified): void
     {
         $this->updateFailureNotified = $updateFailureNotified;
     }
 
     /**
      * Get updateFailureNotified
-     *
-     * @return Boolean
      */
     public function isUpdateFailureNotified(): bool
     {
@@ -808,18 +813,12 @@ class Package
         return $this->suspect;
     }
 
-    /**
-     * @return boolean
-     */
     public function isAbandoned(): bool
     {
         return $this->abandoned;
     }
 
-    /**
-     * @param boolean $abandoned
-     */
-    public function setAbandoned($abandoned): void
+    public function setAbandoned(bool $abandoned): void
     {
         $this->abandoned = $abandoned;
     }
@@ -864,6 +863,7 @@ class Package
             if ($a->getReleasedAt() == $b->getReleasedAt()) {
                 return $a->getNormalizedVersion() <=> $b->getNormalizedVersion();
             }
+
             return $b->getReleasedAt() > $a->getReleasedAt() ? 1 : -1;
         }
 
