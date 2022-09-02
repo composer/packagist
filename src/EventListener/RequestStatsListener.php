@@ -53,6 +53,6 @@ class RequestStatsListener
             $statusCode < 500 => '4xx',
             default => '5xx',
         };
-        $this->statsd->increment('app.status.'.$statsdCode);
+        $this->statsd->increment('app.status.'.$statsdCode, 1, 1, ['route' => $e->getRequest()->attributes->get('_route')]);
     }
 }
