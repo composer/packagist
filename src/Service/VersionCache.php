@@ -6,6 +6,7 @@ use Composer\Pcre\Preg;
 use Composer\Repository\VersionCacheInterface;
 use App\Entity\Package;
 use App\Entity\Version;
+use Composer\Semver\VersionParser;
 use DateTimeInterface;
 
 class VersionCache implements VersionCacheInterface
@@ -53,6 +54,14 @@ class VersionCache implements VersionCacheInterface
 
     public function clearVersion(string $version): void
     {
+        $parser = new VersionParser();
+        // handle branch names like 3.x.x which gets normalized to 3.x-dev (losing a .x)
+        $normalizedBranch = Preg::replace('{(\.9999999)+}', '.x', $parser->normalizeBranch($version));
+        if (isset($this->versionCache[$normalizedBranch])) {
+            unset($this->versionCache[$normalizedBranch]);
+        }
+
+        // handle main => dev-main, 3 => 3.x-dev and 3.x => 3.x-dev
         foreach (array_keys($this->versionCache) as $v) {
             $v = (string) $v;
             if (Preg::replace('{\.x-dev$}', '', $v) === $version || Preg::replace('{-dev$}', '', $v) === $version || Preg::replace('{^dev-}', '', $v) === $version) {
