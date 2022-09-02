@@ -18,7 +18,7 @@ use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
 class RequestStatsListener
 {
-    private int|null $pageTiming = null;
+    private float|null $pageTiming = null;
 
     public function __construct(
         private Client $statsd,
