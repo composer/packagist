@@ -46,7 +46,7 @@ class MigrateDownloadCountsCommand extends Command
         }
 
         $signal = SignalHandler::create(null, $this->logger);
-        $this->statsd->increment('nightly-job.start', 1, 1, ['job' => 'migrate-download-counts']);
+        $this->statsd->increment('nightly_job.start', 1, 1, ['job' => 'migrate-download-counts']);
 
         try {
             // might be a large-ish dataset coming through here
@@ -108,7 +108,7 @@ class MigrateDownloadCountsCommand extends Command
             }
         } finally {
             $this->locker->unlockCommand(__CLASS__);
-            $this->statsd->increment('nightly-job.end', 1, 1, ['job' => 'migrate-download-counts']);
+            $this->statsd->increment('nightly_job.end', 1, 1, ['job' => 'migrate-download-counts']);
         }
 
         return 0;

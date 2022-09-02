@@ -56,7 +56,7 @@ class CompileStatsCommand extends Command
             return 0;
         }
 
-        $this->statsd->increment('nightly-job.start', 1, 1, ['job' => 'compile-stats']);
+        $this->statsd->increment('nightly_job.start', 1, 1, ['job' => 'compile-stats']);
 
         $verbose = $input->getOption('verbose');
 
@@ -89,7 +89,7 @@ class CompileStatsCommand extends Command
         $this->redis->rename('downloads:absolute:new', 'downloads:absolute');
 
         $this->locker->unlockCommand(__CLASS__);
-        $this->statsd->increment('nightly-job.end', 1, 1, ['job' => 'compile-stats']);
+        $this->statsd->increment('nightly_job.end', 1, 1, ['job' => 'compile-stats']);
 
         return 0;
     }

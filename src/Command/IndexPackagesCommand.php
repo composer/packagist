@@ -91,7 +91,7 @@ class IndexPackagesCommand extends Command
             }
             $packages = [['id' => $packageEntity->getId()]];
         } elseif ($force || $indexAll) {
-            $this->statsd->increment('nightly-job.start', 1, 1, ['job' => 'index-packages']);
+            $this->statsd->increment('nightly_job.start', 1, 1, ['job' => 'index-packages']);
 
             $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
             if ($force) {
@@ -180,7 +180,7 @@ class IndexPackagesCommand extends Command
 
         $this->locker->unlockCommand(__CLASS__);
         if ($force || $indexAll) {
-            $this->statsd->increment('nightly-job.end', 1, 1, ['job' => 'index-packages']);
+            $this->statsd->increment('nightly_job.end', 1, 1, ['job' => 'index-packages']);
         }
 
         return 0;
