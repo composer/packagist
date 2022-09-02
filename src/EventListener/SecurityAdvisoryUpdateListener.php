@@ -59,7 +59,10 @@ class SecurityAdvisoryUpdateListener
         $this->packagesToMarkStale = [];
 
         $redisKeys = array_map(fn ($pkg) => 'sec-adv:'.$pkg, $packageNames);
-        $this->redisCache->del($redisKeys);
+        while (count($redisKeys) > 0) {
+            $keys = array_splice($redisKeys, 0, 1000);
+            $this->redisCache->del($keys);
+        }
     }
 
     private function dumpPackage(string $packageName): void
