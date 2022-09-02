@@ -5,54 +5,40 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use DateTimeInterface;
 
-/**
- * @ORM\Entity(repositoryClass="App\Entity\DownloadRepository")
- * @ORM\Table(
- *     name="download",
- *     indexes={
- *         @ORM\Index(name="last_updated_idx",columns={"lastUpdated"}),
- *         @ORM\Index(name="total_idx",columns={"total"}),
- *         @ORM\Index(name="package_idx",columns={"package_id"})
- *     }
- * )
- */
+#[ORM\Entity(repositoryClass: 'App\Entity\DownloadRepository')]
+#[ORM\Table(name: 'download')]
+#[ORM\Index(name: 'last_updated_idx', columns: ['lastUpdated'])]
+#[ORM\Index(name: 'total_idx', columns: ['total'])]
+#[ORM\Index(name: 'package_idx', columns: ['package_id'])]
 class Download
 {
     public const TYPE_PACKAGE = 1;
     public const TYPE_VERSION = 2;
 
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="bigint")
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'bigint')]
     public string $id;
 
     /**
-     * @ORM\Id
-     * @ORM\Column(type="smallint")
      * @var int one of self::TYPE_*
      */
+    #[ORM\Id]
+    #[ORM\Column(type: 'smallint')]
     public int $type;
 
     /**
-     * @ORM\Column(type="json")
      * @var array<int|numeric-string, int> Data is keyed by date in form of YYYYMMDD and as such the keys are technically seen as ints by PHP
      */
+    #[ORM\Column(type: 'json')]
     public array $data = [];
 
-    /**
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Column(type: 'integer')]
     public int $total = 0;
 
-    /**
-     * @ORM\Column(type="datetime")
-     */
+    #[ORM\Column(type: 'datetime')]
     public DateTimeInterface $lastUpdated;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Package", inversedBy="downloads")
-     */
+    #[ORM\ManyToOne(targetEntity: 'App\Entity\Package', inversedBy: 'downloads')]
     public Package|null $package = null;
 
     public function computeSum(): void

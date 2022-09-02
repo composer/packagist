@@ -37,10 +37,8 @@ class HealthCheckController
         $this->dbUrl = $dbUrl;
     }
 
-    /**
-     * @Route("/_aws_lb_check", name="health_check", methods={"GET"})
-     */
-    public function healthCheckAction(Request $req): Response
+    #[Route(path: '/_aws_lb_check', name: 'health_check', methods: ['GET'])]
+    public function healthCheckAction(Request $req) : Response
     {
         if ($req->headers->get('X-Forwarded-For') || !str_starts_with($req->getClientIp() ?? '', '10.')) {
             throw new NotFoundHttpException();

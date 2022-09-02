@@ -21,10 +21,9 @@ class GitHubLoginController extends Controller
 {
     /**
      * Link to this controller to start the "connect" process
-     *
-     * @Route("/connect/github", name="connect_github_start")
      */
-    public function connect(ClientRegistry $clientRegistry): RedirectResponse
+    #[Route(path: '/connect/github', name: 'connect_github_start')]
+    public function connect(ClientRegistry $clientRegistry) : RedirectResponse
     {
         $user = $this->getUser();
         if (!is_object($user)) {
@@ -43,10 +42,9 @@ class GitHubLoginController extends Controller
 
     /**
      * Link to this controller to start the "connect" process
-     *
-     * @Route("/login/github", name="login_github_start")
      */
-    public function login(ClientRegistry $clientRegistry): RedirectResponse
+    #[Route(path: '/login/github', name: 'login_github_start')]
+    public function login(ClientRegistry $clientRegistry) : RedirectResponse
     {
         return $clientRegistry
             ->getClient('github')
@@ -62,10 +60,9 @@ class GitHubLoginController extends Controller
      * After going to GitHub, you're redirected back here
      * because this is the "redirect_route" you configured
      * in config/packages/knpu_oauth2_client.yaml
-     *
-     * @Route("/connect/github/check", name="connect_github_check")
      */
-    public function connectCheck(Request $request, ClientRegistry $clientRegistry, Scheduler $scheduler, #[CurrentUser] User $user): RedirectResponse
+    #[Route(path: '/connect/github/check', name: 'connect_github_check')]
+    public function connectCheck(Request $request, ClientRegistry $clientRegistry, Scheduler $scheduler, #[CurrentUser] User $user) : RedirectResponse
     {
         /** @var \KnpU\OAuth2ClientBundle\Client\Provider\GithubClient $client */
         $client = $clientRegistry->getClient('github');

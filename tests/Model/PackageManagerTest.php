@@ -20,9 +20,9 @@ class PackageManagerTest extends TestCase
         $user = new User;
         $user->addPackage($package);
 
-        $repo = $this->getMockBuilder('App\Entity\UserRepository')->disableOriginalConstructor()->getMock();
-        $em = $this->getMockBuilder('Doctrine\ORM\EntityManager')->disableOriginalConstructor()->getMock();
-        $updater = $this->getMockBuilder('App\Package\Updater')->disableOriginalConstructor()->getMock();
+        $repo = $this->createMock('App\Entity\UserRepository');
+        $em = $this->createMock('Doctrine\ORM\EntityManager');
+        $updater = $this->createMock('App\Package\Updater');
 
         $repo->expects($this->once())
             ->method('findOneBy')

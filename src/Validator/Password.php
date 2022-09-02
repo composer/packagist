@@ -6,9 +6,6 @@ use Attribute;
 use Symfony\Component\Validator\Constraints\Compound;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * @Annotation
- */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class Password extends Compound
 {

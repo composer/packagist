@@ -52,7 +52,7 @@ class ApiControllerTest extends WebTestCase
         $em->persist($user);
         $em->flush();
 
-        $scheduler = $this->getMockBuilder('App\Service\Scheduler')->disableOriginalConstructor()->getMock();
+        $scheduler = $this->createMock('App\Service\Scheduler');
 
         $scheduler->expects($this->once())
             ->method('scheduleUpdate')

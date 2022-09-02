@@ -26,10 +26,8 @@ class RegistrationController extends Controller
     {
     }
 
-    /**
-     * @Route("/register/", name="register")
-     */
-    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, string $mailFromEmail, string $mailFromName, RecaptchaVerifier $recaptchaVerifier): Response
+    #[Route(path: '/register/', name: 'register')]
+    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, string $mailFromEmail, string $mailFromName, RecaptchaVerifier $recaptchaVerifier) : Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('home');
@@ -80,10 +78,8 @@ class RegistrationController extends Controller
         ]);
     }
 
-    /**
-     * @Route("/register/verify", name="register_confirm_email")
-     */
-    public function confirmEmail(Request $request, UserRepository $userRepository, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator): Response
+    #[Route(path: '/register/verify', name: 'register_confirm_email')]
+    public function confirmEmail(Request $request, UserRepository $userRepository, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator) : Response
     {
         $id = $request->get('id');
 

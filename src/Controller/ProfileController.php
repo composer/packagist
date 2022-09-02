@@ -19,10 +19,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ProfileController extends Controller
 {
-    /**
-     * @Route("/profile/", name="my_profile")
-     */
-    public function myProfile(Request $req, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $user): Response
+    #[Route(path: '/profile/', name: 'my_profile')]
+    public function myProfile(Request $req, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $user) : Response
     {
         $packages = $this->getUserPackages($req, $user);
         $lastGithubSync = $this->doctrine->getRepository(Job::class)->getLastGitHubSyncJob($user->getId());
@@ -44,10 +42,8 @@ class ProfileController extends Controller
         );
     }
 
-    /**
-     * @Route("/users/{name}/", name="user_profile")
-     */
-    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $loggedUser = null): Response
+    #[Route(path: '/users/{name}/', name: 'user_profile')]
+    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $loggedUser = null) : Response
     {
         $packages = $this->getUserPackages($req, $user);
 
@@ -70,11 +66,9 @@ class ProfileController extends Controller
         );
     }
 
-    /**
-     * @Route("/users/{name}/packages/", name="user_packages")
-     * @Route("/users/{name}/packages.json", name="user_packages_json", defaults={"_format": "json"})
-     */
-    public function packagesAction(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr): Response
+    #[Route(path: '/users/{name}/packages/', name: 'user_packages')]
+    #[Route(path: '/users/{name}/packages.json', name: 'user_packages_json', defaults: ['_format' => 'json'])]
+    public function packagesAction(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr) : Response
     {
         $packages = $this->getUserPackages($req, $user);
 
@@ -107,10 +101,8 @@ class ProfileController extends Controller
         );
     }
 
-    /**
-     * @Route("/profile/edit", name="edit_profile")
-     */
-    public function editAction(Request $request): Response
+    #[Route(path: '/profile/edit', name: 'edit_profile')]
+    public function editAction(Request $request) : Response
     {
         $user = $this->getUser();
         if (!is_object($user)) {

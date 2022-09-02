@@ -24,8 +24,8 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->providerManager = $this->getMockBuilder(ProviderManager::class)->disableOriginalConstructor()->getMock();
-        $this->doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
+        $this->providerManager = $this->createMock(ProviderManager::class);
+        $this->doctrine = $this->createMock(ManagerRegistry::class);
     }
 
     public function testWithoutPagination(): void

@@ -34,11 +34,11 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->httpUtils = $this->getMockBuilder(HttpUtils::class)->disableOriginalConstructor()->getMock();
-        $this->recaptchaVerifier = $this->getMockBuilder(RecaptchaVerifier::class)->disableOriginalConstructor()->getMock();
-        $this->userProvider = $this->getMockBuilder(UserProviderInterface::class)->disableOriginalConstructor()->getMock();
-        $this->recaptchaHelper = $this->getMockBuilder(RecaptchaHelper::class)->disableOriginalConstructor()->getMock();
-        $this->doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
+        $this->httpUtils = $this->createMock(HttpUtils::class);
+        $this->recaptchaVerifier = $this->createMock(RecaptchaVerifier::class);
+        $this->userProvider = $this->createMock(UserProviderInterface::class);
+        $this->recaptchaHelper = $this->createMock(RecaptchaHelper::class);
+        $this->doctrine = $this->createMock(ManagerRegistry::class);
 
         $this->authenticator = new BruteForceLoginFormAuthenticator($this->httpUtils, $this->recaptchaVerifier, $this->userProvider, $this->recaptchaHelper, $this->doctrine);
     }
@@ -67,8 +67,8 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
     public function testOnAuthenticationSuccess(): void
     {
         $request = new Request();
-        $request->setSession($this->getMockBuilder(SessionInterface::class)->disableOriginalConstructor()->getMock());
-        $token = $this->getMockBuilder(UsernamePasswordToken::class)->disableOriginalConstructor()->getMock();
+        $request->setSession($this->createMock(SessionInterface::class));
+        $token = $this->createMock(UsernamePasswordToken::class);
 
         $this->httpUtils
             ->expects($this->once())
@@ -86,7 +86,7 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
     public function testOnAuthenticationFailureIncreaseCounter(): void
     {
         $request = new Request();
-        $request->setSession($this->getMockBuilder(SessionInterface::class)->disableOriginalConstructor()->getMock());
+        $request->setSession($this->createMock(SessionInterface::class));
         $exception = new AuthenticationException();
 
         $this->recaptchaHelper

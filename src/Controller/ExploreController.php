@@ -27,15 +27,11 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Predis\Client as RedisClient;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 
-/**
- * @Route("/explore")
- */
+#[Route(path: '/explore')]
 class ExploreController extends Controller
 {
-    /**
-     * @Route("/", name="browse")
-     */
-    public function exploreAction(RedisClient $redis): Response
+    #[Route(path: '/', name: 'browse')]
+    public function exploreAction(RedisClient $redis) : Response
     {
         $pkgRepo = $this->getEM()->getRepository(Package::class);
         $verRepo = $this->getEM()->getRepository(Version::class);
@@ -68,11 +64,8 @@ class ExploreController extends Controller
             'popular' => $popular,
         ]);
     }
-
-    /**
-     * @Route("/popular.{_format}", name="browse_popular", defaults={"_format"="html"})
-     */
-    public function popularAction(Request $req, RedisClient $redis, FavoriteManager $favMgr, DownloadManager $dlMgr): Response
+    #[Route(path: '/popular.{_format}', name: 'browse_popular', defaults: ['_format' => 'html'])]
+    public function popularAction(Request $req, RedisClient $redis, FavoriteManager $favMgr, DownloadManager $dlMgr) : Response
     {
         $perPage = $req->query->getInt('per_page', 15);
         try {

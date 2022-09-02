@@ -27,10 +27,8 @@ abstract class Controller extends AbstractController
 
     protected ManagerRegistry $doctrine;
 
-    /**
-     * @required
-     */
-    public function setDeps(ManagerRegistry $doctrine): void
+    #[\Symfony\Contracts\Service\Attribute\Required]
+    public function setDeps(ManagerRegistry $doctrine) : void
     {
         $this->doctrine = $doctrine;
     }

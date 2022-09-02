@@ -21,8 +21,8 @@ use App\Package\Updater;
 use App\Entity\VersionRepository;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use PHPUnit_Framework_MockObject_MockObject;
 
 class UpdaterTest extends TestCase
 {
@@ -34,9 +34,9 @@ class UpdaterTest extends TestCase
     private $package;
     /** @var Updater */
     private $updater;
-    /** @var RepositoryInterface|PHPUnit_Framework_MockObject_MockObject */
+    /** @var RepositoryInterface&MockObject */
     private $repositoryMock;
-    /** @var VcsDriverInterface|PHPUnit_Framework_MockObject_MockObject */
+    /** @var VcsDriverInterface&MockObject */
     private $driverMock;
 
     protected function setUp(): void
@@ -51,16 +51,16 @@ class UpdaterTest extends TestCase
         $reflProp->setAccessible(true);
         $reflProp->setValue($this->package, 1);
 
-        $this->ioMock         = $this->getMockBuilder(NullIO::class)->disableOriginalConstructor()->getMock();
-        $this->repositoryMock = $this->getMockBuilder(VcsRepository::class)->disableOriginalConstructor()->getMock();
-        $registryMock         = $this->getMockBuilder(Registry::class)->disableOriginalConstructor()->getMock();
-        $providerManagerMock  = $this->getMockBuilder(ProviderManager::class)->disableOriginalConstructor()->getMock();
-        $emMock               = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
-        $connectionMock       = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
+        $this->ioMock         = $this->createMock(NullIO::class);
+        $this->repositoryMock = $this->createMock(VcsRepository::class);
+        $registryMock         = $this->createMock(Registry::class);
+        $providerManagerMock  = $this->createMock(ProviderManager::class);
+        $emMock               = $this->createMock(EntityManager::class);
+        $connectionMock       = $this->createMock(Connection::class);
         $package              = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
-        $this->driverMock     = $this->getMockBuilder(GitDriver::class)->disableOriginalConstructor()->getMock();
-        $versionRepoMock      = $this->getMockBuilder(VersionRepository::class)->disableOriginalConstructor()->getMock();
-        $dependentRepoMock    = $this->getMockBuilder(DependentRepository::class)->disableOriginalConstructor()->getMock();
+        $this->driverMock     = $this->createMock(GitDriver::class);
+        $versionRepoMock      = $this->createMock(VersionRepository::class);
+        $dependentRepoMock    = $this->createMock(DependentRepository::class);
 
         $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn(array());
         $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
@@ -82,7 +82,7 @@ class UpdaterTest extends TestCase
         ]);
         $this->repositoryMock->expects($this->any())->method('getDriver')->willReturn($this->driverMock);
 
-        $versionIdCache = $this->getMockBuilder(VersionIdCache::class)->disableOriginalConstructor()->getMock();
+        $versionIdCache = $this->createMock(VersionIdCache::class);
 
         $this->updater = new Updater($registryMock, $providerManagerMock, $versionIdCache);
     }

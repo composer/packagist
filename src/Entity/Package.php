@@ -34,182 +34,135 @@ use Composer\Util\HttpDownloader;
 use DateTimeInterface;
 
 /**
- * @ORM\Entity(repositoryClass="App\Entity\PackageRepository")
- * @ORM\Table(
- *     name="package",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="package_name_idx", columns={"name"})},
- *     indexes={
- *         @ORM\Index(name="indexed_idx",columns={"indexedAt"}),
- *         @ORM\Index(name="crawled_idx",columns={"crawledAt"}),
- *         @ORM\Index(name="dumped_idx",columns={"dumpedAt"}),
- *         @ORM\Index(name="dumped2_idx",columns={"dumpedAtV2"}),
- *         @ORM\Index(name="repository_idx",columns={"repository"}),
- *         @ORM\Index(name="remoteid_idx",columns={"remoteId"}),
- *         @ORM\Index(name="dumped2_crawled_idx",columns={"dumpedAtV2","crawledAt"}),
- *         @ORM\Index(name="vendor_idx",columns={"vendor"})
- *     }
- * )
- * @Assert\Callback(callback="isPackageUnique", groups={"Create"})
- * @Assert\Callback(callback="isVendorWritable", groups={"Create"})
- * @Assert\Callback(callback="isRepositoryValid", groups={"Update", "Default"})
- * @TypoSquatters(groups={"Create"})
- * @Copyright(groups={"Create"})
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[ORM\Entity(repositoryClass: 'App\Entity\PackageRepository')]
+#[ORM\Table(name: 'package')]
+#[ORM\UniqueConstraint(name: 'package_name_idx', columns: ['name'])]
+#[ORM\Index(name: 'indexed_idx', columns: ['indexedAt'])]
+#[ORM\Index(name: 'crawled_idx', columns: ['crawledAt'])]
+#[ORM\Index(name: 'dumped_idx', columns: ['dumpedAt'])]
+#[ORM\Index(name: 'dumped2_idx', columns: ['dumpedAtV2'])]
+#[ORM\Index(name: 'repository_idx', columns: ['repository'])]
+#[ORM\Index(name: 'remoteid_idx', columns: ['remoteId'])]
+#[ORM\Index(name: 'dumped2_crawled_idx', columns: ['dumpedAtV2', 'crawledAt'])]
+#[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
+#[Assert\Callback(callback: 'isPackageUnique', groups: ['Create'])]
+#[Assert\Callback(callback: 'isVendorWritable', groups: ['Create'])]
+#[Assert\Callback(callback: 'isRepositoryValid', groups: ['Update', 'Default'])]
+#[TypoSquatters(groups: ['Create'])]
+#[Copyright(groups: ['Create'])]
 class Package
 {
     const AUTO_NONE = 0;
     const AUTO_MANUAL_HOOK = 1;
     const AUTO_GITHUB_HOOK = 2;
 
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
     private int $id;
 
     /**
      * Unique package name
-     *
-     * @ORM\Column(length=191)
      */
+    #[ORM\Column(length: 191)]
     private string $name = '';
 
-    /**
-     * @ORM\Column(length=191)
-     */
+    #[ORM\Column(length: 191)]
     private string $vendor = '';
 
-    /**
-     * @ORM\Column(nullable=true)
-     */
+    #[ORM\Column(nullable: true)]
     private string|null $type = null;
 
-    /**
-     * @ORM\Column(type="text", nullable=true)
-     */
+    #[ORM\Column(type: 'text', nullable: true)]
     private string|null $description = null;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     private string|null $language = null;
 
-    /**
-     * @ORM\Column(type="text", nullable=true)
-     */
+    #[ORM\Column(type: 'text', nullable: true)]
     private string|null $readme = null;
 
-    /**
-     * @ORM\Column(type="integer", nullable=true, name="github_stars")
-     */
+    #[ORM\Column(type: 'integer', nullable: true, name: 'github_stars')]
     private int|null $gitHubStars = null;
 
-    /**
-     * @ORM\Column(type="integer", nullable=true, name="github_watches")
-     */
+    #[ORM\Column(type: 'integer', nullable: true, name: 'github_watches')]
     private int|null $gitHubWatches = null;
 
-    /**
-     * @ORM\Column(type="integer", nullable=true, name="github_forks")
-     */
+    #[ORM\Column(type: 'integer', nullable: true, name: 'github_forks')]
     private int|null $gitHubForks = null;
 
-    /**
-     * @ORM\Column(type="integer", nullable=true, name="github_open_issues")
-     */
+    #[ORM\Column(type: 'integer', nullable: true, name: 'github_open_issues')]
     private int|null $gitHubOpenIssues = null;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Version", mappedBy="package")
      * @var Collection<int, Version>&Selectable<int, Version>
      */
+    #[ORM\OneToMany(targetEntity: Version::class, mappedBy: 'package')]
     private Collection $versions;
 
     /**
-     * @ORM\ManyToMany(targetEntity="User", inversedBy="packages")
-     * @ORM\JoinTable(name="maintainers_packages")
      * @var Collection<int, User>&Selectable<int, User>
      */
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'packages')]
+    #[ORM\JoinTable(name: 'maintainers_packages')]
     private Collection $maintainers;
 
-    /**
-     * @ORM\Column()
-     * @Assert\NotBlank(groups={"Update", "Default"})
-     */
+    #[ORM\Column]
+    #[Assert\NotBlank(groups: ['Update', 'Default'])]
     private string $repository;
 
-    /**
-     * @ORM\Column(type="datetime")
-     */
+    #[ORM\Column(type: 'datetime')]
     private DateTimeInterface $createdAt;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $updatedAt = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $crawledAt = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $indexedAt = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $dumpedAt = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $dumpedAtV2 = null;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Download", mappedBy="package")
      * @var Collection<int, Download>&Selectable<int, Download>
      */
+    #[ORM\OneToMany(targetEntity: Download::class, mappedBy: 'package')]
     private Collection $downloads;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     private string|null $remoteId = null;
 
     /**
-     * @ORM\Column(type="smallint")
      * @var int one of self::AUTO_*
      */
+    #[ORM\Column(type: 'smallint')]
     private int $autoUpdated = 0;
 
     /**
      * @var bool
-     * @ORM\Column(type="boolean")
      */
+    #[ORM\Column(type: 'boolean')]
     private bool $abandoned = false;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private string|null $replacementPackage = null;
 
-    /**
-     * @ORM\Column(type="boolean", options={"default"=false})
-     */
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $updateFailureNotified = false;
 
     /**
      * If set, the content is the reason for being marked suspicious
-     *
-     * @ORM\Column(type="string", length=255, nullable=true)
      */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private string|null $suspect = null;
-
     private $entityRepository;
     private $router;
 

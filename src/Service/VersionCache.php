@@ -12,7 +12,7 @@ use DateTimeInterface;
 class VersionCache implements VersionCacheInterface
 {
     /** @var array<string, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null}> */
-    private array $versionCache;
+    private array $versionCache = [];
 
     /**
      * @param array<string|int, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null}> $existingVersions
@@ -23,7 +23,6 @@ class VersionCache implements VersionCacheInterface
         array $existingVersions,
         private array $emptyReferences
     ) {
-        $this->versionCache = [];
         foreach ($existingVersions as $version) {
             $this->versionCache[$version['version']] = $version;
         }

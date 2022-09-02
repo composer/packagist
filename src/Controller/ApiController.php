@@ -47,10 +47,8 @@ class ApiController extends Controller
         $this->logger = $logger;
     }
 
-    /**
-     * @Route("/packages.json", name="packages", defaults={"_format" = "json"}, methods={"GET"})
-     */
-    public function packagesAction(string $webDir): Response
+    #[Route(path: '/packages.json', name: 'packages', defaults: ['_format' => 'json'], methods: ['GET'])]
+    public function packagesAction(string $webDir) : Response
     {
         // fallback if any of the dumped files exist
         $rootJson = $webDir.'/packages_root.json';
@@ -67,10 +65,8 @@ class ApiController extends Controller
         return new Response('Horrible misconfiguration or the dumper script messed up, you need to use bin/console packagist:dump', 404);
     }
 
-    /**
-     * @Route("/api/create-package", name="generic_create", defaults={"_format" = "json"}, methods={"POST"})
-     */
-    public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator): JsonResponse
+    #[Route(path: '/api/create-package', name: 'generic_create', defaults: ['_format' => 'json'], methods: ['POST'])]
+    public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator) : JsonResponse
     {
         $payload = json_decode($request->getContent(), true);
         if (!$payload || !is_array($payload)) {
@@ -116,12 +112,10 @@ class ApiController extends Controller
         return new JsonResponse(['status' => 'success'], 202);
     }
 
-    /**
-     * @Route("/api/update-package", name="generic_postreceive", defaults={"_format" = "json"}, methods={"POST"})
-     * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"}, methods={"POST"})
-     * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"}, methods={"POST"})
-     */
-    public function updatePackageAction(Request $request, string $githubWebhookSecret, StatsDClient $statsd): JsonResponse
+    #[Route(path: '/api/update-package', name: 'generic_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
+    #[Route(path: '/api/github', name: 'github_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
+    #[Route(path: '/api/bitbucket', name: 'bitbucket_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
+    public function updatePackageAction(Request $request, string $githubWebhookSecret, StatsDClient $statsd) : JsonResponse
     {
         // parse the payload
         $payload = json_decode((string)$request->request->get('payload'), true);
@@ -159,16 +153,8 @@ class ApiController extends Controller
         return $this->receivePost($request, $url, $urlRegex, $remoteId, $githubWebhookSecret);
     }
 
-    /**
-     * @Route(
-     *     "/api/packages/{package}",
-     *     name="api_edit_package",
-     *     requirements={"package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"},
-     *     defaults={"_format" = "json"},
-     *     methods={"PUT"}
-     * )
-     */
-    public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
+    #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'json'], methods: ['PUT'])]
+    public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator, StatsDClient $statsd) : JsonResponse
     {
         $user = $this->findUser($request);
         if ((!$user || !$package->getMaintainers()->contains($user)) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
@@ -202,10 +188,8 @@ class ApiController extends Controller
         return new JsonResponse(['status' => 'success'], 200);
     }
 
-    /**
-     * @Route("/jobs/{id}", name="get_job", requirements={"id"="[a-f0-9]+"}, defaults={"_format" = "json"}, methods={"GET"})
-     */
-    public function getJobAction(string $id, StatsDClient $statsd): JsonResponse
+    #[Route(path: '/jobs/{id}', name: 'get_job', requirements: ['id' => '[a-f0-9]+'], defaults: ['_format' => 'json'], methods: ['GET'])]
+    public function getJobAction(string $id, StatsDClient $statsd) : JsonResponse
     {
         $statsd->increment('get_job_api');
 
@@ -314,15 +298,8 @@ class ApiController extends Controller
         return Preg::replace('{^(\d+\.\d+).*}', '$1', $version);
     }
 
-    /**
-     * @Route(
-     *     "/api/security-advisories/",
-     *     name="api_security_advisories",
-     *     defaults={"_format" = "json"},
-     *     methods={"GET", "POST"}
-     * )
-     */
-    public function securityAdvisoryAction(Request $request, ProviderManager $providerManager, StatsDClient $statsd): JsonResponse
+    #[Route(path: '/api/security-advisories/', name: 'api_security_advisories', defaults: ['_format' => 'json'], methods: ['GET', 'POST'])]
+    public function securityAdvisoryAction(Request $request, ProviderManager $providerManager, StatsDClient $statsd) : JsonResponse
     {
         $packageNames = array_filter((array) $request->get('packages'), fn($name) => is_string($name) && $name !== '');
         if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {

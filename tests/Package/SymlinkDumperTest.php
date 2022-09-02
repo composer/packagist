@@ -11,9 +11,7 @@ class SymlinkDumperTest extends TestCase
 
     public function setUp(): void
     {
-        $this->mockDumper = $this->getMockBuilder(SymlinkDumper::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $this->mockDumper = $this->createMock(SymlinkDumper::class);
     }
 
     public function tearDown(): void

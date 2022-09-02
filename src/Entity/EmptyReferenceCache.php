@@ -15,22 +15,20 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity
- * @ORM\Table(name="empty_references")
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[ORM\Entity]
+#[ORM\Table(name: 'empty_references')]
 class EmptyReferenceCache
 {
-    /**
-     * @ORM\Id
-     * @ORM\OneToOne(targetEntity="App\Entity\Package")
-     */
+    #[ORM\Id]
+    #[ORM\OneToOne(targetEntity: 'App\Entity\Package')]
     private Package $package;
 
     /**
-     * @ORM\Column(type="array")
      * @var list<string>
      */
+    #[ORM\Column(type: 'array')]
     private array $emptyReferences = [];
 
     public function __construct(Package $package)

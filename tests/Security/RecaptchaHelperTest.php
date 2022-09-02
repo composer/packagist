@@ -17,7 +17,7 @@ class RecaptchaHelperTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->redis = $this->getMockBuilder(Client::class)->disableOriginalConstructor()->getMock();
+        $this->redis = $this->createMock(Client::class);
         $this->helper = new RecaptchaHelper($this->redis, true);
     }
 
@@ -32,12 +32,15 @@ class RecaptchaHelperTest extends TestCase
         $this->assertTrue($this->helper->requiresRecaptcha('127.0.0.1', 'username'));
     }
 
+    /**
+     * @doesNotPerformAssertions
+     */
     public function testIncreaseCounter(): void
     {
         $this->redis
             ->expects($this->once())
             ->method('getProfile')
-            ->willReturn($this->getMockBuilder(RedisProfile::class)->disableOriginalConstructor()->getMock());
+            ->willReturn($this->createMock(RedisProfile::class));
 
         $this->redis
             ->expects($this->once())

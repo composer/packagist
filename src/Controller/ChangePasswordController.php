@@ -14,10 +14,10 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 class ChangePasswordController extends Controller
 {
     /**
-     * @Route("/profile/change-password", name="change_password")
      * @IsGranted("ROLE_USER")
      */
-    public function changePasswordAction(Request $request, UserPasswordHasherInterface $passwordHasher, #[CurrentUser] User $user): Response
+    #[Route(path: '/profile/change-password', name: 'change_password')]
+    public function changePasswordAction(Request $request, UserPasswordHasherInterface $passwordHasher, #[CurrentUser] User $user) : Response
     {
         $form = $this->createForm(ChangePasswordFormType::class, $user);
         $form->handleRequest($request);

@@ -8,10 +8,8 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 class SecurityController extends Controller
 {
-    /**
-     * @Route("/login/", name="login")
-     */
-    public function loginAction(AuthenticationUtils $authenticationUtils): Response
+    #[Route(path: '/login/', name: 'login')]
+    public function loginAction(AuthenticationUtils $authenticationUtils) : Response
     {
         $error = $authenticationUtils->getLastAuthenticationError();
         $lastUsername = $authenticationUtils->getLastUsername();
@@ -23,11 +21,10 @@ class SecurityController extends Controller
     }
 
     /**
-     * @Route("/logout", name="logout")
-     *
      * @phpstan-return never
      */
-    public function logout(): void
+    #[Route(path: '/logout', name: 'logout')]
+    public function logout() : void
     {
         throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
     }

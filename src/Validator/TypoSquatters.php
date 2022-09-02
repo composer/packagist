@@ -5,7 +5,6 @@ namespace App\Validator;
 use Attribute;
 use Symfony\Component\Validator\Constraint;
 
-/** @Annotation() */
 #[Attribute(Attribute::TARGET_CLASS)]
 class TypoSquatters extends Constraint
 {

@@ -28,146 +28,112 @@ use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use DateTimeInterface;
 
-/**
- * @ORM\Entity(repositoryClass="App\Entity\UserRepository")
- * @ORM\Table(name="fos_user")
- * @UniqueEntity(fields={"usernameCanonical"}, message="There is already an account with this username", errorPath="username")
- * @UniqueEntity(fields={"emailCanonical"}, message="There is already an account with this email", errorPath="email")
- */
+#[ORM\Entity(repositoryClass: 'App\Entity\UserRepository')]
+#[ORM\Table(name: 'fos_user')]
+#[UniqueEntity(fields: ['usernameCanonical'], message: 'There is already an account with this username', errorPath: 'username')]
+#[UniqueEntity(fields: ['emailCanonical'], message: 'There is already an account with this email', errorPath: 'email')]
 class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, EquatableInterface, PasswordAuthenticatedUserInterface, LegacyPasswordAuthenticatedUserInterface
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private int $id;
 
     /**
-     * @ORM\Column(type="string", length=191)
-     * @Assert\Length(min=2, max=191, groups={"Profile", "Registration"})
-     * @Assert\Regex(
-     *     pattern="{^[^/""\r\n><#\[\]]{2,100}$}",
-     *     message="Username invalid, /""\r\n><#[] are not allowed",
-     *     groups={"Profile", "Registration"}
-     * )
-     * @Assert\NotBlank(groups={"Profile", "Registration"})
      * @var string
      */
+    #[ORM\Column(type: 'string', length: 191)]
+    #[Assert\Length(min: 2, max: 191, groups: ['Profile', 'Registration'])]
+    #[Assert\Regex(pattern: '{^[^/')]
+    #[Assert\NotBlank(groups: ['Profile', 'Registration'])]
     private string $username;
 
     /**
-     * @ORM\Column(type="string", name="username_canonical", length=191, unique=true)
      * @var string
      */
+    #[ORM\Column(type: 'string', name: 'username_canonical', length: 191, unique: true)]
     private string $usernameCanonical;
 
-    /**
-     * @ORM\Column(type="string", length=191)
-     * @Assert\Length(min=2, max=191, groups={"Profile", "Registration"})
-     * @Assert\Email(groups={"Profile", "Registration"})
-     * @Assert\NotBlank(groups={"Profile", "Registration"})
-     */
+    #[ORM\Column(type: 'string', length: 191)]
+    #[Assert\Length(min: 2, max: 191, groups: ['Profile', 'Registration'])]
+    #[Assert\Email(groups: ['Profile', 'Registration'])]
+    #[Assert\NotBlank(groups: ['Profile', 'Registration'])]
     private string $email;
 
     /**
-     * @ORM\Column(type="string", name="email_canonical", length=191, unique=true)
      * @var string
      */
+    #[ORM\Column(type: 'string', name: 'email_canonical', length: 191, unique: true)]
     private string $emailCanonical;
 
     /**
-     * @ORM\Column(type="boolean")
      * @var bool
      */
+    #[ORM\Column(type: 'boolean')]
     private bool $enabled = false;
 
     /**
-     * @ORM\Column(type="array")
      * @var list<string>
      */
-    private array $roles = [];
+    #[ORM\Column(type: 'array')]
+    private array $roles = array();
 
     /**
      * @var string The hashed password
-     * @ORM\Column(type="string")
      */
+    #[ORM\Column(type: 'string')]
     private string $password;
 
     /**
      * The salt to use for hashing.
-     *
-     * @ORM\Column(type="string", nullable=true)
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     private string|null $salt = null;
 
-    /**
-     * @ORM\Column(type="datetime", name="last_login", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', name: 'last_login', nullable: true)]
     private DateTimeInterface|null $lastLogin = null;
 
     /**
      * Random string sent to the user email address in order to verify it.
-     *
-     * @ORM\Column(type="string", name="confirmation_token", length=180, nullable=true, unique=true)
      */
+    #[ORM\Column(type: 'string', name: 'confirmation_token', length: 180, nullable: true, unique: true)]
     private string|null $confirmationToken = null;
 
-    /**
-     * @ORM\Column(type="datetime", name="password_requested_at", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', name: 'password_requested_at', nullable: true)]
     private DateTimeInterface|null $passwordRequestedAt = null;
 
     /**
-     * @ORM\ManyToMany(targetEntity="Package", mappedBy="maintainers")
      * @var Collection<int, Package>&Selectable<int, Package>
      */
+    #[ORM\ManyToMany(targetEntity: Package::class, mappedBy: 'maintainers')]
     private Collection $packages;
 
-    /**
-     * @ORM\Column(type="datetime")
-     */
+    #[ORM\Column(type: 'datetime')]
     private DateTimeInterface $createdAt;
 
-    /**
-     * @ORM\Column(type="string", length=20)
-     */
+    #[ORM\Column(type: 'string', length: 20)]
     private string $apiToken;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private string|null $githubId = null;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private string|null $githubToken = null;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private string|null $githubScope = null;
 
-    /**
-     * @ORM\Column(type="boolean", options={"default"=true})
-     */
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $failureNotifications = true;
 
-    /**
-     * @ORM\Column(name="totpSecret", type="string", nullable=true)
-     */
+    #[ORM\Column(name: 'totpSecret', type: 'string', nullable: true)]
     private string|null $totpSecret = null;
 
-    /**
-     * @ORM\Column(type="string", length=8, nullable=true)
-     */
+    #[ORM\Column(type: 'string', length: 8, nullable: true)]
     private string|null $backupCode = null;
 
     public function __construct()
     {
-        $this->enabled = false;
-        $this->roles = array();
         $this->packages = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
     }

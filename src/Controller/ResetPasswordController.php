@@ -34,10 +34,9 @@ class ResetPasswordController extends Controller
 
     /**
      * Display & process form to request a password reset.
-     *
-     * @Route("/reset-password", name="request_pwd_reset")
      */
-    public function request(Request $request, MailerInterface $mailer, RecaptchaVerifier $recaptchaVerifier): Response
+    #[Route(path: '/reset-password', name: 'request_pwd_reset')]
+    public function request(Request $request, MailerInterface $mailer, RecaptchaVerifier $recaptchaVerifier) : Response
     {
         $form = $this->createForm(ResetPasswordRequestFormType::class);
         $form->handleRequest($request);
