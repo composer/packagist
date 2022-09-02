@@ -106,7 +106,7 @@ class Updater
         // always update the master branch / root identifier, as in case a package gets archived
         // we want to mark it abandoned automatically, but there will not be a new commit to trigger
         // an update
-        if ($rootIdentifier && $versionCache) {
+        if ($rootIdentifier !== '' && $versionCache) {
             $versionCache->clearVersion($rootIdentifier);
         }
         // migrate old packages to the new metadata storage for v2

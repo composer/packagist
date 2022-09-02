@@ -55,11 +55,8 @@ class VersionCache implements VersionCacheInterface
     public function clearVersion(string $version): void
     {
         $parser = new VersionParser();
-        // handle branch names like 3.x.x which gets normalized to 3.x-dev (losing a .x)
-        $normalizedBranch = Preg::replace('{(\.9999999)+}', '.x', $parser->normalizeBranch($version));
-        if (isset($this->versionCache[$normalizedBranch])) {
-            unset($this->versionCache[$normalizedBranch]);
-        }
+        // handle branch names like 3.x.x or 3.X to make sure they match the normalized 3.x-dev below
+        $version = Preg::replace('{(\.x)+}i', '.x', $version);
 
         // handle main => dev-main, 3 => 3.x-dev and 3.x => 3.x-dev
         foreach (array_keys($this->versionCache) as $v) {
