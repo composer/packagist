@@ -24,6 +24,7 @@ class MigratePhpStatsCommand extends Command
         private Locker $locker,
         private ManagerRegistry $doctrine,
         private Client $redis,
+        private \Graze\DogStatsD\Client $statsd,
     ) {
         parent::__construct();
     }
@@ -48,6 +49,8 @@ class MigratePhpStatsCommand extends Command
         }
 
         $signal = SignalHandler::create(null, $this->logger);
+
+        $this->statsd->increment('nightly-job.start', 1, 1, ['job' => 'migrate-php-stats']);
 
         try {
             // might be a large-ish dataset coming through here
@@ -113,6 +116,7 @@ class MigratePhpStatsCommand extends Command
             }
         } finally {
             $this->locker->unlockCommand(__CLASS__);
+            $this->statsd->increment('nightly-job.end', 1, 1, ['job' => 'migrate-php-stats']);
         }
 
         return 0;

@@ -15,19 +15,14 @@ use Symfony\Component\Console\Command\Command;
 
 class MigrateDownloadCountsCommand extends Command
 {
-    private LoggerInterface $logger;
-    private Locker $locker;
-    private DownloadManager $downloadManager;
-    private Client $redis;
-    private ManagerRegistry $doctrine;
-
-    public function __construct(LoggerInterface $logger, Locker $locker, ManagerRegistry $doctrine, DownloadManager $downloadManager, Client $redis)
-    {
-        $this->logger = $logger;
-        $this->locker = $locker;
-        $this->doctrine = $doctrine;
-        $this->redis = $redis;
-        $this->downloadManager = $downloadManager;
+    public function __construct(
+        private LoggerInterface $logger,
+        private Locker $locker,
+        private ManagerRegistry $doctrine,
+        private DownloadManager $downloadManager,
+        private Client $redis,
+        private \Graze\DogStatsD\Client $statsd,
+    ) {
         parent::__construct();
     }
 
@@ -51,6 +46,7 @@ class MigrateDownloadCountsCommand extends Command
         }
 
         $signal = SignalHandler::create(null, $this->logger);
+        $this->statsd->increment('nightly-job.start', 1, 1, ['job' => 'migrate-download-counts']);
 
         try {
             // might be a large-ish dataset coming through here
@@ -112,6 +108,7 @@ class MigrateDownloadCountsCommand extends Command
             }
         } finally {
             $this->locker->unlockCommand(__CLASS__);
+            $this->statsd->increment('nightly-job.end', 1, 1, ['job' => 'migrate-download-counts']);
         }
 
         return 0;

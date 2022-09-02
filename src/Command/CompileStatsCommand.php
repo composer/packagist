@@ -28,15 +28,12 @@ class CompileStatsCommand extends Command
 {
     use \App\Util\DoctrineTrait;
 
-    private Client $redis;
-    private Locker $locker;
-    private ManagerRegistry $doctrine;
-
-    public function __construct(Client $redis, Locker $locker, ManagerRegistry $doctrine)
-    {
-        $this->redis = $redis;
-        $this->locker = $locker;
-        $this->doctrine = $doctrine;
+    public function __construct(
+        private Client $redis,
+        private Locker $locker,
+        private ManagerRegistry $doctrine,
+        private \Graze\DogStatsD\Client $statsd,
+   ) {
         parent::__construct();
     }
 
@@ -58,6 +55,8 @@ class CompileStatsCommand extends Command
             }
             return 0;
         }
+
+        $this->statsd->increment('nightly-job.start', 1, 1, ['job' => 'compile-stats']);
 
         $verbose = $input->getOption('verbose');
 
@@ -90,6 +89,7 @@ class CompileStatsCommand extends Command
         $this->redis->rename('downloads:absolute:new', 'downloads:absolute');
 
         $this->locker->unlockCommand(__CLASS__);
+        $this->statsd->increment('nightly-job.end', 1, 1, ['job' => 'compile-stats']);
 
         return 0;
     }

@@ -31,25 +31,17 @@ class IndexPackagesCommand extends Command
 {
     use \App\Util\DoctrineTrait;
 
-    private SearchClient $algolia;
-    private Locker $locker;
-    private ManagerRegistry $doctrine;
-    private Client $redis;
-    private DownloadManager $downloadManager;
-    private FavoriteManager $favoriteManager;
-    private string $algoliaIndexName;
-    private string $cacheDir;
-
-    public function __construct(SearchClient $algolia, Locker $locker, ManagerRegistry $doctrine, Client $redis, DownloadManager $downloadManager, FavoriteManager $favoriteManager, string $algoliaIndexName, string $cacheDir)
-    {
-        $this->algolia = $algolia;
-        $this->locker = $locker;
-        $this->doctrine = $doctrine;
-        $this->redis = $redis;
-        $this->downloadManager = $downloadManager;
-        $this->favoriteManager = $favoriteManager;
-        $this->algoliaIndexName = $algoliaIndexName;
-        $this->cacheDir = $cacheDir;
+    public function __construct(
+        private SearchClient $algolia,
+        private Locker $locker,
+        private ManagerRegistry $doctrine,
+        private Client $redis,
+        private DownloadManager $downloadManager,
+        private FavoriteManager $favoriteManager,
+        private string $algoliaIndexName,
+        private string $cacheDir,
+        private \Graze\DogStatsD\Client $statsd,
+    ) {
         parent::__construct();
     }
 
@@ -99,6 +91,8 @@ class IndexPackagesCommand extends Command
             }
             $packages = [['id' => $packageEntity->getId()]];
         } elseif ($force || $indexAll) {
+            $this->statsd->increment('nightly-job.start', 1, 1, ['job' => 'index-packages']);
+
             $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
             if ($force) {
                 $this->getEM()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
@@ -185,6 +179,9 @@ class IndexPackagesCommand extends Command
         }
 
         $this->locker->unlockCommand(__CLASS__);
+        if ($force || $indexAll) {
+            $this->statsd->increment('nightly-job.end', 1, 1, ['job' => 'index-packages']);
+        }
 
         return 0;
     }
