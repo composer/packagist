@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -60,9 +60,9 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/trigger-github-sync/", name="user_github_sync")
      * @IsGranted("ROLE_USER")
      */
+    #[Route(path: '/trigger-github-sync/', name: 'user_github_sync')]
     public function triggerGitHubSyncAction(#[CurrentUser] User $user): RedirectResponse
     {
         if (!$user->getGithubToken()) {
@@ -86,9 +86,7 @@ class UserController extends Controller
         return $this->redirectToRoute('my_profile');
     }
 
-    /**
-     * @Route("/spammers/{name}/", name="mark_spammer", methods={"POST"})
-     */
+    #[Route(path: '/spammers/{name}/', name: 'mark_spammer', methods: ['POST'])]
     public function markSpammerAction(Request $req, #[VarName('name')] User $user): RedirectResponse
     {
         if (!$this->isGranted('ROLE_ANTISPAM')) {
@@ -136,9 +134,7 @@ class UserController extends Controller
         );
     }
 
-    /**
-     * @Route("/users/{name}/favorites/", name="user_favorites", methods={"GET"})
-     */
+    #[Route(path: '/users/{name}/favorites/', name: 'user_favorites', methods: ['GET'])]
     public function favoritesAction(Request $req, #[VarName('name')] User $user, LoggerInterface $logger, RedisClient $redis, FavoriteManager $favoriteManager): Response
     {
         try {
@@ -164,9 +160,9 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/users/{name}/favorites/", name="user_add_fav", defaults={"_format" = "json"}, methods={"POST"})
      * @IsGranted("ROLE_USER")
      */
+    #[Route(path: '/users/{name}/favorites/', name: 'user_add_fav', defaults: ['_format' => 'json'], methods: ['POST'])]
     public function postFavoriteAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, FavoriteManager $favoriteManager): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
@@ -188,9 +184,9 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/users/{name}/favorites/{package}", name="user_remove_fav", defaults={"_format" = "json"}, requirements={"package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"}, methods={"DELETE"})
      * @IsGranted("ROLE_USER")
      */
+    #[Route(path: '/users/{name}/favorites/{package}', name: 'user_remove_fav', defaults: ['_format' => 'json'], requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], methods: ['DELETE'])]
     public function deleteFavoriteAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Package $package, FavoriteManager $favoriteManager): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
@@ -203,9 +199,9 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/users/{name}/delete", name="user_delete", methods={"POST"})
      * @IsGranted("ROLE_USER")
      */
+    #[Route(path: '/users/{name}/delete', name: 'user_delete', methods: ['POST'])]
     public function deleteUserAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req, TokenStorageInterface $storage, EventDispatcherInterface $mainEventDispatcher): RedirectResponse
     {
         if (!$this->isGranted('ROLE_ADMIN') && $user->getId() !== $loggedUser->getId()) {
@@ -244,9 +240,9 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/users/{name}/2fa/", name="user_2fa_configure", methods={"GET"})
      * @IsGranted("ROLE_USER")
      */
+    #[Route(path: '/users/{name}/2fa/', name: 'user_2fa_configure', methods: ['GET'])]
     public function configureTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req): Response
     {
         if (!$this->isGranted('ROLE_DISABLE_2FA') && $user->getId() !== $loggedUser->getId()) {
@@ -264,9 +260,9 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/users/{name}/2fa/enable", name="user_2fa_enable", methods={"GET", "POST"})
      * @IsGranted("ROLE_USER")
      */
+    #[Route(path: '/users/{name}/2fa/enable', name: 'user_2fa_enable', methods: ['GET', 'POST'])]
     public function enableTwoFactorAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, TotpAuthenticatorInterface $authenticator, TwoFactorAuthManager $authManager): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
@@ -330,9 +326,9 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/users/{name}/2fa/confirm", name="user_2fa_confirm", methods={"GET"})
      * @IsGranted("ROLE_USER")
      */
+    #[Route(path: '/users/{name}/2fa/confirm', name: 'user_2fa_confirm', methods: ['GET'])]
     public function confirmTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
@@ -352,9 +348,9 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/users/{name}/2fa/disable", name="user_2fa_disable", methods={"GET"})
      * @IsGranted("ROLE_USER")
      */
+    #[Route(path: '/users/{name}/2fa/disable', name: 'user_2fa_disable', methods: ['GET'])]
     public function disableTwoFactorAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, CsrfTokenManagerInterface $csrfTokenManager, TwoFactorAuthManager $authManager): Response
     {
         if (!$this->isGranted('ROLE_DISABLE_2FA') && $user->getId() !== $loggedUser->getId()) {

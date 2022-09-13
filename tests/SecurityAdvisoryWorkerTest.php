@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Tests;
 
 use App\Entity\Package;
@@ -29,20 +39,20 @@ class SecurityAdvisoryWorkerTest extends TestCase
     private $source;
     /** @var EntityManager&\PHPUnit\Framework\MockObject\MockObject */
     private $em;
-    /** @var \PHPUnit\Framework\MockObject\MockObject */
-    private $securityAdvisoryRepository;
-    /** @var \PHPUnit\Framework\MockObject\MockObject */
-    private $packageRepository;
+
+    private \PHPUnit\Framework\MockObject\MockObject $securityAdvisoryRepository;
+
+    private \PHPUnit\Framework\MockObject\MockObject $packageRepository;
 
     protected function setUp(): void
     {
-        $this->source = $this->getMockBuilder(SecurityAdvisorySourceInterface::class)->disableOriginalConstructor()->getMock();
-        $locker = $this->getMockBuilder(Locker::class)->disableOriginalConstructor()->getMock();
-        $doctrine = $this->getMockBuilder(ManagerRegistry::class)->disableOriginalConstructor()->getMock();
-        $redis = $this->getMockBuilder(Client::class)->disableOriginalConstructor()->getMock();
+        $this->source = $this->createMock(SecurityAdvisorySourceInterface::class);
+        $locker = $this->createMock(Locker::class);
+        $doctrine = $this->createMock(ManagerRegistry::class);
+        $redis = $this->createMock(Client::class);
         $this->worker = new SecurityAdvisoryWorker($locker, new NullLogger(), $doctrine, ['test' => $this->source], new SecurityAdvisoryResolver(), new SecurityAdvisoryUpdateListener($doctrine, $redis));
 
-        $this->em = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
+        $this->em = $this->createMock(EntityManager::class);
 
         $doctrine
             ->method('getManager')
@@ -50,14 +60,14 @@ class SecurityAdvisoryWorkerTest extends TestCase
 
         $this->em
             ->method('getConnection')
-            ->willReturn($this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock());
+            ->willReturn($this->createMock(Connection::class));
 
         $locker
             ->method('lockSecurityAdvisory')
             ->willReturn(true);
 
-        $this->securityAdvisoryRepository = $this->getMockBuilder(SecurityAdvisoryRepository::class)->disableOriginalConstructor()->getMock();
-        $this->packageRepository = $this->getMockBuilder(EntityRepository::class)->disableOriginalConstructor()->getMock();
+        $this->securityAdvisoryRepository = $this->createMock(SecurityAdvisoryRepository::class);
+        $this->packageRepository = $this->createMock(EntityRepository::class);
 
         $doctrine
             ->method('getRepository')

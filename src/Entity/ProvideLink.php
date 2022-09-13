@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -15,14 +15,12 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity
- * @ORM\Table(name="link_provide")
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[ORM\Entity]
+#[ORM\Table(name: 'link_provide')]
 class ProvideLink extends PackageLink
 {
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Version", inversedBy="provide")
-     */
+    #[ORM\ManyToOne(targetEntity: 'App\Entity\Version', inversedBy: 'provide')]
     protected Version|null $version = null;
 }

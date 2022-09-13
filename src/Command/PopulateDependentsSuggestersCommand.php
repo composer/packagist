@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -13,13 +13,10 @@
 namespace App\Command;
 
 use App\Entity\Dependent;
-use App\Entity\Package;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use App\Entity\Download;
 use App\Service\Locker;
-use Predis\Client;
 use Symfony\Component\Console\Command\Command;
 
 /**

@@ -1,25 +1,29 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use DateTimeInterface;
 
-/**
- * @ORM\Entity(repositoryClass="App\Entity\JobRepository")
- * @ORM\Table(
- *     name="job",
- *     indexes={
- *         @ORM\Index(name="type_idx",columns={"type"}),
- *         @ORM\Index(name="status_idx",columns={"status"}),
- *         @ORM\Index(name="execute_dt_idx",columns={"executeAfter"}),
- *         @ORM\Index(name="creation_idx",columns={"createdAt"}),
- *         @ORM\Index(name="completion_idx",columns={"completedAt"}),
- *         @ORM\Index(name="started_idx",columns={"startedAt"}),
- *         @ORM\Index(name="package_id_idx",columns={"packageId"})
- *     }
- * )
- */
+#[ORM\Entity(repositoryClass: 'App\Entity\JobRepository')]
+#[ORM\Table(name: 'job')]
+#[ORM\Index(name: 'type_idx', columns: ['type'])]
+#[ORM\Index(name: 'status_idx', columns: ['status'])]
+#[ORM\Index(name: 'execute_dt_idx', columns: ['executeAfter'])]
+#[ORM\Index(name: 'creation_idx', columns: ['createdAt'])]
+#[ORM\Index(name: 'completion_idx', columns: ['completedAt'])]
+#[ORM\Index(name: 'started_idx', columns: ['startedAt'])]
+#[ORM\Index(name: 'package_id_idx', columns: ['packageId'])]
 class Job
 {
     public const STATUS_QUEUED = 'queued';
@@ -32,58 +36,40 @@ class Job
     public const STATUS_TIMEOUT = 'timeout'; // job was marked timed out
     public const STATUS_RESCHEDULE = 'reschedule';
 
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="string")
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'string')]
     private string $id;
 
-    /**
-     * @ORM\Column(type="string")
-     */
+    #[ORM\Column(type: 'string')]
     private string $type;
 
-    /**
-     * @ORM\Column(type="json")
-     */
+    #[ORM\Column(type: 'json')]
     private array $payload = [];
 
     /**
      * One of queued, started, completed, failed
      *
-     * @ORM\Column(type="string")
      * @var self::STATUS_*
      */
+    #[ORM\Column(type: 'string')]
     private string $status = self::STATUS_QUEUED;
 
-    /**
-     * @ORM\Column(type="json", nullable=true)
-     */
+    #[ORM\Column(type: 'json', nullable: true)]
     private ?array $result = null;
 
-    /**
-     * @ORM\Column(type="datetime")
-     */
+    #[ORM\Column(type: 'datetime')]
     private DateTimeInterface $createdAt;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $startedAt = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $completedAt = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $executeAfter = null;
 
-    /**
-     * @ORM\Column(type="integer", nullable=true)
-     */
+    #[ORM\Column(type: 'integer', nullable: true)]
     private int|null $packageId = null;
 
     public function __construct(string $id, string $type, array $payload)

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -47,10 +47,11 @@ class UserRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('u')
             ->where('u.apiToken IS NULL');
+
         return $qb->getQuery()->getResult();
     }
 
-    public function getPackageMaintainersQueryBuilder(Package $package, User $excludeUser=null): QueryBuilder
+    public function getPackageMaintainersQueryBuilder(Package $package, ?User $excludeUser = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('u')
             ->select('u')

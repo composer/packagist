@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Service;
 
 use Monolog\LogRecord;
@@ -9,6 +19,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Job;
 use Seld\Signal\SignalHandler;
 use Graze\DogStatsD\Client as StatsDClient;
+use TypeError;
 
 class QueueWorker
 {
@@ -99,7 +110,7 @@ class QueueWorker
             throw new \LogicException('At this point a job should always be found');
         }
 
-        $this->logger->pushProcessor(function (LogRecord $record) use ($job) {
+        $this->logger->pushProcessor(static function (LogRecord $record) use ($job) {
             $record->extra['job-id'] = $job->getId();
 
             return $record;
@@ -119,6 +130,13 @@ class QueueWorker
         try {
             $result = $processor->process($job, $signal);
         } catch (\Throwable $e) {
+            if ($e instanceof TypeError) {
+                $this->logger->error('TypeError: '.$e->getMessage(), ['exception' => $e]);
+                $this->statsd->increment('worker.queue.processed', 1, 1, [
+                    'jobType' => $job->getType(),
+                    'status' => 'type_errored',
+                ]);
+            }
             $result = [
                 'status' => Job::STATUS_ERRORED,
                 'message' => 'An unexpected failure occurred',

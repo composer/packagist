@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -15,17 +15,14 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity
- * @ORM\Table(name="link_require_dev", indexes={
- *     @ORM\Index(name="link_require_dev_package_name_idx",columns={"version_id", "packageName"}),
- *     @ORM\Index(name="link_require_dev_name_idx",columns={"packageName"})
- * })
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[ORM\Entity]
+#[ORM\Table(name: 'link_require_dev')]
+#[ORM\Index(name: 'link_require_dev_package_name_idx', columns: ['version_id', 'packageName'])]
+#[ORM\Index(name: 'link_require_dev_name_idx', columns: ['packageName'])]
 class DevRequireLink extends PackageLink
 {
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Version", inversedBy="devRequire")
-     */
+    #[ORM\ManyToOne(targetEntity: 'App\Entity\Version', inversedBy: 'devRequire')]
     protected Version|null $version = null;
 }

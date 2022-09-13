@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -15,28 +15,21 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Entity\VendorRepository")
- * @ORM\Table(
- *     name="vendor",
- *     indexes={
- *         @ORM\Index(name="verified_idx",columns={"verified"})
- *     }
- * )
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[ORM\Entity(repositoryClass: 'App\Entity\VendorRepository')]
+#[ORM\Table(name: 'vendor')]
+#[ORM\Index(name: 'verified_idx', columns: ['verified'])]
 class Vendor
 {
     /**
      * Unique vendor name
-     *
-     * @ORM\Id
-     * @ORM\Column(length=191)
      */
+    #[ORM\Id]
+    #[ORM\Column(length: 191)]
     private string $name;
 
-    /**
-     * @ORM\Column(type="boolean")
-     */
+    #[ORM\Column(type: 'boolean')]
     private bool $verified = false;
 
     public function __construct(string $name)

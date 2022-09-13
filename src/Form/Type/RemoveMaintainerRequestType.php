@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -33,7 +33,7 @@ class RemoveMaintainerRequestType extends AbstractType
     {
         $builder->add('user', EntityType::class, [
             'class' => User::class,
-            'query_builder' => function(UserRepository $er) use ($options) {
+            'query_builder' => static function (UserRepository $er) use ($options) {
                 return $er->getPackageMaintainersQueryBuilder($options['package'], $options['excludeUser']);
             },
         ]);
@@ -44,7 +44,7 @@ class RemoveMaintainerRequestType extends AbstractType
         $resolver->setRequired(['package']);
         $resolver->setDefaults([
             'excludeUser' => null,
-            'data_class' => MaintainerRequest::class
+            'data_class' => MaintainerRequest::class,
         ]);
     }
 

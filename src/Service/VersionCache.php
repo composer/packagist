@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Service;
 
 use Composer\Pcre\Preg;
@@ -7,12 +17,11 @@ use Composer\Repository\VersionCacheInterface;
 use App\Entity\Package;
 use App\Entity\Version;
 use Composer\Semver\VersionParser;
-use DateTimeInterface;
 
 class VersionCache implements VersionCacheInterface
 {
     /** @var array<string, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null}> */
-    private array $versionCache;
+    private array $versionCache = [];
 
     /**
      * @param array<string|int, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null}> $existingVersions
@@ -23,18 +32,15 @@ class VersionCache implements VersionCacheInterface
         array $existingVersions,
         private array $emptyReferences
     ) {
-        $this->versionCache = [];
         foreach ($existingVersions as $version) {
             $this->versionCache[$version['version']] = $version;
         }
     }
 
     /**
-     * @param string $version
-     * @param string $identifier
      * @return array{name: string, version: string, version_normalized: string, source: array{type: string|null, url: string|null, reference: string|null}|null}|false|null
      */
-    public function getVersionPackage($version, $identifier): array|false|null
+    public function getVersionPackage(string $version, string $identifier): array|false|null
     {
         if (!empty($this->versionCache[$version]['source']['reference']) && $this->versionCache[$version]['source']['reference'] === $identifier) {
             return [

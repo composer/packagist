@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Entity;
 
 use App\SecurityAdvisory\AdvisoryIdGenerator;
@@ -12,90 +22,58 @@ use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 
-/**
- * @ORM\Entity(repositoryClass="App\Entity\SecurityAdvisoryRepository")
- * @ORM\Table(
- *     name="security_advisory",
- *     uniqueConstraints={
- *          @ORM\UniqueConstraint(name="source_remoteid_package_idx", columns={"source","remoteId", "packageName"}),
- *          @ORM\UniqueConstraint(name="package_name_cve_idx", columns={"packageName","cve"})
- *     },
- *     indexes={
- *         @ORM\Index(name="package_name_idx",columns={"packageName"}),
- *         @ORM\Index(name="updated_at_idx",columns={"updatedAt"})
- *     }
- * )
- */
+#[ORM\Entity(repositoryClass: 'App\Entity\SecurityAdvisoryRepository')]
+#[ORM\Table(name: 'security_advisory')]
+#[ORM\UniqueConstraint(name: 'source_remoteid_package_idx', columns: ['source', 'remoteId', 'packageName'])]
+#[ORM\UniqueConstraint(name: 'package_name_cve_idx', columns: ['packageName', 'cve'])]
+#[ORM\Index(name: 'package_name_idx', columns: ['packageName'])]
+#[ORM\Index(name: 'updated_at_idx', columns: ['updatedAt'])]
 class SecurityAdvisory
 {
     public const PACKAGIST_ORG = 'https://packagist.org';
 
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
     private int $id;
 
-    /**
-     * @ORM\Column(type="string", unique=true)
-     */
+    #[ORM\Column(type: 'string', unique: true)]
     private string $packagistAdvisoryId;
 
-    /**
-     * @ORM\Column(type="string")
-     */
+    #[ORM\Column(type: 'string')]
     private string $remoteId;
 
-    /**
-     * @ORM\Column(type="string")
-     */
+    #[ORM\Column(type: 'string')]
     private string $packageName;
 
-    /**
-     * @ORM\Column(type="string")
-     */
+    #[ORM\Column(type: 'string')]
     private string $title;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     private string|null $link = null;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     private string|null $cve = null;
 
-    /**
-     * @ORM\Column(type="text")
-     */
+    #[ORM\Column(type: 'text')]
     private string $affectedVersions;
 
-    /**
-     * @ORM\Column(type="string")
-     */
+    #[ORM\Column(type: 'string')]
     private string $source;
 
-    /**
-     * @ORM\Column(type="datetime_immutable")
-     */
+    #[ORM\Column(type: 'datetime_immutable')]
     private DateTimeImmutable $reportedAt;
 
-    /**
-     * @ORM\Column(type="datetime_immutable")
-     */
+    #[ORM\Column(type: 'datetime_immutable')]
     private DateTimeImmutable $updatedAt;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     private string|null $composerRepository = null;
 
     /**
-     * @ORM\OneToMany(targetEntity="SecurityAdvisorySource", mappedBy="securityAdvisory", cascade={"persist"})
      * @var Collection<int, SecurityAdvisorySource>&Selectable<int, SecurityAdvisorySource>
      */
+    #[ORM\OneToMany(targetEntity: SecurityAdvisorySource::class, mappedBy: 'securityAdvisory', cascade: ['persist'])]
     private Collection $sources;
 
     public function __construct(RemoteSecurityAdvisory $advisory, string $source)

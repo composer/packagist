@@ -1,10 +1,19 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Entity;
 
 use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
 use DateTimeImmutable;
@@ -20,7 +29,6 @@ class PhpStatRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param Package $package
      * @return list<array{version: string, depth: PhpStat::DEPTH_*}>
      */
     public function getStatVersions(Package $package): array
@@ -77,18 +85,19 @@ class PhpStatRepository extends ServiceEntityRepository
         }
 
         if ($period === 'months') {
-            $datePoints = array_map(fn ($point) => substr($point, 0, 4).'-'.substr($point, 4), $datePoints);
+            $datePoints = array_map(static fn ($point) => substr($point, 0, 4).'-'.substr($point, 4), $datePoints);
         } else {
-            $datePoints = array_map(fn ($point) => substr($point, 0, 4).'-'.substr($point, 4, 2).'-'.substr($point, 6), $datePoints);
+            $datePoints = array_map(static fn ($point) => substr($point, 0, 4).'-'.substr($point, 4, 2).'-'.substr($point, 6), $datePoints);
         }
 
-        uksort($series, function ($a, $b) {
+        uksort($series, static function ($a, $b) {
             if ($a === 'hhvm') {
                 return 1;
             }
             if ($b === 'hhvm') {
                 return -1;
             }
+
             return $b <=> $a;
         });
 
@@ -111,6 +120,7 @@ class PhpStatRepository extends ServiceEntityRepository
         // package was deleted in the meantime, abort
         if (!$package) {
             $this->redis->del($keys);
+
             return;
         }
 
@@ -213,7 +223,7 @@ class PhpStatRepository extends ServiceEntityRepository
             ['package' => $package->getId(), 'type' => $type, 'exact' => PhpStat::DEPTH_EXACT, 'major' => PhpStat::DEPTH_MAJOR]
         );
 
-        $minorPhpVersions = array_filter($minorPhpVersions, fn($version) => is_string($version));
+        $minorPhpVersions = array_filter($minorPhpVersions, static fn ($version) => is_string($version));
         if (!$minorPhpVersions) {
             return;
         }

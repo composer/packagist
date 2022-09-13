@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -195,9 +195,8 @@ class VersionRepository extends ServiceEntityRepository
      *
      * @param string $vendor optional vendor filter
      * @param string $package optional vendor/package filter
-     * @return QueryBuilder
      */
-    public function getQueryBuilderForLatestVersionWithPackage($vendor = null, $package = null): QueryBuilder
+    public function getQueryBuilderForLatestVersionWithPackage(?string $vendor = null, ?string $package = null): QueryBuilder
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('v')

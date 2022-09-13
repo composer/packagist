@@ -1,25 +1,28 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Entity;
 
 use Composer\Pcre\Preg;
 use Doctrine\ORM\Mapping as ORM;
 use DateTimeInterface;
-use Symfony\Bridge\Doctrine\IdGenerator\UlidGenerator;
 
-/**
- * @ORM\Entity(repositoryClass="App\Entity\PhpStatRepository")
- * @ORM\Table(
- *     name="php_stat",
- *     indexes={
- *         @ORM\Index(name="type_idx",columns={"type"}),
- *         @ORM\Index(name="depth_idx",columns={"depth"}),
- *         @ORM\Index(name="version_idx",columns={"version"}),
- *         @ORM\Index(name="last_updated_idx",columns={"last_updated"}),
- *         @ORM\Index(name="package_idx",columns={"package_id"})
- *     }
- * )
- */
+#[ORM\Entity(repositoryClass: 'App\Entity\PhpStatRepository')]
+#[ORM\Table(name: 'php_stat')]
+#[ORM\Index(name: 'type_idx', columns: ['type'])]
+#[ORM\Index(name: 'depth_idx', columns: ['depth'])]
+#[ORM\Index(name: 'version_idx', columns: ['version'])]
+#[ORM\Index(name: 'last_updated_idx', columns: ['last_updated'])]
+#[ORM\Index(name: 'package_idx', columns: ['package_id'])]
 class PhpStat
 {
     public const TYPE_PHP = 1;
@@ -37,17 +40,16 @@ class PhpStat
      * - x.y for numeric versions (grouped by minor)
      * - x for numeric versions (grouped by major)
      * - Full version for the rest (dev- & co)
-     *
-     * @ORM\Id
-     * @ORM\Column(type="string", length=191)
      */
+    #[ORM\Id]
+    #[ORM\Column(type: 'string', length: 191)]
     public string $version;
 
     /**
-     * @ORM\Id
-     * @ORM\Column(type="smallint")
      * @var self::TYPE_*
      */
+    #[ORM\Id]
+    #[ORM\Column(type: 'smallint')]
     public int $type;
 
     /**
@@ -55,29 +57,25 @@ class PhpStat
      * DEPTH_MINOR for x.y
      * DEPTH_EXACT for the rest
      *
-     * @ORM\Column(type="smallint")
      * @var self::DEPTH_*
      */
+    #[ORM\Column(type: 'smallint')]
     public int $depth;
 
     /**
      * array[php-version][Ymd] = downloads
      *
-     * @ORM\Column(type="json")
      * @var array<string, array<string, int>>
      */
+    #[ORM\Column(type: 'json')]
     public array $data;
 
-    /**
-     * @ORM\Column(type="datetime", name="last_updated")
-     */
+    #[ORM\Column(type: 'datetime', name: 'last_updated')]
     public DateTimeInterface $lastUpdated;
 
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="App\Entity\Package")
-     * @ORM\JoinColumn(name="package_id", nullable=false)
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: 'App\Entity\Package')]
+    #[ORM\JoinColumn(name: 'package_id', nullable: false)]
     public Package $package;
 
     /**

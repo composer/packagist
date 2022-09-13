@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -18,7 +18,6 @@ use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Twig\Environment;
 use Symfony\Component\Mailer\MailerInterface;
@@ -69,9 +68,6 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
 
     /**
      * Disable two-factor auth on the given user account and send confirmation email.
-     *
-     * @param User   $user
-     * @param string $reason
      */
     public function disableTwoFactorAuth(User $user, string $reason): void
     {
@@ -100,10 +96,6 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
 
     /**
      * Generate a new backup code and save it on the given user account.
-     *
-     * @param User $user
-     *
-     * @return string
      */
     public function generateAndSaveNewBackupCode(User $user): string
     {
@@ -119,9 +111,6 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
      * Check if the code is a valid backup code of the user.
      *
      * @param User   $user
-     * @param string $code
-     *
-     * @return bool
      */
     public function isBackupCode(object $user, string $code): bool
     {
@@ -138,7 +127,6 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
      * This should only be called after the backup code has been confirmed and consumed.
      *
      * @param User   $user
-     * @param string $code
      */
     public function invalidateBackupCode(object $user, string $code): void
     {

@@ -11,7 +11,7 @@ web/build/
 /.idea
 /composer.phar
 /nbproject
-/.php_cs.cache
+/.php-cs-fixer.cache
 /.phpstan-dba.cache
 
 ###> symfony/framework-bundle ###

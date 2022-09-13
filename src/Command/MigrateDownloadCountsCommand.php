@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Command;
 
 use Composer\Pcre\Preg;
@@ -42,6 +52,7 @@ class MigrateDownloadCountsCommand extends Command
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
             }
+
             return 0;
         }
 
@@ -57,12 +68,12 @@ class MigrateDownloadCountsCommand extends Command
             $keysToUpdate = $this->redis->keys('dl:*:*');
 
             // skip today datapoints as we will store that to the DB tomorrow
-            $keysToUpdate = array_filter($keysToUpdate, function ($key) use ($todaySuffix) {
+            $keysToUpdate = array_filter($keysToUpdate, static function ($key) use ($todaySuffix) {
                 return strpos($key, $todaySuffix) === false;
             });
 
             // sort by package id, then package datapoint first followed by version datapoints
-            usort($keysToUpdate, function (string $a, string $b) {
+            usort($keysToUpdate, static function (string $a, string $b) {
                 $amin = Preg::replace('{^(dl:\d+).*}', '$1', $a);
                 $bmin = Preg::replace('{^(dl:\d+).*}', '$1', $b);
 

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -27,14 +27,10 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Predis\Client as RedisClient;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 
-/**
- * @Route("/explore")
- */
+#[Route(path: '/explore')]
 class ExploreController extends Controller
 {
-    /**
-     * @Route("/", name="browse")
-     */
+    #[Route(path: '/', name: 'browse')]
     public function exploreAction(RedisClient $redis): Response
     {
         $pkgRepo = $this->getEM()->getRepository(Package::class);
@@ -45,7 +41,7 @@ class ExploreController extends Controller
         $maxId = (int) $this->getEM()->getConnection()->fetchOne('SELECT max(id) FROM package');
         $random = $pkgRepo
             ->createQueryBuilder('p')->where('p.id >= :randId')->andWhere('p.abandoned = 0')
-            ->setParameter('randId', rand(1, $maxId))->setMaxResults(10)
+            ->setParameter('randId', random_int(1, $maxId))->setMaxResults(10)
             ->getQuery()->getResult();
         try {
             $popular = [];
@@ -53,7 +49,7 @@ class ExploreController extends Controller
             if ($popularIds) {
                 $popular = $pkgRepo->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
                     ->getQuery()->enableResultCache(900)->getResult();
-                usort($popular, function ($a, $b) use ($popularIds) {
+                usort($popular, static function ($a, $b) use ($popularIds) {
                     return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
                 });
             }
@@ -69,9 +65,7 @@ class ExploreController extends Controller
         ]);
     }
 
-    /**
-     * @Route("/popular.{_format}", name="browse_popular", defaults={"_format"="html"})
-     */
+    #[Route(path: '/popular.{_format}', name: 'browse_popular', defaults: ['_format' => 'html'])]
     public function popularAction(Request $req, RedisClient $redis, FavoriteManager $favMgr, DownloadManager $dlMgr): Response
     {
         $perPage = $req->query->getInt('per_page', 15);
@@ -83,7 +77,6 @@ class ExploreController extends Controller
                         'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
                     ], 400);
                 }
-
             }
             $perPage = max(1, min(100, $perPage));
 
@@ -95,7 +88,7 @@ class ExploreController extends Controller
             $popular = $this->getEM()->getRepository(Package::class)
                 ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)
                 ->getQuery()->enableResultCache(900)->getResult();
-            usort($popular, function ($a, $b) use ($popularIds) {
+            usort($popular, static function ($a, $b) use ($popularIds) {
                 return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
             });
 

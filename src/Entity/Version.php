@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -22,206 +22,171 @@ use Symfony\Component\Validator\Constraints as Assert;
 use DateTimeInterface;
 
 /**
- * @ORM\Entity(repositoryClass="App\Entity\VersionRepository")
- * @ORM\Table(
- *     name="package_version",
- *     uniqueConstraints={@ORM\UniqueConstraint(name="pkg_ver_idx",columns={"package_id","normalizedVersion"})},
- *     indexes={
- *         @ORM\Index(name="release_idx",columns={"releasedAt"}),
- *         @ORM\Index(name="is_devel_idx",columns={"development"})
- *     }
- * )
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[ORM\Entity(repositoryClass: 'App\Entity\VersionRepository')]
+#[ORM\Table(name: 'package_version')]
+#[ORM\UniqueConstraint(name: 'pkg_ver_idx', columns: ['package_id', 'normalizedVersion'])]
+#[ORM\Index(name: 'release_idx', columns: ['releasedAt'])]
+#[ORM\Index(name: 'is_devel_idx', columns: ['development'])]
 class Version
 {
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
     private int $id;
 
-    /**
-     * @ORM\Column
-     * @Assert\NotBlank()
-     */
+    #[ORM\Column]
+    #[Assert\NotBlank]
     private string $name;
 
-    /**
-     * @ORM\Column(type="text", nullable=true)
-     */
+    #[ORM\Column(type: 'text', nullable: true)]
     private string|null $description = null;
 
-    /**
-     * @ORM\Column(nullable=true)
-     */
+    #[ORM\Column(nullable: true)]
     private string|null $type = null;
 
-    /**
-     * @ORM\Column(nullable=true)
-     */
+    #[ORM\Column(nullable: true)]
     private string|null $targetDir = null;
 
     /**
-     * @ORM\Column(type="array")
      * @var array<mixed>
      */
+    #[ORM\Column(type: 'array')]
     private array $extra = [];
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\Tag", inversedBy="versions")
-     * @ORM\JoinTable(name="version_tag",
-     *     joinColumns={@ORM\JoinColumn(name="version_id", referencedColumnName="id")},
-     *     inverseJoinColumns={@ORM\JoinColumn(name="tag_id", referencedColumnName="id")}
-     * )
      * @var Collection<int, Tag>&Selectable<int, Tag>
      */
+    #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'versions')]
+    #[ORM\JoinTable(name: 'version_tag')]
+    #[ORM\JoinColumn(name: 'version_id', referencedColumnName: 'id')]
+    #[ORM\InverseJoinColumn(name: 'tag_id', referencedColumnName: 'id')]
     private Collection $tags;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Package", fetch="EAGER", inversedBy="versions")
-     * @Assert\Type(type="App\Entity\Package")
-     */
+    #[ORM\ManyToOne(targetEntity: Package::class, fetch: 'EAGER', inversedBy: 'versions')]
+    #[Assert\Type(type: Package::class)]
     private Package|null $package;
 
-    /**
-     * @ORM\Column(nullable=true)
-     * @Assert\Url()
-     */
+    #[ORM\Column(nullable: true)]
+    #[Assert\Url]
     private string|null $homepage = null;
 
-    /**
-     * @ORM\Column
-     * @Assert\NotBlank()
-     */
+    #[ORM\Column]
+    #[Assert\NotBlank]
     private string $version;
 
-    /**
-     * @ORM\Column(length=191)
-     * @Assert\NotBlank()
-     */
+    #[ORM\Column(length: 191)]
+    #[Assert\NotBlank]
     private string $normalizedVersion;
 
-    /**
-     * @ORM\Column(type="boolean")
-     * @Assert\NotBlank()
-     */
+    #[ORM\Column(type: 'boolean')]
+    #[Assert\NotBlank]
     private bool $development;
 
     /**
-     * @ORM\Column(type="json")
      * @var array<string>
      */
+    #[ORM\Column(type: 'json')]
     private array $license;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\RequireLink", mappedBy="version")
      * @var Collection<int, RequireLink>&Selectable<int, RequireLink>
      */
+    #[ORM\OneToMany(targetEntity: 'App\Entity\RequireLink', mappedBy: 'version')]
     private Collection $require;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ReplaceLink", mappedBy="version")
      * @var Collection<int, ReplaceLink>&Selectable<int, ReplaceLink>
      */
+    #[ORM\OneToMany(targetEntity: 'App\Entity\ReplaceLink', mappedBy: 'version')]
     private Collection $replace;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ConflictLink", mappedBy="version")
      * @var Collection<int, ConflictLink>&Selectable<int, ConflictLink>
      */
+    #[ORM\OneToMany(targetEntity: 'App\Entity\ConflictLink', mappedBy: 'version')]
     private Collection $conflict;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ProvideLink", mappedBy="version")
      * @var Collection<int, ProvideLink>&Selectable<int, ProvideLink>
      */
+    #[ORM\OneToMany(targetEntity: 'App\Entity\ProvideLink', mappedBy: 'version')]
     private Collection $provide;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\DevRequireLink", mappedBy="version")
      * @var Collection<int, DevRequireLink>&Selectable<int, DevRequireLink>
      */
+    #[ORM\OneToMany(targetEntity: 'App\Entity\DevRequireLink', mappedBy: 'version')]
     private Collection $devRequire;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\SuggestLink", mappedBy="version")
      * @var Collection<int, SuggestLink>&Selectable<int, SuggestLink>
      */
+    #[ORM\OneToMany(targetEntity: 'App\Entity\SuggestLink', mappedBy: 'version')]
     private Collection $suggest;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
      * @var array{type: string|null, url: string|null, reference: string|null}|null
      */
+    #[ORM\Column(type: 'json', nullable: true)]
     private array|null $source = null;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
      * @var array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null
      */
+    #[ORM\Column(type: 'json', nullable: true)]
     private array|null $dist = null;
 
     /**
-     * @ORM\Column(type="json")
      * @var array{psr-0?: array<string, string|string[]>, psr-4?: array<string, string|string[]>, classmap?: list<string>, files?: list<string>}
      */
+    #[ORM\Column(type: 'json')]
     private array $autoload;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
      * @var array<string>|null
      */
+    #[ORM\Column(type: 'json', nullable: true)]
     private array|null $binaries = null;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
      * @var array<string>
      */
+    #[ORM\Column(type: 'json', nullable: true)]
     private array|null $includePaths = null;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
      * @var array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string}|null
      */
+    #[ORM\Column(type: 'json', nullable: true)]
     private array|null $support = null;
 
     /**
-     * @ORM\Column(type="json", nullable=true)
      * @var array<array{type?: string, url?: string}>|null
      */
+    #[ORM\Column(type: 'json', nullable: true)]
     private array|null $funding = null;
 
     /**
-     * @ORM\Column(name="authors", type="json")
      * @var array<array{name?: string, homepage?: string, email?: string, role?: string}>
      */
+    #[ORM\Column(name: 'authors', type: 'json')]
     private array $authors = [];
 
-    /**
-     * @ORM\Column(name="defaultBranch", type="boolean", options={"default": false})
-     */
+    #[ORM\Column(name: 'defaultBranch', type: 'boolean', options: ['default' => false])]
     private bool $isDefaultBranch = false;
 
-    /**
-     * @ORM\Column(type="datetime")
-     */
+    #[ORM\Column(type: 'datetime')]
     private DateTimeInterface $createdAt;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $softDeletedAt = null;
 
-    /**
-     * @ORM\Column(type="datetime")
-     */
+    #[ORM\Column(type: 'datetime')]
     private DateTimeInterface $updatedAt;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private DateTimeInterface|null $releasedAt = null;
 
     public function __construct()
@@ -294,12 +259,12 @@ class Version
         }
 
         $supportedLinkTypes = [
-            'require'    => 'require',
+            'require' => 'require',
             'devRequire' => 'require-dev',
-            'suggest'    => 'suggest',
-            'conflict'   => 'conflict',
-            'provide'    => 'provide',
-            'replace'    => 'replace',
+            'suggest' => 'suggest',
+            'conflict' => 'conflict',
+            'provide' => 'provide',
+            'replace' => 'replace',
         ];
 
         if ($this->isDefaultBranch()) {
@@ -362,10 +327,10 @@ class Version
     /**
      * @return list<string>
      */
-    public function getNames(array $versionData = null): array
+    public function getNames(?array $versionData = null): array
     {
         $names = [
-            strtolower($this->name) => true
+            strtolower($this->name) => true,
         ];
 
         if (isset($versionData[$this->id])) {
@@ -531,7 +496,7 @@ class Version
         }
 
         $funding = $this->funding;
-        usort($funding, function ($a, $b) {
+        usort($funding, static function ($a, $b) {
             $keyA = ($a['type'] ?? '') . ($a['url'] ?? '');
             $keyB = ($b['type'] ?? '') . ($b['url'] ?? '');
 
@@ -569,6 +534,7 @@ class Version
     public function getPackage(): Package
     {
         assert($this->package instanceof Package);
+
         return $this->package;
     }
 
@@ -780,6 +746,7 @@ class Version
         if (isset($extra['branch-alias'][$this->getVersion()])) {
             $parser = new VersionParser;
             $version = $parser->normalizeBranch(str_replace('-dev', '', $extra['branch-alias'][$this->getVersion()]));
+
             return Preg::replace('{(\.9{7})+}', '.x', $version);
         }
 

@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Tests\Security;
 
 use App\Security\RecaptchaHelper;
@@ -10,14 +20,13 @@ use Symfony\Component\HttpFoundation\Request;
 
 class RecaptchaHelperTest extends TestCase
 {
-    /** @var RecaptchaHelper */
-    private $helper;
+    private RecaptchaHelper $helper;
     /** @var Client&\PHPUnit\Framework\MockObject\MockObject */
     private $redis;
 
     protected function setUp(): void
     {
-        $this->redis = $this->getMockBuilder(Client::class)->disableOriginalConstructor()->getMock();
+        $this->redis = $this->createMock(Client::class);
         $this->helper = new RecaptchaHelper($this->redis, true);
     }
 
@@ -37,7 +46,7 @@ class RecaptchaHelperTest extends TestCase
         $this->redis
             ->expects($this->once())
             ->method('getProfile')
-            ->willReturn($this->getMockBuilder(RedisProfile::class)->disableOriginalConstructor()->getMock());
+            ->willReturn($this->createMock(RedisProfile::class));
 
         $this->redis
             ->expects($this->once())

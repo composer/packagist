@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -14,36 +14,29 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass=DependentRepository::class)
- * @ORM\Table(name="dependent", indexes={
- *     @ORM\Index(name="all_deps",columns={"package_id", "packageName"}),
- *     @ORM\Index(name="by_type",columns={"packageName", "type"})
- * })
- */
+#[ORM\Entity(repositoryClass: DependentRepository::class)]
+#[ORM\Table(name: 'dependent')]
+#[ORM\Index(name: 'all_deps', columns: ['package_id', 'packageName'])]
+#[ORM\Index(name: 'by_type', columns: ['packageName', 'type'])]
 class Dependent
 {
-    const TYPE_REQUIRE = 1;
-    const TYPE_REQUIRE_DEV = 2;
+    public const TYPE_REQUIRE = 1;
+    public const TYPE_REQUIRE_DEV = 2;
 
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Package::class)
-     * @ORM\JoinColumn(nullable=false)
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Package::class)]
+    #[ORM\JoinColumn(nullable: false)]
     private Package $package;
 
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="string", length=191)
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'string', length: 191)]
     private string $packageName;
 
     /**
-     * @ORM\Id
-     * @ORM\Column(type="smallint")
      * @var self::TYPE_*
      */
+    #[ORM\Id]
+    #[ORM\Column(type: 'smallint')]
     private int $type;
 
     /**

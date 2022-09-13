@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -46,10 +46,6 @@ class ClearVersionsCommand extends Command
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package id to clear versions for'),
             ])
             ->setDescription('Clears all versions from the databases')
-            ->setHelp(<<<EOF
-
-EOF
-            )
         ;
     }
 

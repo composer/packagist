@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -69,6 +69,7 @@ class UpdatePackagesCommand extends Command
             if ($verbose) {
                 $output->writeln('Aborting, another task is running already');
             }
+
             return 0;
         }
 
@@ -76,6 +77,7 @@ class UpdatePackagesCommand extends Command
             $packageEntity = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package]);
             if ($packageEntity === null) {
                 $output->writeln('<error>Package '.$package.' not found</error>');
+
                 return 1;
             }
             $packages = [['id' => $packageEntity->getId()]];
@@ -106,7 +108,7 @@ class UpdatePackagesCommand extends Command
             $idsGroup = array_splice($ids, 0, 100);
 
             foreach ($idsGroup as $id) {
-                $job = $this->scheduler->scheduleUpdate($id, $updateEqualRefs, $deleteBefore, $randomTimes ? new \DateTime('+'.rand(1, 600).'seconds') : null);
+                $job = $this->scheduler->scheduleUpdate($id, $updateEqualRefs, $deleteBefore, $randomTimes ? new \DateTime('+'.random_int(1, 600).'seconds') : null);
                 if ($verbose) {
                     $output->writeln('Scheduled update job '.$job->getId().' for package '.$id);
                 }

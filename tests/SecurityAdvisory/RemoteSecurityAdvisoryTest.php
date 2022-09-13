@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Tests\SecurityAdvisory;
 
 use App\Entity\SecurityAdvisory;
@@ -20,7 +30,7 @@ class RemoteSecurityAdvisoryTest extends TestCase
                     'versions' => ['<1.2'],
                 ],
             ],
-            'reference' => 'composer://3f/pygmentize'
+            'reference' => 'composer://3f/pygmentize',
         ]);
 
         $this->assertSame('3f/pygmentize/2017-05-15.yaml', $advisory->getId());
@@ -46,7 +56,7 @@ class RemoteSecurityAdvisoryTest extends TestCase
                 ],
 
             ],
-            'reference' => 'composer://erusev/parsedown'
+            'reference' => 'composer://erusev/parsedown',
         ]);
 
         $this->assertSame('2019-01-01 00:00:00', $advisory->getDate()->format('Y-m-d H:i:s'));
@@ -92,7 +102,7 @@ class RemoteSecurityAdvisoryTest extends TestCase
                     'versions' => ['>=6.0.3', '<=6.0.3'],
                 ],
             ],
-            'reference' => 'composer://symfony/framework-bundle'
+            'reference' => 'composer://symfony/framework-bundle',
         ]);
 
         $this->assertSame('symfony/framework-bundle/CVE-2022-xxxx.yaml', $advisory->getId());

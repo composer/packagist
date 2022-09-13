@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -80,14 +80,9 @@ class SymlinkDumper
     /**
      * Constructor
      *
-     * @param ManagerRegistry       $doctrine
-     * @param Filesystem            $filesystem
-     * @param UrlGeneratorInterface $router
      * @param string                $webDir     web root
-     * @param string                $targetDir
-     * @param int                   $compress
      */
-    public function __construct(ManagerRegistry $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, $webDir, $targetDir, $compress, $awsMetadata, StatsDClient $statsd, Logger $logger)
+    public function __construct(ManagerRegistry $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, string $webDir, string $targetDir, int $compress, $awsMetadata, StatsDClient $statsd, Logger $logger)
     {
         $this->doctrine = $doctrine;
         $this->fs = $filesystem;
@@ -196,7 +191,7 @@ class SymlinkDumper
                 $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions(array_splice($packageIds, 0, $step));
 
                 if ($verbose) {
-                    echo '['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages ('.(memory_get_usage(true)/1024/1024).' MB RAM)'.PHP_EOL;
+                    echo '['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages ('.(memory_get_usage(true) / 1024 / 1024).' MB RAM)'.PHP_EOL;
                 }
 
                 $current += $step;
@@ -247,7 +242,6 @@ class SymlinkDumper
                             $modifiedIndividualFiles[$key] = true;
                             $affectedFiles[$key] = true;
                         }
-
                     }
 
                     // store affected files to clean up properly in the next update
@@ -257,10 +251,10 @@ class SymlinkDumper
                     $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
 
                     if ($verbose) {
-                        echo '['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$package->getName().' ('.(memory_get_usage(true)/1024/1024).' MB RAM)'.PHP_EOL;
+                        echo '['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$package->getName().' ('.(memory_get_usage(true) / 1024 / 1024).' MB RAM)'.PHP_EOL;
                     }
 
-                    if (memory_get_usage(true)/1024/1024 > 8000) {
+                    if (memory_get_usage(true) / 1024 / 1024 > 8000) {
                         if ($verbose) {
                             echo 'Memory usage too high, stopping here.'.PHP_EOL;
                         }
@@ -277,7 +271,7 @@ class SymlinkDumper
                     $packageIds = [];
                 }
 
-                if ($current % 250 === 0 || !$packageIds || memory_get_usage() > 1024*1024*1024) {
+                if ($current % 250 === 0 || !$packageIds || memory_get_usage() > 1024 * 1024 * 1024) {
                     if ($verbose) {
                         echo 'Dumping individual files'.PHP_EOL;
                     }
@@ -293,6 +287,7 @@ class SymlinkDumper
             $finder = Finder::create()->files()->ignoreVCS(true)->name('*.json')->in($buildDir)->depth('1');
 
             foreach ($finder as $file) {
+                $file = (string) $file;
                 // skip hashed files
                 if (strpos($file, '$')) {
                     continue;
@@ -336,7 +331,7 @@ class SymlinkDumper
 
             // dump listings to build dir
             foreach ($individualHashedListings as $listing => $dummy) {
-                list($listingPath, $hash) = $this->dumpListing($buildDir.'/'.$listing);
+                [$listingPath, $hash] = $this->dumpListing($buildDir.'/'.$listing);
                 $hashedListing = basename($listingPath);
                 $this->rootFile['provider-includes']['p/'.str_replace($hash, '%hash%', $hashedListing)] = ['sha256' => $hash];
             }
@@ -533,10 +528,11 @@ class SymlinkDumper
                 ->in((string) $vendorDir);
 
             foreach ($vendorFiles as $file) {
+                $file = (string) $file;
                 $key = strtr(str_replace($buildDir.DIRECTORY_SEPARATOR, '', $file), '\\', '/');
                 if (!isset($safeFiles[$key])) {
-                    unlink((string) $file);
-                    if (file_exists($altDirFile = str_replace($buildDir, $oldBuildDir, (string) $file))) {
+                    unlink($file);
+                    if (file_exists($altDirFile = str_replace($buildDir, $oldBuildDir, $file))) {
                         unlink($altDirFile);
                     }
                 }
@@ -546,9 +542,9 @@ class SymlinkDumper
         // clean up old provider listings
         $finder = Finder::create()->depth(0)->files()->name('provider-*.json')->ignoreVCS(true)->in($buildDir)->date('until 10minutes ago');
         foreach ($finder as $provider) {
-            $key = strtr(str_replace($buildDir.DIRECTORY_SEPARATOR, '', $provider), '\\', '/');
+            $path = (string) $provider;
+            $key = strtr(str_replace($buildDir.DIRECTORY_SEPARATOR, '', $path), '\\', '/');
             if (!isset($safeFiles[$key])) {
-                $path = (string) $provider;
                 unlink($path);
                 if (file_exists($path.'.gz')) {
                     unlink($path.'.gz');
@@ -588,7 +584,7 @@ class SymlinkDumper
             ksort($this->rootFile['packages'][$package]);
         }
 
-        $json = json_encode($this->rootFile, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+        $json = json_encode($this->rootFile, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $time = time();
 
         $this->writeFile($file, $json, $time);
@@ -609,7 +605,7 @@ class SymlinkDumper
         // sort files to make hash consistent
         ksort($this->listings[$key]['providers']);
 
-        $json = json_encode($this->listings[$key], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+        $json = json_encode($this->listings[$key], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $hash = hash('sha256', $json);
         $path = substr($path, 0, -5) . '$' . $hash . '.json';
         $time = time();
@@ -697,6 +693,7 @@ class SymlinkDumper
             return false;
         }
         $this->fs->mkdir($path);
+
         return true;
     }
 
@@ -730,7 +727,7 @@ class SymlinkDumper
         $block = new \DateTime(date('Y', $now).'-'.$month.'-01'); // 1st day of current trimester
 
         // split last 12 months in 4 trimesters
-        for ($i=0; $i < 4; $i++) {
+        for ($i = 0; $i < 4; $i++) {
             $blocks[$block->format('Y-m')] = $block->getTimestamp();
             $block->sub(new \DateInterval('P3M'));
         }
@@ -766,7 +763,7 @@ class SymlinkDumper
         return "provider-archived.json";
     }
 
-    private function writeFile(string $path, string $contents, int $mtime = null): void
+    private function writeFile(string $path, string $contents, ?int $mtime = null): void
     {
         file_put_contents($path.'.tmp', $contents);
         if ($mtime !== null) {

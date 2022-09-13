@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -12,28 +12,20 @@
 
 namespace App\Entity;
 
-use App\Repository\DependentRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass=SuggesterRepository::class)
- * @ORM\Table(name="suggester", indexes={
- *     @ORM\Index(name="all_suggesters",columns={"packageName"})
- * })
- */
+#[ORM\Entity(repositoryClass: SuggesterRepository::class)]
+#[ORM\Table(name: 'suggester')]
+#[ORM\Index(name: 'all_suggesters', columns: ['packageName'])]
 class Suggester
 {
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Package::class)
-     * @ORM\JoinColumn(nullable=false)
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Package::class)]
+    #[ORM\JoinColumn(nullable: false)]
     private Package $package;
 
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="string", length=191)
-     */
+    #[ORM\Id]
+    #[ORM\Column(type: 'string', length: 191)]
     private string $packageName;
 
     public function __construct(Package $sourcePackage, string $targetPackageName)

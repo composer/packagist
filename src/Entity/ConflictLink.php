@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -15,14 +15,12 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity
- * @ORM\Table(name="link_conflict")
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[ORM\Entity]
+#[ORM\Table(name: 'link_conflict')]
 class ConflictLink extends PackageLink
 {
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Version", inversedBy="conflict")
-     */
+    #[ORM\ManyToOne(targetEntity: 'App\Entity\Version', inversedBy: 'conflict')]
     protected Version|null $version = null;
 }

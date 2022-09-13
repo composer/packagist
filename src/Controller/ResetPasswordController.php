@@ -1,4 +1,14 @@
-<?php
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace App\Controller;
 
@@ -34,9 +44,8 @@ class ResetPasswordController extends Controller
 
     /**
      * Display & process form to request a password reset.
-     *
-     * @Route("/reset-password", name="request_pwd_reset")
      */
+    #[Route(path: '/reset-password', name: 'request_pwd_reset')]
     public function request(Request $request, MailerInterface $mailer, RecaptchaVerifier $recaptchaVerifier): Response
     {
         $form = $this->createForm(ResetPasswordRequestFormType::class);
@@ -77,7 +86,7 @@ class ResetPasswordController extends Controller
      *
      * @Route("/reset-password/reset/{token}", name="do_pwd_reset")
      */
-    public function reset(Request $request, UserPasswordHasherInterface $passwordHasher, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator, string $token = null): Response
+    public function reset(Request $request, UserPasswordHasherInterface $passwordHasher, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator, ?string $token = null): Response
     {
         if (null === $token) {
             throw $this->createNotFoundException('No reset password token found in the URL or in the session.');

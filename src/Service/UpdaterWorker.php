@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Service;
 
 use App\Entity\User;
@@ -33,7 +43,7 @@ class UpdaterWorker
 {
     use DoctrineTrait;
 
-    const VCS_REPO_DRIVERS = [
+    public const VCS_REPO_DRIVERS = [
         'github' => 'Composer\Repository\Vcs\GitHubDriver',
         'gitlab' => 'Composer\Repository\Vcs\GitLabDriver',
         'git-bitbucket' => 'Composer\Repository\Vcs\GitBitbucketDriver',
@@ -385,7 +395,7 @@ class UpdaterWorker
                             'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been deleted',
                             'details' => '<pre>'.$output.'</pre>',
                             'exception' => $e,
-                            'vendor' => $package->getVendor()
+                            'vendor' => $package->getVendor(),
                         ];
                     }
                 } catch (\Throwable $e) {

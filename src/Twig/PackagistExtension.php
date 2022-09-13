@@ -1,8 +1,17 @@
-<?php
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace App\Twig;
 
-use App\Entity\Package;
 use App\Entity\PackageLink;
 use App\Model\ProviderManager;
 use App\Security\RecaptchaHelper;
@@ -114,7 +123,7 @@ class PackagistExtension extends AbstractExtension
      */
     public function sortLinks(array $links): array
     {
-        usort($links, function (PackageLink $a, PackageLink $b) {
+        usort($links, static function (PackageLink $a, PackageLink $b) {
             $aPlatform = Preg::isMatch(PlatformRepository::PLATFORM_PACKAGE_REGEX, $a->getPackageName());
             $bPlatform = Preg::isMatch(PlatformRepository::PLATFORM_PACKAGE_REGEX, $b->getPackageName());
 

@@ -1,9 +1,17 @@
-<?php
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace App\Tests\Controller;
 
-use Algolia\AlgoliaSearch\SearchClient;
-use Algolia\AlgoliaSearch\SearchIndex;
 use App\Search\Query;
 use App\Tests\Search\AlgoliaMock;
 use Exception;
@@ -165,17 +173,16 @@ class WebControllerTest extends WebTestCase
      * Executes a given command.
      *
      * @param string $command a command to execute
-     * @param bool $errorHandling
      *
      * @throws Exception when the return code is not 0.
      */
     protected function executeCommand(
-        $command,
-        $errorHandling = true
+        string $command,
+        bool $errorHandling = true
     ) {
-        $output = array();
+        $output = [];
 
-        $returnCode = null;;
+        $returnCode = null;
 
         exec($command, $output, $returnCode);
 

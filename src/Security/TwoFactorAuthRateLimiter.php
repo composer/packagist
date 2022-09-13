@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -23,8 +23,8 @@ use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationExc
  */
 class TwoFactorAuthRateLimiter implements EventSubscriberInterface
 {
-    const MAX_ATTEMPTS = 5;
-    const RATE_LIMIT_DURATION = 15; // in minutes
+    public const MAX_ATTEMPTS = 5;
+    public const RATE_LIMIT_DURATION = 15; // in minutes
 
     public function __construct(private Client $redisCache)
     {
@@ -33,7 +33,7 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
     public function onAuthAttempt(TwoFactorAuthenticationEvent $event): void
     {
         $key = '2fa-failures:'.$event->getToken()->getUserIdentifier();
-        $count = (int)$this->redisCache->get($key);
+        $count = (int) $this->redisCache->get($key);
 
         if ($count >= self::MAX_ATTEMPTS) {
             throw new CustomUserMessageAuthenticationException(sprintf('Too many authentication failures. Try again in %d minutes.', self::RATE_LIMIT_DURATION));

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -20,15 +20,9 @@ use Symfony\Component\Form\FormBuilderInterface;
  * Class AbandonedType
  *
  * Form used to acquire replacement Package information for abandoned package.
- *
- * @package App\Form\Type
  */
 class AbandonedType extends AbstractType
 {
-    /**
-     * @param FormBuilderInterface $builder
-     * @param array $options
-     */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add(
@@ -36,8 +30,8 @@ class AbandonedType extends AbstractType
             TextType::class,
             [
                 'required' => false,
-                'label'    => 'Replacement package',
-                'attr'     => ['placeholder' => 'optional package name']
+                'label' => 'Replacement package',
+                'attr' => ['placeholder' => 'optional package name'],
             ]
         );
     }

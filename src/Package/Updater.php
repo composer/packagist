@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -16,7 +16,6 @@ use App\Entity\Dependent;
 use cebe\markdown\GithubMarkdown;
 use Composer\Package\AliasPackage;
 use Composer\Pcre\Preg;
-use Composer\Repository\RepositoryInterface;
 use Composer\Repository\VcsRepository;
 use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
@@ -44,24 +43,24 @@ class Updater
 {
     use \App\Util\DoctrineTrait;
 
-    const UPDATE_EQUAL_REFS = 1;
-    const DELETE_BEFORE = 2;
-    const FORCE_DUMP = 4;
+    public const UPDATE_EQUAL_REFS = 1;
+    public const DELETE_BEFORE = 2;
+    public const FORCE_DUMP = 4;
 
     private const SUPPORTED_LINK_TYPES = [
-        'require'     => [
+        'require' => [
             'method' => 'getRequires',
             'entity' => 'RequireLink',
         ],
-        'conflict'    => [
+        'conflict' => [
             'method' => 'getConflicts',
             'entity' => 'ConflictLink',
         ],
-        'provide'     => [
+        'provide' => [
             'method' => 'getProvides',
             'entity' => 'ProvideLink',
         ],
-        'replace'     => [
+        'replace' => [
             'method' => 'getReplaces',
             'entity' => 'ReplaceLink',
         ],
@@ -82,11 +81,10 @@ class Updater
     /**
      * Update a project
      *
-     * @param \App\Entity\Package $package
      * @param VcsRepository $repository the repository instance used to update from
      * @param int $flags a few of the constants of this class
      */
-    public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, int $flags = 0, array $existingVersions = null, VersionCache $versionCache = null): Package
+    public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, int $flags = 0, ?array $existingVersions = null, ?VersionCache $versionCache = null): Package
     {
         $httpDownloader = new HttpDownloader($io, $config);
 
@@ -117,7 +115,7 @@ class Updater
         }
 
         $versions = $repository->getPackages();
-        usort($versions, function ($a, $b) {
+        usort($versions, static function ($a, $b) {
             $aVersion = $a->getVersion();
             $bVersion = $b->getVersion();
             if ($aVersion === '9999999-dev' || 'dev-' === substr($aVersion, 0, 4)) {
@@ -434,7 +432,7 @@ class Updater
             foreach ($data->{$opts['method']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
                 if (false !== strpos($constraint, ',') && false !== strpos($constraint, '@')) {
-                    $constraint = Preg::replaceCallback('{([><]=?\s*[^@]+?)@([a-z]+)}i', function ($matches) {
+                    $constraint = Preg::replaceCallback('{([><]=?\s*[^@]+?)@([a-z]+)}i', static function ($matches) {
                         if ($matches[2] === 'stable') {
                             return $matches[1];
                         }
@@ -519,7 +517,7 @@ class Updater
                 $readmeFile = 'README.md';
             }
 
-            $ext = substr($readmeFile, strrpos($readmeFile, '.'));
+            $ext = substr($readmeFile, (int) strrpos($readmeFile, '.'));
             if ($ext === $readmeFile) {
                 $ext = '.txt';
             }
@@ -712,7 +710,7 @@ class Updater
         }
 
         $readme = $dom->saveHTML();
-        $readme = substr($readme, strpos($readme, '<body>')+6);
+        $readme = substr($readme, strpos($readme, '<body>') + 6);
         $readme = substr($readme, 0, strrpos($readme, '</body>'));
 
         libxml_use_internal_errors(false);

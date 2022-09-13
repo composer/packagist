@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Controller;
 
 use App\Entity\User;
@@ -14,9 +24,9 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 class ChangePasswordController extends Controller
 {
     /**
-     * @Route("/profile/change-password", name="change_password")
      * @IsGranted("ROLE_USER")
      */
+    #[Route(path: '/profile/change-password', name: 'change_password')]
     public function changePasswordAction(Request $request, UserPasswordHasherInterface $passwordHasher, #[CurrentUser] User $user): Response
     {
         $form = $this->createForm(ChangePasswordFormType::class, $user);
@@ -36,8 +46,8 @@ class ChangePasswordController extends Controller
             return $this->redirectToRoute('my_profile');
         }
 
-        return $this->render('user/change_password.html.twig', array(
+        return $this->render('user/change_password.html.twig', [
             'form' => $form->createView(),
-        ));
+        ]);
     }
 }

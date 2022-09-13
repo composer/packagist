@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Command;
 
 use App\Entity\Package;
@@ -10,9 +20,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Seld\Signal\SignalHandler;
-use App\Model\DownloadManager;
 use App\Service\Locker;
-use Predis\Client;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 
@@ -45,6 +53,7 @@ class RegenerateMainPhpStatsCommand extends Command
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another task is running already');
             }
+
             return 0;
         }
 

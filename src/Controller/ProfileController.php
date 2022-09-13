@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Controller;
 
 use App\Attribute\VarName;
@@ -19,9 +29,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ProfileController extends Controller
 {
-    /**
-     * @Route("/profile/", name="my_profile")
-     */
+    #[Route(path: '/profile/', name: 'my_profile')]
     public function myProfile(Request $req, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $user): Response
     {
         $packages = $this->getUserPackages($req, $user);
@@ -44,10 +52,8 @@ class ProfileController extends Controller
         );
     }
 
-    /**
-     * @Route("/users/{name}/", name="user_profile")
-     */
-    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] User $loggedUser = null): Response
+    #[Route(path: '/users/{name}/', name: 'user_profile')]
+    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] ?User $loggedUser = null): Response
     {
         $packages = $this->getUserPackages($req, $user);
 
@@ -70,10 +76,8 @@ class ProfileController extends Controller
         );
     }
 
-    /**
-     * @Route("/users/{name}/packages/", name="user_packages")
-     * @Route("/users/{name}/packages.json", name="user_packages_json", defaults={"_format": "json"})
-     */
+    #[Route(path: '/users/{name}/packages/', name: 'user_packages')]
+    #[Route(path: '/users/{name}/packages.json', name: 'user_packages_json', defaults: ['_format' => 'json'])]
     public function packagesAction(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr): Response
     {
         $packages = $this->getUserPackages($req, $user);
@@ -107,9 +111,7 @@ class ProfileController extends Controller
         );
     }
 
-    /**
-     * @Route("/profile/edit", name="edit_profile")
-     */
+    #[Route(path: '/profile/edit', name: 'edit_profile')]
     public function editAction(Request $request): Response
     {
         $user = $this->getUser();
@@ -128,9 +130,9 @@ class ProfileController extends Controller
             return $this->redirectToRoute('my_profile');
         }
 
-        return $this->render('user/edit.html.twig', array(
+        return $this->render('user/edit.html.twig', [
             'form' => $form->createView(),
-        ));
+        ]);
     }
 
     /**

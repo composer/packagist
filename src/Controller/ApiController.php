@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -47,9 +47,7 @@ class ApiController extends Controller
         $this->logger = $logger;
     }
 
-    /**
-     * @Route("/packages.json", name="packages", defaults={"_format" = "json"}, methods={"GET"})
-     */
+    #[Route(path: '/packages.json', name: 'packages', defaults: ['_format' => 'json'], methods: ['GET'])]
     public function packagesAction(string $webDir): Response
     {
         // fallback if any of the dumped files exist
@@ -67,9 +65,7 @@ class ApiController extends Controller
         return new Response('Horrible misconfiguration or the dumper script messed up, you need to use bin/console packagist:dump', 404);
     }
 
-    /**
-     * @Route("/api/create-package", name="generic_create", defaults={"_format" = "json"}, methods={"POST"})
-     */
+    #[Route(path: '/api/create-package', name: 'generic_create', defaults: ['_format' => 'json'], methods: ['POST'])]
     public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator): JsonResponse
     {
         $payload = json_decode($request->getContent(), true);
@@ -95,8 +91,9 @@ class ApiController extends Controller
         if (count($errors) > 0) {
             $errorArray = [];
             foreach ($errors as $error) {
-                $errorArray[$error->getPropertyPath()] =  $error->getMessage();
+                $errorArray[$error->getPropertyPath()] = $error->getMessage();
             }
+
             return new JsonResponse(['status' => 'error', 'message' => $errorArray], 406);
         }
         try {
@@ -110,21 +107,20 @@ class ApiController extends Controller
             }
         } catch (\Exception $e) {
             $this->logger->critical($e->getMessage(), ['exception', $e]);
+
             return new JsonResponse(['status' => 'error', 'message' => 'Error saving package'], 500);
         }
 
         return new JsonResponse(['status' => 'success'], 202);
     }
 
-    /**
-     * @Route("/api/update-package", name="generic_postreceive", defaults={"_format" = "json"}, methods={"POST"})
-     * @Route("/api/github", name="github_postreceive", defaults={"_format" = "json"}, methods={"POST"})
-     * @Route("/api/bitbucket", name="bitbucket_postreceive", defaults={"_format" = "json"}, methods={"POST"})
-     */
+    #[Route(path: '/api/update-package', name: 'generic_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
+    #[Route(path: '/api/github', name: 'github_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
+    #[Route(path: '/api/bitbucket', name: 'bitbucket_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
     public function updatePackageAction(Request $request, string $githubWebhookSecret, StatsDClient $statsd): JsonResponse
     {
         // parse the payload
-        $payload = json_decode((string)$request->request->get('payload'), true);
+        $payload = json_decode((string) $request->request->get('payload'), true);
         if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
             $payload = json_decode($request->getContent(), true);
         }
@@ -159,15 +155,7 @@ class ApiController extends Controller
         return $this->receivePost($request, $url, $urlRegex, $remoteId, $githubWebhookSecret);
     }
 
-    /**
-     * @Route(
-     *     "/api/packages/{package}",
-     *     name="api_edit_package",
-     *     requirements={"package"="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?"},
-     *     defaults={"_format" = "json"},
-     *     methods={"PUT"}
-     * )
-     */
+    #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'json'], methods: ['PUT'])]
     public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
     {
         $user = $this->findUser($request);
@@ -177,7 +165,7 @@ class ApiController extends Controller
 
         $statsd->increment('edit_package_api');
 
-        $payload = json_decode((string)$request->request->get('payload'), true);
+        $payload = json_decode((string) $request->request->get('payload'), true);
         if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
             $payload = json_decode($request->getContent(), true);
         }
@@ -188,8 +176,9 @@ class ApiController extends Controller
         if (count($errors) > 0) {
             $errorArray = [];
             foreach ($errors as $error) {
-                $errorArray[$error->getPropertyPath()] =  $error->getMessage();
+                $errorArray[$error->getPropertyPath()] = $error->getMessage();
             }
+
             return new JsonResponse(['status' => 'error', 'message' => $errorArray], 406);
         }
 
@@ -202,9 +191,7 @@ class ApiController extends Controller
         return new JsonResponse(['status' => 'success'], 200);
     }
 
-    /**
-     * @Route("/jobs/{id}", name="get_job", requirements={"id"="[a-f0-9]+"}, defaults={"_format" = "json"}, methods={"GET"})
-     */
+    #[Route(path: '/jobs/{id}', name: 'get_job', requirements: ['id' => '[a-f0-9]+'], defaults: ['_format' => 'json'], methods: ['GET'])]
     public function getJobAction(string $id, StatsDClient $statsd): JsonResponse
     {
         $statsd->increment('get_job_api');
@@ -229,7 +216,7 @@ class ApiController extends Controller
     public function trackDownloadsAction(Request $request, StatsDClient $statsd, string $trustedIpHeader, DownloadManager $downloadManager, VersionIdCache $versionIdCache): JsonResponse
     {
         $contents = json_decode($request->getContent(), true);
-        $invalidInputs = function ($item) {
+        $invalidInputs = static function ($item) {
             return !isset($item['name'], $item['version']);
         };
 
@@ -314,17 +301,10 @@ class ApiController extends Controller
         return Preg::replace('{^(\d+\.\d+).*}', '$1', $version);
     }
 
-    /**
-     * @Route(
-     *     "/api/security-advisories/",
-     *     name="api_security_advisories",
-     *     defaults={"_format" = "json"},
-     *     methods={"GET", "POST"}
-     * )
-     */
+    #[Route(path: '/api/security-advisories/', name: 'api_security_advisories', defaults: ['_format' => 'json'], methods: ['GET', 'POST'])]
     public function securityAdvisoryAction(Request $request, ProviderManager $providerManager, StatsDClient $statsd): JsonResponse
     {
-        $packageNames = array_filter((array) $request->get('packages'), fn($name) => is_string($name) && $name !== '');
+        $packageNames = array_filter((array) $request->get('packages'), static fn ($name) => is_string($name) && $name !== '');
         if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);
         }
@@ -352,10 +332,9 @@ class ApiController extends Controller
     }
 
     /**
-     * @param string $name
      * @return array{id: int, vid: int}|false
      */
-    protected function getDefaultPackageAndVersionId($name): array|false
+    protected function getDefaultPackageAndVersionId(string $name): array|false
     {
         /** @var array{id: string, vid: string}|false $result */
         $result = $this->getEM()->getConnection()->fetchAssociative(
@@ -403,10 +382,10 @@ class ApiController extends Controller
             $sig = $request->headers->get('X-Hub-Signature');
             $user = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => $username]);
             if ($sig && $user && $user->isEnabled()) {
-                list($algo, $sig) = explode('=', $sig);
+                [$algo, $sig] = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
                 if (hash_equals($expected, $sig)) {
-                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], (string)$remoteId, $user);
+                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], (string) $remoteId, $user);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
                 } else {
@@ -425,10 +404,10 @@ class ApiController extends Controller
         if (!$user && $match['host'] === 'github.com' && $request->getContent()) {
             $sig = $request->headers->get('X-Hub-Signature');
             if ($sig) {
-                list($algo, $sig) = explode('=', $sig);
+                [$algo, $sig] = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $githubWebhookSecret);
                 if (hash_equals($expected, $sig)) {
-                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], (string)$remoteId);
+                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], (string) $remoteId);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_auto';
                 }
@@ -523,10 +502,9 @@ class ApiController extends Controller
     }
 
     /**
-     * @param string $url
      * @return Package[] the packages found
      */
-    protected function findPackagesByRepository(string $url, string $remoteId, User $user = null): array
+    protected function findPackagesByRepository(string $url, string $remoteId, ?User $user = null): array
     {
         $packageRepo = $this->getEM()->getRepository(Package::class);
         $packages = $packageRepo->findBy(['repository' => $url]);
@@ -540,7 +518,7 @@ class ApiController extends Controller
 
         if ($user) {
             // need to check ownership if a user is provided as we can not trust that the request came from github in this case
-            $packages = array_filter($packages, function ($p) use ($user, $packageRepo) {
+            $packages = array_filter($packages, static function ($p) use ($user, $packageRepo) {
                 return $packageRepo->isPackageMaintainedBy($p, $user->getId());
             });
         }

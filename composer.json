@@ -90,6 +90,7 @@
         "phpstan/phpstan-doctrine": "^1",
         "phpstan/phpstan-symfony": "^1.1",
         "phpunit/phpunit": "^9.5",
+        "rector/rector": "^0.13.9",
         "staabm/phpstan-dba": "^0.2",
         "symfony/browser-kit": "^6",
         "symfony/css-selector": "^6",

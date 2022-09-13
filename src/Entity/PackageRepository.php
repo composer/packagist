@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -356,7 +356,7 @@ class PackageRepository extends ServiceEntityRepository
      * @param array<string, string|int|null> $filters
      * @return Package[]
      */
-    public function getPackagesWithVersions(array $ids = null, array $filters = []): array
+    public function getPackagesWithVersions(?array $ids = null, array $filters = []): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'v')
@@ -418,14 +418,15 @@ class PackageRepository extends ServiceEntityRepository
         return $qb;
     }
 
-    public function isVendorTaken(string $vendor, User $user = null): bool
+    public function isVendorTaken(string $vendor, ?User $user = null): bool
     {
         $query = $this->getEntityManager()
             ->createQuery(
                 "SELECT p.name, m.id user_id
                 FROM App\Entity\Package p
                 JOIN p.maintainers m
-                WHERE p.vendor = :vendor")
+                WHERE p.vendor = :vendor"
+            )
             ->setParameters(['vendor' => $vendor]);
 
         $rows = $query->getArrayResult();
@@ -463,7 +464,7 @@ class PackageRepository extends ServiceEntityRepository
     public function getSuspectPackages($offset = 0, $limit = 15): array
     {
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
-            FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam") ORDER BY p.createdAt DESC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+            FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam") ORDER BY p.createdAt DESC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
     }
@@ -511,7 +512,7 @@ class PackageRepository extends ServiceEntityRepository
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
-            ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+            ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $res = [];
         foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
@@ -537,7 +538,7 @@ class PackageRepository extends ServiceEntityRepository
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
-            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int)$limit).' OFFSET '.((int)$offset);
+            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $res = [];
         foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]) as $row) {
@@ -617,8 +618,6 @@ class PackageRepository extends ServiceEntityRepository
 
     /**
      * Gets the most recent packages created
-     *
-     * @return QueryBuilder
      */
     public function getQueryBuilderForNewestPackages(): QueryBuilder
     {
