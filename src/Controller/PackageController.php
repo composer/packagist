@@ -952,7 +952,7 @@ class PackageController extends Controller
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $package->setAbandoned(true);
-            $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', $form->get('replacement')->getData()));
+            $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData()));
             $package->setIndexedAt(null);
             $package->setCrawledAt(new DateTime());
             $package->setUpdatedAt(new DateTime());
@@ -1401,7 +1401,11 @@ class PackageController extends Controller
     public function versionStatsAction(Request $req, #[VarName('name')] Package $package, string $version): JsonResponse
     {
         $normalizer = new VersionParser;
-        $normVersion = $normalizer->normalize($version);
+        try {
+            $normVersion = $normalizer->normalize($version);
+        } catch (\UnexpectedValueException $e) {
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
 
         $version = $this->getEM()->getRepository(Version::class)->findOneBy([
             'package' => $package,
