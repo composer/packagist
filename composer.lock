@@ -567,12 +567,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "93bfe73b529ba7770641d657663fff11e8b4f652"
+                "reference": "c9973cf5a821734a64b2d9eee1ddd80acf2e481b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/93bfe73b529ba7770641d657663fff11e8b4f652",
-                "reference": "93bfe73b529ba7770641d657663fff11e8b4f652",
+                "url": "https://api.github.com/repos/composer/composer/zipball/c9973cf5a821734a64b2d9eee1ddd80acf2e481b",
+                "reference": "c9973cf5a821734a64b2d9eee1ddd80acf2e481b",
                 "shasum": ""
             },
             "require": {
@@ -672,7 +672,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-09-13T14:12:56+00:00"
+            "time": "2022-09-13T14:47:09+00:00"
         },
         {
             "name": "composer/metadata-minifier",
