@@ -216,7 +216,7 @@ class Package
         ];
 
         if ($this->isAbandoned()) {
-            $data['abandoned'] = $this->getReplacementPackage() ?: true;
+            $data['abandoned'] = $this->getReplacementPackage() ?? true;
         }
 
         return $data;
@@ -830,7 +830,11 @@ class Package
 
     public function setReplacementPackage(?string $replacementPackage): void
     {
-        $this->replacementPackage = $replacementPackage;
+        if ('' === $replacementPackage) {
+            $this->replacementPackage = null;
+        } else {
+            $this->replacementPackage = $replacementPackage;
+        }
     }
 
     public static function sortVersions(Version $a, Version $b): int

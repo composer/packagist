@@ -180,7 +180,7 @@ class PackageRepository extends ServiceEntityRepository
             $name = $row['name'];
             unset($row['name']);
             if (isset($row['abandoned']) && array_key_exists('replacementPackage', $row)) {
-                $row['abandoned'] = $row['abandoned'] == "1" ? ($row['replacementPackage'] ?: true) : false;
+                $row['abandoned'] = $row['abandoned'] == "1" ? ($row['replacementPackage'] ?? true) : false;
                 unset($row['replacementPackage']);
             }
             $result[$name] = $row;
