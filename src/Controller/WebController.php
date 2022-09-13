@@ -118,12 +118,12 @@ class WebController extends Controller
         $count = 0;
         foreach ($packages as $dataPoint) {
             $count += $dataPoint['count'];
-            $chart['packages'][$dataPoint['year'] . '-' . str_pad($dataPoint['month'], 2, '0', STR_PAD_LEFT)] = $count;
+            $chart['packages'][$dataPoint['year'] . '-' . str_pad((string) $dataPoint['month'], 2, '0', STR_PAD_LEFT)] = $count;
         }
 
         $count = 0;
         foreach ($versions as $dataPoint) {
-            $yearMonth = $dataPoint['year'] . '-' . str_pad($dataPoint['month'], 2, '0', STR_PAD_LEFT);
+            $yearMonth = $dataPoint['year'] . '-' . str_pad((string) $dataPoint['month'], 2, '0', STR_PAD_LEFT);
             $count += $dataPoint['count'];
             if (in_array($yearMonth, $chart['months'])) {
                 $chart['versions'][$yearMonth] = $count;

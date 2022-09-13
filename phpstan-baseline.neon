@@ -121,11 +121,6 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getCountByYearMonth\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependentCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
@@ -342,11 +337,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:detachToArray\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getCountByYearMonth\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/VersionRepository.php
 

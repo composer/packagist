@@ -261,6 +261,9 @@ class VersionRepository extends ServiceEntityRepository
         return (int) $result[0]['count'];
     }
 
+    /**
+     * @return array<int<0, max>, array{count: int, year: int|null, month: int|null}>
+     */
     public function getCountByYearMonth(): array
     {
         $sql = 'SELECT COUNT(*) count, YEAR(releasedAt) year, MONTH(releasedAt) month FROM `package_version` GROUP BY year, month';
