@@ -276,6 +276,9 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Please ask the owner to check their account')) {
                 // git clone says account is disabled on github for private repos(?) if cloning via https
                 $found404 = true;
+            } elseif ($e instanceof \RuntimeException && str_contains($e->getMessage(), '@github.com/') && str_contains($e->getMessage(), 'remote: Write access to repository not granted.') && str_contains($e->getMessage(), 'The requested URL returned error: 403')) {
+                // git clone failure on github with a 403 when the repo does not exist (or is private?)
+                $found404 = true;
             } elseif ($e instanceof TransportException && Preg::isMatch('{https://api.bitbucket.org/2.0/repositories/[^/]+/.+?\?fields=-project}i', $e->getMessage()) && $e->getStatusCode() == 404) {
                 // bitbucket api root returns a 404
                 $found404 = true;
