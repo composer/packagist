@@ -274,7 +274,7 @@ class UserController extends Controller
             ->handleRequest($req);
 
         $secret = (string) $req->getSession()->get('2fa_secret');
-        if (!$form->isSubmitted()) {
+        if (!$form->isSubmitted() || '' === $secret) {
             $secret = $authenticator->generateSecret();
             $req->getSession()->set('2fa_secret', $secret);
         }

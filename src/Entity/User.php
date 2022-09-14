@@ -41,7 +41,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     #[ORM\Column(type: 'string', length: 191)]
     #[Assert\Length(min: 2, max: 191, groups: ['Profile', 'Registration'])]
-    #[Assert\Regex(pattern: '{^[^/')]
+    #[Assert\Regex(pattern: '{^[^/"\r\n><#\[\]]{2,100}$}')]
     #[Assert\NotBlank(groups: ['Profile', 'Registration'])]
     private string $username;
 
