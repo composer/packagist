@@ -184,7 +184,6 @@ class DownloadManager
             $args[] = 'dl:'.$package;
             $args[] = 'dl:'.$package.':'.$day;
             $args[] = 'dl:'.$package.'-'.$version.':'.$day;
-            $args[] = 'php:'.$package.'-'.$minorVersion.':'.$phpMinor.':'.$day;
             $args[] = 'phpplatform:'.$package.'-'.$minorVersion.':'.$phpMinorPlatform.':'.$day;
         }
 

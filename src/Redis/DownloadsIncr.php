@@ -47,7 +47,7 @@ local successful = 0;
 for i, key in ipairs(KEYS) do
     if i <= 5 then
         -- nothing
-    elseif ((i - 6) % 6) == 0 then
+    elseif ((i - 5) % 5) == 0 then
         local requests = tonumber(redis.call("ZINCRBY", key, 1, ARGV[1]));
         if 1 == requests then
             redis.call("PEXPIREAT", key, tonumber(ARGV[4]));
