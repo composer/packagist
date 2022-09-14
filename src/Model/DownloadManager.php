@@ -148,6 +148,10 @@ class DownloadManager
      */
     public function addDownloads(array $jobs, string $ip, string $phpMinor, string $phpMinorPlatform): void
     {
+        if (!$jobs) {
+            return;
+        }
+
         $now = time();
         $throttleExpiry = strtotime('tomorrow 12:00:00', $now - 86400 / 2) * 1000;
         $throttleDay = date('Ymd', $throttleExpiry);
@@ -161,6 +165,7 @@ class DownloadManager
             $this->redisCommandLoaded = true;
         }
 
+        // init keys, see numInitKeys in lua script
         $args = [
             'downloads',
             'downloads:'.$day,
@@ -169,15 +174,12 @@ class DownloadManager
             'phpplatform:'.$phpMinorPlatform.':',
         ];
 
-        if (!$jobs) {
-            return;
-        }
-
         foreach ($jobs as $job) {
             $package = $job['id'];
             $version = $job['vid'];
             $minorVersion = str_replace(':', '', $job['minor']);
 
+            // job keys, see numKeysPerJob in lua script
             // throttle key
             $args[] = 'throttle:'.$package.':'.$throttleDay;
             // stats keys
@@ -187,6 +189,7 @@ class DownloadManager
             $args[] = 'phpplatform:'.$package.'-'.$minorVersion.':'.$phpMinorPlatform.':'.$day;
         }
 
+        // actual args, see ACTUAL ARGS in DownloadsIncr::getKeysCount
         $args[] = $ip;
         $args[] = $day;
         $args[] = $month;

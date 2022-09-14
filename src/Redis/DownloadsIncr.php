@@ -25,7 +25,7 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
             throw new \LogicException('getKeysCount called before filterArguments');
         }
 
-        return count($this->args) - 4;
+        return count($this->args) - 4 /* ACTUAL ARGS */;
     }
 
     /**
@@ -44,10 +44,12 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
         return <<<LUA
 local doIncr = false;
 local successful = 0;
+local numInitKeys = 6
+local numKeysPerJob = 5
 for i, key in ipairs(KEYS) do
-    if i <= 5 then
+    if i < numInitKeys then
         -- nothing
-    elseif ((i - 5) % 5) == 0 then
+    elseif ((i - numInitKeys) % numKeysPerJob) == 0 then
         local requests = tonumber(redis.call("ZINCRBY", key, 1, ARGV[1]));
         if 1 == requests then
             redis.call("PEXPIREAT", key, tonumber(ARGV[4]));
