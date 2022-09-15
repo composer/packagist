@@ -72,6 +72,7 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface
             $package->addMaintainer($maintainer);
             $package->setRepository($repoUrl);
 
+            $manager->getRepository(Vendor::class)->createIfNotExists($package->getVendor());
             $manager->persist($package);
 
             $this->providerManager->insertPackage($package);

@@ -15,6 +15,7 @@ namespace App\Controller;
 use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
 use App\Entity\User;
+use App\Entity\Vendor;
 use App\Model\DownloadManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
@@ -98,6 +99,7 @@ class ApiController extends Controller
         }
         try {
             $em = $this->getEM();
+            $em->getRepository(Vendor::class)->createIfNotExists($package->getVendor());
             $em->persist($package);
             $em->flush();
 

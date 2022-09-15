@@ -212,6 +212,8 @@ class PackageController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $em = $this->getEM();
+
+                $em->getRepository(Vendor::class)->createIfNotExists($package->getVendor());
                 $em->persist($package);
                 $em->flush();
 

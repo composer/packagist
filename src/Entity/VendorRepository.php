@@ -31,6 +31,14 @@ class VendorRepository extends ServiceEntityRepository
         return (bool) $this->getEntityManager()->getConnection()->fetchOne('SELECT verified FROM vendor WHERE name = :vendor', ['vendor' => $vendor]);
     }
 
+    public function createIfNotExists(string $vendor): bool
+    {
+        $this->getEntityManager()->getConnection()->executeStatement(
+            'INSERT INTO vendor (name, verified) VALUES (:vendor, 0) ON DUPLICATE KEY UPDATE name=name',
+            ['vendor' => $vendor]
+        );
+    }
+
     public function verify(string $vendor): void
     {
         $this->getEntityManager()->getConnection()->executeStatement(
