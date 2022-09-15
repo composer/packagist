@@ -39,7 +39,7 @@ class PhpStatRepository extends ServiceEntityRepository
             ->getQuery();
 
         $query->setParameters(
-            ['package' => $package, 'type' => PhpStat::TYPE_PHP]
+            ['package' => $package, 'type' => PhpStat::TYPE_PLATFORM]
         );
 
         return $query->getArrayResult();
@@ -218,7 +218,7 @@ class PhpStatRepository extends ServiceEntityRepository
     {
         $minorPhpVersions = $this->getEntityManager()->getConnection()->fetchFirstColumn(
             'SELECT DISTINCT stats.php_minor AS php_minor
-            FROM (SELECT DISTINCT JSON_KEYS(p.data) as versions FROM php_stat p WHERE p.package_id = :package AND p.type = :type AND p.depth IN (:exact, :major)) AS x, 
+            FROM (SELECT DISTINCT JSON_KEYS(p.data) as versions FROM php_stat p WHERE p.package_id = :package AND p.type = :type AND p.depth IN (:exact, :major)) AS x,
             JSON_TABLE(x.versions, \'$[*]\' COLUMNS (php_minor VARCHAR(191) PATH \'$\')) stats',
             ['package' => $package->getId(), 'type' => $type, 'exact' => PhpStat::DEPTH_EXACT, 'major' => PhpStat::DEPTH_MAJOR]
         );
