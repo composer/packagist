@@ -23,9 +23,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class ChangePasswordController extends Controller
 {
-    /**
-     * @IsGranted("ROLE_USER")
-     */
+    #[IsGranted('ROLE_USER')]
     #[Route(path: '/profile/change-password', name: 'change_password')]
     public function changePasswordAction(Request $request, UserPasswordHasherInterface $passwordHasher, #[CurrentUser] User $user): Response
     {

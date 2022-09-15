@@ -14,12 +14,16 @@ namespace App\EventListener;
 
 use App\Entity\SecurityAdvisory;
 use App\Util\DoctrineTrait;
+use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
 
+#[AsEntityListener(event: 'postUpdate', entity: SecurityAdvisory::class)]
+#[AsEntityListener(event: 'postPersist', entity: SecurityAdvisory::class)]
+#[AsEntityListener(event: 'postRemove', entity: SecurityAdvisory::class)]
 class SecurityAdvisoryUpdateListener
 {
     use DoctrineTrait;

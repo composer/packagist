@@ -66,21 +66,6 @@ services:
 
     Graze\DogStatsD\Client: ~
 
-    App\EventListener\CacheListener:
-        tags:
-            - { name: kernel.event_listener, event: kernel.response, method: onResponse }
-
-    App\EventListener\RequestStatsListener:
-        tags:
-            - { name: kernel.event_listener, event: kernel.request, method: onRequest }
-            - { name: kernel.event_listener, event: kernel.response, method: onResponse }
-
-    App\EventListener\SecurityAdvisoryUpdateListener:
-        tags:
-            - { name: 'doctrine.orm.entity_listener', event: postUpdate, entity: App\Entity\SecurityAdvisory }
-            - { name: 'doctrine.orm.entity_listener', event: postPersist, entity: App\Entity\SecurityAdvisory }
-            - { name: 'doctrine.orm.entity_listener', event: postRemove, entity: App\Entity\SecurityAdvisory }
-
     App\ArgumentResolver\:
         resource: '../src/ArgumentResolver/*.php'
         tags:
