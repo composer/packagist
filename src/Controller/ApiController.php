@@ -209,10 +209,9 @@ class ApiController extends Controller
      *     ]
      * }
      *
-     * The version must be the normalized one
-     *
-     * @Route("/downloads/", name="track_download_batch", defaults={"_format" = "json"}, methods={"POST"})
+     * The version must be the normalized one.
      */
+    #[Route(path: '/downloads/', name: 'track_download_batch', defaults: ['_format' => 'json'], methods: ['POST'])]
     public function trackDownloadsAction(Request $request, StatsDClient $statsd, string $trustedIpHeader, DownloadManager $downloadManager, VersionIdCache $versionIdCache): JsonResponse
     {
         $contents = json_decode($request->getContent(), true);

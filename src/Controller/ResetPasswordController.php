@@ -73,9 +73,8 @@ class ResetPasswordController extends Controller
 
     /**
      * Confirmation page after a user has requested a password reset.
-     *
-     * @Route("/reset-password/check-email", name="request_pwd_check_email")
      */
+    #[Route('/reset-password/check-email', name: 'request_pwd_check_email')]
     public function checkEmail(): Response
     {
         return $this->render('reset_password/check_email.html.twig');
@@ -83,9 +82,8 @@ class ResetPasswordController extends Controller
 
     /**
      * Validates and process the reset URL that the user clicked in their email.
-     *
-     * @Route("/reset-password/reset/{token}", name="do_pwd_reset")
      */
+    #[Route(path: '/reset-password/reset/{token}', name: 'do_pwd_reset')]
     public function reset(Request $request, UserPasswordHasherInterface $passwordHasher, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator, ?string $token = null): Response
     {
         if (null === $token) {

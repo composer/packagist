@@ -126,16 +126,13 @@ class GitHubLoginController extends Controller
      * After going to GitHub, you're redirected back here
      * because this is the "redirect_route" you configured
      * in config/packages/knpu_oauth2_client.yaml
-     *
-     * @Route("/login/github/check", name="login_github_check", defaults={"_format"="html"})
      */
+    #[Route(path: '/login/github/check', name: 'login_github_check', defaults: ['_format' => 'html'])]
     public function loginCheck(Request $request, ClientRegistry $clientRegistry): void
     {
     }
 
-    /**
-     * @Route("/oauth/github/disconnect", name="user_github_disconnect")
-     */
+    #[Route(path: '/oauth/github/disconnect', name: 'user_github_disconnect')]
     public function disconnect(Request $req, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] User $user): RedirectResponse
     {
         if (!$this->isCsrfTokenValid('unlink_github', $req->query->get('token', ''))) {

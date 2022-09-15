@@ -13,6 +13,7 @@
 namespace App\EventListener;
 
 use Graze\DogStatsD\Client;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
@@ -24,6 +25,7 @@ class RequestStatsListener
         private Client $statsd,
     ) {}
 
+    #[AsEventListener]
     public function onRequest(RequestEvent $e): void
     {
         if (!$e->isMainRequest()) {
@@ -32,6 +34,7 @@ class RequestStatsListener
         $this->pageTiming = microtime(true);
     }
 
+    #[AsEventListener]
     public function onResponse(ResponseEvent $e): void
     {
         if (!$e->isMainRequest()) {

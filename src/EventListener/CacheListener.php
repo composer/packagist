@@ -12,11 +12,13 @@
 
 namespace App\EventListener;
 
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
+#[AsEventListener]
 class CacheListener
 {
-    public function onResponse(ResponseEvent $e): void
+    public function __invoke(ResponseEvent $e): void
     {
         $resp = $e->getResponse();
 

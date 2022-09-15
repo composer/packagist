@@ -429,9 +429,7 @@ class PackageController extends Controller
         return $this->render('package/spam.html.twig', $data);
     }
 
-    /**
-     * @IsGranted("ROLE_ANTISPAM")
-     */
+    #[IsGranted('ROLE_ANTISPAM')]
     #[Route(path: '/spam/nospam', name: 'mark_nospam', defaults: ['_format' => 'html'], methods: ['POST'])]
     public function markSafeAction(Request $req): RedirectResponse
     {
