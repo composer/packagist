@@ -97,7 +97,7 @@ class MigratePhpStatsCommand extends Command
             $lastPackageId = null;
             while ($keysToUpdate) {
                 $key = array_shift($keysToUpdate);
-                if (!Preg::isMatch('{^php(?:platform)?:(\d+)}', $key, $m)) {
+                if (!Preg::isMatch('{^phpplatform:(\d+)}', $key, $m)) {
                     $this->logger->error('Invalid php key found: '.$key);
                     continue;
                 }

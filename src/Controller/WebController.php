@@ -183,7 +183,7 @@ class WebController extends Controller
     }
 
     #[Route('/php-statistics', name: 'php_stats', methods: 'GET')]
-    public function phpStatsAction(): Response
+    public function phpStatsAction(Request $req): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -207,12 +207,15 @@ class WebController extends Controller
             // 'hhvm', // honorable mention here but excluded as it's so low (below 0.00%) it's irrelevant
         ];
 
-        $dailyData = $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'days', 'php');
-        $monthlyData = $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'months', 'php');
+        $type = $req->query->getInt('platform', 0) > 0 ? 'phpplatform' : 'php';
+
+        $dailyData = $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'days', $type);
+        $monthlyData = $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'months', $type);
 
         $resp = $this->render('web/php_stats.html.twig', [
             'dailyData' => $dailyData,
             'monthlyData' => $monthlyData,
+            'type' => $type,
         ]);
         $resp->setSharedMaxAge(1800);
         $resp->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
