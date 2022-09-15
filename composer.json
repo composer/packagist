@@ -76,6 +76,7 @@
         "symfony/serializer": "^6",
         "symfony/translation": "^6",
         "symfony/twig-bundle": "^6",
+        "symfony/uid": "^6.1",
         "symfony/validator": "^6",
         "symfony/web-link": "^6",
         "symfony/yaml": "^6",
