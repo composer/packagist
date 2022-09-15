@@ -26,11 +26,8 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
     use DoctrineTrait;
 
-    private ManagerRegistry $doctrine;
-
-    public function __construct(ManagerRegistry $doctrine)
+    public function __construct(private readonly ManagerRegistry $doctrine)
     {
-        $this->doctrine = $doctrine;
     }
 
     public function loadUserByIdentifier(string $usernameOrEmail): User
