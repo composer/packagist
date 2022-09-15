@@ -290,7 +290,7 @@ class Package
 
             if (
                 Preg::isMatch('{^([^/]*(symfony)[^/]*)/}', $information['name'], $match)
-                && !$this->entityRepository->isVendorTaken($match[1])
+                && !$this->entityRepository?->isVendorTaken($match[1])
             ) {
                 $context->buildViolation('The vendor name '.htmlentities($match[1], ENT_COMPAT, 'utf-8').' is blocked, if you think this is a mistake please get in touch with us.')
                     ->atPath($property)

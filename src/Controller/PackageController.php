@@ -915,6 +915,7 @@ class PackageController extends Controller
             throw new AccessDeniedException;
         }
 
+        $package->setEntityRepository($this->getEM()->getRepository(Package::class));
         $form = $this->createFormBuilder($package, ["validation_groups" => ["Update"]])
             ->add('repository', TextType::class)
             ->setMethod('POST')

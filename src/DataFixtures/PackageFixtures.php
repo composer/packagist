@@ -7,6 +7,7 @@ namespace App\DataFixtures;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Entity\Vendor;
 use App\Model\ProviderManager;
 use App\Service\UpdaterWorker;
 use DateTime;
