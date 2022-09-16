@@ -694,10 +694,14 @@ class PackageController extends Controller
 
         $repo = $this->getEM()->getRepository(Version::class);
 
-        $html = $this->renderView(
-            'package/version_details.html.twig',
-            ['version' => $repo->getFullVersion($versionId)]
-        );
+        try {
+            $html = $this->renderView(
+                'package/version_details.html.twig',
+                ['version' => $repo->getFullVersion($versionId)]
+            );
+        } catch (NoResultException $e) {
+            return new JsonResponse(['status' => 'error', 'message' => 'The version could not be found, it may have been deleted in the meantime? Try reloading the page.'], 404);
+        }
 
         return new JsonResponse(['content' => $html]);
     }

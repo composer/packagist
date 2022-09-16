@@ -34,10 +34,13 @@ const init = function ($) {
                 dataType: 'json',
                 success: function (data) {
                     versionCache[target.attr('data-version-id')] = data.content;
+                    $('.package .version-details')
+                        .html(data.content);
+                },
+                complete: () => {
                     ongoingRequest = false;
                     $('.package .version-details')
                         .removeClass('loading')
-                        .html(data.content);
                 }
             });
         }
