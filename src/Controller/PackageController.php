@@ -201,12 +201,10 @@ class PackageController extends Controller
     public function submitPackageAction(Request $req, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, LoggerInterface $logger, MailerInterface $mailer, string $mailFromEmail, #[CurrentUser] User $user): Response
     {
         $package = new Package;
-        $package->setEntityRepository($this->getEM()->getRepository(Package::class));
-        $package->setRouter($router);
+        $package->addMaintainer($user);
         $form = $this->createForm(PackageType::class, $package, [
             'action' => $this->generateUrl('submit'),
         ]);
-        $package->addMaintainer($user);
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -242,10 +240,8 @@ class PackageController extends Controller
     public function fetchInfoAction(Request $req, RouterInterface $router, #[CurrentUser] User $user): JsonResponse
     {
         $package = new Package;
-        $package->setEntityRepository($this->getEM()->getRepository(Package::class));
-        $package->setRouter($router);
-        $form = $this->createForm(PackageType::class, $package);
         $package->addMaintainer($user);
+        $form = $this->createForm(PackageType::class, $package);
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -915,7 +911,6 @@ class PackageController extends Controller
             throw new AccessDeniedException;
         }
 
-        $package->setEntityRepository($this->getEM()->getRepository(Package::class));
         $form = $this->createFormBuilder($package, ["validation_groups" => ["Update"]])
             ->add('repository', TextType::class)
             ->setMethod('POST')

@@ -23,6 +23,35 @@ use DateTimeInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ * @phpstan-type VersionArray array{
+ *     name: string,
+ *     description: string,
+ *     keywords: list<string>,
+ *     homepage: string,
+ *     version: non-empty-string,
+ *     version_normalized: non-empty-string,
+ *     license: list<string>,
+ *     authors: array<array{email?: string, homepage?: string, name?: string, role?: string}>,
+ *     source: array<mixed>,
+ *     dist: array<mixed>,
+ *     type: string|null,
+ *     support?: array<mixed>,
+ *     funding?: array<mixed>,
+ *     time?: string,
+ *     autoload?: array<mixed>,
+ *     extra?: array<mixed>,
+ *     target-dir?: string,
+ *     include-path?: list<string>,
+ *     bin?: list<string>,
+ *     default-branch?: true,
+ *     require?: array<string, string>,
+ *     require-dev?: array<string, string>,
+ *     suggest?: array<string, string>,
+ *     conflict?: array<string, string>,
+ *     provide?: array<string, string>,
+ *     replace?: array<string, string>,
+ *     abandoned?: string|true
+ * }
  */
 #[ORM\Entity(repositoryClass: 'App\Entity\VersionRepository')]
 #[ORM\Table(name: 'package_version')]
@@ -202,6 +231,9 @@ class Version
         $this->updatedAt = new \DateTimeImmutable;
     }
 
+    /**
+     * @return VersionArray
+     */
     public function toArray(array $versionData, bool $serializeForApi = false): array
     {
         if (isset($versionData[$this->id]['tags'])) {
@@ -278,6 +310,7 @@ class Version
                 }
                 continue;
             }
+            /** @var PackageLink $link */
             foreach ($this->{'get'.$method}() as $link) {
                 $link = $link->toArray();
                 $data[$linkType][key($link)] = current($link);
@@ -291,6 +324,9 @@ class Version
         return $data;
     }
 
+    /**
+     * @return VersionArray
+     */
     public function toV2Array(array $versionData): array
     {
         $array = $this->toArray($versionData);

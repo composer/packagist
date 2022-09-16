@@ -84,8 +84,6 @@ class ApiController extends Controller
 
         $url = $payload['repository']['url'];
         $package = new Package;
-        $package->setEntityRepository($this->getEM()->getRepository(Package::class));
-        $package->setRouter($router);
         $package->addMaintainer($user);
         $package->setRepository($url);
         $errors = $validator->validate($package, groups: ['Default', 'Create']);
