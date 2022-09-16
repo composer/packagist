@@ -72,24 +72,14 @@ services:
             - { name: controller.argument_value_resolver, priority: 101 } # Put these above RequestAttributeValueResolver
 
     App\Package\SymlinkDumper:
-        arguments:
-            $webDir: '%kernel.project_dir%/web/'
-            $targetDir: '%packagist_metadata_dir%'
-            $compress: '%packagist_dumper_compress%'
+        $targetDir: '%packagist_metadata_dir%'
+        $compress: '%packagist_dumper_compress%'
 
     App\Package\V2Dumper:
-        arguments:
-            $webDir: '%kernel.project_dir%/web/'
-            $targetDir: '%packagist_metadata_dir%'
-
-    App\Security\Provider\UserProvider: ~
+        $targetDir: '%packagist_metadata_dir%'
 
     App\Model\PackageManager:
-        bind:
-            $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
-
-    App\Menu\MenuBuilder:
-        arguments: ['@knp_menu.factory', '@security.token_storage', '@translator']
+        $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
 
     packagist.menu.user:
         class: Knp\Menu\MenuItem
@@ -108,13 +98,10 @@ services:
         factory: ['Algolia\AlgoliaSearch\SearchClient', create]
 
     App\Service\QueueWorker:
-        arguments:
-            - "@snc_redis.default"
-            - "@doctrine"
-            - "@logger"
-            - 'package:updates': '@App\Service\UpdaterWorker'
-              'githubuser:migrate': '@App\Service\GitHubUserMigrationWorker'
-              'security:advisory': '@App\Service\SecurityAdvisoryWorker'
+        $jobWorkers:
+            'package:updates': '@App\Service\UpdaterWorker'
+            'githubuser:migrate': '@App\Service\GitHubUserMigrationWorker'
+            'security:advisory': '@App\Service\SecurityAdvisoryWorker'
 
     App\Security\TwoFactorAuthManager:
         public: true
@@ -123,10 +110,9 @@ services:
             $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
 
     App\Service\SecurityAdvisoryWorker:
-        bind:
-            $sources:
-                'FriendsOfPHP/security-advisories': '@App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource'
-                'GitHub': '@App\SecurityAdvisory\GitHubSecurityAdvisoriesSource'
+        $sources:
+            'FriendsOfPHP/security-advisories': '@App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource'
+            'GitHub': '@App\SecurityAdvisory\GitHubSecurityAdvisoriesSource'
 
     Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
         arguments: ['@snc_redis.cache', {prefix: 'sess:', ttl: 3600}]
