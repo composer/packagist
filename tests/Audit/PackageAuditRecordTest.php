@@ -1,0 +1,70 @@
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Tests\Controller;
+
+use App\Audit\AuditRecordType;
+use Doctrine\DBAL\Connection;
+use Doctrine\Persistence\ManagerRegistry;
+use Exception;
+use App\Entity\Package;
+use App\Entity\User;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+
+class PackageAuditRecordTest extends KernelTestCase
+{
+    public function setUp(): void
+    {
+        self::bootKernel();
+        static::getContainer()->get(Connection::class)->beginTransaction();
+
+        parent::setUp();
+    }
+
+    public function tearDown(): void
+    {
+        static::getContainer()->get(Connection::class)->rollBack();
+
+        parent::tearDown();
+    }
+
+    public function testPackageChangesGetRecorded()
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        $package = new Package();
+        $package->setRepository('https://github.com/composer/composer');
+
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
+        self::assertCount(1, $logs);
+        self::assertSame(AuditRecordType::PackageCreated->value, $logs[0]['type']);
+
+        $package->setRepository('https://github.com/composer/packagist');
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
+        self::assertCount(2, $logs);
+        self::assertSame(AuditRecordType::CanonicalUrlChange->value, $logs[0]['type']);
+        self::assertSame('{"name": "composer/composer", "actor": "unknown", "repository_to": "https://github.com/composer/packagist", "repository_from": "https://github.com/composer/composer"}', $logs[0]['attributes']);
+
+        $em->remove($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
+        self::assertCount(3, $logs);
+        self::assertSame(AuditRecordType::PackageDeleted->value, $logs[0]['type']);
+    }
+}
