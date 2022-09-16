@@ -24,24 +24,24 @@ class AuditRecord
     #[ORM\Column(type: 'ulid')]
     public readonly Ulid $id;
 
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[ORM\Column]
     public readonly DateTimeImmutable $datetime;
 
     private function __construct(
-        #[ORM\Column(length: 255, enumType: AuditRecordType::class)]
+        #[ORM\Column]
         public readonly AuditRecordType $type,
 
         /** @var array<string, mixed> */
-        #[ORM\Column]
+        #[ORM\Column(type: Types::JSON)]
         public readonly array $attributes,
 
-        #[ORM\Column(type: Types::INTEGER, nullable: true)]
+        #[ORM\Column(nullable: true)]
         public readonly int|null $userId = null,
 
         #[ORM\Column(nullable: true)]
         public readonly string|null $vendor = null,
 
-        #[ORM\Column(type: Types::INTEGER, nullable: true)]
+        #[ORM\Column(nullable: true)]
         public readonly int|null $packageId = null,
     ) {
         $this->id = new Ulid();
