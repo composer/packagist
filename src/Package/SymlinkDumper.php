@@ -25,6 +25,7 @@ use Doctrine\DBAL\Connection;
 use App\HealthCheck\MetadataDirCheck;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
+use Webmozart\Assert\Assert;
 
 /**
  * v1 Metadata Dumper
@@ -35,65 +36,58 @@ class SymlinkDumper
 {
     use \App\Util\DoctrineTrait;
 
-    protected ManagerRegistry $doctrine;
-    protected Filesystem $fs;
-    protected ComposerFilesystem $cfs;
-    protected string $webDir;
-    protected string $buildDir;
-    protected UrlGeneratorInterface $router;
-    private array $awsMeta;
-    private StatsDClient $statsd;
-    private Logger $logger;
-
-    /**
-     * Generate compressed files.
-     * @var int 0 disabled, 9 maximum.
-     */
-    private int $compress;
+    private ComposerFilesystem $cfs;
 
     /**
      * Data cache
+     * @var array<string, mixed>
      */
     private array $rootFile;
 
     /**
      * Data cache
+     * @var array<string, mixed>
      */
     private array $listings = [];
 
     /**
      * Data cache
+     * @var array<string, mixed>
      */
     private array $individualFiles = [];
 
     /**
      * Modified times of individual files
+     * @var array<string, mixed>
      */
     private array $individualFilesMtime = [];
 
     /**
      * Stores all the disk writes to be replicated in the second build dir after the symlink has been swapped
-     * @var array|false
+     * @var array<string, array{string, int|null}>|false
      */
-    private $writeLog = [];
+    private array|bool $writeLog = [];
 
-    /**
-     * Constructor
-     *
-     * @param string                $webDir     web root
-     */
-    public function __construct(ManagerRegistry $doctrine, Filesystem $filesystem, UrlGeneratorInterface $router, string $webDir, string $targetDir, int $compress, $awsMetadata, StatsDClient $statsd, Logger $logger)
-    {
-        $this->doctrine = $doctrine;
-        $this->fs = $filesystem;
+    public function __construct(
+        private ManagerRegistry $doctrine,
+        private Filesystem $filesystem,
+        private UrlGeneratorInterface $router,
+        private string $webDir,
+        private string $buildDir,
+        /**
+         * Generate compressed files.
+         * @var int 0 disabled, 9 maximum.
+         */
+        private int $compress,
+        /** @var AwsMetadata */
+        private array $awsMetadata,
+        private StatsDClient $statsd,
+        private Logger $logger,
+    ) {
+        $webDir = realpath($webDir);
+        Assert::string($webDir);
+        $this->webDir = $webDir;
         $this->cfs = new ComposerFilesystem;
-        $this->router = $router;
-        $this->webDir = realpath($webDir);
-        $this->buildDir = $targetDir;
-        $this->compress = $compress;
-        $this->awsMeta = $awsMetadata;
-        $this->statsd = $statsd;
-        $this->logger = $logger;
     }
 
     /**
@@ -103,7 +97,7 @@ class SymlinkDumper
      */
     public function dump(array $packageIds, bool $force = false, bool $verbose = false, ?SignalHandler $signal = null): bool
     {
-        if (!MetadataDirCheck::isMetadataStoreMounted($this->awsMeta)) {
+        if (!MetadataDirCheck::isMetadataStoreMounted($this->awsMetadata)) {
             throw new \RuntimeException('Metadata store not mounted, can not dump metadata');
         }
 
@@ -120,8 +114,8 @@ class SymlinkDumper
             if (!$this->removeDirectory($buildDirA) || !$this->removeDirectory($buildDirB)) {
                 throw new \RuntimeException('Failed to delete '.$buildDirA.' or '.$buildDirB);
             }
-            $this->fs->mkdir($buildDirA);
-            $this->fs->mkdir($buildDirB);
+            $this->filesystem->mkdir($buildDirA);
+            $this->filesystem->mkdir($buildDirB);
         }
 
         // set build dir to the not-active one
@@ -209,10 +203,10 @@ class SymlinkDumper
 
                     // clean up versions in individual files
                     if (file_exists($buildDir.'/'.$name.'.files')) {
-                        $files = json_decode(file_get_contents($buildDir.'/'.$name.'.files'));
+                        $files = json_decode((string) file_get_contents($buildDir.'/'.$name.'.files'));
 
                         foreach ($files as $file) {
-                            assert(is_string($file));
+                            Assert::string($file);
                             if (substr_count($file, '/') > 1) { // handle old .files with p/*/*.json paths
                                 $file = Preg::replace('{^p/}', '', $file);
                             }
@@ -245,7 +239,7 @@ class SymlinkDumper
                     }
 
                     // store affected files to clean up properly in the next update
-                    $this->fs->mkdir(dirname($buildDir.'/'.$name));
+                    $this->filesystem->mkdir(dirname($buildDir.'/'.$name));
                     $this->writeFileNonAtomic($buildDir.'/'.$name.'.files', json_encode(array_keys($affectedFiles), JSON_THROW_ON_ERROR));
 
                     $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
@@ -482,7 +476,7 @@ class SymlinkDumper
         exec('cp -rpf '.escapeshellarg($source).' '.escapeshellarg($target), $output, $exit);
         if (0 !== $exit) {
             echo 'Warning, cloning a directory using the php fallback does not keep filemtime, invalid behavior may occur';
-            $this->fs->mirror($source, $target, null, ['override' => true]);
+            $this->filesystem->mirror($source, $target, null, ['override' => true]);
         }
     }
 
@@ -495,12 +489,12 @@ class SymlinkDumper
         if (!file_exists($rootFile) || !is_dir($this->buildDir.'/a')) {
             return;
         }
-        $rootJson = json_decode(file_get_contents($rootFile), true);
+        $rootJson = json_decode((string) file_get_contents($rootFile), true);
         foreach ($rootJson['provider-includes'] as $listing => $opts) {
             $listing = str_replace('%hash%', $opts['sha256'], $listing);
             $safeFiles[basename($listing)] = true;
 
-            $listingJson = json_decode(file_get_contents($this->webDir.'/'.$listing), true);
+            $listingJson = json_decode((string) file_get_contents($this->webDir.'/'.$listing), true);
             foreach ($listingJson['providers'] as $pkg => $pkgOpts) {
                 $provPath = $pkg.'$'.$pkgOpts['sha256'].'.json';
                 $safeFiles[$provPath] = true;
@@ -629,7 +623,7 @@ class SymlinkDumper
         }
 
         if (file_exists($path)) {
-            $this->individualFiles[$key] = json_decode(file_get_contents($path), true);
+            $this->individualFiles[$key] = json_decode((string) file_get_contents($path), true);
             $this->individualFilesMtime[$key] = filemtime($path);
         } else {
             $this->individualFiles[$key] = [];
@@ -656,7 +650,7 @@ class SymlinkDumper
             ksort($this->individualFiles[$key]['packages'][$package]);
         }
 
-        $this->fs->mkdir(dirname($path));
+        $this->filesystem->mkdir(dirname($path));
 
         $flags = 0;
         if (count($this->individualFiles[$key]['packages']) === 0) {
@@ -670,6 +664,9 @@ class SymlinkDumper
         $this->writeFile($hashedFile, $json);
     }
 
+    /**
+     * @param VersionData $versionData
+     */
     private function dumpVersionToIndividualFile(Version $version, string $file, string $key, array $versionData): void
     {
         $this->loadIndividualFile($file, $key);
@@ -692,7 +689,7 @@ class SymlinkDumper
 
             return false;
         }
-        $this->fs->mkdir($path);
+        $this->filesystem->mkdir($path);
 
         return true;
     }
@@ -787,10 +784,12 @@ class SymlinkDumper
 
     private function copyWriteLog(string $from, string $to): void
     {
+        Assert::isArray($this->writeLog);
+
         foreach ($this->writeLog as $path => $op) {
             $path = str_replace($from, $to, $path);
 
-            $this->fs->mkdir(dirname($path));
+            $this->filesystem->mkdir(dirname($path));
             file_put_contents($path, $op[0]);
             if ($op[1] !== null) {
                 touch($path, $op[1]);

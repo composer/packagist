@@ -20,6 +20,7 @@ use App\Entity\Job;
 use Seld\Signal\SignalHandler;
 use Graze\DogStatsD\Client as StatsDClient;
 use TypeError;
+use Webmozart\Assert\Assert;
 
 class QueueWorker
 {
@@ -176,9 +177,8 @@ class QueueWorker
             return true;
         }
 
-        if (!isset($result['message']) || !isset($result['status'])) {
-            throw new \LogicException('$result must be an array with at least status and message keys');
-        }
+        Assert::keyExists($result, 'message');
+        Assert::keyExists($result, 'status');
 
         if (!in_array($result['status'], [Job::STATUS_COMPLETED, Job::STATUS_FAILED, Job::STATUS_ERRORED, Job::STATUS_PACKAGE_GONE, Job::STATUS_PACKAGE_DELETED], true)) {
             throw new \LogicException('$result[\'status\'] must be one of '.Job::STATUS_COMPLETED.' or '.Job::STATUS_FAILED.', '.$result['status'].' given');

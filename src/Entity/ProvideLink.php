@@ -22,5 +22,6 @@ use Doctrine\ORM\Mapping as ORM;
 class ProvideLink extends PackageLink
 {
     #[ORM\ManyToOne(targetEntity: 'App\Entity\Version', inversedBy: 'provide')]
-    protected Version|null $version = null;
+    #[ORM\JoinColumn(name: 'version_id', nullable: false, referencedColumnName: 'id')]
+    protected Version $version;
 }

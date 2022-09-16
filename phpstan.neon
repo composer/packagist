@@ -6,6 +6,7 @@ includes:
     - vendor/phpstan/phpstan-doctrine/rules.neon
     - vendor/phpstan/phpstan-symfony/extension.neon
     - vendor/phpstan/phpstan-symfony/rules.neon
+    - vendor/phpstan/phpstan-webmozart-assert/extension.neon
     - vendor/staabm/phpstan-dba/config/dba.neon
 
 parameters:
@@ -36,3 +37,9 @@ parameters:
         - '~Property App\\Entity\\Dependent::\$type type mapping mismatch: database can contain int but property expects~'
         - '~Property App\\Entity\\PhpStat::\$type type mapping mismatch: database can contain int but property expects~'
         - '~Property App\\Entity\\PhpStat::\$depth type mapping mismatch: database can contain int but property expects~'
+
+    typeAliases:
+        AwsMetadata: 'array{}|array{ec2_node: string, ip: string, region: string, primary: bool, has_instance_store: bool, is_worker: bool, is_web: bool}'
+
+        VersionData: 'array<int, array{require: VersionDataLinks, devRequire: VersionDataLinks, suggest: VersionDataLinks, conflict: VersionDataLinks, provide: VersionDataLinks, replace: VersionDataLinks, tags: list<string>}>'
+        VersionDataLinks: 'array<array{version_id: int, name: string, version: string}>'

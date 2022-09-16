@@ -137,7 +137,12 @@ class GitHubUserMigrationWorker
                 $configWithoutSecret = $hook['config'];
                 unset($configWithoutSecret['secret'], $expectedConfigWithoutSecret['secret']);
 
-                if ($hook['updated_at'] < '2018-09-04T13:00:00' || $hook['events'] != $hookData['events'] || $configWithoutSecret != $expectedConfigWithoutSecret || !$hook['active']) {
+                if (
+                    $hook['updated_at'] < '2018-09-04T13:00:00'
+                    || $hook['events'] != $hookData['events']
+                    || $configWithoutSecret != $expectedConfigWithoutSecret
+                    || !$hook['active']
+                ) {
                     $this->logger->debug('Updating hook '.$hook['id']);
                     $this->request($token, 'PATCH', 'repos/'.$repoKey.'/hooks/'.$hook['id'], $hookData);
                     $changed = true;
@@ -226,7 +231,9 @@ class GitHubUserMigrationWorker
      *     events: string[],
      *     config: array{
      *         url: string,
-     *         secret: string
+     *         content_type: string,
+     *         secret: string,
+     *         insecure_ssl: numeric-string|int
      *     },
      *     updated_at: string
      * }>

@@ -18,9 +18,6 @@ use Laminas\Diagnostics\Result\ResultInterface;
 use Laminas\Diagnostics\Result\Success;
 use Symfony\Component\Process\Process;
 
-/**
- * @phpstan-type AwsMetadata array{}|array{ec2_node: string, ip: string, region: string, primary: bool, has_instance_store: bool, is_worker: bool, is_web: bool}
- */
 class MetadataDirCheck implements CheckInterface
 {
     /**

@@ -72,11 +72,11 @@ services:
             - { name: controller.argument_value_resolver, priority: 101 } # Put these above RequestAttributeValueResolver
 
     App\Package\SymlinkDumper:
-        $targetDir: '%packagist_metadata_dir%'
+        $buildDir: '%packagist_metadata_dir%'
         $compress: '%packagist_dumper_compress%'
 
     App\Package\V2Dumper:
-        $targetDir: '%packagist_metadata_dir%'
+        $buildDir: '%packagist_metadata_dir%'
 
     App\Model\PackageManager:
         $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }

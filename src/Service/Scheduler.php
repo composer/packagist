@@ -129,6 +129,9 @@ class Scheduler
         return $results;
     }
 
+    /**
+     * @param array<string, string|int|bool> $payload
+     */
     private function createJob(string $type, array $payload, ?int $packageId = null, ?\DateTimeInterface $executeAfter = null): Job
     {
         $jobId = bin2hex(random_bytes(20));
@@ -147,7 +150,7 @@ class Scheduler
 
         // trigger immediately if not scheduled for later
         if (!$job->getExecuteAfter()) {
-            $this->redis->lpush('jobs', $job->getId());
+            $this->redis->lpush('jobs', [$job->getId()]);
         }
 
         return $job;

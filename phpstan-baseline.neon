@@ -56,11 +56,6 @@ parameters:
 			path: src/Entity/DownloadRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Job\\:\\:__construct\\(\\) has parameter \\$payload with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Job.php
-
-		-
 			message: "#^Method App\\\\Entity\\\\Job\\:\\:complete\\(\\) has parameter \\$result with no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Job.php
@@ -72,11 +67,6 @@ parameters:
 
 		-
 			message: "#^Method App\\\\Entity\\\\Job\\:\\:getResult\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Job.php
-
-		-
-			message: "#^Property App\\\\Entity\\\\Job\\:\\:\\$payload type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Job.php
 
@@ -94,6 +84,11 @@ parameters:
 			message: "#^Property App\\\\Entity\\\\Job\\:\\:\\$status type mapping mismatch\\: database can contain string but property expects 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'reschedule'\\|'started'\\|'timeout'\\.$#"
 			count: 1
 			path: src/Entity/Job.php
+
+		-
+			message: "#^Method App\\\\Entity\\\\Package\\:\\:toArray\\(\\) should return array\\{name\\: string, description\\: string\\|null, time\\: string, maintainers\\: array\\<int, array\\{name\\: string, avatar_url\\: string\\}\\>, versions\\: array\\<App\\\\Entity\\\\Version\\>, type\\: string\\|null, repository\\: string, github_stars\\: int\\|null, \\.\\.\\.\\} but returns array\\{name\\: string, description\\: string\\|null, time\\: non\\-falsy\\-string, maintainers\\: array\\<int, array\\{name\\: string, avatar_url\\: string\\}\\>, versions\\: array\\<string, array\\{name\\: string, description\\: string, keywords\\: array\\<int, string\\>, homepage\\: string, version\\: non\\-empty\\-string, version_normalized\\: non\\-empty\\-string, license\\: array\\<int, string\\>, authors\\: array\\<array\\{email\\?\\: string, homepage\\?\\: string, name\\?\\: string, role\\?\\: string\\}\\>, \\.\\.\\.\\}\\>, type\\: string\\|null, repository\\: string, github_stars\\: int\\|null, \\.\\.\\.\\}\\.$#"
+			count: 1
+			path: src/Entity/Package.php
 
 		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:findProviders\\(\\) has parameter \\$name with no type specified\\.$#"
@@ -196,6 +191,16 @@ parameters:
 			path: src/Entity/User.php
 
 		-
+			message: "#^Cannot access offset string on array\\|string\\|true\\|null\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
+			message: "#^Cannot access offset string\\|null on array\\|string\\|true\\|null\\.$#"
+			count: 1
+			path: src/Entity/Version.php
+
+		-
 			message: "#^Method App\\\\Entity\\\\Version\\:\\:getAutoload\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Entity/Version.php
@@ -281,17 +286,7 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:toArray\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:toArray\\(\\) should return array\\{name\\: string, description\\: string, keywords\\: array\\<int, string\\>, homepage\\: string, version\\: non\\-empty\\-string, version_normalized\\: non\\-empty\\-string, license\\: array\\<int, string\\>, authors\\: array\\<array\\{email\\?\\: string, homepage\\?\\: string, name\\?\\: string, role\\?\\: string\\}\\>, \\.\\.\\.\\} but returns non\\-empty\\-array\\<'abandoned'\\|'authors'\\|'autoload'\\|'bin'\\|'conflict'\\|'default\\-branch'\\|'description'\\|'dist'\\|'extra'\\|'funding'\\|'homepage'\\|'include\\-path'\\|'keywords'\\|'license'\\|'name'\\|'provide'\\|'replace'\\|'require'\\|'require\\-dev'\\|'source'\\|'suggest'\\|'support'\\|'target\\-dir'\\|'time'\\|'type'\\|'version'\\|'version_normalized', mixed\\>\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:toV2Array\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
+			message: "#^Method App\\\\Entity\\\\Version\\:\\:toArray\\(\\) should return array\\{name\\: string, description\\: string, keywords\\: array\\<int, string\\>, homepage\\: string, version\\: non\\-empty\\-string, version_normalized\\: non\\-empty\\-string, license\\: array\\<int, string\\>, authors\\: array\\<array\\{email\\?\\: string, homepage\\?\\: string, name\\?\\: string, role\\?\\: string\\}\\>, \\.\\.\\.\\} but returns non\\-empty\\-array\\<'abandoned'\\|'authors'\\|'autoload'\\|'bin'\\|'conflict'\\|'default\\-branch'\\|'description'\\|'dist'\\|'extra'\\|'funding'\\|'homepage'\\|'include\\-path'\\|'keywords'\\|'license'\\|'name'\\|'provide'\\|'replace'\\|'require'\\|'require\\-dev'\\|'source'\\|'suggest'\\|'support'\\|'target\\-dir'\\|'time'\\|'type'\\|'version'\\|'version_normalized', array\\|string\\|true\\|null\\>\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
@@ -306,36 +301,6 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:detachToArray\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:detachToArray\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getEntityManager\\(\\) should return Doctrine\\\\ORM\\\\EntityManager but returns Doctrine\\\\ORM\\\\EntityManagerInterface\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getLatestReleases\\(\\) has no return type specified\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getLatestReleases\\(\\) has parameter \\$count with no type specified\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\VersionRepository\\:\\:getVersionData\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Entity/VersionRepository.php
-
-		-
 			message: "#^Method App\\\\Form\\\\Type\\\\EnableTwoFactorAuthType\\:\\:buildForm\\(\\) has no return type specified\\.$#"
 			count: 1
 			path: src/Form/Type/EnableTwoFactorAuthType.php
@@ -346,64 +311,9 @@ parameters:
 			path: src/Form/Type/EnableTwoFactorAuthType.php
 
 		-
-			message: "#^Method App\\\\Model\\\\RedisAdapter\\:\\:getNbResults\\(\\) should return int\\<0, max\\> but returns int\\.$#"
+			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavoriteCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
 			count: 1
-			path: src/Model/RedisAdapter.php
-
-		-
-			message: "#^Argument of an invalid type array\\|false supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no type specified\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\SymlinkDumper\\:\\:dumpVersionToIndividualFile\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Parameter \\#1 \\$json of function json_decode expects string, string\\|false given\\.$#"
-			count: 4
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$awsMeta type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$individualFiles type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$individualFilesMtime type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$listings type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$rootFile type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$webDir \\(string\\) does not accept string\\|false\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
-			message: "#^Property App\\\\Package\\\\SymlinkDumper\\:\\:\\$writeLog type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/SymlinkDumper.php
+			path: src/Model/FavoriteManager.php
 
 		-
 			message: "#^Cannot call method addElement\\(\\) on HTMLPurifier_HTMLDefinition\\|null\\.$#"
@@ -444,78 +354,3 @@ parameters:
 			message: "#^Parameter \\#3 \\$length of function substr expects int\\|null, int\\|false given\\.$#"
 			count: 1
 			path: src/Package/Updater.php
-
-		-
-			message: "#^Argument of an invalid type array\\<int, string\\>\\|false supplied for foreach, only iterables are supported\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\V2Dumper\\:\\:__construct\\(\\) has parameter \\$awsMetadata with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\V2Dumper\\:\\:dumpVersionsToV2File\\(\\) has parameter \\$versionData with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Method App\\\\Package\\\\V2Dumper\\:\\:dumpVersionsToV2File\\(\\) has parameter \\$versions with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Parameter \\#1 \\$dir of method App\\\\Package\\\\V2Dumper\\:\\:dumpPackageToV2File\\(\\) expects string, string\\|false given\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Parameter \\#1 \\$string of function strlen expects string, int\\<0, max\\> given\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Parameter \\#1 \\$target of function symlink expects string, string\\|false given\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Parameter \\#2 \\$contents of method App\\\\Package\\\\V2Dumper\\:\\:writeV2File\\(\\) expects string, string\\|false given\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Property App\\\\Package\\\\V2Dumper\\:\\:\\$awsMeta type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Property App\\\\Package\\\\V2Dumper\\:\\:\\$webDir \\(string\\) does not accept string\\|false\\.$#"
-			count: 1
-			path: src/Package/V2Dumper.php
-
-		-
-			message: "#^Result of \\|\\| is always true\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Right side of \\|\\| is always true\\.$#"
-			count: 1
-			path: src/Service/GitHubUserMigrationWorker.php
-
-		-
-			message: "#^Offset 'status' on array\\{status\\: 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'reschedule'\\|'started'\\|'timeout', message\\: string, after\\?\\: DateTime, results\\?\\: array\\{hooks_setup\\: int, hooks_failed\\: array\\<int, array\\{package\\: string, reason\\: mixed\\}\\>, hooks_ok_unchanged\\: int\\}\\}\\|array\\{status\\: 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'reschedule'\\|'started'\\|'timeout', message\\: string, after\\?\\: DateTimeInterface, vendor\\?\\: string, details\\?\\: string, e\\?\\: Throwable\\}\\|array\\{status\\: 'errored', message\\: 'An unexpected…', exception\\: Throwable\\} in isset\\(\\) always exists and is not nullable\\.$#"
-			count: 1
-			path: src/Service/QueueWorker.php
-
-		-
-			message: "#^Method App\\\\Service\\\\Scheduler\\:\\:createJob\\(\\) has parameter \\$payload with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php
-
-		-
-			message: "#^Parameter \\#2 \\$values of method Predis\\\\ClientInterface\\:\\:lpush\\(\\) expects array, string given\\.$#"
-			count: 1
-			path: src/Service/Scheduler.php

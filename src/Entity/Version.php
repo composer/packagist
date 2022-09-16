@@ -232,6 +232,7 @@ class Version
     }
 
     /**
+     * @param VersionData $versionData
      * @return VersionArray
      */
     public function toArray(array $versionData, bool $serializeForApi = false): array
@@ -325,6 +326,7 @@ class Version
     }
 
     /**
+     * @param VersionData $versionData
      * @return VersionArray
      */
     public function toV2Array(array $versionData): array

@@ -54,6 +54,9 @@ class FavoriteManager
         return $this->packageRepo->findBy(['id' => $favoriteIds]);
     }
 
+    /**
+     * @return int<0, max>
+     */
     public function getFavoriteCount(User $user): int
     {
         return $this->redis->zcard('usr:'.$user->getId().':fav');

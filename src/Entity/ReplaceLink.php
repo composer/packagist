@@ -22,5 +22,6 @@ use Doctrine\ORM\Mapping as ORM;
 class ReplaceLink extends PackageLink
 {
     #[ORM\ManyToOne(targetEntity: 'App\Entity\Version', inversedBy: 'replace')]
-    protected Version|null $version = null;
+    #[ORM\JoinColumn(name: 'version_id', nullable: false, referencedColumnName: 'id')]
+    protected Version $version;
 }

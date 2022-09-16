@@ -25,9 +25,6 @@ use Predis\Client;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-/**
- * @phpstan-import-type AwsMetadata from \App\HealthCheck\MetadataDirCheck
- */
 class HealthCheckController
 {
     private LoggerInterface $logger;

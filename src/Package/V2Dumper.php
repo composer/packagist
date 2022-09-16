@@ -26,6 +26,7 @@ use App\HealthCheck\MetadataDirCheck;
 use Predis\Client;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
+use Webmozart\Assert\Assert;
 
 /**
  * v2 Metadata Dumper
@@ -36,27 +37,21 @@ class V2Dumper
 {
     use \App\Util\DoctrineTrait;
 
-    protected ManagerRegistry $doctrine;
-    protected Filesystem $fs;
-    protected string $webDir;
-    protected string $buildDir;
-    protected Client $redis;
-    private array $awsMeta;
-    private StatsDClient $statsd;
-    private ProviderManager $providerManager;
-    private Logger $logger;
-
-    public function __construct(ManagerRegistry $doctrine, Filesystem $filesystem, Client $redis, string $webDir, string $targetDir, array $awsMetadata, StatsDClient $statsd, ProviderManager $providerManager, Logger $logger)
-    {
-        $this->doctrine = $doctrine;
-        $this->fs = $filesystem;
-        $this->webDir = realpath($webDir);
-        $this->buildDir = $targetDir;
-        $this->redis = $redis;
-        $this->awsMeta = $awsMetadata;
-        $this->statsd = $statsd;
-        $this->providerManager = $providerManager;
-        $this->logger = $logger;
+    public function __construct(
+        private ManagerRegistry $doctrine,
+        private Filesystem $filesystem,
+        private Client $redis,
+        private string $webDir,
+        private string $buildDir,
+        /** @var AwsMetadata */
+        private array $awsMetadata,
+        private StatsDClient $statsd,
+        private ProviderManager $providerManager,
+        private Logger $logger,
+    ) {
+        $webDir = realpath($webDir);
+        Assert::string($webDir);
+        $this->webDir = $webDir;
     }
 
     /**
@@ -66,7 +61,7 @@ class V2Dumper
      */
     public function dump(array $packageIds, bool $force = false, bool $verbose = false): void
     {
-        if (!MetadataDirCheck::isMetadataStoreMounted($this->awsMeta)) {
+        if (!MetadataDirCheck::isMetadataStoreMounted($this->awsMetadata)) {
             throw new \RuntimeException('Metadata store not mounted, can not dump metadata');
         }
 
@@ -79,9 +74,10 @@ class V2Dumper
         $initialRun = false;
         if (!is_dir($buildDirV2)) {
             $initialRun = true;
-            $this->fs->mkdir($buildDirV2);
+            $this->filesystem->mkdir($buildDirV2);
         }
         $buildDirV2 = realpath($buildDirV2);
+        Assert::string($buildDirV2);
 
         // copy existing stuff for smooth BC transition
         if ($initialRun && !$force) {
@@ -107,7 +103,7 @@ class V2Dumper
             $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
 
             if ($verbose) {
-                echo '['.sprintf('%'.strlen($total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.PHP_EOL;
+                echo '['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.PHP_EOL;
             }
 
             $current += $step;
@@ -198,7 +194,9 @@ class V2Dumper
         $packageNames = array_flip($this->providerManager->getPackageNames());
 
         foreach ($finder as $vendorDir) {
-            foreach (glob(((string) $vendorDir).'/*.json') as $file) {
+            $files = glob(((string) $vendorDir).'/*.json');
+            Assert::isArray($files);
+            foreach ($files as $file) {
                 if (!Preg::isMatch('{/([^/]+/[^/]+?)(~dev)?\.json$}', strtr($file, '\\', '/'), $match)) {
                     throw new \LogicException('Could not match package name from '.$file);
                 }
@@ -247,6 +245,8 @@ class V2Dumper
 
     /**
      * @param array<array{advisoryId: string, affectedVersions: string}>|null $advisories
+     * @param array<Version> $versions
+     * @param VersionData $versionData
      */
     private function dumpVersionsToV2File(string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, array|null $advisories = null): void
     {
@@ -268,7 +268,7 @@ class V2Dumper
             $metadata['security-advisories'] = $advisories;
         }
 
-        $json = json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $json = json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $this->writeV2File($path, $json, $forceDump);
     }
 
@@ -284,7 +284,7 @@ class V2Dumper
             return;
         }
 
-        $this->fs->mkdir(dirname($path));
+        $this->filesystem->mkdir(dirname($path));
 
         // get time before file_put_contents to be sure we return a time at least as old as the filemtime, if it is older it doesn't matter
         $timestamp = round(microtime(true) * 10000);

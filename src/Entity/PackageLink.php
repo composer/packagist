@@ -35,7 +35,7 @@ abstract class PackageLink
      * Base property holding the version - this must remain protected since it
      * is redefined with an annotation in the child class
      */
-    protected Version|null $version = null;
+    protected Version $version;
 
     /**
      * @return array<string, string>

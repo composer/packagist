@@ -18,8 +18,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
- *
- * @phpstan-import-type AwsMetadata from \App\HealthCheck\MetadataDirCheck
  */
 class SymlinkMetadataMirrorCommand extends Command
 {

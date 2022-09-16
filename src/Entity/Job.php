@@ -43,6 +43,9 @@ class Job
     #[ORM\Column(type: 'string')]
     private string $type;
 
+    /**
+     * @var array<string, string|int|bool>
+     */
     #[ORM\Column(type: 'json')]
     private array $payload = [];
 
@@ -72,6 +75,9 @@ class Job
     #[ORM\Column(type: 'integer', nullable: true)]
     private int|null $packageId = null;
 
+    /**
+     * @param array<string, string|int|bool> $payload
+     */
     public function __construct(string $id, string $type, array $payload)
     {
         $this->id = $id;

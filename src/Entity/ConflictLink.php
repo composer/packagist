@@ -22,5 +22,6 @@ use Doctrine\ORM\Mapping as ORM;
 class ConflictLink extends PackageLink
 {
     #[ORM\ManyToOne(targetEntity: 'App\Entity\Version', inversedBy: 'conflict')]
-    protected Version|null $version = null;
+    #[ORM\JoinColumn(name: 'version_id', nullable: false, referencedColumnName: 'id')]
+    protected Version $version;
 }
