@@ -82,7 +82,8 @@ class UpdaterWorker
     }
 
     /**
-     * @return array{status: Job::STATUS_*, message?: string, after?: \DateTimeInterface, vendor?: string, details?: string, e?: \Throwable}
+     * @param Job<PackageUpdateJob> $job
+     * @return array{status: Job::STATUS_*, message?: string, after?: \DateTimeInterface, vendor?: string, details?: string, exception?: \Throwable}
      */
     public function process(Job $job, SignalHandler $signal): array
     {
@@ -174,7 +175,7 @@ class UpdaterWorker
                 $flags = Updater::DELETE_BEFORE;
                 $useVersionCache = false;
             }
-            if (($job->getPayload()['force_dump'] ?? false) === true) {
+            if ($job->getPayload()['force_dump'] === true) {
                 $flags |= Updater::FORCE_DUMP;
             }
 

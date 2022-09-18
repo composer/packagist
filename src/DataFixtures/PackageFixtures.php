@@ -93,9 +93,9 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface
     {
         $job = new Job('FAKE_ID', 'FAKE_TYPE', [
             'id'                => $id,
-            'force_dump'        => false,
-            'delete_before'     => false,
             'update_equal_refs' => false,
+            'delete_before'     => false,
+            'force_dump'        => false,
         ]);
 
         $this->updaterWorker->process($job, $this->signalHandler);

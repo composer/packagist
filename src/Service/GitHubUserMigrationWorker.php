@@ -42,6 +42,7 @@ class GitHubUserMigrationWorker
     }
 
     /**
+     * @param Job<GitHubUserMigrateJob> $job
      * @return array{
      *     status: Job::STATUS_*,
      *     message: string,

@@ -26,7 +26,7 @@ class DownloadRepository extends ServiceEntityRepository
         parent::__construct($registry, Download::class);
     }
 
-    public function deletePackageDownloads(Package $package)
+    public function deletePackageDownloads(Package $package): void
     {
         $conn = $this->getEntityManager()->getConnection();
 

@@ -95,7 +95,7 @@ class WebController extends Controller
     }
 
     #[Route('/statistics', name: 'stats', methods: 'GET')]
-    public function statsAction(RedisClient $redis)
+    public function statsAction(RedisClient $redis): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -224,7 +224,7 @@ class WebController extends Controller
     }
 
     #[Route('/statistics.json', name: 'stats_json', defaults: ['_format' => 'json'], methods: 'GET')]
-    public function statsTotalsAction(RedisClient $redis)
+    public function statsTotalsAction(RedisClient $redis): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);

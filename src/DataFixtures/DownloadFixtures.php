@@ -99,7 +99,7 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
      */
     private function populateDownloads(Package $package, Version $version): void
     {
-        $date = DateTimeImmutable::createFromMutable($package->getCreatedAt());
+        $date = DateTimeImmutable::createFromInterface($package->getCreatedAt());
         $endDate = (new \DateTimeImmutable('now'));
 
         $downloads = 0;

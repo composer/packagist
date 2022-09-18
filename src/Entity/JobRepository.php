@@ -48,6 +48,9 @@ class JobRepository extends ServiceEntityRepository
         ]);
     }
 
+    /**
+     * @return Job<GitHubUserMigrateJob>|null
+     */
     public function getLastGitHubSyncJob(int $userId): ?Job
     {
         return $this->createQueryBuilder('j')
@@ -74,6 +77,9 @@ class JobRepository extends ServiceEntityRepository
         }
     }
 
+    /**
+     * @return Job<AnyJob>|null
+     */
     public function findLatestExecutedJob(int $packageId, string $type): ?Job
     {
         $conn = $this->getEntityManager()->getConnection();

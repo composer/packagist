@@ -107,13 +107,16 @@ class PhpStatRepository extends ServiceEntityRepository
         ];
     }
 
-    public function deletePackageStats(Package $package)
+    public function deletePackageStats(Package $package): void
     {
         $conn = $this->getEntityManager()->getConnection();
 
         $conn->executeStatement('DELETE FROM php_stat WHERE package_id = :id', ['id' => $package->getId()]);
     }
 
+    /**
+     * @param array<non-empty-string> $keys
+     */
     public function transferStatsToDb(int $packageId, array $keys, DateTimeImmutable $now, DateTimeImmutable $updateDateForMajor): void
     {
         $package = $this->getEntityManager()->getRepository(Package::class)->find($packageId);
@@ -160,7 +163,7 @@ class PhpStatRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param array<string, int> $keys array of keys => dl count
+     * @param non-empty-array<string, int> $keys array of keys => dl count
      */
     private function createDbRecordsForKeys(Package $package, array $keys, DateTimeImmutable $now): bool
     {
@@ -177,6 +180,10 @@ class PhpStatRepository extends ServiceEntityRepository
         return null !== $record || null !== $majorRecord;
     }
 
+    /**
+     * @param non-empty-array<string, int> $keys array of keys => dl count
+     * @param PhpStat::TYPE_* $type
+     */
     private function createOrUpdateRecord(Package $package, int $type, string $version, array $keys, DateTimeImmutable $now): ?PhpStat
     {
         $record = $this->getEntityManager()->getRepository(PhpStat::class)->findOneBy(['package' => $package, 'type' => $type, 'version' => $version]);
@@ -214,6 +221,9 @@ class PhpStatRepository extends ServiceEntityRepository
         return null;
     }
 
+    /**
+     * @param PhpStat::TYPE_* $type
+     */
     public function createOrUpdateMainRecord(Package $package, int $type, DateTimeImmutable $now, DateTimeImmutable $updateDate): void
     {
         $minorPhpVersions = $this->getEntityManager()->getConnection()->fetchFirstColumn(

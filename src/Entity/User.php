@@ -256,6 +256,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function getTotpAuthenticationConfiguration(): TotpConfigurationInterface
     {
+        \Webmozart\Assert\Assert::notNull($this->totpSecret);
         return new TotpConfiguration($this->totpSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
     }
 
@@ -416,7 +417,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         $this->usernameCanonical = mb_strtolower($usernameCanonical);
     }
 
-    public function setSalt($salt): void
+    public function setSalt(string|null $salt): void
     {
         $this->salt = $salt;
     }

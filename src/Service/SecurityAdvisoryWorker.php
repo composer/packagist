@@ -43,7 +43,8 @@ class SecurityAdvisoryWorker
     }
 
     /**
-     * @return array{status: Job::STATUS_*, after?: \DateTime, message?: string, details?: string}
+     * @param Job<SecurityAdvisoryJob> $job
+     * @return JobResult
      */
     public function process(Job $job, SignalHandler $signal): array
     {

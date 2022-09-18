@@ -15,6 +15,9 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use DateTimeInterface;
 
+/**
+ * @template T of array<string, string|int|bool>
+ */
 #[ORM\Entity(repositoryClass: 'App\Entity\JobRepository')]
 #[ORM\Table(name: 'job')]
 #[ORM\Index(name: 'type_idx', columns: ['type'])]
@@ -44,7 +47,7 @@ class Job
     private string $type;
 
     /**
-     * @var array<string, string|int|bool>
+     * @var T
      */
     #[ORM\Column(type: 'json')]
     private array $payload = [];
@@ -57,6 +60,7 @@ class Job
     #[ORM\Column(type: 'string')]
     private string $status = self::STATUS_QUEUED;
 
+    /** @var (JobResult&array<string, int|string|bool|null|array<mixed>|\Throwable>)|null */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $result = null;
 
@@ -76,7 +80,7 @@ class Job
     private int|null $packageId = null;
 
     /**
-     * @param array<string, string|int|bool> $payload
+     * @param T $payload
      */
     public function __construct(string $id, string $type, array $payload)
     {
@@ -92,6 +96,10 @@ class Job
         $this->status = self::STATUS_STARTED;
     }
 
+    /**
+     * @param JobResult&array<string, int|string|bool|null|array<mixed>|\Throwable> $result
+     * @return void
+     */
     public function complete(array $result): void
     {
         $this->result = $result;
@@ -126,21 +134,33 @@ class Job
         return $this->type;
     }
 
+    /**
+     * @return T
+     */
     public function getPayload(): array
     {
         return $this->payload;
     }
 
+    /**
+     * @param self::STATUS_* $status
+     */
     public function setStatus(string $status): void
     {
         $this->status = $status;
     }
 
+    /**
+     * @return self::STATUS_*
+     */
     public function getStatus(): string
     {
         return $this->status;
     }
 
+    /**
+     * @return JobResult&array<string, int|string|bool|null|array<mixed>|\Throwable>
+     */
     public function getResult(): ?array
     {
         return $this->result;

@@ -613,7 +613,7 @@ class PackageController extends Controller
             if ($lastJob) {
                 switch ($lastJob->getStatus()) {
                     case Job::STATUS_COMPLETED:
-                        if (str_contains($data['lastJobDetails'], 'does not match version')) {
+                        if (str_contains((string) $data['lastJobDetails'], 'does not match version')) {
                             $data['lastJobWarning'] = 'Some tags were ignored because of a version mismatch in composer.json, <a href="https://blog.packagist.com/tagged-a-new-release-for-composer-and-it-wont-show-up-on-packagist/">read more</a>.';
                         }
                         break;
@@ -791,11 +791,7 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'success'], 202);
         }
 
-        if ($package->wasUpdatedInTheLast24Hours()) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours'], 404);
-        }
-
-        return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)'], 404);
+        return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours'], 404);
     }
 
     #[Route(path: '/packages/{name}', name: 'delete_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'], methods: ['DELETE'])]

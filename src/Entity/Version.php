@@ -363,6 +363,7 @@ class Version
     }
 
     /**
+     * @param VersionData|null $versionData
      * @return list<string>
      */
     public function getNames(?array $versionData = null): array
@@ -437,71 +438,113 @@ class Version
         return $this->normalizedVersion;
     }
 
+    /**
+     * @param array<string> $license
+     */
     public function setLicense(array $license): void
     {
         $this->license = $license;
     }
 
+    /**
+     * @return array<string>
+     */
     public function getLicense(): array
     {
         return $this->license;
     }
 
+    /**
+     * @param PackageSource $source
+     */
     public function setSource(array|null $source): void
     {
         $this->source = $source;
     }
 
+    /**
+     * @return PackageSource
+     */
     public function getSource(): array|null
     {
         return $this->source;
     }
 
+    /**
+     * @param PackageDist $dist
+     */
     public function setDist(array|null $dist): void
     {
         $this->dist = $dist;
     }
 
+    /**
+     * @return PackageDist
+     */
     public function getDist(): array|null
     {
         return $this->dist;
     }
 
+    /**
+     * @param PackageAutoloadRules $autoload
+     */
     public function setAutoload(array $autoload): void
     {
         $this->autoload = $autoload;
     }
 
+    /**
+     * @return PackageAutoloadRules
+     */
     public function getAutoload(): array
     {
         return $this->autoload;
     }
 
+    /**
+     * @param array<string>|null $binaries
+     */
     public function setBinaries(array|null $binaries): void
     {
         $this->binaries = $binaries;
     }
 
+    /**
+     * @return array<string>|null
+     */
     public function getBinaries(): array|null
     {
         return $this->binaries;
     }
 
+    /**
+     * @param array<string>|null $paths
+     */
     public function setIncludePaths(array|null $paths): void
     {
         $this->includePaths = $paths;
     }
 
+    /**
+     * @return array<string>|null
+     */
     public function getIncludePaths(): array|null
     {
         return $this->includePaths;
     }
 
+    /**
+     * @param array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string}|null $support
+     */
     public function setSupport(array|null $support): void
     {
         $this->support = $support;
     }
 
+    /**
+     * @return array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string}|null
+     */
     public function getSupport(): array|null
     {
         return $this->support;
@@ -652,11 +695,17 @@ class Version
         return $this->targetDir;
     }
 
+    /**
+     * @param array<mixed> $extra
+     */
     public function setExtra(array $extra): void
     {
         $this->extra = $extra;
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function getExtra(): array
     {
         return $this->extra;

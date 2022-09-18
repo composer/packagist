@@ -57,7 +57,7 @@ class DependentRepository extends ServiceEntityRepository
         $conn->commit();
     }
 
-    public function deletePackageDependentSuggesters(int $packageId)
+    public function deletePackageDependentSuggesters(int $packageId): void
     {
         $conn = $this->getEntityManager()->getConnection();
         $conn->executeStatement('DELETE FROM dependent WHERE package_id = :id', ['id' => $packageId]);

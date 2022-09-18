@@ -106,6 +106,7 @@ class QueueWorker
             return false;
         }
 
+        /** @var Job<AnyJob>|null $job */
         $job = $repo->find($jobId);
         if (null === $job) {
             throw new \LogicException('At this point a job should always be found');
@@ -165,9 +166,7 @@ class QueueWorker
         $repo = $em->getRepository(Job::class);
 
         if ($result['status'] === Job::STATUS_RESCHEDULE) {
-            if (!isset($result['after'])) {
-                throw new \LogicException('$result must have an "after" key when returning a reschedule status.');
-            }
+            Assert::keyExists($result, 'after', message: '$result must have an "after" key when returning a reschedule status.');
             $job->reschedule($result['after']);
             $em->flush($job);
 
@@ -179,10 +178,7 @@ class QueueWorker
 
         Assert::keyExists($result, 'message');
         Assert::keyExists($result, 'status');
-
-        if (!in_array($result['status'], [Job::STATUS_COMPLETED, Job::STATUS_FAILED, Job::STATUS_ERRORED, Job::STATUS_PACKAGE_GONE, Job::STATUS_PACKAGE_DELETED], true)) {
-            throw new \LogicException('$result[\'status\'] must be one of '.Job::STATUS_COMPLETED.' or '.Job::STATUS_FAILED.', '.$result['status'].' given');
-        }
+        Assert::inArray($result['status'], [Job::STATUS_COMPLETED, Job::STATUS_FAILED, Job::STATUS_ERRORED, Job::STATUS_PACKAGE_GONE, Job::STATUS_PACKAGE_DELETED]);
 
         if (isset($result['exception'])) {
             $result['exceptionMsg'] = $result['exception']->getMessage();

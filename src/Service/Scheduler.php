@@ -29,6 +29,7 @@ class Scheduler
 
     /**
      * @param Package|int $packageOrId
+     * @return Job<PackageUpdateJob>
      */
     public function scheduleUpdate($packageOrId, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeInterface $executeAfter = null, bool $forceDump = false): Job
     {
@@ -62,11 +63,17 @@ class Scheduler
         return $this->createJob('package:updates', ['id' => $packageOrId, 'update_equal_refs' => $updateEqualRefs, 'delete_before' => $deleteBefore, 'force_dump' => $forceDump], $packageOrId, $executeAfter);
     }
 
+    /**
+     * @return Job<GitHubUserMigrateJob>
+     */
     public function scheduleUserScopeMigration(int $userId, string $oldScope, string $newScope): Job
     {
         return $this->createJob('githubuser:migrate', ['id' => $userId, 'old_scope' => $oldScope, 'new_scope' => $newScope], $userId);
     }
 
+    /**
+     * @return Job<SecurityAdvisoryJob>
+     */
     public function scheduleSecurityAdvisory(string $source, int $packageId, ?\DateTimeInterface $executeAfter = null): Job
     {
         return $this->createJob('security:advisory', ['source' => $source], $packageId, $executeAfter);
@@ -94,7 +101,7 @@ class Scheduler
     }
 
     /**
-     * @return array{status: string, message: string}
+     * @return JobResult|array{status: 'running', message: ''}
      */
     public function getJobStatus(string $jobId): array
     {
@@ -108,7 +115,7 @@ class Scheduler
     }
 
     /**
-     * @param  Job[]   $jobs
+     * @param array<Job<AnyJob>> $jobs
      * @return array<string, array{status: mixed}>
      */
     public function getJobsStatus(array $jobs): array
@@ -130,7 +137,9 @@ class Scheduler
     }
 
     /**
-     * @param array<string, string|int|bool> $payload
+     * @template T of AnyJob
+     * @param T $payload
+     * @return Job<T>
      */
     private function createJob(string $type, array $payload, ?int $packageId = null, ?\DateTimeInterface $executeAfter = null): Job
     {

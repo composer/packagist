@@ -161,7 +161,7 @@ class VersionRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<string, array{id: int, version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null, softDeletedAt: string|null}>
+     * @return ExistingVersionsForUpdate
      */
     public function getVersionMetadataForUpdate(Package $package): array
     {

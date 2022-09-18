@@ -191,9 +191,9 @@ class Package
      * @return array{
      *     name: string,
      *     description: string|null,
-     *     time: string,
+     *     time: truthy-string,
      *     maintainers: list<array{name: string, avatar_url: string}>,
-     *     versions: array<Version>,
+     *     versions: array<string, VersionArray>,
      *     type: string|null,
      *     repository: string,
      *     github_stars: int|null,

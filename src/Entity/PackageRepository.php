@@ -33,7 +33,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return array<Package>
      */
-    public function findProviders($name): array
+    public function findProviders(string $name): array
     {
         $query = $this->createQueryBuilder('p')
             ->select('p')
@@ -98,7 +98,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return array<string>
      */
-    public function getPackageNamesByType($type): array
+    public function getPackageNamesByType(string $type): array
     {
         $query = $this->getEntityManager()
             ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.type = :type AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
@@ -110,7 +110,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return array<string>
      */
-    public function getPackageNamesByVendor($vendor): array
+    public function getPackageNamesByVendor(string $vendor): array
     {
         $query = $this->getEntityManager()
             ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.vendor = :vendor AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
@@ -152,7 +152,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @param array<string, string|int|bool> $filters
      * @param array<string> $fields
-     * @return array<array<string, string|int|bool>>
+     * @return array<string, array<string, string|int|bool|null>>
      */
     public function getPackagesWithFields(array $filters, array $fields): array
     {
@@ -181,8 +181,8 @@ class PackageRepository extends ServiceEntityRepository
             unset($row['name']);
             if (isset($row['abandoned']) && array_key_exists('replacementPackage', $row)) {
                 $row['abandoned'] = $row['abandoned'] == "1" ? ($row['replacementPackage'] ?? true) : false;
-                unset($row['replacementPackage']);
             }
+            unset($row['replacementPackage']);
             $result[$name] = $row;
         }
 
@@ -211,7 +211,10 @@ class PackageRepository extends ServiceEntityRepository
         return $names;
     }
 
-    public function getStalePackages()
+    /**
+     * @return list<array{id: int}>
+     */
+    public function getStalePackages(): array
     {
         $conn = $this->getEntityManager()->getConnection();
 
@@ -306,7 +309,7 @@ class PackageRepository extends ServiceEntityRepository
         }
     }
 
-    public function getPartialPackageByNameWithVersions($name): Package
+    public function getPartialPackageByNameWithVersions(string $name): Package
     {
         // first fetch a partial package including joined versions/maintainers, that way
         // the join is cheap and heavy data (description, readme) is not duplicated for each joined row
@@ -339,7 +342,7 @@ class PackageRepository extends ServiceEntityRepository
         return $pkg;
     }
 
-    public function getPackageByName($name): Package
+    public function getPackageByName(string $name): Package
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p', 'm')
@@ -458,10 +461,13 @@ class PackageRepository extends ServiceEntityRepository
     {
         $sql = 'SELECT COUNT(*) count FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam")';
 
-        return (int) $this->getEntityManager()->getConnection()->fetchOne($sql);
+        return max(0, (int) $this->getEntityManager()->getConnection()->fetchOne($sql));
     }
 
-    public function getSuspectPackages($offset = 0, $limit = 15): array
+    /**
+     * @return array<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
+     */
+    public function getSuspectPackages(int $offset = 0, int $limit = 15): array
     {
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam") ORDER BY p.createdAt DESC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
@@ -483,7 +489,7 @@ class PackageRepository extends ServiceEntityRepository
             $args['type'] = $type;
         }
 
-        return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args);
+        return max(0, (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args));
     }
 
     /**
@@ -522,6 +528,9 @@ class PackageRepository extends ServiceEntityRepository
         return $res;
     }
 
+    /**
+     * @return int<0, max>
+     */
     public function getSuggestCount(string $name): int
     {
         $sql = 'SELECT COUNT(*) count FROM suggester WHERE packageName = :name';

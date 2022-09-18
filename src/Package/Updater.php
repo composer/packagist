@@ -35,6 +35,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Service\VersionCache;
 use Composer\Package\CompletePackageInterface;
+use Webmozart\Assert\Assert;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -83,6 +84,7 @@ class Updater
      *
      * @param VcsRepository $repository the repository instance used to update from
      * @param int $flags a few of the constants of this class
+     * @param ExistingVersionsForUpdate|null $existingVersions
      */
     public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, int $flags = 0, ?array $existingVersions = null, ?VersionCache $versionCache = null): Package
     {
@@ -272,9 +274,10 @@ class Updater
      *  - version (normalized version from the composer package)
      *  - object (Version instance if it was updated)
      *
+     * @param ExistingVersionsForUpdate $existingVersions
      * @return array{updated: true, id: int|null, version: string, object: Version}|array{updated: false, id: int|null, version: string, object: null}
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, $rootIdentifier): array
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier): array
     {
         $em = $this->getEM();
         $version = new Version();
@@ -287,7 +290,7 @@ class Updater
             $source = $existingVersion['source'];
             if (
                 // update if the source reference has changed (re-tag or new commit on branch)
-                $source['reference'] !== $data->getSourceReference()
+                ($source['reference'] ?? null) !== $data->getSourceReference()
                 // or if the right flag is set
                 || ($flags & self::UPDATE_EQUAL_REFS)
                 // or if the package must be marked abandoned from composer.json
@@ -317,7 +320,7 @@ class Updater
         $version->setIsDefaultBranch($data->isDefaultBranch());
 
         // update the package description only for the default branch
-        if ($rootIdentifier === null || $data->isDefaultBranch()) {
+        if ($data->isDefaultBranch()) {
             $package->setDescription($descr);
             if ($data->isAbandoned() && !$package->isAbandoned()) {
                 $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
@@ -650,6 +653,7 @@ class Updater
 
         // add custom HTML tag definitions
         $def = $config->getHTMLDefinition(true);
+        Assert::notNull($def);
         $def->addElement('details', 'Block', 'Flow', 'Common', [
           'open' => 'Bool#open',
         ]);
@@ -706,12 +710,13 @@ class Updater
         }
 
         if ($first && ('h1' === $first->nodeName || 'h2' === $first->nodeName)) {
-            $first->parentNode->removeChild($first);
+            $first->parentNode?->removeChild($first);
         }
 
         $readme = $dom->saveHTML();
+        Assert::string($readme);
         $readme = substr($readme, strpos($readme, '<body>') + 6);
-        $readme = substr($readme, 0, strrpos($readme, '</body>'));
+        $readme = substr($readme, 0, strrpos($readme, '</body>') ?: PHP_INT_MAX);
 
         libxml_use_internal_errors(false);
         libxml_clear_errors();
