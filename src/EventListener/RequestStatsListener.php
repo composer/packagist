@@ -23,7 +23,8 @@ class RequestStatsListener
 
     public function __construct(
         private Client $statsd,
-    ) {}
+    ) {
+    }
 
     #[AsEventListener]
     public function onRequest(RequestEvent $e): void

@@ -30,7 +30,7 @@ return static function (RectorConfig $rectorConfig): void {
 
     // define sets of rules
     $rectorConfig->sets([
-        SymfonySetList::SYMFONY_54,
+        SymfonySetList::SYMFONY_62,
         DoctrineSetList::DOCTRINE_ORM_29,
         PHPUnitLevelSetList::UP_TO_PHPUNIT_90,
     ]);

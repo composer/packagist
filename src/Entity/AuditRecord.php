@@ -1,15 +1,21 @@
-<?php
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace App\Entity;
 
 use App\Audit\AuditRecordType;
 use DateTimeImmutable;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\Selectable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Query\Expr\Select;
 use Symfony\Component\Uid\Ulid;
 
 #[ORM\Entity(repositoryClass: AuditRecordRepository::class)]
@@ -34,13 +40,10 @@ class AuditRecord
         /** @var array<string, mixed> */
         #[ORM\Column(type: Types::JSON)]
         public readonly array $attributes,
-
         #[ORM\Column(nullable: true)]
         public readonly int|null $userId = null,
-
         #[ORM\Column(nullable: true)]
         public readonly string|null $vendor = null,
-
         #[ORM\Column(nullable: true)]
         public readonly int|null $packageId = null,
     ) {

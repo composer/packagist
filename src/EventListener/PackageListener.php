@@ -17,13 +17,11 @@ use App\Entity\Package;
 use App\Entity\User;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
-use Predis\Client;
-use Symfony\Component\Security\Core\Security;
+use Symfony\Bundle\SecurityBundle\Security;
 
 #[AsEntityListener(event: 'postPersist', entity: Package::class)]
 #[AsEntityListener(event: 'preRemove', entity: Package::class)]
@@ -62,9 +60,6 @@ class PackageListener
         // let the record be flushed together with the entity
     }
 
-    /**
-     * @param PreUpdateEventArgs $event
-     */
     public function preUpdate(Package $package, PreUpdateEventArgs $event): void
     {
         if ($event->hasChangedField('repository')) {

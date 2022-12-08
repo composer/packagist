@@ -65,7 +65,7 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class PackageController extends Controller
 {
@@ -233,7 +233,7 @@ class PackageController extends Controller
             }
         }
 
-        return $this->render('package/submit_package.html.twig', ['form' => $form->createView(), 'page' => 'submit']);
+        return $this->render('package/submit_package.html.twig', ['form' => $form, 'page' => 'submit']);
     }
 
     #[Route(path: '/packages/fetch-info', name: 'submit.fetch_info', defaults: ['_format' => 'json'])]
@@ -899,7 +899,7 @@ class PackageController extends Controller
             'versions' => null,
             'expandedVersion' => null,
             'version' => null,
-            'removeMaintainerForm' => $removeMaintainerForm->createView(),
+            'removeMaintainerForm' => $removeMaintainerForm,
             'show_remove_maintainer_form' => true,
         ]);
     }
@@ -933,7 +933,7 @@ class PackageController extends Controller
 
         return $this->render('package/edit.html.twig', [
             'package' => $package,
-            'form' => $form->createView(),
+            'form' => $form,
         ]);
     }
 
@@ -963,7 +963,7 @@ class PackageController extends Controller
 
         return $this->render('package/abandon.html.twig', [
             'package' => $package,
-            'form' => $form->createView(),
+            'form' => $form,
         ]);
     }
 
