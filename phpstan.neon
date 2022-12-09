@@ -38,7 +38,6 @@ parameters:
         - '~Property App\\Entity\\PhpStat::\$type type mapping mismatch: database can contain int but property expects~'
         - '~Property App\\Entity\\PhpStat::\$depth type mapping mismatch: database can contain int but property expects~'
         - '~Property App\\Entity\\Job::\$status type mapping mismatch: database can contain string but property expects~'
-        - '~Property App\\Entity\\\w+::\$\w+ type mapping mismatch: property can contain Doctrine\\Common\\Collections\\Collection~'
 
     typeAliases:
         AwsMetadata: 'array{}|array{ec2_node: string, ip: string, region: string, primary: bool, has_instance_store: bool, is_worker: bool, is_web: bool}'
