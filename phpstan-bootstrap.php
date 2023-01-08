@@ -14,7 +14,6 @@ require_once __DIR__ . '/vendor/autoload.php';
 $cacheFile = __DIR__.'/.phpstan-dba.cache';
 $config = new RuntimeConfiguration();
 $config->stringifyTypes(false);
-$config->analyzeWriteQueries(true);
 // $config->analyzeQueryPlans(true);
 // $config->debugMode(true);
 
