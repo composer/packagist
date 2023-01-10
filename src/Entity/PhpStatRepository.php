@@ -81,6 +81,7 @@ class PhpStatRepository extends ServiceEntityRepository
             foreach ($datePoints as $date) {
                 $series[$seriesName][$date] = (int) ($data[$date] ?? 0);
             }
+            ksort($series[$seriesName]);
             $series[$seriesName] = array_values($series[$seriesName]);
         }
 
