@@ -20,6 +20,7 @@ use App\Search\Algolia;
 use App\Search\Query;
 use App\Util\Killswitch;
 use Predis\Connection\ConnectionException;
+use Psr\Cache\CacheItemInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,6 +28,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Predis\Client as RedisClient;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
+use Symfony\Contracts\Cache\CacheInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -183,7 +185,7 @@ class WebController extends Controller
     }
 
     #[Route('/php-statistics', name: 'php_stats', methods: 'GET')]
-    public function phpStatsAction(Request $req): Response
+    public function phpStatsAction(Request $req, CacheInterface $cache): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -209,8 +211,14 @@ class WebController extends Controller
 
         $type = $req->query->getInt('platform', 0) > 0 ? 'phpplatform' : 'php';
 
-        $dailyData = $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'days', $type);
-        $monthlyData = $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'months', $type);
+        [$dailyData, $monthlyData] = $cache->get('php-statistics', function (CacheItemInterface $item) use ($versions, $type) {
+            $item->expiresAfter(1800);
+
+            return [
+                $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'days', $type),
+                $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'months', $type)
+            ];
+        });
 
         $resp = $this->render('web/php_stats.html.twig', [
             'dailyData' => $dailyData,
@@ -218,7 +226,6 @@ class WebController extends Controller
             'type' => $type,
         ]);
         $resp->setSharedMaxAge(1800);
-        $resp->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $resp;
     }
