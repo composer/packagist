@@ -8,9 +8,6 @@
     "bacon/bacon-qr-code": {
         "version": "2.0.3"
     },
-    "beberlei/assert": {
-        "version": "v3.3.0"
-    },
     "beelab/recaptcha2-bundle": {
         "version": "2.6",
         "recipe": {
@@ -786,9 +783,6 @@
     },
     "symfonycasts/verify-email-bundle": {
         "version": "v1.4.0"
-    },
-    "thecodingmachine/safe": {
-        "version": "v1.3.3"
     },
     "theseer/tokenizer": {
         "version": "1.2.1"

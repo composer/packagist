@@ -54,6 +54,6 @@ class PackageResolver implements ValueResolverInterface
             throw new NotFoundHttpException('Package with name '.$pkgName.' was not found');
         }
 
-        yield $package;
+        return [$package];
     }
 }

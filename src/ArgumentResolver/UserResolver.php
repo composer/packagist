@@ -55,6 +55,6 @@ class UserResolver implements ValueResolverInterface
             throw new NotFoundHttpException('User with name '.$username.' was not found');
         }
 
-        yield $user;
+        return [$user];
     }
 }
