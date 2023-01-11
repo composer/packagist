@@ -211,7 +211,7 @@ class WebController extends Controller
 
         $type = $req->query->getInt('platform', 0) > 0 ? 'phpplatform' : 'php';
 
-        [$dailyData, $monthlyData] = $cache->get('php-statistics', function (CacheItemInterface $item) use ($versions, $type) {
+        [$dailyData, $monthlyData] = $cache->get('php-statistics-' . $type, function (CacheItemInterface $item) use ($versions, $type) {
             $item->expiresAfter(1800);
 
             return [
