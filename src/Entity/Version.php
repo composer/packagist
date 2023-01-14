@@ -186,7 +186,7 @@ class Version
     private array|null $includePaths = null;
 
     /**
-     * @var array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string}|null
+     * @var array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string, security?: string}|null
      */
     #[ORM\Column(type: 'json', nullable: true)]
     private array|null $support = null;
@@ -535,7 +535,7 @@ class Version
     }
 
     /**
-     * @param array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string}|null $support
+     * @param array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string, security?: string}|null $support
      */
     public function setSupport(array|null $support): void
     {
@@ -543,7 +543,7 @@ class Version
     }
 
     /**
-     * @return array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string}|null
+     * @return array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string, security?: string}|null
      */
     public function getSupport(): array|null
     {

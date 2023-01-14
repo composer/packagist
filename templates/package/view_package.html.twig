@@ -172,6 +172,9 @@
                             {% if version and version.support.docs is defined %}
                                 <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.docs }}">Documentation</a></p>
                             {% endif %}
+                            {% if version and version.support.security is defined %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.security }}">Security Policy</a></p>
+                            {% endif %}
                         </div>
 
                         {% if version and version.funding and version.funding|length > 0 %}
