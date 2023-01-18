@@ -98,7 +98,6 @@ class Job
 
     /**
      * @param JobResult&array<string, int|string|bool|null|array<mixed>|\Throwable> $result
-     * @return void
      */
     public function complete(array $result): void
     {

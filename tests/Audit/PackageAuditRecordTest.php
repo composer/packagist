@@ -15,9 +15,7 @@ namespace App\Tests\Controller;
 use App\Audit\AuditRecordType;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
-use Exception;
 use App\Entity\Package;
-use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class PackageAuditRecordTest extends KernelTestCase

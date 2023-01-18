@@ -25,7 +25,6 @@ use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
-use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Http\Authenticator\AbstractLoginFormAuthenticator;
@@ -36,6 +35,7 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Credentials\PasswordC
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 use Symfony\Component\Security\Http\HttpUtils;
+use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 /**
  * @phpstan-type Credentials array{username: string, password: string, ip: string|null, recaptcha: string}
@@ -108,7 +108,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
     {
         $this->recaptchaHelper->increaseCounter($request);
 
-        $request->getSession()->set(Security::AUTHENTICATION_ERROR, $exception);
+        $request->getSession()->set(SecurityRequestAttributes::AUTHENTICATION_ERROR, $exception);
 
         return $this->httpUtils->createRedirectResponse($request, 'login', Response::HTTP_FOUND);
     }
@@ -131,11 +131,11 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
 
         $credentials['username'] = trim($credentials['username']);
 
-        if (\strlen($credentials['username']) > Security::MAX_USERNAME_LENGTH) {
+        if (\strlen($credentials['username']) > UserBadge::MAX_USERNAME_LENGTH) {
             throw new BadCredentialsException('Invalid username.');
         }
 
-        $request->getSession()->set(Security::LAST_USERNAME, $credentials['username']);
+        $request->getSession()->set(SecurityRequestAttributes::LAST_USERNAME, $credentials['username']);
 
         return $credentials;
     }

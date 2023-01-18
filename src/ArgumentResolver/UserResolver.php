@@ -16,21 +16,15 @@ use App\Attribute\VarName;
 use App\Entity\User;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
+use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
-class UserResolver implements ArgumentValueResolverInterface
+class UserResolver implements ValueResolverInterface
 {
-    public function __construct(
-        private ManagerRegistry $doctrine,
-    ) {
-    }
-
-    public function supports(Request $request, ArgumentMetadata $argument): bool
+    public function __construct(private readonly ManagerRegistry $doctrine)
     {
-        return User::class === $argument->getType() && \count($argument->getAttributes(CurrentUser::class, ArgumentMetadata::IS_INSTANCEOF)) === 0;
     }
 
     /**
@@ -38,6 +32,10 @@ class UserResolver implements ArgumentValueResolverInterface
      */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
+        if (User::class !== $argument->getType() || \count($argument->getAttributes(CurrentUser::class, ArgumentMetadata::IS_INSTANCEOF)) > 0) {
+            return [];
+        }
+
         $varName = $argument->getName();
         if ($attrs = $argument->getAttributes(VarName::class)) {
             foreach ($attrs as $attr) {
@@ -57,6 +55,6 @@ class UserResolver implements ArgumentValueResolverInterface
             throw new NotFoundHttpException('User with name '.$username.' was not found');
         }
 
-        yield $user;
+        return [$user];
     }
 }

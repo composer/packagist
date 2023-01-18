@@ -28,7 +28,7 @@ use Endroid\QrCode\Writer\SvgWriter;
 use Pagerfanta\Pagerfanta;
 use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -307,7 +307,7 @@ class UserController extends Controller
             'user/enable_two_factor_auth.html.twig',
             [
                 'user' => $user,
-                'form' => $form->createView(),
+                'form' => $form,
                 'qrCode' => $qrCode->getDataUri(),
             ]
         );

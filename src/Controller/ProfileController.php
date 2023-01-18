@@ -131,7 +131,7 @@ class ProfileController extends Controller
         }
 
         return $this->render('user/edit.html.twig', [
-            'form' => $form->createView(),
+            'form' => $form,
         ]);
     }
 

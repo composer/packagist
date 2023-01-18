@@ -16,20 +16,14 @@ use App\Attribute\VarName;
 use App\Entity\Package;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
+use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class PackageResolver implements ArgumentValueResolverInterface
+class PackageResolver implements ValueResolverInterface
 {
-    public function __construct(
-        private ManagerRegistry $doctrine,
-    ) {
-    }
-
-    public function supports(Request $request, ArgumentMetadata $argument): bool
+    public function __construct(private readonly ManagerRegistry $doctrine)
     {
-        return Package::class === $argument->getType();
     }
 
     /**
@@ -37,6 +31,10 @@ class PackageResolver implements ArgumentValueResolverInterface
      */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
+        if (Package::class !== $argument->getType()) {
+            return [];
+        }
+
         $varName = $argument->getName();
         if ($attrs = $argument->getAttributes(VarName::class)) {
             foreach ($attrs as $attr) {
@@ -56,6 +54,6 @@ class PackageResolver implements ArgumentValueResolverInterface
             throw new NotFoundHttpException('Package with name '.$pkgName.' was not found');
         }
 
-        yield $package;
+        return [$package];
     }
 }

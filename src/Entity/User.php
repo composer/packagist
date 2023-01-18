@@ -257,6 +257,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function getTotpAuthenticationConfiguration(): TotpConfigurationInterface
     {
         \Webmozart\Assert\Assert::notNull($this->totpSecret);
+
         return new TotpConfiguration($this->totpSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
     }
 
