@@ -282,12 +282,11 @@ class DownloadManager
         $record->setLastUpdated($now);
 
         foreach ($keys as $key => $val) {
-            $date = null;
-            if (Preg::isMatch('{:(\d+)$}', $key, $match)) {
-                $date = $match[1];
-            } else {
+            if (!Preg::isMatch('{:(\d+)$}', $key, $match)) {
                 throw new \LogicException('Malformed key does not end with a date stamp in form YYYYMMDD');
             }
+            /** @var numeric-string $date */
+            $date = $match[1];
             if ($val > 0) {
                 $record->setDataPoint($date, $val);
             }

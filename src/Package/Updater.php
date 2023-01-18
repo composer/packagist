@@ -239,7 +239,7 @@ class Updater
             );
         }
 
-        if (Preg::isMatch('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
+        if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
             $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver);
         } else {
             $this->updateReadme($io, $package, $driver);
@@ -638,7 +638,7 @@ class Updater
 
         // detect base path for github readme if file is located in a subfolder like docs/README.md
         $basePath = '';
-        if ($host === 'github.com' && Preg::isMatch('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
+        if ($host === 'github.com' && Preg::isMatchStrictGroups('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
             $basePath = dirname($match[1]);
         }
         if ($basePath) {

@@ -23,6 +23,7 @@ use League\OAuth2\Client\Provider\GithubResourceOwner;
 use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
@@ -144,7 +145,9 @@ class GitHubAuthenticator extends OAuth2Authenticator
                 $this->getEM()->persist($user);
                 $this->getEM()->flush();
 
-                $request->getSession()->getFlashBag()->add('success', 'A new account was automatically created. You are now logged in.');
+                $session = $request->getSession();
+                assert($session instanceof FlashBagAwareSessionInterface);
+                $session->getFlashBag()->add('success', 'A new account was automatically created. You are now logged in.');
 
                 return $user;
             }),
@@ -175,7 +178,9 @@ class GitHubAuthenticator extends OAuth2Authenticator
             $message = 'No Packagist.org account found that is connected to your GitHub account. Please register an account and connect it to GitHub first.';
         }
 
-        $request->getSession()->getFlashBag()->add('warning', $message);
+        $session = $request->getSession();
+        assert($session instanceof FlashBagAwareSessionInterface);
+        $session->getFlashBag()->add('warning', $message);
 
         return $this->httpUtils->createRedirectResponse($request, 'login', Response::HTTP_FOUND);
     }

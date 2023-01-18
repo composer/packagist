@@ -106,7 +106,7 @@ class ValidPackageRepositoryValidator extends ConstraintValidator
         }
 
         if (
-            Preg::isMatch('{^([^/]*(symfony)[^/]*)/}', $name, $match)
+            Preg::isMatchStrictGroups('{^([^/]*(symfony)[^/]*)/}', $name, $match)
             && !$this->packageRepository->isVendorTaken($match[1])
         ) {
             $this->addViolation('The vendor name '.htmlentities($match[1], ENT_COMPAT, 'utf-8').' is blocked, if you think this is a mistake please get in touch with us.');

@@ -21,7 +21,17 @@ parameters:
 			path: src/DataFixtures/PackageFixtures.php
 
 		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) should return array\\<array\\{id\\: int, name\\: string, description\\: string\\|null, language\\: string\\|null, abandoned\\: int, replacementPackage\\: string\\|null\\}\\> but returns array\\<int, non\\-empty\\-array\\<string, mixed\\>\\>\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggestCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Query error\\: Unknown column 'd\\.total' in 'order clause' \\(1054\\)\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 

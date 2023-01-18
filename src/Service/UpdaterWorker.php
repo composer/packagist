@@ -221,8 +221,8 @@ class UpdaterWorker
 
             // github update downgraded to a git clone, this should not happen, so check through API whether the package still exists
             $driver = $repository->getDriver();
-            if ($driver && Preg::isMatch('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository(), $match) && str_starts_with($driver->getUrl(), 'git@')) {
-                if ($result = $this->checkForDeadGitHubPackage($package, $match, $httpDownloader, $io->getOutput())) {
+            if ($driver && Preg::isMatchStrictGroups('{[@/]github.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $match) && str_starts_with($driver->getUrl(), 'git@')) {
+                if ($result = $this->checkForDeadGitHubPackage($package, $match[1], $httpDownloader, $io->getOutput())) {
                     return $result;
                 }
             }
@@ -306,8 +306,8 @@ class UpdaterWorker
             }
 
             // github 404'ed, check through API whether the package still exists and delete if not
-            if ($found404 && Preg::isMatch('{[@/]github.com[:/]([^/]+/[^/]+?)(\.git)?$}i', $package->getRepository(), $match)) {
-                if ($result = $this->checkForDeadGitHubPackage($package, $match, $httpDownloader, $output)) {
+            if ($found404 && Preg::isMatchStrictGroups('{[@/]github.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $match)) {
+                if ($result = $this->checkForDeadGitHubPackage($package, $match[1], $httpDownloader, $output)) {
                     return $result;
                 }
             }
@@ -375,13 +375,12 @@ class UpdaterWorker
     }
 
     /**
-     * @param array<int, string> $match
      * @return array{status: Job::STATUS_*, message: string, details: string, exception: TransportException, vendor: string}|null
      */
-    private function checkForDeadGitHubPackage(Package $package, array $match, HttpDownloader $httpDownloader, string $output): ?array
+    private function checkForDeadGitHubPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output): ?array
     {
         try {
-            $httpDownloader->get('https://api.github.com/repos/'.$match[1].'/git/refs/heads', ['retry-auth-failure' => false]);
+            $httpDownloader->get('https://api.github.com/repos/'.$repo.'/git/refs/heads', ['retry-auth-failure' => false]);
         } catch (\Throwable $e) {
             // 404 indicates the repo does not exist
             // 409 indicates an empty repo which is about the same for our purposes

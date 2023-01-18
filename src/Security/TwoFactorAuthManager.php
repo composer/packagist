@@ -18,6 +18,7 @@ use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Twig\Environment;
 use Symfony\Component\Mailer\MailerInterface;
@@ -141,6 +142,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
             return;
         }
 
+        assert($session instanceof FlashBagAwareSessionInterface);
         $session->getFlashBag()->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
     }
 }

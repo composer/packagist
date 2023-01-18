@@ -174,7 +174,7 @@ class PhpStatRepository extends ServiceEntityRepository
         $majorRecord = null;
         $record = $this->createOrUpdateRecord($package, $info['type'], $info['version'], $keys, $now);
         // create an aggregate major version data point by summing up all the minor versions under it
-        if ($record && $record->getDepth() === PhpStat::DEPTH_MINOR && Preg::isMatch('{^\d+}', $record->getVersion(), $match)) {
+        if ($record && $record->getDepth() === PhpStat::DEPTH_MINOR && Preg::isMatchStrictGroups('{^\d+}', $record->getVersion(), $match)) {
             $majorRecord = $this->createOrUpdateRecord($package, $info['type'], $match[0], $keys, $now);
         }
 
@@ -280,6 +280,8 @@ class PhpStatRepository extends ServiceEntityRepository
         if ((int) $match['package'] !== $package->getId()) {
             throw new \LogicException('Expected keys for package id '.$package->getId().', got '.$key);
         }
+
+        assert(isset($match['package'], $match['version'], $match['phpversion'], $match['date']));
 
         return [
             'type' => $match['platform'] === 'platform' ? PhpStat::TYPE_PLATFORM : PhpStat::TYPE_PHP,
