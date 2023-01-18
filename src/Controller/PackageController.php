@@ -432,7 +432,7 @@ class PackageController extends Controller
     public function markSafeAction(Request $req): RedirectResponse
     {
         /** @var string[] $vendors */
-        $vendors = array_filter($req->request->all('vendor'));
+        $vendors = array_filter($req->request->all('vendor'), fn ($vendor) => $vendor !== '' && $vendor !== null);
         if (!$this->isCsrfTokenValid('mark_safe', (string) $req->request->get('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
         }
