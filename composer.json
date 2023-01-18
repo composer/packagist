@@ -57,6 +57,7 @@
         "symfony/asset": "^6",
         "symfony/console": "^6",
         "symfony/dotenv": "^6",
+        "symfony/doctrine-bridge": "6.1.*",
         "symfony/expression-language": "^6",
         "symfony/flex": "^2",
         "symfony/form": "^6",
