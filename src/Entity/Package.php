@@ -389,7 +389,7 @@ class Package
         $repoUrl = Preg::replace('{^(https://bitbucket.org/[^/]+/[^/]+)/src/[^.]+}i', '$1.git', $repoUrl);
 
         // normalize protocol case
-        $repoUrl = Preg::replaceCallback('{^(https?|git|svn)://}i', static fn ($match) => strtolower($match[1]) . '://', $repoUrl);
+        $repoUrl = Preg::replaceCallbackStrictGroups('{^(https?|git|svn)://}i', static fn ($match) => strtolower($match[1]) . '://', $repoUrl);
 
         $this->repository = $repoUrl;
         $this->remoteId = null;

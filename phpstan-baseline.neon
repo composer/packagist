@@ -21,7 +21,17 @@ parameters:
 			path: src/DataFixtures/PackageFixtures.php
 
 		-
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) should return array\\<array\\{id\\: int, name\\: string, description\\: string\\|null, language\\: string\\|null, abandoned\\: int, replacementPackage\\: string\\|null\\}\\> but returns array\\<int, non\\-empty\\-array\\<string, mixed\\>\\>\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggestCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
+			message: "#^Query error\\: Unknown column 'd\\.total' in 'order clause' \\(1054\\)\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
@@ -44,6 +54,16 @@ parameters:
 			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavoriteCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
 			count: 1
 			path: src/Model/FavoriteManager.php
+
+		-
+			message: "#^Call to an undefined method Symfony\\\\Component\\\\HttpFoundation\\\\Session\\\\SessionInterface\\:\\:getFlashBag\\(\\)\\.$#"
+			count: 2
+			path: src/Security/GitHubAuthenticator.php
+
+		-
+			message: "#^Call to an undefined method Symfony\\\\Component\\\\HttpFoundation\\\\Session\\\\SessionInterface\\:\\:getFlashBag\\(\\)\\.$#"
+			count: 1
+			path: src/Security/TwoFactorAuthManager.php
 
 		-
 			message: "#^Parameter \\#1 \\$job of method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:process\\(\\) expects App\\\\Entity\\\\Job\\<array\\{id\\: int, update_equal_refs\\: bool, delete_before\\: bool, force_dump\\: bool\\}\\>\\|App\\\\Entity\\\\Job\\<array\\{id\\: int, old_scope\\: string, new_scope\\: string\\}\\>\\|App\\\\Entity\\\\Job\\<array\\{source\\: string\\}\\>, App\\\\Entity\\\\Job\\<array\\<string, bool\\|int\\|string\\>\\> given\\.$#"

@@ -26,14 +26,15 @@ class UserAgentParser
     public function __construct(?string $userAgent)
     {
         if ($userAgent && Preg::isMatch('#^Composer/(?P<composer>[a-z0-9.+-]+) \((?P<os>[^\s;]+)[^;]*?; [^;]*?; (?P<engine>HHVM|PHP) (?P<php>[0-9.]+)[^;]*(?:; (?P<http>streams|curl \d+\.\d+)[^;)]*)?(?:; Platform-PHP (?P<platform_php>[0-9.]+)[^;]*)?(?P<ci>; CI)?#i', $userAgent, $matches)) {
+            assert(isset($matches['composer'], $matches['engine'], $matches['os'], $matches['php']));
             if ($matches['composer'] === 'source' || Preg::isMatch('{^[a-f0-9]{40}$}', $matches['composer'])) {
                 $matches['composer'] = 'pre-1.8.5';
             }
             $this->composerVersion = Preg::replace('{\+[a-f0-9]{40}}', '', $matches['composer']);
             $this->phpVersion = (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['php'];
-            $this->platformPhpVersion = !empty($matches['platform_php']) ? (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['platform_php'] : null;
+            $this->platformPhpVersion = null !== $matches['platform_php'] ? (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['platform_php'] : null;
             $this->os = Preg::replace('{^cygwin_nt-.*}', 'cygwin', strtolower($matches['os']));
-            $this->httpVersion = !empty($matches['http']) ? strtolower($matches['http']) : null;
+            $this->httpVersion = null !== $matches['http'] ? strtolower($matches['http']) : null;
             $this->ci = (bool) ($matches['ci'] ?? null);
         }
     }

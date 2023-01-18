@@ -486,6 +486,8 @@ class ApiController extends Controller
                 $url === 'https://packagist.org/packages/'.$package->getName()
                 || (
                     Preg::isMatch($urlRegex, $package->getRepository(), $candidate)
+                    && isset($candidate['host'], $candidate['path'])
+                    && isset($matched['host'], $matched['path'])
                     && strtolower($candidate['host']) === strtolower($matched['host'])
                     && strtolower($candidate['path']) === strtolower($matched['path'])
                 )
