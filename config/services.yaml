@@ -69,7 +69,7 @@ services:
     App\ArgumentResolver\:
         resource: '../src/ArgumentResolver/*.php'
         tags:
-            - { name: controller.argument_value_resolver, priority: 115 } # Put these above RequestAttributeValueResolver (100) and above doctrine.orm.entity_value_resolver (110) but below native user value resolver (120)
+            - { name: controller.argument_value_resolver, priority: 115 } # Put these above doctrine.orm.entity_value_resolver (110) but below user_value_resolver (120)
 
     App\Package\SymlinkDumper:
         $buildDir: '%packagist_metadata_dir%'

@@ -21,6 +21,9 @@ use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
+/**
+ * Automatically loads users using the usernameCanonical property for perf reasons to avoid having to map it everywhere
+ */
 class UserResolver implements ValueResolverInterface
 {
     public function __construct(private readonly ManagerRegistry $doctrine)

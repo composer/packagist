@@ -12,7 +12,6 @@
 
 namespace App\Controller;
 
-use App\Attribute\VarName;
 use App\Entity\Dependent;
 use App\Entity\PhpStat;
 use App\Util\Killswitch;
@@ -823,7 +822,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/maintainers/', name: 'add_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
-    public function createMaintainerAction(Request $req, #[VarName('name')] Package $package, LoggerInterface $logger): RedirectResponse
+    public function createMaintainerAction(Request $req, Package $package, LoggerInterface $logger): RedirectResponse
     {
         if (!$form = $this->createAddMaintainerForm($package)) {
             throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
@@ -861,7 +860,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/maintainers/delete', name: 'remove_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
-    public function removeMaintainerAction(Request $req, #[VarName('name')] Package $package, LoggerInterface $logger): Response
+    public function removeMaintainerAction(Request $req, Package $package, LoggerInterface $logger): Response
     {
         if (!$removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
             throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
@@ -905,7 +904,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/edit', name: 'edit_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
-    public function editAction(Request $req, #[VarName('name')] Package $package, #[CurrentUser] ?User $user = null): Response
+    public function editAction(Request $req, Package $package, #[CurrentUser] ?User $user = null): Response
     {
         if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
@@ -938,7 +937,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/abandon', name: 'abandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
-    public function abandonAction(Request $request, #[VarName('name')] Package $package, #[CurrentUser] ?User $user = null): Response
+    public function abandonAction(Request $request, Package $package, #[CurrentUser] ?User $user = null): Response
     {
         if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
@@ -968,7 +967,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/unabandon', name: 'unabandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
-    public function unabandonAction(#[VarName('name')] Package $package, #[CurrentUser] ?User $user = null): RedirectResponse
+    public function unabandonAction(Package $package, #[CurrentUser] ?User $user = null): RedirectResponse
     {
         if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
             throw new AccessDeniedException;
@@ -989,7 +988,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/stats.{_format}', name: 'view_package_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'])]
-    public function statsAction(Request $req, #[VarName('name')] Package $package): Response
+    public function statsAction(Request $req, Package $package): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -1036,7 +1035,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/php-stats.{_format}', name: 'view_package_php_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'])]
-    public function phpStatsAction(Request $req, #[VarName('name')] Package $package): Response
+    public function phpStatsAction(Request $req, Package $package): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -1321,7 +1320,40 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/stats/all.json', name: 'package_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
-    public function overallStatsAction(Request $req, #[VarName('name')] Package $package, ?Version $version = null, ?string $majorVersion = null): JsonResponse
+    public function overallStatsAction(Request $req, Package $package): JsonResponse
+    {
+        return $this->computeStats($req, $package);
+    }
+
+    #[Route(path: '/packages/{name}/stats/major/{majorVersion}.json', name: 'major_version_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'majorVersion' => '(all|[0-9]+?)'])]
+    public function majorVersionStatsAction(Request $req, Package $package, string $majorVersion): JsonResponse
+    {
+        return $this->computeStats($req, $package, null, $majorVersion);
+    }
+
+    #[Route(path: '/packages/{name}/stats/{version}.json', name: 'version_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'version' => '.+?'])]
+    public function versionStatsAction(Request $req, Package $package, string $version): JsonResponse
+    {
+        $normalizer = new VersionParser;
+        try {
+            $normVersion = $normalizer->normalize($version);
+        } catch (\UnexpectedValueException $e) {
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy([
+            'package' => $package,
+            'normalizedVersion' => $normVersion,
+        ]);
+
+        if (!$version) {
+            throw new NotFoundHttpException();
+        }
+
+        return $this->computeStats($req, $package, $version);
+    }
+
+    private function computeStats(Request $req, Package $package, ?Version $version = null, ?string $majorVersion = null): JsonResponse
     {
         if ($from = $req->query->get('from')) {
             $from = new DateTimeImmutable($from);
@@ -1345,7 +1377,7 @@ class PackageController extends Controller
                 }
                 $dlData = $this->getEM()->getRepository(Download::class)->findDataByMajorVersion($package, (int) $majorVersion);
             }
-        } elseif ($version) {
+        } elseif (null !== $version) {
             $downloads = $this->getEM()->getRepository(Download::class)->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
             $dlData[$version->getVersion()] = [$downloads ? $downloads->getData() : []];
         } else {
@@ -1385,34 +1417,6 @@ class PackageController extends Controller
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $response;
-    }
-
-    #[Route(path: '/packages/{name}/stats/major/{majorVersion}.json', name: 'major_version_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'majorVersion' => '(all|[0-9]+?)'])]
-    public function majorVersionStatsAction(Request $req, #[VarName('name')] Package $package, string $majorVersion): JsonResponse
-    {
-        return $this->overallStatsAction($req, $package, null, $majorVersion);
-    }
-
-    #[Route(path: '/packages/{name}/stats/{version}.json', name: 'version_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'version' => '.+?'])]
-    public function versionStatsAction(Request $req, #[VarName('name')] Package $package, string $version): JsonResponse
-    {
-        $normalizer = new VersionParser;
-        try {
-            $normVersion = $normalizer->normalize($version);
-        } catch (\UnexpectedValueException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        }
-
-        $version = $this->getEM()->getRepository(Version::class)->findOneBy([
-            'package' => $package,
-            'normalizedVersion' => $normVersion,
-        ]);
-
-        if (!$version) {
-            throw new NotFoundHttpException();
-        }
-
-        return $this->overallStatsAction($req, $package, $version);
     }
 
     #[Route(path: '/packages/{name}/advisories', name: 'view_package_advisories', requirements: ['name' => '([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)'])]

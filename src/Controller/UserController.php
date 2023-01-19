@@ -28,6 +28,7 @@ use Endroid\QrCode\Writer\SvgWriter;
 use Pagerfanta\Pagerfanta;
 use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -181,7 +182,12 @@ class UserController extends Controller
 
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/users/{name}/favorites/{package}', name: 'user_remove_fav', defaults: ['_format' => 'json'], requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], methods: ['DELETE'])]
-    public function deleteFavoriteAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Package $package, FavoriteManager $favoriteManager): Response
+    public function deleteFavoriteAction(
+        #[VarName('name')] User $user,
+        #[CurrentUser] User $loggedUser,
+        #[MapEntity(mapping: ['package' => 'name'])] Package $package,
+        FavoriteManager $favoriteManager,
+    ): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You can only change your own favorites');
