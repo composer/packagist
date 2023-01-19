@@ -6,8 +6,10 @@ doctrine:
             2: 1.3
     orm:
         auto_generate_proxy_classes: true
-        enable_lazy_ghost_objects: false
+        enable_lazy_ghost_objects: true
         auto_mapping: true
+        controller_resolver:
+            enabled: false
         mappings:
             App:
                 is_bundle: false
