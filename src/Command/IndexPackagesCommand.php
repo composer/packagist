@@ -200,7 +200,7 @@ class IndexPackagesCommand extends Command
         $downloadsLog = $downloads['monthly'] > 0 ? log($downloads['monthly'], 10) : 0;
         $starsLog = $package->getGitHubStars() > 0 ? log($package->getGitHubStars(), 10) : 0;
         $popularity = round($downloadsLog + $starsLog);
-        $trendiness = (float) $this->redis->zscore('downloads:trending', $package->getId());
+        $trendiness = (float) $this->redis->zscore('downloads:trending', (string) $package->getId());
 
         $record = [
             'id' => $package->getId(),

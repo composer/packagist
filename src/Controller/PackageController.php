@@ -351,7 +351,7 @@ class PackageController extends Controller
             $trendiness = [];
             foreach ($providers as $package) {
                 /** @var Package $package */
-                $trendiness[$package->getId()] = (int) $redis->zscore('downloads:trending', $package->getId());
+                $trendiness[$package->getId()] = (int) $redis->zscore('downloads:trending', (string) $package->getId());
             }
             usort($providers, static function (Package $a, Package $b) use ($trendiness) {
                 if ($trendiness[$a->getId()] === $trendiness[$b->getId()]) {

@@ -14,12 +14,15 @@ snc_redis:
             alias: default
             dsn: '%env(REDIS_URL)%'
             options:
-                profile: 3.2
                 connection_timeout: 1
+                commands:
+                    fetchVersionIds: 'App\Redis\FetchVersionIds'
+                    downloadsIncr: 'App\Redis\DownloadsIncr'
+                    incrFailedLoginCounter: 'App\Redis\FailedLoginCounter'
+
         cache:
             type: predis
             alias: cache
             dsn: '%env(REDIS_CACHE_URL)%'
             options:
-                profile: 3.2
                 connection_timeout: 1

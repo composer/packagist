@@ -12,7 +12,6 @@
 
 namespace App\Model;
 
-use App\Redis\DownloadsIncr;
 use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
@@ -30,8 +29,6 @@ use Predis\Profile\RedisProfile;
 class DownloadManager
 {
     use DoctrineTrait;
-
-    protected bool $redisCommandLoaded = false;
 
     public function __construct(private Client $redis, private ManagerRegistry $doctrine)
     {
@@ -157,13 +154,6 @@ class DownloadManager
         $throttleDay = date('Ymd', $throttleExpiry);
         $day = date('Ymd', $now);
         $month = date('Ym', $now);
-
-        if (!$this->redisCommandLoaded) {
-            $profile = $this->redis->getProfile();
-            assert($profile instanceof RedisProfile);
-            $profile->defineCommand('downloadsIncr', DownloadsIncr::class);
-            $this->redisCommandLoaded = true;
-        }
 
         // init keys, see numInitKeys in lua script
         $args = [

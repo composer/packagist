@@ -40,8 +40,8 @@ class FavoriteManager
 
     public function removeFavorite(User $user, Package $package): void
     {
-        $this->redis->zrem('pkg:'.$package->getId().':fav', $user->getId());
-        $this->redis->zrem('usr:'.$user->getId().':fav', $package->getId());
+        $this->redis->zrem('pkg:'.$package->getId().':fav', (string) $user->getId());
+        $this->redis->zrem('usr:'.$user->getId().':fav', (string) $package->getId());
     }
 
     /**
@@ -102,6 +102,6 @@ class FavoriteManager
 
     public function isMarked(User $user, Package $package): bool
     {
-        return null !== $this->redis->zrank('usr:'.$user->getId().':fav', $package->getId());
+        return null !== $this->redis->zrank('usr:'.$user->getId().':fav', (string) $package->getId());
     }
 }

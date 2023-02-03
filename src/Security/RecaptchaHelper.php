@@ -12,7 +12,6 @@
 
 namespace App\Security;
 
-use App\Redis\FailedLoginCounter;
 use Predis\Client;
 use Predis\Profile\RedisProfile;
 use Symfony\Component\HttpFoundation\Request;
@@ -57,10 +56,6 @@ class RecaptchaHelper
         if (!$this->recaptchaEnabled) {
             return;
         }
-
-        $profile = $this->redisCache->getProfile();
-        assert($profile instanceof RedisProfile);
-        $profile->defineCommand('incrFailedLoginCounter', FailedLoginCounter::class);
 
         $ipKey = self::LOGIN_BASE_KEY_IP . $request->getClientIp();
         $userKey = $this->getUserKey($request);

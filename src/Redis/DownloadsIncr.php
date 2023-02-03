@@ -22,21 +22,20 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
     public function getKeysCount(): int
     {
         if (!$this->args) {
-            throw new \LogicException('getKeysCount called before filterArguments');
+            throw new \LogicException('getKeysCount called before setArguments');
         }
 
         return count($this->args) - 4 /* ACTUAL ARGS */;
     }
 
     /**
-     * @param  array<string|int> $arguments
-     * @return array<string|int>
+     * @param array<string|int> $arguments
      */
-    protected function filterArguments(array $arguments): array
+    public function setArguments(array $arguments): void
     {
         $this->args = $arguments;
 
-        return parent::filterArguments($arguments);
+        parent::setArguments($arguments);
     }
 
     public function getScript(): string

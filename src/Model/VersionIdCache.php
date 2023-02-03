@@ -18,8 +18,6 @@ use Predis\Client;
 
 class VersionIdCache
 {
-    private bool $redisCommandLoaded = false;
-
     public function __construct(private Client $redis)
     {
     }
@@ -30,12 +28,6 @@ class VersionIdCache
      */
     public function augmentDownloadPayloadWithIds(array $payload): array
     {
-        if (!$this->redisCommandLoaded) {
-            /** @phpstan-ignore-next-line */
-            $this->redis->getProfile()->defineCommand('fetchVersionIds', 'App\Redis\FetchVersionIds');
-            $this->redisCommandLoaded = true;
-        }
-
         $args = [];
         foreach ($payload as $package) {
             $args[] = 'ids:'.strtolower($package['name']);

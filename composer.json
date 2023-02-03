@@ -29,7 +29,7 @@
         "cebe/markdown": "^1.1",
         "composer/composer": "^2.5@dev",
         "composer/pcre": "^3.0",
-        "doctrine/annotations": "^1.0",
+        "doctrine/annotations": "^2",
         "doctrine/common": "^3",
         "doctrine/doctrine-bundle": "^2.2",
         "doctrine/orm": "^2.7",
@@ -47,13 +47,13 @@
         "pagerfanta/doctrine-orm-adapter": "^3.1",
         "pagerfanta/twig": "^3.1",
         "phpdocumentor/reflection-docblock": "^5.2",
-        "predis/predis": "^1.0",
+        "predis/predis": "^2.0",
         "scheb/2fa-backup-code": "^6",
         "scheb/2fa-bundle": "^6",
         "scheb/2fa-totp": "^6",
         "scheb/2fa-trusted-device": "^6",
         "seld/signal-handler": "^2",
-        "snc/redis-bundle": "^4.2",
+        "snc/redis-bundle": "dev-custom_commands_config as 4.6.99",
         "symfony/asset": "^6",
         "symfony/console": "^6",
         "symfony/dotenv": "^6",
@@ -163,5 +163,11 @@
         "symfony-tests-dir": "tests",
         "symfony-assets-install": "relative",
         "public-dir": "web/"
+    },
+    "repositories": {
+        "snc_redis": {
+            "type": "vcs",
+            "url": "https://github.com/Seldaek/SncRedisBundle"
+        }
     }
 }

@@ -14,11 +14,6 @@ namespace App\Redis;
 
 class FetchVersionIds extends \Predis\Command\ScriptCommand
 {
-    public function getKeysCount(): int
-    {
-        return 0;
-    }
-
     public function getScript(): string
     {
         return <<<LUA
