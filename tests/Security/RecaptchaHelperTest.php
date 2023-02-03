@@ -45,11 +45,6 @@ class RecaptchaHelperTest extends TestCase
     {
         $this->redis
             ->expects($this->once())
-            ->method('getProfile')
-            ->willReturn($this->createMock(RedisProfile::class));
-
-        $this->redis
-            ->expects($this->once())
             ->method('__call')
             ->with($this->equalTo('incrFailedLoginCounter'));
 

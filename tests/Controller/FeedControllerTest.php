@@ -13,6 +13,7 @@
 namespace App\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class FeedControllerTest extends WebTestCase
 {
@@ -21,9 +22,9 @@ class FeedControllerTest extends WebTestCase
      */
     public function testFeedAction(string $feed, string $format, ?string $vendor = null)
     {
-        $client = self::createClient();
+        $client = static::createClient();
 
-        $url = $client->getContainer()->get('router')->generate($feed, ['_format' => $format, 'vendor' => $vendor]);
+        $url = static::getContainer()->get(UrlGeneratorInterface::class)->generate($feed, ['_format' => $format, 'vendor' => $vendor]);
 
         $crawler = $client->request('GET', $url);
 

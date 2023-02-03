@@ -12,23 +12,44 @@
 
 namespace App\Tests\Controller;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\Persistence\ManagerRegistry;
 use Exception;
 use App\Entity\Package;
 use App\Entity\User;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class ApiControllerTest extends WebTestCase
 {
-    public function testGithubFailsCorrectly()
+    private KernelBrowser $client;
+
+    public function setUp(): void
     {
-        $client = self::createClient();
+        $this->client = self::createClient();
+        static::getContainer()->get(Connection::class)->beginTransaction();
 
-        $client->request('GET', '/api/github');
-        $this->assertEquals(405, $client->getResponse()->getStatusCode(), 'GET method should not be allowed for GitHub Post-Receive URL');
+        parent::setUp();
+    }
 
+    public function tearDown(): void
+    {
+        static::getContainer()->get(Connection::class)->rollBack();
+
+        parent::tearDown();
+    }
+
+    public function testGithubFailsOnGet(): void
+    {
+        $this->client->request('GET', '/api/github');
+        $this->assertEquals(405, $this->client->getResponse()->getStatusCode(), 'GET method should not be allowed for GitHub Post-Receive URL');
+    }
+
+    public function testGitHubFailsWithInvalidCredentials(): void
+    {
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
-        $client->request('POST', '/api/github?username=INVALID_USER&apiToken=INVALID_TOKEN', ['payload' => $payload]);
-        $this->assertEquals(403, $client->getResponse()->getStatusCode(), 'POST method should return 403 "Forbidden" if invalid username and API Token are sent: '.$client->getResponse()->getContent());
+        $this->client->request('POST', '/api/github?username=INVALID_USER&apiToken=INVALID_TOKEN', ['payload' => $payload]);
+        $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), 'POST method should return 403 "Forbidden" if invalid username and API Token are sent: '.$this->client->getResponse()->getContent());
     }
 
     /**
@@ -36,15 +57,6 @@ class ApiControllerTest extends WebTestCase
      */
     public function testGithubApi($url)
     {
-        $client = self::createClient();
-
-        $projectDir = $client->getContainer()->getParameter('kernel.project_dir');
-
-        $this->executeCommand('php '.$projectDir . '/bin/console doctrine:database:drop --env=test --force -q', false);
-        $this->executeCommand('php '.$projectDir . '/bin/console doctrine:database:create --env=test -q');
-        $this->executeCommand('php '.$projectDir . '/bin/console doctrine:schema:create --env=test -q');
-        $this->executeCommand('php '.$projectDir . '/bin/console redis:query flushall --env=test -n -q');
-
         $package = new Package;
         $package->setName('test/'.md5(uniqid()));
         $package->setRepository($url);
@@ -57,7 +69,7 @@ class ApiControllerTest extends WebTestCase
         $user->setPassword('testtest');
         $user->setApiToken('token');
 
-        $em = $client->getContainer()->get('doctrine')->getManager();
+        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
         $em->persist($package);
         $em->persist($user);
         $em->flush();
@@ -72,8 +84,8 @@ class ApiControllerTest extends WebTestCase
         static::$kernel->getContainer()->set('App\Service\Scheduler', $scheduler);
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
-        $client->request('POST', '/api/github?username=test&apiToken=token', ['payload' => $payload]);
-        $this->assertEquals(202, $client->getResponse()->getStatusCode(), $client->getResponse()->getContent());
+        $this->client->request('POST', '/api/github?username=test&apiToken=token', ['payload' => $payload]);
+        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     public function githubApiProvider()
@@ -87,13 +99,11 @@ class ApiControllerTest extends WebTestCase
     }
 
     /**
-     * @depends testGithubFailsCorrectly
+     * @depends testGitHubFailsWithInvalidCredentials
      * @dataProvider urlProvider
      */
     public function testUrlDetection($endpoint, $url, $expectedOK)
     {
-        $client = self::createClient();
-
         if ($endpoint == 'bitbucket') {
             $canonUrl = substr($url, 0, 1);
             $absUrl = substr($url, 1);
@@ -102,9 +112,9 @@ class ApiControllerTest extends WebTestCase
             $payload = json_encode(['repository' => ['url' => $url]]);
         }
 
-        $client->request('POST', '/api/'.$endpoint.'?username=INVALID_USER&apiToken=INVALID_TOKEN', ['payload' => $payload]);
+        $this->client->request('POST', '/api/'.$endpoint.'?username=INVALID_USER&apiToken=INVALID_TOKEN', ['payload' => $payload]);
 
-        $status = $client->getResponse()->getStatusCode();
+        $status = $this->client->getResponse()->getStatusCode();
 
         if (!$expectedOK) {
             $this->assertEquals(406, $status, 'POST method should return 406 "Not Acceptable" if an unknown URL was sent');
@@ -151,33 +161,5 @@ class ApiControllerTest extends WebTestCase
             ['github', 'https://github.com', false],
             ['update-package', 'ssh://ghe.example.org/user/jjjjj.git', false],
         ];
-    }
-
-    /**
-     * Executes a given command.
-     *
-     * @param string $command a command to execute
-     *
-     * @throws Exception when the return code is not 0.
-     */
-    protected function executeCommand(
-        string $command,
-        bool $errorHandling = true
-    ) {
-        $output = [];
-
-        $returnCode = null;
-
-        exec($command, $output, $returnCode);
-
-        if ($errorHandling && $returnCode !== 0) {
-            throw new Exception(
-                sprintf(
-                    'Error executing command "%s", return code was "%s".',
-                    $command,
-                    $returnCode
-                )
-            );
-        }
     }
 }
