@@ -12,6 +12,7 @@
 
 namespace App\Tests\Package;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use App\Package\SymlinkDumper;
 
@@ -29,10 +30,8 @@ class SymlinkDumperTest extends TestCase
         $this->mockDumper = null;
     }
 
-    /**
-     * @dataProvider getTestGetTargetListingBlocks
-     */
-    public function testGetTargetListingBlocks($now, array $expected)
+    #[DataProvider('getTestGetTargetListingBlocks')]
+    public function testGetTargetListingBlocks($now, array $expected): void
     {
         $blocks = self::invoke($this->mockDumper, 'getTargetListingBlocks', $now);
 
@@ -43,7 +42,7 @@ class SymlinkDumperTest extends TestCase
         $this->assertEquals($expected, $blocks);
     }
 
-    public function getTestGetTargetListingBlocks()
+    public static function getTestGetTargetListingBlocks(): array
     {
         return [
             [
@@ -84,7 +83,7 @@ class SymlinkDumperTest extends TestCase
         ];
     }
 
-    private static function invoke($object, $method)
+    private static function invoke($object, $method): mixed
     {
         $refl = new \ReflectionMethod($object, $method);
         $refl->setAccessible(true);

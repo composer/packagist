@@ -13,6 +13,7 @@
 namespace App\Tests\Search;
 
 use App\Search\Query;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -55,9 +56,7 @@ final class QueryTest extends TestCase
         static::assertEmpty($query->type);
     }
 
-    /**
-     * @dataProvider provideQueryForEscaping
-     */
+    #[DataProvider('provideQueryForEscaping')]
     public function testConstructQueryEscaping(string $query, string $expected): void
     {
         $query = new Query($query, [], '', 15, 1);
@@ -68,7 +67,7 @@ final class QueryTest extends TestCase
     /**
      * @return array<array{0: string, 1: string}>
      */
-    public function provideQueryForEscaping(): array
+    public static function provideQueryForEscaping(): array
     {
         return [
             ['symfony/property', 'symfony/property'],
@@ -137,10 +136,9 @@ final class QueryTest extends TestCase
     }
 
     /**
-     * @dataProvider provideQueryWithOptions
-     *
      * @phpstan-param SearchOptions $expectedOptions
      */
+    #[DataProvider('provideQueryWithOptions')]
     public function testGetOptions(Query $query, array $expectedOptions): void
     {
         static::assertSame($expectedOptions, $query->getOptions());
@@ -149,7 +147,7 @@ final class QueryTest extends TestCase
     /**
      * @phpstan-return iterable<string, array{0: Query, 1: SearchOptions}>
      */
-    public function provideQueryWithOptions(): iterable
+    public static function provideQueryWithOptions(): iterable
     {
         yield 'empty_tag_type' => [
             new Query('monolog', [], '', 15, 1),

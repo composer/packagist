@@ -17,6 +17,8 @@ use Doctrine\Persistence\ManagerRegistry;
 use Exception;
 use App\Entity\Package;
 use App\Entity\User;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Depends;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -52,10 +54,8 @@ class ApiControllerTest extends WebTestCase
         $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), 'POST method should return 403 "Forbidden" if invalid username and API Token are sent: '.$this->client->getResponse()->getContent());
     }
 
-    /**
-     * @dataProvider githubApiProvider
-     */
-    public function testGithubApi($url)
+    #[DataProvider('githubApiProvider')]
+    public function testGithubApi($url): void
     {
         $package = new Package;
         $package->setName('test/'.md5(uniqid()));
@@ -88,7 +88,7 @@ class ApiControllerTest extends WebTestCase
         $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
-    public function githubApiProvider()
+    public static function githubApiProvider(): array
     {
         return [
             ['https://github.com/composer/composer.git'],
@@ -98,11 +98,9 @@ class ApiControllerTest extends WebTestCase
         ];
     }
 
-    /**
-     * @depends testGitHubFailsWithInvalidCredentials
-     * @dataProvider urlProvider
-     */
-    public function testUrlDetection($endpoint, $url, $expectedOK)
+    #[Depends('testGitHubFailsWithInvalidCredentials')]
+    #[DataProvider('urlProvider')]
+    public function testUrlDetection($endpoint, $url, $expectedOK): void
     {
         if ($endpoint == 'bitbucket') {
             $canonUrl = substr($url, 0, 1);
@@ -123,7 +121,7 @@ class ApiControllerTest extends WebTestCase
         }
     }
 
-    public function urlProvider()
+    public static function urlProvider(): array
     {
         return [
             // valid github URLs

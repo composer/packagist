@@ -35,7 +35,7 @@ class PackageAuditRecordTest extends KernelTestCase
         parent::tearDown();
     }
 
-    public function testPackageChangesGetRecorded()
+    public function testPackageChangesGetRecorded(): void
     {
         $container = static::getContainer();
         $em = $container->get(ManagerRegistry::class)->getManager();

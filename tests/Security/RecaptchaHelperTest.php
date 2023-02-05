@@ -13,16 +13,15 @@
 namespace App\Tests\Security;
 
 use App\Security\RecaptchaHelper;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
-use Predis\Profile\RedisProfile;
 use Symfony\Component\HttpFoundation\Request;
 
 class RecaptchaHelperTest extends TestCase
 {
     private RecaptchaHelper $helper;
-    /** @var Client&\PHPUnit\Framework\MockObject\MockObject */
-    private $redis;
+    private Client&MockObject $redis;
 
     protected function setUp(): void
     {

@@ -14,13 +14,12 @@ namespace App\Tests\Search;
 
 use App\Search\Query;
 use App\Search\ResultTransformer;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class ResultTransformerTest extends KernelTestCase
 {
-    /**
-     * @dataProvider provideQueryWithResults
-     */
+    #[DataProvider('provideQueryWithResults')]
     public function testTransform(Query $query, array $result, array $expectedResult): void
     {
         $transformer = static::getContainer()->get(ResultTransformer::class);
@@ -29,7 +28,7 @@ final class ResultTransformerTest extends KernelTestCase
         static::assertSame($expectedResult, $actualResult);
     }
 
-    public function provideQueryWithResults(): \Generator
+    public static function provideQueryWithResults(): \Generator
     {
         yield 'simple-query' => [
             new Query('monolog', [], '', 15, 0),
