@@ -18,7 +18,6 @@ snc_redis:
                 commands:
                     fetchVersionIds: 'App\Redis\FetchVersionIds'
                     downloadsIncr: 'App\Redis\DownloadsIncr'
-                    incrFailedLoginCounter: 'App\Redis\FailedLoginCounter'
 
         cache:
             type: predis
@@ -26,3 +25,5 @@ snc_redis:
             dsn: '%env(REDIS_CACHE_URL)%'
             options:
                 connection_timeout: 1
+                commands:
+                    incrFailedLoginCounter: 'App\Redis\FailedLoginCounter'
