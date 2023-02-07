@@ -12,15 +12,14 @@
 
 namespace App\Tests\Controller;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class FeedControllerTest extends WebTestCase
 {
-    /**
-     * @dataProvider provideForFeed
-     */
-    public function testFeedAction(string $feed, string $format, ?string $vendor = null)
+    #[DataProvider('provideForFeed')]
+    public function testFeedAction(string $feed, string $format, ?string $vendor = null): void
     {
         $client = static::createClient();
 
@@ -36,7 +35,7 @@ class FeedControllerTest extends WebTestCase
         }
     }
 
-    public function provideForFeed()
+    public static function provideForFeed(): array
     {
         return [
             ['feed_packages', 'rss'],

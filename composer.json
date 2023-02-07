@@ -91,14 +91,13 @@
         "phpstan/phpstan-doctrine": "^1",
         "phpstan/phpstan-symfony": "^1.1",
         "phpstan/phpstan-webmozart-assert": "^1.2",
-        "phpunit/phpunit": "^9.5",
+        "phpunit/phpunit": "^10.0",
         "rector/rector": "^0.15.0",
         "staabm/phpstan-dba": "^0.2",
         "symfony/browser-kit": "^6",
         "symfony/css-selector": "^6",
         "symfony/debug-bundle": "^6",
         "symfony/maker-bundle": "^1.30",
-        "symfony/phpunit-bridge": "^6",
         "symfony/stopwatch": "^6",
         "symfony/var-dumper": "^6",
         "symfony/web-profiler-bundle": "^6"
@@ -150,7 +149,7 @@
         "post-update-cmd": [
             "@auto-scripts"
         ],
-        "test": "bin/phpunit",
+        "test": "vendor/bin/phpunit",
         "phpstan": "vendor/bin/phpstan analyse"
     },
     "extra": {

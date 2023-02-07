@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 
 class PackageManagerTest extends TestCase
 {
-    public function testNotifyFailure()
+    public function testNotifyFailure(): void
     {
         $this->markTestSkipped('Do it!');
 

@@ -32,6 +32,6 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->sets([
         SymfonySetList::SYMFONY_62,
         DoctrineSetList::DOCTRINE_ORM_29,
-        PHPUnitLevelSetList::UP_TO_PHPUNIT_90,
+        PHPUnitLevelSetList::UP_TO_PHPUNIT_100,
     ]);
 };

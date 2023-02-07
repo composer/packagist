@@ -26,6 +26,7 @@ use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\SecurityAdvisorySourceInterface;
 use App\Service\Locker;
 use App\Service\SecurityAdvisoryWorker;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Psr\Log\NullLogger;
@@ -35,14 +36,10 @@ use Doctrine\Persistence\ManagerRegistry;
 class SecurityAdvisoryWorkerTest extends TestCase
 {
     private SecurityAdvisoryWorker $worker;
-    /** @var SecurityAdvisorySourceInterface&\PHPUnit\Framework\MockObject\MockObject */
-    private $source;
-    /** @var EntityManager&\PHPUnit\Framework\MockObject\MockObject */
-    private $em;
-
-    private \PHPUnit\Framework\MockObject\MockObject $securityAdvisoryRepository;
-
-    private \PHPUnit\Framework\MockObject\MockObject $packageRepository;
+    private SecurityAdvisorySourceInterface&MockObject $source;
+    private EntityManager&MockObject $em;
+    private SecurityAdvisoryRepository&MockObject $securityAdvisoryRepository;
+    private EntityRepository&MockObject $packageRepository;
 
     protected function setUp(): void
     {

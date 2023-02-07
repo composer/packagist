@@ -13,19 +13,18 @@
 namespace App\Tests\SecurityAdvisory;
 
 use App\SecurityAdvisory\AdvisoryParser;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class AdvisoryParserTest extends TestCase
 {
-    /**
-     * @dataProvider cveProvider
-     */
+    #[DataProvider('cveProvider')]
     public function testIsValidCve(bool $expected, string $cve): void
     {
         $this->assertSame($expected, AdvisoryParser::isValidCve($cve));
     }
 
-    public function cveProvider(): array
+    public static function cveProvider(): array
     {
         return [
             [true, 'CVE-2022-99999'],
@@ -33,15 +32,13 @@ class AdvisoryParserTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider titleProvider
-     */
+    #[DataProvider('titleProvider')]
     public function test(string $expected, string $title): void
     {
         $this->assertSame($expected, AdvisoryParser::titleWithoutCve($title));
     }
 
-    public function titleProvider(): array
+    public static function titleProvider(): array
     {
         return [
             ['CSRF token missing in forms', 'CVE-2022-99999999999: CSRF token missing in forms'],

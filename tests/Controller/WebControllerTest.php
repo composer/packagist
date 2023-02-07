@@ -110,7 +110,7 @@ class WebControllerTest extends WebTestCase
         static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query-tags.json', $this->client->getResponse()->getContent());
     }
 
-    public function testPackages()
+    public function testPackages(): void
     {
         $this->initializePackages($this->client->getContainer());
 
@@ -119,7 +119,7 @@ class WebControllerTest extends WebTestCase
         $this->assertGreaterThan(0, $crawler->filter('.packages-short li')->count());
     }
 
-    public function testPackage()
+    public function testPackage(): void
     {
         $this->initializePackages($this->client->getContainer());
 
@@ -128,7 +128,10 @@ class WebControllerTest extends WebTestCase
         $this->assertGreaterThan(0, $crawler->filter('.package')->count());
     }
 
-    protected function initializePackages(ContainerInterface $container)
+    /**
+     * @return Package[]
+     */
+    protected function initializePackages(ContainerInterface $container): array
     {
         $em = $container->get('doctrine')->getManager();
 

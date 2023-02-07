@@ -16,6 +16,8 @@ use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use App\Security\BruteForceLoginFormAuthenticator;
 use App\Security\RecaptchaHelper;
 use Doctrine\Persistence\ManagerRegistry;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,16 +30,11 @@ use Symfony\Component\Security\Http\HttpUtils;
 class BruteForceLoginFormAuthenticatorTest extends TestCase
 {
     private BruteForceLoginFormAuthenticator $authenticator;
-    /** @var HttpUtils&\PHPUnit\Framework\MockObject\MockObject */
-    private $httpUtils;
-    /** @var RecaptchaVerifier&\PHPUnit\Framework\MockObject\MockObject */
-    private $recaptchaVerifier;
-    /** @var UserProviderInterface&\PHPUnit\Framework\MockObject\MockObject */
-    private $userProvider;
-    /** @var RecaptchaHelper&\PHPUnit\Framework\MockObject\MockObject */
-    private $recaptchaHelper;
-    /** @var ManagerRegistry&\PHPUnit\Framework\MockObject\MockObject */
-    private $doctrine;
+    private HttpUtils&MockObject $httpUtils;
+    private RecaptchaVerifier&MockObject $recaptchaVerifier;
+    private UserProviderInterface&MockObject $userProvider;
+    private RecaptchaHelper&MockObject $recaptchaHelper;
+    private ManagerRegistry&MockObject $doctrine;
 
     protected function setUp(): void
     {
@@ -50,9 +47,7 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
         $this->authenticator = new BruteForceLoginFormAuthenticator($this->httpUtils, $this->recaptchaVerifier, $this->userProvider, $this->recaptchaHelper, $this->doctrine);
     }
 
-    /**
-     * @dataProvider supportsProvider
-     */
+    #[DataProvider('supportsProvider')]
     public function testSupports(string $method, string $route, bool $expected): void
     {
         $request = new Request();
@@ -62,7 +57,7 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
         $this->assertSame($expected, $this->authenticator->supports($request));
     }
 
-    public function supportsProvider(): array
+    public static function supportsProvider(): array
     {
         return [
             ['POST', 'login', true],

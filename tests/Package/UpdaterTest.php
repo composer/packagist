@@ -36,17 +36,12 @@ use PHPUnit\Framework\TestCase;
 
 class UpdaterTest extends TestCase
 {
-    private IOInterface $ioMock;
-
+    private IOInterface&MockObject $ioMock;
     private Config $config;
-
     private Package $package;
-
     private Updater $updater;
-    /** @var RepositoryInterface&MockObject */
-    private $repositoryMock;
-    /** @var VcsDriverInterface&MockObject */
-    private $driverMock;
+    private RepositoryInterface&MockObject $repositoryMock;
+    private VcsDriverInterface&MockObject $driverMock;
 
     protected function setUp(): void
     {
@@ -98,7 +93,7 @@ class UpdaterTest extends TestCase
         $this->updater = new Updater($registryMock, $providerManagerMock, $versionIdCache);
     }
 
-    public function testUpdatesTheReadme()
+    public function testUpdatesTheReadme(): void
     {
         $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->expects($this->any())->method('getComposerInformation')
@@ -111,7 +106,7 @@ class UpdaterTest extends TestCase
         $this->assertStringContainsString('This is the readme', $this->package->getReadme());
     }
 
-    public function testConvertsMarkdownForReadme()
+    public function testConvertsMarkdownForReadme(): void
     {
         $readme = <<<EOR
 # some package name
@@ -148,7 +143,7 @@ EOR;
      * When <h1> or <h2> titles are not the first element of the README contents,
      * they should not be removed.
      */
-    public function testNoUsefulTitlesAreRemovedForReadme()
+    public function testNoUsefulTitlesAreRemovedForReadme(): void
     {
         $readme = <<<EOR
 Lorem ipsum dolor sit amet.
@@ -173,7 +168,7 @@ EOR;
         self::assertSame($readmeHtml, $this->package->getReadme());
     }
 
-    public function testSurrondsTextReadme()
+    public function testSurrondsTextReadme(): void
     {
         $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->expects($this->any())->method('getComposerInformation')
@@ -186,7 +181,7 @@ EOR;
         self::assertSame('<pre>This is the readme</pre>', $this->package->getReadme());
     }
 
-    public function testUnderstandsDifferentFileNames()
+    public function testUnderstandsDifferentFileNames(): void
     {
         $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->expects($this->any())->method('getComposerInformation')
