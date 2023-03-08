@@ -55,7 +55,7 @@ class ProviderManager
         }
 
         $names = $this->redis->smembers('set:packages');
-        sort($names, SORT_STRING);
+        sort($names, SORT_STRING | SORT_FLAG_CASE);
 
         return $names;
     }

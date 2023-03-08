@@ -202,11 +202,7 @@ class PackageRepository extends ServiceEntityRepository
             $names[] = $row['name'];
         }
 
-        if (defined('SORT_FLAG_CASE')) {
-            sort($names, SORT_STRING | SORT_FLAG_CASE);
-        } else {
-            sort($names, SORT_STRING);
-        }
+        sort($names, SORT_STRING | SORT_FLAG_CASE);
 
         return $names;
     }
