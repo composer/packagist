@@ -463,25 +463,16 @@ class PackageController extends Controller
             return $this->{$match['method'].'Action'}($req, $match['pkg']);
         }
 
-        $repo = $this->getEM()->getRepository(Package::class);
-
-        try {
-            $package = $repo->getPartialPackageByNameWithVersions($name);
-        } catch (NoResultException $e) {
-            if ('json' === $req->getRequestFormat()) {
-                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
-            }
-
-            if ($repo->findProviders($name)) {
-                return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
-            }
-
-            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
+        $package = $this->getPartialPackageWithVersions($req, $name);
+        if ($package instanceof Response) {
+            return $package;
         }
 
         if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam' && !$this->isGranted('ROLE_ADMIN')) {
             throw new NotFoundHttpException('This is a spam package');
         }
+
+        $repo = $this->getEM()->getRepository(Package::class);
 
         if ('json' === $req->getRequestFormat()) {
             $data = $package->toArray($this->getEM()->getRepository(Version::class), true);
@@ -644,20 +635,9 @@ class PackageController extends Controller
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
-        $repo = $this->getEM()->getRepository(Package::class);
-
-        try {
-            $package = $repo->getPartialPackageByNameWithVersions($name);
-        } catch (NoResultException) {
-            if ('json' === $req->getRequestFormat()) {
-                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
-            }
-
-            if ($repo->findProviders($name)) {
-                return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
-            }
-
-            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
+        $package = $this->getPartialPackageWithVersions($req, $name);
+        if ($package instanceof Response) {
+            return $package;
         }
 
         $versions = $package->getVersions();
@@ -800,12 +780,9 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name}', name: 'delete_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'], methods: ['DELETE'])]
     public function deletePackageAction(Request $req, string $name): Response
     {
-        try {
-            $package = $this->getEM()
-                ->getRepository(Package::class)
-                ->getPartialPackageByNameWithVersions($name);
-        } catch (NoResultException) {
-            throw new NotFoundHttpException('The requested package, '.$name.', was not found.');
+        $package = $this->getPartialPackageWithVersions($req, $name);
+        if ($package instanceof Response) {
+            return $package;
         }
 
         if (!$form = $this->createDeletePackageForm($package)) {
@@ -992,10 +969,19 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/stats.{_format}', name: 'view_package_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'])]
-    public function statsAction(Request $req, Package $package): Response
+    public function statsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
+
+        if ($resp = $this->blockAbusers($req)) {
+            return $resp;
+        }
+
+        $package = $this->getPartialPackageWithVersions($req, $name);
+        if ($package instanceof Response) {
+            return $package;
         }
 
         /** @var Version[] $versions */
@@ -1520,6 +1506,25 @@ class PackageController extends Controller
         }
 
         return $this->createFormBuilder([])->getForm();
+    }
+
+    private function getPartialPackageWithVersions(Request $req, string $name): Package|Response
+    {
+        $repo = $this->getEM()->getRepository(Package::class);
+
+        try {
+            return $repo->getPartialPackageByNameWithVersions($name);
+        } catch (NoResultException) {
+            if ('json' === $req->getRequestFormat()) {
+                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
+            }
+
+            if ($repo->findProviders($name)) {
+                return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
+            }
+
+            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
+        }
     }
 
     /**
