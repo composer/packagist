@@ -451,6 +451,10 @@ class PackageController extends Controller
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
+        if ($resp = $this->blockAbusers($req)) {
+            return $resp;
+        }
+
         if ($req->getSession()->isStarted()) {
             $req->getSession()->save();
         }
@@ -1611,5 +1615,14 @@ class PackageController extends Controller
         }
 
         return $intervals[$average];
+    }
+
+    private function blockAbusers(Request $req): ?JsonResponse
+    {
+        if ('json' === $req->getRequestFormat() && in_array($req->getClientIp(), ['193.13.144.72', '144.178.97.2'], true)) {
+            return new JsonResponse("Please use a proper user-agent with contact information or get in touch before abusing the API", 429);
+        }
+
+        return null;
     }
 }
