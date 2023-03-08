@@ -13,6 +13,7 @@
       <li><a href="#list-packages-with-fields">With additional data</a></li>
     </ul>
   </li>
+  <li><a href="#list-popular-packages">List popular packages</a></li>
   <li><a href="#search-packages">{{ 'api_doc.searching'|trans }}</a>
     <ul>
       <li><a href="#search-packages-by-tag">{{ 'api_doc.by_tag'|trans }}</a></li>
@@ -21,6 +22,7 @@
     </ul>
   </li>
   <li><a href="#get-package-data">{{ 'api_doc.get_package_data'|trans }}</a></li>
+  <li><a href="#get-package-stats">Get package download stats</a></li>
   <li><a href="#track-package-updates">Track package updates</a></li>
   <li><a href="#get-statistics">{{ 'api_doc.get_statistics'|trans }}</a></li>
   <li><a href="#list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</a></li>
@@ -36,7 +38,9 @@
   <li>If you send requests in parallel, be a good citizen and do a <strong>maximum of 10 concurrent requests</strong>, or up to 20 if you only fetch static files. Huge bursts in requests can cause issues for other regular users so try to spread out the load.</li>
   <li>Use an <strong>HTTP/2</strong>-capable client and make sure you enable that, it is much more efficient than reconnecting for every request.</li>
 </ul>
+</section>
 
+<section class="col-d-12">
 <h3 id="list-packages">{{ 'api_doc.listing_names'|trans }}</h3>
 <h4 id="list-packages-all">{{ 'api_doc.all_packages'|trans }}</h4>
 <pre>
@@ -78,9 +82,9 @@ GET https://{{ packagist_host }}/packages/list.json?type=[type]
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?type=composer-plugin">https://{{ packagist_host }}/packages/list.json?type=composer-plugin</a></code></p>
 
 <h4 id="list-packages-with-fields">Retrieving additional data if the name is not enough</h4>
-If you need more than just package names you can additionally request one or more fields to be returned with every package. Currently supported fields are: <code>repository</code>, <code>type</code>, and <code>abandoned</code>.
+<p>If you need more than just package names you can additionally request one or more fields to be returned with every package. Currently supported fields are: <code>repository</code>, <code>type</code>, and <code>abandoned</code>.</p>
 
-Note that when requesting fields, the response structure is different.
+<p>Note that when requesting fields, the response structure is different.</p>
 
 <pre>
 GET https://{{ packagist_host }}/packages/list.json?vendor=[type]&amp;fields[]=type&amp;fields[]=repository&amp;fields[]=abandoned
@@ -97,6 +101,32 @@ GET https://{{ packagist_host }}/packages/list.json?vendor=[type]&amp;fields[]=t
 }
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?vendor=composer&amp;fields[]=repository&amp;fields[]=type">https://{{ packagist_host }}/packages/list.json?vendor=composer&amp;fields[]=repository&amp;fields[]=type</a></code></p>
+
+</section>
+
+
+<section class="col-d-12">
+<h3 id="list-popular-packages">List popular packages</h3>
+    <p>If you need to retrieve the most popular (this is sorted by downloads over the last week, not overall downloads to ensure we demote formerly-popular packages) packages please use this endpoint to avoid having to request the download stats for all of our 300K+ packages individually. This also includes faver count (github stars + packagist.org favorites) and downloads count. The API is paginated if you need more than 100.</p>
+<pre>
+GET https://{{ packagist_host }}/explore/popular.json?per_page=100
+<code>
+{
+  "packages": [
+    {
+      "name": "[vendor]/[package]",
+      "description": "[description]",
+      "url": "https://packagist.org/packages/[vendor]/[package]",
+      "downloads": 123456,
+      "favers": 123
+    },
+    ...
+  ],
+  "total": 123456,
+  "next": "https://packagist.org/explore/popular.json?page=2&per_page=100"
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/explore/popular.json?per_page=100">https://{{ packagist_host }}/explore/popular.json?per_page=100</a></code></p>
 
 </section>
 
@@ -283,6 +313,31 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package].json
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/monolog/monolog.json">https://{{ packagist_host }}/packages/monolog/monolog.json</a></code></p>
 
+</section>
+
+<section class="col-d-12">
+<h3 id="get-package-stats">Get package download stats</h3>
+<p>If you need complete package information and use <a href="#get-package-by-name">the JSON API</a> already then please use the <code>downloads</code> key to retrieve stats from that response.</p>
+
+<p>However if you are only interested in download stats for a set of package names, you can use the stats endpoint which includes overall download stats + the faver count (github stars + packagist.org favorites):</p>
+
+<pre>
+GET https://{{ packagist_host }}/[vendor]/[package]/stats.json
+<code>
+{
+  "downloads": {
+    "total": 100,
+    "monthly": 10,
+    "daily": 1
+  },
+  "versions": [
+    "[list of versions]",
+    "[list of versions]"
+  ],
+  "date": "2022-09-15" # stats collection start date
+}
+</code></pre>
+<p>Working example: <code><a href="https://{{ packagist_host }}/monolog/monolog/stats.json">https://{{ packagist_host }}/monolog/monolog/stats.json</a></code></p>
 </section>
 
 
