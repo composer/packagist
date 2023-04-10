@@ -322,7 +322,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package].json
 <p>However if you are only interested in download stats for a set of package names, you can use the stats endpoint which includes overall download stats + the faver count (github stars + packagist.org favorites):</p>
 
 <pre>
-GET https://{{ packagist_host }}/[vendor]/[package]/stats.json
+GET https://{{ packagist_host }}/packages/[vendor]/[package]/stats.json
 <code>
 {
   "downloads": {
@@ -337,7 +337,7 @@ GET https://{{ packagist_host }}/[vendor]/[package]/stats.json
   "date": "2022-09-15" # stats collection start date
 }
 </code></pre>
-<p>Working example: <code><a href="https://{{ packagist_host }}/monolog/monolog/stats.json">https://{{ packagist_host }}/monolog/monolog/stats.json</a></code></p>
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/monolog/monolog/stats.json">https://{{ packagist_host }}/monolog/monolog/stats.json</a></code></p>
 </section>
 
 
