@@ -14,6 +14,7 @@ namespace App\Controller;
 
 use App\Entity\Dependent;
 use App\Entity\PhpStat;
+use App\Security\Voter\PackageActions;
 use App\Util\Killswitch;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
@@ -584,21 +585,17 @@ class PackageController extends Controller
                 }
             }
 
-            if ($maintainerForm = $this->createAddMaintainerForm($package)) {
-                $data['addMaintainerForm'] = $maintainerForm->createView();
-            }
-            if ($removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
-                $data['removeMaintainerForm'] = $removeMaintainerForm->createView();
-            }
-            if ($deleteForm = $this->createDeletePackageForm($package)) {
-                $data['deleteForm'] = $deleteForm->createView();
-            }
+            $data['addMaintainerForm'] = $this->createAddMaintainerForm($package)->createView();
+            $data['removeMaintainerForm'] = $this->createRemoveMaintainerForm($package)->createView();
+            $data['deleteForm'] = $this->createDeletePackageForm($package)->createView();
         } else {
             $data['hasVersionSecurityAdvisories'] = [];
         }
 
-        if ($this->isGranted('ROLE_DELETE_PACKAGES') || $package->isMaintainer($user)) {
+        if ($this->isGranted(PackageActions::Delete->value, $package)) {
             $data['deleteVersionCsrfToken'] = $csrfTokenManager->getToken('delete_version');
+        }
+        if ($this->isGranted(PackageActions::Update->value, $package)) {
             $lastJob = $this->getEM()->getRepository(Job::class)->findLatestExecutedJob($package->getId(), 'package:updates');
             $data['lastJobWarning'] = null;
             $data['lastJobStatus'] = $lastJob?->getStatus();
@@ -701,9 +698,7 @@ class PackageController extends Controller
         }
         $package = $version->getPackage();
 
-        if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_DELETE_PACKAGES')) {
-            throw new AccessDeniedException;
-        }
+        $this->denyAccessUnlessGranted(PackageActions::Delete->value, $package);
 
         if (!$this->isCsrfTokenValid('delete_version', (string) $req->request->get('_token'))) {
             throw new AccessDeniedException;
@@ -751,7 +746,7 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
         }
 
-        $canUpdatePackage = $package->isMaintainer($user) || $this->isGranted('ROLE_UPDATE_PACKAGES');
+        $canUpdatePackage = $this->isGranted(PackageActions::Update->value, $package);
         if ($canUpdatePackage || !$package->wasUpdatedInTheLast24Hours()) {
             // do not let non-maintainers execute update with those flags
             if (!$canUpdatePackage) {
@@ -785,9 +780,9 @@ class PackageController extends Controller
             return $package;
         }
 
-        if (!$form = $this->createDeletePackageForm($package)) {
-            throw new AccessDeniedException;
-        }
+        $this->denyAccessUnlessGranted(PackageActions::Delete->value, $package);
+
+        $form = $this->createDeletePackageForm($package);
         $form->submit($req->request->all('form'));
         if ($form->isSubmitted() && $form->isValid()) {
             if ($req->getSession()->isStarted()) {
@@ -805,10 +800,9 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name}/maintainers/', name: 'add_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
     public function createMaintainerAction(Request $req, Package $package, LoggerInterface $logger): RedirectResponse
     {
-        if (!$form = $this->createAddMaintainerForm($package)) {
-            throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
-        }
+        $this->denyAccessUnlessGranted(PackageActions::AddMaintainer->value, $package);
 
+        $form = $this->createAddMaintainerForm($package);
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
             try {
@@ -843,10 +837,9 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name}/maintainers/delete', name: 'remove_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
     public function removeMaintainerAction(Request $req, Package $package, LoggerInterface $logger): Response
     {
-        if (!$removeMaintainerForm = $this->createRemoveMaintainerForm($package)) {
-            throw new AccessDeniedException('You must be a package\'s maintainer to modify maintainers.');
-        }
+        $this->denyAccessUnlessGranted(PackageActions::RemoveMaintainer->value, $package);
 
+        $removeMaintainerForm = $this->createRemoveMaintainerForm($package);
         $removeMaintainerForm->handleRequest($req);
         if ($removeMaintainerForm->isSubmitted() && $removeMaintainerForm->isValid()) {
             try {
@@ -887,9 +880,7 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name}/edit', name: 'edit_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
     public function editAction(Request $req, Package $package, #[CurrentUser] ?User $user = null): Response
     {
-        if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
-            throw new AccessDeniedException;
-        }
+        $this->denyAccessUnlessGranted(PackageActions::Edit->value, $package);
 
         $form = $this->createFormBuilder($package, ["validation_groups" => ["Update"]])
             ->add('repository', TextType::class)
@@ -920,9 +911,7 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name}/abandon', name: 'abandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
     public function abandonAction(Request $request, Package $package, #[CurrentUser] ?User $user = null): Response
     {
-        if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
-            throw new AccessDeniedException;
-        }
+        $this->denyAccessUnlessGranted(PackageActions::Abandon->value, $package);
 
         $form = $this->createForm(AbandonedType::class);
         $form->handleRequest($request);
@@ -950,9 +939,7 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name}/unabandon', name: 'unabandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
     public function unabandonAction(Package $package, #[CurrentUser] ?User $user = null): RedirectResponse
     {
-        if (!$package->isMaintainer($user) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
-            throw new AccessDeniedException;
-        }
+        $this->denyAccessUnlessGranted(PackageActions::Unabandon->value, $package);
 
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
@@ -1445,33 +1432,15 @@ class PackageController extends Controller
         return $this->render('package/security_advisories.html.twig', $data);
     }
 
-    private function createAddMaintainerForm(Package $package): FormInterface|null
+    private function createAddMaintainerForm(Package $package): FormInterface
     {
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            return null;
-        }
-
-        if (!$this->isGranted('ROLE_EDIT_PACKAGES') && !$package->isMaintainer($user)) {
-            return null;
-        }
-
         $maintainerRequest = new MaintainerRequest();
 
         return $this->createForm(AddMaintainerRequestType::class, $maintainerRequest);
     }
 
-    private function createRemoveMaintainerForm(Package $package): FormInterface|null
+    private function createRemoveMaintainerForm(Package $package): FormInterface
     {
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            return null;
-        }
-
-        if (1 === $package->getMaintainers()->count() || (!$this->isGranted('ROLE_EDIT_PACKAGES') && !$package->isMaintainer($user))) {
-            return null;
-        }
-
         $maintainerRequest = new MaintainerRequest();
 
         return $this->createForm(RemoveMaintainerRequestType::class, $maintainerRequest, [
@@ -1479,32 +1448,8 @@ class PackageController extends Controller
         ]);
     }
 
-    private function createDeletePackageForm(Package $package): FormInterface|null
+    private function createDeletePackageForm(Package $package): FormInterface
     {
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            return null;
-        }
-
-        // super admins bypass additional checks
-        if (!$this->isGranted('ROLE_DELETE_PACKAGES')) {
-            // non maintainers can not delete
-            if (!$package->isMaintainer($user)) {
-                return null;
-            }
-
-            try {
-                $downloads = $this->downloadManager->getTotalDownloads($package);
-            } catch (ConnectionException $e) {
-                return null;
-            }
-
-            // more than 500 downloads = established package, do not allow deletion by maintainers
-            if ($downloads > 500) {
-                return null;
-            }
-        }
-
         return $this->createFormBuilder([])->getForm();
     }
 

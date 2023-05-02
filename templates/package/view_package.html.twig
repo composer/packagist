@@ -29,7 +29,7 @@
 
 {% block content %}
     <div class="row" id="view-package-page">
-        <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %} data-force-crawl="true"{% endif %}>
+        <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and is_granted('edit', package) %} data-force-crawl="true"{% endif %}>
             <div class="package-header">
 
                 <div class="row">
@@ -48,7 +48,7 @@
                 <div class="col-md-8">
                     <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="composer {% if package.type == 'project' %}create-project{% else %}require{% endif %} {{ "#{package.vendor}/#{package.packageName}" }}" /></p>
 
-                    {% if not package.isAutoUpdated() and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES')) %}
+                    {% if not package.isAutoUpdated() and is_granted('update', package) %}
                         {% if "github.com" in package.repository %}
                             <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">GitHub Hook</a> for Packagist so that it gets updated whenever you push!</div>
                         {% elseif "bitbucket.org" in package.repository %}
@@ -67,15 +67,13 @@
                                 {% endif %}
                             {% else %}
                                 No replacement package was suggested.
-                                {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) %}
+                                {% if is_granted('unabandon', package) %}
                                     <a href="{{ path('abandon_package', {name: package.name}) }}">Suggest a replacement.</a>
                                 {% endif %}
                             {% endif %}
                         </div>
                     {% endif %}
-                    {% if package.updateFailureNotified
-                        and app.user and (package.maintainers.contains(app.user) or is_granted('ROLE_UPDATE_PACKAGES'))
-                    %}
+                    {% if package.updateFailureNotified and is_granted('update', package) %}
                         <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Update" below to see details.</div>
                     {% endif %}
 
@@ -87,29 +85,29 @@
 
                     {% if hasActions %}
                         <div class="btn-group btn-group-xs">
-                            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and not package.abandoned %}
+                            {% if is_granted('abandon', package) %}
                                 <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
                                     <input class="btn btn-warning" type="submit" value="Abandon" />
                                 </form>
                             {% endif %}
-                            {% if (is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user)) and package.abandoned %}
+                            {% if is_granted('unabandon', package) %}
                                 <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
                                     <input class="btn btn-default" type="submit" value="Un-abandon" />
                                 </form>
                             {% endif %}
-                            {% if deleteForm is defined %}
+                            {% if is_granted('delete', package) %}
                                 <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE">
                                     {{ form_widget(deleteForm._token) }}
                                     <input class="btn btn-danger" type="submit" value="Delete" />
                                 </form>
                             {% endif %}
-                            {% if is_granted('ROLE_UPDATE_PACKAGES') or package.maintainers.contains(app.user) %}
+                            {% if is_granted('update', package) %}
                                 <form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
                                     <input type="hidden" name="update" value="1" />
                                     <input class="btn btn-success" type="submit" value="Update" />
                                 </form>
                             {% endif %}
-                            {% if is_granted('ROLE_EDIT_PACKAGES') or package.maintainers.contains(app.user) %}
+                            {% if is_granted('edit', package) %}
                                 <form class="action" action="{{ path("edit_package", {name: package.name}) }}">
                                     <input class="btn btn-primary" type="submit" value="Edit" />
                                 </form>
@@ -136,10 +134,8 @@
                                 {% for maintainer in package.maintainers -%}
                                     <a href="{{ path('user_profile', {'name': maintainer.username}) }}"><img width="48" height="48" title="{{ maintainer.username }}" src="https://www.gravatar.com/avatar/{{ maintainer.email|gravatar_hash }}?s=48&amp;d=identicon" srcset="https://www.gravatar.com/avatar/{{ maintainer.email|gravatar_hash }}?s=96&amp;d=identicon 2x"></a>
                                 {% endfor %}
-                                {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
-                                    {% if removeMaintainerForm is defined %}<a title="Remove Maintainer" id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
-                                    {% if addMaintainerForm is defined %}<a title="Add Maintainer" id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
-                                {% endif %}
+                                {% if is_granted('remove_maintainer', package) %}<a title="Remove Maintainer" id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
+                                {% if is_granted('add_maintainer', package) %}<a title="Add Maintainer" id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
                             </p>
 
                             <h5>Details</h5>
