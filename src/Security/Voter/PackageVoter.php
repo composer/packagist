@@ -81,17 +81,6 @@ class PackageVoter extends \Symfony\Component\Security\Core\Authorization\Voter\
             return false;
         }
 
-        try {
-            $downloads = $this->downloadManager->getTotalDownloads($package);
-        } catch (ConnectionException $e) {
-            return false;
-        }
-
-        // more than 100000 downloads = established package, do not allow editing URL anymore
-        if ($downloads > 100_000) {
-            return false;
-        }
-
         return true;
     }
 

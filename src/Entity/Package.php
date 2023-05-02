@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Service\UpdaterWorker;
+use App\Validator\PopularPackageSafety;
 use App\Validator\TypoSquatters;
 use App\Validator\Copyright;
 use App\Validator\UniquePackage;
@@ -52,6 +53,7 @@ use DateTimeInterface;
 #[ValidPackageRepository(groups: ['Update', 'Default'])]
 #[TypoSquatters(groups: ['Create'])]
 #[Copyright(groups: ['Create'])]
+#[PopularPackageSafety(groups: ['Update'])]
 class Package
 {
     public const AUTO_NONE = 0;
