@@ -51,8 +51,8 @@ class PopularPackageSafetyValidator extends ConstraintValidator
             $downloads = PHP_INT_MAX;
         }
 
-        // more than 100000 downloads = established package, do not allow editing URL anymore
-        if ($downloads > 100_000) {
+        // more than 50000 downloads = established package, do not allow editing URL anymore
+        if ($downloads > 50_000) {
             $this->context->buildViolation($constraint->message)
                 ->atPath('repository')
                 ->addViolation()
