@@ -406,6 +406,11 @@ class Package
             return;
         }
 
+        // block env vars & ~ prefixes
+        if (Preg::isMatch('{^[%$~]}', $repoUrl)) {
+            return;
+        }
+
         try {
             $io = new NullIO();
             $config = Factory::createConfig();
