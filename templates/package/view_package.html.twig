@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block head_canonical %}
-    <link rel="canonical" href="{{ url('view_package', {name: package.name}) }}" />
+    <link rel="canonical" href="{{ url('view_package', {name: package.name})|replace({'://root.': '://'}) }}" />
 {% endblock %}
 
 {% block head_additions %}
