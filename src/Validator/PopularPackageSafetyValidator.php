@@ -16,6 +16,7 @@ use App\Entity\Package;
 use App\Entity\PackageRepository;
 use App\Model\DownloadManager;
 use Predis\Connection\ConnectionException;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -26,6 +27,7 @@ class PopularPackageSafetyValidator extends ConstraintValidator
 {
     public function __construct(
         private DownloadManager $downloadManager,
+        private Security $security,
     ) {
     }
 
@@ -43,6 +45,10 @@ class PopularPackageSafetyValidator extends ConstraintValidator
 
         if (!$value instanceof Package) {
             throw new UnexpectedValueException($value, Package::class);
+        }
+
+        if ($this->security->isGranted('ROLE_EDIT_PACKAGES')) {
+            return;
         }
 
         try {
