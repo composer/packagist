@@ -239,6 +239,18 @@
     "nikic/php-parser": {
         "version": "v4.10.2"
     },
+    "nyholm/psr7": {
+        "version": "1.6",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "4a8c0345442dcca1d8a2c65633dcf0285dd5a5a2"
+        },
+        "files": [
+            "config/packages/nyholm_psr7.yaml"
+        ]
+    },
     "pagerfanta/core": {
         "version": "v3.1.0"
     },
@@ -427,6 +439,9 @@
         "files": [
             "config/packages/snc_redis.yaml"
         ]
+    },
+    "spomky-labs/cbor-bundle": {
+        "version": "v3.0.0"
     },
     "spomky-labs/otphp": {
         "version": "v10.0.1"
@@ -780,6 +795,19 @@
     },
     "ua-parser/uap-php": {
         "version": "v3.9.14"
+    },
+    "web-auth/webauthn-symfony-bundle": {
+        "version": "4.5",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "3.0",
+            "ref": "9926090a80c2cceeffe96e6c3312b397ea55d4a7"
+        },
+        "files": [
+            "config/packages/webauthn.yaml",
+            "config/routes/webauthn_routes.yaml"
+        ]
     },
     "webmozart/assert": {
         "version": "1.9.1"

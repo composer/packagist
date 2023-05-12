@@ -39,12 +39,18 @@ security:
                 auth_form_path: 2fa_login
                 check_path: 2fa_login_check
                 enable_csrf: true
+            webauthn:
+                authentication:
+                    routes:
+                        options_path: '/login/webauthn/options'
+                        result_path: '/login/webauthn'
             switch_user:
                 provider: packagist
 
     access_control:
         # Explicit public access
         - { path: ^/_(?:wdt|profiler)/, roles: PUBLIC_ACCESS }
+        - { path: ^/login/webauthn, role: PUBLIC_ACCESS }
         - { path: ^/login$, role: PUBLIC_ACCESS }
         - { path: ^/register($|/), role: PUBLIC_ACCESS }
         - { path: ^/reset-password($|/), role: PUBLIC_ACCESS }

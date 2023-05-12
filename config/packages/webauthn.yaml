@@ -1,0 +1,13 @@
+# Please see the following page for more information: https://webauthn-doc.spomky-labs.com/the-webauthn-server/the-symfony-way#configuration
+
+webauthn:
+    credential_repository: 'Webauthn\Bundle\Repository\DummyPublicKeyCredentialSourceRepository' # CREATE YOUR REPOSITORY AND CHANGE THIS!
+    user_repository: 'Webauthn\Bundle\Repository\DummyPublicKeyCredentialUserEntityRepository' # CREATE YOUR REPOSITORY AND CHANGE THIS!
+    creation_profiles:
+        default:
+            rp:
+                name: '%env(RELAYING_PARTY_NAME)%' # Please adapt the env file with the correct relaying party ID or set null
+                id: '%env(RELAYING_PARTY_ID)%' # Please adapt the env file with the correct relaying party ID or set null
+    request_profiles:
+        default:
+            rp_id: '%env(RELAYING_PARTY_ID)%' # Please adapt the env file with the correct relaying party ID or set null
