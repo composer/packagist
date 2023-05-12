@@ -20,7 +20,7 @@ use Webauthn\TrustPath\TrustPath;
 class WebauthnCredential extends BasePublicKeyCredentialSource
 {
     #[Id]
-    #[Column(type: Types::STRING, unique: true)]
+    #[Column(type: Types::STRING)]
     #[GeneratedValue(strategy: "NONE")]
     private string $id;
 
