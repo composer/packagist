@@ -24,6 +24,12 @@ class WebauthnCredential extends BasePublicKeyCredentialSource
     #[GeneratedValue(strategy: "NONE")]
     private string $id;
 
+    #[Column(type: Types::STRING, nullable: true)]
+    private null|string $name;
+
+    #[Column(type: Types::DATETIME_IMMUTABLE)]
+    private \DateTimeImmutable $createdAt;
+
     public function __construct(
         string $publicKeyCredentialId,
         string $type,
@@ -37,11 +43,42 @@ class WebauthnCredential extends BasePublicKeyCredentialSource
     )
     {
         $this->id = Ulid::generate();
+        $this->createdAt = new \DateTimeImmutable();
         parent::__construct($publicKeyCredentialId, $type, $transports, $attestationType, $trustPath, $aaguid, $credentialPublicKey, $userHandle, $counter);
+    }
+
+    public static function createFromPublicKeyCredentialSource(BasePublicKeyCredentialSource $publicKeyCredentialSource): self
+    {
+        return new self(
+            $publicKeyCredentialSource->getPublicKeyCredentialId(),
+            $publicKeyCredentialSource->getType(),
+            $publicKeyCredentialSource->getTransports(),
+            $publicKeyCredentialSource->getAttestationType(),
+            $publicKeyCredentialSource->getTrustPath(),
+            $publicKeyCredentialSource->getAaguid(),
+            $publicKeyCredentialSource->getCredentialPublicKey(),
+            $publicKeyCredentialSource->getUserHandle(),
+            $publicKeyCredentialSource->getCounter()
+        );
     }
 
     public function getId(): string
     {
         return $this->id;
+    }
+
+    public function getName(): null|string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 }

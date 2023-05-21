@@ -117,9 +117,6 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[ORM\Column(name: 'totpSecret', type: 'string', nullable: true)]
     private string|null $totpSecret = null;
 
-    #[ORM\Column(name: 'webauthId', type: 'string', unique: true, nullable: true)]
-    private string|null $webauthnId = null;
-
     #[ORM\Column(type: 'string', length: 8, nullable: true)]
     private string|null $backupCode = null;
 
@@ -240,16 +237,6 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function getGravatarUrl(): string
     {
         return 'https://www.gravatar.com/avatar/'.md5(strtolower($this->getEmail())).'?d=identicon';
-    }
-
-    public function setWebauthnId(string $webauthnId): void
-    {
-        $this->webauthnId = $webauthnId;
-    }
-
-    public function getWebauthnId(): null|string
-    {
-        return $this->webauthnId;
     }
 
     public function setTotpSecret(string|null $secret): void

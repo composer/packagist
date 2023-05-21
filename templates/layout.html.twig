@@ -100,11 +100,11 @@
                                     <section class="signin-box">
                                         <form action="{{ path('login') }}" method="POST" id="nav_login">
                                             <div class="input-group">
-                                                <input class="form-control" type="text" id="_username" name="_username" placeholder="Username / Email">
+                                                <input class="form-control" type="text" id="_username" name="_username" placeholder="Username / Email" autocomplete="username webauthn">
                                                 <span class="input-group-addon"><span class="icon-user"></span></span>
                                             </div>
                                             <div class="input-group">
-                                                <input class="form-control" type="password" id="_password" name="_password" placeholder="Password">
+                                                <input class="form-control" type="password" id="_password" name="_password" placeholder="Password" autocomplete="password webauthn">
                                                 <span class="input-group-addon"><span class="icon-lock"></span></span>
                                             </div>
 
@@ -120,6 +120,7 @@
 
                                             <div class="signin-box-buttons">
                                                 <a href="{{ path('login_github_start') }}" class="pull-right btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
+                                                <button class="pull-right btn btn-primary btn-webauthn" id="_webauthn_login"><span class="icon-webauthn"></span>Use Webauthn</button>
                                                 <button type="submit" class="btn btn-success" id="_submit_mini" name="_submit">Log in</button>
                                             </div>
                                         </form>
@@ -243,4 +244,48 @@
 
         {% block scripts %}{% endblock %}
     </body>
+    <script nonce="{{ csp_nonce('script') }}" src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+    <script nonce="{{ csp_nonce('script') }}">
+        const webauthnLoginButton = document.getElementById('_webauthn_login');
+        webauthnLoginButton.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const { startAuthentication } = SimpleWebAuthnBrowser;
+            const usernameInput = document.getElementById('_username');
+            const optionsRequest = {};
+            if (usernameInput && usernameInput.value) {
+                optionsRequest.username = usernameInput.value;
+            }
+            console.log(optionsRequest);
+            const resp = await fetch('{{ path('webauthn.controller.security.main.request.options') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(optionsRequest),
+            });
+
+            let attResp;
+            try {
+                attResp = await startAuthentication(await resp.json());
+            } catch (error) {
+                throw error;
+            }
+
+            // POST the response to the endpoint that calls
+            // @simplewebauthn/server -> verifyAuthenticationResponse()
+            const verificationResp = await fetch('{{ path('webauthn.controller.security.main.request.result') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(attResp),
+            });
+
+            // Wait for the results of verification
+            const verificationJSON = await verificationResp.json();
+            if (verificationJSON && verificationJSON.status === 'ok') {
+                window.location.href = "{{ path('home') }}";
+            }
+        });
+    </script>
 </html>
