@@ -26,9 +26,7 @@ final class WebauthnUserEntityRepository implements PublicKeyCredentialUserEntit
     public function findOneByUsername(string $username): ?PublicKeyCredentialUserEntity
     {
         /** @var User|null $user */
-        $user = $this->userRepository->findOneBy([
-            'usernameCanonical' => $username,
-        ]);
+        $user = $this->userRepository->findOneByUsernameOrEmail($username);
 
         return $this->getUserEntity($user);
     }
