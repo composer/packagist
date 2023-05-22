@@ -592,7 +592,7 @@ class PackageController extends Controller
             $data['hasVersionSecurityAdvisories'] = [];
         }
 
-        if ($this->isGranted(PackageActions::Delete->value, $package)) {
+        if ($this->isGranted(PackageActions::DeleteVersion->value, $package)) {
             $data['deleteVersionCsrfToken'] = $csrfTokenManager->getToken('delete_version');
         }
         if ($this->isGranted(PackageActions::Update->value, $package)) {

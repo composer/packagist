@@ -10,5 +10,6 @@ enum PackageActions: string
     case Abandon = 'abandon';
     case Unabandon = 'unabandon';
     case Delete = 'delete';
+    case DeleteVersion = 'delete_version';
     case Update = 'update';
 }

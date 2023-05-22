@@ -38,6 +38,7 @@ class PackageVoter extends \Symfony\Component\Security\Core\Authorization\Voter\
             PackageActions::Abandon => !$package->isAbandoned() && ($package->isMaintainer($user) || $this->security->isGranted('ROLE_EDIT_PACKAGES')),
             PackageActions::Unabandon => $package->isAbandoned() && ($package->isMaintainer($user) || $this->security->isGranted('ROLE_EDIT_PACKAGES')),
             PackageActions::Delete => $this->canDelete($package, $user),
+            PackageActions::DeleteVersion => $this->canDeleteVersion($package, $user),
             PackageActions::Edit => $this->canEdit($package, $user),
             PackageActions::AddMaintainer => $this->canAddMaintainers($package, $user),
             PackageActions::RemoveMaintainer => $this->canRemoveMaintainers($package, $user),
@@ -68,6 +69,16 @@ class PackageVoter extends \Symfony\Component\Security\Core\Authorization\Voter\
         }
 
         return true;
+    }
+
+    private function canDeleteVersion(Package $package, User $user): bool
+    {
+        if ($this->security->isGranted('ROLE_DELETE_PACKAGES')) {
+            return true;
+        }
+
+        // only maintainers can delete
+        return $package->isMaintainer($user);
     }
 
     private function canEdit(Package $package, User $user): bool
