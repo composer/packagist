@@ -241,7 +241,7 @@
                             {% if 'github.com' in repoUrl and package.gitHubForks is not null %}
                                 <p>
                                     <span>
-                                        <a href="{{ repoUrl }}/network">Forks</a>:
+                                        <a href="{{ repoUrl }}/forks">Forks</a>:
                                     </span>
                                     {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
