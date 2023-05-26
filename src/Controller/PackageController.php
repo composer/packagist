@@ -1569,7 +1569,14 @@ class PackageController extends Controller
 
     private function blockAbusers(Request $req): ?JsonResponse
     {
-        if ('json' === $req->getRequestFormat() && in_array($req->getClientIp(), ['193.13.144.72', '144.178.97.2', '185.167.99.27', '82.77.112.123'], true)) {
+        $abusers = [
+            '193.13.144.72',
+            '144.178.97.2',
+            '185.167.99.27',
+            '82.77.112.123',
+            '14.116.239.33', '14.116.239.34', '14.116.239.35', '14.116.239.36', '14.116.239.37'
+        ];
+        if ('json' === $req->getRequestFormat() && in_array($req->getClientIp(), $abusers, true)) {
             return new JsonResponse("Please use a proper user-agent with contact information or get in touch before abusing the API", 429);
         }
 
