@@ -125,6 +125,6 @@ class PackageVoter extends \Symfony\Component\Security\Core\Authorization\Voter\
 
     public function supportsType(string $subjectType): bool
     {
-        return $subjectType === Package::class;
+        return is_a($subjectType, Package::class, true);
     }
 }

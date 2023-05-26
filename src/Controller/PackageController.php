@@ -698,10 +698,10 @@ class PackageController extends Controller
         }
         $package = $version->getPackage();
 
-        $this->denyAccessUnlessGranted(PackageActions::Delete->value, $package);
+        $this->denyAccessUnlessGranted(PackageActions::DeleteVersion->value, $package, 'No permission to delete versions');
 
         if (!$this->isCsrfTokenValid('delete_version', (string) $req->request->get('_token'))) {
-            throw new AccessDeniedException;
+            throw new AccessDeniedException('Invalid CSRF token');
         }
 
         $repo->remove($version);
