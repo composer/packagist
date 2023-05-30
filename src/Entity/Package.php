@@ -381,6 +381,7 @@ class Package
         $repoUrl = Preg::replace('{^git@github.com:}i', 'https://github.com/', $repoUrl);
         $repoUrl = Preg::replace('{^git://github.com/}i', 'https://github.com/', $repoUrl);
         $repoUrl = Preg::replace('{^(https://github.com/.*?)\.git$}i', '$1', $repoUrl);
+        $repoUrl = Preg::replace('{^(https://github.com/.*?)/$}i', '$1', $repoUrl);
 
         $repoUrl = Preg::replace('{^git@gitlab.com:}i', 'https://gitlab.com/', $repoUrl);
         $repoUrl = Preg::replace('{^(https://gitlab.com/.*?)\.git$}i', '$1', $repoUrl);
