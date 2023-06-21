@@ -1574,7 +1574,8 @@ class PackageController extends Controller
             '144.178.97.2',
             '185.167.99.27',
             '82.77.112.123',
-            '14.116.239.33', '14.116.239.34', '14.116.239.35', '14.116.239.36', '14.116.239.37'
+            '14.116.239.33', '14.116.239.34', '14.116.239.35', '14.116.239.36', '14.116.239.37',
+            '14.22.11.161', '14.22.11.162', '14.22.11.163', '14.22.11.164', '14.22.11.165',
         ];
         if ('json' === $req->getRequestFormat() && in_array($req->getClientIp(), $abusers, true)) {
             return new JsonResponse("Please use a proper user-agent with contact information or get in touch before abusing the API", 429);
