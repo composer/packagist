@@ -512,7 +512,7 @@ class ApiController extends Controller
         $updateUrl = false;
 
         // maybe url changed, look up by remoteId
-        if (!$packages) {
+        if (!$packages && $user === null) {
             $packages = $packageRepo->findBy(['remoteId' => $remoteId]);
             $updateUrl = true;
         }
