@@ -27,25 +27,27 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Graze\DogStatsD\Client as StatsDClient;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class ApiController extends Controller
 {
-    private Scheduler $scheduler;
-    private LoggerInterface $logger;
-
-    public function __construct(Scheduler $scheduler, LoggerInterface $logger)
-    {
-        $this->scheduler = $scheduler;
-        $this->logger = $logger;
+    public function __construct(
+        private Scheduler $scheduler,
+        private LoggerInterface $logger,
+        private HttpClientInterface $httpClient,
+        /** @var list<string> */
+        private array $fallbackGhTokens,
+    ) {
     }
 
     #[Route(path: '/packages.json', name: 'packages', defaults: ['_format' => 'json'], methods: ['GET'])]
@@ -139,11 +141,11 @@ class ApiController extends Controller
             $url = str_replace('https://api.github.com/repos', 'https://github.com', $url);
             $remoteId = isset($payload['repository']['id']) && (is_string($payload['repository']['id']) || is_int($payload['repository']['id'])) ? $payload['repository']['id'] : null;
         } elseif (isset($payload['repository']['links']['html']['href'])) { // bitbucket push event payload
-            $urlRegex = '{^(?:https?://|git://|git@)?(?:api\.)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
+            $urlRegex = '{^(?:https?://|git://|git@)?(?:api\.)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?/?$}i';
             $url = $payload['repository']['links']['html']['href'];
             $remoteId = null;
         } elseif (isset($payload['canon_url']) && isset($payload['repository']['absolute_url'])) { // bitbucket post hook (deprecated)
-            $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(\.git)?/?$}i';
+            $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?/?$}i';
             $url = $payload['canon_url'].$payload['repository']['absolute_url'];
             $remoteId = null;
         } else {
@@ -362,7 +364,7 @@ class ApiController extends Controller
     protected function receivePost(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret): JsonResponse
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
-        if (!Preg::isMatch($urlRegex, $url, $match)) {
+        if (!Preg::isMatchStrictGroups($urlRegex, $url, $match)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Could not parse payload repository URL'], 406);
         }
 
@@ -384,7 +386,7 @@ class ApiController extends Controller
                 [$algo, $sig] = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
                 if (hash_equals($expected, $sig)) {
-                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], (string) $remoteId, $user);
+                    $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $user);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
                 } else {
@@ -406,7 +408,7 @@ class ApiController extends Controller
                 [$algo, $sig] = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $githubWebhookSecret);
                 if (hash_equals($expected, $sig)) {
-                    $packages = $this->findPackagesByRepository('https://github.com/'.$match['path'], (string) $remoteId);
+                    $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_auto';
                 }
@@ -503,16 +505,41 @@ class ApiController extends Controller
     }
 
     /**
+     * @param User|null $user If provided it means the request came with a user's API token and not the packagist-configured secret, so we cannot be sure it is a request coming directly from github
      * @return Package[] the packages found
      */
-    protected function findPackagesByRepository(string $url, string $remoteId, ?User $user = null): array
+    protected function findGitHubPackagesByRepository(string $path, string $remoteId, ?User $user = null): array
     {
+        $url = 'https://github.com/'.$path;
+
         $packageRepo = $this->getEM()->getRepository(Package::class);
         $packages = $packageRepo->findBy(['repository' => $url]);
         $updateUrl = false;
 
         // maybe url changed, look up by remoteId
         if (!$packages) {
+            // the remote id was provided by a user, and not by github directly, so we cannot fully trust it and should verify with github that the URL matches that id
+            if ($user !== null) {
+                if (\count($this->fallbackGhTokens) > 0) {
+                    $fallbackUser = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
+                    if (null === $fallbackUser) {
+                        throw new \LogicException('Invalid fallback user was not found');
+                    }
+                    $fallbackToken = $fallbackUser->getGithubToken();
+                    if (null === $fallbackToken) {
+                        throw new \LogicException('Invalid fallback user '.$fallbackUser->getUsername().' has no token');
+                    }
+                    $options = ['auth_bearer' => $fallbackToken];
+                } else {
+                    $options = [];
+                }
+                $response = $this->httpClient->request('GET', 'https://api.github.com/repos/'.$path, $options);
+                $data = json_decode((string) $response->getContent(), true);
+                if ((string) $data['id'] !== $remoteId) {
+                    throw new BadRequestHttpException('remoteId '.$remoteId.' does not match the repo URL '.$path);
+                }
+            }
+
             $packages = $packageRepo->findBy(['remoteId' => $remoteId]);
             $updateUrl = true;
         }
