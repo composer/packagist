@@ -535,7 +535,7 @@ class ApiController extends Controller
                 }
                 $response = $this->httpClient->request('GET', 'https://api.github.com/repos/'.$path, $options);
                 $data = json_decode((string) $response->getContent(), true);
-                if ((string) $data['id'] !== $remoteId) {
+                if ('github.com/'.$data['id'] !== $remoteId) {
                     throw new BadRequestHttpException('remoteId '.$remoteId.' does not match the repo URL '.$path);
                 }
             }
