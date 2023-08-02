@@ -518,8 +518,11 @@ class ApiController extends Controller
 
         // maybe url changed, look up by remoteId
         if (!$packages) {
+            $packages = $packageRepo->findBy(['remoteId' => $remoteId]);
+            $updateUrl = true;
+
             // the remote id was provided by a user, and not by github directly, so we cannot fully trust it and should verify with github that the URL matches that id
-            if ($user !== null) {
+            if (\count($packages) > 0 && $user !== null) {
                 if (\count($this->fallbackGhTokens) > 0) {
                     $fallbackUser = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
                     if (null === $fallbackUser) {
@@ -534,14 +537,14 @@ class ApiController extends Controller
                     $options = [];
                 }
                 $response = $this->httpClient->request('GET', 'https://api.github.com/repos/'.$path, $options);
+                if ($response->getStatusCode() === 404) {
+                    throw new NotFoundHttpException('Repo does not exist on github, where did this come from?!');
+                }
                 $data = json_decode((string) $response->getContent(), true);
                 if ('github.com/'.$data['id'] !== $remoteId) {
                     throw new BadRequestHttpException('remoteId '.$remoteId.' does not match the repo URL '.$path);
                 }
             }
-
-            $packages = $packageRepo->findBy(['remoteId' => $remoteId]);
-            $updateUrl = true;
         }
 
         if ($user) {
