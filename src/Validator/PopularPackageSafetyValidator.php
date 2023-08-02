@@ -54,7 +54,7 @@ class PopularPackageSafetyValidator extends ConstraintValidator
 
         // bypass download check for some accounts which requested it
         $user = $this->security->getUser();
-        if ($user instanceof User && in_array($user->getUsernameCanonical(), [], true)) {
+        if ($user instanceof User && in_array($user->getUsernameCanonical(), [''], true)) {
             return;
         }
 
