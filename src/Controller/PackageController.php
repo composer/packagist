@@ -66,6 +66,7 @@ use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use UnexpectedValueException;
 
 class PackageController extends Controller
 {
@@ -576,7 +577,12 @@ class PackageController extends Controller
             $versionParser = new VersionParser();
             $affectedVersionsConstraint = new MatchNoneConstraint();
             foreach ($securityAdvisories as $advisory) {
-                $affectedVersionsConstraint = MultiConstraint::create([$affectedVersionsConstraint, $versionParser->parseConstraints($advisory['affectedVersions'])], false);
+                try {
+                    $advisoryConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
+                    $affectedVersionsConstraint = MultiConstraint::create([$affectedVersionsConstraint, $advisoryConstraint], false);
+                } catch (UnexpectedValueException) {
+                    // ignore parsing errors, advisory must be invalid
+                }
             }
 
             foreach ($versions as $version) {
