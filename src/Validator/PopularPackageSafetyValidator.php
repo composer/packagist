@@ -14,6 +14,7 @@ namespace App\Validator;
 
 use App\Entity\Package;
 use App\Entity\PackageRepository;
+use App\Entity\User;
 use App\Model\DownloadManager;
 use Predis\Connection\ConnectionException;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -48,6 +49,12 @@ class PopularPackageSafetyValidator extends ConstraintValidator
         }
 
         if ($this->security->isGranted('ROLE_EDIT_PACKAGES')) {
+            return;
+        }
+
+        // bypass download check for some accounts which requested it
+        $user = $this->security->getUser();
+        if ($user instanceof User && in_array($user->getUsernameCanonical(), [], true)) {
             return;
         }
 
