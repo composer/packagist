@@ -50,8 +50,14 @@ class CopyrightValidator extends ConstraintValidator
         }
 
         $copyrightWatches = [
-            'flarum' => 'legal@flarum.org',
-            'symfony' => 'fabien@symfony.com',
+            'flarum' => [
+                'allow' => ['flarum', 'flarum-lang', 'flarum-com'],
+                'email' => 'legal@flarum.org'
+            ],
+            'symfony' => [
+                'allow' => ['symfony'],
+                'email' => 'fabien@symfony.com'
+            ],
         ];
 
         $req = $this->requestStack->getMainRequest();
@@ -59,15 +65,15 @@ class CopyrightValidator extends ConstraintValidator
             return;
         }
 
-        foreach ($copyrightWatches as $vendor => $email) {
-            if ($value->getVendor() === $vendor || !str_contains($value->getVendor(), $vendor)) {
+        foreach ($copyrightWatches as $vendor => $config) {
+            if (in_array($value->getVendor(), $config['allow']) || !str_contains($value->getVendor(), $vendor)) {
                 continue;
             }
 
             $message = (new Email())
                 ->subject('Packagist.org package submission notification: '.$value->getName().' contains '.$vendor.' in its vendor name')
                 ->from(new Address($this->mailFromEmail))
-                ->to($email)
+                ->to($config['email'])
                 ->text('Check out '.$this->urlGenerator->generate('view_package', ['name' => $value->getName()], UrlGeneratorInterface::ABSOLUTE_URL).' for copyright infringement.')
             ;
             $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
