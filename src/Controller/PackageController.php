@@ -44,6 +44,7 @@ use App\Model\ProviderManager;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Connection\ConnectionException;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -804,7 +805,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/maintainers/', name: 'add_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
-    public function createMaintainerAction(Request $req, Package $package, LoggerInterface $logger): RedirectResponse
+    public function createMaintainerAction(Request $req, #[MapEntity] Package $package, LoggerInterface $logger): RedirectResponse
     {
         $this->denyAccessUnlessGranted(PackageActions::AddMaintainer->value, $package);
 
@@ -841,7 +842,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/maintainers/delete', name: 'remove_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
-    public function removeMaintainerAction(Request $req, Package $package, LoggerInterface $logger): Response
+    public function removeMaintainerAction(Request $req, #[MapEntity] Package $package, LoggerInterface $logger): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::RemoveMaintainer->value, $package);
 
@@ -884,7 +885,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/edit', name: 'edit_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
-    public function editAction(Request $req, Package $package, #[CurrentUser] ?User $user = null): Response
+    public function editAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] ?User $user = null): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::Edit->value, $package);
 
@@ -915,7 +916,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/abandon', name: 'abandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
-    public function abandonAction(Request $request, Package $package, #[CurrentUser] ?User $user = null): Response
+    public function abandonAction(Request $request, #[MapEntity] Package $package, #[CurrentUser] ?User $user = null): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::Abandon->value, $package);
 
@@ -943,7 +944,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/unabandon', name: 'unabandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
-    public function unabandonAction(Package $package, #[CurrentUser] ?User $user = null): RedirectResponse
+    public function unabandonAction(#[MapEntity] Package $package, #[CurrentUser] ?User $user = null): RedirectResponse
     {
         $this->denyAccessUnlessGranted(PackageActions::Unabandon->value, $package);
 
@@ -1018,7 +1019,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/php-stats.{_format}', name: 'view_package_php_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'])]
-    public function phpStatsAction(Request $req, Package $package): Response
+    public function phpStatsAction(Request $req, #[MapEntity] Package $package): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -1303,19 +1304,19 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/stats/all.json', name: 'package_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
-    public function overallStatsAction(Request $req, Package $package): JsonResponse
+    public function overallStatsAction(Request $req, #[MapEntity] Package $package): JsonResponse
     {
         return $this->computeStats($req, $package);
     }
 
     #[Route(path: '/packages/{name}/stats/major/{majorVersion}.json', name: 'major_version_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'majorVersion' => '(all|[0-9]+?)'])]
-    public function majorVersionStatsAction(Request $req, Package $package, string $majorVersion): JsonResponse
+    public function majorVersionStatsAction(Request $req, #[MapEntity] Package $package, string $majorVersion): JsonResponse
     {
         return $this->computeStats($req, $package, null, $majorVersion);
     }
 
     #[Route(path: '/packages/{name}/stats/{version}.json', name: 'version_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'version' => '.+?'])]
-    public function versionStatsAction(Request $req, Package $package, string $version): JsonResponse
+    public function versionStatsAction(Request $req, #[MapEntity] Package $package, string $version): JsonResponse
     {
         $normalizer = new VersionParser;
         try {
