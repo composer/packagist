@@ -1422,7 +1422,12 @@ class PackageController extends Controller
                 $versionSecurityAdvisories = [];
                 $versionParser = new VersionParser();
                 foreach ($securityAdvisories as $advisory) {
-                    $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
+                    try {
+                        $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
+                    } catch (UnexpectedValueException) {
+                        // ignore parsing errors, advisory must be invalid
+                        continue;
+                    }
                     if ($affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
                         $versionSecurityAdvisories[] = $advisory;
                     }
