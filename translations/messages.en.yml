@@ -20,6 +20,7 @@ menu:
     create_account: Create account
     sign_in: Sign in
     settings: Settings
+    manage_authenticators: Authenticators
     change_password: Change password
     configure_2fa: Two-factor auth
     my_packages: My packages
@@ -104,6 +105,9 @@ profile:
     notify_on_failure: Notify me of package update failures
     api_token_explain: |
         You can use your API token to interact with the Packagist API, see details in <a href="%path_about%#how-to-update-packages">the docs</a>.
+    webauthn:
+        authenticators: Authenticators
+        no_authenticators: No authenticators configured
 
 stats:
     title: Install Statistics

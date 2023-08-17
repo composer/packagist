@@ -56,8 +56,8 @@
         "snc/redis-bundle": "dev-custom_commands_config as 4.6.99",
         "symfony/asset": "^6",
         "symfony/console": "^6",
-        "symfony/dotenv": "^6",
         "symfony/doctrine-bridge": "^6",
+        "symfony/dotenv": "^6",
         "symfony/expression-language": "^6",
         "symfony/flex": "^2",
         "symfony/form": "^6",
@@ -83,7 +83,8 @@
         "symfonycasts/verify-email-bundle": "^1.4",
         "twig/extra-bundle": "^2.12|^3.0",
         "twig/string-extra": "^3.2",
-        "twig/twig": "^2.12|^3.0"
+        "twig/twig": "^2.12|^3.0",
+        "web-auth/webauthn-symfony-bundle": "^4.5"
     },
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^3.4",

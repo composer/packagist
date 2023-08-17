@@ -1,0 +1,20 @@
+# Please see the following page for more information: https://webauthn-doc.spomky-labs.com/the-webauthn-server/the-symfony-way#configuration
+
+webauthn:
+    credential_repository: App\Entity\WebauthnCredentialRepository
+    user_repository: App\Entity\WebauthnUserEntityRepository
+    creation_profiles:
+        default:
+            rp:
+                name: '%env(RELYING_PARTY_NAME)%'
+                id: '%env(RELYING_PARTY_ID)%'
+    request_profiles:
+        default:
+            rp_id: '%env(RELYING_PARTY_ID)%'
+    controllers:
+        enabled: true
+        creation:
+            from_user_account:
+                options_path: '/profile/webauthn/add/options'
+                result_path: '/profile/webauthn/add'
+                user_entity_guesser: Webauthn\Bundle\Security\Guesser\CurrentUserEntityGuesser

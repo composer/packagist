@@ -1,0 +1,58 @@
+{% extends "user/layout.html.twig" %}
+
+{% block user_content %}
+    <section class="col-md-9">
+        <h3 class="font-normal profile-title">{{ 'profile.webauthn.authenticators'|trans }}</h3>
+        {%- if authenticators|length == 0 %}
+            <p>{{ 'profile.webauthn.no_authenticators'|trans }}</p>
+            <hr>
+        {%- else %}
+            <ul>
+                {% for authenticator in authenticators %}
+                    <li>{{ authenticator.id }}</li>
+                {% endfor %}
+            </ul>
+        {%- endif %}
+
+        <button id="add_authenticator" class="pull-right btn btn-primary btn-webauthn"><span class="icon-webauthn"></span>Add</button>
+    </section>
+    <script nonce="{{ csp_nonce('script') }}" src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+    <script nonce="{{ csp_nonce('script') }}" type="module">
+        const { startRegistration } = SimpleWebAuthnBrowser;
+        const addButton = document.getElementById('add_authenticator');
+        addButton.addEventListener('click', async () => {
+            const resp = await fetch('{{ path('webauthn.controller.creation.request.from_user_account') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({}),
+            });
+
+            let attResp;
+            try {
+                attResp = await startRegistration(await resp.json());
+            } catch (error) {
+                throw error;
+            }
+
+            // POST the response to the endpoint that calls
+            // @simplewebauthn/server -> verifyRegistrationResponse()
+            const verificationResp = await fetch('{{ path('webauthn.controller.creation.response.from_user_account') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(attResp),
+            });
+
+            // Wait for the results of verification
+            const verificationJSON = await verificationResp.json();
+
+            console.log(verificationJSON);
+            if (verificationJSON && verificationJSON.status === 'ok') {
+                window.location.href = "{{ path('home') }}";
+            }
+        });
+    </script>
+{% endblock user_content %}

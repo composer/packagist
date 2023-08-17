@@ -28,7 +28,7 @@
                 <div class="form-group clearfix">
                     <label for="username">Username / Email</label>
                     <div class="input-group clearfix">
-                        <input class="form-control" type="text" id="username" name="_username" value="{{ lastUsername|default('') }}">
+                        <input class="form-control" type="text" id="username" name="_username" value="{{ lastUsername|default('') }}" autocomplete="username webauthn">
                         <span class="input-group-addon"><span class="icon-user"></span></span>
                     </div>
                 </div>
@@ -36,7 +36,7 @@
                 <div class="form-group clearfix">
                     <label for="password">Password</label>
                     <div class="input-group clearfix">
-                        <input class="form-control" type="password" id="password" name="_password">
+                        <input class="form-control" type="password" id="password" name="_password" autocomplete="password webauthn">
                         <span class="input-group-addon"><span class="icon-lock"></span></span>
                     </div>
                 </div>
@@ -61,9 +61,56 @@
         </div>
 
         <div class="clearfix"></div>
-
+        <div class="col-md-6">
+            <button id="webauthn_login" class="btn btn-block btn-github btn-primary btn-lg"><span class="icon-webauthn"></span>Log in with Webauthn</button>
+        </div>
         <div class="col-md-6">
             <a class="btn btn-block btn-github btn-primary btn-lg" href="{{ path('login_github_start') }}"><span class="icon-github"></span>Log in with GitHub</a>
         </div>
     {% endif %}
+
+    <script nonce="{{ csp_nonce('script') }}" src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+    <script nonce="{{ csp_nonce('script') }}">
+        const webauthnLoginButton = document.getElementById('webauthn_login');
+        webauthnLoginButton.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const { startAuthentication } = SimpleWebAuthnBrowser;
+            const usernameInput = document.getElementById('_username');
+            const optionsRequest = {};
+            if (usernameInput && usernameInput.value) {
+                optionsRequest.username = usernameInput.value;
+            }
+            console.log(optionsRequest);
+            const resp = await fetch('{{ path('webauthn.controller.security.main.request.options') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(optionsRequest),
+            });
+
+            let attResp;
+            try {
+                attResp = await startAuthentication(await resp.json());
+            } catch (error) {
+                throw error;
+            }
+
+            // POST the response to the endpoint that calls
+            // @simplewebauthn/server -> verifyAuthenticationResponse()
+            const verificationResp = await fetch('{{ path('webauthn.controller.security.main.request.result') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(attResp),
+            });
+
+            // Wait for the results of verification
+            const verificationJSON = await verificationResp.json();
+            if (verificationJSON && verificationJSON.status === 'ok') {
+                window.location.href = "{{ path('home') }}";
+            }
+        });
+    </script>
 {% endblock %}

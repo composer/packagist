@@ -1,0 +1,11 @@
+services:
+    # Register nyholm/psr7 services for autowiring with PSR-17 (HTTP factories)
+    Psr\Http\Message\RequestFactoryInterface: '@nyholm.psr7.psr17_factory'
+    Psr\Http\Message\ResponseFactoryInterface: '@nyholm.psr7.psr17_factory'
+    Psr\Http\Message\ServerRequestFactoryInterface: '@nyholm.psr7.psr17_factory'
+    Psr\Http\Message\StreamFactoryInterface: '@nyholm.psr7.psr17_factory'
+    Psr\Http\Message\UploadedFileFactoryInterface: '@nyholm.psr7.psr17_factory'
+    Psr\Http\Message\UriFactoryInterface: '@nyholm.psr7.psr17_factory'
+
+    nyholm.psr7.psr17_factory:
+        class: Nyholm\Psr7\Factory\Psr17Factory
