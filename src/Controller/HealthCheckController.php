@@ -57,6 +57,10 @@ class HealthCheckController
         $dbname = trim((string) parse_url($this->dbUrl, PHP_URL_PATH), '/');
         $dbuser = (string) parse_url($this->dbUrl, PHP_URL_USER);
         $dbpass = (string) parse_url($this->dbUrl, PHP_URL_PASS);
+        $dbport = (string) parse_url($this->dbUrl, PHP_URL_PORT);
+        if ($dbport === '') {
+            $dbport = '3306';
+        }
 
         if (isset($this->awsMeta['ec2_node'])) {
             $machineName = $this->awsMeta['ec2_node'].' in '.$this->awsMeta['region'];
@@ -69,7 +73,7 @@ class HealthCheckController
             $runner->addCheck(new Check\DiskUsage(80, 90, '/mnt/sdephemeral'));
         }
         $runner->addCheck(new Check\DiskFree(100 * 1024 * 1024, '/tmp'));
-        $runner->addCheck(new Check\PDOCheck('mysql:dbname='.$dbname.';host='.$dbhost, $dbuser, $dbpass));
+        $runner->addCheck(new Check\PDOCheck('mysql:dbname='.$dbname.';host='.$dbhost.';port='.$dbport, $dbuser, $dbpass));
         $runner->addCheck(new RedisHealthCheck($this->redisClient));
         $runner->addCheck(new MetadataDirCheck($this->awsMeta));
 
