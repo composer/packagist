@@ -196,6 +196,10 @@ class PackageController extends Controller
             }
         }
 
+        if (count($actions) > 100_000) {
+            return new JsonResponse(['actions' => [['type' => 'resync', 'time' => floor($now / 10000), 'package' => '*']], 'timestamp' => $now]);
+        }
+
         return new JsonResponse(['actions' => array_values($actions), 'timestamp' => $now]);
     }
 
