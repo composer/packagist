@@ -33,14 +33,14 @@ class RemoteSecurityAdvisoryTest extends TestCase
             'reference' => 'composer://3f/pygmentize',
         ]);
 
-        $this->assertSame('3f/pygmentize/2017-05-15.yaml', $advisory->getId());
-        $this->assertSame('Remote Code Execution', $advisory->getTitle());
-        $this->assertSame('https://github.com/dedalozzo/pygmentize/issues/1', $advisory->getLink());
-        $this->assertNull($advisory->getCve());
-        $this->assertSame('<1.2', $advisory->getAffectedVersions());
-        $this->assertSame('3f/pygmentize', $advisory->getPackageName());
-        $this->assertSame('2017-05-15 00:00:00', $advisory->getDate()->format('Y-m-d H:i:s'));
-        $this->assertSame(SecurityAdvisory::PACKAGIST_ORG, $advisory->getComposerRepository());
+        $this->assertSame('3f/pygmentize/2017-05-15.yaml', $advisory->id);
+        $this->assertSame('Remote Code Execution', $advisory->title);
+        $this->assertSame('https://github.com/dedalozzo/pygmentize/issues/1', $advisory->link);
+        $this->assertNull($advisory->cve);
+        $this->assertSame('<1.2', $advisory->affectedVersions);
+        $this->assertSame('3f/pygmentize', $advisory->packageName);
+        $this->assertSame('2017-05-15 00:00:00', $advisory->date->format('Y-m-d H:i:s'));
+        $this->assertSame(SecurityAdvisory::PACKAGIST_ORG, $advisory->composerRepository);
     }
 
     public function testCreateFromFriendsOfPhpOnlyYearAvailable(): void
@@ -59,7 +59,7 @@ class RemoteSecurityAdvisoryTest extends TestCase
             'reference' => 'composer://erusev/parsedown',
         ]);
 
-        $this->assertSame('2019-01-01 00:00:00', $advisory->getDate()->format('Y-m-d H:i:s'));
+        $this->assertSame('2019-01-01 00:00:00', $advisory->date->format('Y-m-d H:i:s'));
     }
 
     public function testCreateFromFriendsOfPhpOnlyYearButBranchDatesAvailable(): void
@@ -79,7 +79,7 @@ class RemoteSecurityAdvisoryTest extends TestCase
             'composer-repository' => false,
         ]);
 
-        $this->assertSame('2019-10-08 00:00:00', $advisory->getDate()->format('Y-m-d H:i:s'));
+        $this->assertSame('2019-10-08 00:00:00', $advisory->date->format('Y-m-d H:i:s'));
     }
 
     public function testCreateFromFriendsOfPhpCVEXXXX(): void
@@ -105,8 +105,8 @@ class RemoteSecurityAdvisoryTest extends TestCase
             'reference' => 'composer://symfony/framework-bundle',
         ]);
 
-        $this->assertSame('symfony/framework-bundle/CVE-2022-xxxx.yaml', $advisory->getId());
-        $this->assertNull($advisory->getCve());
+        $this->assertSame('symfony/framework-bundle/CVE-2022-xxxx.yaml', $advisory->id);
+        $this->assertNull($advisory->cve);
     }
 
     public function testWithAddedAffectedVersion(): void
@@ -114,6 +114,6 @@ class RemoteSecurityAdvisoryTest extends TestCase
         $advisory = new RemoteSecurityAdvisory('id', 'foobar', 'foo/bar', '>=1', 'https://foobar.com', null, new \DateTimeImmutable(), null, [], 'test');
         $advisory = $advisory->withAddedAffectedVersion('<2');
 
-        $this->assertSame('>=1|<2', $advisory->getAffectedVersions());
+        $this->assertSame('>=1|<2', $advisory->affectedVersions);
     }
 }
