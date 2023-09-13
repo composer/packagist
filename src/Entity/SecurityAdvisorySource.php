@@ -12,6 +12,8 @@
 
 namespace App\Entity;
 
+use App\SecurityAdvisory\RemoteSecurityAdvisory;
+use App\SecurityAdvisory\Severity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -32,11 +34,15 @@ class SecurityAdvisorySource
     #[ORM\Column(type: 'string')]
     private string $source;
 
-    public function __construct(SecurityAdvisory $securityAdvisory, string $remoteId, string $source)
+    #[ORM\Column(nullable: true)]
+    private Severity|null $severity;
+
+    public function __construct(SecurityAdvisory $securityAdvisory, string $remoteId, string $source, Severity|null $severity)
     {
         $this->securityAdvisory = $securityAdvisory;
         $this->remoteId = $remoteId;
         $this->source = $source;
+        $this->severity = $severity;
     }
 
     public function getRemoteId(): string
@@ -47,5 +53,15 @@ class SecurityAdvisorySource
     public function getSource(): string
     {
         return $this->source;
+    }
+
+    public function getSeverity(): ?Severity
+    {
+        return $this->severity;
+    }
+
+    public function update(RemoteSecurityAdvisory $advisory): void
+    {
+        $this->severity = $advisory->severity;
     }
 }

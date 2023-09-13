@@ -15,6 +15,7 @@ namespace App\Entity;
 use App\SecurityAdvisory\AdvisoryIdGenerator;
 use App\SecurityAdvisory\AdvisoryParser;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
+use App\SecurityAdvisory\Severity;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -70,6 +71,9 @@ class SecurityAdvisory
     #[ORM\Column(type: 'string', nullable: true)]
     private string|null $composerRepository = null;
 
+    #[ORM\Column(nullable: true)]
+    private Severity|null $severity = null;
+
     /**
      * @var Collection<int, SecurityAdvisorySource>&Selectable<int, SecurityAdvisorySource>
      */
@@ -86,11 +90,19 @@ class SecurityAdvisory
         $this->updatedAt = new DateTimeImmutable();
 
         $this->copyAdvisory($advisory, true);
-        $this->addSource($this->remoteId, $source);
+        $this->addSource($advisory->id, $source, $advisory->severity);
     }
 
     public function updateAdvisory(RemoteSecurityAdvisory $advisory): void
     {
+        $this->findSecurityAdvisorySource($advisory->source)?->update($advisory);
+
+        $now = new DateTimeImmutable();
+        if (!$this->severity && $advisory->severity) {
+            $this->updatedAt = $now;
+            $this->severity = $advisory->severity;
+        }
+
         if (!in_array($advisory->source, [null, $this->source], true)) {
             return;
         }
@@ -103,9 +115,10 @@ class SecurityAdvisory
             $this->cve !== $advisory->cve ||
             $this->affectedVersions !== $advisory->affectedVersions ||
             $this->reportedAt != $advisory->date ||
-            $this->composerRepository !== $advisory->composerRepository
+            $this->composerRepository !== $advisory->composerRepository ||
+            ($this->severity !== $advisory->severity && $advisory->severity)
         ) {
-            $this->updatedAt = new DateTimeImmutable();
+            $this->updatedAt = $now;
         }
 
         $this->copyAdvisory($advisory, false);
@@ -241,15 +254,20 @@ class SecurityAdvisory
         $this->packagistAdvisoryId = AdvisoryIdGenerator::generate();
     }
 
+    public function getSeverity(): ?Severity
+    {
+        return $this->severity;
+    }
+
     public function hasSources(): bool
     {
         return !$this->sources->isEmpty();
     }
 
-    public function addSource(string $remoteId, string $source): void
+    public function addSource(string $remoteId, string $source, Severity|null $severity): void
     {
         if (null === $this->getSourceRemoteId($source)) {
-            $this->sources->add(new SecurityAdvisorySource($this, $remoteId, $source));
+            $this->sources->add(new SecurityAdvisorySource($this, $remoteId, $source, $severity));
 
             // FriendsOfPhp source is curated by PHP developer, trust that data over data from GitHub
             if ($source === FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME) {
@@ -300,7 +318,18 @@ class SecurityAdvisory
     public function setupSource(): void
     {
         if (!$this->getSourceRemoteId($this->source)) {
-            $this->addSource($this->remoteId, $this->source);
+            $this->addSource($this->remoteId, $this->source, null);
         }
+    }
+
+    public function findSecurityAdvisorySource(string $search): ?SecurityAdvisorySource
+    {
+        foreach ($this->sources as $source) {
+            if ($source->getSource() === $search) {
+                return $source;
+            }
+        }
+
+        return null;
     }
 }

@@ -41,6 +41,7 @@ class RemoteSecurityAdvisoryTest extends TestCase
         $this->assertSame('3f/pygmentize', $advisory->packageName);
         $this->assertSame('2017-05-15 00:00:00', $advisory->date->format('Y-m-d H:i:s'));
         $this->assertSame(SecurityAdvisory::PACKAGIST_ORG, $advisory->composerRepository);
+        $this->assertNull($advisory->severity);
     }
 
     public function testCreateFromFriendsOfPhpOnlyYearAvailable(): void
@@ -111,7 +112,7 @@ class RemoteSecurityAdvisoryTest extends TestCase
 
     public function testWithAddedAffectedVersion(): void
     {
-        $advisory = new RemoteSecurityAdvisory('id', 'foobar', 'foo/bar', '>=1', 'https://foobar.com', null, new \DateTimeImmutable(), null, [], 'test');
+        $advisory = new RemoteSecurityAdvisory('id', 'foobar', 'foo/bar', '>=1', 'https://foobar.com', null, new \DateTimeImmutable(), null, [], 'test', null);
         $advisory = $advisory->withAddedAffectedVersion('<2');
 
         $this->assertSame('>=1|<2', $advisory->affectedVersions);

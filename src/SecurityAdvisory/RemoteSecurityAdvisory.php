@@ -45,6 +45,7 @@ class RemoteSecurityAdvisory
         public readonly ?string $composerRepository,
         public readonly array $references,
         public readonly string $source,
+        public readonly ?Severity $severity,
     ) {
     }
     public function withAddedAffectedVersion(string $version): self
@@ -60,6 +61,7 @@ class RemoteSecurityAdvisory
             $this->composerRepository,
             $this->references,
             $this->source,
+            $this->severity,
         );
     }
 
@@ -133,6 +135,7 @@ class RemoteSecurityAdvisory
             $composerRepository,
             [],
             FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME,
+            null, // The FriendsOfPHP database doesn't contain severity values
         );
     }
 }

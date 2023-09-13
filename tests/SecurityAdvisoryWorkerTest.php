@@ -168,6 +168,18 @@ class SecurityAdvisoryWorkerTest extends TestCase
 
     private function createRemoteAdvisory(string $packageName, string $remoteId): RemoteSecurityAdvisory
     {
-        return new RemoteSecurityAdvisory($remoteId, 'Advisory' . $packageName, $packageName, '^1.0', 'https://example/' . $packageName, null, new \DateTimeImmutable(), null, [], 'test');
+        return new RemoteSecurityAdvisory(
+            $remoteId,
+            'Advisory' . $packageName,
+            $packageName,
+            '^1.0',
+            'https://example/' . $packageName,
+            null,
+            new \DateTimeImmutable(),
+            null,
+            [],
+            'test',
+            null,
+        );
     }
 }

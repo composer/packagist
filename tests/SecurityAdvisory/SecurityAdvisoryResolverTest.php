@@ -76,7 +76,7 @@ class SecurityAdvisoryResolverTest extends TestCase
     public function testResolveDontRemoveAdvisoryWithMultipleSources(): void
     {
         $advisory = new SecurityAdvisory($this->createRemoteAdvisory('test'), 'test');
-        $advisory->addSource('other-id', 'other');
+        $advisory->addSource('other-id', 'other', null);
         [$new, $removed] = $this->resolver->resolve([$advisory], new RemoteSecurityAdvisoryCollection([]), 'test');
 
         $this->assertSame([], $new);
@@ -108,6 +108,18 @@ class SecurityAdvisoryResolverTest extends TestCase
 
     private function createRemoteAdvisory(string $source, string $packageName = 'acme/package', ?string $cve = null): RemoteSecurityAdvisory
     {
-        return new RemoteSecurityAdvisory(uniqid('id-'), 'Security Advisory', $packageName, '^1.0', 'https://example.org', $cve, new \DateTimeImmutable(), null, [], $source);
+        return new RemoteSecurityAdvisory(
+            uniqid('id-'),
+            'Security Advisory',
+            $packageName,
+            '^1.0',
+            'https://example.org',
+            $cve,
+            new \DateTimeImmutable(),
+            null,
+            [],
+            $source,
+            null,
+        );
     }
 }

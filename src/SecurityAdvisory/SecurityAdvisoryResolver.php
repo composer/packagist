@@ -79,7 +79,7 @@ class SecurityAdvisoryResolver
                     $newAdvisories[] = new SecurityAdvisory($remoteAdvisory, $sourceName);
                 } else {
                     // Update advisory and make sure the new source is added
-                    $matchedAdvisory->addSource($remoteAdvisory->id, $sourceName);
+                    $matchedAdvisory->addSource($remoteAdvisory->id, $sourceName, $remoteAdvisory->severity);
                     $matchedAdvisory->updateAdvisory($remoteAdvisory);
                     unset($unmatchedExistingAdvisories[$packageName][$matchedAdvisory->getPackagistAdvisoryId()]);
                 }
