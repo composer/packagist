@@ -12,6 +12,10 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\SecurityAdvisory;
+use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
+use App\SecurityAdvisory\RemoteSecurityAdvisory;
+use App\SecurityAdvisory\Severity;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
@@ -159,5 +163,32 @@ class ApiControllerTest extends WebTestCase
             ['github', 'https://github.com', false],
             ['update-package', 'ssh://ghe.example.org/user/jjjjj.git', false],
         ];
+    }
+
+    public function testSecurityAdvisories(): void
+    {
+        $advisory = new SecurityAdvisory(new RemoteSecurityAdvisory(
+            'GHSA-1234-1234-1234',
+            'Advisory Title',
+            'acme/package',
+            '<1.0.1',
+            'https://example.org',
+            'CVE-12345',
+            new \DateTimeImmutable(),
+            SecurityAdvisory::PACKAGIST_ORG,
+            [],
+            GitHubSecurityAdvisoriesSource::SOURCE_NAME,
+            Severity::MEDIUM,
+        ), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em->persist($advisory);
+        $em->flush();
+
+        $this->client->request('GET', '/api/security-advisories/?packages[]=acme/package');
+        $this->assertEquals(200, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+
+        $content = json_decode($this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertArrayHasKey('acme/package', $content['advisories']);
+        $this->assertCount(1, $content['advisories']['acme/package']);
     }
 }
