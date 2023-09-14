@@ -138,6 +138,10 @@ class SecurityAdvisory
         if ($initialCopy || $this->reportedAt != $advisory->date) {
             $this->reportedAt = $advisory->date;
         }
+
+        if ($initialCopy && $advisory->severity) {
+            $this->severity = $advisory->severity;
+        }
     }
 
     public function getPackagistAdvisoryId(): string

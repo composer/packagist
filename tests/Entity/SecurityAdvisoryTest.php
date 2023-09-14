@@ -131,7 +131,7 @@ class SecurityAdvisoryTest extends TestCase
 
     private function generateFriendsOfPhpRemoteAdvisory(string $title, string $link, string $cve): RemoteSecurityAdvisory
     {
-        return RemoteSecurityAdvisory::createFromFriendsOfPhp('symfony/framework-bundle/CVE-2022-xxxx.yaml', [
+        return RemoteSecurityAdvisory::createFromFriendsOfPhp(sprintf('symfony/framework-bundle/%s.yaml', $cve), [
             'title' => $title,
             'link' => $link,
             'cve' => $cve,
