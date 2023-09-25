@@ -187,6 +187,7 @@ class Package
     }
 
     /**
+     * @param VersionRepository|array<string,VersionArray> $versionRepo Version repo or an already array-ified version dataset
      * @return array{
      *     name: string,
      *     description: string|null,
@@ -203,24 +204,28 @@ class Package
      *     abandoned?: string|true,
      * }
      */
-    public function toArray(VersionRepository $versionRepo, bool $serializeForApi = false): array
+    public function toArray(VersionRepository|array $versionRepo, bool $serializeForApi = false): array
     {
         $maintainers = [];
         foreach ($this->getMaintainers() as $maintainer) {
             $maintainers[] = $maintainer->toArray();
         }
 
-        $versions = [];
-        $partialVersions = $this->getVersions()->toArray();
-        while ($partialVersions) {
-            $versionRepo->getEntityManager()->clear();
+        if (is_array($versionRepo)) {
+            $versions = $versionRepo;
+        } else {
+            $versions = [];
+            $partialVersions = $this->getVersions()->toArray();
+            while ($partialVersions) {
+                $versionRepo->getEntityManager()->clear();
 
-            $slice = array_splice($partialVersions, 0, 100);
-            $fullVersions = $versionRepo->refreshVersions($slice);
-            $versionData = $versionRepo->getVersionData(array_map(static function ($v) {
-                return $v->getId();
-            }, $fullVersions));
-            $versions = array_merge($versions, $versionRepo->detachToArray($fullVersions, $versionData, $serializeForApi));
+                $slice = array_splice($partialVersions, 0, 100);
+                $fullVersions = $versionRepo->refreshVersions($slice);
+                $versionData = $versionRepo->getVersionData(array_map(static function ($v) {
+                    return $v->getId();
+                }, $fullVersions));
+                $versions = array_merge($versions, $versionRepo->detachToArray($fullVersions, $versionData, $serializeForApi));
+            }
         }
 
         $data = [

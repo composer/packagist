@@ -78,6 +78,9 @@ services:
     App\Package\V2Dumper:
         $buildDir: '%packagist_metadata_dir%'
 
+    App\Controller\PackageController:
+        $buildDir: '%packagist_metadata_dir%'
+
     App\Model\PackageManager:
         $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
 

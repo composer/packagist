@@ -18,6 +18,7 @@ use App\Security\Voter\PackageActions;
 use App\Util\Killswitch;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use Composer\Semver\Constraint\Constraint;
@@ -69,6 +70,9 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use UnexpectedValueException;
 
+/**
+ * @phpstan-import-type VersionArray from Version
+ */
 class PackageController extends Controller
 {
     public function __construct(
@@ -77,6 +81,9 @@ class PackageController extends Controller
         private Scheduler $scheduler,
         private FavoriteManager $favoriteManager,
         private DownloadManager $downloadManager,
+        private string $buildDir,
+        /** @var AwsMetadata */
+        private array $awsMetadata,
     ) {
     }
 
@@ -470,7 +477,11 @@ class PackageController extends Controller
             return $this->{$match['method'].'Action'}($req, $match['pkg']);
         }
 
-        $package = $this->getPartialPackageWithVersions($req, $name);
+        if ('json' === $req->getRequestFormat()) {
+            $package = $this->getPackageByName($req, $name);
+        } else {
+            $package = $this->getPartialPackageWithVersions($req, $name);
+        }
         if ($package instanceof Response) {
             return $package;
         }
@@ -482,7 +493,45 @@ class PackageController extends Controller
         $repo = $this->getEM()->getRepository(Package::class);
 
         if ('json' === $req->getRequestFormat()) {
-            $data = $package->toArray($this->getEM()->getRepository(Version::class), true);
+            $staticFiles = [
+                $this->buildDir.'/p2/'.$package->getName().'~dev.json',
+                $this->buildDir.'/p2/'.$package->getName().'.json',
+            ];
+            $versions = [];
+            $foundFiles = false;
+            $gzdecode = isset($this->awsMetadata['primary']) && $this->awsMetadata['primary'] === false;
+            foreach ($staticFiles as $file) {
+                if ($gzdecode) {
+                    $file .= '.gz';
+                }
+                if (file_exists($file)) {
+                    $contents = file_get_contents($file);
+                    if ($contents !== false) {
+                        if ($gzdecode) {
+                            $contents = gzdecode($contents);
+                            if ($contents === false) {
+                                throw new \RuntimeException('Failed to gzdecode '.$file);
+                            }
+                        }
+                        $contents = json_decode($contents, true);
+                        if (isset($contents['packages'][$package->getName()])) {
+                            $versionsData = $contents['packages'][$package->getName()];
+                            if (isset($contents['minified']) && $contents['minified'] === 'composer/2.0') {
+                                $versionsData = MetadataMinifier::expand($versionsData);
+                            }
+                            /** @var VersionArray $version */
+                            foreach ($versionsData as $version) {
+                                $versions[$version['version']] = $version;
+                            }
+                            $foundFiles = true;
+                        }
+                    }
+                }
+            }
+            unset($versionsData, $contents, $staticFiles, $file);
+
+            $data = $package->toArray($foundFiles ? $versions : $this->getEM()->getRepository(Version::class), true);
+
             if (Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
                 $data['dependents'] = $repo->getDependentCount($package->getName());
                 $data['suggesters'] = $repo->getSuggestCount($package->getName());
@@ -1475,6 +1524,25 @@ class PackageController extends Controller
 
         try {
             return $repo->getPartialPackageByNameWithVersions($name);
+        } catch (NoResultException) {
+            if ('json' === $req->getRequestFormat()) {
+                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
+            }
+
+            if ($repo->findProviders($name)) {
+                return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
+            }
+
+            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
+        }
+    }
+
+    private function getPackageByName(Request $req, string $name): Package|Response
+    {
+        $repo = $this->getEM()->getRepository(Package::class);
+
+        try {
+            return $repo->getPackageByName($name);
         } catch (NoResultException) {
             if ('json' === $req->getRequestFormat()) {
                 return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
