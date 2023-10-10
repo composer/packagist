@@ -563,7 +563,12 @@ class ApiController extends Controller
 
         if ($updateUrl) {
             foreach ($packages as $package) {
+                $previousUrl = $package->getRepository();
                 $package->setRepository($url);
+                if ($url !== $previousUrl) {
+                    // ensure we do a full update of all versions to update the repo URL
+                    $this->scheduler->scheduleUpdate($package, updateEqualRefs: true, forceDump: true);
+                }
             }
         }
 
