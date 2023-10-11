@@ -563,7 +563,7 @@ class PackageRepository extends ServiceEntityRepository
                 $sql,
                 [],
                 [],
-                new QueryCacheProfile(86400, 'total_packages', $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+                new QueryCacheProfile(86400, 'total_packages', $this->getEntityManager()->getConfiguration()->getResultCache())
             );
         $result = $stmt->fetchAllAssociative();
         $stmt->free();
@@ -583,7 +583,7 @@ class PackageRepository extends ServiceEntityRepository
                 $sql,
                 [],
                 [],
-                new QueryCacheProfile(3600, 'package_count_by_year_month', $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+                new QueryCacheProfile(3600, 'package_count_by_year_month', $this->getEntityManager()->getConfiguration()->getResultCache())
             );
         $result = $stmt->fetchAllAssociative();
         $stmt->free();

@@ -261,7 +261,7 @@ class VersionRepository extends ServiceEntityRepository
                 $sql,
                 [],
                 [],
-                new QueryCacheProfile(86400, 'total_package_versions', $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+                new QueryCacheProfile(86400, 'total_package_versions', $this->getEntityManager()->getConfiguration()->getResultCache())
             );
         $result = $stmt->fetchAllAssociative();
         $stmt->free();
@@ -281,7 +281,7 @@ class VersionRepository extends ServiceEntityRepository
                 $sql,
                 [],
                 [],
-                new QueryCacheProfile(3600, 'package_versions_count_by_year_month', $this->getEntityManager()->getConfiguration()->getResultCacheImpl())
+                new QueryCacheProfile(3600, 'package_versions_count_by_year_month', $this->getEntityManager()->getConfiguration()->getResultCache())
             );
         $result = $stmt->fetchAllAssociative();
         $stmt->free();

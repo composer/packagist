@@ -17,10 +17,12 @@ use App\Entity\Package;
 use App\Entity\User;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bundle\SecurityBundle\Security;
 
 #[AsEntityListener(event: 'postPersist', entity: Package::class)]
@@ -45,9 +47,7 @@ class PackageListener
      */
     public function postPersist(Package $package, LifecycleEventArgs $event): void
     {
-        $record = AuditRecord::packageCreated($package, $this->getUser());
-        $this->getEM()->persist($record);
-        $this->getEM()->flush();
+        $this->insert(AuditRecord::packageCreated($package, $this->getUser()));
     }
 
     /**
@@ -63,7 +63,7 @@ class PackageListener
     public function preUpdate(Package $package, PreUpdateEventArgs $event): void
     {
         if ($event->hasChangedField('repository')) {
-            // buffering things to be flushed in postUpdate as flushing here results in an infinite loop
+            // buffering things to be inserted in postUpdate once we can confirm it is done
             $this->buffered[] = AuditRecord::canonicalUrlChange($package, $this->getUser(), $event->getOldValue('repository'));
         }
     }
@@ -75,9 +75,8 @@ class PackageListener
     {
         if ($this->buffered) {
             foreach ($this->buffered as $record) {
-                $this->getEM()->persist($record);
+                $this->insert($record);
             }
-            $this->getEM()->flush();
             $this->buffered = [];
         }
     }
@@ -87,5 +86,22 @@ class PackageListener
         $user = $this->security->getUser();
 
         return $user instanceof User ? $user : null;
+    }
+
+    private function insert(AuditRecord $record): void
+    {
+        $this->getEM()->getConnection()->insert('audit_log', [
+            'id' => $record->id,
+            'datetime' => $record->datetime,
+            'type' => $record->type->value,
+            'attributes' => $record->attributes,
+            'userId' => $record->userId,
+            'vendor' => $record->vendor,
+            'packageId' => $record->packageId,
+        ], [
+            'id' => UlidType::NAME,
+            'datetime' => Types::DATETIME_IMMUTABLE,
+            'attributes' => Types::JSON
+        ]);
     }
 }
