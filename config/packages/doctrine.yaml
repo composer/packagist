@@ -5,6 +5,7 @@ doctrine:
             # PDO::ATTR_TIMEOUT
             2: 1.3
     orm:
+        report_fields_where_declared: true
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true
         auto_mapping: true

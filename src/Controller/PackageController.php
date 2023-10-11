@@ -69,6 +69,7 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use UnexpectedValueException;
+use Webmozart\Assert\Assert;
 
 /**
  * @phpstan-import-type VersionArray from Version
@@ -1282,6 +1283,7 @@ class PackageController extends Controller
             $data = [
                 'packages' => $paginator->getCurrentPageResults(),
             ];
+            Assert::isArray($data['packages']);
             $meta = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
             foreach ($data['packages'] as $index => $package) {
                 $data['packages'][$index]['downloads'] = $meta['downloads'][$package['id']];
@@ -1334,6 +1336,7 @@ class PackageController extends Controller
             $data = [
                 'packages' => $paginator->getCurrentPageResults(),
             ];
+            Assert::isArray($data['packages']);
             $meta = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
             foreach ($data['packages'] as $index => $package) {
                 $data['packages'][$index]['downloads'] = $meta['downloads'][$package['id']];

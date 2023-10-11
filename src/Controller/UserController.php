@@ -24,6 +24,8 @@ use App\Model\ProviderManager;
 use App\Model\RedisAdapter;
 use App\Security\TwoFactorAuthManager;
 use App\Service\Scheduler;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\SvgWriter;
 use Pagerfanta\Pagerfanta;
 use Psr\Log\LoggerInterface;
@@ -303,10 +305,10 @@ class UserController extends Controller
             ->writerOptions([])
             ->data($qrContent)
             ->encoding(new Encoding('UTF-8'))
-            ->errorCorrectionLevel(new ErrorCorrectionLevelHigh())
+            ->errorCorrectionLevel(ErrorCorrectionLevel::High)
             ->size(200)
             ->margin(0)
-            ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
+            ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
             ->build();
 
         return $this->render(

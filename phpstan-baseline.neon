@@ -6,22 +6,12 @@ parameters:
 			path: src/Controller/ExploreController.php
 
 		-
-			message: "#^Parameter \\#1 \\$nbResults of class Pagerfanta\\\\Adapter\\\\FixedAdapter constructor expects int\\<0, max\\>, int given\\.$#"
-			count: 1
-			path: src/Controller/ExploreController.php
-
-		-
-			message: "#^Offset string on array\\<int, int\\> on left side of \\?\\? does not exist\\.$#"
-			count: 1
-			path: src/Controller/PackageController.php
-
-		-
 			message: "#^Parameter \\#1 \\$job of method App\\\\Service\\\\UpdaterWorker\\:\\:process\\(\\) expects App\\\\Entity\\\\Job\\<array\\{id\\: int, update_equal_refs\\: bool, delete_before\\: bool, force_dump\\: bool\\}\\>, App\\\\Entity\\\\Job\\<array\\{id\\: int, update_equal_refs\\: false, delete_before\\: false, force_dump\\: false\\}\\> given\\.$#"
 			count: 1
 			path: src/DataFixtures/PackageFixtures.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) should return array\\<array\\{id\\: int, name\\: string, description\\: string\\|null, language\\: string\\|null, abandoned\\: int, replacementPackage\\: string\\|null\\}\\> but returns array\\<int, non\\-empty\\-array\\<string, mixed\\>\\>\\.$#"
+			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) should return array\\<array\\{id\\: int, name\\: string, description\\: string\\|null, language\\: string\\|null, abandoned\\: int, replacementPackage\\: string\\|null\\}\\> but returns array\\<int\\<0, max\\>, non\\-empty\\-array\\<string, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
 
