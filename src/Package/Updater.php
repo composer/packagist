@@ -31,6 +31,7 @@ use App\Entity\VersionRepository;
 use App\Entity\SuggestLink;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Service\VersionCache;
@@ -183,8 +184,9 @@ class Updater
             if ($result['updated']) {
                 assert($result['object'] instanceof Version);
                 $em->flush();
-                $em->clear();
-                $package = $em->merge($package);
+
+                // detach version once flushed to avoid gathering lots of data in memory
+                $em->detach($result['object']);
 
                 $this->versionIdCache->insertVersion($package, $result['object']);
                 $versionId = $result['object']->getId();
@@ -213,7 +215,7 @@ class Updater
         $em->getConnection()->executeStatement(
             'UPDATE package_version SET updatedAt = :now, softDeletedAt = NULL WHERE id IN (:ids) AND softDeletedAt IS NOT NULL',
             ['now' => date('Y-m-d H:i:s'), 'ids' => $idsToMarkUpdated],
-            ['ids' => Connection::PARAM_INT_ARRAY]
+            ['ids' => ArrayParameterType::INTEGER]
         );
 
         // remove outdated versions

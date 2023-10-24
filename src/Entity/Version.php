@@ -87,7 +87,7 @@ class Version
     /**
      * @var Collection<int, Tag>&Selectable<int, Tag>
      */
-    #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'versions')]
+    #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'versions', cascade: ['persist', 'detach'])]
     #[ORM\JoinTable(name: 'version_tag')]
     #[ORM\JoinColumn(name: 'version_id', referencedColumnName: 'id')]
     #[ORM\InverseJoinColumn(name: 'tag_id', referencedColumnName: 'id')]
@@ -122,37 +122,37 @@ class Version
     /**
      * @var Collection<int, RequireLink>&Selectable<int, RequireLink>
      */
-    #[ORM\OneToMany(targetEntity: 'App\Entity\RequireLink', mappedBy: 'version')]
+    #[ORM\OneToMany(targetEntity: 'App\Entity\RequireLink', mappedBy: 'version', cascade: ['persist', 'detach'])]
     private Collection $require;
 
     /**
      * @var Collection<int, ReplaceLink>&Selectable<int, ReplaceLink>
      */
-    #[ORM\OneToMany(targetEntity: 'App\Entity\ReplaceLink', mappedBy: 'version')]
+    #[ORM\OneToMany(targetEntity: 'App\Entity\ReplaceLink', mappedBy: 'version', cascade: ['persist', 'detach'])]
     private Collection $replace;
 
     /**
      * @var Collection<int, ConflictLink>&Selectable<int, ConflictLink>
      */
-    #[ORM\OneToMany(targetEntity: 'App\Entity\ConflictLink', mappedBy: 'version')]
+    #[ORM\OneToMany(targetEntity: 'App\Entity\ConflictLink', mappedBy: 'version', cascade: ['persist', 'detach'])]
     private Collection $conflict;
 
     /**
      * @var Collection<int, ProvideLink>&Selectable<int, ProvideLink>
      */
-    #[ORM\OneToMany(targetEntity: 'App\Entity\ProvideLink', mappedBy: 'version')]
+    #[ORM\OneToMany(targetEntity: 'App\Entity\ProvideLink', mappedBy: 'version', cascade: ['persist', 'detach'])]
     private Collection $provide;
 
     /**
      * @var Collection<int, DevRequireLink>&Selectable<int, DevRequireLink>
      */
-    #[ORM\OneToMany(targetEntity: 'App\Entity\DevRequireLink', mappedBy: 'version')]
+    #[ORM\OneToMany(targetEntity: 'App\Entity\DevRequireLink', mappedBy: 'version', cascade: ['persist', 'detach'])]
     private Collection $devRequire;
 
     /**
      * @var Collection<int, SuggestLink>&Selectable<int, SuggestLink>
      */
-    #[ORM\OneToMany(targetEntity: 'App\Entity\SuggestLink', mappedBy: 'version')]
+    #[ORM\OneToMany(targetEntity: 'App\Entity\SuggestLink', mappedBy: 'version', cascade: ['persist', 'detach'])]
     private Collection $suggest;
 
     /**

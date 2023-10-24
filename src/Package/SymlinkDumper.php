@@ -13,6 +13,7 @@
 namespace App\Package;
 
 use Composer\Pcre\Preg;
+use Doctrine\DBAL\ArrayParameterType;
 use Seld\Signal\SignalHandler;
 use Symfony\Component\Filesystem\Filesystem;
 use Composer\Util\Filesystem as ComposerFilesystem;
@@ -430,7 +431,7 @@ class SymlinkDumper
                             'ids' => $ids,
                             'dumped' => $dt,
                         ],
-                        ['ids' => Connection::PARAM_INT_ARRAY]
+                        ['ids' => ArrayParameterType::INTEGER]
                     );
                     break;
                 } catch (\Exception $e) {

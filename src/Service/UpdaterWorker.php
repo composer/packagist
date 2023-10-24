@@ -216,7 +216,6 @@ class UpdaterWorker
             // perform the actual update (fetch and re-scan the repository's source)
             $package = $this->updater->update($io, $config, $package, $repository, $flags, $existingVersions, $versionCache);
 
-            $emptyRefCache = $em->merge($emptyRefCache);
             $emptyRefCache->setEmptyReferences($repository->getEmptyReferences());
             $em->persist($emptyRefCache);
             $em->flush();

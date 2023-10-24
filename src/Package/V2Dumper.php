@@ -14,6 +14,7 @@ namespace App\Package;
 
 use App\Entity\SecurityAdvisory;
 use Composer\Pcre\Preg;
+use Doctrine\DBAL\ArrayParameterType;
 use Symfony\Component\Filesystem\Filesystem;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Doctrine\Persistence\ManagerRegistry;
@@ -159,7 +160,7 @@ class V2Dumper
                             'ids' => $ids,
                             'dumped' => $dt,
                         ],
-                        ['ids' => Connection::PARAM_INT_ARRAY]
+                        ['ids' => ArrayParameterType::INTEGER]
                     );
                     break;
                 } catch (\Exception $e) {

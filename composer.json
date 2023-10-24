@@ -88,6 +88,7 @@
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^3.4",
         "phpstan/phpstan": "^1.9.2",
+        "phpstan/phpstan-deprecation-rules": "^1.1",
         "phpstan/phpstan-doctrine": "^1",
         "phpstan/phpstan-symfony": "^1.1",
         "phpstan/phpstan-webmozart-assert": "^1.2",

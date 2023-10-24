@@ -15,6 +15,7 @@ namespace App\EventListener;
 use App\Entity\SecurityAdvisory;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
@@ -67,7 +68,7 @@ class SecurityAdvisoryUpdateListener
         $pkg = $this->getEM()->getConnection()->executeStatement(
             'UPDATE package SET dumpedAtV2 = null WHERE name IN (:names)',
             ['names' => $packageNames],
-            ['names' => Connection::PARAM_STR_ARRAY]
+            ['names' => ArrayParameterType::STRING]
         );
 
         $this->packagesToMarkStale = [];

@@ -13,6 +13,7 @@
 namespace App\Model;
 
 use Composer\Pcre\Preg;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Entity\Package;
@@ -212,7 +213,7 @@ class DownloadManager
         $versionIds = $this->getEM()->getConnection()->fetchFirstColumn(
             'SELECT id FROM package_version WHERE id IN (:ids)',
             ['ids' => array_keys($versionsWithDownloads)],
-            ['ids' => Connection::PARAM_INT_ARRAY]
+            ['ids' => ArrayParameterType::INTEGER]
         );
         $versionIds = array_map('intval', $versionIds);
         unset($versionsWithDownloads);

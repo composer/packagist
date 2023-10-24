@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -91,7 +92,7 @@ class JobRepository extends ServiceEntityRepository
                 'statuses' => [Job::STATUS_COMPLETED, Job::STATUS_ERRORED, Job::STATUS_FAILED],
                 'type' => $type,
             ],
-            ['statuses' => Connection::PARAM_STR_ARRAY]
+            ['statuses' => ArrayParameterType::STRING]
         );
         if ($id) {
             return $this->find($id);

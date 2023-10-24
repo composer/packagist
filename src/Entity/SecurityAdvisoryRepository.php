@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
@@ -46,7 +47,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->innerJoin('a.sources', 's')
             ->innerJoin('a.sources', 'query')
             ->where('query.source = :source OR a.packageName IN (:packageNames)')
-            ->setParameter('packageNames', $packageNames, Connection::PARAM_STR_ARRAY)
+            ->setParameter('packageNames', $packageNames, ArrayParameterType::STRING)
             ->setParameter('source', $sourceName)
             ->getQuery()
             ->getResult();
@@ -130,7 +131,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             $types = [];
             if ($filterByNames) {
                 $params['packageNames'] = $packageNames;
-                $types['packageNames'] = Connection::PARAM_STR_ARRAY;
+                $types['packageNames'] = ArrayParameterType::STRING;
             }
 
             $result = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $params, $types);
@@ -173,12 +174,12 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ORDER BY s.id DESC';
 
         $params['packageNames'] = $packageNames;
-        $types['packageNames'] = Connection::PARAM_STR_ARRAY;
+        $types['packageNames'] = ArrayParameterType::STRING;
 
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             $sql,
             ['packageNames' => $packageNames],
-            ['packageNames' => Connection::PARAM_STR_ARRAY]
+            ['packageNames' => ArrayParameterType::STRING]
         );
 
         $results = [];

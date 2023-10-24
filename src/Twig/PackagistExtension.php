@@ -124,8 +124,8 @@ class PackagistExtension extends AbstractExtension
     public function sortLinks(array $links): array
     {
         usort($links, static function (PackageLink $a, PackageLink $b) {
-            $aPlatform = Preg::isMatch(PlatformRepository::PLATFORM_PACKAGE_REGEX, $a->getPackageName());
-            $bPlatform = Preg::isMatch(PlatformRepository::PLATFORM_PACKAGE_REGEX, $b->getPackageName());
+            $aPlatform = PlatformRepository::isPlatformPackage($a->getPackageName());
+            $bPlatform = PlatformRepository::isPlatformPackage($b->getPackageName());
 
             if ($aPlatform !== $bPlatform) {
                 return $aPlatform ? -1 : 1;
