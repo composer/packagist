@@ -161,14 +161,20 @@ class QueueWorker
             $this->doctrine->resetManager();
         }
 
-        // refetch objects in case the EM was reset during the job run
+        // reset EM for safety to avoid flushing anything not flushed during the job, and refetch objects
         $em = $this->getEM();
+        $em->clear();
         $repo = $em->getRepository(Job::class);
+        $job = $repo->find($jobId);
+        if (null === $job) {
+            throw new \LogicException('At this point a job should always be found');
+        }
 
         if ($result['status'] === Job::STATUS_RESCHEDULE) {
             Assert::keyExists($result, 'after', message: '$result must have an "after" key when returning a reschedule status.');
             $job->reschedule($result['after']);
-            $em->flush($job);
+            $em->persist($job);
+            $em->flush();
 
             $this->logger->reset();
             $this->logger->popProcessor();
@@ -185,15 +191,12 @@ class QueueWorker
             $result['exceptionClass'] = get_class($result['exception']);
         }
 
-        $job = $repo->find($jobId);
-        if (null === $job) {
-            throw new \LogicException('At this point a job should always be found');
-        }
         $job->complete($result);
+        $em->persist($job);
 
         $this->redis->setex('job-'.$job->getId(), 600, json_encode($result));
 
-        $em->flush($job);
+        $em->flush();
         $em->clear();
 
         if ($result['status'] === Job::STATUS_FAILED) {

@@ -54,10 +54,10 @@ class Scheduler
                 return $pendingJob;
             }
 
-            // pending job will somehow execute after the one we are scheduling so we mark it complete and schedule a new job to run immediately
+            // pending job would execute after the one we are scheduling so we mark it complete and schedule a new job to run immediately
             $pendingJob->start();
             $pendingJob->complete(['status' => Job::STATUS_COMPLETED, 'message' => 'Another job is attempting to schedule immediately for this package, aborting scheduled-for-later update']);
-            $this->getEM()->flush($pendingJob);
+            $this->getEM()->flush();
         }
 
         return $this->createJob('package:updates', ['id' => $packageOrId, 'update_equal_refs' => $updateEqualRefs, 'delete_before' => $deleteBefore, 'force_dump' => $forceDump], $packageOrId, $executeAfter);

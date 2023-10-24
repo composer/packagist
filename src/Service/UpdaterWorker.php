@@ -135,7 +135,8 @@ class UpdaterWorker
                     // invalid/outdated token, wipe it so we don't try it again
                     if (!$rate && isset($http_response_header[0]) && (strpos($http_response_header[0], '403') || strpos($http_response_header[0], '401'))) {
                         $maintainer->setGithubToken(null);
-                        $em->flush($maintainer);
+                        $em->persist($maintainer);
+                        $em->flush();
                         continue;
                     }
                 }
@@ -188,7 +189,7 @@ class UpdaterWorker
             if (!$emptyRefCache) {
                 $emptyRefCache = new EmptyReferenceCache($package);
                 $em->persist($emptyRefCache);
-                $em->flush($emptyRefCache);
+                $em->flush();
             }
 
             if ($useVersionCache) {
@@ -217,7 +218,8 @@ class UpdaterWorker
 
             $emptyRefCache = $em->merge($emptyRefCache);
             $emptyRefCache->setEmptyReferences($repository->getEmptyReferences());
-            $em->flush($emptyRefCache);
+            $em->persist($emptyRefCache);
+            $em->flush();
 
             // github update downgraded to a git clone, this should not happen, so check through API whether the package still exists
             $driver = $repository->getDriver();
@@ -315,7 +317,8 @@ class UpdaterWorker
             // detected a 404 so mark the package as gone and prevent updates for 1y
             if ($found404) {
                 $package->setCrawledAt($found404 === true ? new \DateTime('+1 year') : $found404);
-                $this->getEM()->flush($package);
+                $this->getEM()->persist($package);
+                $this->getEM()->flush();
 
                 return [
                     'status' => Job::STATUS_PACKAGE_GONE,

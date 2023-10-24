@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
@@ -307,33 +308,43 @@ class PackageRepository extends ServiceEntityRepository
 
     public function getPartialPackageByNameWithVersions(string $name): Package
     {
-        // first fetch a partial package including joined versions/maintainers, that way
-        // the join is cheap and heavy data (description, readme) is not duplicated for each joined row
-        //
-        // fetching everything partial here to avoid fetching tons of data,
+        // first fetch the package alone to avoid joins with heavy data (description, readme) that would be duplicated for each joined row
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p')
+            ->from('App\Entity\Package', 'p')
+            ->where('p.name = ?0')
+            ->setParameters([$name]);
+        $pkg = $qb->getQuery()->getSingleResult();
+
+        // then fetch partial version data here to avoid fetching tons of data,
         // this helps for packages like https://packagist.org/packages/ccxt/ccxt
         // with huge amounts of versions
         $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('partial p.{id}', 'partial v.{id, version, normalizedVersion, development, releasedAt, extra, isDefaultBranch}')
-            ->from('App\Entity\Package', 'p')
-            ->leftJoin('p.versions', 'v')
+        $qb->select('v.id, v.version, v.normalizedVersion, v.development, v.releasedAt, v.extra, v.isDefaultBranch')
+            ->from('App\Entity\Version', 'v')
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC')
-            ->where('p.name = ?0')
-            ->setParameters([$name]);
+            ->where('v.package = ?0')
+            ->setParameters([$pkg]);
 
-        $pkg = $qb->getQuery()->getSingleResult();
-
-        if ($pkg instanceof Package) {
-            // then refresh the package to complete its data and inject the previously
-            // fetched partial versions to get a complete package
-            $versions = $pkg->getVersions();
-            $this->getEntityManager()->refresh($pkg);
-
-            $prop = new \ReflectionProperty($pkg, 'versions');
-            $prop->setAccessible(true);
-            $prop->setValue($pkg, $versions);
+        $versions = [];
+        $reflId = new \ReflectionProperty(Version::class, 'id');
+        foreach ($qb->getQuery()->getArrayResult() as $row) {
+            $versions[] = $v = new Version;
+            $reflId->setValue($v, $row['id']);
+            $v->setName($pkg->getName());
+            $v->setPackage($pkg);
+            $v->setVersion($row['version']);
+            $v->setNormalizedVersion($row['normalizedVersion']);
+            $v->setDevelopment($row['development']);
+            $v->setReleasedAt($row['releasedAt']);
+            $v->setExtra($row['extra']);
+            $v->setIsDefaultBranch($row['isDefaultBranch']);
         }
+        $versions = new ArrayCollection($versions);
+
+        $prop = new \ReflectionProperty($pkg, 'versions');
+        $prop->setValue($pkg, $versions);
 
         return $pkg;
     }

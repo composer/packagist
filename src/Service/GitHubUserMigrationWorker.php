@@ -174,7 +174,8 @@ class GitHubUserMigrationWorker
             if (count($hooks) && !Preg::isMatch('{^https://api\.github\.com/repos/'.$repoKey.'/hooks/}', $hooks[0]['url'])) {
                 if (Preg::isMatch('{https://api\.github\.com/repos/([^/]+/[^/]+)/hooks}', $hooks[0]['url'], $match)) {
                     $package->setRepository('https://github.com/'.$match[1]);
-                    $this->getEM()->flush($package);
+                    $this->getEM()->persist($package);
+                    $this->getEM()->flush();
                 }
             }
         } catch (HttpExceptionInterface $e) {

@@ -574,7 +574,14 @@ class PackageController extends Controller
 
             // load the default branch version as it is used to display the latest available source.* and homepage info
             $version = reset($versions);
-            $this->getEM()->refresh($version);
+            foreach ($versions as $v) {
+                if ($v->isDefaultBranch()) {
+                    $version = $v;
+                    break;
+                }
+            }
+            $version = $versionRepo->find($version->getId());
+            Assert::notNull($version);
 
             $expandedVersion = $version;
             foreach ($versions as $candidate) {
@@ -586,9 +593,12 @@ class PackageController extends Controller
 
             // load the expanded version fully to be able to display all info including tags
             if ($expandedVersion->getId() !== $version->getId()) {
-                $this->getEM()->refresh($expandedVersion);
+                $expandedVersion = $versionRepo->find($expandedVersion->getId());
+                Assert::notNull($expandedVersion);
+            } else {
+                // ensure we get the reloaded $version with full data if it was overwritten above by $candidate
+                $expandedVersion = $version;
             }
-            $expandedVersion = $versionRepo->getFullVersion($expandedVersion->getId());
         }
 
         $data = [
