@@ -60,9 +60,8 @@
         (function () {
             var average = {{ average|json_encode|raw }};
             var date = {{ date|json_encode|raw }};
-            var versions = {{ versions|json_encode|raw }};
 
-            initPhpStats(average, date, versions, {{ path('version_php_stats', {name: package.name, version: '_VERSION_', type: 'effective'})|replace({effective: '_TYPE_'})|json_encode|raw }});
+            initPhpStats(average, date, {{ path('version_php_stats', {name: package.name, version: '_VERSION_', type: 'effective'})|replace({effective: '_TYPE_'})|json_encode|raw }});
         }());
     </script>
 {% endblock %}

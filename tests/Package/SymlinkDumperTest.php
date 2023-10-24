@@ -86,7 +86,6 @@ class SymlinkDumperTest extends TestCase
     private static function invoke($object, $method): mixed
     {
         $refl = new \ReflectionMethod($object, $method);
-        $refl->setAccessible(true);
 
         $args = func_get_args();
         array_shift($args); // object

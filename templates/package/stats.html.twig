@@ -94,9 +94,8 @@
         (function () {
             var average = {{ average|json_encode|raw }};
             var date = {{ date|json_encode|raw }};
-            var versions = {{ versions|json_encode|raw }};
 
-            initPackageStats(average, date, versions, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }});
+            initPackageStats(average, date, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }});
         }());
     </script>
 {% endblock %}

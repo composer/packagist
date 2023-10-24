@@ -564,6 +564,7 @@ class PackageController extends Controller
 
         $version = null;
         $expandedVersion = null;
+        /** @var Version[] $versions */
         $versions = $package->getVersions()->toArray();
 
         usort($versions, Package::class.'::sortVersions');

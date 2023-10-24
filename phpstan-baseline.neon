@@ -41,6 +41,21 @@ parameters:
 			path: src/Entity/Version.php
 
 		-
+			message: "#^Query error\\: Column \"audit_log\\.attributes\" expects value type string, got type array\\<string, mixed\\>$#"
+			count: 1
+			path: src/EventListener/PackageListener.php
+
+		-
+			message: "#^Query error\\: Column \"audit_log\\.datetime\" expects value type string, got type DateTimeImmutable$#"
+			count: 1
+			path: src/EventListener/PackageListener.php
+
+		-
+			message: "#^Query error\\: Column \"audit_log\\.id\" expects value type string, got type Symfony\\\\Component\\\\Uid\\\\Ulid$#"
+			count: 1
+			path: src/EventListener/PackageListener.php
+
+		-
 			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavoriteCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
 			count: 1
 			path: src/Model/FavoriteManager.php

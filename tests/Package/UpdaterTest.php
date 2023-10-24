@@ -52,7 +52,6 @@ class UpdaterTest extends TestCase
         $this->package->setName('test/pkg');
         $this->package->setRepository('https://example.com/test/pkg');
         $reflProp = new \ReflectionProperty(Package::class, 'id');
-        $reflProp->setAccessible(true);
         $reflProp->setValue($this->package, 1);
 
         $this->ioMock = $this->createMock(NullIO::class);
@@ -73,7 +72,6 @@ class UpdaterTest extends TestCase
         }));
         $emMock->expects($this->any())->method('persist')->will($this->returnCallback(static function ($object) {
             if ($reflProperty = new \ReflectionProperty($object, 'id')) {
-                $reflProperty->setAccessible(true);
                 $reflProperty->setValue($object, random_int(0, 10000));
             }
         }));

@@ -135,7 +135,7 @@ import '../css/charts.css';
         );
     });
 
-    window.initPackageStats = function (average, date, versions, statsUrl, versionStatsUrl) {
+    window.initPackageStats = function (average, date, statsUrl, versionStatsUrl) {
         colors = [
             '#f28d1a',
             '#1765f4',
@@ -274,7 +274,7 @@ import '../css/charts.css';
         initializeVersionListExpander();
     };
 
-    window.initPhpStats = function (average, date, versions, versionStatsUrl) {
+    window.initPhpStats = function (average, date, versionStatsUrl) {
         colors = PHP_VERSION_COLORS;
 
         var match,
