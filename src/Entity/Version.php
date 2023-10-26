@@ -93,7 +93,7 @@ class Version
     #[ORM\InverseJoinColumn(name: 'tag_id', referencedColumnName: 'id')]
     private Collection $tags;
 
-    #[ORM\ManyToOne(targetEntity: Package::class, fetch: 'EAGER', inversedBy: 'versions')]
+    #[ORM\ManyToOne(targetEntity: Package::class, inversedBy: 'versions')]
     #[Assert\Type(type: Package::class)]
     private Package|null $package;
 
