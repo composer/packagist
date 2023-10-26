@@ -1537,7 +1537,7 @@ class PackageController extends Controller
         $repo = $this->getEM()->getRepository(Package::class);
 
         try {
-            return $repo->getPartialPackageByNameWithVersions($name);
+            return $repo->getPackageByName($name);
         } catch (NoResultException) {
             if ('json' === $req->getRequestFormat()) {
                 return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
