@@ -15,6 +15,7 @@ namespace App\Controller;
 use App\Entity\Dependent;
 use App\Entity\PhpStat;
 use App\Security\Voter\PackageActions;
+use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Util\Killswitch;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
@@ -1509,6 +1510,25 @@ class PackageController extends Controller
         $data['count'] = count($securityAdvisories);
 
         return $this->render('package/security_advisories.html.twig', $data);
+    }
+
+    #[Route(path: '/security-advisories/{id}', name: 'view_advisory')]
+    public function securityAdvisoryAction(Request $request, string $id): Response
+    {
+        $repo = $this->getEM()->getRepository(SecurityAdvisory::class);
+        if (str_starts_with($id, 'CVE-')) {
+            $securityAdvisories = $repo->findBy(['cve' => $id]);
+        } elseif (str_starts_with($id, 'GHSA-')) {
+            $securityAdvisories = $repo->findByRemoteId(GitHubSecurityAdvisoriesSource::SOURCE_NAME, $id);
+        } else {
+            $securityAdvisories = array_filter([$repo->findOneBy(['packagistAdvisoryId' => $id])]);
+        }
+
+        if (0 === count($securityAdvisories)) {
+            throw new NotFoundHttpException();
+        }
+
+        return $this->render('package/security_advisory.html.twig', ['advisories' => $securityAdvisories, 'id' => $id]);
     }
 
     private function createAddMaintainerForm(Package $package): FormInterface

@@ -278,6 +278,14 @@ class SecurityAdvisory
         return false;
     }
 
+    /**
+     * @return Collection<int, SecurityAdvisorySource>&Selectable<int, SecurityAdvisorySource>
+     */
+    public function getSources(): Collection
+    {
+        return $this->sources;
+    }
+
     public function getSourceRemoteId(string $source): ?string
     {
         foreach ($this->sources as $advisorySource) {

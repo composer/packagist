@@ -96,6 +96,10 @@ var search = instantsearch({
             document.getElementById('search_query_query').focus();
         }
 
+        if (helper.state.query.match(/^PKSA-.{14}$/) || helper.state.query.match(/^GHSA-.{14}$/) || helper.state.query.match(/^CVE-\d{4}-\d+$/)) {
+            document.location.href = "/security-advisories/" + helper.state.query;
+        }
+
         helper.state.query = helper.state.query.replace(new RegExp('([^\\s])-', 'g'), '$1--');
 
         searchThrottle = setTimeout(function () {
