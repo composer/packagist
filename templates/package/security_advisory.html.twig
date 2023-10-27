@@ -17,39 +17,5 @@
         </div>
     </div>
 
-    <section class="row">
-        <section class="col-md-12">
-            <ul class="packages list-unstyled">
-                {% for advisory in advisories %}
-                    <li class="row">
-                        <div class="col-xs-12 package-item">
-                            <div class="row">
-                                <div class="col-sm-8 col-lg-9">
-                                    <h4 class="font-bold">
-                                        <a href="{{ advisory.link }}">{{ advisory.title }}</a>
-                                    </h4>
-                                    <p>
-                                        <a href="{{ path('view_advisory', {id: advisory.packagistAdvisoryId}) }}">{{ advisory.packagistAdvisoryId }}</a>
-                                        {% if advisory.cve %}
-                                            <a href="http://cve.mitre.org/cgi-bin/cvename.cgi?name={{ advisory.cve }}">{{ advisory.cve }}</a>
-                                        {% endif %}
-                                        {% for source in advisory.sources %}
-                                            {% if source.source == 'GitHub' and source.remoteId is not empty %}
-                                                <a href="https://github.com/advisories/{{ source.remoteId }}">{{ source.remoteId }}</a>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </p>
-                                    <p>Affected package: {% if advisory.packageName is existing_package %}<a href="{{ path('view_package', { 'name': advisory.packageName }) }}">{{ advisory.packageName }}</a>{% else %}{{ advisory.packageName }}{% endif %}</p>
-                                    <p>Affected version: {{ advisory.affectedVersions }}</p>
-                                </div>
-                                <div class="col-sm-4 col-lg-3">
-                                    <p>Reported by:<br/>{% for source in advisory.sources %}{{ source.source }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        </section>
-    </section>
+    {% include 'package/_security_advisory_list.html.twig' %}
 {% endblock %}

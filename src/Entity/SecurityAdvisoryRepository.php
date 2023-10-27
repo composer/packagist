@@ -98,6 +98,22 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return list<SecurityAdvisory>
+     */
+    public function findByPackageName(string $packageName): array
+    {
+        return $this
+            ->createQueryBuilder('a')
+            ->addSelect('s')
+            ->leftJoin('a.sources', 's')
+            ->where('a.packageName = :packageName')
+            ->orderBy('a.reportedAt', 'DESC')
+            ->setParameters(['packageName' => $packageName])
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @return array<string, array{advisoryId: string, packageName: string, remoteId: string, title: string, link: string|null, cve: string|null, affectedVersions: string, sources: array<array{name: string, remoteId: string}>, reportedAt: string, composerRepository: string|null}>
      */
     public function getPackageSecurityAdvisories(string $name): array

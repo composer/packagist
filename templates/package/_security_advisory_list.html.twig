@@ -1,0 +1,41 @@
+<section class="row">
+    <section class="col-md-12">
+        {% if securityAdvisories|length %}
+            <ul class="packages list-unstyled">
+                {% for advisory in securityAdvisories %}
+                    <li class="row">
+                        <div class="col-xs-12 package-item">
+                            <div class="row">
+                                <div class="col-sm-8 col-lg-9">
+                                    <h4 class="font-bold">
+                                        {% if advisory.severity %}[{{ advisory.severity.value|upper }}]{% endif %}
+                                        <a href="{{ advisory.link }}">{{ advisory.title }}</a>
+                                    </h4>
+                                    <p>
+                                        <a href="{{ path('view_advisory', {id: advisory.packagistAdvisoryId}) }}">{{ advisory.packagistAdvisoryId }}</a>
+                                        {% if advisory.cve %}
+                                            <a href="http://cve.mitre.org/cgi-bin/cvename.cgi?name={{ advisory.cve }}">{{ advisory.cve }}</a>
+                                        {% endif %}
+                                        {% for source in advisory.sources %}
+                                            {% if source.source == 'GitHub' and source.remoteId is not empty %}
+                                                <a href="https://github.com/advisories/{{ source.remoteId }}">{{ source.remoteId }}</a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                    <p>Affected version: {{ advisory.affectedVersions }}</p>
+                                </div>
+                                <div class="col-sm-4 col-lg-3">
+                                    <p>Reported by:<br/>{% for source in advisory.sources %}{{ source.source }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="alert alert-danger">
+                <p>{{ 'listing.no_security_advisories'|trans }}</p>
+            </div>
+        {% endif %}
+    </section>
+</section>
