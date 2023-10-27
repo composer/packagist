@@ -1528,7 +1528,7 @@ class PackageController extends Controller
             throw new NotFoundHttpException();
         }
 
-        return $this->render('package/security_advisory.html.twig', ['advisories' => $securityAdvisories, 'id' => $id]);
+        return $this->render('package/security_advisory.html.twig', ['securityAdvisories' => $securityAdvisories, 'id' => $id]);
     }
 
     private function createAddMaintainerForm(Package $package): FormInterface
