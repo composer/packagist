@@ -1476,7 +1476,7 @@ class PackageController extends Controller
     {
         /** @var SecurityAdvisoryRepository $repo */
         $repo = $this->getEM()->getRepository(SecurityAdvisory::class);
-        $securityAdvisories = $repo->getPackageSecurityAdvisories($name);
+        $securityAdvisories = $repo->findByPackageName($name);
 
         $data = [];
         $data['name'] = $name;
@@ -1491,7 +1491,7 @@ class PackageController extends Controller
                 $versionParser = new VersionParser();
                 foreach ($securityAdvisories as $advisory) {
                     try {
-                        $affectedVersionConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
+                        $affectedVersionConstraint = $versionParser->parseConstraints($advisory->getAffectedVersions());
                     } catch (UnexpectedValueException) {
                         // ignore parsing errors, advisory must be invalid
                         continue;
@@ -1528,7 +1528,7 @@ class PackageController extends Controller
             throw new NotFoundHttpException();
         }
 
-        return $this->render('package/security_advisory.html.twig', ['advisories' => $securityAdvisories, 'id' => $id]);
+        return $this->render('package/security_advisory.html.twig', ['securityAdvisories' => $securityAdvisories, 'id' => $id]);
     }
 
     private function createAddMaintainerForm(Package $package): FormInterface

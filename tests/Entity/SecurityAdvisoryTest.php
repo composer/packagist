@@ -14,7 +14,9 @@ namespace App\Tests\Entity;
 
 use App\Entity\SecurityAdvisory;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
+use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
+use App\SecurityAdvisory\Severity;
 use PHPUnit\Framework\TestCase;
 
 class SecurityAdvisoryTest extends TestCase
@@ -85,33 +87,54 @@ class SecurityAdvisoryTest extends TestCase
 
     public function testCalculateDifferenceScoreCveXXXX(): void
     {
-        $remoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('symfony/framework-bundle/CVE-2022-xxxx.yaml', [
-            'title' => 'CVE-2022-xxxx: CSRF token missing in forms',
-            'link' => 'https://symfony.com/cve-2022-xxxx',
-            'cve' => 'CVE-2022-xxxx',
-            'branches' => [
-                '5.3.x' => [
-                    'time' => '2022-01-29 12:00:00',
-                    'versions' => ['>=5.3.14', '<=5.3.14'],
-                ],
-                '5.4.x' => [
-                    'time' => '2022-01-29 12:00:00',
-                    'versions' => ['>=5.4.3', '<=5.4.3'],
-                ],
-                '6.0.x' => [
-                    'time' => '2022-01-29 12:00:00',
-                    'versions' => ['>=6.0.3', '<=6.0.3'],
-                ],
-            ],
-            'reference' => 'composer://symfony/framework-bundle',
-        ]);
+        $remoteAdvisory = $this->generateFriendsOfPhpRemoteAdvisory('CVE-2022-xxxx: CSRF token missing in forms', 'https://symfony.com/cve-2022-xxxx', 'CVE-2022-xxxx');
 
         $advisory = new SecurityAdvisory($remoteAdvisory, FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
 
-        $updatedRemoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('symfony/framework-bundle/CVE-2022-99999999999.yaml', [
-            'title' => 'CVE-2022-99999999999: CSRF token missing in forms',
-            'link' => 'https://symfony.com/cve-2022-99999999999',
-            'cve' => 'CVE-2022-99999999999',
+        $updatedRemoteAdvisory = $this->generateFriendsOfPhpRemoteAdvisory('CVE-2022-99999999999: CSRF token missing in forms', 'https://symfony.com/cve-2022-99999999999', 'CVE-2022-99999999999');
+
+        $this->assertSame(3, $advisory->calculateDifferenceScore($updatedRemoteAdvisory));
+    }
+
+    public function testStoreSeverity(): void
+    {
+        $friendsOfPhpRemoteAdvisory = $this->generateFriendsOfPhpRemoteAdvisory('CVE-2022-xxxx: CSRF token missing in forms', 'https://symfony.com/cve-2022-xxxx', 'CVE-2022-xxxx');
+        $gitHubRemoteAdvisor = $this->generateGitHubAdvisory(null);
+        $advisory = new SecurityAdvisory($friendsOfPhpRemoteAdvisory, $friendsOfPhpRemoteAdvisory->source);
+
+        $this->assertNull($advisory->getSeverity(), "FriendsOfPHP doesn't provide severity information");
+        $advisory->addSource($gitHubRemoteAdvisor->id, GitHubSecurityAdvisoriesSource::SOURCE_NAME, null);
+        $advisory->updateAdvisory($this->generateGitHubAdvisory(Severity::HIGH));
+        $this->assertSame(Severity::HIGH, $advisory->getSeverity(), "GitHub should update the severity severity");
+        $this->assertSame(Severity::HIGH, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getSeverity(), 'GitHub should update the source data');
+
+        $advisory->updateAdvisory($friendsOfPhpRemoteAdvisory);
+        $this->assertSame(Severity::HIGH, $advisory->getSeverity(), "FriendsOfPHP shouldn't reset the severity information");
+    }
+
+    private function generateGitHubAdvisory(Severity|null $severity): RemoteSecurityAdvisory
+    {
+        return new RemoteSecurityAdvisory(
+            'GHSA-1234-1234-1234',
+            'Tile',
+            'symfony/framework-bundle',
+            '',
+            'https://github.com/advisories/GHSA-1234-1234-1234',
+            null,
+            new \DateTimeImmutable(),
+            null,
+            [],
+            GitHubSecurityAdvisoriesSource::SOURCE_NAME,
+            $severity,
+        );
+    }
+
+    private function generateFriendsOfPhpRemoteAdvisory(string $title, string $link, string $cve): RemoteSecurityAdvisory
+    {
+        return RemoteSecurityAdvisory::createFromFriendsOfPhp(sprintf('symfony/framework-bundle/%s.yaml', $cve), [
+            'title' => $title,
+            'link' => $link,
+            'cve' => $cve,
             'branches' => [
                 '5.3.x' => [
                     'time' => '2022-01-29 12:00:00',
@@ -128,7 +151,5 @@ class SecurityAdvisoryTest extends TestCase
             ],
             'reference' => 'composer://symfony/framework-bundle',
         ]);
-
-        $this->assertSame(3, $advisory->calculateDifferenceScore($updatedRemoteAdvisory));
     }
 }

@@ -35,85 +35,33 @@ class RemoteSecurityAdvisory
      * @param list<string> $references
      */
     public function __construct(
-        private string $id,
-        private string $title,
-        private string $packageName,
-        private string $affectedVersions,
-        private string $link,
-        private ?string $cve,
-        private DateTimeImmutable $date,
-        private ?string $composerRepository,
-        private array $references,
-        private string $source,
+        public readonly string $id,
+        public readonly string $title,
+        public readonly string $packageName,
+        public readonly string $affectedVersions,
+        public readonly string $link,
+        public readonly ?string $cve,
+        public readonly DateTimeImmutable $date,
+        public readonly ?string $composerRepository,
+        public readonly array $references,
+        public readonly string $source,
+        public readonly ?Severity $severity,
     ) {
     }
-
-    public function getId(): string
-    {
-        return $this->id;
-    }
-
-    public function getTitle(): string
-    {
-        return $this->title;
-    }
-
-    public function getPackageName(): string
-    {
-        return $this->packageName;
-    }
-
-    public function getAffectedVersions(): string
-    {
-        return $this->affectedVersions;
-    }
-
-    public function getLink(): string
-    {
-        return $this->link;
-    }
-
-    public function getCve(): ?string
-    {
-        return $this->cve;
-    }
-
-    public function getDate(): DateTimeImmutable
-    {
-        return $this->date;
-    }
-
-    public function getComposerRepository(): ?string
-    {
-        return $this->composerRepository;
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function getReferences(): array
-    {
-        return $this->references;
-    }
-
-    public function getSource(): string
-    {
-        return $this->source;
-    }
-
     public function withAddedAffectedVersion(string $version): self
     {
         return new self(
-            $this->getId(),
-            $this->getTitle(),
-            $this->getPackageName(),
-            implode('|', [$this->getAffectedVersions(), $version]),
-            $this->getLink(),
-            $this->getCve(),
-            $this->getDate(),
-            $this->getComposerRepository(),
-            $this->getReferences(),
-            $this->getSource(),
+            $this->id,
+            $this->title,
+            $this->packageName,
+            implode('|', [$this->affectedVersions, $version]),
+            $this->link,
+            $this->cve,
+            $this->date,
+            $this->composerRepository,
+            $this->references,
+            $this->source,
+            $this->severity,
         );
     }
 
@@ -186,7 +134,8 @@ class RemoteSecurityAdvisory
             $date,
             $composerRepository,
             [],
-            FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME
+            FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME,
+            null, // The FriendsOfPHP database doesn't contain severity values
         );
     }
 }

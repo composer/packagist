@@ -15,6 +15,7 @@ namespace App\Entity;
 use App\SecurityAdvisory\AdvisoryIdGenerator;
 use App\SecurityAdvisory\AdvisoryParser;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
+use App\SecurityAdvisory\Severity;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -70,6 +71,9 @@ class SecurityAdvisory
     #[ORM\Column(type: 'string', nullable: true)]
     private string|null $composerRepository = null;
 
+    #[ORM\Column(nullable: true)]
+    private Severity|null $severity = null;
+
     /**
      * @var Collection<int, SecurityAdvisorySource>&Selectable<int, SecurityAdvisorySource>
      */
@@ -86,26 +90,35 @@ class SecurityAdvisory
         $this->updatedAt = new DateTimeImmutable();
 
         $this->copyAdvisory($advisory, true);
-        $this->addSource($this->remoteId, $source);
+        $this->addSource($advisory->id, $source, $advisory->severity);
     }
 
     public function updateAdvisory(RemoteSecurityAdvisory $advisory): void
     {
-        if (!in_array($advisory->getSource(), [null, $this->source], true)) {
+        $this->findSecurityAdvisorySource($advisory->source)?->update($advisory);
+
+        $now = new DateTimeImmutable();
+        if (!$this->severity && $advisory->severity) {
+            $this->updatedAt = $now;
+            $this->severity = $advisory->severity;
+        }
+
+        if (!in_array($advisory->source, [null, $this->source], true)) {
             return;
         }
 
         if (
-            $this->remoteId !== $advisory->getId() ||
-            $this->packageName !== $advisory->getPackageName() ||
-            $this->title !== $advisory->getTitle() ||
-            $this->link !== $advisory->getLink() ||
-            $this->cve !== $advisory->getCve() ||
-            $this->affectedVersions !== $advisory->getAffectedVersions() ||
-            $this->reportedAt != $advisory->getDate() ||
-            $this->composerRepository !== $advisory->getComposerRepository()
+            $this->remoteId !== $advisory->id ||
+            $this->packageName !== $advisory->packageName ||
+            $this->title !== $advisory->title ||
+            $this->link !== $advisory->link ||
+            $this->cve !== $advisory->cve ||
+            $this->affectedVersions !== $advisory->affectedVersions ||
+            $this->reportedAt != $advisory->date ||
+            $this->composerRepository !== $advisory->composerRepository ||
+            ($this->severity !== $advisory->severity && $advisory->severity)
         ) {
-            $this->updatedAt = new DateTimeImmutable();
+            $this->updatedAt = $now;
         }
 
         $this->copyAdvisory($advisory, false);
@@ -113,17 +126,21 @@ class SecurityAdvisory
 
     private function copyAdvisory(RemoteSecurityAdvisory $advisory, bool $initialCopy): void
     {
-        $this->remoteId = $advisory->getId();
-        $this->packageName = $advisory->getPackageName();
-        $this->title = $advisory->getTitle();
-        $this->link = $advisory->getLink();
-        $this->cve = $advisory->getCve();
-        $this->affectedVersions = $advisory->getAffectedVersions();
-        $this->composerRepository = $advisory->getComposerRepository();
+        $this->remoteId = $advisory->id;
+        $this->packageName = $advisory->packageName;
+        $this->title = $advisory->title;
+        $this->link = $advisory->link;
+        $this->cve = $advisory->cve;
+        $this->affectedVersions = $advisory->affectedVersions;
+        $this->composerRepository = $advisory->composerRepository;
 
         // only update if the date is different to avoid ending up with a new datetime object which doctrine will want to update in the DB for nothing
-        if ($initialCopy || $this->reportedAt != $advisory->getDate()) {
-            $this->reportedAt = $advisory->getDate();
+        if ($initialCopy || $this->reportedAt != $advisory->date) {
+            $this->reportedAt = $advisory->date;
+        }
+
+        if ($initialCopy && $advisory->severity) {
+            $this->severity = $advisory->severity;
         }
     }
 
@@ -179,52 +196,52 @@ class SecurityAdvisory
     public function calculateDifferenceScore(RemoteSecurityAdvisory $advisory): int
     {
         // Regard advisories where CVE + package name match as identical as the remaining data on GitHub and FriendsOfPhp can be quite different
-        if ($advisory->getCve() === $this->getCve() && $advisory->getPackageName() === $this->getPackageName()) {
+        if ($advisory->cve === $this->getCve() && $advisory->packageName === $this->getPackageName()) {
             return 0;
         }
 
         $score = 0;
-        if ($advisory->getId() !== $this->getRemoteId() && $this->getSource() === $advisory->getSource()) {
+        if ($advisory->id !== $this->getRemoteId() && $this->getSource() === $advisory->source) {
             $score++;
         }
 
-        if ($advisory->getPackageName() !== $this->getPackageName()) {
+        if ($advisory->packageName !== $this->getPackageName()) {
             $score += 99;
         }
 
-        if ($advisory->getTitle() !== $this->getTitle()) {
+        if ($advisory->title !== $this->getTitle()) {
             $increase = 1;
 
             // Do not increase the score if the title was just renamed to add a CVE e.g. from CVE-2022-xxx to CVE-2022-99999999
-            if (AdvisoryParser::titleWithoutCve($this->getTitle()) === AdvisoryParser::titleWithoutCve($advisory->getTitle())) {
+            if (AdvisoryParser::titleWithoutCve($this->getTitle()) === AdvisoryParser::titleWithoutCve($advisory->title)) {
                 $increase = 0;
             }
 
             $score += $increase;
         }
 
-        if ($advisory->getLink() !== $this->getLink() && !in_array($this->getLink(), $advisory->getReferences(), true)) {
+        if ($advisory->link !== $this->getLink() && !in_array($this->getLink(), $advisory->references, true)) {
             $score++;
         }
 
-        if ($advisory->getCve() !== $this->getCve()) {
+        if ($advisory->cve !== $this->getCve()) {
             $score++;
 
             // CVE ID changed from not null to different not-null value
-            if ($advisory->getCve() !== null && $this->getCve() !== null) {
+            if ($advisory->cve !== null && $this->getCve() !== null) {
                 $score += 99;
             }
         }
 
-        if ($advisory->getAffectedVersions() !== $this->getAffectedVersions()) {
+        if ($advisory->affectedVersions !== $this->getAffectedVersions()) {
             $score++;
         }
 
-        if ($advisory->getComposerRepository() !== $this->composerRepository) {
+        if ($advisory->composerRepository !== $this->composerRepository) {
             $score++;
         }
 
-        if ($advisory->getDate() != $this->reportedAt) {
+        if ($advisory->date != $this->reportedAt) {
             $score++;
         }
 
@@ -241,15 +258,20 @@ class SecurityAdvisory
         $this->packagistAdvisoryId = AdvisoryIdGenerator::generate();
     }
 
+    public function getSeverity(): ?Severity
+    {
+        return $this->severity;
+    }
+
     public function hasSources(): bool
     {
         return !$this->sources->isEmpty();
     }
 
-    public function addSource(string $remoteId, string $source): void
+    public function addSource(string $remoteId, string $source, Severity|null $severity): void
     {
         if (null === $this->getSourceRemoteId($source)) {
-            $this->sources->add(new SecurityAdvisorySource($this, $remoteId, $source));
+            $this->sources->add(new SecurityAdvisorySource($this, $remoteId, $source, $severity));
 
             // FriendsOfPhp source is curated by PHP developer, trust that data over data from GitHub
             if ($source === FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME) {
@@ -300,7 +322,18 @@ class SecurityAdvisory
     public function setupSource(): void
     {
         if (!$this->getSourceRemoteId($this->source)) {
-            $this->addSource($this->remoteId, $this->source);
+            $this->addSource($this->remoteId, $this->source, null);
         }
+    }
+
+    public function findSecurityAdvisorySource(string $search): ?SecurityAdvisorySource
+    {
+        foreach ($this->sources as $source) {
+            if ($source->getSource() === $search) {
+                return $source;
+            }
+        }
+
+        return null;
     }
 }

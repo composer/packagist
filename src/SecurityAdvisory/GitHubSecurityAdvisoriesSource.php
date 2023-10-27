@@ -125,6 +125,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                     $this->providerManager->packageExists($packageName) ? SecurityAdvisory::PACKAGIST_ORG : null,
                     $references,
                     self::SOURCE_NAME,
+                    Severity::fromGitHub($node['advisory']['severity']),
                 );
             }
 
@@ -157,6 +158,7 @@ query {
         permalink,
         publishedAt,
         withdrawnAt,
+        severity,
         identifiers {
           type,
           value

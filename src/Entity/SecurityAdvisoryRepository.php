@@ -98,6 +98,22 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return list<SecurityAdvisory>
+     */
+    public function findByPackageName(string $packageName): array
+    {
+        return $this
+            ->createQueryBuilder('a')
+            ->addSelect('s')
+            ->leftJoin('a.sources', 's')
+            ->where('a.packageName = :packageName')
+            ->orderBy('a.reportedAt', 'DESC')
+            ->setParameters(['packageName' => $packageName])
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @return array<string, array{advisoryId: string, packageName: string, remoteId: string, title: string, link: string|null, cve: string|null, affectedVersions: string, sources: array<array{name: string, remoteId: string}>, reportedAt: string, composerRepository: string|null}>
      */
     public function getPackageSecurityAdvisories(string $name): array
@@ -136,7 +152,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
         }
 
         if (!$useCache || $filterByNames) {
-            $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId
+            $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId, s.severity
                 FROM security_advisory s
                 INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
                 WHERE s.updatedAt >= :updatedSince '.

@@ -23,7 +23,7 @@ class RemoteSecurityAdvisoryCollection
     public function __construct(array $advisories)
     {
         foreach ($advisories as $advisory) {
-            $this->groupedSecurityAdvisories[$advisory->getPackageName()][] = $advisory;
+            $this->groupedSecurityAdvisories[$advisory->packageName][] = $advisory;
         }
     }
 

@@ -42,9 +42,9 @@ class SecurityAdvisoryResolver
         $unmatchedRemoteAdvisories = [];
         foreach ($remoteAdvisories->getPackageNames() as $packageName) {
             foreach ($remoteAdvisories->getAdvisoriesForPackageName($packageName) as $remoteAdvisory) {
-                if (isset($existingSourceAdvisoryMap[$packageName][$remoteAdvisory->getId()])) {
-                    $existingSourceAdvisoryMap[$packageName][$remoteAdvisory->getId()]->updateAdvisory($remoteAdvisory);
-                    unset($existingSourceAdvisoryMap[$packageName][$remoteAdvisory->getId()]);
+                if (isset($existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id])) {
+                    $existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id]->updateAdvisory($remoteAdvisory);
+                    unset($existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id]);
                 } else {
                     $unmatchedRemoteAdvisories[$packageName][] = $remoteAdvisory;
                 }
@@ -79,7 +79,7 @@ class SecurityAdvisoryResolver
                     $newAdvisories[] = new SecurityAdvisory($remoteAdvisory, $sourceName);
                 } else {
                     // Update advisory and make sure the new source is added
-                    $matchedAdvisory->addSource($remoteAdvisory->getId(), $sourceName);
+                    $matchedAdvisory->addSource($remoteAdvisory->id, $sourceName, $remoteAdvisory->severity);
                     $matchedAdvisory->updateAdvisory($remoteAdvisory);
                     unset($unmatchedExistingAdvisories[$packageName][$matchedAdvisory->getPackagistAdvisoryId()]);
                 }
