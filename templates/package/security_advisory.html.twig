@@ -17,5 +17,5 @@
         </div>
     </div>
 
-    {% include 'package/_security_advisory_list.html.twig' %}
+    {% include 'package/_security_advisory_list.html.twig' with {withPackage: true} %}
 {% endblock %}
