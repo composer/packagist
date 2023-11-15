@@ -556,8 +556,15 @@ class ApiController extends Controller
         }
 
         foreach ($packages as $package) {
-            if ($remoteId && !$package->getRemoteId()) {
-                $package->setRemoteId($remoteId);
+            if ($remoteId) {
+                $actualRemoteId = $package->getRemoteId();
+                if ($actualRemoteId) {
+                    if ($actualRemoteId !== $remoteId) {
+                        throw new BadRequestHttpException('The remoteId of the repo URL '.$path.' has changed from '.$remoteId.' to '.$actualRemoteId);
+                    }
+                } else {
+                    $package->setRemoteId($remoteId);
+                }
             }
         }
 
