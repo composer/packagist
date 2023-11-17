@@ -16,6 +16,7 @@ use App\Entity\User;
 use App\Form\ResetPasswordFormType;
 use App\Form\ResetPasswordRequestFormType;
 use App\Security\BruteForceLoginFormAuthenticator;
+use App\Security\Passport\Badge\ResolvedTwoFactorCodeCredentials;
 use App\Security\UserChecker;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
@@ -98,7 +99,7 @@ class ResetPasswordController extends Controller
         }
 
         // The token is valid; allow the user to change their password.
-        $form = $this->createForm(ResetPasswordFormType::class);
+        $form = $this->createForm(ResetPasswordFormType::class, null, ['user' => $user]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -124,7 +125,9 @@ class ResetPasswordController extends Controller
                 // skip authenticating if any pre-auth check does not pass
             }
 
-            if ($response = $userAuthenticator->authenticateUser($user, $authenticator, $request)) {
+            // A user resetting the password with 2FA enabled, should automatically be marked as 2FA complete
+            $badges = $user->isTotpAuthenticationEnabled() ? [new ResolvedTwoFactorCodeCredentials()] : [];
+            if ($response = $userAuthenticator->authenticateUser($user, $authenticator, $request, $badges)) {
                 return $response;
             }
 

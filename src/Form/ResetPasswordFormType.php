@@ -12,13 +12,24 @@
 
 namespace App\Form;
 
+use App\Entity\User;
+use App\Form\Validation\TwoFactorCodeConstraint;
 use App\Validator\Password;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class ResetPasswordFormType extends AbstractType
 {
+    public function configureOptions(OptionsResolver $resolver): void
+    {
+        $resolver
+            ->setDefault('user', null)
+            ->setAllowedTypes('user', User::class);
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -32,5 +43,17 @@ class ResetPasswordFormType extends AbstractType
                 ],
             ])
         ;
+
+        if ($options['user']->isTotpAuthenticationEnabled()) {
+            $builder
+                ->add('twoFactorCode', TextType::class, [
+                    'label' => 'Two-Factor Code',
+                    'required' => true,
+                    'mapped' => false,
+                    'constraints' => [
+                        new TwoFactorCodeConstraint($options['user']),
+                    ],
+                ]);
+        }
     }
 }
