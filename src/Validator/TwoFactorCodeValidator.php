@@ -10,20 +10,20 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Form\Validation;
+namespace App\Validator;
 
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 
-class TwoFactorCodeConstraintValidator extends ConstraintValidator
+class TwoFactorCodeValidator extends ConstraintValidator
 {
     public function __construct(
         private readonly TotpAuthenticatorInterface $totpAuthenticator,
     ) {}
 
     /**
-     * @param TwoFactorCodeConstraint $constraint
+     * @param TwoFactorCode $constraint
      */
     public function validate(mixed $value, Constraint $constraint): void
     {

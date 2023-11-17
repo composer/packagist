@@ -13,8 +13,8 @@
 namespace App\Form;
 
 use App\Entity\User;
-use App\Form\Validation\TwoFactorCodeConstraint;
 use App\Validator\Password;
+use App\Validator\TwoFactorCode;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -52,7 +52,7 @@ class ResetPasswordFormType extends AbstractType
                     'required' => true,
                     'mapped' => false,
                     'constraints' => [
-                        new TwoFactorCodeConstraint($options['user']),
+                        new TwoFactorCode($options['user']),
                     ],
                 ]);
         }

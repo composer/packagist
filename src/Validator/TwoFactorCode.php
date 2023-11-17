@@ -10,12 +10,12 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Form\Validation;
+namespace App\Validator;
 
 use App\Entity\User;
 use Symfony\Component\Validator\Constraint;
 
-class TwoFactorCodeConstraint extends Constraint
+class TwoFactorCode extends Constraint
 {
     public function __construct(
         public readonly User $user,

@@ -14,7 +14,7 @@ namespace App\Form\Type;
 
 use App\Entity\User;
 use App\Form\Model\EnableTwoFactorRequest;
-use App\Form\Validation\TwoFactorCodeConstraint;
+use App\Validator\TwoFactorCode;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -28,7 +28,7 @@ class EnableTwoFactorAuthType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('code', TextType::class, [
-            'constraints' => [new TwoFactorCodeConstraint($options['user'])]
+            'constraints' => [new TwoFactorCode($options['user'])]
         ]);
     }
 
