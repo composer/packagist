@@ -265,7 +265,7 @@ class UserController extends Controller
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        $secret = (string) $req->getSession()->get('2fa_secret', $authenticator->generateSecret());
+        $secret = (string) $req->getSession()->get('2fa_secret') ?: $authenticator->generateSecret();
         // Temporarily store this code on the user, as we'll need it there to generate the
         // QR code and to check the confirmation code.  We won't actually save this change
         // until we've confirmed the code

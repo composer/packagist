@@ -37,8 +37,9 @@ class EnableTwoFactorAuthType extends AbstractType
         $resolver
             ->setDefaults([
                 'data_class' => EnableTwoFactorRequest::class,
-                'user' => null,
             ])
-            ->setAllowedTypes('user', User::class);
+            ->define('user')
+            ->allowedTypes(User::class)
+            ->required();
     }
 }

@@ -17,9 +17,9 @@ use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Security\Http\Event\AuthenticationTokenCreatedEvent;
 
-#[AsEventListener(event: AuthenticationTokenCreatedEvent::class, method: 'onAuthenticationTokenCreated', priority: 512)]
 class ResolvedTwoFactorCodeCredentialsListener
 {
+    #[AsEventListener(event: AuthenticationTokenCreatedEvent::class, priority: 512)]
     public function onAuthenticationTokenCreated(AuthenticationTokenCreatedEvent $event): void
     {
         if ($event->getPassport()->getBadge(ResolvedTwoFactorCodeCredentials::class)) {

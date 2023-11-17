@@ -26,8 +26,9 @@ class ResetPasswordFormType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefault('user', null)
-            ->setAllowedTypes('user', User::class);
+            ->define('user')
+            ->allowedTypes(User::class)
+            ->required();
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
