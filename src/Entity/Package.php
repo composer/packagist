@@ -274,7 +274,10 @@ class Package
         return $this->vendor;
     }
 
-    public function isGitHub(): array|bool
+    /**
+     * @return array<string> Vendor and package name
+     */
+    public function isGitHub(): array|false
     {
         if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
             return $match;
@@ -284,7 +287,10 @@ class Package
         }
     }
 
-    public function isGitLab(): array|bool
+    /**
+     * @return array<string> Vendor and package name
+     */
+    public function isGitLab(): array|false
     {
         if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)gitlab.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
             return $match;
