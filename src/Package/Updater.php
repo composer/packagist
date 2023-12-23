@@ -18,6 +18,7 @@ use Composer\Package\AliasPackage;
 use Composer\Pcre\Preg;
 use Composer\Repository\VcsRepository;
 use Composer\Repository\Vcs\GitHubDriver;
+use Composer\Repository\Vcs\GitLabDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Util\ErrorHandler;
@@ -241,8 +242,10 @@ class Updater
             );
         }
 
-        if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
+        if ($match = $package->isGitHub()) {
             $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver);
+        } elseif ($match = $package->isGitLab()) {
+            $this->updateGitLabInfo($httpDownloader, $io, $package, $match[1], $match[2], $driver);
         } else {
             $this->updateReadme($io, $package, $driver);
         }
@@ -602,6 +605,34 @@ class Updater
         if (isset($repoData['open_issues_count']) && is_numeric($repoData['open_issues_count'])) {
             $package->setGitHubOpenIssues((int) $repoData['open_issues_count']);
         }
+    }
+
+    private function updateGitLabInfo(HttpDownloader $httpDownloader, IOInterface $io, Package $package, string $owner, string $repo, VcsDriverInterface $driver): void
+    {
+        // GitLab provides a generic URL for the original formatted README,
+        // which requires further elaboration. Here we use the already existing
+        // function to handle it, and back here to populate the other available
+        // metadata
+        $this->updateReadme($io, $package, $driver);
+
+        if (!$driver instanceof GitLabDriver) {
+            return;
+        }
+
+        $repoData = $driver->getRepoData();
+
+        if (isset($repoData['star_count']) && is_numeric($repoData['star_count'])) {
+            $package->setGitHubStars((int) $repoData['star_count']);
+        }
+        if (isset($repoData['forks_count']) && is_numeric($repoData['forks_count'])) {
+            $package->setGitHubForks((int) $repoData['forks_count']);
+        }
+        if (isset($repoData['open_issues_count']) && is_numeric($repoData['open_issues_count'])) {
+            $package->setGitHubOpenIssues((int) $repoData['open_issues_count']);
+        }
+
+        // GitLab does not include a "watch" feature
+        $package->setGitHubWatches(null);
     }
 
     /**

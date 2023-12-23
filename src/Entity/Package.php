@@ -274,6 +274,26 @@ class Package
         return $this->vendor;
     }
 
+    public function isGitHub(): array|bool
+    {
+        if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
+            return $match;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public function isGitLab(): array|bool
+    {
+        if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)gitlab.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
+            return $match;
+        }
+        else {
+            return false;
+        }
+    }
+
     /**
      * Get package name without vendor
      */
@@ -334,6 +354,19 @@ class Package
         return $this->gitHubStars;
     }
 
+    public function getGitHubStarsUrl(): string|null
+    {
+        if ($this->isGitHub()) {
+            return $this->getBrowsableRepository() . '/stargazers';
+        }
+        else if ($this->isGitLab()) {
+            return $this->getBrowsableRepository() . '/-/starrers';
+        }
+        else {
+            return null;
+        }
+    }
+
     public function setGitHubWatches(int|null $val): void
     {
         $this->gitHubWatches = $val;
@@ -352,6 +385,19 @@ class Package
     public function getGitHubForks(): int|null
     {
         return $this->gitHubForks;
+    }
+
+    public function getGitHubForksUrl(): string|null
+    {
+        if ($this->isGitHub()) {
+            return $this->getBrowsableRepository() . '/forks';
+        }
+        else if ($this->isGitLab()) {
+            return $this->getBrowsableRepository() . '/-/forks';
+        }
+        else {
+            return null;
+        }
     }
 
     public function setGitHubOpenIssues(int|null $val): void
@@ -467,7 +513,15 @@ class Package
             return Preg::replace('{^(?:git@|https://|git://)bitbucket.org[:/](.+?)(?:\.git)?$}i', 'https://bitbucket.org/$1', $this->repository);
         }
 
-        return Preg::replace('{^(git://github.com/|git@github.com:)}', 'https://github.com/', $this->repository);
+        if (Preg::isMatch('{(://|@)github.com[:/]}i', $this->repository)) {
+            return Preg::replace('{^(git://github.com/|git@github.com:)}', 'https://github.com/', $this->repository);
+        }
+
+        if (Preg::isMatch('{(://|@)gitlab.com[:/]}i', $this->repository)) {
+            return Preg::replace('{^(git://gitlab.com/|git@gitlab.com:)}', 'https://gitlab.com/', $this->repository);
+        }
+
+        return $this->repository;
     }
 
     public function addVersion(Version $version): void

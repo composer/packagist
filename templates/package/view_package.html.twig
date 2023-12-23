@@ -223,10 +223,10 @@
                                     {{ securityAdvisories|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if 'github.com' in repoUrl and package.gitHubStars is not null %}
+                            {% if package.gitHubStars is not null %}
                                 <p>
                                     <span>
-                                        <a href="{{ repoUrl }}/stargazers">Stars</a>:
+                                        <a href="{{ package.gitHubStarsUrl }}">Stars</a>:
                                     </span>
                                     {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
@@ -238,10 +238,10 @@
                                     </span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if 'github.com' in repoUrl and package.gitHubForks is not null %}
+                            {% if package.gitHubForks is not null %}
                                 <p>
                                     <span>
-                                        <a href="{{ repoUrl }}/forks">Forks</a>:
+                                        <a href="{{ package.gitHubForksUrl }}">Forks</a>:
                                     </span>
                                     {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
