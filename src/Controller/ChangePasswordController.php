@@ -31,6 +31,7 @@ class ChangePasswordController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $user->resetPasswordRequest();
             $user->setPassword(
                 $passwordHasher->hashPassword(
                     $user,
