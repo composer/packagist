@@ -300,12 +300,12 @@ class Package
 
     public function isGitHub(): bool
     {
-        return (bool) $this->isGitHub();
+        return (bool) $this->getGitHubComponents();
     }
 
     public function isGitLab(): bool
     {
-        return (bool) $this->isGitLab();
+        return (bool) $this->getGitLabComponents();
     }
 
     /**
