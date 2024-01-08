@@ -242,9 +242,9 @@ class Updater
             );
         }
 
-        if ($match = $package->isGitHub()) {
+        if (null !== ($match = $package->getGitHubComponents())) {
             $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver);
-        } elseif ($match = $package->isGitLab()) {
+        } elseif (null !== ($match = $package->getGitLabComponents())) {
             $this->updateGitLabInfo($httpDownloader, $io, $package, $match[1], $match[2], $driver);
         } else {
             $this->updateReadme($io, $package, $driver);

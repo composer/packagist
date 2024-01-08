@@ -275,27 +275,37 @@ class Package
     }
 
     /**
-     * @return array<string> Vendor and package name
+     * @return array<string>|null Vendor and package name
      */
-    public function isGitHub(): array|false
+    public function getGitHubComponents(): array|null
     {
         if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
             return $match;
         }
 
-        return false;
+        return null;
     }
 
     /**
-     * @return array<string> Vendor and package name
+     * @return array<string>|null Vendor and package name
      */
-    public function isGitLab(): array|false
+    public function getGitLabComponents(): array|null
     {
         if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)gitlab.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
             return $match;
         }
 
-        return false;
+        return null;
+    }
+
+    public function isGitHub(): bool
+    {
+        return (bool) $this->isGitHub();
+    }
+
+    public function isGitLab(): bool
+    {
+        return (bool) $this->isGitLab();
     }
 
     /**
@@ -362,7 +372,7 @@ class Package
     {
         if ($this->isGitHub()) {
             return $this->getBrowsableRepository() . '/stargazers';
-        } 
+        }
         if ($this->isGitLab()) {
             return $this->getBrowsableRepository() . '/-/starrers';
         }
