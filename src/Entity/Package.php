@@ -178,6 +178,9 @@ class Package
      */
     private array|null $cachedVersions = null;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private string|null $snapshotedLatestVersion = null;
+
     public function __construct()
     {
         $this->versions = new ArrayCollection();
@@ -539,6 +542,18 @@ class Package
     public function addVersion(Version $version): void
     {
         $this->versions[] = $version;
+
+        $newVersion = strtolower($version->getNormalizedVersion());
+
+        if (null === $this->snapshotedLatestVersion) {
+            $this->snapshotedLatestVersion = $newVersion . '&' . $version->getReleasedAt()->format('Y-m-d');
+        }
+
+        $actualVersion = explode('&', $this->snapshotedLatestVersion)[0];
+
+        if (version_compare($newVersion, $actualVersion, '>=')) {
+            $this->snapshotedLatestVersion = $newVersion . '&' . $version->getReleasedAt()->format('Y-m-d')
+        }
     }
 
     /**
@@ -563,6 +578,11 @@ class Package
         }
 
         return null;
+    }
+
+    public function getSnapshotedLatestVersion(): ?string
+    {
+        return $this->snapshotedLatestVersion;
     }
 
     public function setUpdatedAt(DateTimeInterface $updatedAt): void

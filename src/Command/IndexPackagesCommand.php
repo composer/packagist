@@ -233,6 +233,14 @@ class IndexPackagesCommand extends Command
             $record['replacementPackage'] = '';
         }
 
+        if (null !== $snapshotedLatestVersion = $package->getSnapshotedLatestVersion()) {
+            $snapshotedLatestVersion = \exploded('&', $snapshotedLatestVersion);
+            $record['meta'] = [
+                'latest_version' => $snapshotedLatestVersion[0],
+                'latest_date' => $snapshotedLatestVersion[1],
+            ];
+        }
+
         $record['tags'] = $tags;
 
         return $record;
