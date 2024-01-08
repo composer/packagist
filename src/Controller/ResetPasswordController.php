@@ -102,8 +102,7 @@ class ResetPasswordController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $user->setPasswordRequestedAt(null);
-            $user->clearConfirmationToken();
+            $user->resetPasswordRequest();
             if (!$user->hasRole('ROLE_SPAMMER')) {
                 $user->setEnabled(true);
             }

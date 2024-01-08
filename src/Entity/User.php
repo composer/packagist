@@ -454,6 +454,12 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         $this->passwordRequestedAt = $date;
     }
 
+    public function resetPasswordRequest(): void
+    {
+        $this->setPasswordRequestedAt(null);
+        $this->clearConfirmationToken();
+    }
+
     /**
      * Gets the timestamp that the user requested a password reset.
      */
