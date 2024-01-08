@@ -265,39 +265,28 @@ class UserController extends Controller
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        $enableRequest = new EnableTwoFactorRequest();
-        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest)
-            ->handleRequest($req);
-
-        $secret = (string) $req->getSession()->get('2fa_secret');
-        if (!$form->isSubmitted() || '' === $secret) {
-            $secret = $authenticator->generateSecret();
-            $req->getSession()->set('2fa_secret', $secret);
-        }
-
+        $secret = (string) $req->getSession()->get('2fa_secret') ?: $authenticator->generateSecret();
         // Temporarily store this code on the user, as we'll need it there to generate the
         // QR code and to check the confirmation code.  We won't actually save this change
         // until we've confirmed the code
         $user->setTotpSecret($secret);
 
-        if ($form->isSubmitted()) {
-            // Validate the code using the secret that was submitted in the form
-            if (!$authenticator->checkCode($user, $enableRequest->getCode() ?? '')) {
-                $form->get('code')->addError(new FormError('Invalid authenticator code'));
-            }
+        $enableRequest = new EnableTwoFactorRequest();
+        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest, ['user' => $user])
+            ->handleRequest($req);
 
-            if ($form->isValid()) {
-                $req->getSession()->remove('2fa_secret');
-                $authManager->enableTwoFactorAuth($user, $secret);
-                $backupCode = $authManager->generateAndSaveNewBackupCode($user);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $req->getSession()->remove('2fa_secret');
+            $authManager->enableTwoFactorAuth($user, $secret);
+            $backupCode = $authManager->generateAndSaveNewBackupCode($user);
 
-                $this->addFlash('success', 'Two-factor authentication has been enabled.');
-                $req->getSession()->set('backup_code', $backupCode);
+            $this->addFlash('success', 'Two-factor authentication has been enabled.');
+            $req->getSession()->set('backup_code', $backupCode);
 
-                return $this->redirectToRoute('user_2fa_confirm', ['name' => $user->getUsername()]);
-            }
+            return $this->redirectToRoute('user_2fa_confirm', ['name' => $user->getUsername()]);
         }
 
+        $req->getSession()->set('2fa_secret', $secret);
         $qrContent = $authenticator->getQRContent($user);
 
         $qrCode = Builder::create()
