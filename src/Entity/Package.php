@@ -282,9 +282,8 @@ class Package
         if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
             return $match;
         }
-        else {
-            return false;
-        }
+
+        return false;
     }
 
     /**
@@ -295,9 +294,8 @@ class Package
         if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)gitlab.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
             return $match;
         }
-        else {
-            return false;
-        }
+
+        return false;
     }
 
     /**
@@ -364,13 +362,12 @@ class Package
     {
         if ($this->isGitHub()) {
             return $this->getBrowsableRepository() . '/stargazers';
-        }
-        else if ($this->isGitLab()) {
+        } 
+        if ($this->isGitLab()) {
             return $this->getBrowsableRepository() . '/-/starrers';
         }
-        else {
-            return null;
-        }
+
+        return null;
     }
 
     public function setGitHubWatches(int|null $val): void
@@ -398,12 +395,11 @@ class Package
         if ($this->isGitHub()) {
             return $this->getBrowsableRepository() . '/forks';
         }
-        else if ($this->isGitLab()) {
+        if ($this->isGitLab()) {
             return $this->getBrowsableRepository() . '/-/forks';
         }
-        else {
-            return null;
-        }
+
+        return null;
     }
 
     public function setGitHubOpenIssues(int|null $val): void
