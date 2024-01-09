@@ -250,6 +250,15 @@ class Updater
             $this->updateReadme($io, $package, $driver);
         }
 
+        $usingDetails = '';
+        try {
+            $gitDriverProperty = new \ReflectionProperty($driver, 'gitDriver');
+            if (null !== $gitDriverProperty->getValue($driver)) {
+                $usingDetails = ' (via GitDriver fallback instance)';
+            }
+        } catch (\Throwable $e) {}
+        $io->writeError('Updated from '.$package->getRepository().' using ' . $driver::class . $usingDetails);
+
         // make sure the package exists in the package list if for some reason adding it on submit failed
         if ($package->getReplacementPackage() !== 'spam/spam' && !$this->providerManager->packageExists($package->getName())) {
             $this->providerManager->insertPackage($package);
