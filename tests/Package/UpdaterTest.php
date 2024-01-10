@@ -33,6 +33,8 @@ use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class UpdaterTest extends TestCase
 {
@@ -88,7 +90,10 @@ class UpdaterTest extends TestCase
 
         $versionIdCache = $this->createMock(VersionIdCache::class);
 
-        $this->updater = new Updater($registryMock, $providerManagerMock, $versionIdCache);
+        $mailerMock = $this->createMock(MailerInterface::class);
+        $routerMock = $this->createMock(UrlGeneratorInterface::class);
+
+        $this->updater = new Updater($registryMock, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock);
     }
 
     public function testUpdatesTheReadme(): void

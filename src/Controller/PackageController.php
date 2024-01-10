@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Entity\Dependent;
+use App\Entity\PackageFreezeReason;
 use App\Entity\PhpStat;
 use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
@@ -462,7 +463,7 @@ class PackageController extends Controller
 
     #[IsGranted('ROLE_ADMIN')]
     #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'html'], methods: ['POST'])]
-    public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager): RedirectResponse
+    public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager): Response
     {
         if (!$this->isCsrfTokenValid('unfreeze', (string) $req->request->get('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
@@ -508,7 +509,7 @@ class PackageController extends Controller
             return $package;
         }
 
-        if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam' && !$this->isGranted('ROLE_ADMIN')) {
+        if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam && !$this->isGranted('ROLE_ANTISPAM')) {
             throw new NotFoundHttpException('This is a spam package');
         }
 
@@ -818,7 +819,7 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
         }
 
-        if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
+        if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam) {
             throw new NotFoundHttpException('This is a spam package');
         }
 
@@ -1017,8 +1018,8 @@ class PackageController extends Controller
             $package->setAbandoned(true);
             $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData()));
             $package->setIndexedAt(null);
-            $package->setCrawledAt(new DateTime());
-            $package->setUpdatedAt(new DateTime());
+            $package->setCrawledAt(new DateTimeImmutable());
+            $package->setUpdatedAt(new DateTimeImmutable());
             $package->setDumpedAt(null);
             $package->setDumpedAtV2(null);
 
@@ -1042,8 +1043,8 @@ class PackageController extends Controller
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
         $package->setIndexedAt(null);
-        $package->setCrawledAt(new DateTime());
-        $package->setUpdatedAt(new DateTime());
+        $package->setCrawledAt(new DateTimeImmutable());
+        $package->setUpdatedAt(new DateTimeImmutable());
         $package->setDumpedAt(null);
         $package->setDumpedAtV2(null);
 

@@ -12,6 +12,7 @@
 
 namespace App\Package;
 
+use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
@@ -111,9 +112,8 @@ class V2Dumper
 
             // prepare packages in memory
             foreach ($packages as $package) {
-                // skip spam packages in the dumper in case we do a forced full dump and prevent them from being dumped for a little while
-                if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
-                    $dumpTimeUpdates['2100-01-01 00:00:00'][] = $package->getId();
+                // skip spam packages in the dumper in case one appears due to a race condition
+                if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam) {
                     continue;
                 }
 

@@ -111,6 +111,10 @@ class Updater
             throw new \RuntimeException('Driver could not be established for package '.$package->getName().' ('.$package->getRepository().')');
         }
 
+        if ($package->isFrozen()) {
+            return $package;
+        }
+
         $remoteId = null;
         if ($driver instanceof GitHubDriver) {
             $repoData = $driver->getRepoData();
@@ -303,12 +307,12 @@ class Updater
         $io->writeError('Updated from '.$package->getRepository().' using ' . $driver::class . $usingDetails);
 
         // make sure the package exists in the package list if for some reason adding it on submit failed
-        if ($package->getReplacementPackage() !== 'spam/spam' && !$this->providerManager->packageExists($package->getName())) {
+        if (!$this->providerManager->packageExists($package->getName())) {
             $this->providerManager->insertPackage($package);
         }
 
-        $package->setUpdatedAt(new \DateTime);
-        $package->setCrawledAt(new \DateTime);
+        $package->setUpdatedAt(new \DateTimeImmutable());
+        $package->setCrawledAt(new \DateTimeImmutable());
 
         if ($flags & self::FORCE_DUMP) {
             $package->setDumpedAt(null);

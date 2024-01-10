@@ -100,7 +100,7 @@ class DumpPackagesV2Command extends Command
         try {
             while ($iterations--) {
                 if ($force) {
-                    $ids = $this->getEM()->getConnection()->fetchFirstColumn('SELECT id FROM package WHERE replacementPackage != "spam/spam" OR replacementPackage IS NULL ORDER BY id ASC');
+                    $ids = $this->getEM()->getConnection()->fetchFirstColumn('SELECT id FROM package WHERE frozen IS NULL ORDER BY id ASC');
                 } else {
                     $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2();
                 }

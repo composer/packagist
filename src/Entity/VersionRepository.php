@@ -48,8 +48,8 @@ class VersionRepository extends ServiceEntityRepository
         $em = $this->getEntityManager();
         $package = $version->getPackage();
         $package->getVersions()->removeElement($version);
-        $package->setCrawledAt(new \DateTime);
-        $package->setUpdatedAt(new \DateTime);
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $package->setUpdatedAt(new \DateTimeImmutable());
         $em->persist($package);
 
         $this->versionIdCache->deleteVersion($package, $version);

@@ -181,8 +181,8 @@ class PackageManager
         }
 
         // make sure the package crawl time is updated so we avoid retrying failing packages more often than working ones
-        if (!$package->getCrawledAt() || $package->getCrawledAt() < new \DateTime()) {
-            $package->setCrawledAt(new \DateTime);
+        if (!$package->getCrawledAt() || $package->getCrawledAt() < new \DateTimeImmutable()) {
+            $package->setCrawledAt(new \DateTimeImmutable());
         }
         $this->doctrine->getManager()->flush();
 

@@ -37,6 +37,7 @@ enum PackageFreezeReason: string
 {
     case Spam = 'spam';
     case RemoteIdMismatch = 'remote_id';
+    case Gone = 'gone';
 }
 
 /**
@@ -52,8 +53,9 @@ enum PackageFreezeReason: string
 #[ORM\Index(name: 'dumped2_idx', columns: ['dumpedAtV2'])]
 #[ORM\Index(name: 'repository_idx', columns: ['repository'])]
 #[ORM\Index(name: 'remoteid_idx', columns: ['remoteId'])]
-#[ORM\Index(name: 'dumped2_crawled_idx', columns: ['dumpedAtV2', 'crawledAt'])]
+#[ORM\Index(name: 'dumped2_crawled_frozen_idx', columns: ['dumpedAtV2', 'crawledAt', 'frozen'])]
 #[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
+#[ORM\Index(name: 'frozen_idx', columns: ['frozen'])]
 #[UniquePackage(groups: ['Create'])]
 #[VendorWritable(groups: ['Create'])]
 #[ValidPackageRepository(groups: ['Update', 'Default'])]
@@ -590,7 +592,7 @@ class Package
 
     public function wasUpdatedInTheLast24Hours(): bool
     {
-        return $this->updatedAt && $this->updatedAt > new \DateTime('-24 hours');
+        return $this->updatedAt && $this->updatedAt > new \DateTimeImmutable('-24 hours');
     }
 
     public function setCrawledAt(?DateTimeInterface $crawledAt): void
@@ -735,9 +737,10 @@ class Package
     public function freeze(PackageFreezeReason $reason): void
     {
         $this->frozen = $reason;
-        $this->setCrawledAt($dt = new \DateTimeImmutable('2100-01-01 00:00:00'));
-        $this->setDumpedAt($dt);
-        $this->setDumpedAtV2($dt);
+        // force re-indexing for spam packages to ensure they get deleted from the search index
+        if ($reason === PackageFreezeReason::Spam) {
+            $this->setIndexedAt(null);
+        }
     }
 
     public function unfreeze(): void
@@ -747,8 +750,6 @@ class Package
         }
         $this->frozen = null;
         $this->setCrawledAt(null);
-        $this->setDumpedAt(null);
-        $this->setDumpedAtV2(null);
     }
 
     public function isFrozen(): bool

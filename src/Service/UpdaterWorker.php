@@ -12,6 +12,7 @@
 
 namespace App\Service;
 
+use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Composer\Pcre\Preg;
@@ -315,13 +316,17 @@ class UpdaterWorker
 
             // detected a 404 so mark the package as gone and prevent updates for 1y
             if ($found404) {
-                $package->setCrawledAt($found404 === true ? new \DateTime('+1 year') : $found404);
+                if ($found404 === true) {
+                    $package->freeze(PackageFreezeReason::Gone);
+                } else {
+                    $package->setCrawledAt($found404);
+                }
                 $this->getEM()->persist($package);
                 $this->getEM()->flush();
 
                 return [
                     'status' => Job::STATUS_PACKAGE_GONE,
-                    'message' => 'Update of '.$packageName.' failed, package appears to be 404/gone and has been marked as crawled for 1year',
+                    'message' => 'Update of '.$packageName.' failed, package appears to be 404/gone and has been marked frozen.',
                     'details' => '<pre>'.$output.'</pre>',
                     'exception' => $e,
                     'vendor' => $packageVendor,
@@ -390,14 +395,26 @@ class UpdaterWorker
             if ($e instanceof TransportException && in_array($e->getStatusCode(), [404, 409, 451], true)) {
                 try {
                     // check composer repo is visible to make sure it's not github or something else glitching
-                    $httpDownloader->get('https://api.github.com/repos/composer/composer', ['retry-auth-failure' => false]);
+                    $httpDownloader->get('https://api.github.com/repos/composer/composer/git/refs/heads', ['retry-auth-failure' => false]);
                     // remove packages with very low downloads and that are 404
                     if ($this->downloadManager->getTotalDownloads($package) <= 100) {
                         $this->packageManager->deletePackage($package);
 
                         return [
                             'status' => Job::STATUS_PACKAGE_DELETED,
-                            'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been deleted',
+                            'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been deleted.',
+                            'details' => '<pre>'.$output.'</pre>',
+                            'exception' => $e,
+                            'vendor' => $package->getVendor(),
+                        ];
+                    } else {
+                        $package->freeze(PackageFreezeReason::Gone);
+                        $this->getEM()->persist($package);
+                        $this->getEM()->flush();
+
+                        return [
+                            'status' => Job::STATUS_PACKAGE_GONE,
+                            'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been marked frozen.',
                             'details' => '<pre>'.$output.'</pre>',
                             'exception' => $e,
                             'vendor' => $package->getVendor(),
