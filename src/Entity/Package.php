@@ -38,6 +38,26 @@ enum PackageFreezeReason: string
     case Spam = 'spam';
     case RemoteIdMismatch = 'remote_id';
     case Gone = 'gone';
+
+    public function translationKey(): string
+    {
+        return 'freezing_reasons.' . $this->value;
+    }
+
+    public function isSpam(): bool
+    {
+        return $this === self::Spam;
+    }
+
+    public function isGone(): bool
+    {
+        return $this === self::Gone;
+    }
+
+    public function isRemoteIdMismatch(): bool
+    {
+        return $this === self::RemoteIdMismatch;
+    }
 }
 
 /**
