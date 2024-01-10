@@ -33,6 +33,12 @@ use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Util\HttpDownloader;
 use DateTimeInterface;
 
+enum PackageFreezeReason: string
+{
+    case Spam = 'spam';
+    case RemoteIdMismatch = 'remote_id';
+}
+
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  * @phpstan-import-type VersionArray from Version
@@ -162,6 +168,12 @@ class Package
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private string|null $suspect = null;
+
+    /**
+     * If set, the content is the reason for being frozen
+     */
+    #[ORM\Column(nullable: true)]
+    private PackageFreezeReason|null $frozen = null;
 
     /**
      * @internal
@@ -718,6 +730,35 @@ class Package
     public function getSuspect(): ?string
     {
         return $this->suspect;
+    }
+
+    public function freeze(PackageFreezeReason $reason): void
+    {
+        $this->frozen = $reason;
+        $this->setCrawledAt($dt = new \DateTimeImmutable('2100-01-01 00:00:00'));
+        $this->setDumpedAt($dt);
+        $this->setDumpedAtV2($dt);
+    }
+
+    public function unfreeze(): void
+    {
+        if ($this->frozen === PackageFreezeReason::RemoteIdMismatch) {
+            $this->setRemoteId(null);
+        }
+        $this->frozen = null;
+        $this->setCrawledAt(null);
+        $this->setDumpedAt(null);
+        $this->setDumpedAtV2(null);
+    }
+
+    public function isFrozen(): bool
+    {
+        return !is_null($this->frozen);
+    }
+
+    public function getFreezeReason(): ?PackageFreezeReason
+    {
+        return $this->frozen;
     }
 
     public function isAbandoned(): bool

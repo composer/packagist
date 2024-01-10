@@ -460,6 +460,26 @@ class PackageController extends Controller
         return $this->redirectToRoute('view_spam');
     }
 
+    #[IsGranted('ROLE_ADMIN')]
+    #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'html'], methods: ['POST'])]
+    public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('unfreeze', (string) $req->request->get('token'))) {
+            throw new BadRequestHttpException('Invalid CSRF token');
+        }
+
+        $package = $this->getPackageByName($req, $name);
+        if ($package instanceof Response) {
+            return $package;
+        }
+
+        $package->unfreeze();
+        $this->getEM()->persist($package);
+        $this->getEM()->flush();
+
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+    }
+
     #[Route(path: '/packages/{name}.{_format}', name: 'view_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'], methods: ['GET'])]
     public function viewPackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] ?User $user = null): Response
     {
@@ -693,6 +713,9 @@ class PackageController extends Controller
 
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
+        }
+        if ($this->isGranted('ROLE_ADMIN')) {
+            $data['unfreezeCsrfToken'] = $csrfTokenManager->getToken('unfreeze');
         }
 
         return $this->render('package/view_package.html.twig', $data);
@@ -965,6 +988,8 @@ class PackageController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             // Force updating of packages once the package is viewed after the redirect.
             $package->setCrawledAt(null);
+            // Reset remoteId as if the URL changes we expect possibly a different id and that's ok
+            $package->setRemoteId(null);
 
             $em = $this->getEM();
             $em->persist($package);

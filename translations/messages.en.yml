@@ -172,3 +172,7 @@ Order: 'Order'
 Username: 'Username'
 asc: 'asc'
 desc: 'desc'
+
+freezing_reasons:
+    spam: This package was marked as spam and has been frozen as a result.
+    remote_id: This packages's canonical repository id has changed and the package has been frozen as a result.
