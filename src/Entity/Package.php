@@ -33,6 +33,33 @@ use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Util\HttpDownloader;
 use DateTimeInterface;
 
+enum PackageFreezeReason: string
+{
+    case Spam = 'spam';
+    case RemoteIdMismatch = 'remote_id';
+    case Gone = 'gone';
+
+    public function translationKey(): string
+    {
+        return 'freezing_reasons.' . $this->value;
+    }
+
+    public function isSpam(): bool
+    {
+        return $this === self::Spam;
+    }
+
+    public function isGone(): bool
+    {
+        return $this === self::Gone;
+    }
+
+    public function isRemoteIdMismatch(): bool
+    {
+        return $this === self::RemoteIdMismatch;
+    }
+}
+
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  * @phpstan-import-type VersionArray from Version
@@ -46,8 +73,9 @@ use DateTimeInterface;
 #[ORM\Index(name: 'dumped2_idx', columns: ['dumpedAtV2'])]
 #[ORM\Index(name: 'repository_idx', columns: ['repository'])]
 #[ORM\Index(name: 'remoteid_idx', columns: ['remoteId'])]
-#[ORM\Index(name: 'dumped2_crawled_idx', columns: ['dumpedAtV2', 'crawledAt'])]
+#[ORM\Index(name: 'dumped2_crawled_frozen_idx', columns: ['dumpedAtV2', 'crawledAt', 'frozen'])]
 #[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
+#[ORM\Index(name: 'frozen_idx', columns: ['frozen'])]
 #[UniquePackage(groups: ['Create'])]
 #[VendorWritable(groups: ['Create'])]
 #[ValidPackageRepository(groups: ['Update', 'Default'])]
@@ -162,6 +190,12 @@ class Package
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private string|null $suspect = null;
+
+    /**
+     * If set, the content is the reason for being frozen
+     */
+    #[ORM\Column(nullable: true)]
+    private PackageFreezeReason|null $frozen = null;
 
     /**
      * @internal
@@ -578,7 +612,7 @@ class Package
 
     public function wasUpdatedInTheLast24Hours(): bool
     {
-        return $this->updatedAt && $this->updatedAt > new \DateTime('-24 hours');
+        return $this->updatedAt && $this->updatedAt > new \DateTimeImmutable('-24 hours');
     }
 
     public function setCrawledAt(?DateTimeInterface $crawledAt): void
@@ -718,6 +752,34 @@ class Package
     public function getSuspect(): ?string
     {
         return $this->suspect;
+    }
+
+    public function freeze(PackageFreezeReason $reason): void
+    {
+        $this->frozen = $reason;
+        // force re-indexing for spam packages to ensure they get deleted from the search index
+        if ($reason === PackageFreezeReason::Spam) {
+            $this->setIndexedAt(null);
+        }
+    }
+
+    public function unfreeze(): void
+    {
+        if ($this->frozen === PackageFreezeReason::RemoteIdMismatch) {
+            $this->setRemoteId(null);
+        }
+        $this->frozen = null;
+        $this->setCrawledAt(null);
+    }
+
+    public function isFrozen(): bool
+    {
+        return !is_null($this->frozen);
+    }
+
+    public function getFreezeReason(): ?PackageFreezeReason
+    {
+        return $this->frozen;
     }
 
     public function isAbandoned(): bool

@@ -119,10 +119,19 @@
                                     <input class="btn btn-danger" type="submit" value="Mark Not Spam" />
                                 </form>
                             {% endif %}
+                            {% if is_granted('ROLE_ADMIN') and package.isFrozen() %}
+                                <form class="action" action="{{ path("unfreeze_package", {name: package.name}) }}" method="POST">
+                                    <input type="hidden" name="token" value="{{ unfreezeCsrfToken }}" />
+                                    <input class="btn btn-danger" type="submit" value="Unfreeze" />
+                                </form>
+                            {% endif %}
                         </div>
                         {% if lastJobWarning is defined and lastJobWarning is not empty %}
                             <p class="alert alert-danger">{{ lastJobWarning|raw }} <br /> <a href="#" data-msg="{{ lastJobMsg }}" data-details="{{ lastJobDetails }}" class="view-log">View Last Update Log</a></p>
                         {% endif %}
+                    {% endif %}
+                    {% if package.isFrozen() %}
+                        <p class="alert alert-danger">{{ package.getFreezeReason().translationKey()|trans }}</p>
                     {% endif %}
                 </div>
 

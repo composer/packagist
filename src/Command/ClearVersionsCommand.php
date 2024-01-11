@@ -115,7 +115,7 @@ class ClearVersionsCommand extends Command
             foreach ($packageNames as $name) {
                 $package = $packageRepo->findOneBy(['name' => $name]);
                 if ($package !== null) {
-                    $package->setCrawledAt(new \DateTime);
+                    $package->setCrawledAt(new \DateTimeImmutable());
                     $em->persist($package);
                 }
             }

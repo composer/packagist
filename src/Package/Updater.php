@@ -13,6 +13,7 @@
 namespace App\Package;
 
 use App\Entity\Dependent;
+use App\Entity\PackageFreezeReason;
 use cebe\markdown\GithubMarkdown;
 use Composer\Package\AliasPackage;
 use Composer\Pcre\Preg;
@@ -37,6 +38,10 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Service\VersionCache;
 use Composer\Package\CompletePackageInterface;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Webmozart\Assert\Assert;
 
 /**
@@ -77,6 +82,9 @@ class Updater
         private ManagerRegistry $doctrine,
         private ProviderManager $providerManager,
         private VersionIdCache $versionIdCache,
+        private MailerInterface $mailer,
+        private string $mailFromEmail,
+        private UrlGeneratorInterface $urlGenerator,
     ) {
         ErrorHandler::register();
     }
@@ -101,6 +109,45 @@ class Updater
         $driver = $repository->getDriver();
         if (!$driver) {
             throw new \RuntimeException('Driver could not be established for package '.$package->getName().' ('.$package->getRepository().')');
+        }
+
+        if ($package->isFrozen()) {
+            return $package;
+        }
+
+        $remoteId = null;
+        if ($driver instanceof GitHubDriver) {
+            $repoData = $driver->getRepoData();
+            if (isset($repoData['repository']['id'])) {
+                $remoteId = 'github.com/'.$repoData['repository']['id'];
+            }
+        } elseif ($driver instanceof GitLabDriver) {
+            $repoData = $driver->getRepoData();
+            if (isset($repoData['id'])) {
+                $remoteId = 'gitlab.com/'.$repoData['id'];
+            }
+        }
+
+        if ($remoteId !== null) {
+            if (!$package->getRemoteId()) {
+                $package->setRemoteId($remoteId);
+            }
+            if ($package->getRemoteId() !== $remoteId) {
+                $package->freeze(PackageFreezeReason::RemoteIdMismatch);
+                $em->flush();
+                $io->writeError('<error>Skipping update as the source repository has a remote id mismatch. Expected '.$package->getRemoteId().' but got ' . $remoteId.'.</error>');
+
+                $message = (new Email())
+                    ->subject($package->getName().' frozen due to remote id mismatch')
+                    ->from(new Address($this->mailFromEmail))
+                    ->to($this->mailFromEmail)
+                    ->text('Check out '.$this->urlGenerator->generate('view_package', ['name' => $package->getName()], UrlGeneratorInterface::ABSOLUTE_URL).' was not repo-jacked.')
+                ;
+                $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
+                $this->mailer->send($message);
+
+                return $package;
+            }
         }
 
         $rootIdentifier = $driver->getRootIdentifier();
@@ -260,12 +307,12 @@ class Updater
         $io->writeError('Updated from '.$package->getRepository().' using ' . $driver::class . $usingDetails);
 
         // make sure the package exists in the package list if for some reason adding it on submit failed
-        if ($package->getReplacementPackage() !== 'spam/spam' && !$this->providerManager->packageExists($package->getName())) {
+        if (!$this->providerManager->packageExists($package->getName())) {
             $this->providerManager->insertPackage($package);
         }
 
-        $package->setUpdatedAt(new \DateTime);
-        $package->setCrawledAt(new \DateTime);
+        $package->setUpdatedAt(new \DateTimeImmutable());
+        $package->setCrawledAt(new \DateTimeImmutable());
 
         if ($flags & self::FORCE_DUMP) {
             $package->setDumpedAt(null);

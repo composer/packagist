@@ -105,7 +105,7 @@ class UserController extends Controller
 
             $em->getConnection()->executeStatement(
                 'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id
-                 SET abandoned = 1, replacementPackage = "spam/spam", suspect = "spam", indexedAt = NULL, dumpedAt = "2100-01-01 00:00:00"
+                 SET frozen = "spam", indexedAt = NULL
                  WHERE mp.user_id = :userId',
                 ['userId' => $user->getId()]
             );

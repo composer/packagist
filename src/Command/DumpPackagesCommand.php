@@ -99,7 +99,7 @@ class DumpPackagesCommand extends Command
                 SELECT p.id
                 FROM package p
                 LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
-                WHERE (replacementPackage != "spam/spam" OR replacementPackage IS NULL)
+                WHERE p.frozen IS NULL
                 AND (d.total > 1000 OR d.lastUpdated > :date)
                 ORDER BY p.id ASC
             ', ['date' => date('Y-m-d H:i:s', strtotime('-4months'))]);

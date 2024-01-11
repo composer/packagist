@@ -57,7 +57,7 @@ class PackageRepository extends ServiceEntityRepository
         $query = $this->getEntityManager()
             ->createQuery("
                 SELECT p.name FROM App\Entity\Package p
-                WHERE p.dumpedAt >= :date AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')
+                WHERE p.dumpedAt >= :date AND p.frozen IS NULL
             ")
             ->setParameters(['date' => $date]);
 
@@ -72,7 +72,7 @@ class PackageRepository extends ServiceEntityRepository
     public function getPackageNames(): array
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam'");
+            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.frozen IS NULL");
 
         $names = $this->getPackageNamesForQuery($query);
 
@@ -102,7 +102,7 @@ class PackageRepository extends ServiceEntityRepository
     public function getPackageNamesByType(string $type): array
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.type = :type AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
+            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.type = :type AND p.frozen IS NULL")
             ->setParameters(['type' => $type]);
 
         return $this->getPackageNamesForQuery($query);
@@ -114,7 +114,7 @@ class PackageRepository extends ServiceEntityRepository
     public function getPackageNamesByVendor(string $vendor): array
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.vendor = :vendor AND (p.replacementPackage IS NULL OR p.replacementPackage != 'spam/spam')")
+            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.vendor = :vendor AND p.frozen IS NULL")
             ->setParameters(['vendor' => $vendor]);
 
         return $this->getPackageNamesForQuery($query);
@@ -166,11 +166,10 @@ class PackageRepository extends ServiceEntityRepository
             $selector .= ', p.replacementPackage';
         }
 
-        $where = '(p.replacementPackage IS NULL OR p.replacementPackage != :replacement)';
+        $where = 'p.frozen IS NULL';
         foreach ($filters as $filter => $val) {
             $where .= ' AND p.'.$filter.' = :'.$filter;
         }
-        $filters['replacement'] = "spam/spam";
         $query = $this->getEntityManager()
             ->createQuery("SELECT p.name $selector FROM App\Entity\Package p WHERE $where ORDER BY p.name")
             ->setParameters($filters);
@@ -218,6 +217,7 @@ class PackageRepository extends ServiceEntityRepository
         return $conn->fetchAllAssociative(
             'SELECT p.id FROM package p
             WHERE p.abandoned = false
+            AND p.frozen IS NULL
             AND (
                 p.crawledAt IS NULL
                 OR (p.autoUpdated = 0 AND p.crawledAt < :recent AND p.createdAt >= :yesterday)
@@ -259,6 +259,7 @@ class PackageRepository extends ServiceEntityRepository
             FROM package p
             LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
             WHERE (p.dumpedAt IS NULL OR (p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW()))
+            AND p.frozen IS NULL
             AND (d.total > 1000 OR d.lastUpdated > :date)
             ORDER BY p.crawledAt ASC
         ', ['date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
@@ -272,7 +273,7 @@ class PackageRepository extends ServiceEntityRepository
             SELECT p.id
             FROM package p
             LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
-            WHERE p.id = :id
+            WHERE p.id = :id AND p.frozen IS NULL
             AND (d.total > 1000 OR d.lastUpdated > :date)
         ', ['id' => $package->getId(), 'date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
     }
@@ -284,7 +285,7 @@ class PackageRepository extends ServiceEntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchFirstColumn('SELECT p.id FROM package p WHERE p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())');
+        return $conn->fetchFirstColumn('SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND p.frozen IS NULL');
     }
 
     /**
@@ -414,7 +415,7 @@ class PackageRepository extends ServiceEntityRepository
             $qb->leftJoin('v.tags', 't');
         }
 
-        $qb->andWhere('(p.replacementPackage IS NULL OR p.replacementPackage != \'spam/spam\')');
+        $qb->andWhere('p.frozen IS NULL');
 
         $qb->orderBy('p.abandoned');
         if (true === $orderByName) {
@@ -466,7 +467,7 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getSuspectPackageCount(): int
     {
-        $sql = 'SELECT COUNT(*) count FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam")';
+        $sql = 'SELECT COUNT(*) count FROM package p WHERE p.suspect IS NOT NULL AND p.frozen IS NULL';
 
         return max(0, (int) $this->getEntityManager()->getConnection()->fetchOne($sql));
     }
@@ -477,7 +478,7 @@ class PackageRepository extends ServiceEntityRepository
     public function getSuspectPackages(int $offset = 0, int $limit = 15): array
     {
         $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
-            FROM package p WHERE p.suspect IS NOT NULL AND (p.replacementPackage IS NULL OR p.replacementPackage != "spam/spam") ORDER BY p.createdAt DESC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+            FROM package p WHERE p.suspect IS NOT NULL AND p.frozen IS NULL ORDER BY p.createdAt DESC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
     }

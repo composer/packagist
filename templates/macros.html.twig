@@ -1,6 +1,6 @@
 {% macro listPackages(packages, paginate, showAutoUpdateWarning, meta) %}
     <ul class="packages list-unstyled">
-        {% for package in packages|filter(package => package.replacementPackage|default('') != 'spam/spam') %}
+        {% for package in packages|filter(package => not package.isFrozen() or not package.getFreezeReason().isSpam()) %}
             {% if package.id is numeric %}
                 {% set packageUrl = path('view_package', { 'name' : package.name }) %}
             {% else %}

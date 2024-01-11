@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Entity\Dependent;
+use App\Entity\PackageFreezeReason;
 use App\Entity\PhpStat;
 use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
@@ -460,6 +461,26 @@ class PackageController extends Controller
         return $this->redirectToRoute('view_spam');
     }
 
+    #[IsGranted('ROLE_ADMIN')]
+    #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'html'], methods: ['POST'])]
+    public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager): Response
+    {
+        if (!$this->isCsrfTokenValid('unfreeze', (string) $req->request->get('token'))) {
+            throw new BadRequestHttpException('Invalid CSRF token');
+        }
+
+        $package = $this->getPackageByName($req, $name);
+        if ($package instanceof Response) {
+            return $package;
+        }
+
+        $package->unfreeze();
+        $this->getEM()->persist($package);
+        $this->getEM()->flush();
+
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+    }
+
     #[Route(path: '/packages/{name}.{_format}', name: 'view_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'], methods: ['GET'])]
     public function viewPackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] ?User $user = null): Response
     {
@@ -488,7 +509,7 @@ class PackageController extends Controller
             return $package;
         }
 
-        if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam' && !$this->isGranted('ROLE_ADMIN')) {
+        if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam && !$this->isGranted('ROLE_ANTISPAM')) {
             throw new NotFoundHttpException('This is a spam package');
         }
 
@@ -694,6 +715,9 @@ class PackageController extends Controller
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
         }
+        if ($this->isGranted('ROLE_ADMIN')) {
+            $data['unfreezeCsrfToken'] = $csrfTokenManager->getToken('unfreeze');
+        }
 
         return $this->render('package/view_package.html.twig', $data);
     }
@@ -795,7 +819,7 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
         }
 
-        if ($package->isAbandoned() && $package->getReplacementPackage() === 'spam/spam') {
+        if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam) {
             throw new NotFoundHttpException('This is a spam package');
         }
 
@@ -965,6 +989,8 @@ class PackageController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             // Force updating of packages once the package is viewed after the redirect.
             $package->setCrawledAt(null);
+            // Reset remoteId as if the URL changes we expect possibly a different id and that's ok
+            $package->setRemoteId(null);
 
             $em = $this->getEM();
             $em->persist($package);
@@ -992,8 +1018,8 @@ class PackageController extends Controller
             $package->setAbandoned(true);
             $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData()));
             $package->setIndexedAt(null);
-            $package->setCrawledAt(new DateTime());
-            $package->setUpdatedAt(new DateTime());
+            $package->setCrawledAt(new DateTimeImmutable());
+            $package->setUpdatedAt(new DateTimeImmutable());
             $package->setDumpedAt(null);
             $package->setDumpedAtV2(null);
 
@@ -1017,8 +1043,8 @@ class PackageController extends Controller
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
         $package->setIndexedAt(null);
-        $package->setCrawledAt(new DateTime());
-        $package->setUpdatedAt(new DateTime());
+        $package->setCrawledAt(new DateTimeImmutable());
+        $package->setUpdatedAt(new DateTimeImmutable());
         $package->setDumpedAt(null);
         $package->setDumpedAtV2(null);
 
