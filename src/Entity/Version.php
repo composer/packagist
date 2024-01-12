@@ -204,7 +204,7 @@ class Version
     private array $authors = [];
 
     /**
-     * @var array<array{priority?: int, config?: array<string, bool>}>
+     * @var array{priority?: int, config?: array<string, bool>}|null
      */
     #[ORM\Column(type: 'json', options: ['default' => null], nullable: true)]
     private array|null $phpExt = null;
@@ -672,7 +672,7 @@ class Version
     }
 
     /**
-     * @return array<array{priority?: int, config?: array<string, bool>}>|null
+     * @return array{priority?: int, config?: array<string, bool>}|null
      */
     public function getPhpExt(): array|null
     {
@@ -680,7 +680,7 @@ class Version
     }
 
     /**
-     * @param array<array{priority?: int, config?: array<string, bool>}>|null $phpExt
+     * @param array{priority?: int, config?: array<string, bool>}|null $phpExt
      */
     public function setPhpExt(array|null $phpExt): void
     {
