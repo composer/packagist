@@ -83,6 +83,8 @@ class ResetPasswordController extends Controller
 
     /**
      * Validates and process the reset URL that the user clicked in their email.
+     *
+     * @param BruteForceLoginFormAuthenticator<User> $authenticator
      */
     #[Route(path: '/reset-password/reset/{token}', name: 'do_pwd_reset')]
     public function reset(Request $request, UserPasswordHasherInterface $passwordHasher, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator, bool $recaptchaEnabled, ?string $token = null): Response

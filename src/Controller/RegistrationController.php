@@ -91,6 +91,9 @@ class RegistrationController extends Controller
         ]);
     }
 
+    /**
+     * @param BruteForceLoginFormAuthenticator<User> $authenticator
+     */
     #[Route(path: '/register/verify', name: 'register_confirm_email')]
     public function confirmEmail(Request $request, UserRepository $userRepository, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator): Response
     {

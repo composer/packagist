@@ -12,7 +12,7 @@ scheb_two_factor:
         enabled: true
         server_name: '%env(APP_HOSTNAME)%'
         issuer: Packagist
-        window: 1
+        leeway: 10
 
     trusted_device:
         enabled: true
