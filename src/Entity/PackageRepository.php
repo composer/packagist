@@ -285,7 +285,7 @@ class PackageRepository extends ServiceEntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchFirstColumn('SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND p.frozen IS NULL');
+        return $conn->fetchFirstColumn('SELECT p.id FROM package p USE INDEX (dumped2_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND p.frozen IS NULL');
     }
 
     /**
