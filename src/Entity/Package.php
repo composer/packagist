@@ -687,6 +687,23 @@ class Package
         return $this->type;
     }
 
+    public function getInstallCommand(): string
+    {
+        $command = 'create-project';
+
+        if ('project' !== $this->getType()) {
+            $command = 'require';
+
+            /** @var Version $version */
+            $version = $this->getVersions()->first();
+            if ($version && $version->hasDevTag()) {
+                $command .= ' --dev';
+            }
+        }
+
+        return sprintf('composer %s %s', $command, $this->getName());
+    }
+
     public function setRemoteId(string|null $remoteId): void
     {
         $this->remoteId = $remoteId;
