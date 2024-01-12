@@ -207,7 +207,7 @@ class Version
      * @var array<array{priority?: int, config?: array<string, bool>}>
      */
     #[ORM\Column(type: 'json', options: ['default' => null], nullable: true)]
-    private ?array $phpExt = null;
+    private array|null $phpExt = null;
 
     #[ORM\Column(name: 'defaultBranch', type: 'boolean', options: ['default' => false])]
     private bool $isDefaultBranch = false;
@@ -672,17 +672,17 @@ class Version
     }
 
     /**
-     * @return array<array{priority?: int, config?: array<string, bool>}>
+     * @return array<array{priority?: int, config?: array<string, bool>}>|null
      */
-    public function getPhpExt(): array
+    public function getPhpExt(): array|null
     {
         return $this->phpExt;
     }
 
     /**
-     * @param array<array{priority?: int, config?: array<string, bool>}> $phpExt
+     * @param array<array{priority?: int, config?: array<string, bool>}>|null $phpExt
      */
-    public function setPhpExt(array $phpExt): void
+    public function setPhpExt(array|null $phpExt): void
     {
         $this->phpExt = $phpExt;
     }
