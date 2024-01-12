@@ -203,6 +203,12 @@ class Version
     #[ORM\Column(name: 'authors', type: 'json')]
     private array $authors = [];
 
+    /**
+     * @var array<array{priority?: int, config?: array<string, bool>}>
+     */
+    #[ORM\Column(type: 'json', options: ['default' => null], nullable: true)]
+    private ?array $phpExt = null;
+
     #[ORM\Column(name: 'defaultBranch', type: 'boolean', options: ['default' => false])]
     private bool $isDefaultBranch = false;
 
@@ -663,6 +669,22 @@ class Version
     public function setAuthors(array $authors): void
     {
         $this->authors = $authors;
+    }
+
+    /**
+     * @return array<array{priority?: int, config?: array<string, bool>}>
+     */
+    public function getPhpExt(): array
+    {
+        return $this->phpExt;
+    }
+
+    /**
+     * @param array<array{priority?: int, config?: array<string, bool>}> $phpExt
+     */
+    public function setPhpExt(array $phpExt): void
+    {
+        $this->phpExt = $phpExt;
     }
 
     public function isDefaultBranch(): bool
