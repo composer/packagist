@@ -36,14 +36,14 @@ class PackageTest extends TestCase
     public function testInstallCommand(string $type, string $tag, string $expected): void
     {
         $version = new Version();
-        $version->addTag(new Tag('dev'));
+        $version->addTag(new Tag($tag));
 
         $package = new Package();
         $package->setName('vendor/name');
-        $package->setType('project');
+        $package->setType($type);
         $package->addVersion($version);
 
-        self::assertSame('composer create-project vendor/name', $package->getInstallCommand());
+        self::assertSame($expected, $package->getInstallCommand());
     }
 
     public static function providePackageScenarios(): array
