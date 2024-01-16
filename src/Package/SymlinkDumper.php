@@ -313,7 +313,6 @@ class SymlinkDumper
             $this->rootFile['security-advisories'] = [
                 'metadata' => true, // whether advisories are part of the metadata v2 files
                 'api-url' => $this->router->generate('api_security_advisories', [], UrlGeneratorInterface::ABSOLUTE_URL),
-                'query-all' => true, // whether packages that are not part of the repo can be searched in the API
             ];
             $this->rootFile['providers-api'] = str_replace('VND/PKG', '%package%', $this->router->generate('view_providers', ['name' => 'VND/PKG', '_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL));
             $this->rootFile['warning'] = 'Support for Composer 1 is deprecated and some packages will not be available. You should upgrade to Composer 2. See https://blog.packagist.com/deprecating-composer-1-support/';
