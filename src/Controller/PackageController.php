@@ -1723,7 +1723,7 @@ class PackageController extends Controller
 
     private function blockAbusers(Request $req): ?JsonResponse
     {
-        if (str_contains($req->headers->get('User-Agent'), 'Bytespider; spider-feedback@bytedance.com')) {
+        if (str_contains((string) $req->headers->get('User-Agent'), 'Bytespider; spider-feedback@bytedance.com')) {
             return new JsonResponse("Please respect noindex/nofollow meta tags, and email contact@packagist.org to get unblocked once this is resolved", 429, ['Retry-After' => 31536000]);
         }
 
