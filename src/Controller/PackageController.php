@@ -1293,6 +1293,11 @@ class PackageController extends Controller
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
+
+        if ($resp = $this->blockAbusers($req)) {
+            return $resp;
+        }
+
         $page = max(1, $req->query->getInt('page', 1));
         $perPage = 15;
         $orderBy = $req->query->get('order_by', 'name');
@@ -1354,6 +1359,11 @@ class PackageController extends Controller
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
+
+        if ($resp = $this->blockAbusers($req)) {
+            return $resp;
+        }
+
         $page = max(1, $req->query->getInt('page', 1));
         $perPage = 15;
 
@@ -1713,6 +1723,10 @@ class PackageController extends Controller
 
     private function blockAbusers(Request $req): ?JsonResponse
     {
+        if (str_contains($req->headers->get('User-Agent'), 'Bytespider; spider-feedback@bytedance.com')) {
+            return new JsonResponse("Please respect noindex/nofollow meta tags, and email contact@packagist.org to get unblocked once this is resolved", 429, ['Retry-After' => 31536000]);
+        }
+
         $abusers = [
             '193.13.144.72',
             '185.167.99.27',
