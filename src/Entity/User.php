@@ -510,7 +510,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
             return false;
         }
 
-        if ($this->sessionBuster !== $user->sessionBuster) {
+        if ($this->getSessionBuster() !== $user->getSessionBuster()) {
             return false;
         }
 
@@ -540,6 +540,11 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function isPasswordRequestExpired(int $ttl): bool
     {
         return !$this->getPasswordRequestedAt() instanceof \DateTime || $this->getPasswordRequestedAt()->getTimestamp() + $ttl <= time();
+    }
+
+    public function getSessionBuster(): int
+    {
+        return $this->sessionBuster;
     }
 
     public function invalidateAllSessions(): void

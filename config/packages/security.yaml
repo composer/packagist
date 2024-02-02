@@ -33,6 +33,7 @@ security:
                 always_remember_me: false
                 secure: '%force_ssl%'
                 lifetime: 31104000 # 1y
+                signature_properties: ['password', 'sessionBuster']
             logout:       true
             lazy:         true
             two_factor:
