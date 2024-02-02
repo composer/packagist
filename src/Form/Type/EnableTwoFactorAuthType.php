@@ -12,9 +12,9 @@
 
 namespace App\Form\Type;
 
-use App\Entity\User;
 use App\Form\Model\EnableTwoFactorRequest;
 use App\Validator\TwoFactorCode;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -39,7 +39,7 @@ class EnableTwoFactorAuthType extends AbstractType
                 'data_class' => EnableTwoFactorRequest::class,
             ])
             ->define('user')
-            ->allowedTypes(User::class)
+            ->allowedTypes(TwoFactorInterface::class)
             ->required();
     }
 }

@@ -273,7 +273,7 @@ class UserController extends Controller
         $temporary2faUser = new TemporaryTwoFactorUser($user, $secret);
 
         $enableRequest = new EnableTwoFactorRequest();
-        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest, ['user' => $user])
+        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest, ['user' => $temporary2faUser])
             ->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -307,6 +307,7 @@ class UserController extends Controller
             [
                 'user' => $user,
                 'form' => $form,
+                'tfaConfig' => $temporary2faUser->getTotpAuthenticationConfiguration(),
                 'qrCode' => $qrCode->getDataUri(),
             ]
         );

@@ -24,7 +24,7 @@ class TemporaryTwoFactorUser implements TwoFactorInterface
         return $this->user->getTotpAuthenticationUsername();
     }
 
-    public function getTotpAuthenticationConfiguration(): ?TotpConfigurationInterface
+    public function getTotpAuthenticationConfiguration(): TotpConfigurationInterface
     {
         return new TotpConfiguration($this->totpSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
     }
