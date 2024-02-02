@@ -120,6 +120,9 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[ORM\Column(type: 'string', length: 8, nullable: true)]
     private string|null $backupCode = null;
 
+    #[ORM\Column(type: 'smallint', options: ['unsigned' => true, 'default' => 0])]
+    private int $sessionBuster = 0;
+
     public function __construct()
     {
         $this->packages = new ArrayCollection();
@@ -242,6 +245,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function setTotpSecret(string|null $secret): void
     {
         $this->totpSecret = $secret;
+        $this->invalidateAllSessions();
     }
 
     public function isTotpAuthenticationEnabled(): bool
@@ -307,6 +311,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
             $this->id,
             $this->email,
             $this->emailCanonical,
+            'session_buster' => $this->sessionBuster,
         ];
     }
 
@@ -325,6 +330,9 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
             $this->email,
             $this->emailCanonical
         ] = $data;
+
+        // session_buster might not be available yet in the session
+        $this->sessionBuster = $data['session_buster'] ?? 0;
     }
 
     public function eraseCredentials(): void
@@ -502,6 +510,10 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
             return false;
         }
 
+        if ($this->sessionBuster !== $user->sessionBuster) {
+            return false;
+        }
+
         return (!$this->getPassword() && !$user->getPassword()) || ($this->getPassword() && $user->getPassword() && hash_equals($this->getPassword(), $user->getPassword()));
     }
 
@@ -528,5 +540,10 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function isPasswordRequestExpired(int $ttl): bool
     {
         return !$this->getPasswordRequestedAt() instanceof \DateTime || $this->getPasswordRequestedAt()->getTimestamp() + $ttl <= time();
+    }
+
+    public function invalidateAllSessions(): void
+    {
+        $this->sessionBuster = ($this->sessionBuster + 1) % 65535;
     }
 }
