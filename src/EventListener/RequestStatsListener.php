@@ -13,6 +13,8 @@
 namespace App\EventListener;
 
 use Graze\DogStatsD\Client;
+use Monolog\LogRecord;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
@@ -23,6 +25,7 @@ class RequestStatsListener
 
     public function __construct(
         private Client $statsd,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -33,6 +36,13 @@ class RequestStatsListener
             return;
         }
         $this->pageTiming = microtime(true);
+
+        $reqId = bin2hex(random_bytes(6));
+        $this->logger->pushProcessor(static function (LogRecord $record) use ($reqId) {
+            $record->extra['req_id'] = $reqId;
+
+            return $record;
+        });
     }
 
     #[AsEventListener]
@@ -46,6 +56,7 @@ class RequestStatsListener
             return;
         }
 
+        $this->logger->popProcessor();
         $this->statsd->timing('app.response_time', (int) ((microtime(true) - $this->pageTiming) * 1000));
         $this->pageTiming = null;
 
