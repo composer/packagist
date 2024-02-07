@@ -13,8 +13,8 @@
 namespace App\EventListener;
 
 use Graze\DogStatsD\Client;
+use Monolog\Logger;
 use Monolog\LogRecord;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
@@ -25,7 +25,7 @@ class RequestStatsListener
 
     public function __construct(
         private Client $statsd,
-        private LoggerInterface $logger,
+        private Logger $logger,
     ) {
     }
 
