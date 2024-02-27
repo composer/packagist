@@ -5,7 +5,7 @@
 {% block user_content %}
     {% if app.user %}
         <div class="col-xs-6">
-            <p>You are logged in as {{ app.user.username }}, <a href="{{ path('logout') }}">Log out</a></p>
+            <p>You are logged in as {{ app.user.username }}, <a href="{{ logout_path() }}">Log out</a></p>
         </div>
     {% else %}
         <div class="col-xs-12">

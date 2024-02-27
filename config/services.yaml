@@ -26,6 +26,7 @@ services:
             $recaptchaVerifier: "@beelab_recaptcha2.verifier"
             'Monolog\Logger': '@logger'
             'Symfony\Contracts\EventDispatcher\EventDispatcherInterface $mainEventDispatcher': '@security.event_dispatcher.main'
+            'Symfony\Component\Security\Http\Logout\LogoutUrlGenerator': '@security.logout_url_generator'
 
             # params
             $dbUrl: '%env(DATABASE_URL)%'

@@ -33,7 +33,12 @@ security:
                 always_remember_me: false
                 secure: '%force_ssl%'
                 lifetime: 31104000 # 1y
-            logout:       true
+            logout:
+                enable_csrf: true
+                clear_site_data:
+                    - cookies
+                    - storage
+                    - cache
             lazy:         true
             two_factor:
                 auth_form_path: 2fa_login
