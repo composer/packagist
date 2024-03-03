@@ -19,6 +19,7 @@ use App\Entity\User;
 use App\Form\Type\ProfileFormType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Security\UserNotifier;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
@@ -112,7 +113,7 @@ class ProfileController extends Controller
     }
 
     #[Route(path: '/profile/edit', name: 'edit_profile')]
-    public function editAction(Request $request): Response
+    public function editAction(Request $request, UserNotifier $userNotifier): Response
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -125,6 +126,17 @@ class ProfileController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $uow = $this->getEM()->getUnitOfWork();
+            $uow->computeChangeSets();
+            $changeSet = $uow->getEntityChangeSet($user);
+
+            $diffs = array_intersect(array_keys($changeSet), ['email', 'username']);
+
+            if (!empty($diffs) && $user instanceof User) {
+                $reason = sprintf('Your %s has been changed', implode(' and ', $diffs));
+                $userNotifier->notifyChange($changeSet['email'][0] ?? $user->getEmail(), $reason);
+            }
+
             if ($oldEmail !== $user->getEmail()) {
                 $user->resetPasswordRequest();
             }
