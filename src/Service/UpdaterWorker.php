@@ -279,6 +279,9 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Please ask the owner to check their account')) {
                 // git clone says account is disabled on github for private repos(?) if cloning via https
                 $found404 = true;
+            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), 'Access to this repository has been disabled by GitHub staff due to excessive resource use.')) {
+                // git clone says repo is disabled on github
+                $found404 = true;
             } elseif ($e instanceof \RuntimeException && str_contains($e->getMessage(), '@github.com/') && str_contains($e->getMessage(), 'remote: Write access to repository not granted.') && str_contains($e->getMessage(), 'The requested URL returned error: 403')) {
                 // git clone failure on github with a 403 when the repo does not exist (or is private?)
                 $found404 = true;
@@ -297,7 +300,10 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && (
                 Preg::isMatch('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
                 || Preg::isMatch('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
-                || Preg::isMatch('{Can\'t connect to host \'[^\']+\': Connection timed out}i', $e->getMessage())
+                || Preg::isMatch('{Can\'t connect to host \'[^\']+\': Connection (timed out|refused)}i', $e->getMessage())
+                || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+: Connection refused}i', $e->getMessage())
+                || Preg::isMatch('{SSL: certificate subject name \([\w.-]+\) does not match target host name \'[\w.-]+\'}i', $e->getMessage())
+                || Preg::isMatch('{gnutls_handshake\(\) failed: The server name sent was not recognized}i', $e->getMessage())
             )) {
                 // unreachable host, skip for a week as this may be a temporary failure
                 $found404 = new \DateTime('+7 days');
@@ -314,7 +320,7 @@ class UpdaterWorker
                 }
             }
 
-            // detected a 404 so mark the package as gone and prevent updates for 1y
+            // detected a 404 so prevent updates for x days or fully if the package is conclusively gone
             if ($found404) {
                 if ($found404 === true) {
                     $package->freeze(PackageFreezeReason::Gone);
@@ -392,7 +398,13 @@ class UpdaterWorker
             // 404 indicates the repo does not exist
             // 409 indicates an empty repo which is about the same for our purposes
             // 451 is used for DMCA takedowns which also indicate the package is bust
-            if ($e instanceof TransportException && in_array($e->getStatusCode(), [404, 409, 451], true)) {
+            if (
+                $e instanceof TransportException
+                && (
+                    in_array($e->getStatusCode(), [404, 409, 451], true)
+                    || ($e->getStatusCode() === 403 && str_contains('"message": "Repository access blocked"', (string) $e->getResponse()))
+                )
+            ) {
                 try {
                     // check composer repo is visible to make sure it's not github or something else glitching
                     $httpDownloader->get('https://api.github.com/repos/composer/composer/git/refs/heads', ['retry-auth-failure' => false]);
