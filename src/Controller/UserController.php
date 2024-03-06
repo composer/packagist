@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Attribute\VarName;
+use App\Entity\TemporaryTwoFactorUser;
 use App\Model\FavoriteManager;
 use App\Entity\Package;
 use App\Entity\Version;
@@ -269,13 +270,14 @@ class UserController extends Controller
         // Temporarily store this code on the user, as we'll need it there to generate the
         // QR code and to check the confirmation code.  We won't actually save this change
         // until we've confirmed the code
-        $user->setTotpSecret($secret);
+        $temporary2faUser = new TemporaryTwoFactorUser($user, $secret);
 
         $enableRequest = new EnableTwoFactorRequest();
-        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest, ['user' => $user])
+        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest, ['user' => $temporary2faUser])
             ->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $user->setTotpSecret($secret);
             $req->getSession()->remove('2fa_secret');
             $authManager->enableTwoFactorAuth($user, $secret);
             $backupCode = $authManager->generateAndSaveNewBackupCode($user);
@@ -287,7 +289,7 @@ class UserController extends Controller
         }
 
         $req->getSession()->set('2fa_secret', $secret);
-        $qrContent = $authenticator->getQRContent($user);
+        $qrContent = $authenticator->getQRContent($temporary2faUser);
 
         $qrCode = Builder::create()
             ->writer(new SvgWriter())
@@ -305,6 +307,7 @@ class UserController extends Controller
             [
                 'user' => $user,
                 'form' => $form,
+                'tfaConfig' => $temporary2faUser->getTotpAuthenticationConfiguration(),
                 'qrCode' => $qrCode->getDataUri(),
             ]
         );

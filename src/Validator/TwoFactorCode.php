@@ -12,13 +12,13 @@
 
 namespace App\Validator;
 
-use App\Entity\User;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Component\Validator\Constraint;
 
 class TwoFactorCode extends Constraint
 {
     public function __construct(
-        public readonly User $user,
+        public readonly TwoFactorInterface $user,
         public readonly string $message = 'Invalid authenticator code',
     ) {
         parent::__construct();
