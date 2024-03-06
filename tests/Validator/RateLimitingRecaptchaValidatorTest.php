@@ -55,14 +55,14 @@ class RateLimitingRecaptchaValidatorTest extends TestCase
         $this->validator->validate(null, new RateLimitingRecaptcha());
     }
 
-    #[TestWith(['recaptcha', RateLimitingRecaptcha::INVALID_RECAPTCHA_MESSAGE])]
-    #[TestWith([null, RateLimitingRecaptcha::MISSING_RECAPTCHA_MESSAGE])]
-    public function testValidateInvalidRecaptcha(?string $recaptcha, string $expectedMessage): void
+    #[TestWith([true, RateLimitingRecaptcha::INVALID_RECAPTCHA_MESSAGE])]
+    #[TestWith([false, RateLimitingRecaptcha::MISSING_RECAPTCHA_MESSAGE])]
+    public function testValidateInvalidRecaptcha(bool $hasRecaptcha, string $expectedMessage): void
     {
         $this->recaptchaHelper
             ->expects($this->once())
             ->method('buildContext')
-            ->willReturn(new RecaptchaContext('127.0.0.1', 'username', $recaptcha));
+            ->willReturn(new RecaptchaContext('127.0.0.1', 'username', $hasRecaptcha));
 
         $this->recaptchaHelper
             ->expects($this->once())

@@ -34,7 +34,7 @@ class RecaptchaHelper
         return new RecaptchaContext(
             $this->requestStack->getMainRequest()?->getClientIp() ?: '',
             $this->getCurrentUsername(),
-            (string) $this->requestStack->getMainRequest()?->request->get('g-recaptcha-response'),
+            (bool) $this->requestStack->getMainRequest()?->request->has('g-recaptcha-response'),
         );
     }
 

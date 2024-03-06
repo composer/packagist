@@ -22,7 +22,7 @@ class RecaptchaContext
     public function __construct(
         public readonly string $ip,
         public readonly string $username,
-        public readonly ?string $recaptcha,
+        public readonly bool $hasRecaptcha,
     ) {}
 
     /**
@@ -41,7 +41,7 @@ class RecaptchaContext
         return new self(
             $request->getClientIp() ?: '',
             (string) $request->request->get('_username'),
-            (string) $request->request->get('g-recaptcha-response'),
+            $request->request->has('g-recaptcha-response'),
         );
     }
 }

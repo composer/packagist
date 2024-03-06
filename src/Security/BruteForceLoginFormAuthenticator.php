@@ -146,7 +146,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
      */
     private function validateRecaptcha(array $credentials): void
     {
-        if ($this->recaptchaHelper->requiresRecaptcha(new RecaptchaContext($credentials['ip'] ?? '', $credentials['username'], $credentials['recaptcha']))) {
+        if ($this->recaptchaHelper->requiresRecaptcha(new RecaptchaContext($credentials['ip'] ?? '', $credentials['username'], (bool) $credentials['recaptcha']))) {
             if (!$credentials['recaptcha']) {
                 throw new CustomUserMessageAuthenticationException('We detected too many failed login attempts. Please log in again with ReCaptcha.');
             }

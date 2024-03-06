@@ -45,7 +45,7 @@ class RecaptchaHelperTest extends TestCase
             ->with($this->equalTo('mget'))
             ->willReturn([2, 3]);
 
-        $context = new RecaptchaContext('127.0.0.1', 'username', null);
+        $context = new RecaptchaContext('127.0.0.1', 'username', false);
 
         $this->assertTrue($this->helper->requiresRecaptcha($context));
     }
@@ -57,7 +57,7 @@ class RecaptchaHelperTest extends TestCase
             ->method('__call')
             ->with($this->equalTo('incrFailedLoginCounter'));
 
-        $context = new RecaptchaContext('127.0.0.1', 'username', null);
+        $context = new RecaptchaContext('127.0.0.1', 'username', false);
 
         $this->helper->increaseCounter($context);
     }
@@ -69,7 +69,7 @@ class RecaptchaHelperTest extends TestCase
             ->method('__call')
             ->with($this->equalTo('del'));
 
-        $context = new RecaptchaContext('127.0.0.1', 'username', null);
+        $context = new RecaptchaContext('127.0.0.1', 'username', false);
 
         $this->helper->clearCounter($context);
     }
