@@ -301,7 +301,7 @@ class UpdaterWorker
                 Preg::isMatch('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
                 || Preg::isMatch('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
                 || Preg::isMatch('{Can\'t connect to host \'[^\']+\': Connection (timed out|refused)}i', $e->getMessage())
-                || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+: Connection refused}i', $e->getMessage())
+                || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+: Connection (timed out|refused)}i', $e->getMessage())
                 || Preg::isMatch('{SSL: certificate subject name \([\w.-]+\) does not match target host name \'[\w.-]+\'}i', $e->getMessage())
                 || Preg::isMatch('{gnutls_handshake\(\) failed: The server name sent was not recognized}i', $e->getMessage())
             )) {
