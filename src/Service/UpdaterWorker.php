@@ -113,7 +113,7 @@ class UpdaterWorker
         $io->loadConfiguration($config);
 
         $usesPackagistToken = false;
-        if (Preg::isMatch('{\bgithub\.com\b}i', $package->getRepository())) {
+        if (Preg::isMatch('{^https://github\.com/(?P<repo>[^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $matches)) {
             $usesPackagistToken = true;
             $apc = extension_loaded('apcu');
 
@@ -132,7 +132,7 @@ class UpdaterWorker
 
                 if (true !== $valid) {
                     $context = stream_context_create(['http' => ['header' => ['User-agent: packagist-token-check', 'Authorization: token '.$newGithubToken]]]);
-                    $rate = json_decode((string) @file_get_contents('https://api.github.com/rate_limit', false, $context), true);
+                    $rate = json_decode((string) @file_get_contents('https://api.github.com/repos/'.$matches['repo'], false, $context), true);
                     // invalid/outdated token, wipe it so we don't try it again
                     if (!$rate && isset($http_response_header[0]) && (strpos($http_response_header[0], '403') || strpos($http_response_header[0], '401'))) {
                         $maintainer->setGithubToken(null);
