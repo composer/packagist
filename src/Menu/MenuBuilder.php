@@ -16,13 +16,14 @@ use App\Entity\User;
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class MenuBuilder
 {
     private string $username;
 
-    public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator)
+    public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator, private LogoutUrlGenerator $logoutUrlGenerator)
     {
         if ($tokenStorage->getToken() && $tokenStorage->getToken()->getUser() instanceof User) {
             $this->username = $tokenStorage->getToken()->getUser()->getUsername();
@@ -36,7 +37,7 @@ class MenuBuilder
 
         $this->addProfileMenu($menu);
         $menu->addChild('hr', ['label' => '<hr>', 'labelAttributes' => ['class' => 'normal'], 'extras' => ['safe_label' => true]]);
-        $menu->addChild($this->translator->trans('menu.logout'), ['label' => '<span class="icon-off"></span>' . $this->translator->trans('menu.logout'), 'route' => 'logout', 'extras' => ['safe_label' => true]]);
+        $menu->addChild($this->translator->trans('menu.logout'), ['label' => '<span class="icon-off"></span>' . $this->translator->trans('menu.logout'), 'uri' => $this->logoutUrlGenerator->getLogoutPath(), 'extras' => ['safe_label' => true]]);
 
         return $menu;
     }

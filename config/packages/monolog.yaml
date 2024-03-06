@@ -39,12 +39,14 @@ when@prod:
                 buffer_size: 100 # How many messages should be saved? Prevent memory leaks
             nested:
                 type: stream
-                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                formatter: 'monolog.formatter.json'
+                path: "%kernel.logs_dir%/packagist.log"
                 level: debug
                 include_stacktraces: true
 
             deprecation:
                 type: stream
+                formatter: 'monolog.formatter.json'
                 path: "%kernel.logs_dir%/deprecations.log"
                 include_stacktraces: true
                 channels: [deprecation]

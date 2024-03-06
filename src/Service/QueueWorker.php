@@ -113,7 +113,7 @@ class QueueWorker
         }
 
         $this->logger->pushProcessor(static function (LogRecord $record) use ($job) {
-            $record->extra['job-id'] = $job->getId();
+            $record->extra['job_id'] = $job->getId();
 
             return $record;
         });

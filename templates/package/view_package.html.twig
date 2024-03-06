@@ -29,7 +29,7 @@
 
 {% block content %}
     <div class="row" id="view-package-page">
-        <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and is_granted('edit', package) %} data-force-crawl="true"{% endif %}>
+        <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and is_granted('edit', package) and not package.isFrozen() %} data-force-crawl="true"{% endif %}>
             <div class="package-header">
 
                 <div class="row">

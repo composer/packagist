@@ -34,7 +34,12 @@ security:
                 secure: '%force_ssl%'
                 lifetime: 31104000 # 1y
                 signature_properties: ['password', 'sessionBuster']
-            logout:       true
+            logout:
+                enable_csrf: true
+                clear_site_data:
+                    - cookies
+                    - storage
+                    - cache
             lazy:         true
             two_factor:
                 auth_form_path: 2fa_login

@@ -352,6 +352,8 @@ class Updater
             if (
                 // update if the source reference has changed (re-tag or new commit on branch)
                 ($source['reference'] ?? null) !== $data->getSourceReference()
+                // or the source has some corrupted github private url
+                || (isset($source['url']) && is_string($source['url']) && Preg::isMatch('{^git@github.com:.*?\.git$}', $source['url']))
                 // or if the right flag is set
                 || ($flags & self::UPDATE_EQUAL_REFS)
                 // or if the package must be marked abandoned from composer.json
@@ -403,6 +405,10 @@ class Updater
         if ($data->getSourceType()) {
             $source['type'] = $data->getSourceType();
             $source['url'] = $data->getSourceUrl();
+            // force public URLs even if the package somehow got downgraded to a GitDriver
+            if (is_string($source['url']) && Preg::isMatch('{^git@github.com:(?P<repo>.*?)\.git$}', $source['url'], $match)) {
+                $source['url'] = 'https://github.com/'.$match['repo'];
+            }
             $source['reference'] = $data->getSourceReference();
             $version->setSource($source);
         } else {
