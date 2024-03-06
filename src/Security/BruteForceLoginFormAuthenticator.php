@@ -14,6 +14,7 @@ namespace App\Security;
 
 use App\Entity\User;
 use App\Util\DoctrineTrait;
+use App\Validator\RateLimitingRecaptcha;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use Doctrine\Persistence\ManagerRegistry;
@@ -89,7 +90,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        $this->recaptchaHelper->clearCounter($request);
+        $this->recaptchaHelper->clearCounter(RecaptchaContext::fromRequest($request));
 
         if ($token->getUser() instanceof User) {
             $token->getUser()->setLastLogin(new \DateTimeImmutable());
@@ -106,7 +107,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
     {
-        $this->recaptchaHelper->increaseCounter($request);
+        $this->recaptchaHelper->increaseCounter(RecaptchaContext::fromRequest($request));
 
         $request->getSession()->set(SecurityRequestAttributes::AUTHENTICATION_ERROR, $exception);
 
@@ -145,7 +146,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
      */
     private function validateRecaptcha(array $credentials): void
     {
-        if ($this->recaptchaHelper->requiresRecaptcha($credentials['ip'] ?? '', $credentials['username'])) {
+        if ($this->recaptchaHelper->requiresRecaptcha(new RecaptchaContext($credentials['ip'] ?? '', $credentials['username'], $credentials['recaptcha']))) {
             if (!$credentials['recaptcha']) {
                 throw new CustomUserMessageAuthenticationException('We detected too many failed login attempts. Please log in again with ReCaptcha.');
             }
@@ -153,7 +154,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
             try {
                 $this->recaptchaVerifier->verify($credentials['recaptcha']);
             } catch (RecaptchaException $e) {
-                throw new CustomUserMessageAuthenticationException('Invalid ReCaptcha');
+                throw new CustomUserMessageAuthenticationException(RateLimitingRecaptcha::INVALID_RECAPTCHA_MESSAGE);
             }
         }
     }

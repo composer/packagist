@@ -36,3 +36,16 @@
         {%- endfor -%}
     {%- endif %}
 {%- endblock form_errors %}
+
+{% block invisible_recaptcha_widget -%}
+    {% if requires_recaptcha() %}
+        <div
+            id='recaptcha'
+            class="g-recaptcha"
+            data-sitekey="{{ recaptcha_site_key }}"
+            data-size="invisible"
+        ></div>
+
+        <script nonce="{{ csp_nonce('script') }}" src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {% endif %}
+{%- endblock %}

@@ -22,7 +22,7 @@
 
         <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist" />
 
-        {% if requiresRecaptcha|default(false) or (not app.user and requires_recaptcha(lastUsername|default)) %}
+        {% if requiresRecaptcha|default(false) or (not app.user and requires_recaptcha()) %}
             <script nonce="{{ csp_nonce('script') }}" src="https://www.google.com/recaptcha/api.js?render=explicit&amp;onload=onloadRecaptchaCallback" async defer></script>
 
             <script nonce="{{ csp_nonce('script') }}">

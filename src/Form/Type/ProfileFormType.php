@@ -55,7 +55,9 @@ class ProfileFormType extends AbstractType
                 }
             });
 
-        $builder->add('failureNotifications', null, ['required' => false, 'label' => 'Notify me of package update failures']);
+        $builder
+            ->add('failureNotifications', null, ['required' => false, 'label' => 'Notify me of package update failures'])
+            ->add('captcha', InvisibleRecaptchaType::class);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

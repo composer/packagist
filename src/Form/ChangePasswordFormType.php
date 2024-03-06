@@ -13,6 +13,7 @@
 namespace App\Form;
 
 use App\Entity\User;
+use App\Form\Type\InvisibleRecaptchaType;
 use App\Validator\Password;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -46,6 +47,7 @@ class ChangePasswordFormType extends AbstractType
                     new Password(),
                 ],
             ])
+            ->add('captcha', InvisibleRecaptchaType::class)
         ;
     }
 

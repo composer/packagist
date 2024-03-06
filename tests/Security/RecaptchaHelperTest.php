@@ -12,11 +12,14 @@
 
 namespace App\Tests\Security;
 
+use App\Security\RecaptchaContext;
 use App\Security\RecaptchaHelper;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 class RecaptchaHelperTest extends TestCase
 {
@@ -25,8 +28,13 @@ class RecaptchaHelperTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->redis = $this->createMock(Client::class);
-        $this->helper = new RecaptchaHelper($this->redis, true);
+        $this->helper = new RecaptchaHelper(
+            $this->redis = $this->createMock(Client::class),
+            true,
+            $this->createMock(RequestStack::class),
+            $this->createMock(TokenStorageInterface::class),
+            $this->createMock(AuthenticationUtils::class),
+        );
     }
 
     public function testRequiresRecaptcha(): void
@@ -37,7 +45,9 @@ class RecaptchaHelperTest extends TestCase
             ->with($this->equalTo('mget'))
             ->willReturn([2, 3]);
 
-        $this->assertTrue($this->helper->requiresRecaptcha('127.0.0.1', 'username'));
+        $context = new RecaptchaContext('127.0.0.1', 'username', null);
+
+        $this->assertTrue($this->helper->requiresRecaptcha($context));
     }
 
     public function testIncreaseCounter(): void
@@ -47,7 +57,9 @@ class RecaptchaHelperTest extends TestCase
             ->method('__call')
             ->with($this->equalTo('incrFailedLoginCounter'));
 
-        $this->helper->increaseCounter(new Request());
+        $context = new RecaptchaContext('127.0.0.1', 'username', null);
+
+        $this->helper->increaseCounter($context);
     }
 
     public function testClearCounter(): void
@@ -57,6 +69,8 @@ class RecaptchaHelperTest extends TestCase
             ->method('__call')
             ->with($this->equalTo('del'));
 
-        $this->helper->clearCounter(new Request());
+        $context = new RecaptchaContext('127.0.0.1', 'username', null);
+
+        $this->helper->clearCounter($context);
     }
 }
