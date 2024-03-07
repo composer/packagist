@@ -23,7 +23,7 @@ jobs:
         with:
           coverage: "none"
           extensions: "intl, zip, apcu"
-          php-version: "8.1"
+          php-version: "8.3"
           tools: composer
           ini-values: apc.enable_cli=1
 

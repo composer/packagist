@@ -12,7 +12,7 @@ jobs:
   tests:
     name: "CI"
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: "Checkout"
@@ -23,7 +23,7 @@ jobs:
         with:
           coverage: "none"
           extensions: "intl, zip, apcu"
-          php-version: "8.1"
+          php-version: "8.3"
           tools: composer
           ini-values: apc.enable_cli=1
 
