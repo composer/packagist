@@ -19,7 +19,7 @@ These steps are provided for development purposes only.
 ### Requirements
 
 - **PHP** for the web app
-- **NPM** for the frontend build
+- **NPM** (or Docker) for the frontend build
 - **[Symfony CLI](https://symfony.com/download)** to run the web server
 - **MySQL** (or Docker) for the main data store
 - **Redis** (or Docker) for some functionality (favorites, download statistics)
@@ -39,8 +39,9 @@ These steps are provided for development purposes only.
    ```
 4. Start MySQL & Redis:
    ```bash
-   docker-compose up -d # or somehow run MySQL & Redis on localhost without docker
+   docker compose up -d # or somehow run MySQL & Redis on localhost without Docker
    ```
+   This mounts the current working directory into the node container and runs npm install and npm run build automatically.
 5. Create 2 databases:
     - `packagist` - for the web app
     - `packagist_test` - for running the tests
@@ -53,7 +54,7 @@ These steps are provided for development purposes only.
    bin/console doctrine:schema:create
    ```
 7. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
-8. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files.
+8. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files. When using Docker run `docker-compose run node npm run dev` to watch css/js files.
 
 You should now be able to access the site, create a user, etc.
 
