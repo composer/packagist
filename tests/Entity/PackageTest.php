@@ -41,9 +41,8 @@ class PackageTest extends TestCase
         $package = new Package();
         $package->setName('vendor/name');
         $package->setType($type);
-        $package->addVersion($version);
 
-        self::assertSame($expected, $package->getInstallCommand());
+        self::assertSame($expected, $package->getInstallCommand($version));
     }
 
     public static function providePackageScenarios(): array

@@ -687,16 +687,14 @@ class Package
         return $this->type;
     }
 
-    public function getInstallCommand(): string
+    public function getInstallCommand(Version $version = null): string
     {
         $command = 'create-project';
 
         if ('project' !== $this->getType()) {
             $command = 'require';
 
-            /** @var Version $version */
-            $version = $this->getVersions()->first();
-            if ($version && $version->hasDevTag()) {
+            if (null !== $version && $version->hasDevTag()) {
                 $command .= ' --dev';
             }
         }
