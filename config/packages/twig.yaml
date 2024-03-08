@@ -12,6 +12,7 @@ twig:
           app_id: '%env(ALGOLIA_APP_ID)%'
           search_key: '%env(ALGOLIA_SEARCH_KEY)%'
           index_name: '%env(ALGOLIA_INDEX_NAME)%'
+    file_name_pattern: '*.twig'
 
 when@test:
     twig:
