@@ -40,24 +40,25 @@ class ProfileFormType extends AbstractType
                 }
 
                 if (!$user->getGithubId()) {
-                    $event->getForm()->add('current_password', PasswordType::class, [
-                        'label' => 'Current password',
-                        'translation_domain' => 'FOSUserBundle',
-                        'mapped' => false,
-                        'constraints' => [
-                            new NotBlank(),
-                            new UserPassword(),
-                        ],
-                        'attr' => [
-                            'autocomplete' => 'current-password',
-                        ],
-                    ]);
+                    $event->getForm()
+                        ->add('current_password', PasswordType::class, [
+                            'label' => 'Current password',
+                            'translation_domain' => 'FOSUserBundle',
+                            'mapped' => false,
+                            'constraints' => [
+                                new NotBlank(),
+                                new UserPassword(),
+                            ],
+                            'attr' => [
+                                'autocomplete' => 'current-password',
+                            ],
+                        ])
+                        ->add('captcha', InvisibleRecaptchaType::class);
                 }
             });
 
         $builder
-            ->add('failureNotifications', null, ['required' => false, 'label' => 'Notify me of package update failures'])
-            ->add('captcha', InvisibleRecaptchaType::class);
+            ->add('failureNotifications', null, ['required' => false, 'label' => 'Notify me of package update failures']);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
