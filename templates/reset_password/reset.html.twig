@@ -2,14 +2,16 @@
 
 {% block title %}Reset your password - {{ parent() }}{% endblock %}
 
+{% set requiresRecaptcha = requires_recaptcha() %}
+
 {% block user_content %}
     <h1>Reset your password</h1>
 
-    {{ form_start(resetForm) }}
+    {{ form_start(resetForm, {attr: {id: 'reset_password'}}) }}
         {{ form_row(resetForm.plainPassword) }}
         {% if resetForm.twoFactorCode is defined %}
             {{ form_row(resetForm.twoFactorCode) }}
         {% endif %}
-        <button class="btn btn-primary">Reset password</button>
+        <button class="btn btn-primary" id="_reset_password_submit">Reset password</button>
     {{ form_end(resetForm) }}
 {% endblock %}

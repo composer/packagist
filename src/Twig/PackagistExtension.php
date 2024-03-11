@@ -27,13 +27,11 @@ class PackagistExtension extends AbstractExtension
 {
     private ProviderManager $providerManager;
     private RecaptchaHelper $recaptchaHelper;
-    private RequestStack $requestStack;
 
-    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, RequestStack $requestStack)
+    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper)
     {
         $this->providerManager = $providerManager;
         $this->recaptchaHelper = $recaptchaHelper;
-        $this->requestStack = $requestStack;
     }
 
     public function getTests(): array
@@ -144,14 +142,10 @@ class PackagistExtension extends AbstractExtension
         return $links;
     }
 
-    public function requiresRecaptcha(?string $username): bool
+    public function requiresRecaptcha(): bool
     {
-        $clientIp = $this->requestStack->getCurrentRequest()?->getClientIp();
+        $context = $this->recaptchaHelper->buildContext();
 
-        if (null === $clientIp || null === $username) {
-            return false;
-        }
-
-        return $this->recaptchaHelper->requiresRecaptcha($clientIp, $username);
+        return $this->recaptchaHelper->requiresRecaptcha($context);
     }
 }

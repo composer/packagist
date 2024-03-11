@@ -14,6 +14,7 @@ namespace App\Form;
 
 use App\Entity\User;
 use App\Validator\Password;
+use App\Validator\RateLimitingRecaptcha;
 use App\Validator\TwoFactorCode;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -52,6 +53,7 @@ class ResetPasswordFormType extends AbstractType
                     'required' => true,
                     'mapped' => false,
                     'constraints' => [
+                        new RateLimitingRecaptcha(),
                         new TwoFactorCode($options['user']),
                     ],
                 ]);
