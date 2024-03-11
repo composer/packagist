@@ -37,7 +37,7 @@ class RateLimitingRecaptchaValidator extends ConstraintValidator
         }
 
         try {
-            $this->recaptchaVerifier->verify($value);
+            $this->recaptchaVerifier->verify();
         } catch (RecaptchaException) {
             $this->context
                 ->buildViolation($context->hasRecaptcha ? RateLimitingRecaptcha::INVALID_RECAPTCHA_MESSAGE : RateLimitingRecaptcha::MISSING_RECAPTCHA_MESSAGE)
