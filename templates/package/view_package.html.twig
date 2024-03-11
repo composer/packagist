@@ -46,7 +46,7 @@
 
             <div class="row">
                 <div class="col-md-8">
-                    <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(expandedVersion) }}" /></p>
+                    <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
 
                     {% if not package.isAutoUpdated() and is_granted('update', package) %}
                         {% if "github.com" in package.repository %}
