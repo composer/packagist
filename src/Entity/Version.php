@@ -635,6 +635,17 @@ class Version
         return $this->tags;
     }
 
+    public function hasDevTag(): bool
+    {
+        foreach ($this->getTags() as $tag) {
+            if ($tag->isDev()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function setUpdatedAt(DateTimeInterface $updatedAt): void
     {
         $this->updatedAt = $updatedAt;

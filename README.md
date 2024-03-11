@@ -35,11 +35,11 @@ These steps are provided for development purposes only.
    ```
 3. Start the web server:
    ```bash
-   symfony serve
+   symfony serve -d
    ```
 4. Start MySQL & Redis:
    ```bash
-   docker-compose up -d # or somehow run MySQL & Redis on localhost without docker
+   docker compose up -d # or somehow run MySQL & Redis on localhost without docker
    ```
 5. Create 2 databases:
     - `packagist` - for the web app
