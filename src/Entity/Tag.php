@@ -86,6 +86,12 @@ class Tag
         return $this->name;
     }
 
+    public function isDev(): bool
+    {
+        // see Composer\Command\RequireCommand
+        return in_array(strtolower($this->name), ['dev', 'testing', 'static analysis'], true);
+    }
+
     public function addVersions(Version $versions): void
     {
         $this->versions[] = $versions;

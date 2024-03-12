@@ -13,6 +13,9 @@
 namespace App\Tests\Entity;
 
 use App\Entity\Package;
+use App\Entity\Tag;
+use App\Entity\Version;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class PackageTest extends TestCase
@@ -27,5 +30,35 @@ class PackageTest extends TestCase
 
         $package->setUpdatedAt(new \DateTime('now'));
         $this->assertTrue($package->wasUpdatedInTheLast24Hours());
+    }
+
+    #[DataProvider('providePackageScenarios')]
+    public function testInstallCommand(string $type, string $tag, string $expected): void
+    {
+        $version = new Version();
+        $version->addTag(new Tag($tag));
+
+        $package = new Package();
+        $package->setName('vendor/name');
+        $package->setType($type);
+
+        self::assertSame($expected, $package->getInstallCommand($version));
+    }
+
+    public static function providePackageScenarios(): array
+    {
+        return [
+            'project' => ['project', 'dev', 'composer create-project vendor/name'],
+            'library non-dev' => ['library', 'database', 'composer require vendor/name'],
+            'library dev' => ['library', 'testing', 'composer require --dev vendor/name'],
+        ];
+    }
+
+    public function testInstallCommandWithoutVersion(): void
+    {
+        $package = new Package();
+        $package->setName('vendor/name');
+
+        self::assertSame('composer require vendor/name', $package->getInstallCommand());
     }
 }

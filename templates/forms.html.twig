@@ -36,3 +36,10 @@
         {%- endfor -%}
     {%- endif %}
 {%- endblock form_errors %}
+
+{% block invisible_recaptcha_widget -%}
+    {% if requires_recaptcha() %}
+        {# @see layout.html.twig for onloadRecaptchaCallback #}
+        <script nonce="{{ csp_nonce('script') }}" src="https://www.google.com/recaptcha/api.js?render=explicit&amp;onload=onloadRecaptchaCallback" async defer></script>
+    {% endif %}
+{%- endblock %}

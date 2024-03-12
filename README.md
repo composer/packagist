@@ -35,7 +35,7 @@ These steps are provided for development purposes only.
    ```
 3. Start the web server:
    ```bash
-   symfony serve
+   symfony serve -d
    ```
 4. Start MySQL & Redis:
    ```bash

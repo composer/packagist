@@ -22,31 +22,34 @@
 
         <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist" />
 
-        {% if requiresRecaptcha|default(false) or (not app.user and requires_recaptcha(lastUsername|default)) %}
+        {% if requiresRecaptcha|default(false) or (not app.user and requires_recaptcha()) %}
             <script nonce="{{ csp_nonce('script') }}" src="https://www.google.com/recaptcha/api.js?render=explicit&amp;onload=onloadRecaptchaCallback" async defer></script>
-
-            <script nonce="{{ csp_nonce('script') }}">
-                var onloadRecaptchaCallback = function() {
-                    const forms = [
-                        {submit: '_submit', form: 'page_login'},
-                        {submit: '_request_password_submit', form: 'request_password'},
-                        {submit: '_register_submit', form: 'register_form'},
-                        {submit: '_submit_mini', form: 'nav_login'},
-                    ];
-
-                    forms.forEach(({submit, form}) => {
-                        if (document.getElementById(submit)) {
-                            grecaptcha.render(submit, {
-                                'sitekey' : '{{ recaptcha_site_key }}',
-                                'callback' : function (token) {
-                                    document.getElementById(form).submit();
-                                }
-                            });
-                        }
-                    });
-                };
-            </script>
         {% endif %}
+
+        <script nonce="{{ csp_nonce('script') }}">
+            var onloadRecaptchaCallback = function() {
+                const forms = [
+                    {submit: '_submit', form: 'page_login'},
+                    {submit: '_request_password_submit', form: 'request_password'},
+                    {submit: '_register_submit', form: 'register_form'},
+                    {submit: '_submit_mini', form: 'nav_login'},
+                    {submit: '_reset_password_submit', form: 'reset_password'},
+                    {submit: '_change_password_submit', form: 'change_password'},
+                    {submit: '_edit_profile_submit', form: 'edit_profile'},
+                ];
+
+                forms.forEach(({submit, form}) => {
+                    if (document.getElementById(submit)) {
+                        grecaptcha.render(submit, {
+                            'sitekey' : '{{ recaptcha_site_key }}',
+                            'callback' : function (token) {
+                                document.getElementById(form).submit();
+                            }
+                        });
+                    }
+                });
+            };
+        </script>
 
         {% block head_additions %}{% endblock %}
     </head>

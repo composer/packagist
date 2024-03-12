@@ -43,6 +43,11 @@ class VersionCache implements VersionCacheInterface
     public function getVersionPackage(string $version, string $identifier): array|false|null
     {
         if (!empty($this->versionCache[$version]['source']['reference']) && $this->versionCache[$version]['source']['reference'] === $identifier) {
+            // if the source has some corrupted github private url we do not return a cached version to ensure full metadata gets loaded
+            if (isset($this->versionCache[$version]['source']['url']) && is_string($this->versionCache[$version]['source']['url']) && Preg::isMatch('{^git@github.com:.*?\.git$}', $this->versionCache[$version]['source']['url'])) {
+                return null;
+            }
+
             return [
                 'name' => $this->package->getName(),
                 'version' => $this->versionCache[$version]['version'],
