@@ -1,0 +1,7 @@
+services:
+    node:
+        image: 'node:20-alpine'
+        command: ['sh', '-c', 'npm install && npm run build']
+        working_dir: '/app'
+        volumes:
+            - .:/app

@@ -1,5 +1,3 @@
-version: '3'
-
 services:
     database:
         image: mysql:8.0
@@ -9,12 +7,9 @@ services:
             MYSQL_ALLOW_EMPTY_PASSWORD: 1
             MYSQL_DATABASE: packagist
         volumes:
-            - data:/var/lib/mysql
+            - /var/lib/mysql
 
     redis:
         image: redis:6.2-alpine
         ports:
             - 6379:6379
-
-volumes:
-    data:
