@@ -115,15 +115,20 @@ class ProfileController extends Controller
     public function editAction(Request $request): Response
     {
         $user = $this->getUser();
-        if (!is_object($user)) {
+        if (!$user instanceof User) {
             throw $this->createAccessDeniedException('This user does not have access to this section.');
         }
 
+        $oldEmail = $user->getEmail();
         $form = $this->createForm(ProfileFormType::class, $user);
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if ($oldEmail !== $user->getEmail()) {
+                $user->resetPasswordRequest();
+            }
+
             $this->getEM()->persist($user);
             $this->getEM()->flush();
 
