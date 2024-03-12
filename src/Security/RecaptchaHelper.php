@@ -75,7 +75,10 @@ class RecaptchaHelper
             return;
         }
 
-        $this->redisCache->del($context->getRedisKeys(true));
+        $keys = $context->getRedisKeys(true);
+        if (count($keys) > 0) {
+            $this->redisCache->del($keys);
+        }
     }
 
     private function getCurrentUsername(): string
