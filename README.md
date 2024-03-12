@@ -54,7 +54,7 @@ These steps are provided for development purposes only.
    bin/console doctrine:schema:create
    ```
 7. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
-8. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files. When using Docker run `docker-compose run node npm run dev` to watch css/js files.
+8. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files. When using Docker run `docker compose run node npm run dev` to watch css/js files.
 
 You should now be able to access the site, create a user, etc.
 
