@@ -37,7 +37,7 @@ class RegistrationController extends Controller
     }
 
     #[Route(path: '/register/', name: 'register')]
-    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, string $mailFromEmail, string $mailFromName, RecaptchaVerifier $recaptchaVerifier): Response
+    public function register(Request $request, UserPasswordHasherInterface $passwordHasher, string $mailFromEmail, string $mailFromName, RecaptchaVerifier $recaptchaVerifier, bool $recaptchaEnabled): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('home');
@@ -87,6 +87,7 @@ class RegistrationController extends Controller
 
         return $this->render('registration/register.html.twig', [
             'registrationForm' => $form,
+            'requiresRecaptcha' => $recaptchaEnabled,
         ]);
     }
 
