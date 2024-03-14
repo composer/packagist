@@ -13,14 +13,11 @@
 namespace App\Tests\Controller;
 
 use App\Entity\User;
-use App\Tests\Mock\TotpAuthenticatorStub;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
-use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class RegistrationControllerTest extends WebTestCase
 {
@@ -61,5 +58,29 @@ class RegistrationControllerTest extends WebTestCase
         $user = $em->getRepository(User::class)->findOneBy(['username' => 'max.example']);
         $this->assertInstanceOf(User::class, $user);
         $this->assertSame('max@example.com', $user->getEmailCanonical(), "user email should have been canonicalized");
+    }
+
+    public function testRegisterWithTooSimplePasswords(): void
+    {
+        $crawler = $this->client->request('GET', '/register/');
+        $this->assertResponseStatusCodeSame(200);
+
+        $email = 'Max@Example.com';
+        $form = $crawler->filter('[name="registration_form"]')->form();
+        $form->setValues([
+            'registration_form[email]' => $email,
+            'registration_form[username]' => 'max.example',
+            'registration_form[plainPassword]' => $email,
+        ]);
+
+        $crawler = $this->client->submit($form);
+        $this->assertResponseStatusCodeSame(422);
+
+        $this->assertFormError('Password should not match your email or any of your names.', $crawler);
+    }
+
+    private function assertFormError(string $message, Crawler $crawler): void
+    {
+        $crawler->filter('.alert-danger:contains("' . $message . '")');
     }
 }
