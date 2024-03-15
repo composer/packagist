@@ -14,6 +14,7 @@ namespace App\Form;
 
 use App\Entity\User;
 use App\Form\Type\InvisibleRecaptchaType;
+use App\Validator\NotProhibitedPassword;
 use App\Validator\Password;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -55,6 +56,7 @@ class ChangePasswordFormType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => User::class,
+            'constraints' => [new NotProhibitedPassword()],
         ]);
     }
 }

@@ -54,7 +54,7 @@ class RegistrationFormType extends AbstractType
         $resolver->setDefaults([
             'data_class' => User::class,
             'validation_groups' => ['Default', 'Registration'],
-            'constraints' => new NotProhibitedPassword(),
+            'constraints' => [new NotProhibitedPassword()],
         ]);
     }
 }
