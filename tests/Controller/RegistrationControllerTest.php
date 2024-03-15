@@ -13,8 +13,10 @@
 namespace App\Tests\Controller;
 
 use App\Entity\User;
+use App\Validator\NotProhibitedPassword;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -60,27 +62,34 @@ class RegistrationControllerTest extends WebTestCase
         $this->assertSame('max@example.com', $user->getEmailCanonical(), "user email should have been canonicalized");
     }
 
-    public function testRegisterWithTooSimplePasswords(): void
+    #[TestWith(['max.example'])]
+    #[TestWith(['max@example.com'])]
+    #[TestWith(['Max@Example.com'])]
+    public function testRegisterWithTooSimplePasswords(string $password): void
     {
         $crawler = $this->client->request('GET', '/register/');
         $this->assertResponseStatusCodeSame(200);
 
-        $email = 'Max@Example.com';
         $form = $crawler->filter('[name="registration_form"]')->form();
         $form->setValues([
-            'registration_form[email]' => $email,
+            'registration_form[email]' => 'Max@Example.com',
             'registration_form[username]' => 'max.example',
-            'registration_form[plainPassword]' => $email,
+            'registration_form[plainPassword]' => $password,
         ]);
 
         $crawler = $this->client->submit($form);
-        $this->assertResponseStatusCodeSame(422);
+        $this->assertResponseStatusCodeSame(422, 'Should be invalid because password is the same as email or username');
 
-        $this->assertFormError('Password should not match your email or any of your names.', $crawler);
+        $this->assertFormError((new NotProhibitedPassword)->message, $crawler);
     }
 
     private function assertFormError(string $message, Crawler $crawler): void
     {
-        $crawler->filter('.alert-danger:contains("' . $message . '")');
+        $formCrawler = $crawler->filter('[name="registration_form"]');
+        $this->assertCount(
+            1,
+            $formCrawler->filter('.alert-danger:contains("' . $message . '")'),
+            $formCrawler->html()."\nShould find an .alert-danger within the form with the message: '$message'",
+        );
     }
 }
