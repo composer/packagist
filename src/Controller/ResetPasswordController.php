@@ -99,7 +99,7 @@ class ResetPasswordController extends Controller
         }
 
         // The token is valid; allow the user to change their password.
-        $form = $this->createForm(ResetPasswordFormType::class, null, ['user' => $user]);
+        $form = $this->createForm(ResetPasswordFormType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

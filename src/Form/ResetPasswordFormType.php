@@ -13,6 +13,7 @@
 namespace App\Form;
 
 use App\Entity\User;
+use App\Validator\NotProhibitedPassword;
 use App\Validator\Password;
 use App\Validator\RateLimitingRecaptcha;
 use App\Validator\TwoFactorCode;
@@ -26,10 +27,10 @@ class ResetPasswordFormType extends AbstractType
 {
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver
-            ->define('user')
-            ->allowedTypes(User::class)
-            ->required();
+        $resolver->setDefaults([
+            'data_class' => User::class,
+            'constraints' => [new NotProhibitedPassword()],
+        ]);
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -46,7 +47,7 @@ class ResetPasswordFormType extends AbstractType
             ])
         ;
 
-        if ($options['user']->isTotpAuthenticationEnabled()) {
+        if ($options['data']->isTotpAuthenticationEnabled()) {
             $builder
                 ->add('twoFactorCode', TextType::class, [
                     'label' => 'Two-Factor Code',
@@ -54,7 +55,7 @@ class ResetPasswordFormType extends AbstractType
                     'mapped' => false,
                     'constraints' => [
                         new RateLimitingRecaptcha(),
-                        new TwoFactorCode($options['user']),
+                        new TwoFactorCode($options['data']),
                     ],
                 ]);
         }

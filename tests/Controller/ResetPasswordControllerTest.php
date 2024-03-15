@@ -69,6 +69,18 @@ class ResetPasswordControllerTest extends WebTestCase
         $this->assertTrue(self::getContainer()->get(TokenStorageInterface::class)->getToken()?->getAttribute(TwoFactorAuthenticator::FLAG_2FA_COMPLETE));
     }
 
+    public function testResetPasswordToProhibited(): void
+    {
+        $user = $this->setupUserWithPasswordResetRequest(false);
+        $oldPassword = $user->getPassword();
+
+        $crawler = $this->client->request('GET', '/reset-password/reset/' . $user->getConfirmationToken());
+        $this->assertResponseStatusCodeSame(200);
+
+        $this->submitPasswordResetFormAndAsserStatusCode($crawler, newPassword: $user->getEmail(), expectedStatusCode: 422);
+        $this->assertUserHasUnchangedPassword($user, $oldPassword);
+    }
+
     private function setupUserWithPasswordResetRequest(bool $withTwoFactor): User
     {
         $user = new User;
@@ -111,5 +123,15 @@ class ResetPasswordControllerTest extends WebTestCase
         $user = $em->getRepository(User::class)->find($user->getId());
         $this->assertNotNull($user);
         $this->assertNotSame($oldPassword, $user->getPassword());
+    }
+
+    private function assertUserHasUnchangedPassword(User $user, ?string $oldPassword): void
+    {
+        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em->clear();
+
+        $user = $em->getRepository(User::class)->find($user->getId());
+        $this->assertNotNull($user);
+        $this->assertSame($oldPassword, $user->getPassword());
     }
 }
