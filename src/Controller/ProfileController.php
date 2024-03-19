@@ -121,24 +121,26 @@ class ProfileController extends Controller
         }
 
         $oldEmail = $user->getEmail();
+        $oldUsername = $user->getUsername();
         $form = $this->createForm(ProfileFormType::class, $user);
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $uow = $this->getEM()->getUnitOfWork();
-            $uow->computeChangeSets();
-            $changeSet = $uow->getEntityChangeSet($user);
+            $diffs = array_filter([
+                $oldEmail !== $user->getEmail() ? 'email' : null,
+                $oldUsername !== $user->getUsername() ? 'username' : null,
+            ]);
 
-            $diffs = array_intersect(array_keys($changeSet), ['email', 'username']);
-
-            if (!empty($diffs) && $user instanceof User) {
+            if (!empty($diffs)) {
                 $reason = sprintf('Your %s has been changed', implode(' and ', $diffs));
-                $userNotifier->notifyChange($changeSet['email'][0] ?? $user->getEmail(), $reason);
-            }
 
-            if ($oldEmail !== $user->getEmail()) {
-                $user->resetPasswordRequest();
+                if ($oldEmail !== $user->getEmail()) {
+                    $userNotifier->notifyChange($oldEmail, $reason);
+                    $user->resetPasswordRequest();
+                }
+
+                $userNotifier->notifyChange($user->getEmail(), $reason);
             }
 
             $this->getEM()->persist($user);
