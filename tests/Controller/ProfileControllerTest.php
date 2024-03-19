@@ -1,5 +1,15 @@
 <?php declare(strict_types=1);
 
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace App\Tests\Controller;
 
 use App\Entity\User;
@@ -19,6 +29,13 @@ class ProfileControllerTest extends WebTestCase
         static::getContainer()->get(Connection::class)->beginTransaction();
 
         parent::setUp();
+    }
+
+    public function tearDown(): void
+    {
+        static::getContainer()->get(Connection::class)->rollBack();
+
+        parent::tearDown();
     }
 
     public function testEditProfile(): void
