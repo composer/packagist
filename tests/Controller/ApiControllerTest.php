@@ -12,39 +12,17 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
+use App\Entity\User;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;
-use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
-use Exception;
-use App\Entity\Package;
-use App\Entity\User;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class ApiControllerTest extends WebTestCase
+class ApiControllerTest extends ControllerTestCase
 {
-    private KernelBrowser $client;
-
-    public function setUp(): void
-    {
-        $this->client = self::createClient();
-        static::getContainer()->get(Connection::class)->beginTransaction();
-
-        parent::setUp();
-    }
-
-    public function tearDown(): void
-    {
-        static::getContainer()->get(Connection::class)->rollBack();
-
-        parent::tearDown();
-    }
-
     public function testGithubFailsOnGet(): void
     {
         $this->client->request('GET', '/api/github');
@@ -73,7 +51,7 @@ class ApiControllerTest extends WebTestCase
         $user->setPassword('testtest');
         $user->setApiToken('token');
 
-        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em = self::getEM();
         $em->persist($package);
         $em->persist($user);
         $em->flush();
@@ -180,7 +158,7 @@ class ApiControllerTest extends WebTestCase
             GitHubSecurityAdvisoriesSource::SOURCE_NAME,
             Severity::MEDIUM,
         ), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
-        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em = self::getEM();
         $em->persist($advisory);
         $em->flush();
 

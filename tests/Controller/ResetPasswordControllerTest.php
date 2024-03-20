@@ -14,34 +14,12 @@ namespace App\Tests\Controller;
 
 use App\Entity\User;
 use App\Tests\Mock\TotpAuthenticatorStub;
-use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
 use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
-class ResetPasswordControllerTest extends WebTestCase
+class ResetPasswordControllerTest extends ControllerTestCase
 {
-    private KernelBrowser $client;
-
-    public function setUp(): void
-    {
-        $this->client = self::createClient();
-        $this->client->disableReboot(); // Prevent reboot between requests
-        static::getContainer()->get(Connection::class)->beginTransaction();
-
-        parent::setUp();
-    }
-
-    public function tearDown(): void
-    {
-        static::getContainer()->get(Connection::class)->rollBack();
-
-        parent::tearDown();
-    }
-
     public function testResetPassword(): void
     {
         $user = $this->setupUserWithPasswordResetRequest(false);
@@ -96,7 +74,7 @@ class ResetPasswordControllerTest extends WebTestCase
             $user->setTotpSecret('secret');
         }
 
-        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em = self::getEM();
         $em->persist($user);
         $em->flush();
 
@@ -117,7 +95,7 @@ class ResetPasswordControllerTest extends WebTestCase
 
     private function assertUserHasNewPassword(User $user, ?string $oldPassword): void
     {
-        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em = self::getEM();
         $em->clear();
 
         $user = $em->getRepository(User::class)->find($user->getId());
@@ -127,7 +105,7 @@ class ResetPasswordControllerTest extends WebTestCase
 
     private function assertUserHasUnchangedPassword(User $user, ?string $oldPassword): void
     {
-        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em = self::getEM();
         $em->clear();
 
         $user = $em->getRepository(User::class)->find($user->getId());

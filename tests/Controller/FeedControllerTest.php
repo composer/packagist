@@ -13,25 +13,23 @@
 namespace App\Tests\Controller;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-class FeedControllerTest extends WebTestCase
+class FeedControllerTest extends ControllerTestCase
 {
     #[DataProvider('provideForFeed')]
     public function testFeedAction(string $feed, string $format, ?string $vendor = null): void
     {
-        $client = static::createClient();
-
         $url = static::getContainer()->get(UrlGeneratorInterface::class)->generate($feed, ['_format' => $format, 'vendor' => $vendor]);
 
-        $crawler = $client->request('GET', $url);
+        $this->client->request('GET', $url);
 
-        $this->assertEquals(200, $client->getResponse()->getStatusCode(), $client->getResponse()->getContent());
-        $this->assertStringContainsString($format, $client->getResponse()->getContent());
+        $response = $this->client->getResponse();
+        $this->assertEquals(200, $response->getStatusCode(), $response->getContent());
+        $this->assertStringContainsString($format, $response->getContent());
 
         if ($vendor !== null) {
-            $this->assertStringContainsString($vendor, $client->getResponse()->getContent());
+            $this->assertStringContainsString($vendor, $response->getContent());
         }
     }
 
