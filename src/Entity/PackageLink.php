@@ -38,7 +38,7 @@ abstract class PackageLink
     protected Version $version;
 
     /**
-     * @return array<string, string>
+     * @return non-empty-array<string, string>
      */
     public function toArray(): array
     {

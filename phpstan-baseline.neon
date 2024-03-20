@@ -26,17 +26,12 @@ parameters:
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Cannot access offset string on array\\|string\\|true\\|null\\.$#"
+			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Cannot access offset string\\|null on array\\|string\\|true\\|null\\.$#"
-			count: 1
-			path: src/Entity/Version.php
-
-		-
-			message: "#^Method App\\\\Entity\\\\Version\\:\\:toArray\\(\\) should return array\\{name\\: string, description\\: string, keywords\\: array\\<int, string\\>, homepage\\: string, version\\: non\\-empty\\-string, version_normalized\\: non\\-empty\\-string, license\\: array\\<int, string\\>, authors\\: array\\<array\\{email\\?\\: string, homepage\\?\\: string, name\\?\\: string, role\\?\\: string\\}\\>, \\.\\.\\.\\} but returns non\\-empty\\-array\\<'abandoned'\\|'authors'\\|'autoload'\\|'bin'\\|'conflict'\\|'default\\-branch'\\|'description'\\|'dist'\\|'extra'\\|'funding'\\|'homepage'\\|'include\\-path'\\|'keywords'\\|'license'\\|'name'\\|'provide'\\|'replace'\\|'require'\\|'require\\-dev'\\|'source'\\|'suggest'\\|'support'\\|'target\\-dir'\\|'time'\\|'type'\\|'version'\\|'version_normalized', array\\|string\\|true\\|null\\>\\.$#"
+			message: "#^Offset 'name' on array\\{name\\: string, description\\?\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
 			count: 1
 			path: src/Entity/Version.php
 

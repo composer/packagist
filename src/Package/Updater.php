@@ -375,6 +375,7 @@ class Updater
         $version->setVersion($data->getPrettyVersion());
         $version->setNormalizedVersion($normVersion);
         $version->setDevelopment($data->isDev());
+        $version->setPhpExt($data->getPhpExt());
 
         $em->persist($version);
 

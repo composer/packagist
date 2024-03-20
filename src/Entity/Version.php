@@ -50,7 +50,8 @@ use DateTimeInterface;
  *     conflict?: array<string, string>,
  *     provide?: array<string, string>,
  *     replace?: array<string, string>,
- *     abandoned?: string|true
+ *     abandoned?: string|true,
+ *     php-ext?: array{priority?: int, configure-options?: list<array{name: string, description?: string}>}
  * }
  */
 #[ORM\Entity(repositoryClass: 'App\Entity\VersionRepository')]
@@ -204,7 +205,7 @@ class Version
     private array $authors = [];
 
     /**
-     * @var array{priority?: int, config?: array<string, bool>}|null
+     * @var array{priority?: int, configure-options?: list<array{name: string, description?: string}>}|null
      */
     #[ORM\Column(type: 'json', options: ['default' => null], nullable: true)]
     private array|null $phpExt = null;
@@ -258,6 +259,7 @@ class Version
         }
         unset($author);
 
+        /** @var VersionArray $data */
         $data = [
             'name' => $this->getName(),
             'description' => (string) $this->getDescription(),
@@ -275,8 +277,12 @@ class Version
         if ($serializeForApi && $this->getSupport()) {
             $data['support'] = $this->getSupport();
         }
-        if ($this->getFunding()) {
-            $data['funding'] = $this->getFundingSorted();
+        if ($serializeForApi && $this->getPhpExt() !== null) {
+            $data['php-ext'] = $this->getPhpExt();
+        }
+        $funding = $this->getFundingSorted();
+        if ($funding !== null) {
+            $data['funding'] = $funding;
         }
         if ($this->getReleasedAt()) {
             $data['time'] = $this->getReleasedAt()->format('Y-m-d\TH:i:sP');
@@ -337,11 +343,13 @@ class Version
      */
     public function toV2Array(array $versionData): array
     {
-        $array = $this->toArray($versionData);
+        $array = $this->toArray($versionData, true);
 
-        if ($this->getSupport()) {
-            $array['support'] = $this->getSupport();
+        if (isset($array['support'])) {
             ksort($array['support']);
+        }
+        if (isset($array['php-ext']['configure-options'])) {
+            usort($array['php-ext']['configure-options'], fn ($a, $b) => $a['name'] ?? '' <=> $b['name'] ?? '');
         }
 
         return $array;
@@ -683,7 +691,7 @@ class Version
     }
 
     /**
-     * @return array{priority?: int, config?: array<string, bool>}|null
+     * @return array{priority?: int, configure-options?: list<array{name: string, description?: string}>}|null
      */
     public function getPhpExt(): array|null
     {
@@ -691,7 +699,7 @@ class Version
     }
 
     /**
-     * @param array{priority?: int, config?: array<string, bool>}|null $phpExt
+     * @param array{priority?: int, configure-options?: list<array{name: string, description?: string}>}|null $phpExt
      */
     public function setPhpExt(array|null $phpExt): void
     {
