@@ -14,34 +14,11 @@ namespace App\Tests\Controller;
 
 use App\Entity\User;
 use App\Validator\NotProhibitedPassword;
-use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\TestWith;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-class ChangePasswordControllerTest extends WebTestCase
+class ChangePasswordControllerTest extends ControllerTestCase
 {
-    private KernelBrowser $client;
-
-    public function setUp(): void
-    {
-        $this->client = self::createClient();
-        $this->client->disableReboot(); // Prevent reboot between requests
-        static::getContainer()->get(Connection::class)->beginTransaction();
-
-        parent::setUp();
-    }
-
-    public function tearDown(): void
-    {
-        static::getContainer()->get(Connection::class)->rollBack();
-
-        parent::tearDown();
-    }
-
     #[TestWith(['SuperSecret123', 'ok'])]
     #[TestWith(['test@example.org', 'prohibited-password-error'])]
     public function testChangePassword(string $newPassword, string $expectedResult): void
@@ -58,7 +35,7 @@ class ChangePasswordControllerTest extends WebTestCase
         $currentPasswordHash = self::getContainer()->get(UserPasswordHasherInterface::class)->hashPassword($user, $currentPassword);
         $user->setPassword($currentPasswordHash);
 
-        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em = self::getEM();
         $em->persist($user);
         $em->flush();
 
@@ -83,17 +60,7 @@ class ChangePasswordControllerTest extends WebTestCase
 
         if ($expectedResult === 'prohibited-password-error') {
             $this->assertResponseStatusCodeSame(422);
-            $this->assertFormError((new NotProhibitedPassword)->message, $crawler);
+            $this->assertFormError((new NotProhibitedPassword)->message, 'change_password_form', $crawler);
         }
-    }
-
-    private function assertFormError(string $message, Crawler $crawler): void
-    {
-        $formCrawler = $crawler->filter('[name="change_password_form"]');
-        $this->assertCount(
-            1,
-            $formCrawler->filter('.alert-danger:contains("' . $message . '")'),
-            $formCrawler->html()."\nShould find an .alert-danger within the form with the message: '$message'",
-        );
     }
 }

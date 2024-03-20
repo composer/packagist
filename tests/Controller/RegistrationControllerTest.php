@@ -14,33 +14,10 @@ namespace App\Tests\Controller;
 
 use App\Entity\User;
 use App\Validator\NotProhibitedPassword;
-use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\TestWith;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DomCrawler\Crawler;
 
-class RegistrationControllerTest extends WebTestCase
+class RegistrationControllerTest extends ControllerTestCase
 {
-    private KernelBrowser $client;
-
-    public function setUp(): void
-    {
-        $this->client = self::createClient();
-        $this->client->disableReboot(); // Prevent reboot between requests
-        static::getContainer()->get(Connection::class)->beginTransaction();
-
-        parent::setUp();
-    }
-
-    public function tearDown(): void
-    {
-        static::getContainer()->get(Connection::class)->rollBack();
-
-        parent::tearDown();
-    }
-
     public function testRegisterWithoutOAuth(): void
     {
         $crawler = $this->client->request('GET', '/register/');
@@ -56,7 +33,7 @@ class RegistrationControllerTest extends WebTestCase
         $this->client->submit($form);
         $this->assertResponseStatusCodeSame(302);
 
-        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em = self::getEM();
         $user = $em->getRepository(User::class)->findOneBy(['username' => 'max.example']);
         $this->assertInstanceOf(User::class, $user);
         $this->assertSame('max@example.com', $user->getEmailCanonical(), "user email should have been canonicalized");
@@ -80,16 +57,6 @@ class RegistrationControllerTest extends WebTestCase
         $crawler = $this->client->submit($form);
         $this->assertResponseStatusCodeSame(422, 'Should be invalid because password is the same as email or username');
 
-        $this->assertFormError((new NotProhibitedPassword)->message, $crawler);
-    }
-
-    private function assertFormError(string $message, Crawler $crawler): void
-    {
-        $formCrawler = $crawler->filter('[name="registration_form"]');
-        $this->assertCount(
-            1,
-            $formCrawler->filter('.alert-danger:contains("' . $message . '")'),
-            $formCrawler->html()."\nShould find an .alert-danger within the form with the message: '$message'",
-        );
+        $this->assertFormError((new NotProhibitedPassword)->message, 'registration_form', $crawler);
     }
 }

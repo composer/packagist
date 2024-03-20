@@ -12,34 +12,12 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\Package;
 use App\Search\Query;
 use App\Tests\Search\AlgoliaMock;
-use Doctrine\DBAL\Connection;
-use Exception;
-use App\Entity\Package;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class WebControllerTest extends WebTestCase
+class WebControllerTest extends ControllerTestCase
 {
-    private KernelBrowser $client;
-
-    public function setUp(): void
-    {
-        $this->client = self::createClient();
-        static::getContainer()->get(Connection::class)->beginTransaction();
-
-        parent::setUp();
-    }
-
-    public function tearDown(): void
-    {
-        static::getContainer()->get(Connection::class)->rollBack();
-
-        parent::tearDown();
-    }
-
     public function testHomepage(): void
     {
         $crawler = $this->client->request('GET', '/');
@@ -48,7 +26,7 @@ class WebControllerTest extends WebTestCase
 
     public function testRedirectsOnMatch(): void
     {
-        $this->initializePackages($this->client->getContainer());
+        $this->initializePackages();
 
         $this->client->request('GET', '/', ['query' => 'twig/twig']);
         static::assertResponseRedirects('/packages/twig/twig', 302);
@@ -63,7 +41,7 @@ class WebControllerTest extends WebTestCase
 
     public function testSearchRedirectsOnMatch(): void
     {
-        $this->initializePackages($this->client->getContainer());
+        $this->initializePackages();
 
         $this->client->request('GET', '/search/', ['query' => 'twig/twig']);
         static::assertResponseRedirects('/packages/twig/twig', 302);
@@ -112,7 +90,7 @@ class WebControllerTest extends WebTestCase
 
     public function testPackages(): void
     {
-        $this->initializePackages($this->client->getContainer());
+        $this->initializePackages();
 
         //we expect at least one package
         $crawler = $this->client->request('GET', '/explore/');
@@ -121,7 +99,7 @@ class WebControllerTest extends WebTestCase
 
     public function testPackage(): void
     {
-        $this->initializePackages($this->client->getContainer());
+        $this->initializePackages();
 
         //we expect package to be clickable and showing at least 'package' div
         $crawler = $this->client->request('GET', '/packages/symfony/symfony');
@@ -131,9 +109,9 @@ class WebControllerTest extends WebTestCase
     /**
      * @return Package[]
      */
-    protected function initializePackages(ContainerInterface $container): array
+    protected function initializePackages(): array
     {
-        $em = $container->get('doctrine')->getManager();
+        $em = $this->getEM();
 
         $twigPackage = new Package();
 

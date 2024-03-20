@@ -14,31 +14,9 @@ namespace App\Tests\Controller;
 
 use App\Entity\User;
 use App\Tests\Mock\TotpAuthenticatorStub;
-use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class UserControllerTest extends WebTestCase
+class UserControllerTest extends ControllerTestCase
 {
-    private KernelBrowser $client;
-
-    public function setUp(): void
-    {
-        $this->client = self::createClient();
-        $this->client->disableReboot(); // Prevent reboot between requests
-        static::getContainer()->get(Connection::class)->beginTransaction();
-
-        parent::setUp();
-    }
-
-    public function tearDown(): void
-    {
-        static::getContainer()->get(Connection::class)->rollBack();
-
-        parent::tearDown();
-    }
-
     public function testEnableTwoFactoCode(): void
     {
         $user = new User;
@@ -48,7 +26,7 @@ class UserControllerTest extends WebTestCase
         $user->setPassword('testtest');
         $user->setApiToken('token');
 
-        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em = self::getEM();
         $em->persist($user);
         $em->flush();
 
