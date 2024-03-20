@@ -113,20 +113,9 @@ class WebControllerTest extends ControllerTestCase
     {
         $em = $this->getEM();
 
-        $twigPackage = new Package();
-
-        $twigPackage->setName('twig/twig');
-        $twigPackage->setRepository('https://github.com/twig/twig');
-
-        $packagistPackage = new Package();
-
-        $packagistPackage->setName('composer/packagist');
-        $packagistPackage->setRepository('https://github.com/composer/packagist');
-
-        $symfonyPackage = new Package();
-
-        $symfonyPackage->setName('symfony/symfony');
-        $symfonyPackage->setRepository('https://github.com/symfony/symfony');
+        $twigPackage = $this->createPackage('twig/twig', 'https://github.com/twigphp/Twig', 'github.com/330275');
+        $packagistPackage = $this->createPackage('composer/packagist', 'https://github.com/composer/packagist');
+        $symfonyPackage = $this->createPackage('symfony/symfony', 'https://github.com/symfony/symfony', 'github.com/458058');
 
         $em->persist($twigPackage);
         $em->persist($packagistPackage);

@@ -53,3 +53,5 @@ executeCommand('php ./bin/console doctrine:database:drop --env=test --force -q',
 executeCommand('php ./bin/console doctrine:database:create --env=test -q');
 executeCommand('php ./bin/console doctrine:schema:create --env=test -q');
 executeCommand('php ./bin/console redis:query flushall --env=test -n -q');
+
+\Composer\Util\Platform::putEnv('PACKAGIST_TESTS_ARE_RUNNING', '1');

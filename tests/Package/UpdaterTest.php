@@ -52,9 +52,8 @@ class UpdaterTest extends TestCase
         $this->config = new Config();
         $this->package = new Package();
         $this->package->setName('test/pkg');
-        $this->package->setRepository('https://example.com/test/pkg');
-        $reflProp = new \ReflectionProperty(Package::class, 'id');
-        $reflProp->setValue($this->package, 1);
+        (new \ReflectionProperty($this->package, 'repository'))->setValue($this->package, 'https://example.com/test/pkg');
+        (new \ReflectionProperty($this->package, 'id'))->setValue($this->package, 1);
 
         $this->ioMock = $this->createMock(NullIO::class);
         $this->repositoryMock = $this->createMock(VcsRepository::class);

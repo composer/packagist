@@ -12,9 +12,11 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\Package;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use ReflectionProperty;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -53,5 +55,19 @@ class ControllerTestCase extends WebTestCase
             $formCrawler->filter('.alert-danger:contains("' . $message . '")'),
             $formCrawler->html()."\nShould find an .alert-danger within the form with the message: '$message'",
         );
+    }
+
+    /**
+     * Creates a Package entity without running the slow network-based repository initialization step
+     */
+    protected function createPackage(string $name, string $repository, ?string $remoteId = null)
+    {
+        $package = new Package();
+
+        $package->setName($name);
+        $package->setRemoteId($remoteId);
+        (new ReflectionProperty($package, 'repository'))->setValue($package, $repository);
+
+        return $package;
     }
 }
