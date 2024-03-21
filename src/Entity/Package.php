@@ -76,6 +76,7 @@ enum PackageFreezeReason: string
 #[ORM\Index(name: 'dumped2_crawled_frozen_idx', columns: ['dumpedAtV2', 'crawledAt', 'frozen'])]
 #[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
 #[ORM\Index(name: 'frozen_idx', columns: ['frozen'])]
+#[ORM\Index(name: 'type_frozen_idx', columns: ['type', 'frozen'])]
 #[UniquePackage(groups: ['Create'])]
 #[VendorWritable(groups: ['Create'])]
 #[ValidPackageRepository(groups: ['Update', 'Default'])]
