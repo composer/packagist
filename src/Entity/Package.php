@@ -689,6 +689,10 @@ class Package
 
     public function getInstallCommand(Version $version = null): string
     {
+        if (in_array($this->getType(), ['php-ext', 'php-ext-zend'], true)) {
+            return 'pie install '.$this->getName();
+        }
+
         $command = 'create-project';
 
         if ('project' !== $this->getType()) {
