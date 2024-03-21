@@ -114,9 +114,9 @@ class GitHubLoginController extends Controller
             $this->getEM()->flush();
 
             $scheduler->scheduleUserScopeMigration($user->getId(), $oldScope, $user->getGithubScope() ?? '');
-            $userNotifier->notifyChange($user->getEmail(), 'A Github account has been connected to your Packagist.org account.');
+            $userNotifier->notifyChange($user->getEmail(), 'A GitHub account ('.$ghUser->getNickname().') has been connected to your Packagist.org account.');
 
-            $this->addFlash('success', 'You have connected your GitHub account '.$ghUser->getNickname().' to your Packagist.org account.');
+            $this->addFlash('success', 'You have connected your GitHub account ('.$ghUser->getNickname().') to your Packagist.org account.');
         } catch (IdentityProviderException | InvalidStateException $e) {
             $this->addFlash('error', 'Failed OAuth Login: '.$e->getMessage());
         }
