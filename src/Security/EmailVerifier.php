@@ -65,7 +65,7 @@ class EmailVerifier
             throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
         }
 
-        $this->verifyEmailHelper->validateEmailConfirmation($request->getUri(), (string) $user->getId(), $user->getEmail());
+        $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $user->getId(), $user->getEmail());
 
         if (!$user->hasRole('ROLE_SPAMMER')) {
             $user->setEnabled(true);

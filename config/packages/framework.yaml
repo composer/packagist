@@ -5,13 +5,11 @@ parameters:
 framework:
     secret: '%env(APP_SECRET)%'
     csrf_protection: true
-    http_method_override: false
-    handle_all_throwables: true
 
     # Enables session support. Note that the session will ONLY be started if you read or write from it.
     # Remove or comment this section to explicitly disable session support.
     session:
-        name:            packagist
+        name: packagist
         cookie_lifetime: 3600
         cookie_httponly: true
         cookie_secure: auto
@@ -20,9 +18,7 @@ framework:
 
     #esi: true
     fragments: true
-    php_errors:
-        log: true
-    form:            true
+    form: true
     assets:
         version: 'v=%env(default::ASSETS_VERSION)%'
 

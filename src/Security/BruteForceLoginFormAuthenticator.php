@@ -27,6 +27,7 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Http\Authenticator\AbstractLoginFormAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\PasswordUpgradeBadge;
@@ -40,11 +41,15 @@ use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 /**
  * @phpstan-type Credentials array{username: string, password: string, ip: string|null, recaptcha: string}
+ * @template-covariant TUser of UserInterface
  */
 class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator implements AuthenticationEntryPointInterface
 {
     use DoctrineTrait;
 
+    /**
+     * @param UserProviderInterface<TUser> $userProvider
+     */
     public function __construct(
         private HttpUtils $httpUtils,
         private RecaptchaVerifier $recaptchaVerifier,

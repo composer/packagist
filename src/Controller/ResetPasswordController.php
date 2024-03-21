@@ -27,7 +27,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Authentication\UserAuthenticatorInterface;
 
@@ -83,6 +83,8 @@ class ResetPasswordController extends Controller
 
     /**
      * Validates and process the reset URL that the user clicked in their email.
+     *
+     * @param BruteForceLoginFormAuthenticator<User> $authenticator
      */
     #[Route(path: '/reset-password/reset/{token}', name: 'do_pwd_reset')]
     public function reset(Request $request, UserPasswordHasherInterface $passwordHasher, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator, bool $recaptchaEnabled, ?string $token = null): Response

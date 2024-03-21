@@ -1,13 +1,15 @@
 doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
+        profiling_collect_backtrace: '%kernel.debug%'
+        use_savepoints: true
         options:
             # PDO::ATTR_TIMEOUT
             2: 1.3
     orm:
-        report_fields_where_declared: true
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true
+        report_fields_where_declared: true
         auto_mapping: true
         mappings:
             App:
@@ -17,6 +19,7 @@ doctrine:
                 alias: App
         controller_resolver:
             enabled: false
+            auto_mapping: true
 
 when@test:
     doctrine:

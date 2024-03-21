@@ -14,7 +14,7 @@ namespace App\Controller;
 
 use Laminas\Diagnostics\Result\Collection;
 use Laminas\Diagnostics\Result\ResultInterface;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Laminas\Diagnostics\Check;
