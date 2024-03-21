@@ -128,8 +128,8 @@ class ProfileController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             $diffs = array_filter([
-                $oldEmail !== $user->getEmail() ? 'email' : null,
-                $oldUsername !== $user->getUsername() ? 'username' : null,
+                $oldEmail !== $user->getEmail() ? 'email ('.$oldEmail.' => '.$user->getEmail().')' : null,
+                $oldUsername !== $user->getUsername() ? 'username ('.$oldUsername.' => '.$user->getUsername().')' : null,
             ]);
 
             if (!empty($diffs)) {
