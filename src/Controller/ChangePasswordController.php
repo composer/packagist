@@ -14,6 +14,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\ChangePasswordFormType;
+use App\Security\UserNotifier;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,7 +26,7 @@ class ChangePasswordController extends Controller
 {
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/profile/change-password', name: 'change_password')]
-    public function changePasswordAction(Request $request, UserPasswordHasherInterface $passwordHasher, #[CurrentUser] User $user): Response
+    public function changePasswordAction(Request $request, UserPasswordHasherInterface $passwordHasher, UserNotifier $userNotifier, #[CurrentUser] User $user): Response
     {
         $form = $this->createForm(ChangePasswordFormType::class, $user);
         $form->handleRequest($request);
@@ -41,6 +42,8 @@ class ChangePasswordController extends Controller
 
             $this->getEM()->persist($user);
             $this->getEM()->flush();
+
+            $userNotifier->notifyChange($user->getEmail(), 'Your password has been changed');
 
             return $this->redirectToRoute('my_profile');
         }

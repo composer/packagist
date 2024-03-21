@@ -1,0 +1,10 @@
+{% autoescape false -%}
+
+A critical account security change has been made to your account:
+
+-------------------------------
+Change: {{ reason }}
+Time: {{ 'now'|date('c') }}
+-------------------------------
+
+{%- endautoescape %}

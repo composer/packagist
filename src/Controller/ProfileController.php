@@ -19,6 +19,7 @@ use App\Entity\User;
 use App\Form\Type\ProfileFormType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Security\UserNotifier;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
@@ -112,7 +113,7 @@ class ProfileController extends Controller
     }
 
     #[Route(path: '/profile/edit', name: 'edit_profile')]
-    public function editAction(Request $request): Response
+    public function editAction(Request $request, UserNotifier $userNotifier): Response
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -120,13 +121,26 @@ class ProfileController extends Controller
         }
 
         $oldEmail = $user->getEmail();
+        $oldUsername = $user->getUsername();
         $form = $this->createForm(ProfileFormType::class, $user);
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if ($oldEmail !== $user->getEmail()) {
-                $user->resetPasswordRequest();
+            $diffs = array_filter([
+                $oldEmail !== $user->getEmail() ? 'email ('.$oldEmail.' => '.$user->getEmail().')' : null,
+                $oldUsername !== $user->getUsername() ? 'username ('.$oldUsername.' => '.$user->getUsername().')' : null,
+            ]);
+
+            if (!empty($diffs)) {
+                $reason = sprintf('Your %s has been changed', implode(' and ', $diffs));
+
+                if ($oldEmail !== $user->getEmail()) {
+                    $userNotifier->notifyChange($oldEmail, $reason);
+                    $user->resetPasswordRequest();
+                }
+
+                $userNotifier->notifyChange($user->getEmail(), $reason);
             }
 
             $this->getEM()->persist($user);
