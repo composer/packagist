@@ -386,6 +386,7 @@ class Updater
         // update the package description only for the default branch
         if ($data->isDefaultBranch()) {
             $package->setDescription($descr);
+            $package->setType($this->sanitize($data->getType()));
             if ($data->isAbandoned() && !$package->isAbandoned()) {
                 $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
                 $package->setAbandoned(true);
@@ -429,7 +430,7 @@ class Updater
         if ($data->getType()) {
             $type = $this->sanitize($data->getType());
             $version->setType($type);
-            if ($type !== $package->getType()) {
+            if (null === $package->getType()) {
                 $package->setType($type);
             }
         }
