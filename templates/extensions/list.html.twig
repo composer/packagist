@@ -1,5 +1,7 @@
 {% embed "web/list.html.twig" %}
+    {% block title %}PHP Extensions - Packagist{% endblock %}
+    {% block description %}List of all PHP extensions installable via pie{% endblock %}
     {% block content_title %}
-        <h2 class="title">PHP Extensions</h2>
+        <h2 class="title">PHP Extensions <small>installable via <a href="https://github.com/php/pie">pie</a></small></h2>
     {% endblock %}
 {% endembed %}
