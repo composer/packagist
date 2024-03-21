@@ -12,7 +12,9 @@
 
 namespace App\Security;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 
@@ -21,28 +23,32 @@ use Symfony\Component\Mime\Address;
  */
 class UserNotifier
 {
-    private MailerInterface $mailer;
-    private string $mailFromEmail;
-    private string $mailFromName;
+    public function __construct(
+        private string $mailFromEmail,
+        private string $mailFromName,
+        private MailerInterface $mailer,
+        private LoggerInterface $logger,
+    ) {}
 
-    public function __construct(string $mailFromEmail, string $mailFromName, MailerInterface $mailer)
-    {
-        $this->mailer = $mailer;
-        $this->mailFromEmail = $mailFromEmail;
-        $this->mailFromName = $mailFromName;
-    }
-
-    public function notifyChange(string $email, string $reason): void
+    /**
+     * @param array<string, mixed> $templateVars
+     */
+    public function notifyChange(string $email, string $reason = '', string $template = 'email/alert_change.txt.twig', string $subject = 'A change has been made to your Packagist.org account', ...$templateVars): void
     {
         $email = (new TemplatedEmail())
             ->from(new Address($this->mailFromEmail, $this->mailFromName))
             ->to($email)
-            ->subject('A change has been made to your account')
-            ->textTemplate('email/alert_change.txt.twig')
+            ->subject($subject)
+            ->textTemplate($template)
             ->context([
                 'reason' => $reason,
+                ...$templateVars
             ]);
 
-        $this->mailer->send($email);
+        try {
+            $this->mailer->send($email);
+        } catch (TransportExceptionInterface $e) {
+            $this->logger->error('['.get_class($e).'] '.$e->getMessage());
+        }
     }
 }

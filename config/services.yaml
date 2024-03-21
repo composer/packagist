@@ -110,8 +110,6 @@ services:
     App\Security\TwoFactorAuthManager:
         public: true
         class: App\Security\TwoFactorAuthManager
-        arguments:
-            $options: { from: '%env(APP_MAILER_FROM_EMAIL)%', fromName: '%env(APP_MAILER_FROM_NAME)%' }
 
     App\Service\SecurityAdvisoryWorker:
         $sources:

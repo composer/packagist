@@ -13,17 +13,11 @@
 namespace App\Security;
 
 use App\Entity\User;
-use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
-use Twig\Environment;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Address;
-use Symfony\Component\Mime\Email;
 
 /**
  * @author Colin O'Dell <colinodell@gmail.com>
@@ -32,12 +26,8 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
 {
     public function __construct(
         private ManagerRegistry $doctrine,
-        private MailerInterface $mailer,
-        private Environment $twig,
-        private LoggerInterface $logger,
         private RequestStack $requestStack,
-        /** @var array{from: string, fromName: string} */
-        private array $options
+        private UserNotifier $userNotifier,
     ) {
     }
 
@@ -49,22 +39,12 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $user->setTotpSecret($secret);
         $this->doctrine->getManager()->flush();
 
-        $body = $this->twig->render('email/two_factor_enabled.txt.twig', [
-            'username' => $user->getUsername(),
-        ]);
-
-        $message = (new Email())
-            ->subject('[Packagist] Two-factor authentication enabled')
-            ->from(new Address($this->options['from'], $this->options['fromName']))
-            ->to($user->getEmail())
-            ->text($body)
-        ;
-
-        try {
-            $this->mailer->send($message);
-        } catch (TransportExceptionInterface $e) {
-            $this->logger->error('['.get_class($e).'] '.$e->getMessage());
-        }
+        $this->userNotifier->notifyChange(
+            $user->getEmail(),
+            template: 'email/two_factor_enabled.txt.twig',
+            subject: 'Two-factor authentication enabled on Packagist.org',
+            username: $user->getUsername()
+        );
     }
 
     /**
@@ -76,23 +56,14 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $user->invalidateAllBackupCodes();
         $this->doctrine->getManager()->flush();
 
-        $body = $this->twig->render('email/two_factor_disabled.txt.twig', [
-            'username' => $user->getUsername(),
-            'reason' => $reason,
-        ]);
 
-        $message = (new Email())
-            ->subject('[Packagist] Two-factor authentication disabled')
-            ->from(new Address($this->options['from'], $this->options['fromName']))
-            ->to($user->getEmail())
-            ->text($body)
-        ;
-
-        try {
-            $this->mailer->send($message);
-        } catch (TransportExceptionInterface $e) {
-            $this->logger->error('['.get_class($e).'] '.$e->getMessage());
-        }
+        $this->userNotifier->notifyChange(
+            $user->getEmail(),
+            template: 'email/two_factor_disabled.txt.twig',
+            subject: 'Two-factor authentication disabled on Packagist.org',
+            username: $user->getUsername(),
+            reason: $reason,
+        );
     }
 
     /**
