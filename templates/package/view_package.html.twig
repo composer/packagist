@@ -274,9 +274,9 @@
                 </div>
             </div>
 
-            {% if addMaintainerForm is defined or removeMaintainerForm is defined %}
+            {% if is_granted('remove_maintainer', package) or is_granted('add_maintainer', package) %}
                 <div class="row">
-                    {% if addMaintainerForm is defined %}
+                    {% if is_granted('add_maintainer', package) %}
                         {{ form_start(addMaintainerForm, {
                             attr: { id: 'add-maintainer-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_add_maintainer_form|default(false) ? '': 'hidden') },
                             action: path('add_maintainer', { 'name': package.name })
@@ -294,7 +294,7 @@
                         {{ form_end(addMaintainerForm) }}
                     {% endif %}
 
-                    {% if removeMaintainerForm is defined %}
+                    {% if is_granted('remove_maintainer', package) %}
                         {{ form_start(removeMaintainerForm, {
                             attr: { id: 'remove-maintainer-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_remove_maintainer_form|default(false) ? '': 'hidden') },
                             action: path('remove_maintainer', { 'name': package.name })

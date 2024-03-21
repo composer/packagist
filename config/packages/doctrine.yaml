@@ -19,7 +19,7 @@ doctrine:
                 alias: App
         controller_resolver:
             enabled: false
-            auto_mapping: false
+            auto_mapping: true
 
 when@test:
     doctrine:
