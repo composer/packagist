@@ -53,7 +53,7 @@ class ProfileFormType extends AbstractType
                                 'autocomplete' => 'current-password',
                             ],
                         ])
-                        ->add('captcha', InvisibleRecaptchaType::class);
+                        ->add('captcha', InvisibleRecaptchaType::class, ['only_show_after_increment_trigger' => true]);
                 }
             });
 

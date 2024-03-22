@@ -13,6 +13,7 @@
 namespace App\Form;
 
 use App\Entity\User;
+use App\Form\Type\InvisibleRecaptchaType;
 use App\Validator\NotProhibitedPassword;
 use App\Validator\Password;
 use App\Validator\RateLimitingRecaptcha;
@@ -54,10 +55,10 @@ class ResetPasswordFormType extends AbstractType
                     'required' => true,
                     'mapped' => false,
                     'constraints' => [
-                        new RateLimitingRecaptcha(),
                         new TwoFactorCode($options['data']),
                     ],
                 ]);
+            $builder->add('captcha', InvisibleRecaptchaType::class, ['only_show_after_increment_trigger' => true]);
         }
     }
 }

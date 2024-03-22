@@ -32,7 +32,7 @@ class RateLimitingRecaptchaValidator extends ConstraintValidator
     {
         $context = $this->recaptchaHelper->buildContext();
 
-        if (! $this->recaptchaHelper->requiresRecaptcha($context)) {
+        if ($constraint->onlyShowAfterIncrementTrigger && !$this->recaptchaHelper->requiresRecaptcha($context)) {
             return;
         }
 

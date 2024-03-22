@@ -48,7 +48,7 @@ class ChangePasswordFormType extends AbstractType
                     new Password(),
                 ],
             ])
-            ->add('captcha', InvisibleRecaptchaType::class)
+            ->add('captcha', InvisibleRecaptchaType::class, ['only_show_after_increment_trigger' => true])
         ;
     }
 

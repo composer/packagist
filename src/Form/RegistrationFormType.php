@@ -13,6 +13,7 @@
 namespace App\Form;
 
 use App\Entity\User;
+use App\Form\Type\InvisibleRecaptchaType;
 use App\Validator\NotProhibitedPassword;
 use App\Validator\Password;
 use Symfony\Component\Form\AbstractType;
@@ -46,6 +47,7 @@ class RegistrationFormType extends AbstractType
                     new Password(),
                 ],
             ])
+            ->add('captcha', InvisibleRecaptchaType::class)
         ;
     }
 

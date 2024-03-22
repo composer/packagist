@@ -13,6 +13,7 @@
 namespace App\Form\EventSubscriber;
 
 use App\Security\RecaptchaHelper;
+use App\Validator\TwoFactorCode;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -32,7 +33,14 @@ class FormInvalidPasswordSubscriber implements EventSubscriberInterface
         if ($form->isRoot()) {
             foreach ($form->getErrors(true) as $error) {
                 $cause = $error->getCause();
+                // increment for invalid password
                 if ($cause instanceof ConstraintViolation && $cause->getCode() === UserPassword::INVALID_PASSWORD_ERROR) {
+                    $context = $this->recaptchaHelper->buildContext();
+                    $this->recaptchaHelper->increaseCounter($context);
+                }
+
+                // increment for invalid 2fa code
+                if ($cause instanceof ConstraintViolation && $cause->getConstraint() instanceof TwoFactorCode) {
                     $context = $this->recaptchaHelper->buildContext();
                     $this->recaptchaHelper->increaseCounter($context);
                 }

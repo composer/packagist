@@ -87,7 +87,7 @@ class ResetPasswordController extends Controller
      * @param BruteForceLoginFormAuthenticator<User> $authenticator
      */
     #[Route(path: '/reset-password/reset/{token}', name: 'do_pwd_reset')]
-    public function reset(Request $request, UserPasswordHasherInterface $passwordHasher, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator, bool $recaptchaEnabled, ?string $token = null): Response
+    public function reset(Request $request, UserPasswordHasherInterface $passwordHasher, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator, ?string $token = null): Response
     {
         if (null === $token) {
             throw $this->createNotFoundException('No reset password token found in the URL or in the session.');
@@ -137,7 +137,6 @@ class ResetPasswordController extends Controller
 
         return $this->render('reset_password/reset.html.twig', [
             'resetForm' => $form,
-            'requiresRecaptcha' => $recaptchaEnabled,
         ]);
     }
 
