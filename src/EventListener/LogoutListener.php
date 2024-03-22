@@ -21,7 +21,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class LogoutListener
 {
     #[AsEventListener]
-    public function handleExpiredCsrfError(ExceptionEvent $event)
+    public function handleExpiredCsrfError(ExceptionEvent $event): void
     {
         $e = $event->getThrowable();
         do {
