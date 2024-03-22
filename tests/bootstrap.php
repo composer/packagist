@@ -20,6 +20,9 @@ if (file_exists(dirname(__DIR__).'/config/bootstrap.php')) {
     (new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
 }
 
+// hack for PHPUnit 11, see https://github.com/symfony/symfony/issues/53812
+set_exception_handler([new Symfony\Component\ErrorHandler\ErrorHandler(), 'handleException']);
+
 if ($_SERVER['APP_DEBUG']) {
     umask(0000);
 }

@@ -13,13 +13,12 @@ namespace App\Tests\SecurityAdvisory;
  */
 
 use App\SecurityAdvisory\Severity;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class SeverityTest extends TestCase
 {
-    /**
-     * @dataProvider gitHubSeverityProvider
-     */
+    #[DataProvider('gitHubSeverityProvider')]
     public function testFromGitHub(?string $gitHubSeverity, ?Severity $expected): void
     {
         $this->assertSame($expected, Severity::fromGitHub($gitHubSeverity));

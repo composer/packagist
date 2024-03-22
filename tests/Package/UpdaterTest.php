@@ -68,14 +68,14 @@ class UpdaterTest extends TestCase
 
         $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn([]);
         $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
-        $emMock->expects($this->any())->method('merge')->will($this->returnCallback(static function ($package) {
+        $emMock->expects($this->any())->method('merge')->willReturnCallback(static function ($package) {
             return $package;
-        }));
-        $emMock->expects($this->any())->method('persist')->will($this->returnCallback(static function ($object) {
+        });
+        $emMock->expects($this->any())->method('persist')->willReturnCallback(static function ($object) {
             if ($reflProperty = new \ReflectionProperty($object, 'id')) {
                 $reflProperty->setValue($object, random_int(0, 10000));
             }
-        }));
+        });
 
         $registryMock->method('getManager')->willReturn($emMock);
         $registryMock->method('getRepository')->willReturnMap([
@@ -93,6 +93,12 @@ class UpdaterTest extends TestCase
         $routerMock = $this->createMock(UrlGeneratorInterface::class);
 
         $this->updater = new Updater($registryMock, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock);
+    }
+
+    public function tearDown(): void
+    {
+        parent::tearDown();
+        unset($this->updater);
     }
 
     public function testUpdatesTheReadme(): void

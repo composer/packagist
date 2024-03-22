@@ -89,6 +89,11 @@ class Updater
         ErrorHandler::register();
     }
 
+    public function __destruct()
+    {
+        restore_error_handler();
+    }
+
     /**
      * Update a project
      *
