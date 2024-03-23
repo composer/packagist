@@ -14,11 +14,12 @@ const search = instantsearch({
     routing: {
         stateMapping: {
             stateToRoute: function (uiState) {
+                const state = uiState[algoliaConfig.index_name];
                 return {
-                    query: uiState.query && uiState.query.replace(new RegExp('([^\\s])--', 'g'), '$1-'),
-                    type: uiState.menu && uiState.menu.type,
-                    tags: uiState.refinementList && uiState.refinementList.tags && uiState.refinementList.tags.join('~'),
-                    page: uiState.page,
+                    query: state.query && state.query.replace(new RegExp('([^\\s])--', 'g'), '$1-'),
+                    type: state.menu && state.menu.type,
+                    tags: state.refinementList && state.refinementList.tags && state.refinementList.tags.join('~'),
+                    page: state.page,
                 };
             },
             routeToState: function (routeState) {
@@ -35,24 +36,27 @@ const search = instantsearch({
                 }
 
                 return {
-                    query: routeState.query || '',
-                    menu: {
-                        type: routeState.type
-                    },
-                    refinementList: {
-                        tags: routeState.tags && routeState.tags.replace(/[\s-]+/g, ' ').split('~'),
-                    },
-                    page: routeState.page
-                };
+                    [algoliaConfig.index_name]: {
+                        query: routeState.query || '',
+                        menu: {
+                            type: routeState.type
+                        },
+                        refinementList: {
+                            tags: routeState.tags && routeState.tags.replace(/[\s-]+/g, ' ').split('~'),
+                        },
+                        page: routeState.page
+                    }
+                }
             },
         },
     },
-    searchFunction: function(helper) {
-        var searchResults = document.querySelector('#search-container');
+    onStateChange: function({uiState, setUiState}) {
+        const searchResults = document.querySelector('#search-container');
+        const state = uiState[algoliaConfig.index_name];
 
-        if (helper.state.query === ''
-            && helper.state.hierarchicalFacetsRefinements.type === undefined
-            && (helper.state.disjunctiveFacetsRefinements.tags === undefined || helper.state.disjunctiveFacetsRefinements.tags.length === 0)
+        if (state.query === ''
+            && state.hierarchicalFacetsRefinements.type === undefined
+            && (state.disjunctiveFacetsRefinements.tags === undefined || state.disjunctiveFacetsRefinements.tags.length === 0)
         ) {
             searchResults.classList.add('hidden');
             return;
@@ -65,18 +69,18 @@ const search = instantsearch({
         }
 
         // force focus to prevent algolia from updating the search field input with the modified value
-        if (helper.state.query.match(/-/)) {
+        if (state.query.match(/-/)) {
             document.getElementById('search_query_query').focus();
         }
 
-        if (helper.state.query.match(/^PKSA-.{14}$/) || helper.state.query.match(/^GHSA-.{14}$/) || helper.state.query.match(/^CVE-\d{4}-\d+$/)) {
-            document.location.href = "/security-advisories/" + helper.state.query;
+        if (state.query.match(/^PKSA-.{14}$/) || state.query.match(/^GHSA-.{14}$/) || state.query.match(/^CVE-\d{4}-\d+$/)) {
+            document.location.href = "/security-advisories/" + state.query;
         }
 
-        helper.state.query = helper.state.query.replace(new RegExp('([^\\s])-', 'g'), '$1--');
+        state.query = state.query.replace(new RegExp('([^\\s])-', 'g'), '$1--');
 
-        searchThrottle = setTimeout(function () {
-            helper.search();
+        searchThrottle = setTimeout(() => {
+            setUiState({[algoliaConfig.index_name]: state});
         }, 300);
     },
 });

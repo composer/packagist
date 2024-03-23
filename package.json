@@ -4,7 +4,7 @@
         "algoliasearch": "^4.22.1",
         "bootstrap": "3.3.5",
         "d3": "^3.5.17",
-        "instantsearch.js": "^3.7.0",
+        "instantsearch.js": "^4.66.0",
         "jquery": "^3.6.0",
         "nvd3": "^1.8.6",
         "plausible-tracker": "^0.3",
