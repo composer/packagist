@@ -1,43 +1,16 @@
+import algoliasearch from 'algoliasearch';
 import instantsearch from 'instantsearch.js';
-import {searchBox, hits, pagination, currentRefinedValues, menu, refinementList} from "instantsearch.js/es/widgets";
-
-document.getElementById('search_query_query').addEventListener('keydown', function (e) {
-    if (e.keyCode === 13) {
-        e.preventDefault();
-    }
-});
-
-// Add accessibility functionality:
-// "Press '/' to focus the searchbar".
-document.addEventListener('keydown', function (e) {
-    if (e.key !== '/') {
-        return;
-    }
-    var searchInput = document.getElementById('search_query_query');
-    // Just ignore if we can't find the search input for some reason maybe we are on a page without it.
-    if (!searchInput) {
-        return;
-    }
-    // If we already have input focus ignore.
-    if (document.activeElement.tagName === 'INPUT') {
-        return;
-    }
-    searchInput.focus();
-    // Prevent '/' being inserted on focus.
-    e.preventDefault();
-});
-
-var searchParameters = {};
+import { connectSearchBox } from 'instantsearch.js/es/connectors';
+import { hits, pagination, currentRefinements, menu, refinementList} from "instantsearch.js/es/widgets";
 
 if (decodeURI(location.search).match(/[<>]/)) {
     location.replace(location.pathname);
 }
 
-var searchThrottle = null;
-var search = instantsearch({
-    appId: algoliaConfig.app_id,
-    apiKey: algoliaConfig.search_key,
+let searchThrottle = null;
+const search = instantsearch({
     indexName: algoliaConfig.index_name,
+    searchClient: algoliasearch(algoliaConfig.app_id, algoliaConfig.search_key),
     routing: {
         stateMapping: {
             stateToRoute: function (uiState) {
@@ -106,27 +79,59 @@ var search = instantsearch({
             helper.search();
         }, 300);
     },
-    searchParameters: searchParameters
 });
 
-var autofocus = false;
-if (location.pathname == "/" || location.pathname == "/explore/") {
-    autofocus = true;
-}
-search.addWidget(
-    searchBox({
-        container: '#search_query_query',
-        magnifier: false,
-        reset: false,
-        wrapInput: false,
-        autofocus: autofocus
-    })
-);
+const renderSearchBox = (renderOptions, isFirstRender) => {
+    const { query, refine, clear, isSearchStalled, widgetParams } = renderOptions;
+    const input = document.querySelector('#search_query_query');
 
-search.addWidget(
+    // register events on the first render
+    if (isFirstRender) {
+        // focus the search on the homepage and explore
+        if(location.pathname === "/" || location.pathname === "/explore/") {
+            input.focus();
+        }
+
+        // trigger search on input change
+        input.addEventListener('input', event => {
+            refine(event.target.value);
+        });
+
+        // prevent form submission
+        input.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+            }
+        });
+
+        // clear search on escape
+        input.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                clear();
+            }
+        });
+
+        // focus search on / but not when typing in the input
+        document.addEventListener('keydown', event => {
+            if (event.key !== '/' || document.activeElement === input) {
+                return;
+            }
+
+            input.focus();
+            event.preventDefault();
+        });
+    }
+
+    input.value = query;
+};
+
+const customSearchBox = connectSearchBox(renderSearchBox);
+
+search.addWidgets([
+    customSearchBox({}),
     hits({
         container: '.search-list',
-        transformData: function (hit) {
+        transformItems: hits => hits.map(hit => {
             hit.url = '/packages/' + hit.name;
             if (hit.type === 'virtual-package') {
                 hit.virtual = true;
@@ -144,7 +149,7 @@ search.addWidget(
             }
 
             return hit;
-        },
+        }),
         templates: {
             empty: 'No packages found.',
             item: `
@@ -153,7 +158,7 @@ search.addWidget(
         <div class="col-sm-9 col-lg-10">
             <p class="pull-right language">{{ language }}</p>
             <h4 class="font-bold">
-                <a href="{{ url }}" tabindex="2">{{{ _highlightResult.name.value }}}</a>
+                <a href="{{ url }}" tabindex="2">{{#helpers.highlight}}{ "attribute": "name" }{{/helpers.highlight}}</a>
                 {{#virtual}}
                     <small>(Virtual Package)</small>
                 {{/virtual}}
@@ -187,20 +192,14 @@ search.addWidget(
             root: 'packages',
             item: 'row'
         }
-    })
-);
-
-search.addWidget(
+    }),
     pagination({
         container: '.pagination',
         maxPages: 200,
         scrollTo: document.getElementById('search_query_query'),
         showFirstLast: false,
-    })
-);
-
-search.addWidget(
-    currentRefinedValues({
+    }),
+    currentRefinements({
         container: '.search-facets-active-filters',
         clearAll: 'before',
         clearsQuery: false,
@@ -210,7 +209,7 @@ search.addWidget(
         templates: {
             header: 'Active filters',
             item: function (filter) {
-                if ('tags' == filter.attributeName) {
+                if ('tags' === filter.attributeName) {
                     return 'tag: ' + filter.name
                 } else {
                     return filter.attributeName + ': ' + filter.name
@@ -218,32 +217,26 @@ search.addWidget(
             }
         },
         onlyListedAttributes: true,
-    })
-);
-
-search.addWidget(
+    }),
     menu({
         container: '.search-facets-type',
-        attributeName: 'type',
+        attribute: 'type',
         limit: 15,
         showMore: true,
         templates: {
             header: 'Package type'
         }
-    })
-);
-
-search.addWidget(
+    }),
     refinementList({
         container: '.search-facets-tags',
-        attributeName: 'tags',
+        attribute: 'tags',
         limit: 15,
         showMore: true,
         templates: {
             header: 'Tags'
         },
         searchForFacetValues:true
-    })
-);
+    }),
+]);
 
 search.start();
