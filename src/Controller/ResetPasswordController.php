@@ -53,14 +53,6 @@ class ResetPasswordController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            try {
-                $recaptchaVerifier->verify();
-            } catch (RecaptchaException $e) {
-                $this->addFlash('error', 'Invalid ReCaptcha. Please try again.');
-
-                return $this->redirectToRoute('request_pwd_reset');
-            }
-
             return $this->processSendingPasswordResetEmail(
                 $form->get('email')->getData(),
                 $mailer
