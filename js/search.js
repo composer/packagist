@@ -29,8 +29,9 @@ document.addEventListener('keydown', function (e) {
 
 var searchParameters = {};
 
+// avoid reflective XSS issues
 if (decodeURI(location.search).match(/[<>]/)) {
-    location.replace(location.pathname);
+    location.replace(location.origin + location.pathname);
 }
 
 var searchThrottle = null;
