@@ -223,11 +223,7 @@
         </footer>
 
         <script nonce="{{ csp_nonce('script') }}">
-            var algoliaConfig = {{ algolia|json_encode|raw }};
-            {# For Aloglia instantsearch 2.x, can be dropped once we upgrade to 4.x #}
-            window.process = {
-                env: { DEBUG: undefined },
-            };
+            const algoliaConfig = {{ algolia|json_encode|raw }};
         </script>
         {% block script_init %}{% endblock %}
 
