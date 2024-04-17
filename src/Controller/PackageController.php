@@ -1038,7 +1038,7 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name}/unabandon', name: 'unabandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
     public function unabandonAction(#[MapEntity] Package $package, #[CurrentUser] ?User $user = null): RedirectResponse
     {
-        $this->denyAccessUnlessGranted(PackageActions::Unabandon->value, $package);
+        $this->denyAccessUnlessGranted(PackageActions::Abandon->value, $package);
 
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);

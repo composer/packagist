@@ -8,7 +8,6 @@ enum PackageActions: string
     case AddMaintainer = 'add_maintainer';
     case RemoveMaintainer = 'remove_maintainer';
     case Abandon = 'abandon';
-    case Unabandon = 'unabandon';
     case Delete = 'delete';
     case DeleteVersion = 'delete_version';
     case Update = 'update';

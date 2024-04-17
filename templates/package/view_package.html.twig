@@ -67,7 +67,7 @@
                                 {% endif %}
                             {% else %}
                                 No replacement package was suggested.
-                                {% if is_granted('unabandon', package) %}
+                                {% if is_granted('abandon', package) %}
                                     <a href="{{ path('abandon_package', {name: package.name}) }}">Suggest a replacement.</a>
                                 {% endif %}
                             {% endif %}
@@ -86,14 +86,15 @@
                     {% if hasActions %}
                         <div class="btn-group btn-group-xs">
                             {% if is_granted('abandon', package) %}
-                                <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
-                                    <input class="btn btn-warning" type="submit" value="Abandon" />
-                                </form>
-                            {% endif %}
-                            {% if is_granted('unabandon', package) %}
-                                <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
-                                    <input class="btn btn-default" type="submit" value="Un-abandon" />
-                                </form>
+                                {% if package.abandoned %}
+                                    <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
+                                        <input class="btn btn-default" type="submit" value="Un-abandon" />
+                                    </form>
+                                {% else %}
+                                    <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
+                                        <input class="btn btn-warning" type="submit" value="Abandon" />
+                                    </form>
+                                {% endif %}
                             {% endif %}
                             {% if is_granted('delete', package) %}
                                 <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE">

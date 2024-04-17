@@ -35,8 +35,7 @@ class PackageVoter extends \Symfony\Component\Security\Core\Authorization\Voter\
         $package = $subject;
 
         return match(PackageActions::from($attribute)) {
-            PackageActions::Abandon => !$package->isAbandoned() && ($package->isMaintainer($user) || $this->security->isGranted('ROLE_EDIT_PACKAGES')),
-            PackageActions::Unabandon => $package->isAbandoned() && ($package->isMaintainer($user) || $this->security->isGranted('ROLE_EDIT_PACKAGES')),
+            PackageActions::Abandon => $this->canEdit($package, $user),
             PackageActions::Delete => $this->canDelete($package, $user),
             PackageActions::DeleteVersion => $this->canDeleteVersion($package, $user),
             PackageActions::Edit => $this->canEdit($package, $user),
