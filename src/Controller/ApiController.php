@@ -312,6 +312,12 @@ class ApiController extends Controller
         }
 
         $updatedSince = $request->query->getInt('updatedSince', 0);
+        if ($updatedSince > time() + 60) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid updatedSince parameter: timestamp is in the future.'], 400);
+        }
+        if ($updatedSince < 0) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid updatedSince parameter: timestamp should not be negative.'], 400);
+        }
 
         $statsd->increment('advisory_api');
 
