@@ -1773,6 +1773,17 @@ body {
     speak: none;
 }
 
+.sponsor {
+    p {
+        margin-bottom: 0;
+    }
+    img {
+        height: 45px;
+        position: relative;
+        top: -3px;
+    }
+}
+
 .icon-check:before { content: '\2611'; } /* '☑' */
 .icon-tools:before { content: '\2692'; } /* '⚒' */
 .icon-cogs:before { content: '\26ef'; } /* '⛯' */
