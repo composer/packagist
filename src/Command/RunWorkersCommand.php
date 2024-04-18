@@ -20,6 +20,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Command\Command;
 use App\Service\QueueWorker;
+use Symfony\Component\Lock\Exception\LockReleasingException;
 
 class RunWorkersCommand extends Command
 {
@@ -75,7 +76,19 @@ class RunWorkersCommand extends Command
 
             $this->logger->notice('Worker exiting successfully');
         } finally {
-            $this->release();
+            try {
+                $this->release();
+            } catch (LockReleasingException $e) {
+                // during deployments the system v semaphore somehow gets removed before the previous
+                // deploy's processes are stopped so this fails to release the lock but is not an actual problem
+                if (!str_contains((string) $e->getPrevious()?->getMessage(), 'does not (any longer) exist')) {
+                    throw $e;
+                }
+                try {
+                    // force destructor as that will trigger another lock release attempt
+                    $this->lock = null;
+                } catch (LockReleasingException) {}
+            }
         }
 
         return 0;
