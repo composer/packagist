@@ -303,6 +303,7 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && (
                 Preg::isMatch('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
                 || Preg::isMatch('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
+                || Preg::isMatch('{fatal: unable to access \'[^\']+\': The requested URL returned error: 503}i', $e->getMessage())
                 || Preg::isMatch('{Can\'t connect to host \'[^\']+\': Connection (timed out|refused)}i', $e->getMessage())
                 || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+: Connection (timed out|refused)}i', $e->getMessage())
                 || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+: No route to host}i', $e->getMessage())
