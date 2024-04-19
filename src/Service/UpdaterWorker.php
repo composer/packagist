@@ -342,9 +342,19 @@ class UpdaterWorker
                 $this->getEM()->persist($package);
                 $this->getEM()->flush();
 
+                if ($found404 === true) {
+                    return [
+                        'status' => Job::STATUS_PACKAGE_GONE,
+                        'message' => 'Update of '.$packageName.' failed, package appears to be 404/gone and has been marked frozen.',
+                        'details' => '<pre>'.$output.'</pre>',
+                        'exception' => $e,
+                        'vendor' => $packageVendor,
+                    ];
+                }
+
                 return [
-                    'status' => Job::STATUS_PACKAGE_GONE,
-                    'message' => 'Update of '.$packageName.' failed, package appears to be 404/gone and has been marked frozen.',
+                    'status' => Job::STATUS_FAILED,
+                    'message' => 'Package data of '.$packageName.' could not be downloaded. Could not reach remote VCS server. Please try again later.',
                     'details' => '<pre>'.$output.'</pre>',
                     'exception' => $e,
                     'vendor' => $packageVendor,
