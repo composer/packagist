@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Validator\NotReservedWord;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
@@ -43,6 +44,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[Assert\Length(min: 2, max: 191, groups: ['Profile', 'Registration'])]
     #[Assert\Regex(pattern: '{^[^/"\r\n><#\[\]]{2,100}$}')]
     #[Assert\NotBlank(groups: ['Profile', 'Registration'])]
+    #[NotReservedWord(groups: ['Profile', 'Registration'])]
     private string $username;
 
     #[ORM\Column(type: 'string', name: 'username_canonical', length: 191, unique: true)]
