@@ -115,7 +115,7 @@ class ValidPackageRepositoryValidator extends ConstraintValidator
             return;
         }
 
-        $reservedVendors = ['php'];
+        $reservedVendors = ['php', 'packagist'];
         $bits = explode('/', strtolower($name));
         if (in_array($bits[0], $reservedVendors, true)) {
             $this->addViolation('The vendor name '.htmlentities($bits[0], ENT_COMPAT, 'utf-8').' is reserved, please use another name or reach out to us if you have a legitimate use for it.');
