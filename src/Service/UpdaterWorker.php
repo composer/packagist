@@ -273,6 +273,9 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), 'git@gitlab.com') && strpos($e->getMessage(), 'Please make sure you have the correct access rights')) {
                 // git clone says we have no right on gitlab for 404s
                 $found404 = true;
+            } elseif ($e instanceof TransportException && $e->getStatusCode() === 404 && strpos($e->getMessage(), 'https://gitlab.com/api/v4/projects/') && strpos($e->getMessage(), '404 Project Not Found')) {
+                // http client 404s on gitlab
+                $found404 = true;
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), 'git@bitbucket.org') && strpos($e->getMessage(), 'Please make sure you have the correct access rights')) {
                 // git clone says we have no right on bitbucket for 404s
                 $found404 = true;
@@ -317,6 +320,13 @@ class UpdaterWorker
             // github 404'ed, check through API whether the package still exists and delete if not
             if ($found404 && Preg::isMatchStrictGroups('{[@/]github.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $match)) {
                 if ($result = $this->checkForDeadGitHubPackage($package, $match[1], $httpDownloader, $output)) {
+                    return $result;
+                }
+            }
+
+            // gitlab 404'ed, check through API whether the package still exists and delete if not
+            if ($found404 && Preg::isMatchStrictGroups('{https://gitlab.com/([^/]+/.+)$}i', $package->getRepository(), $match)) {
+                if ($result = $this->checkForDeadGitLabPackage($package, $match[1], $httpDownloader, $output)) {
                     return $result;
                 }
             }
@@ -406,39 +416,71 @@ class UpdaterWorker
                     || ($e->getStatusCode() === 403 && str_contains('"message": "Repository access blocked"', (string) $e->getResponse()))
                 )
             ) {
-                try {
-                    // check composer repo is visible to make sure it's not github or something else glitching
-                    $httpDownloader->get('https://api.github.com/repos/composer/composer/git/refs/heads', ['retry-auth-failure' => false]);
-                    // remove packages with very low downloads and that are 404
-                    if ($this->downloadManager->getTotalDownloads($package) <= 100) {
-                        $this->packageManager->deletePackage($package);
-
-                        return [
-                            'status' => Job::STATUS_PACKAGE_DELETED,
-                            'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been deleted.',
-                            'details' => '<pre>'.$output.'</pre>',
-                            'exception' => $e,
-                            'vendor' => $package->getVendor(),
-                        ];
-                    } else {
-                        $package->freeze(PackageFreezeReason::Gone);
-                        $this->getEM()->persist($package);
-                        $this->getEM()->flush();
-
-                        return [
-                            'status' => Job::STATUS_PACKAGE_GONE,
-                            'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been marked frozen.',
-                            'details' => '<pre>'.$output.'</pre>',
-                            'exception' => $e,
-                            'vendor' => $package->getVendor(),
-                        ];
-                    }
-                } catch (\Throwable $e) {
-                    // ignore failures here, we/github must be offline
-                }
+                return $this->completeDeadPackageCheck('https://api.github.com/repos/composer/composer/git/refs/heads', $package, $httpDownloader, $output, $e);
             }
         }
 
         return null;
+    }
+
+    /**
+     * @return array{status: Job::STATUS_*, message: string, details: string, exception: TransportException, vendor: string}|null
+     */
+    private function checkForDeadGitLabPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output): ?array
+    {
+        try {
+            $httpDownloader->get('https://gitlab.com/api/v4/projects/'.urlencode($repo), ['retry-auth-failure' => false]);
+        } catch (\Throwable $e) {
+            // 404 indicates the repo does not exist
+            if (
+                $e instanceof TransportException
+                && (
+                    in_array($e->getStatusCode(), [404], true)
+                )
+            ) {
+                return $this->completeDeadPackageCheck('https://gitlab.com/api/v4/projects/'.urlencode('packagist/vcs-repository-test'), $package, $httpDownloader, $output, $e);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{status: Job::STATUS_*, message: string, details: string, exception: TransportException, vendor: string}|null
+     */
+    private function completeDeadPackageCheck(string $referenceRepoApiUrl, Package $package, HttpDownloader $httpDownloader, string $output, TransportException $e): ?array
+    {
+        try {
+            // check composer reference repo is visible to make sure it's not github/gitlab or something else in between glitching
+            $httpDownloader->get($referenceRepoApiUrl, ['retry-auth-failure' => false]);
+        } catch (\Throwable $e) {
+            // ignore failures here, we/github/gitlab/.. must be offline
+            return null;
+        }
+
+        // remove packages with very low downloads and that are 404
+        if ($this->downloadManager->getTotalDownloads($package) <= 100) {
+            $this->packageManager->deletePackage($package);
+
+            return [
+                'status' => Job::STATUS_PACKAGE_DELETED,
+                'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been deleted.',
+                'details' => '<pre>'.$output.'</pre>',
+                'exception' => $e,
+                'vendor' => $package->getVendor(),
+            ];
+        }
+
+        $package->freeze(PackageFreezeReason::Gone);
+        $this->getEM()->persist($package);
+        $this->getEM()->flush();
+
+        return [
+            'status' => Job::STATUS_PACKAGE_GONE,
+            'message' => 'Update of '.$package->getName().' failed, package appears to be 404/gone and has been marked frozen.',
+            'details' => '<pre>'.$output.'</pre>',
+            'exception' => $e,
+            'vendor' => $package->getVendor(),
+        ];
     }
 }
