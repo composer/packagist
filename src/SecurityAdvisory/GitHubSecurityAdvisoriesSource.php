@@ -44,6 +44,8 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
     {
         /** @var array<string, array<string, RemoteSecurityAdvisory>> $advisoryMap */
         $advisoryMap = [];
+        /** @var array<string, array<string, true>> $foundPackageCves */
+        $foundPackageCves = [];
         $hasNextPage = true;
         $after = '';
 
@@ -100,6 +102,15 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                 if (isset($advisoryMap[$packageName][$remoteId])) {
                     $advisoryMap[$packageName][$remoteId] = $advisoryMap[$packageName][$remoteId]->withAddedAffectedVersion($versionRange);
                     continue;
+                }
+
+                // GitHub can have multiple advisories per CVE and package
+                if ($cve !== null) {
+                    if (isset($foundPackageCves[$packageName][$cve])) {
+                        continue;
+                    }
+
+                    $foundPackageCves[$packageName][$cve] = true;
                 }
 
                 $references = [];
