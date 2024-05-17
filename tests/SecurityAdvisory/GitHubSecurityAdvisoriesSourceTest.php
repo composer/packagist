@@ -146,6 +146,38 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         $this->assertSame(Severity::MEDIUM, $advisories[1]->severity);
     }
 
+    public function testDuplicateCvePerPackage(): void
+    {
+        $responseFactory = function (string $method, string $url, array $options) {
+            $this->assertSame('POST', $method);
+            $this->assertSame('https://api.github.com/graphql', $url);
+            $this->assertSame('{"query":"query{securityVulnerabilities(ecosystem:COMPOSER,first:100){nodes{advisory{summary,permalink,publishedAt,withdrawnAt,severity,identifiers{type,value},references{url}},vulnerableVersionRange,package{name}},pageInfo{hasNextPage,endCursor}}}"}', $options['body']);
+
+            return new MockResponse(json_encode($this->getGraphQLResultPageWithMultipleCvePerPackage()), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+        };
+        $client = new MockHttpClient($responseFactory);
+
+        $source = new GitHubSecurityAdvisoriesSource($client, new NullLogger(), $this->providerManager, [], $this->doctrine);
+        $package = $this->getPackage();
+        $advisoryCollection = $source->getAdvisories(new BufferIO());
+
+        $this->assertNotNull($advisoryCollection);
+        $this->assertSame(1, $client->getRequestsCount());
+
+        $advisories = $advisoryCollection->getAdvisoriesForPackageName($package->getName());
+        $this->assertCount(1, $advisories);
+
+        $this->assertSame('GHSA-h58v-c6rf-abcd', $advisories[0]->id);
+        $this->assertSame('Insert tag injection', $advisories[0]->title);
+        $this->assertSame('vendor/package', $advisories[0]->packageName);
+        $this->assertSame('=4.10.0', $advisories[0]->affectedVersions);
+        $this->assertSame('https://github.com/advisories/GHSA-h58v-c6rf-abcd', $advisories[0]->link);
+        $this->assertSame('CVE-2020-25768', $advisories[0]->cve);
+        $this->assertSame('2021-07-01T17:00:04+0000', $advisories[0]->date->format(\DateTimeInterface::ISO8601));
+        $this->assertNull($advisories[0]->composerRepository);
+        $this->assertSame(Severity::MEDIUM, $advisories[0]->severity);
+    }
+
     private function getPackage(): Package
     {
         $package = new Package();
@@ -181,6 +213,24 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
                     'nodes' => [
                         $this->graphQlPackageNode('GHSA-f7wm-x4gw-6m23', 'vendor/package', '< 4.11.0', 'CVE-2020-25768', 'Insert tag injection in forms', '2020-09-24T16:23:54Z'),
                         $this->graphQlPackageNode('GHSA-f7wm-x4gw-6m23', 'vendor/other-package', '< 5.11.0', 'CVE-2020-25768', 'Insert tag injection in forms', '2020-09-24T16:23:54Z'),
+                    ],
+                    'pageInfo' => [
+                        'hasNextPage' => false,
+                        'endCursor' => 'Y3Vyc29yOnYyOpK5MjAxOS0xMi0xN1QyMDozNTozMSswMTowMM0LWQ==',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    private function getGraphQLResultPageWithMultipleCvePerPackage(): array
+    {
+        return [
+            'data' => [
+                'securityVulnerabilities' => [
+                    'nodes' => [
+                        $this->graphQlPackageNode('GHSA-h58v-c6rf-abcd', 'vendor/package', '= 4.10.0', 'CVE-2020-25768', 'Insert tag injection', '2021-07-01T17:00:04Z'),
+                        $this->graphQlPackageNode('GHSA-f7wm-x4gw-abcd', 'vendor/package', '= 4.10.0', 'CVE-2020-25768', 'Insert tag injection in forms', '2020-09-24T16:23:54Z'),
                     ],
                     'pageInfo' => [
                         'hasNextPage' => false,
