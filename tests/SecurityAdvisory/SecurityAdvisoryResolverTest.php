@@ -98,6 +98,18 @@ class SecurityAdvisoryResolverTest extends TestCase
         $this->assertNotNull($advisory->getSourceRemoteId('other'));
     }
 
+    public function testResolveRemoteIdChangedSameCve(): void
+    {
+        $remoteAdvisory = $this->createRemoteAdvisory('test', cve: 'CVE-2024-9999999999');
+        $advisory = new SecurityAdvisory($this->createRemoteAdvisory('test', cve: 'CVE-2024-9999999999'), 'test');
+        [$new, $removed] = $this->resolver->resolve([$advisory], new RemoteSecurityAdvisoryCollection([$remoteAdvisory]), 'test');
+
+        $this->assertSame([], $new);
+        $this->assertSame([], $removed);
+
+        $this->assertSame($remoteAdvisory->id, $advisory->getSourceRemoteId('test'));
+    }
+
     public function testResolveEmpty(): void
     {
         [$new, $removed] = $this->resolver->resolve([], new RemoteSecurityAdvisoryCollection([]), 'test');

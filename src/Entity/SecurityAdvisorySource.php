@@ -62,6 +62,7 @@ class SecurityAdvisorySource
 
     public function update(RemoteSecurityAdvisory $advisory): void
     {
+        $this->remoteId = $advisory->id;
         $this->severity = $advisory->severity;
     }
 }
