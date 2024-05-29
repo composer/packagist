@@ -155,8 +155,8 @@ final class QueryTest extends TestCase
         ];
 
         yield 'with_single_tag' => [
-            new Query('monolog', ['testing'], '', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing")'],
+            new Query('monolog', ['testing"quote'], '', 15, 1),
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing\"quote")'],
         ];
 
         yield 'with_single_tag_but_space' => [
@@ -170,18 +170,18 @@ final class QueryTest extends TestCase
         ];
 
         yield 'with_type' => [
-            new Query('monolog', [], 'symfony-bundle', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:symfony-bundle'],
+            new Query('monolog', [], 'symfony-bundle"quote', 15, 1),
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:"symfony-bundle\"quote"'],
         ];
 
         yield 'with_single_tag_and_type' => [
             new Query('monolog', ['testing'], 'symfony-bundle', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:symfony-bundle AND (tags:"testing")'],
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:"symfony-bundle" AND (tags:"testing")'],
         ];
 
         yield 'with_multiple_tags_and_type' => [
             new Query('monolog', ['testing', 'mock'], 'symfony-bundle', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:symfony-bundle AND (tags:"testing" OR tags:"mock")'],
+            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:"symfony-bundle" AND (tags:"testing" OR tags:"mock")'],
         ];
     }
 }
