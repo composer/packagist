@@ -87,7 +87,7 @@
                         <div class="btn-group btn-group-xs">
                             {% if is_granted('abandon', package) %}
                                 {% if package.abandoned %}
-                                    <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}">
+                                    <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}" method="POST">
                                         <input class="btn btn-default" type="submit" value="Un-abandon" />
                                     </form>
                                 {% else %}

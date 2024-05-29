@@ -1035,7 +1035,7 @@ class PackageController extends Controller
         ]);
     }
 
-    #[Route(path: '/packages/{name}/unabandon', name: 'unabandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
+    #[Route(path: '/packages/{name}/unabandon', name: 'unabandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], methods: ['POST'])]
     public function unabandonAction(#[MapEntity] Package $package, #[CurrentUser] ?User $user = null): RedirectResponse
     {
         $this->denyAccessUnlessGranted(PackageActions::Abandon->value, $package);
