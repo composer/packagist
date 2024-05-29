@@ -60,7 +60,7 @@ final class Query
         $filters = [];
 
         if ($this->type) {
-            $filters[] = 'type:'.$this->type;
+            $filters[] = 'type:"'.Preg::replace('{\\\\*"}', '\"', $this->type).'"';
         }
 
         // filter by tags
@@ -68,6 +68,7 @@ final class Query
             $tags = [];
             foreach ($this->tags as $tag) {
                 $tag = Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8'));
+                $tag = Preg::replace('{\\\\*"}', '\"', $tag);
                 $tags[] = 'tags:"'.$tag.'"';
                 if (str_contains($tag, ' ')) {
                     $tags[] = 'tags:"'.strtr($tag, ' ', '-').'"';
