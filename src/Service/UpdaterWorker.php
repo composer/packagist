@@ -39,6 +39,8 @@ use Composer\Factory;
 use Composer\Downloader\TransportException;
 use Composer\Util\HttpDownloader;
 use Graze\DogStatsD\Client as StatsDClient;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 
 class UpdaterWorker
 {
@@ -224,12 +226,12 @@ class UpdaterWorker
             // github update downgraded to a git clone, this should not happen, so check through API whether the package still exists
             $driver = $repository->getDriver();
             if ($driver && Preg::isMatchStrictGroups('{[@/]github.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $match) && str_starts_with($driver->getUrl(), 'git@')) {
-                if ($result = $this->checkForDeadGitHubPackage($package, $match[1], $httpDownloader, $io->getOutput())) {
+                if ($result = $this->checkForDeadGitHubPackage($package, $match[1], $httpDownloader, $this->cleanupOutput($io->getOutput()))) {
                     return $result;
                 }
             }
         } catch (\Throwable $e) {
-            $output = $io->getOutput();
+            $output = $this->cleanupOutput($io->getOutput());
 
             if (!$this->getEM()->isOpen()) {
                 $this->doctrine->resetManager();
@@ -406,10 +408,18 @@ class UpdaterWorker
 
     private function cleanupOutput(string $str): string
     {
-        return Preg::replace('{
+        // remove "Reading composer.json of ..." lines preceding "Found cached composer.json..." ones as they are redundant
+        $str = Preg::replace('{
             Reading\ composer.json\ of\ <span(.+?)>(?P<pkg>[^<]+)</span>\ \(<span(.+?)>(?P<version>[^<]+)</span>\)\r?\n
             (?P<cache>Found\ cached\ composer.json\ of\ <span(.+?)>(?P=pkg)</span>\ \(<span(.+?)>(?P=version)</span>\)\r?\n)
         }x', '$5', $str);
+
+        $config = (new HtmlSanitizerConfig())
+            ->allowElement('span')
+            ->allowAttribute('style', ['span'])
+            ->withMaxInputLength(10_000_000);
+        $sanitizer = new HtmlSanitizer($config);
+        return $sanitizer->sanitize($str);
     }
 
     /**
