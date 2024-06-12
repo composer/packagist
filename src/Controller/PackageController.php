@@ -1299,21 +1299,29 @@ class PackageController extends Controller
         }
 
         $page = max(1, $req->query->getInt('page', 1));
-        $perPage = 15;
-        $orderBy = $req->query->get('order_by', 'name');
-        $requires = $req->query->get('requires', 'all');
+        if ($req->getRequestFormat() === 'html' && $page > 3 && $this->getUser() === null) {
+            return new Response('<html>You must <a href="'.$this->generateUrl('login').'">log in</a> to access this page.', Response::HTTP_FORBIDDEN);
+        }
 
+        $perPage = 15;
         if ($req->getRequestFormat() === 'json') {
             $perPage = 100;
         }
 
-        $repo = $this->getEM()->getRepository(Package::class);
-        $requireType = null;
-        if ($requires === 'require') {
-            $requireType = Dependent::TYPE_REQUIRE;
-        } elseif ($requires === 'require-dev') {
-            $requireType = Dependent::TYPE_REQUIRE_DEV;
+        $orderBy = $req->query->get('order_by', 'name');
+        if (!in_array($orderBy, ['name', 'downloads'], true)) {
+            throw new BadRequestHttpException('Invalid order_by parameter provided');
         }
+
+        $requires = $req->query->get('requires', 'all');
+        $requireType = match ($requires) {
+            'require' => Dependent::TYPE_REQUIRE,
+            'require-dev' => Dependent::TYPE_REQUIRE_DEV,
+            'all' => null,
+            default => throw new BadRequestHttpException('Invalid requires parameter provided'),
+        };
+
+        $repo = $this->getEM()->getRepository(Package::class);
         $depCount = $repo->getDependentCount($name, $requireType);
         $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
 
@@ -1365,8 +1373,11 @@ class PackageController extends Controller
         }
 
         $page = max(1, $req->query->getInt('page', 1));
-        $perPage = 15;
+        if ($req->getRequestFormat() === 'html' && $page > 3 && $this->getUser() === null) {
+            return new Response('<html>You must <a href="'.$this->generateUrl('login').'">log in</a> to access this page.', Response::HTTP_FORBIDDEN);
+        }
 
+        $perPage = 15;
         if ($req->getRequestFormat() === 'json') {
             $perPage = 100;
         }
