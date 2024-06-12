@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Service\UpdaterWorker;
+use App\Util\HttpDownloaderOptionsFactory;
 use App\Validator\PopularPackageSafety;
 use App\Validator\TypoSquatters;
 use App\Validator\Copyright;
@@ -514,7 +515,7 @@ class Package
             $io = new NullIO();
             $config = Factory::createConfig();
             $io->loadConfiguration($config);
-            $httpDownloader = new HttpDownloader($io, $config);
+            $httpDownloader = new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
             $repository = new VcsRepository(['url' => $this->repository], $io, $config, $httpDownloader, null, null, UpdaterWorker::VCS_REPO_DRIVERS);
 
             $driver = $this->vcsDriver = $repository->getDriver();

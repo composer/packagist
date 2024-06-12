@@ -14,6 +14,7 @@ namespace App\Package;
 
 use App\Entity\Dependent;
 use App\Entity\PackageFreezeReason;
+use App\Util\HttpDownloaderOptionsFactory;
 use cebe\markdown\GithubMarkdown;
 use Composer\Package\AliasPackage;
 use Composer\Pcre\Preg;
@@ -103,7 +104,7 @@ class Updater
      */
     public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, int $flags = 0, ?array $existingVersions = null, ?VersionCache $versionCache = null): Package
     {
-        $httpDownloader = new HttpDownloader($io, $config);
+        $httpDownloader = new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
 
         $deleteDate = new \DateTime();
         $deleteDate->modify('-1day');

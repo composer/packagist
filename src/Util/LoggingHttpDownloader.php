@@ -28,7 +28,7 @@ class LoggingHttpDownloader extends HttpDownloader
         private bool $usesPackagistToken,
         private string $vendor,
     ) {
-        parent::__construct($io, $config);
+        parent::__construct($io, $config, HttpDownloaderOptionsFactory::getOptions());
     }
 
     public function get($url, $options = []): Response
