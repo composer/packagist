@@ -51,6 +51,7 @@ class PackageAuditRecordTest extends KernelTestCase
         self::assertSame(AuditRecordType::PackageCreated->value, $logs[0]['type']);
 
         $package->setRepository('https://github.com/composer/packagist');
+        $em->persist($package);
         $em->flush();
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');

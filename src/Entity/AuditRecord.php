@@ -66,6 +66,25 @@ class AuditRecord
         return new self(AuditRecordType::CanonicalUrlChange, ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($user)], $user?->getId(), $package->getVendor(), $package->getId());
     }
 
+    public static function versionDeleted(Version $version, User|null $user): self
+    {
+        $package = $version->getPackage();
+
+        return new self(AuditRecordType::VersionDeleted, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($user, 'automation')], $user?->getId(), $package->getVendor(), $package->getId());
+    }
+
+    public static function versionReferenceChange(Version $version, string|null $oldSourceReference, string|null $oldDistReference): self
+    {
+        $package = $version->getPackage();
+
+        return new self(
+            AuditRecordType::VersionReferenceChange,
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'source_from' => $oldSourceReference, 'source_to' => $version->getSource()['reference'] ?? null, 'dist_from' => $oldDistReference, 'dist_to' => $version->getDist()['reference'] ?? null],
+            vendor: $package->getVendor(),
+            packageId: $package->getId()
+        );
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */

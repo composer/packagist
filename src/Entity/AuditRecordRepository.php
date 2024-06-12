@@ -14,6 +14,8 @@ namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\DBAL\Types\Types;
+use Symfony\Bridge\Doctrine\Types\UlidType;
 
 /**
  * @extends ServiceEntityRepository<AuditRecord>
@@ -41,5 +43,25 @@ class AuditRecordRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    /**
+     * Performs a direct insert not requiring usage of the ORM so it can be used within ORM lifecycle listeners
+     */
+    public function insert(AuditRecord $record): void
+    {
+        $this->getEntityManager()->getConnection()->insert('audit_log', [
+            'id' => $record->id,
+            'datetime' => $record->datetime,
+            'type' => $record->type->value,
+            'attributes' => $record->attributes,
+            'userId' => $record->userId,
+            'vendor' => $record->vendor,
+            'packageId' => $record->packageId,
+        ], [
+            'id' => UlidType::NAME,
+            'datetime' => Types::DATETIME_IMMUTABLE,
+            'attributes' => Types::JSON
+        ]);
     }
 }

@@ -23,8 +23,8 @@ enum AuditRecordType: string
     case PackageCreated = 'package_created';
     case PackageDeleted = 'package_deleted';
     case CanonicalUrlChange = 'canonical_url_change';
-    case VersionDeleted = 'version_deleted'; # TODO
-    case VersionChange = 'version_change'; # TODO
+    case VersionDeleted = 'version_deleted';
+    case VersionReferenceChange = 'version_reference_change';
     case PackageAbandoned = 'package_abandoned'; # TODO
     case PackageUnabandoned = 'package_unabandoned'; # TODO
 

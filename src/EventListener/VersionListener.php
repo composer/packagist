@@ -13,21 +13,20 @@
 namespace App\EventListener;
 
 use App\Entity\AuditRecord;
-use App\Entity\Package;
 use App\Entity\User;
+use App\Entity\Version;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\EntityManager;
-use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
 
-#[AsEntityListener(event: 'postPersist', entity: Package::class)]
-#[AsEntityListener(event: 'preRemove', entity: Package::class)]
-#[AsEntityListener(event: 'preUpdate', entity: Package::class)]
-#[AsEntityListener(event: 'postUpdate', entity: Package::class)]
-class PackageListener
+#[AsEntityListener(event: 'preRemove', entity: Version::class)]
+#[AsEntityListener(event: 'preUpdate', entity: Version::class)]
+#[AsEntityListener(event: 'postUpdate', entity: Version::class)]
+class VersionListener
 {
     use DoctrineTrait;
 
@@ -43,33 +42,31 @@ class PackageListener
     /**
      * @param LifecycleEventArgs<EntityManager> $event
      */
-    public function postPersist(Package $package, LifecycleEventArgs $event): void
+    public function preRemove(Version $version, LifecycleEventArgs $event): void
     {
-        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::packageCreated($package, $this->getUser()));
-    }
-
-    /**
-     * @param LifecycleEventArgs<EntityManager> $event
-     */
-    public function preRemove(Package $package, LifecycleEventArgs $event): void
-    {
-        $record = AuditRecord::packageDeleted($package, $this->getUser());
+        $record = AuditRecord::versionDeleted($version, $this->getUser());
         $this->getEM()->persist($record);
         // let the record be flushed together with the entity
     }
 
-    public function preUpdate(Package $package, PreUpdateEventArgs $event): void
+    public function preUpdate(Version $version, PreUpdateEventArgs $event): void
     {
-        if ($event->hasChangedField('repository')) {
-            // buffering things to be inserted in postUpdate once we can confirm it is done
-            $this->buffered[] = AuditRecord::canonicalUrlChange($package, $this->getUser(), $event->getOldValue('repository'));
+        if (($event->hasChangedField('source') || $event->hasChangedField('dist')) && !$version->isDevelopment()) {
+            $oldDistRef = $event->getOldValue('dist')['reference'] ?? null;
+            $oldSourceRef = $event->getOldValue('source')['reference'] ?? null;
+            $newDistRef = $event->getNewValue('dist')['reference'] ?? null;
+            $newSourceRef = $event->getNewValue('source')['reference'] ?? null;
+            if ($oldDistRef !== $newDistRef || $oldSourceRef !== $newSourceRef) {
+                // buffering things to be inserted in postUpdate once we can confirm it is done
+                $this->buffered[] = AuditRecord::versionReferenceChange($version, $oldSourceRef, $oldDistRef);
+            }
         }
     }
 
     /**
      * @param LifecycleEventArgs<EntityManager> $event
      */
-    public function postUpdate(Package $package, LifecycleEventArgs $event): void
+    public function postUpdate(Version $version, LifecycleEventArgs $event): void
     {
         if ($this->buffered) {
             $repo = $this->getEM()->getRepository(AuditRecord::class);

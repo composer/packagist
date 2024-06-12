@@ -16,6 +16,21 @@ parameters:
 			path: src/DataFixtures/PackageFixtures.php
 
 		-
+			message: "#^Query error\\: Column \"audit_log\\.attributes\" expects value type string, got type array\\<string, mixed\\>$#"
+			count: 1
+			path: src/Entity/AuditRecordRepository.php
+
+		-
+			message: "#^Query error\\: Column \"audit_log\\.datetime\" expects value type string, got type DateTimeImmutable$#"
+			count: 1
+			path: src/Entity/AuditRecordRepository.php
+
+		-
+			message: "#^Query error\\: Column \"audit_log\\.id\" expects value type string, got type Symfony\\\\Component\\\\Uid\\\\Ulid$#"
+			count: 1
+			path: src/Entity/AuditRecordRepository.php
+
+		-
 			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) should return array\\<array\\{id\\: int, name\\: string, description\\: string\\|null, language\\: string\\|null, abandoned\\: int, replacementPackage\\: string\\|null\\}\\> but returns array\\<int\\<0, max\\>, non\\-empty\\-array\\<string, mixed\\>\\>\\.$#"
 			count: 1
 			path: src/Entity/PackageRepository.php
@@ -39,21 +54,6 @@ parameters:
 			message: "#^Offset 'name' on array\\{name\\: string, description\\?\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
 			count: 1
 			path: src/Entity/Version.php
-
-		-
-			message: "#^Query error\\: Column \"audit_log\\.attributes\" expects value type string, got type array\\<string, mixed\\>$#"
-			count: 1
-			path: src/EventListener/PackageListener.php
-
-		-
-			message: "#^Query error\\: Column \"audit_log\\.datetime\" expects value type string, got type DateTimeImmutable$#"
-			count: 1
-			path: src/EventListener/PackageListener.php
-
-		-
-			message: "#^Query error\\: Column \"audit_log\\.id\" expects value type string, got type Symfony\\\\Component\\\\Uid\\\\Ulid$#"
-			count: 1
-			path: src/EventListener/PackageListener.php
 
 		-
 			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavoriteCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
