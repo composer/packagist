@@ -39,6 +39,9 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Service\VersionCache;
 use Composer\Package\CompletePackageInterface;
+use DOMElement;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
@@ -710,6 +713,15 @@ class Updater
      */
     private function prepareReadme(string $readme, ?string $host = null, ?string $owner = null, ?string $repo = null): string
     {
+        // detect base path for github readme if file is located in a subfolder like docs/README.md
+        $basePath = '';
+        if ($host === 'github.com' && Preg::isMatchStrictGroups('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
+            $basePath = dirname($match[1]);
+        }
+        if ($basePath) {
+            $basePath .= '/';
+        }
+
         $elements = [
             'p',
             'br',
@@ -726,44 +738,32 @@ class Updater
             'q', 'blockquote', 'abbr', 'cite',
             'table', 'thead', 'tbody', 'th', 'tr', 'td',
             'a', 'span',
-            'img',
             'details', 'summary',
         ];
 
-        $attributes = [
-            'img.src', 'img.title', 'img.alt', 'img.width', 'img.height', 'img.style',
-            'a.href', 'a.target', 'a.rel', 'a.id',
-            'td.colspan', 'td.rowspan', 'th.colspan', 'th.rowspan',
-            'th.align', 'td.align', 'p.align',
-            'h1.align', 'h2.align', 'h3.align', 'h4.align', 'h5.align', 'h6.align',
-            '*.class', 'details.open',
-        ];
-
-        // detect base path for github readme if file is located in a subfolder like docs/README.md
-        $basePath = '';
-        if ($host === 'github.com' && Preg::isMatchStrictGroups('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
-            $basePath = dirname($match[1]);
-        }
-        if ($basePath) {
-            $basePath .= '/';
+        $config = (new HtmlSanitizerConfig());
+        foreach ($elements as $el) {
+            $config = $config->allowElement($el);
         }
 
-        $config = \HTMLPurifier_Config::createDefault();
-        $config->set('HTML.AllowedElements', implode(',', $elements));
-        $config->set('HTML.AllowedAttributes', implode(',', $attributes));
-        $config->set('Attr.EnableID', true);
-        $config->set('Attr.AllowedFrameTargets', ['_blank']);
+        $config = $config
+            ->blockElement('div')
+            ->blockElement('article')
+            ->blockElement('g-emoji')
+            ->allowElement('img', ['src', 'title', 'alt', 'width', 'height'])
+            ->allowElement('a', ['href', 'target', 'id'])
+            ->allowElement('td', ['colspan', 'rowspan'])
+            ->allowElement('th', ['colspan', 'rowspan'])
+            ->allowElement('details', ['open'])
+            ->allowAttribute('align', ['th', 'td', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+            ->allowAttribute('class', '*')
+            ->allowLinkSchemes(['https', 'http', 'mailto'])
+            ->allowRelativeLinks()
+            ->allowRelativeMedias()
+            ->withMaxInputLength(10_000_000);
 
-        // add custom HTML tag definitions
-        $def = $config->getHTMLDefinition(true);
-        Assert::notNull($def);
-        $def->addElement('details', 'Block', 'Flow', 'Common', [
-          'open' => 'Bool#open',
-        ]);
-        $def->addElement('summary', 'Inline', 'Inline', 'Common');
-
-        $purifier = new \HTMLPurifier($config);
-        $readme = $purifier->purify($readme);
+        $sanitizer = new HtmlSanitizer($config);
+        $readme = $sanitizer->sanitizeFor('body', $readme);
 
         libxml_use_internal_errors(true);
         $dom = new \DOMDocument();
@@ -771,6 +771,7 @@ class Updater
 
         // Links can not be trusted, mark them nofollow and convert relative to absolute links
         $links = $dom->getElementsByTagName('a');
+        /** @var DOMElement $link */
         foreach ($links as $link) {
             $link->setAttribute('rel', 'nofollow noindex noopener external ugc');
             if ('#' === substr($link->getAttribute('href'), 0, 1)) {
@@ -788,11 +789,15 @@ class Updater
                     'https://gitlab.com/'.$owner.'/'.$repo.'/-/blob/HEAD/'.$basePath.$link->getAttribute('href')
                 );
             }
+            if ($link->getAttribute('target') !== '' && $link->getAttribute('target') !== '_blank') {
+                $link->setAttribute('target', '_blank');
+            }
         }
 
         // embed images of selected hosts by converting relative links to accessible URLs
         if (in_array($host, ['github.com', 'gitlab.com', 'bitbucket.org'], true)) {
             $images = $dom->getElementsByTagName('img');
+            /** @var DOMElement $img */
             foreach ($images as $img) {
                 if (!str_contains($img->getAttribute('src'), '//')) {
                     $imgSrc = match ($host) {

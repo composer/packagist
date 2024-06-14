@@ -128,9 +128,6 @@
     "endroid/qr-code": {
         "version": "3.9.6"
     },
-    "ezyang/htmlpurifier": {
-        "version": "v4.13.0"
-    },
     "friendsofphp/proxy-manager-lts": {
         "version": "v1.0.7"
     },

@@ -34,7 +34,6 @@
         "doctrine/doctrine-bundle": "^2.2",
         "doctrine/orm": "^2.7",
         "endroid/qr-code": "^5",
-        "ezyang/htmlpurifier": "^4.6",
         "graze/dog-statsd": "^1",
         "knplabs/knp-menu-bundle": "^3",
         "knpuniversity/oauth2-client-bundle": "^2.8",
