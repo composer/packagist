@@ -14,6 +14,8 @@ namespace App\Package;
 
 use App\Entity\Dependent;
 use App\Entity\PackageFreezeReason;
+use App\HtmlSanitizer\ReadmeImageSanitizer;
+use App\HtmlSanitizer\ReadmeLinkSanitizer;
 use App\Util\HttpDownloaderOptionsFactory;
 use cebe\markdown\GithubMarkdown;
 use Composer\Package\AliasPackage;
@@ -39,7 +41,6 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
 use App\Service\VersionCache;
 use Composer\Package\CompletePackageInterface;
-use DOMElement;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 use Symfony\Component\Mailer\MailerInterface;
@@ -758,6 +759,9 @@ class Updater
             ->allowAttribute('align', ['th', 'td', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
             ->allowAttribute('class', '*')
             ->allowLinkSchemes(['https', 'http', 'mailto'])
+            ->forceAttribute('a', 'rel', 'nofollow noindex noopener external ugc')
+            ->withAttributeSanitizer(new ReadmeLinkSanitizer($host, $owner.'/'.$repo, $basePath))
+            ->withAttributeSanitizer(new ReadmeImageSanitizer($host, $owner.'/'.$repo, $basePath))
             ->allowRelativeLinks()
             ->allowRelativeMedias()
             ->withMaxInputLength(10_000_000);
@@ -765,69 +769,9 @@ class Updater
         $sanitizer = new HtmlSanitizer($config);
         $readme = $sanitizer->sanitizeFor('body', $readme);
 
-        libxml_use_internal_errors(true);
-        $dom = new \DOMDocument();
-        $dom->loadHTML('<?xml encoding="UTF-8">' . $readme);
-
-        // Links can not be trusted, mark them nofollow and convert relative to absolute links
-        $links = $dom->getElementsByTagName('a');
-        /** @var DOMElement $link */
-        foreach ($links as $link) {
-            $link->setAttribute('rel', 'nofollow noindex noopener external ugc');
-            if ('#' === substr($link->getAttribute('href'), 0, 1)) {
-                $link->setAttribute('href', '#user-content-'.substr($link->getAttribute('href'), 1));
-            } elseif ('mailto:' === substr($link->getAttribute('href'), 0, 7)) {
-                // do nothing
-            } elseif ($host === 'github.com' && !str_contains($link->getAttribute('href'), '//')) {
-                $link->setAttribute(
-                    'href',
-                    'https://github.com/'.$owner.'/'.$repo.'/blob/HEAD/'.$basePath.$link->getAttribute('href')
-                );
-            } elseif ($host === 'gitlab.com' && !str_contains($link->getAttribute('href'), '//')) {
-                $link->setAttribute(
-                    'href',
-                    'https://gitlab.com/'.$owner.'/'.$repo.'/-/blob/HEAD/'.$basePath.$link->getAttribute('href')
-                );
-            }
-            if ($link->getAttribute('target') !== '' && $link->getAttribute('target') !== '_blank') {
-                $link->setAttribute('target', '_blank');
-            }
-        }
-
-        // embed images of selected hosts by converting relative links to accessible URLs
-        if (in_array($host, ['github.com', 'gitlab.com', 'bitbucket.org'], true)) {
-            $images = $dom->getElementsByTagName('img');
-            /** @var DOMElement $img */
-            foreach ($images as $img) {
-                if (!str_contains($img->getAttribute('src'), '//')) {
-                    $imgSrc = match ($host) {
-                        'github.com' => 'https://raw.github.com/'.$owner.'/'.$repo.'/HEAD/'.$basePath.$img->getAttribute('src'),
-                        'gitlab.com' => 'https://gitlab.com/'.$owner.'/'.$repo.'/-/raw/HEAD/'.$basePath.$img->getAttribute('src'),
-                        'bitbucket.org' => 'https://bitbucket.org/'.$owner.'/'.$repo.'/raw/HEAD/'.$basePath.$img->getAttribute('src'),
-                    };
-                    $img->setAttribute('src', $imgSrc);
-                }
-            }
-        }
-
         // remove first page element if it's a <h1> or <h2>, because it's usually
         // the project name or the `README` string which we don't need
-        $first = $dom->getElementsByTagName('body')->item(0);
-        if ($first) {
-            $first = $first->childNodes->item(0);
-        }
-
-        if ($first && ('h1' === $first->nodeName || 'h2' === $first->nodeName)) {
-            $first->parentNode?->removeChild($first);
-        }
-
-        $readme = $dom->saveHTML();
-        Assert::string($readme);
-        $readme = substr($readme, strpos($readme, '<body>') + 6);
-        $readme = substr($readme, 0, strrpos($readme, '</body>') ?: PHP_INT_MAX);
-
-        libxml_use_internal_errors(false);
-        libxml_clear_errors();
+        $readme = Preg::replace('{^<(h[12])>.*</(?1)>}', '', $readme);
 
         return str_replace("\r\n", "\n", $readme);
     }
