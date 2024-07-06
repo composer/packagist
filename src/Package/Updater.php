@@ -748,6 +748,7 @@ class Updater
         }
 
         $config = $config
+            // TODO symfony/html-sanitizer:7.2 ->defaultAction(HtmlSanitizerAction::Block)
             ->blockElement('div')
             ->blockElement('article')
             ->blockElement('g-emoji')

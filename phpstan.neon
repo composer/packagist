@@ -8,6 +8,7 @@ includes:
     - vendor/phpstan/phpstan-symfony/rules.neon
     - vendor/phpstan/phpstan-webmozart-assert/extension.neon
     - vendor/staabm/phpstan-dba/config/dba.neon
+    - vendor/staabm/phpstan-todo-by/extension.neon
     - vendor/phpstan/phpstan-deprecation-rules/rules.neon
 
 parameters:
