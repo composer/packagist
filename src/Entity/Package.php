@@ -482,7 +482,7 @@ class Package
         $repoUrl = Preg::replace('{^(https://github.com/.*?)\.git$}i', '$1', $repoUrl);
         $repoUrl = Preg::replace('{^(https://github.com/.*?)/$}i', '$1', $repoUrl);
         // support urls like https://github.com/foo/bar/tree/main/baz or other sub-URLs in a repo
-        $repoUrl = Preg::replace('{^(https://github.com/[^/]+/[^/]+).+$}i', '$1', $repoUrl);
+        $repoUrl = Preg::replace('{^(https://github.com/[^/]+/[^/]++).+$}i', '$1', $repoUrl);
 
         $repoUrl = Preg::replace('{^git@gitlab.com:}i', 'https://gitlab.com/', $repoUrl);
         $repoUrl = Preg::replace('{^https?://(?:www\.)?gitlab\.com/(.*?)\.git$}i', 'https://gitlab.com/$1', $repoUrl);
