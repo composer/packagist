@@ -6,11 +6,6 @@ parameters:
 			path: src/Command/RunWorkersCommand.php
 
 		-
-			message: "#^Parameter \\#1 \\$min \\(1\\) of function random_int expects lower number than parameter \\#2 \\$max \\(int\\<\\-2147483648, 2147483647\\>\\)\\.$#"
-			count: 1
-			path: src/Controller/ExploreController.php
-
-		-
 			message: "#^Parameter \\#1 \\$job of method App\\\\Service\\\\UpdaterWorker\\:\\:process\\(\\) expects App\\\\Entity\\\\Job\\<array\\{id\\: int, update_equal_refs\\: bool, delete_before\\: bool, force_dump\\: bool\\}\\>, App\\\\Entity\\\\Job\\<array\\{id\\: int, update_equal_refs\\: false, delete_before\\: false, force_dump\\: false\\}\\> given\\.$#"
 			count: 1
 			path: src/DataFixtures/PackageFixtures.php
