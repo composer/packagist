@@ -12,6 +12,7 @@
 
 namespace App\Service;
 
+use App\Logger\LogIdProcessor;
 use Monolog\LogRecord;
 use Predis\Client as Redis;
 use Monolog\Logger;
@@ -34,7 +35,8 @@ class QueueWorker
         private Logger $logger,
         /** @var array<string, UpdaterWorker|GitHubUserMigrationWorker|SecurityAdvisoryWorker> */
         private array $jobWorkers,
-        private StatsDClient $statsd
+        private StatsDClient $statsd,
+        private readonly LogIdProcessor $logIdProcessor,
     ) {
     }
 
@@ -112,11 +114,7 @@ class QueueWorker
             throw new \LogicException('At this point a job should always be found');
         }
 
-        $this->logger->pushProcessor(static function (LogRecord $record) use ($job) {
-            $record->extra['job_id'] = $job->getId();
-
-            return $record;
-        });
+        $this->logIdProcessor->startJob($job->getId());
 
         $expectedStart = $job->getExecuteAfter() ?: $job->getCreatedAt();
         $start = microtime(true);
@@ -177,7 +175,6 @@ class QueueWorker
             $em->flush();
 
             $this->logger->reset();
-            $this->logger->popProcessor();
 
             return true;
         }
@@ -206,7 +203,6 @@ class QueueWorker
         }
 
         $this->logger->reset();
-        $this->logger->popProcessor();
 
         return true;
     }

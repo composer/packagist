@@ -12,6 +12,7 @@
 
 namespace App\EventListener;
 
+use App\Logger\LogIdProcessor;
 use Graze\DogStatsD\Client;
 use Monolog\Logger;
 use Monolog\LogRecord;
@@ -26,10 +27,11 @@ class RequestStatsListener
     public function __construct(
         private Client $statsd,
         private Logger $logger,
+        private LogIdProcessor $logIdProcessor,
     ) {
     }
 
-    #[AsEventListener]
+    #[AsEventListener(priority: 1000)]
     public function onRequest(RequestEvent $e): void
     {
         if (!$e->isMainRequest()) {
@@ -37,15 +39,13 @@ class RequestStatsListener
         }
         $this->pageTiming = microtime(true);
 
-        $reqId = bin2hex(random_bytes(6));
-        $this->logger->pushProcessor(static function (LogRecord $record) use ($reqId) {
-            $record->extra['req_id'] = $reqId;
-
-            return $record;
-        });
+        $this->logIdProcessor->startRequest();
+        if ($e->getRequest()->getContent() !== null) {
+            $this->logger->debug('Request content received', ['content' => substr($e->getRequest()->getContent(), 0, 10_000)]);
+        }
     }
 
-    #[AsEventListener]
+    #[AsEventListener(priority: -1000)]
     public function onResponse(ResponseEvent $e): void
     {
         if (!$e->isMainRequest()) {
@@ -56,7 +56,6 @@ class RequestStatsListener
             return;
         }
 
-        $this->logger->popProcessor();
         $this->statsd->timing('app.response_time', (int) ((microtime(true) - $this->pageTiming) * 1000));
         $this->pageTiming = null;
 
