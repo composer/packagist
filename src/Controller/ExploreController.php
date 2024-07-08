@@ -38,7 +38,7 @@ class ExploreController extends Controller
         $newSubmitted = $pkgRepo->getQueryBuilderForNewestPackages()->setMaxResults(10)
             ->getQuery()->enableResultCache(60)->getResult();
         $newReleases = $verRepo->getLatestReleases(10);
-        $maxId = (int) $this->getEM()->getConnection()->fetchOne('SELECT max(id) FROM package');
+        $maxId = max(1, (int) $this->getEM()->getConnection()->fetchOne('SELECT max(id) FROM package'));
         $random = $pkgRepo
             ->createQueryBuilder('p')->where('p.id >= :randId')->andWhere('p.abandoned = 0')
             ->setParameter('randId', random_int(1, $maxId))->setMaxResults(10)
