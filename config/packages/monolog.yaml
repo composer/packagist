@@ -36,7 +36,6 @@ when@prod:
                 action_level: error
                 handler: nested
                 excluded_http_codes: [400, 404, 405]
-                passthru_level: warning
                 buffer_size: 100 # How many messages should be saved? Prevent memory leaks
             nested:
                 type: stream
