@@ -772,7 +772,7 @@ class Updater
 
         // remove first page element if it's a <h1> or <h2>, because it's usually
         // the project name or the `README` string which we don't need
-        $readme = Preg::replace('{^<(h[12])[^>]+>.*</(?1)>}', '', $readme);
+        $readme = Preg::replace('{^<(h[12])[^>]*>.*</(?1)>}', '', $readme);
 
         return str_replace("\r\n", "\n", $readme);
     }
