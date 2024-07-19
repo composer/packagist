@@ -51,4 +51,34 @@ class ProfileControllerTest extends ControllerTestCase
         $this->assertNull($user->getPasswordRequestedAt());
         $this->assertNull($user->getConfirmationToken());
     }
+
+    public function testTokenRotate(): void
+    {
+        $user = new User;
+        $user->setEnabled(true);
+        $user->setUsername('test');
+        $user->setEmail('test@example.org');
+        $user->setPassword('testtest');
+        $user->initializeApiToken();
+        $token = $user->getApiToken();
+
+        $em = self::getEM();
+        $em->persist($user);
+        $em->flush();
+
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/profile/');
+        $this->assertEquals($token, $crawler->filter('#api-token')->attr('data-api-token'));
+
+        $form = $crawler->selectButton('Rotate API Token')->form();
+        $this->client->submit($form);
+
+        $this->assertResponseStatusCodeSame(302);
+
+        $em->clear();
+        $user = $em->getRepository(User::class)->find($user->getId());
+        $this->assertNotNull($user);
+        $this->assertNotEquals($token, $user->getApiToken());
+    }
 }
