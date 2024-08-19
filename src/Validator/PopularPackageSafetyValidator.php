@@ -16,6 +16,8 @@ use App\Entity\Package;
 use App\Entity\PackageRepository;
 use App\Entity\User;
 use App\Model\DownloadManager;
+use Doctrine\DBAL\Connection;
+use Doctrine\Persistence\ManagerRegistry;
 use Predis\Connection\ConnectionException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -29,6 +31,7 @@ class PopularPackageSafetyValidator extends ConstraintValidator
     public function __construct(
         private DownloadManager $downloadManager,
         private Security $security,
+        private readonly ManagerRegistry $doctrine,
     ) {
     }
 
@@ -66,6 +69,20 @@ class PopularPackageSafetyValidator extends ConstraintValidator
 
         // more than 50000 downloads = established package, do not allow editing URL anymore
         if ($downloads > 50_000) {
+            // for github, check if the existing remoteId is the same as the new one, if so it means the repo was renamed, and we can thus
+            // allow the rename to happen as we would anyway rename it the next time an update happens. So while maintainers do not have
+            // to update the URL themselves, in practice they often do then get blocked then reach out to support.
+            if ($value->isGitHub()) {
+                /** @var Connection $conn */
+                $conn = $this->doctrine->getConnection();
+                $oldRemoteId = $conn->fetchOne('SELECT remoteId FROM package WHERE id = :id', ['id' => $value->getId()]);
+                if (is_string($oldRemoteId)) {
+                    if ($oldRemoteId === $value->getRemoteId()) {
+                        return;
+                    }
+                }
+            }
+
             $this->context->buildViolation($constraint->message)
                 ->atPath('repository')
                 ->addViolation()
