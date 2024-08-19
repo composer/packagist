@@ -112,7 +112,7 @@ class PackagistExtension extends AbstractExtension
 
     public function generateGravatarHash(string $email): string
     {
-        return md5(strtolower($email));
+        return hash('md5', strtolower($email));
     }
 
     /**

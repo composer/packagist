@@ -5,19 +5,20 @@
 {% block user_content %}
 <section class="col-md-9">
     {%- if app.user.apiToken %}
-        <h3 class="font-normal profile-title">{{ 'profile.your_api_token'|trans }}</h3>
+        <h3 class="font-normal profile-title">Your API Token</h3>
 
         <div class="input-group api-token-group clearfix">
             <input id="api-token" type="text" class="form-control" value="" data-api-token="{{ app.user.apiToken }}" readonly="readonly">
             <span class="input-group-btn">
-                <button class="btn btn-success btn-show-api-token" type="button">{{ 'profile.show_api_token'|trans }}</button>
+                <button class="btn btn-success btn-show-api-token" type="button">Show API Token</button>
             </span>
         </div>
 
-        <p>{{ 'profile.api_token_explain'|trans({ '%path_about%':path('about') })|raw }}</p>
-        <p>{{ 'profile.api_token_rotate'|trans }}</p>
+        <p>You can use your API token to interact with the Packagist API, see details in <a href="{{ path('about') }}#how-to-update-packages">the docs</a>.</p>
+        <p>You can rotate your API token and generate a new one at any time.</p>
         <form class="rotate action" action="{{ path('rotate_token') }}" method="POST">
-            <input class="btn btn-inverse btn-rotate-api-token" type="submit" value="{{ 'profile.api_token_rotate_submit'|trans }}" />
+            <input class="btn btn-inverse btn-rotate-api-token" type="submit" value="Rotate API Token" />
+            <input type="hidden" name="token" value="{{ rotateApiCsrfToken }}" />
         </form>
 
         <hr>

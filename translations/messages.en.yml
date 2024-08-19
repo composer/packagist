@@ -96,18 +96,6 @@ edit:
     title: "Edit %name%"
     submit: Update
 
-profile:
-    your_api_token: Your API Token
-    show_api_token: Show API Token
-    accounts_connected: Account connected to %user%
-    connect_accounts: Connect accounts
-    notify_on_failure: Notify me of package update failures
-    api_token_explain: |
-        You can use your API token to interact with the Packagist API, see details in <a href="%path_about%#how-to-update-packages">the docs</a>.
-    api_token_rotate: |
-        You can rotate your API token and generate a new one at any time.
-    api_token_rotate_submit: Rotate API Token
-
 stats:
     title: Install Statistics
     subtitle: install statistics

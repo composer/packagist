@@ -37,7 +37,7 @@
             {{ form_errors(form.failureNotifications) }}
             <label>
                 {{ form_widget(form.failureNotifications) }}
-                {{ 'profile.notify_on_failure'|trans }}
+                Notify me of package update failures
             </label>
         </div>
 
@@ -51,7 +51,11 @@
         <a href="{{ app.user.githubId ? '#' : path('connect_github_start') }}" class="btn btn-block btn-github btn-lg {{ app.user.githubId ? 'disabled' : 'btn-primary' }}">
             <span class="icon-github"></span>
             {% set ghUser = app.user.githubUsername %}
-            {{ (app.user.githubId ? 'profile.accounts_connected' : 'profile.connect_accounts')|trans({"%user%": ghUser|default('unknown')}) }}
+            {% if app.user.githubId %}
+                Account connected to {{ ghUser|default('unknown') }}
+            {% else %}
+                Connect accounts
+            {% endif %}
         </a>
 
         {% if app.user.githubId %}
