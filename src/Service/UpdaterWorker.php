@@ -72,8 +72,7 @@ class UpdaterWorker
         PackageManager $packageManager,
         DownloadManager $downloadManager,
         private StatsDClient $statsd,
-        /** @var list<string> */
-        private array $fallbackGhTokens,
+        private readonly FallbackGitHubAuthProvider $fallbackGitHubAuthProvider,
     ) {
         $this->logger = $logger;
         $this->doctrine = $doctrine;
@@ -154,16 +153,11 @@ class UpdaterWorker
             }
         }
 
-        if ($usesPackagistToken && $this->fallbackGhTokens) {
-            $fallbackUser = $em->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
-            if (null === $fallbackUser) {
-                throw new \LogicException('Invalid fallback user was not found');
+        if ($usesPackagistToken) {
+            $fallbackToken = $this->fallbackGitHubAuthProvider->getAuthToken();
+            if (null !== $fallbackToken) {
+                $io->setAuthentication('github.com', $fallbackToken, 'x-oauth-basic');
             }
-            $fallbackToken = $fallbackUser->getGithubToken();
-            if (null === $fallbackToken) {
-                throw new \LogicException('Invalid fallback user '.$fallbackUser->getUsername().' has no token');
-            }
-            $io->setAuthentication('github.com', $fallbackToken, 'x-oauth-basic');
         }
 
         $httpDownloader = new LoggingHttpDownloader($io, $config, $this->statsd, $usesPackagistToken, $packageVendor);

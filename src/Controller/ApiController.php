@@ -19,6 +19,7 @@ use App\Entity\Vendor;
 use App\Model\DownloadManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
+use App\Service\FallbackGitHubAuthProvider;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\UserAgentParser;
@@ -46,8 +47,7 @@ class ApiController extends Controller
         private Scheduler $scheduler,
         private LoggerInterface $logger,
         private HttpClientInterface $httpClient,
-        /** @var list<string> */
-        private array $fallbackGhTokens,
+        private readonly FallbackGitHubAuthProvider $fallbackGitHubAuthProvider,
     ) {
     }
 
@@ -530,15 +530,8 @@ class ApiController extends Controller
 
             // the remote id was provided by a user, and not by github directly, so we cannot fully trust it and should verify with github that the URL matches that id
             if (\count($packages) > 0 && $user !== null) {
-                if (\count($this->fallbackGhTokens) > 0) {
-                    $fallbackUser = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
-                    if (null === $fallbackUser) {
-                        throw new \LogicException('Invalid fallback user was not found');
-                    }
-                    $fallbackToken = $fallbackUser->getGithubToken();
-                    if (null === $fallbackToken) {
-                        throw new \LogicException('Invalid fallback user '.$fallbackUser->getUsername().' has no token');
-                    }
+                $fallbackToken = $this->fallbackGitHubAuthProvider->getAuthToken();
+                if (null !== $fallbackToken) {
                     $options = ['auth_bearer' => $fallbackToken];
                 } else {
                     $options = [];
