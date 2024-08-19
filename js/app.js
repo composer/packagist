@@ -51,6 +51,11 @@ import 'bootstrap';
             e.preventDefault();
         });
     });
+    $('.btn-rotate-api-token').on('click', function (e) {
+        if (!window.confirm('Are you sure? This will revoke your current API token and generate a new one.')) {
+            e.preventDefault();
+        }
+    });
 
     $('.toc a').click(function (e) {
         setTimeout(function () {

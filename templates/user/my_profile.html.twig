@@ -15,6 +15,10 @@
         </div>
 
         <p>{{ 'profile.api_token_explain'|trans({ '%path_about%':path('about') })|raw }}</p>
+        <p>{{ 'profile.api_token_rotate'|trans }}</p>
+        <form class="rotate action" action="{{ path('rotate_token') }}" method="POST">
+            <input class="btn btn-inverse btn-rotate-api-token" type="submit" value="{{ 'profile.api_token_rotate_submit'|trans }}" />
+        </form>
 
         <hr>
     {%- endif %}

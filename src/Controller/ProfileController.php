@@ -154,6 +154,23 @@ class ProfileController extends Controller
         ]);
     }
 
+    #[Route(path: '/profile/token/rotate', name: 'rotate_token', methods: ['POST'])]
+    public function tokenRotateAction(Request $request, UserNotifier $userNotifier): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException('This user does not have access to this section.');
+        }
+        $user->initializeApiToken();
+
+        $userNotifier->notifyChange($user->getEmail(), 'Your API token has been rotated');
+
+        $this->getEM()->persist($user);
+        $this->getEM()->flush();
+
+        return $this->redirectToRoute('my_profile');
+    }
+
     /**
      * @return Pagerfanta<Package>
      */
