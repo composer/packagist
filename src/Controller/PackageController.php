@@ -784,7 +784,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/versions/{versionId}/delete', name: 'delete_version', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'versionId' => '[0-9]+'], methods: ['DELETE'])]
-    public function deletePackageVersionAction(Request $req, int $versionId, #[CurrentUser] ?User $user = null): Response
+    public function deletePackageVersionAction(Request $req, int $versionId): Response
     {
         $repo = $this->getEM()->getRepository(Version::class);
 
@@ -809,7 +809,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}', name: 'update_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'], defaults: ['_format' => 'json'], methods: ['PUT'])]
-    public function updatePackageAction(Request $req, string $name): Response
+    public function updatePackageAction(Request $req, string $name, #[CurrentUser] User $user): Response
     {
         try {
             $package = $this->getEM()
@@ -823,22 +823,13 @@ class PackageController extends Controller
             throw new NotFoundHttpException('This is a spam package');
         }
 
-        $username = $req->request->has('username') ?
-            $req->request->get('username') :
-            $req->query->get('username');
-
-        $apiToken = $req->request->has('apiToken') ?
-            $req->request->get('apiToken') :
-            $req->query->get('apiToken');
-
         $update = $req->request->getBoolean('update', $req->query->getBoolean('update'));
         $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
         $updateEqualRefs = $req->request->getBoolean('updateAll', $req->query->getBoolean('updateAll'));
         $manualUpdate = $req->request->getBoolean('manualUpdate', $req->query->getBoolean('manualUpdate'));
 
-        $user = $this->getUser() ?: $this->getEM()->getRepository(User::class)
-            ->findOneBy(['usernameCanonical' => $username, 'apiToken' => $apiToken]);
-
+        // check that a user is logged in to trigger an update on a package they don't own at least to avoid abuse
+        $user = $this->getUser();
         if (!$user instanceof User) {
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
         }
