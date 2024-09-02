@@ -24,7 +24,7 @@
         </div>
 
         <p>Read more <a href="{{ path('api_doc') }}#create-package">about the API</a>.</p>
-        <p>You can rotate your API tokens and generate a new one at any time.</p>
+        <p>You can rotate your API tokens and generate new ones at any time.</p>
         <form class="rotate action" action="{{ path('rotate_token') }}" method="POST">
             <input class="btn btn-inverse btn-rotate-api-token" type="submit" value="Rotate API Tokens" />
             <input type="hidden" name="token" value="{{ rotateApiCsrfToken }}" />
