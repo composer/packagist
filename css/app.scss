@@ -683,16 +683,15 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 
 .api-token-group {
     display: block;
-    min-height: 45px;
+    margin-bottom: 5px;
 }
-.api-token-group #api-token {
+.api-token-group .api-token {
   width: 85%;
-  position: absolute;
   right: 0;
   text-align: center;
 }
 .api-token-group .btn-show-api-token {
-  width: 145px;
+  width: 185px;
   position: absolute;
   z-index: 10;
 }

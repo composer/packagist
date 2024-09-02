@@ -43,6 +43,7 @@ class ApiControllerTest extends ControllerTestCase
 
         $user = new User;
         $user->addPackage($package);
+        $package->addMaintainer($user);
         $user->setEnabled(true);
         $user->setUsername('test');
         $user->setEmail('test@example.org');
@@ -78,6 +79,54 @@ class ApiControllerTest extends ControllerTestCase
         ];
     }
 
+    public function testUnsafeApiRejectsSafeApiToken(): void
+    {
+        $user = new User;
+        $user->setEnabled(true);
+        $user->setUsername('test');
+        $user->setEmail('test@example.org');
+        $user->setPassword('testtest');
+        $user->setApiToken('token');
+        $user->setSafeApiToken('safetoken');
+
+        $em = self::getEM();
+        $em->persist($user);
+        $em->flush();
+
+        $payload = json_encode(['repository' => 'https://github.com/composer/composer']);
+        $this->client->request('POST', '/api/create-package?username=test&apiToken=safetoken', ['payload' => $payload]);
+        $this->assertEquals(406, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
+    }
+
+    public function testSafeApiAcceptsBothApiTokens(): void
+    {
+        $url = 'https://github.com/composer/composer';
+        $package = $this->createPackage('test/'.bin2hex(random_bytes(10)), $url);
+        $user = new User;
+        $user->addPackage($package);
+        $package->addMaintainer($user);
+        $user->setEnabled(true);
+        $user->setUsername('test');
+        $user->setEmail('test@example.org');
+        $user->setPassword('testtest');
+        $user->setApiToken('token');
+        $user->setSafeApiToken('safetoken');
+
+        $em = self::getEM();
+        $em->persist($package);
+        $em->persist($user);
+        $em->flush();
+
+        $payload = json_encode(['repository' => $url]);
+        $this->client->request('POST', '/api/update-package?username=test&apiToken=safetoken', ['payload' => $payload]);
+        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+
+        $payload = json_encode(['repository' => 'https://packagist.org/packages/'.$package->getName()]);
+        $this->client->request('POST', '/api/update-package?username=test&apiToken=token', ['payload' => $payload]);
+        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
+
     #[Depends('testGitHubFailsWithInvalidCredentials')]
     #[DataProvider('urlProvider')]
     public function testUrlDetection($endpoint, $url, $expectedOK): void
@@ -87,7 +136,7 @@ class ApiControllerTest extends ControllerTestCase
             $absUrl = substr($url, 1);
             $payload = json_encode(['canon_url' => $canonUrl, 'repository' => ['absolute_url' => $absUrl]]);
         } else {
-            $payload = json_encode(['repository' => ['url' => $url]]);
+            $payload = json_encode(['repository' => $url]);
         }
 
         $this->client->request('POST', '/api/'.$endpoint.'?username=INVALID_USER&apiToken=INVALID_TOKEN', ['payload' => $payload]);

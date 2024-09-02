@@ -38,11 +38,23 @@ use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+enum ApiType {
+    case Safe;
+    case Unsafe;
+}
+
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 class ApiController extends Controller
 {
+    private const REGEXES = [
+        'gitlab'         => '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>[\w.-]+(?:/[\w.-]+?)+)(?:\.git|/)?$}i',
+        'any'            => '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>[\w.-]+(?:/[\w.-]+?)*)(?:\.git|/)?$}i',
+        'bitbucket_push' => '{^(?:https?://|git://|git@)?(?:api\.)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?/?$}i',
+        'bitbucket_hook' => '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?/?$}i',
+    ];
+
     public function __construct(
         private Scheduler $scheduler,
         private LoggerInterface $logger,
@@ -72,20 +84,27 @@ class ApiController extends Controller
     #[Route(path: '/api/create-package', name: 'generic_create', defaults: ['_format' => 'json'], methods: ['POST'])]
     public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator): JsonResponse
     {
-        $payload = json_decode($request->getContent(), true);
+        $payload = json_decode((string) $request->request->get('payload'), true);
+        if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
+            $payload = json_decode($request->getContent(), true);
+        }
+
         if (!$payload || !is_array($payload)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
         }
-        if (!isset($payload['repository']['url']) || !is_string($payload['repository']['url'])) {
-            return new JsonResponse(['status' => 'error', 'message' => '{repository: {url: string}} expected in payload'], 406);
+        if (isset($payload['repository']['url']) && is_string($payload['repository']['url'])) { // supported for BC
+            $url = $payload['repository']['url'];
+        } elseif (isset($payload['repository']) && is_string($payload['repository'])) {
+            $url = $payload['repository'];
+        } else {
+            return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in payload'], 406);
         }
 
         $user = $this->findUser($request);
         if (null === $user) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing username or apiToken in request'], 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
         }
 
-        $url = $payload['repository']['url'];
         $package = new Package;
         $package->addMaintainer($user);
         $package->setRepository($url);
@@ -133,20 +152,23 @@ class ApiController extends Controller
         }
 
         if (isset($payload['project']['git_http_url'])) { // gitlab event payload
-            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>[\w.-]+(?:/[\w.-]+?)+)(?:\.git|/)?$}i';
+            $urlRegex = self::REGEXES['gitlab'];
             $url = $payload['project']['git_http_url'];
             $remoteId = null;
-        } elseif (isset($payload['repository']['url'])) { // github/anything hook
-            $urlRegex = '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>[\w.-]+(?:/[\w.-]+?)*)(?:\.git|/)?$}i';
+        } elseif (isset($payload['repository']) && is_string($payload['repository'])) { // anything hook
+            $urlRegex = self::REGEXES['any'];
+            $url = $payload['repository'];
+            $remoteId = null;
+        } elseif (isset($payload['repository']['url']) && is_string($payload['repository']['url'])) { // github hook
+            $urlRegex = self::REGEXES['any'];
             $url = $payload['repository']['url'];
-            $url = str_replace('https://api.github.com/repos', 'https://github.com', $url);
             $remoteId = isset($payload['repository']['id']) && (is_string($payload['repository']['id']) || is_int($payload['repository']['id'])) ? $payload['repository']['id'] : null;
         } elseif (isset($payload['repository']['links']['html']['href'])) { // bitbucket push event payload
-            $urlRegex = '{^(?:https?://|git://|git@)?(?:api\.)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?/?$}i';
+            $urlRegex = self::REGEXES['bitbucket_push'];
             $url = $payload['repository']['links']['html']['href'];
             $remoteId = null;
         } elseif (isset($payload['canon_url']) && isset($payload['repository']['absolute_url'])) { // bitbucket post hook (deprecated)
-            $urlRegex = '{^(?:https?://|git://|git@)?(?P<host>bitbucket\.org)[/:](?P<path>[\w.-]+/[\w.-]+?)(?:\.git)?/?$}i';
+            $urlRegex = self::REGEXES['bitbucket_hook'];
             $url = $payload['canon_url'].$payload['repository']['absolute_url'];
             $remoteId = null;
         } else {
@@ -155,14 +177,19 @@ class ApiController extends Controller
 
         $statsd->increment('update_pkg_api');
 
-        return $this->receivePost($request, $url, $urlRegex, $remoteId, $githubWebhookSecret);
+        $url = str_replace('https://api.github.com/repos', 'https://github.com', $url);
+
+        return $this->receiveUpdateRequest($request, $url, $urlRegex, $remoteId, $githubWebhookSecret);
     }
 
     #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'json'], methods: ['PUT'])]
     public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
     {
         $user = $this->findUser($request);
-        if ((!$user || !$package->getMaintainers()->contains($user)) && !$this->isGranted('ROLE_EDIT_PACKAGES')) {
+        if (!$user) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
+        }
+        if (!$package->getMaintainers()->contains($user)) {
             throw new AccessDeniedException;
         }
 
@@ -171,6 +198,10 @@ class ApiController extends Controller
         $payload = json_decode((string) $request->request->get('payload'), true);
         if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
             $payload = json_decode($request->getContent(), true);
+        }
+
+        if (!isset($payload['repository']) || !is_string($payload['repository'])) {
+            return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in request body'], 406);
         }
 
         $package->setRepository($payload['repository']);
@@ -366,9 +397,9 @@ class ApiController extends Controller
      * Perform the package update
      *
      * @param string $url the repository's URL (deducted from the request)
-     * @param non-empty-string $urlRegex the regex used to split the user packages into domain and path
+     * @param value-of<self::REGEXES> $urlRegex the regex used to split the user packages into domain and path
      */
-    protected function receivePost(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret): JsonResponse
+    protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret): JsonResponse
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!Preg::isMatchStrictGroups($urlRegex, $url, $match)) {
@@ -406,7 +437,7 @@ class ApiController extends Controller
 
         if (!$user) {
             // find the user
-            $user = $this->findUser($request);
+            $user = $this->findUser($request, ApiType::Safe);
         }
 
         if (!$user && $match['host'] === 'github.com' && $request->getContent()) {
@@ -424,7 +455,7 @@ class ApiController extends Controller
 
         if (!$packages) {
             if (!$user) {
-                return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
+                return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 403);
             }
 
             // try to find the user package
@@ -453,7 +484,7 @@ class ApiController extends Controller
     /**
      * Find a user by his username and API token
      */
-    protected function findUser(Request $request): ?User
+    protected function findUser(Request $request, ApiType $apiType = ApiType::Unsafe): ?User
     {
         $username = $request->request->has('username') ?
             $request->request->get('username') :
@@ -468,7 +499,14 @@ class ApiController extends Controller
         }
 
         $user = $this->getEM()->getRepository(User::class)
-            ->findOneBy(['usernameCanonical' => $username, 'apiToken' => $apiToken]);
+            ->createQueryBuilder('u')
+            ->where('u.usernameCanonical = :username')
+            ->andWhere($apiType === ApiType::Safe ? '(u.apiToken = :apiToken OR u.safeApiToken = :apiToken)' : 'u.apiToken = :apiToken')
+            ->setParameter('username', $username)
+            ->setParameter('apiToken', $apiToken)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
 
         if ($user && !$user->isEnabled()) {
             return null;
@@ -480,7 +518,7 @@ class ApiController extends Controller
     /**
      * Find a user package given by its full URL
      *
-     * @param non-empty-string $urlRegex
+     * @param value-of<self::REGEXES> $urlRegex
      * @return list<Package>
      */
     protected function findPackagesByUrl(User $user, string $url, string $urlRegex, string|int|null $remoteId): array

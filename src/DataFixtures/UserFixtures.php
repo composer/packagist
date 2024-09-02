@@ -28,7 +28,6 @@ class UserFixtures extends Fixture
         $dev->setPassword($this->passwordHasher->hashPassword($dev, 'dev'));
         $dev->setEnabled(true);
         $dev->setRoles(['ROLE_SUPERADMIN']);
-        $dev->initializeApiToken();
 
         $manager->persist($dev);
 
@@ -38,7 +37,6 @@ class UserFixtures extends Fixture
         $user->setPassword($this->passwordHasher->hashPassword($user, 'user'));
         $user->setEnabled(true);
         $user->setRoles([]);
-        $user->initializeApiToken();
 
         $manager->persist($user);
         $manager->flush();

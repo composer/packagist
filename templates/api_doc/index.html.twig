@@ -27,6 +27,7 @@
   <li><a href="#get-statistics">{{ 'api_doc.get_statistics'|trans }}</a></li>
   <li><a href="#list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</a></li>
   <li><a href="#create-package">{{ 'api_doc.api_create_package'|trans }}</a></li>
+  <li><a href="#edit-package">Edit a package</a></li>
   <li><a href="#update-package">Update a package</a></li>
 </ul>
 
@@ -476,26 +477,49 @@ GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestam
 <section class="col-d-12">
     <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }}</h3>
 
-    <p>This endpoint creates a package for a specific repo. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>POST</code> method is allowed.</p>
+    <p>This endpoint creates a package for a specific repo. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
+    <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
 
     <pre>
-POST https://{{ packagist_host }}/api/create-package?username=[username]&amp;apiToken=[apiToken] -d '{"repository":{"url":"[url]"}}'
+POST https://{{ packagist_host }}/api/create-package?username=[username]&amp;apiToken=[apiToken] {"repository":"[url]"}
 <code>
 {
   "status": "success"
 }
 </code></pre>
-    <p>Working example: <code>curl -X POST 'https://{{ packagist_host }}/api/create-package?username=zqfan&amp;apiToken=********' -d '{"repository":{"url":"https://github.com/monolog/monolog"}}'</code></p>
+    <p>Working example:<br/>
+        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/create-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code>
+    </p>
+
+</section>
+
+<section class="col-d-12">
+    <h3 id="edit-package">Edit a package</h3>
+
+    <p>This endpoint allows you to edit a package URL. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>PUT</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
+    <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
+
+    <pre>
+PUT https://{{ packagist_host }}/api/packages/[package name]?username=[username]&amp;apiToken=[apiToken] {"repository":"[url]"}
+<code>
+{
+  "status": "success"
+}
+</code></pre>
+    <p>Working example:<br/>
+        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/packages/monolog/monolog?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code>
+    </p>
 
 </section>
 
 <section class="col-d-12">
     <h3 id="update-package">Update a package</h3>
 
-    <p>This endpoint updates a package by canonical repository URL or packagist.org package URL. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>POST</code> method is allowed.</p>
+    <p>This endpoint updates a package by canonical repository URL or packagist.org package URL. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
+    <p>This endpoint is considered SAFE and allows either your main or safe <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
 
     <pre>
-POST https://{{ packagist_host }}/api/update-package?username=[username]&amp;apiToken=[apiToken] -d '{"repository":{"url":"[url]"}}'
+POST https://{{ packagist_host }}/api/update-package?username=[username]&amp;apiToken=[apiToken] {"repository":"[url]"}
 <code>
 {
   "status": "success",
@@ -503,8 +527,8 @@ POST https://{{ packagist_host }}/api/update-package?username=[username]&amp;api
 }
 </code></pre>
     <p>Working examples:<br/>
-        <code>curl -X POST 'https://{{ packagist_host }}/api/update-package?username=Seldaek&amp;apiToken=********' -d '{"repository":{"url":"https://github.com/Seldaek/monolog"}}'</code><br/>
-        <code>curl -X POST 'https://{{ packagist_host }}/api/update-package?username=Seldaek&amp;apiToken=********' -d '{"repository":{"url":"https://packagist.org/monolog/monolog"}}'</code>
+        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code><br/>
+        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://packagist.org/monolog/monolog"}'</code>
     </p>
 
 </section>

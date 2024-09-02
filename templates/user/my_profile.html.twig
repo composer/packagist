@@ -5,19 +5,28 @@
 {% block user_content %}
 <section class="col-md-9">
     {%- if app.user.apiToken %}
-        <h3 class="font-normal profile-title">Your API Token</h3>
+        <h3 class="font-normal profile-title">Your API Tokens</h3>
 
         <div class="input-group api-token-group clearfix">
-            <input id="api-token" type="text" class="form-control" value="" data-api-token="{{ app.user.apiToken }}" readonly="readonly">
+            <p>The main API token can be used to talk to all APIs (e.g. package creation, edit, update) and should be only used in places where it can be kept secret.</p>
+            <input type="text" class="api-token form-control" value="" data-api-token="{{ app.user.apiToken }}" readonly="readonly">
             <span class="input-group-btn">
-                <button class="btn btn-success btn-show-api-token" type="button">Show API Token</button>
+                <button class="btn btn-success btn-show-api-token" type="button">Show Main API Token</button>
             </span>
         </div>
 
-        <p>You can use your API token to interact with the Packagist API, see details in <a href="{{ path('about') }}#how-to-update-packages">the docs</a>.</p>
-        <p>You can rotate your API token and generate a new one at any time.</p>
+        <div class="input-group api-token-group clearfix">
+            <p>The safe API token can only be used to talk to safe APIs (e.g. package update) and is not very sensitive if leaked.</p>
+            <input type="text" class="api-token form-control" value="" data-api-token="{{ app.user.safeApiToken }}" readonly="readonly">
+            <span class="input-group-btn">
+                <button class="btn btn-success btn-show-api-token" type="button">Show Safe API Token</button>
+            </span>
+        </div>
+
+        <p>Read more <a href="{{ path('api_doc') }}#create-package">about the API</a>.</p>
+        <p>You can rotate your API tokens and generate a new one at any time.</p>
         <form class="rotate action" action="{{ path('rotate_token') }}" method="POST">
-            <input class="btn btn-inverse btn-rotate-api-token" type="submit" value="Rotate API Token" />
+            <input class="btn btn-inverse btn-rotate-api-token" type="submit" value="Rotate API Tokens" />
             <input type="hidden" name="token" value="{{ rotateApiCsrfToken }}" />
         </form>
 

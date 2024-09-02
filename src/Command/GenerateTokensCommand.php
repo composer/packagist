@@ -51,6 +51,16 @@ class GenerateTokensCommand extends Command
             $user->initializeApiToken();
         }
         $this->doctrine->getManager()->flush();
+        $this->doctrine->getManager()->clear();
+
+        do {
+            $users = $userRepo->findUsersMissingSafeApiToken();
+            foreach ($users as $user) {
+                $user->initializeSafeApiToken();
+            }
+            $this->doctrine->getManager()->flush();
+            $this->doctrine->getManager()->clear();
+        } while (\count($users) > 0);
 
         return 0;
     }

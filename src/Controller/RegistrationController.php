@@ -54,8 +54,6 @@ class RegistrationController extends Controller
                 )
             );
 
-            $user->initializeApiToken();
-
             $this->getEM()->persist($user);
             $this->getEM()->flush();
 

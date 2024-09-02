@@ -139,7 +139,6 @@ class GitHubAuthenticator extends OAuth2Authenticator
                 );
 
                 $user->setLastLogin(new \DateTimeImmutable());
-                $user->initializeApiToken();
                 $user->setEnabled(true);
 
                 $this->getEM()->persist($user);

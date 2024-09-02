@@ -59,8 +59,8 @@ class ProfileControllerTest extends ControllerTestCase
         $user->setUsername('test');
         $user->setEmail('test@example.org');
         $user->setPassword('testtest');
-        $user->initializeApiToken();
         $token = $user->getApiToken();
+        $safeToken = $user->getSafeApiToken();
 
         $em = self::getEM();
         $em->persist($user);
@@ -69,9 +69,10 @@ class ProfileControllerTest extends ControllerTestCase
         $this->client->loginUser($user);
 
         $crawler = $this->client->request('GET', '/profile/');
-        $this->assertEquals($token, $crawler->filter('#api-token')->attr('data-api-token'));
+        $this->assertEquals($token, $crawler->filter('.api-token')->first()->attr('data-api-token'));
+        $this->assertEquals($safeToken, $crawler->filter('.api-token')->last()->attr('data-api-token'));
 
-        $form = $crawler->selectButton('Rotate API Token')->form();
+        $form = $crawler->selectButton('Rotate API Tokens')->form();
         $this->client->submit($form);
 
         $this->assertResponseStatusCodeSame(302);
@@ -80,5 +81,6 @@ class ProfileControllerTest extends ControllerTestCase
         $user = $em->getRepository(User::class)->find($user->getId());
         $this->assertNotNull($user);
         $this->assertNotEquals($token, $user->getApiToken());
+        $this->assertNotEquals($safeToken, $user->getSafeApiToken());
     }
 }

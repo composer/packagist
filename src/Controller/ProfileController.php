@@ -165,8 +165,9 @@ class ProfileController extends Controller
         }
 
         $user->initializeApiToken();
-        $userNotifier->notifyChange($user->getEmail(), 'Your API token has been rotated');
-        $this->addFlash('success', 'Your API token has been rotated');
+        $user->initializeSafeApiToken();
+        $userNotifier->notifyChange($user->getEmail(), 'Your API tokens have been rotated');
+        $this->addFlash('success', 'Your API tokens have been rotated');
 
         $this->getEM()->persist($user);
         $this->getEM()->flush();

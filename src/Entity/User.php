@@ -101,8 +101,11 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[ORM\Column(type: 'datetime')]
     private DateTimeInterface $createdAt;
 
-    #[ORM\Column(type: 'string', length: 20)]
+    #[ORM\Column(type: 'string', length: 40)]
     private string $apiToken;
+
+    #[ORM\Column(type: 'string', length: 40)]
+    private string $safeApiToken;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private string|null $githubId = null;
@@ -129,6 +132,8 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     {
         $this->packages = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
+        $this->initializeApiToken();
+        $this->initializeSafeApiToken();
     }
 
     public function __toString(): string
@@ -173,6 +178,16 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function getApiToken(): string
     {
         return $this->apiToken;
+    }
+
+    public function setSafeApiToken(string $apiToken): void
+    {
+        $this->safeApiToken = $apiToken;
+    }
+
+    public function getSafeApiToken(): string
+    {
+        return $this->safeApiToken;
     }
 
     public function getGithubId(): string|null
@@ -521,7 +536,12 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function initializeApiToken(): void
     {
-        $this->apiToken = bin2hex(random_bytes(10));
+        $this->apiToken = bin2hex(random_bytes(20));
+    }
+
+    public function initializeSafeApiToken(): void
+    {
+        $this->safeApiToken = bin2hex(random_bytes(20));
     }
 
     public function getConfirmationToken(): string|null

@@ -38,21 +38,23 @@ import 'bootstrap';
     /**
      * API Token visibility toggling
      */
-    var token = $('#api-token');
-    token.val('');
+    $('.api-token').val();
 
-    $('.btn-show-api-token,#api-token').each(function() {
+    $('.btn-show-api-token, .api-token').each(function() {
         $(this).click(function (e) {
+            const parent = $(this).closest('.api-token-group');
+            const token = parent.find('.api-token');
             token.val(token.data('api-token'));
             token.select();
 
-            $('.btn-show-api-token').text('Your API token');
+            const button = parent.find('.btn-show-api-token').first();
+            button.text(button.text().replace('Show', 'Your'));
 
             e.preventDefault();
         });
     });
     $('.btn-rotate-api-token').click(function (e) {
-        if (!window.confirm('Are you sure? This will revoke your current API token and generate a new one.')) {
+        if (!window.confirm('Are you sure? This will revoke your current API tokens and generate new ones.')) {
             e.preventDefault();
         }
     });

@@ -51,6 +51,18 @@ class UserRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    /**
+     * @return list<User>
+     */
+    public function findUsersMissingSafeApiToken(): array
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->where('u.safeApiToken IS NULL')
+            ->setMaxResults(500);
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function getPackageMaintainersQueryBuilder(Package $package, ?User $excludeUser = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('u')
