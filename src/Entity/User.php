@@ -521,7 +521,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function initializeApiToken(): void
     {
-        $this->apiToken = substr(hash('sha256', random_bytes(20)), 0, 20);
+        $this->apiToken = bin2hex(random_bytes(10));
     }
 
     public function getConfirmationToken(): string|null
@@ -531,7 +531,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function initializeConfirmationToken(): void
     {
-        $this->confirmationToken = substr(hash('sha256', random_bytes(40)), 0, 40);
+        $this->confirmationToken = bin2hex(random_bytes(20));
     }
 
     public function clearConfirmationToken(): void

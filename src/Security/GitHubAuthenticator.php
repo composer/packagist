@@ -134,7 +134,7 @@ class GitHubAuthenticator extends OAuth2Authenticator
                 $user->setPassword(
                     $this->passwordHasher->hashPassword(
                         $user,
-                        hash('sha512', random_bytes(60))
+                        bin2hex(random_bytes(20))
                     )
                 );
 

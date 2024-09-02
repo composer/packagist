@@ -39,7 +39,7 @@ class ApiControllerTest extends ControllerTestCase
     #[DataProvider('githubApiProvider')]
     public function testGithubApi($url): void
     {
-        $package = $this->createPackage('test/'.md5(uniqid()), $url);
+        $package = $this->createPackage('test/'.bin2hex(random_bytes(10)), $url);
 
         $user = new User;
         $user->addPackage($package);
