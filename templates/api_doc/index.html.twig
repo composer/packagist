@@ -27,6 +27,7 @@
   <li><a href="#get-statistics">{{ 'api_doc.get_statistics'|trans }}</a></li>
   <li><a href="#list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</a></li>
   <li><a href="#create-package">{{ 'api_doc.api_create_package'|trans }}</a></li>
+  <li><a href="#update-package">Update a package</a></li>
 </ul>
 
 
@@ -345,8 +346,6 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package]/stats.json
 <section class="col-d-12">
 <h3 id="track-package-updates">Track package updates</h3>
 
-<h4 id="get-package-updates">Track package updates</h4>
-
 <p>This endpoint provides you with a feed of metadata changes you can poll to know what packages you need to update.</p>
 
 <p>First to initialize this you can poll the API without timestamp to get the most current timestamp, or make your own by using <code>10000 * time()</code>:</p>
@@ -416,13 +415,11 @@ GET https://{{ packagist_host }}/metadata/changes.json?since=16140636710498
 
 
 <section class="col-d-12">
-<h3 id="get-statistics">{{ 'api_doc.get_statistics'|trans }}</h3>
+    <h3 id="get-statistics">{{ 'api_doc.get_statistics'|trans }}</h3>
 
-<h4 id="get-global-statistics">{{ 'api_doc.get_statistics'|trans }}</h4>
+    <p>This endpoint provides basic some statistics.</p>
 
-<p>This endpoint provides basic some statistics.</p>
-
-<pre>
+    <pre>
 GET https://{{ packagist_host }}/statistics.json
 <code>
 {
@@ -431,14 +428,12 @@ GET https://{{ packagist_host }}/statistics.json
   }
 }
 </code></pre>
-<p>Working example: <code><a href="https://{{ packagist_host }}/statistics.json">https://{{ packagist_host }}/statistics.json</a></code></p>
+    <p>Working example: <code><a href="https://{{ packagist_host }}/statistics.json">https://{{ packagist_host }}/statistics.json</a></code></p>
 
 </section>
 
 <section class="col-d-12">
-  <h3 id="list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</h3>
-
-  <h4 id="list-security-advisories-by-package">{{ 'api_doc.list_security_advisory'|trans }}</h4>
+    <h3 id="list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</h3>
 
     <p>This endpoint provides a list of security advisories. Either a list of packages as query or request parameter or a timestamp as updatedSince query parameter need to be passed.</p>
 
@@ -479,11 +474,9 @@ GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestam
 
 
 <section class="col-d-12">
-  <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }}</h3>
+    <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }}</h3>
 
-  <h4 id="create-package-by-url">{{ 'api_doc.api_create_package'|trans }}</h4>
-
-    <p>This endpoint creates a package for a specific repo. Parameters <code>username</code> and <code>apiToken</code> are required. Only <code>POST</code> method is allowed.</p>
+    <p>This endpoint creates a package for a specific repo. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>POST</code> method is allowed.</p>
 
     <pre>
 POST https://{{ packagist_host }}/api/create-package?username=[username]&amp;apiToken=[apiToken] -d '{"repository":{"url":"[url]"}}'
@@ -493,6 +486,26 @@ POST https://{{ packagist_host }}/api/create-package?username=[username]&amp;api
 }
 </code></pre>
     <p>Working example: <code>curl -X POST 'https://{{ packagist_host }}/api/create-package?username=zqfan&amp;apiToken=********' -d '{"repository":{"url":"https://github.com/monolog/monolog"}}'</code></p>
+
+</section>
+
+<section class="col-d-12">
+    <h3 id="update-package">Update a package</h3>
+
+    <p>This endpoint updates a package by canonical repository URL or packagist.org package URL. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>POST</code> method is allowed.</p>
+
+    <pre>
+POST https://{{ packagist_host }}/api/update-package?username=[username]&amp;apiToken=[apiToken] -d '{"repository":{"url":"[url]"}}'
+<code>
+{
+  "status": "success",
+  "jobs": ["job-id", ".."]
+}
+</code></pre>
+    <p>Working examples:<br/>
+        <code>curl -X POST 'https://{{ packagist_host }}/api/update-package?username=Seldaek&amp;apiToken=********' -d '{"repository":{"url":"https://github.com/Seldaek/monolog"}}'</code><br/>
+        <code>curl -X POST 'https://{{ packagist_host }}/api/update-package?username=Seldaek&amp;apiToken=********' -d '{"repository":{"url":"https://packagist.org/monolog/monolog"}}'</code>
+    </p>
 
 </section>
 
