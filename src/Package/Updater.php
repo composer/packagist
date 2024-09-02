@@ -514,7 +514,7 @@ class Updater
             foreach ($data->{$opts['method']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
                 if (false !== strpos($constraint, ',') && false !== strpos($constraint, '@')) {
-                    $constraint = Preg::replaceCallback('{([><]=?\s*[^@]+?)@([a-z]+)}i', static function ($matches) {
+                    $constraint = Preg::replaceCallbackStrictGroups('{([><]=?\s*[^@]+?)@([a-z]+)}i', static function ($matches) {
                         if ($matches[2] === 'stable') {
                             return $matches[1];
                         }

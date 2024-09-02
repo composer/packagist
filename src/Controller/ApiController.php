@@ -490,7 +490,7 @@ class ApiController extends Controller
         }
 
         if ($matched['host'] === 'packagist.org') {
-            $name = Preg::replace('{^packages/}', '', $matched['path']);
+            $name = Preg::replace('{^packages/}', '', (string) $matched['path']);
             $package = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $name]);
             if ($package !== null && $package->getMaintainers()->contains($user)) {
                 return [$package];

@@ -348,8 +348,8 @@ class Version
         if (isset($array['support'])) {
             ksort($array['support']);
         }
-        if (isset($array['php-ext']['configure-options'])) {
-            usort($array['php-ext']['configure-options'], fn ($a, $b) => $a['name'] ?? '' <=> $b['name'] ?? '');
+        if (isset($array['php-ext']['configure-options']) && is_array($array['php-ext']['configure-options'])) {
+            usort($array['php-ext']['configure-options'], fn ($a, $b) => ($a['name'] ?? '') <=> ($b['name'] ?? ''));
         }
 
         return $array;
