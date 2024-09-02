@@ -33,15 +33,19 @@ These steps are provided for development purposes only.
    composer install
    npm install
    ```
+   Ensure env vars are set up correctly, you probably need to set `APP_MAILER_FROM_EMAIL`, `APP_MAILER_FROM_NAME` and `APP_DEV_EMAIL_RECIPIENT` in .env.local and possibly `MAILER_DSN` if you need to receive email.
+
 3. Start the web server:
    ```bash
    symfony serve -d
    ```
+
 4. Start MySQL & Redis:
    ```bash
    docker compose up -d # or somehow run MySQL & Redis on localhost without Docker
    ```
    This mounts the current working directory into the node container and runs npm install and npm run build automatically.
+
 5. Create 2 databases:
     - `packagist` - for the web app
     - `packagist_test` - for running the tests
@@ -49,11 +53,14 @@ These steps are provided for development purposes only.
    bin/console doctrine:database:create
    bin/console doctrine:database:create --env=test
    ```
+
 6. Setup the database schema:
    ```bash
    bin/console doctrine:schema:create
    ```
+
 7. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
+
 8. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files. When using Docker run `docker compose run node npm run dev` to watch css/js files.
 
 You should now be able to access the site, create a user, etc.

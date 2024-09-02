@@ -1,2 +1,2 @@
 parameters:
-    fallback_gh_tokens: ['Seldaek']
+    fallback_gh_tokens: []
