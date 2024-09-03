@@ -14,6 +14,7 @@ namespace App\Util;
 
 use Composer\Config;
 use Composer\IO\IOInterface;
+use Composer\Pcre\Preg;
 use Composer\Util\Http\Response;
 use Composer\Util\HttpDownloader;
 use Graze\DogStatsD\Client as StatsDClient;
@@ -21,6 +22,9 @@ use React\Promise\PromiseInterface;
 
 class LoggingHttpDownloader extends HttpDownloader
 {
+    /** For use in fixtures loading only */
+    private bool $loadMinimalVersions = false;
+
     public function __construct(
         IOInterface $io,
         Config $config,
@@ -35,7 +39,16 @@ class LoggingHttpDownloader extends HttpDownloader
     {
         $this->track($url);
 
-        return parent::get($url, $options);
+        $result = parent::get($url, $options);
+
+        if ($this->loadMinimalVersions && Preg::isMatch('{/(tags|git/refs/heads)(\?|$)}', $url)) {
+            $reflProp = new \ReflectionProperty(Response::class, 'request');
+            $newBody = $result->decodeJson();
+            $newBody = array_slice($newBody, 0, 1);
+            $result = new Response($reflProp->getValue($result), $result->getStatusCode(), [], (string) json_encode($newBody));
+        }
+
+        return $result;
     }
 
     public function add($url, $options = []): PromiseInterface
@@ -57,6 +70,14 @@ class LoggingHttpDownloader extends HttpDownloader
         $this->track($url);
 
         return parent::addCopy($url, $to, $options);
+    }
+
+    /**
+     * @internal for use in fixtures only
+     */
+    public function loadMinimalVersions(): void
+    {
+        $this->loadMinimalVersions = true;
     }
 
     private function track(string $url): void

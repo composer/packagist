@@ -33,7 +33,7 @@ These steps are provided for development purposes only.
    composer install
    npm install
    ```
-   Ensure env vars are set up correctly, you probably need to set `APP_MAILER_FROM_EMAIL`, `APP_MAILER_FROM_NAME` and `APP_DEV_EMAIL_RECIPIENT` in .env.local and possibly `MAILER_DSN` if you need to receive email.
+   Ensure env vars are set up correctly, you probably need to set `APP_MAILER_FROM_EMAIL`, `APP_MAILER_FROM_NAME` and `APP_DEV_EMAIL_RECIPIENT` in `.env.local`. Set also `MAILER_DSN` if you'd like to receive email.
 
 3. Start the web server:
    ```bash
@@ -70,12 +70,19 @@ You should now be able to access the site, create a user, etc.
 You can get test data by running the fixtures:
 
 ```bash
-bin/console doctrine:fixtures:load
+bin/console doctrine:fixtures:load --group base
+bin/console doctrine:fixtures:load --group downloads --append
  ```
 
-This will create 100 packages from packagist.org, update them from GitHub,
-populate them with fake download stats, and assign a user named `dev`
-(with password: `dev`) as their maintainer.
+This will create some packages, update them from GitHub, populate them
+with fake download stats, and assign a user named `dev` (with password: `dev`)
+as their maintainer.
+
+There is also a user `user` (with password: `user`) that has no access if you
+need to check readonly views.
+
+Finally there is a user `admin` (with password: `admin`) that has super admin
+permissions.
 
 ### Search
 

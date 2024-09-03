@@ -62,6 +62,8 @@ class UpdaterWorker
     private Scheduler $scheduler;
     private PackageManager $packageManager;
     private DownloadManager $downloadManager;
+    /** For use in fixtures loader only */
+    private bool $loadMinimalVersions = false;
 
     public function __construct(
         LoggerInterface $logger,
@@ -81,6 +83,14 @@ class UpdaterWorker
         $this->scheduler = $scheduler;
         $this->packageManager = $packageManager;
         $this->downloadManager = $downloadManager;
+    }
+
+    /**
+     * @internal for fixtures usage only
+     */
+    public function setLoadMinimalVersions(bool $loadMinimalVersions): void
+    {
+        $this->loadMinimalVersions = $loadMinimalVersions;
     }
 
     /**
@@ -161,6 +171,9 @@ class UpdaterWorker
         }
 
         $httpDownloader = new LoggingHttpDownloader($io, $config, $this->statsd, $usesPackagistToken, $packageVendor);
+        if ($this->loadMinimalVersions) {
+            $httpDownloader->loadMinimalVersions();
+        }
 
         try {
             $flags = 0;

@@ -64,7 +64,7 @@ class MigratePhpStatsCommand extends Command
 
         try {
             // might be a large-ish dataset coming through here
-            ini_set('memory_limit', '2G');
+            ini_set('memory_limit', -1);
 
             $now = new \DateTimeImmutable();
             $yesterday = new \DateTimeImmutable('yesterday');

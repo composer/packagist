@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\DataFixtures;
 
+use App\Command\CompileStatsCommand;
 use App\Command\MigrateDownloadCountsCommand;
+use App\Command\MigratePhpStatsCommand;
 use App\Entity\Package;
 use App\Entity\Version;
 use DateInterval;
 use DateTimeImmutable;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
@@ -21,19 +24,19 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 /**
  * Creates fake download statistics for each package.
  */
-class DownloadFixtures extends Fixture implements DependentFixtureInterface
+class DownloadFixtures extends Fixture implements FixtureGroupInterface
 {
     public function __construct(
         private Client $redis,
-        private MigrateDownloadCountsCommand $migrateDownloadCountsCommand
+        private MigrateDownloadCountsCommand $migrateDownloadCountsCommand,
+        private readonly MigratePhpStatsCommand $migratePhpStatsCommand,
+        private readonly CompileStatsCommand $compileStatsCommand,
     ) {
     }
 
-    public function getDependencies(): array
+    public static function getGroups(): array
     {
-        return [
-            PackageFixtures::class,
-        ];
+        return ['downloads'];
     }
 
     public function load(ObjectManager $manager): void
@@ -43,25 +46,41 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
 
         $output->writeln('Generating downloads...');
 
-        /** @var Package[] $packages */
-        $packages = $manager->getRepository(Package::class)->findAll();
+        $pkgNames = ['composer/pcre', 'monolog/monolog', 'twig/twig'];
+        $packages = $manager->getRepository(Package::class)->findBy(['name' => $pkgNames]);
 
-        $progressBar = new ProgressBar($output, count($packages));
+        $versions = [];
+        foreach ($packages as $index => $package) {
+            if ($package->getName() === 'composer/pcre') {
+                $versions[$index] = $package->getVersions();
+            } else {
+                assert($manager instanceof EntityManagerInterface);
+                $latestVersion = $this->getLatestPackageVersion($manager, $package);
+                $versions[$index][] = $latestVersion;
+            }
+        }
+
+        if ($versions === []) {
+            echo 'No packages found, make sure to run "bin/console doctrine:fixtures:load --group base" before the download fixtures' . PHP_EOL;
+            return;
+        }
+
+        echo 'Creating download fixtures for packages: '.implode(', ', $pkgNames).PHP_EOL;
+
+        $progressBar = new ProgressBar($output, array_sum(array_map('count', $versions)));
         $progressBar->setFormat('%current%/%max% [%bar%] %percent:3s%% (%remaining% left) %message%');
 
         $progressBar->setMessage('');
         $progressBar->start();
 
         // Set the Redis keys that would normally be set by the DownloadManager, for the whole period.
-
-        foreach ($packages as $package) {
+        foreach ($packages as $index => $package) {
             $progressBar->setMessage($package->getName());
             $progressBar->display();
 
-            /** @var EntityManagerInterface $manager */
-            $latestVersion = $this->getLatestPackageVersion($manager, $package);
-
-            $this->populateDownloads($package, $latestVersion);
+            foreach ($versions[$index] as $version) {
+                $this->populateDownloads($package, $version);
+            }
 
             $progressBar->advance();
         }
@@ -69,10 +88,13 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
         $progressBar->finish();
         $output->writeln('');
 
-        // Then migrate the Redis keys to the db
+        $manager->clear();
 
+        // Then migrate the Redis keys to the db
         $output->writeln('Migrating downloads to db... (this may take some time)');
         $this->migrateDownloadCountsCommand->run($input, $output);
+        $this->migratePhpStatsCommand->run($input, $output);
+        $this->compileStatsCommand->run($input, $output);
     }
 
     /**
@@ -115,19 +137,22 @@ class DownloadFixtures extends Fixture implements DependentFixtureInterface
             $day = $date->format('Ymd');
             $month = $date->format('Ym');
 
-            $keys = [
-                'downloads',
-                'downloads:' . $day,
-                'downloads:' . $month,
+            $phpMinorPlatform = random_int(7, 8).'.'.random_int(0, 4);
 
-                'dl:' . $package->getId(),
-                'dl:' . $package->getId() . ':' . $day,
-                'dl:' . $package->getId() . '-' . $version->getId() . ':' . $day
+            $keys = [
+                'downloads' => $downloads,
+                'downloads:' . $day => $downloads,
+                'downloads:' . $month => $downloads,
+
+                'dl:' . $package->getId() => $downloads,
+                'dl:' . $package->getId() . ':' . $day => $downloads,
+                'dl:' . $package->getId() . '-' . $version->getId() . ':' . $day => $downloads,
+
+                'phpplatform:'.$phpMinorPlatform.':' => $downloads,
+                'phpplatform:'.$package->getId() . '-' . $version->getId().':'.$phpMinorPlatform.':'.$day => $downloads,
             ];
 
-            foreach ($keys as $key) {
-                $this->redis->incrby($key, $downloads);
-            }
+            $this->redis->mset($keys);
 
             $date = $date->add(new DateInterval('P1D'));
 

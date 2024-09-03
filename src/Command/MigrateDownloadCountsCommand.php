@@ -61,7 +61,7 @@ class MigrateDownloadCountsCommand extends Command
 
         try {
             // might be a large-ish dataset coming through here
-            ini_set('memory_limit', '1G');
+            ini_set('memory_limit', -1);
 
             $now = new \DateTimeImmutable();
             $todaySuffix = ':'.$now->format('Ymd');
