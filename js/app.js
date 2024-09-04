@@ -38,8 +38,6 @@ import 'bootstrap';
     /**
      * API Token visibility toggling
      */
-    $('.api-token').val();
-
     $('.btn-show-api-token, .api-token').each(function() {
         $(this).click(function (e) {
             const parent = $(this).closest('.api-token-group');
