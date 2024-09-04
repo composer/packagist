@@ -9,6 +9,7 @@ use App\Command\MigrateDownloadCountsCommand;
 use App\Command\MigratePhpStatsCommand;
 use App\Entity\Package;
 use App\Entity\Version;
+use Composer\Pcre\Preg;
 use DateInterval;
 use DateTimeImmutable;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -80,15 +81,16 @@ class DownloadFixtures extends Fixture implements FixtureGroupInterface
 
             foreach ($versions[$index] as $version) {
                 $this->populateDownloads($package, $version);
+                $progressBar->advance();
             }
-
-            $progressBar->advance();
         }
 
         $progressBar->finish();
         $output->writeln('');
 
         $manager->clear();
+
+        $this->populateGlobalStats();
 
         // Then migrate the Redis keys to the db
         $output->writeln('Migrating downloads to db... (this may take some time)');
@@ -122,7 +124,57 @@ class DownloadFixtures extends Fixture implements FixtureGroupInterface
     private function populateDownloads(Package $package, Version $version): void
     {
         $date = DateTimeImmutable::createFromInterface($package->getCreatedAt());
-        $endDate = (new \DateTimeImmutable('now'));
+        $endDate = new \DateTimeImmutable('now');
+
+        $downloads = 0;
+
+        for ($i = 0; ; $i++) {
+            $val = min($i, 300);
+            $downloads += random_int(-$val * 9, $val * 10);
+
+            if ($downloads < 0) {
+                $downloads = 0;
+            }
+
+            $day = $date->format('Ymd');
+            $month = $date->format('Ym');
+
+            $phpMinorPlatform = random_int(7, 8).'.'.random_int(0, 4);
+            $minorVersion = Preg::replace('{^(\d+\.\d+).*}', '$1', $version->getVersion());
+
+            $keys = [
+                'dl:'.$package->getId() => $downloads,
+                'dl:'.$package->getId().':'.$day => $downloads,
+                'dl:'.$package->getId().'-'.$version->getId().':'.$day => $downloads,
+            ];
+            for ($major = 7; $major <= 8; $major++) {
+                for ($minor = 0; $minor <= 4; $minor++) {
+                    $phpMinorDl = random_int(0, $downloads + $minor * $major * 2);
+                    $keys['phpplatform:'.$phpMinorPlatform.':'.$day] = $phpMinorDl;
+                    $keys['phpplatform:'.$phpMinorPlatform.':'.$month] = $phpMinorDl;
+                    $keys['phpplatform:'.$package->getId().'-'.$minorVersion.':'.$phpMinorPlatform.':'.$day] = $phpMinorDl;
+                }
+            }
+
+            $this->redis->mset($keys);
+
+            $date = $date->add(new DateInterval('P1D'));
+
+            if ($date->diff($endDate)->invert) {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Populates Redis with pseudo-random daily download stats globally
+     * The algorithm attempts to mimic a typical download stats curve.
+     * The Redis keys set mimic the keys set by the DownloadManager.
+     */
+    private function populateGlobalStats(): void
+    {
+        $date = new \DateTimeImmutable('-2years 3months');
+        $endDate = new \DateTimeImmutable('now');
 
         $downloads = 0;
 
@@ -137,22 +189,20 @@ class DownloadFixtures extends Fixture implements FixtureGroupInterface
             $day = $date->format('Ymd');
             $month = $date->format('Ym');
 
-            $phpMinorPlatform = random_int(7, 8).'.'.random_int(0, 4);
-
             $keys = [
                 'downloads' => $downloads,
                 'downloads:' . $day => $downloads,
                 'downloads:' . $month => $downloads,
-
-                'dl:' . $package->getId() => $downloads,
-                'dl:' . $package->getId() . ':' . $day => $downloads,
-                'dl:' . $package->getId() . '-' . $version->getId() . ':' . $day => $downloads,
-
-                'phpplatform:'.$phpMinorPlatform.':' => $downloads,
-                'phpplatform:'.$package->getId() . '-' . $version->getId().':'.$phpMinorPlatform.':'.$day => $downloads,
             ];
-
             $this->redis->mset($keys);
+
+            for ($major = 7; $major <= 8; $major++) {
+                for ($minor = 0; $minor <= 4; $minor++) {
+                    $phpMinorPlatform = $major.'.'.$minor;
+                    $this->redis->hset('php:'.$phpMinorPlatform.':days', $day, $downloads + random_int(0, $major * $minor * 5));
+                    $this->redis->hset('php:'.$phpMinorPlatform.':months', $month, $downloads + random_int(0, $major * $minor * 5));
+                }
+            }
 
             $date = $date->add(new DateInterval('P1D'));
 
