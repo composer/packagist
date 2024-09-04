@@ -199,8 +199,8 @@ class DownloadFixtures extends Fixture implements FixtureGroupInterface
             for ($major = 7; $major <= 8; $major++) {
                 for ($minor = 0; $minor <= 4; $minor++) {
                     $phpMinorPlatform = $major.'.'.$minor;
-                    $this->redis->hset('php:'.$phpMinorPlatform.':days', $day, $downloads + random_int(0, $major * $minor * 5));
-                    $this->redis->hset('php:'.$phpMinorPlatform.':months', $month, $downloads + random_int(0, $major * $minor * 5));
+                    $this->redis->hset('php:'.$phpMinorPlatform.':days', $day, (string) ($downloads + random_int(0, $major * $minor * 5)));
+                    $this->redis->hset('php:'.$phpMinorPlatform.':months', $month, (string) ($downloads + random_int(0, $major * $minor * 5)));
                 }
             }
 
