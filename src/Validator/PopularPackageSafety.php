@@ -19,7 +19,7 @@ use Symfony\Component\Validator\Constraint;
 class PopularPackageSafety extends Constraint
 {
     /** @readonly */
-    public string $message = 'This package is very popular and URL editing has been disabled for security reasons. Please get in touch at contact@packagist.org if you have a legitimate URL edit to do.';
+    public string $message = 'This package is very popular and URL editing has been disabled for security reasons. Please add a note on the old repo pointing to the new one if possible then get in touch at contact@packagist.org so we can get it sorted.';
 
     public function getTargets(): string
     {
