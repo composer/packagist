@@ -34,7 +34,7 @@ class ReadmeImageSanitizer implements AttributeSanitizerInterface
         }
 
         if (str_starts_with($value, 'https://private-user-images.githubusercontent.com/')) {
-            return Preg::replace('{^https://private-}', 'https://', $value, 1);
+            return Preg::replace('{^https://private-user-images.githubusercontent.com/\d+/\d+-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\.\w+\?.*$}', 'https://github.com/user-attachments/assets/$1', $value, 1);
         }
 
         return $value;
