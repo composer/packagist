@@ -649,7 +649,7 @@ class Updater
         $repoData = $driver->getRepoData();
 
         try {
-            $opts = ['http' => ['header' => ['Accept: application/vnd.github.v3.html']]];
+            $opts = ['http' => ['header' => ['Accept: application/vnd.github.html+json', 'X-GitHub-Api-Version: 2022-11-28']]];
             $readme = $httpDownloader->get($baseApiUrl.'/readme', $opts)->getBody();
         } catch (\Exception $e) {
             if (!$e instanceof \Composer\Downloader\TransportException || $e->getCode() !== 404) {

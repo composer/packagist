@@ -260,6 +260,7 @@ the correct directories. So if you change the dependencies, make sure you run <c
 <p dir="auto"><a href="https://fork-cms.herokuapp.com" rel="nofollow"><img src="https://camo.githubusercontent.com/f21b09fbe2280a6ee4a1badd19dd95404a233c132c021239d80d07a5e44bc8ec/68747470733a2f2f696d6775722e636f6d2f7a5875765264772e706e67" alt="Join our Slack channel" data-canonical-src="https://imgur.com/zXuvRdw.png" style="max-width: 100%;"> Join our Slack Channel!</a></p>
 <p dir="auto"><em>The Fork CMS team</em></p>
 <img src="https://private-user-images.githubusercontent.com/abcdef">
+<a href="https://private-user-images.githubusercontent.com/42083846/370308489-1bf9b427-0daf-4b69-9b45-a9a8fc09467f.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3Mjc4NDc4MDgsIm5iZiI6MTcyNzg0NzUwOCwicGF0aCI6Ii80MjA4Mzg0Ni8zNzAzMDg0ODktMWJmOWI0MjctMGRhZi00YjY5LTliNDUtYTlhOGZjMDk0NjdmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDEwMDIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQxMDAyVDA1MzgyOFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTg5NWEyNTJhY2MzYzQxN2NmZWM1Yjc4NTZhNGYzYmViNmNjMDEzMmUzYmE1MTk4OTZlNDZlM2IyZWMzYmUzODImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.8WVQcF1h41-gYzy3FdeX6E0F7MrcEfJM8EcTR6cWbLk"><img src="https://private-user-images.githubusercontent.com/42083846/370308489-1bf9b427-0daf-4b69-9b45-a9a8fc09467f.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3Mjc4NDc4MDgsIm5iZiI6MTcyNzg0NzUwOCwicGF0aCI6Ii80MjA4Mzg0Ni8zNzAzMDg0ODktMWJmOWI0MjctMGRhZi00YjY5LTliNDUtYTlhOGZjMDk0NjdmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDEwMDIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQxMDAyVDA1MzgyOFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTg5NWEyNTJhY2MzYzQxN2NmZWM1Yjc4NTZhNGYzYmViNmNjMDEzMmUzYmE1MTk4OTZlNDZlM2IyZWMzYmUzODImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.8WVQcF1h41-gYzy3FdeX6E0F7MrcEfJM8EcTR6cWbLk"></a>
 
 </article></div>
 SOURCE;
@@ -320,7 +321,8 @@ the correct directories. So if you change the dependencies, make sure you run <c
 <h2 class="heading-element">Community</h2><a id="user-content-community" class="anchor" href="#user-content-community" rel="nofollow noindex noopener external ugc"></a>
 <p><a href="https://fork-cms.herokuapp.com" rel="nofollow noindex noopener external ugc"><img src="https://camo.githubusercontent.com/f21b09fbe2280a6ee4a1badd19dd95404a233c132c021239d80d07a5e44bc8ec/68747470733a2f2f696d6775722e636f6d2f7a5875765264772e706e67" alt="Join our Slack channel" /> Join our Slack Channel!</a></p>
 <p><em>The Fork CMS team</em></p>
-<img src="https://user-images.githubusercontent.com/abcdef" />
+<img src="https://private-user-images.githubusercontent.com/abcdef" />
+<a href="https://github.com/user-attachments/assets/1bf9b427-0daf-4b69-9b45-a9a8fc09467f" rel="nofollow noindex noopener external ugc"><img src="https://github.com/user-attachments/assets/1bf9b427-0daf-4b69-9b45-a9a8fc09467f" /></a>
 
 
 EXPECTED
