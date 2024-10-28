@@ -312,6 +312,9 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && Preg::isMatch('{Driver could not be established for package}i', $e->getMessage())) {
                 // no driver found as it is a custom hosted git most likely on a server that is now unreachable or similar
                 $found404 = true;
+            } elseif ($e instanceof \RuntimeException && str_contains($e->getMessage(), 'svn: E160013:')) {
+                // svn failed with a 404
+                $found404 = true;
             } elseif ($e instanceof \RuntimeException && (
                 Preg::isMatch('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
                 || Preg::isMatch('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
@@ -321,6 +324,7 @@ class UpdaterWorker
                 || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+: No route to host}i', $e->getMessage())
                 || Preg::isMatch('{SSL: certificate subject name \([\w.-]+\) does not match target host name \'[\w.-]+\'}i', $e->getMessage())
                 || Preg::isMatch('{gnutls_handshake\(\) failed: The server name sent was not recognized}i', $e->getMessage())
+                || Preg::isMatch('{svn: E170013: Unable to connect to a repository at URL}', $e->getMessage())
             )) {
                 // unreachable host, skip for a week as this may be a temporary failure
                 $found404 = new \DateTime('+7 days');
