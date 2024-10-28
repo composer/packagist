@@ -537,6 +537,11 @@ class Package
                     $this->remoteId = parse_url($this->repository, PHP_URL_HOST).'/'.$repoData['id'];
                 }
             }
+
+            // when a package URL is updated to a new one we should assume it is now valid and not gone anymore
+            if ($this->isFrozen() && $this->getFreezeReason() === PackageFreezeReason::Gone) {
+                $this->unfreeze();
+            }
         } catch (\Exception $e) {
             $this->vcsDriverError = '['.get_class($e).'] '.$e->getMessage();
         }
