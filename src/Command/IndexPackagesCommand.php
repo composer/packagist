@@ -234,6 +234,10 @@ class IndexPackagesCommand extends Command
             $record['replacementPackage'] = '';
         }
 
+        if (in_array($package->getType(), ['php-ext', 'php-ext-zend'], true)) {
+            $record['extension'] = 1;
+        }
+
         $record['tags'] = $tags;
 
         return $record;
