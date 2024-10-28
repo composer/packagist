@@ -5,7 +5,7 @@
                 <div class="col-xs-12 js-search-field-wrapper col-md-9">
                     {% set query = app.request.query %}
                     {% set searchQuery = query.has('q') ? query.get('q') : query.get('query') %}
-                    <input type="search" id="search_query_query" name="query" required="required" autocomplete="off" placeholder="Search packages..." tabindex="1" class=" form-control" value="{{ searchQuery }}" />
+                    <input type="search" id="search_query_query" name="query" required="required" autocomplete="off" placeholder="Search {% if app.current_route == 'browse_extensions' %}extension {% endif %}packages..." tabindex="1" class=" form-control" value="{{ searchQuery }}" />
                 </div>
             </div>
         </form>

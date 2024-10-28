@@ -27,7 +27,11 @@ document.addEventListener('keydown', function (e) {
     e.preventDefault();
 });
 
-var searchParameters = {};
+var searchParameters = location.href.match(/\/extensions/) === null
+    ? {}
+    : {
+    numericFilters: 'extension = 1',
+};
 
 // avoid reflective XSS issues
 if (decodeURI(location.search).match(/[<>]/)) {
