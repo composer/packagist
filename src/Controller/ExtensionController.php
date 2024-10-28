@@ -16,6 +16,7 @@ use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use Pagerfanta\Adapter\FixedAdapter;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -30,16 +31,17 @@ class ExtensionController extends Controller
     #[Route(path: '/extensions.{_format}', name: 'browse_extensions', defaults: ['_format' => 'html'])]
     public function extensionsAction(Request $req, RedisClient $redis, FavoriteManager $favMgr, DownloadManager $dlMgr): Response
     {
-        $packages = $this->getEM()->getRepository(Package::class)
+        $packageQuery = $this->getEM()
+            ->getRepository(Package::class)
             ->createQueryBuilder('p')
             ->where("(p.type = 'php-ext' OR p.type = 'php-ext-zend')")
             ->andWhere('p.frozen IS NULL')
-            ->orderBy('p.name')
-            ->getQuery()
-            ->enableResultCache(900)
-            ->getResult();
+            ->orderBy('p.name');
 
-        $packages = new Pagerfanta(new FixedAdapter(count($packages), $packages));
+        $packages = new Pagerfanta(new QueryAdapter($packageQuery, false));
+        $packages->setNormalizeOutOfRangePages(true);
+        $packages->setMaxPerPage(15);
+        $packages->setCurrentPage(max(1, $req->query->getInt('page', 1)));
 
         $data = [
             'packages' => $packages,
