@@ -34,9 +34,9 @@ class UserAgentParser
             $this->phpVersion = (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['php'];
             $this->platformPhpVersion = null !== $matches['platform_php'] ? (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['platform_php'] : null;
             $this->os = Preg::replace('{^cygwin_nt-.*}', 'cygwin', strtolower($matches['os']));
-            if (str_contains('microsoft', strtolower((string) $matches['osversion']))) { // likely WSL 1 e.g. version-Microsoft
+            if (str_contains(strtolower((string) $matches['osversion']), 'microsoft')) { // likely WSL 1 e.g. version-Microsoft
                 $this->os = 'wsl';
-            } elseif (str_contains('WSL', (string) $matches['osversion'])) { // likely WSL2 e.g. version-microsoft-standard-WSL2
+            } elseif (str_contains((string) $matches['osversion'], 'WSL')) { // likely WSL2 e.g. version-microsoft-standard-WSL2
                 $this->os = 'wsl';
             }
             $this->httpVersion = null !== $matches['http'] ? strtolower($matches['http']) : null;
