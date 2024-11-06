@@ -10248,16 +10248,16 @@
         },
         {
             "name": "symfony/translation-contracts",
-            "version": "v3.4.2",
+            "version": "v3.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/translation-contracts.git",
-                "reference": "43810bdb2ddb5400e5c5e778e27b210a0ca83b6b"
+                "reference": "b9d2189887bb6b2e0367a9fc7136c5239ab9b05a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/translation-contracts/zipball/43810bdb2ddb5400e5c5e778e27b210a0ca83b6b",
-                "reference": "43810bdb2ddb5400e5c5e778e27b210a0ca83b6b",
+                "url": "https://api.github.com/repos/symfony/translation-contracts/zipball/b9d2189887bb6b2e0367a9fc7136c5239ab9b05a",
+                "reference": "b9d2189887bb6b2e0367a9fc7136c5239ab9b05a",
                 "shasum": ""
             },
             "require": {
@@ -10266,7 +10266,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "3.4-dev"
+                    "dev-main": "3.5-dev"
                 },
                 "thanks": {
                     "name": "symfony/contracts",
@@ -10306,7 +10306,7 @@
                 "standards"
             ],
             "support": {
-                "source": "https://github.com/symfony/translation-contracts/tree/v3.4.2"
+                "source": "https://github.com/symfony/translation-contracts/tree/v3.5.0"
             },
             "funding": [
                 {
@@ -10322,7 +10322,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-01-23T14:51:35+00:00"
+            "time": "2024-04-18T09:32:20+00:00"
         },
         {
             "name": "symfony/twig-bridge",
@@ -10592,20 +10592,21 @@
         },
         {
             "name": "symfony/validator",
-            "version": "v7.0.10",
+            "version": "v7.1.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/validator.git",
-                "reference": "b3e4d838cdae9f2882402c2ad8018a27d469c075"
+                "reference": "0d7e0dfd41702d6b9356214b76110421c1e74368"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/validator/zipball/b3e4d838cdae9f2882402c2ad8018a27d469c075",
-                "reference": "b3e4d838cdae9f2882402c2ad8018a27d469c075",
+                "url": "https://api.github.com/repos/symfony/validator/zipball/0d7e0dfd41702d6b9356214b76110421c1e74368",
+                "reference": "0d7e0dfd41702d6b9356214b76110421c1e74368",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.2",
+                "symfony/deprecation-contracts": "^2.5|^3",
                 "symfony/polyfill-ctype": "~1.8",
                 "symfony/polyfill-mbstring": "~1.0",
                 "symfony/polyfill-php83": "^1.27",
@@ -10638,6 +10639,7 @@
                 "symfony/property-access": "^6.4|^7.0",
                 "symfony/property-info": "^6.4|^7.0",
                 "symfony/translation": "^6.4.3|^7.0.3",
+                "symfony/type-info": "^7.1",
                 "symfony/yaml": "^6.4|^7.0"
             },
             "type": "library",
@@ -10667,7 +10669,7 @@
             "description": "Provides tools to validate values",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/validator/tree/v7.0.10"
+                "source": "https://github.com/symfony/validator/tree/v7.1.4"
             },
             "funding": [
                 {
@@ -10683,7 +10685,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-07-26T12:31:22+00:00"
+            "time": "2024-08-30T15:58:06+00:00"
         },
         {
             "name": "symfony/var-dumper",
@@ -14341,7 +14343,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "platform-overrides": {
         "php": "8.3.3"
     },
