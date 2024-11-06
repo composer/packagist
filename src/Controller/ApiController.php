@@ -311,6 +311,11 @@ class ApiController extends Controller
                 $statsd->increment('installs.php_patch', 1, 1, [
                     'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
                 ]);
+                $statsd->increment('installs.os', 1, 1, [
+                    'os' => $uaParser->getOs() ?: 'unknown',
+                    'php_minor' => $uaParser->getPhpMinorVersion(),
+                    'ci' => $uaParser->getCI() ? 'true' : 'false',
+                ]);
             } elseif (
                 // log only if user-agent header is well-formed (it sometimes contains the header name itself in the value)
                 !str_starts_with($request->headers->get('User-Agent'), 'User-Agent:')
