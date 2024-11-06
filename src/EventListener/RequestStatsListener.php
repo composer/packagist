@@ -17,8 +17,10 @@ use Graze\DogStatsD\Client;
 use Monolog\Logger;
 use Monolog\LogRecord;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class RequestStatsListener
 {
@@ -68,5 +70,13 @@ class RequestStatsListener
             default => '5xx',
         };
         $this->statsd->increment('app.status.'.$statsdCode, 1, 1, ['route' => $e->getRequest()->attributes->get('_route')]);
+    }
+
+    #[AsEventListener()]
+    public function onException(ExceptionEvent $e): void
+    {
+        if ($e->getThrowable() instanceof BadRequestHttpException && $e->getThrowable()->getCode() !== 404) {
+            $this->logger->error('Bad request', ['exception' => $e->getThrowable()]);
+        }
     }
 }
