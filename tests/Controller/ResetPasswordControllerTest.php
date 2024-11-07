@@ -61,12 +61,7 @@ class ResetPasswordControllerTest extends ControllerTestCase
 
     private function setupUserWithPasswordResetRequest(bool $withTwoFactor): User
     {
-        $user = new User;
-        $user->setEnabled(true);
-        $user->setUsername('test');
-        $user->setEmail('test@example.org');
-        $user->setPassword('testtest');
-        $user->setApiToken('token');
+        $user = self::createUser();
         $user->initializeConfirmationToken();
         $user->setPasswordRequestedAt(new \DateTime());
 
@@ -74,9 +69,7 @@ class ResetPasswordControllerTest extends ControllerTestCase
             $user->setTotpSecret('secret');
         }
 
-        $em = self::getEM();
-        $em->persist($user);
-        $em->flush();
+        $this->store($user);
 
         return $user;
     }

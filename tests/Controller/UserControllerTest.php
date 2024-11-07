@@ -19,16 +19,8 @@ class UserControllerTest extends ControllerTestCase
 {
     public function testEnableTwoFactoCode(): void
     {
-        $user = new User;
-        $user->setEnabled(true);
-        $user->setUsername('test');
-        $user->setEmail('test@example.org');
-        $user->setPassword('testtest');
-        $user->setApiToken('token');
-
-        $em = self::getEM();
-        $em->persist($user);
-        $em->flush();
+        $user = self::createUser();
+        $this->store($user);
 
         $this->client->loginUser($user);
 
@@ -49,6 +41,7 @@ class UserControllerTest extends ControllerTestCase
         $this->client->submit($form);
         $this->assertResponseStatusCodeSame(302);
 
+        $em = self::getEM();
         $em->clear();
         $this->assertTrue($em->getRepository(User::class)->find($user->getId())->isTotpAuthenticationEnabled());
     }

@@ -52,9 +52,13 @@ function executeCommand(string $command, bool $errorHandling = true): void {
     }
 }
 
-executeCommand('php ./bin/console doctrine:database:drop --env=test --force -q', false);
-executeCommand('php ./bin/console doctrine:database:create --env=test -q');
-executeCommand('php ./bin/console doctrine:schema:create --env=test -q');
-executeCommand('php ./bin/console redis:query flushall --env=test -n -q');
+if (!getenv('QUICK')) {
+    echo 'For quicker test runs without a fresh DB schema, prefix the test command with a QUICK=1 env var.' . PHP_EOL;
+
+    executeCommand('php ./bin/console doctrine:database:drop --env=test --force -q', false);
+    executeCommand('php ./bin/console doctrine:database:create --env=test -q');
+    executeCommand('php ./bin/console doctrine:schema:create --env=test -q');
+    executeCommand('php ./bin/console redis:query flushall --env=test -n -q');
+}
 
 \Composer\Util\Platform::putEnv('PACKAGIST_TESTS_ARE_RUNNING', '1');

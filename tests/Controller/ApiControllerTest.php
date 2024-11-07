@@ -39,21 +39,9 @@ class ApiControllerTest extends ControllerTestCase
     #[DataProvider('githubApiProvider')]
     public function testGithubApi($url): void
     {
-        $package = $this->createPackage('test/'.bin2hex(random_bytes(10)), $url);
-
-        $user = new User;
-        $user->addPackage($package);
-        $package->addMaintainer($user);
-        $user->setEnabled(true);
-        $user->setUsername('test');
-        $user->setEmail('test@example.org');
-        $user->setPassword('testtest');
-        $user->setApiToken('token');
-
-        $em = self::getEM();
-        $em->persist($package);
-        $em->persist($user);
-        $em->flush();
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), $url, maintainers: [$user]);
+        $this->store($user, $package);
 
         $scheduler = $this->createMock('App\Service\Scheduler');
 
@@ -61,11 +49,11 @@ class ApiControllerTest extends ControllerTestCase
             ->method('scheduleUpdate')
             ->with($package);
 
-        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', $em);
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
         static::$kernel->getContainer()->set('App\Service\Scheduler', $scheduler);
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
-        $this->client->request('POST', '/api/github?username=test&apiToken=token', ['payload' => $payload]);
+        $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload]);
         $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
@@ -81,20 +69,11 @@ class ApiControllerTest extends ControllerTestCase
 
     public function testUnsafeApiRejectsSafeApiToken(): void
     {
-        $user = new User;
-        $user->setEnabled(true);
-        $user->setUsername('test');
-        $user->setEmail('test@example.org');
-        $user->setPassword('testtest');
-        $user->setApiToken('token');
-        $user->setSafeApiToken('safetoken');
-
-        $em = self::getEM();
-        $em->persist($user);
-        $em->flush();
+        $user = self::createUser();
+        $this->store($user);
 
         $payload = json_encode(['repository' => 'https://github.com/composer/composer']);
-        $this->client->request('POST', '/api/create-package?username=test&apiToken=safetoken', ['payload' => $payload]);
+        $this->client->request('POST', '/api/create-package?username=test&apiToken=safe-api-token', ['payload' => $payload]);
         $this->assertEquals(406, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
         $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
     }
@@ -102,28 +81,16 @@ class ApiControllerTest extends ControllerTestCase
     public function testSafeApiAcceptsBothApiTokens(): void
     {
         $url = 'https://github.com/composer/composer';
-        $package = $this->createPackage('test/'.bin2hex(random_bytes(10)), $url);
-        $user = new User;
-        $user->addPackage($package);
-        $package->addMaintainer($user);
-        $user->setEnabled(true);
-        $user->setUsername('test');
-        $user->setEmail('test@example.org');
-        $user->setPassword('testtest');
-        $user->setApiToken('token');
-        $user->setSafeApiToken('safetoken');
-
-        $em = self::getEM();
-        $em->persist($package);
-        $em->persist($user);
-        $em->flush();
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), $url, maintainers: [$user]);
+        $this->store($user, $package);
 
         $payload = json_encode(['repository' => $url]);
-        $this->client->request('POST', '/api/update-package?username=test&apiToken=safetoken', ['payload' => $payload]);
+        $this->client->request('POST', '/api/update-package?username=test&apiToken=safe-api-token', ['payload' => $payload]);
         $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
 
         $payload = json_encode(['repository' => 'https://packagist.org/packages/'.$package->getName()]);
-        $this->client->request('POST', '/api/update-package?username=test&apiToken=token', ['payload' => $payload]);
+        $this->client->request('POST', '/api/update-package?username=test&apiToken=api-token', ['payload' => $payload]);
         $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
@@ -205,9 +172,7 @@ class ApiControllerTest extends ControllerTestCase
             GitHubSecurityAdvisoriesSource::SOURCE_NAME,
             Severity::MEDIUM,
         ), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
-        $em = self::getEM();
-        $em->persist($advisory);
-        $em->flush();
+        $this->store($advisory);
 
         $this->client->request('GET', '/api/security-advisories/?packages[]=acme/package');
         $this->assertEquals(200, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());

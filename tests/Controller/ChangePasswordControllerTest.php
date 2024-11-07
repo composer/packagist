@@ -23,21 +23,13 @@ class ChangePasswordControllerTest extends ControllerTestCase
     #[TestWith(['test@example.org', 'prohibited-password-error'])]
     public function testChangePassword(string $newPassword, string $expectedResult): void
     {
-        $user = new User;
-        $user->setEnabled(true);
-        $user->setUsername('test');
-        $user->setEmail('test@example.org');
-        $user->setPassword('testtest');
-        $user->setApiToken('token');
-        $user->setGithubId('123456');
+        $user = self::createUser();
 
         $currentPassword = 'current-one-123';
         $currentPasswordHash = self::getContainer()->get(UserPasswordHasherInterface::class)->hashPassword($user, $currentPassword);
         $user->setPassword($currentPasswordHash);
 
-        $em = self::getEM();
-        $em->persist($user);
-        $em->flush();
+        $this->store($user);
 
         $this->client->loginUser($user);
 
@@ -52,6 +44,7 @@ class ChangePasswordControllerTest extends ControllerTestCase
         if ($expectedResult == 'ok') {
             $this->assertResponseStatusCodeSame(302);
 
+            $em = self::getEM();
             $em->clear();
             $user = $em->getRepository(User::class)->find($user->getId());
             $this->assertNotNull($user);

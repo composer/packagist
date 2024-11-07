@@ -111,7 +111,7 @@ class WebControllerTest extends ControllerTestCase
      */
     protected function initializePackages(): array
     {
-        $em = $this->getEM();
+        $em = self::getEM();
 
         $twigPackage = $this->createPackage('twig/twig', 'https://github.com/twigphp/Twig', 'github.com/330275');
         $packagistPackage = $this->createPackage('composer/packagist', 'https://github.com/composer/packagist');

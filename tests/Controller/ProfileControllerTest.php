@@ -18,20 +18,8 @@ class ProfileControllerTest extends ControllerTestCase
 {
     public function testEditProfile(): void
     {
-        $user = new User;
-        $user->setEnabled(true);
-        $user->setUsername('test');
-        $user->setEmail('test@example.org');
-        $user->setPassword('testtest');
-        $user->setApiToken('token');
-        $user->setGithubId('123456');
-
-        $user->initializeConfirmationToken();
-        $user->setPasswordRequestedAt(new \DateTime());
-
-        $em = self::getEM();
-        $em->persist($user);
-        $em->flush();
+        $user = self::createUser();
+        $this->store($user);
 
         $this->client->loginUser($user);
 
@@ -44,6 +32,7 @@ class ProfileControllerTest extends ControllerTestCase
 
         $this->assertResponseStatusCodeSame(302);
 
+        $em = self::getEM();
         $em->clear();
         $user = $em->getRepository(User::class)->find($user->getId());
         $this->assertNotNull($user);
@@ -54,17 +43,11 @@ class ProfileControllerTest extends ControllerTestCase
 
     public function testTokenRotate(): void
     {
-        $user = new User;
-        $user->setEnabled(true);
-        $user->setUsername('test');
-        $user->setEmail('test@example.org');
-        $user->setPassword('testtest');
+        $user = self::createUser();
+        $this->store($user);
+
         $token = $user->getApiToken();
         $safeToken = $user->getSafeApiToken();
-
-        $em = self::getEM();
-        $em->persist($user);
-        $em->flush();
 
         $this->client->loginUser($user);
 
@@ -77,6 +60,7 @@ class ProfileControllerTest extends ControllerTestCase
 
         $this->assertResponseStatusCodeSame(302);
 
+        $em = self::getEM();
         $em->clear();
         $user = $em->getRepository(User::class)->find($user->getId());
         $this->assertNotNull($user);
