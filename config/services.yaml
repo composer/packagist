@@ -119,4 +119,5 @@ services:
     Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
         arguments: ['@snc_redis.cache', {prefix: 'sess:', ttl: 3600}]
 
-    Symfony\Component\HttpClient\NoPrivateNetworkHttpClient: ~
+    Symfony\Component\HttpClient\NoPrivateNetworkHttpClient:
+        autoconfigure: false
