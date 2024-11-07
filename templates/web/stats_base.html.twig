@@ -7,12 +7,10 @@
 {% block content %}
     {% set packageCount = 0 %}
 
-    {% apply spaceless %}
     <h2 class="title">
         {{ 'statistics.title'|trans }}
-        <small class="header-menu-item {% if app.request.attributes.get('_route') == 'stats' %}active{% endif %}"><a href="{{ path('stats') }}">Package Installs</a></small>
-        <small class="header-menu-item {% if app.request.attributes.get('_route') == 'php_stats' and type|default(false) == 'php' %}active{% endif %}"><a href="{{ path('php_stats') }}">PHP Versions</a></small>
+        <small class="header-menu-item {% if app.request.attributes.get('_route') == 'stats' %}active{% endif %}"><a href="{{ path('stats') }}">Package Installs</a></small>{#--#}
+        <small class="header-menu-item {% if app.request.attributes.get('_route') == 'php_stats' and type|default(false) == 'php' %}active{% endif %}"><a href="{{ path('php_stats') }}">PHP Versions</a></small>{#--#}
         {# <small class="header-menu-item {% if app.request.attributes.get('_route') == 'php_stats' and type|default(false) == 'phpplatform' %}active{% endif %}"><a href="{{ path('php_stats', {platform: 1}) }}">Platform PHP Versions</a></small> #}
     </h2>
-    {% endapply %}
 {% endblock %}

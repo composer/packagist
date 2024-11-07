@@ -27,7 +27,7 @@ class LogIdProcessor implements ProcessorInterface, ResettableInterface
         $this->jobId = null;
     }
 
-    public function __invoke(LogRecord $record)
+    public function __invoke(LogRecord $record): LogRecord
     {
         if ($this->jobId !== null) {
             $record->extra['job_id'] = $this->jobId;

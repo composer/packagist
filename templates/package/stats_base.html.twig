@@ -10,13 +10,11 @@
     <div class="row">
         <div class="col-xs-12 package">
             <div class="package-header">
-                {% apply spaceless %}
                 <h2 class="title">
                     <a href="{{ path("view_package", {name: package.name}) }}">{{ package.name }}</a> statistics
-                    <small class="header-menu-item {% if app.request.attributes.get('_route') == 'view_package_stats' %}active{% endif %}"><a href="{{ path('view_package_stats', {name: package.name}) }}">Package Installs</a></small>
+                    <small class="header-menu-item {% if app.request.attributes.get('_route') == 'view_package_stats' %}active{% endif %}"><a href="{{ path('view_package_stats', {name: package.name}) }}">Package Installs</a></small>{#--#}
                     <small class="header-menu-item {% if app.request.attributes.get('_route') == 'view_package_php_stats' %}active{% endif %}"><a href="{{ path('view_package_php_stats', {name: package.name}) }}">PHP Versions</a></small>
                 </h2>
-                {% endapply %}
             </div>
         </div>
     </div>
