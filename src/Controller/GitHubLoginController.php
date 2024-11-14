@@ -20,7 +20,6 @@ use KnpU\OAuth2ClientBundle\Exception\InvalidStateException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Provider\GithubResourceOwner;
 use League\OAuth2\Client\Token\AccessToken;
-use Symfony\Component\Finder\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
@@ -138,7 +137,7 @@ class GitHubLoginController extends Controller
     public function disconnect(Request $req, CsrfTokenManagerInterface $csrfTokenManager, UserNotifier $userNotifier, #[CurrentUser] User $user): RedirectResponse
     {
         if (!$this->isCsrfTokenValid('unlink_github', $req->query->get('token', ''))) {
-            throw new AccessDeniedException('Invalid CSRF token');
+            throw $this->createAccessDeniedException('Invalid CSRF token');
         }
 
         if ($user->getGithubId()) {

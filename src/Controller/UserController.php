@@ -291,16 +291,16 @@ class UserController extends Controller
         $req->getSession()->set('2fa_secret', $secret);
         $qrContent = $authenticator->getQRContent($temporary2faUser);
 
-        $qrCode = Builder::create()
-            ->writer(new SvgWriter())
-            ->writerOptions([])
-            ->data($qrContent)
-            ->encoding(new Encoding('UTF-8'))
-            ->errorCorrectionLevel(ErrorCorrectionLevel::High)
-            ->size(200)
-            ->margin(0)
-            ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
-            ->build();
+        $qrCode = new Builder(
+            writer: new SvgWriter(),
+            writerOptions: [],
+            data: $qrContent,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            size: 200,
+            margin: 0,
+            roundBlockSizeMode: RoundBlockSizeMode::Margin,
+        );
 
         return $this->render(
             'user/enable_two_factor_auth.html.twig',
@@ -308,7 +308,7 @@ class UserController extends Controller
                 'user' => $user,
                 'form' => $form,
                 'tfaConfig' => $temporary2faUser->getTotpAuthenticationConfiguration(),
-                'qrCode' => $qrCode->getDataUri(),
+                'qrCode' => $qrCode->build()->getDataUri(),
             ]
         );
     }

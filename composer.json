@@ -33,7 +33,7 @@
         "doctrine/common": "^3",
         "doctrine/doctrine-bundle": "^2.2",
         "doctrine/orm": "^2.7",
-        "endroid/qr-code": "^5",
+        "endroid/qr-code": "^6",
         "graze/dog-statsd": "^1",
         "knplabs/knp-menu-bundle": "^3",
         "knpuniversity/oauth2-client-bundle": "^2.8",
@@ -93,7 +93,6 @@
         "phpstan/phpstan-symfony": "^1.1",
         "phpstan/phpstan-webmozart-assert": "^1.2",
         "phpunit/phpunit": "^11.0",
-        "rector/rector": "^0.15.0",
         "staabm/phpstan-dba": "^0.2",
         "staabm/phpstan-todo-by": "^0.1.27",
         "symfony/browser-kit": "^7",
@@ -120,7 +119,7 @@
     "autoload": {
         "psr-4": {
             "App\\": "src/"
-        }, 
+        },
         "classmap": ["src/"]
     },
     "autoload-dev": {
