@@ -14,6 +14,7 @@ namespace App\Controller;
 
 use App\Entity\Dependent;
 use App\Entity\PackageFreezeReason;
+use App\Entity\PackageRepository;
 use App\Entity\PhpStat;
 use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
@@ -54,6 +55,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -97,18 +99,34 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/list.json', name: 'list', defaults: ['_format' => 'json'], methods: ['GET'])]
-    public function listAction(Request $req): JsonResponse
-    {
-        $repo = $this->getEM()->getRepository(Package::class);
-        $queryParams = $req->query->all();
-        $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
+    public function listAction(Request $req,
+        PackageRepository $repo,
+        #[MapQueryParameter] ?string $type=null,
+        #[MapQueryParameter] ?string $vendor=null,
         /** @var string[] $fields */
+        #[MapQueryParameter] array $fields=[]
+    ): JsonResponse
+    {
+//        $repo = $this->getEM()->getRepository(Package::class);
+        $queryParams = $req->query->all();
+//        $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
+
+        $qb = $repo->createQueryBuilder('p');
+        if ($type) {
+            $qb->andWhere('p.type = :type')->setParameter('type', $type);
+        }
+        if ($vendor) {
+            $qb->andWhere('p.vendor = :vendor')->setParameter('vendor', $vendor);
+        }
+
+        $query = $qb->getQuery();
+//        dd($fields, $query->getResult());
 
         if (count($fields) > 0) {
             $filters = array_filter([
-                'type' => $req->query->get('type'),
-                'vendor' => $req->query->get('vendor'),
+                'type' => $type,
+                'vendor' => $vendor,
             ]);
 
             $response = new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);
@@ -118,10 +136,8 @@ class PackageController extends Controller
             return $response;
         }
 
-        if ($req->query->get('type')) {
-            $names = $repo->getPackageNamesByType($req->query->get('type'));
-        } elseif ($req->query->get('vendor')) {
-            $names = $repo->getPackageNamesByVendor($req->query->get('vendor'));
+        if ($type || $vendor) {
+            $names = $repo->getPackageNamesByTypeAndVendor($type, $vendor);
         } else {
             $names = $this->providerManager->getPackageNames();
         }

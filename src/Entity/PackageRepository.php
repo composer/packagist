@@ -121,6 +121,26 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return array<string>
+     */
+    public function getPackageNamesByTypeAndVendor(?string $type, ?string $vendor): array
+    {
+        $qb = $this->getEntityManager()->getRepository(Package::class)->createQueryBuilder('p')
+            ->select('p.name')
+            ->where('p.frozen IS NULL');
+        if ($type) {
+            $qb->andWhere('p.type = :type')
+                ->setParameter('type', $type);
+        }
+        if ($vendor) {
+            $qb->andWhere('p.vendor = :vendor')
+                ->setParameter('vendor', $vendor);
+        }
+
+        return $this->getPackageNamesForQuery($qb->getQuery());
+    }
+
+    /**
      * @return array<Package>
      */
     public function getGitHubPackagesByMaintainer(int $userId): array
