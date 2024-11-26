@@ -99,40 +99,16 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return array<string>
      */
-    public function getPackageNamesByType(string $type): array
-    {
-        $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.type = :type AND p.frozen IS NULL")
-            ->setParameters(['type' => $type]);
-
-        return $this->getPackageNamesForQuery($query);
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function getPackageNamesByVendor(string $vendor): array
-    {
-        $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.vendor = :vendor AND p.frozen IS NULL")
-            ->setParameters(['vendor' => $vendor]);
-
-        return $this->getPackageNamesForQuery($query);
-    }
-
-    /**
-     * @return array<string>
-     */
     public function getPackageNamesByTypeAndVendor(?string $type, ?string $vendor): array
     {
         $qb = $this->getEntityManager()->getRepository(Package::class)->createQueryBuilder('p')
             ->select('p.name')
             ->where('p.frozen IS NULL');
-        if ($type) {
+        if ($type !== null) {
             $qb->andWhere('p.type = :type')
                 ->setParameter('type', $type);
         }
-        if ($vendor) {
+        if ($vendor !== null) {
             $qb->andWhere('p.vendor = :vendor')
                 ->setParameter('vendor', $vendor);
         }
