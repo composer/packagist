@@ -30,11 +30,13 @@ services:
 
             # params
             $dbUrl: '%env(DATABASE_URL)%'
+            $packagistHost: '%env(APP_HOSTNAME)%'
             $awsMetadata: '%aws_metadata%'
             $cacheDir: '%kernel.cache_dir%'
             $webDir: '%kernel.project_dir%/web/'
             $metadataDir: '%packagist_metadata_dir%'
             $trustedIpHeader: '%trusted_ip_header%'
+            $environment: '%kernel.environment%'
             $algoliaIndexName: '%env(ALGOLIA_INDEX_NAME)%'
             $githubWebhookSecret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
             $recaptchaEnabled: "%env(bool:APP_RECAPTCHA_ENABLED)%"
