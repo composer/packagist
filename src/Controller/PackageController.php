@@ -14,6 +14,7 @@ namespace App\Controller;
 
 use App\Entity\Dependent;
 use App\Entity\PackageFreezeReason;
+use App\Entity\PackageRepository;
 use App\Entity\PhpStat;
 use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
@@ -54,6 +55,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -97,19 +99,21 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/list.json', name: 'list', defaults: ['_format' => 'json'], methods: ['GET'])]
-    public function listAction(Request $req): JsonResponse
+    public function listAction(Request $req,
+        PackageRepository $repo,
+        #[MapQueryParameter] ?string $type=null,
+        #[MapQueryParameter] ?string $vendor=null,
+    ): JsonResponse
     {
-        $repo = $this->getEM()->getRepository(Package::class);
         $queryParams = $req->query->all();
         $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
-        /** @var string[] $fields */
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
 
         if (count($fields) > 0) {
             $filters = array_filter([
-                'type' => $req->query->get('type'),
-                'vendor' => $req->query->get('vendor'),
-            ]);
+                'type' => $type,
+                'vendor' => $vendor,
+            ], fn ($val) => $val !== null);
 
             $response = new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);
             $response->setSharedMaxAge(300);
@@ -118,10 +122,8 @@ class PackageController extends Controller
             return $response;
         }
 
-        if ($req->query->get('type')) {
-            $names = $repo->getPackageNamesByType($req->query->get('type'));
-        } elseif ($req->query->get('vendor')) {
-            $names = $repo->getPackageNamesByVendor($req->query->get('vendor'));
+        if ($type !== null || $vendor !== null) {
+            $names = $repo->getPackageNamesByTypeAndVendor($type, $vendor);
         } else {
             $names = $this->providerManager->getPackageNames();
         }

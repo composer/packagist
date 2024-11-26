@@ -154,6 +154,8 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface, Fixt
             ['https://github.com/thephpleague/flysystem', '2014-01-15T07:46:47+00:00'],
             ['https://github.com/twigphp/Twig', '2011-09-29T16:52:42+00:00'],
             ['https://github.com/webmozarts/assert', '2015-03-11T12:18:50+00:00'],
+            ['https://github.com/zenstruck/schedule-bundle', '2022-03-11T12:18:50+00:00'],
+            ['https://github.com/zenstruck/signed-url-bundle', '2022-03-11T12:18:50+00:00'],
         ];
     }
 }
