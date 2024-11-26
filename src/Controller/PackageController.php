@@ -113,7 +113,7 @@ class PackageController extends Controller
             $filters = array_filter([
                 'type' => $type,
                 'vendor' => $vendor,
-            ]);
+            ], fn ($val) => $val !== null);
 
             $response = new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);
             $response->setSharedMaxAge(300);
@@ -122,7 +122,7 @@ class PackageController extends Controller
             return $response;
         }
 
-        if ($type || $vendor) {
+        if ($type !== null || $vendor !== null) {
             $names = $repo->getPackageNamesByTypeAndVendor($type, $vendor);
         } else {
             $names = $this->providerManager->getPackageNames();
