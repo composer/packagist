@@ -102,23 +102,12 @@ class PackageController extends Controller
     public function listAction(Request $req,
         PackageRepository $repo,
         #[MapQueryParameter] ?string $type=null,
-        #[MapQueryParameter] ?string $vendor=null
+        #[MapQueryParameter] ?string $vendor=null,
     ): JsonResponse
     {
         $queryParams = $req->query->all();
         $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
-
-        $qb = $repo->createQueryBuilder('p');
-        if ($type) {
-            $qb->andWhere('p.type = :type')->setParameter('type', $type);
-        }
-        if ($vendor) {
-            $qb->andWhere('p.vendor = :vendor')->setParameter('vendor', $vendor);
-        }
-
-        $query = $qb->getQuery();
-//        dd($fields, $query->getResult());
 
         if (count($fields) > 0) {
             $filters = array_filter([
