@@ -16,6 +16,7 @@ $config = new RuntimeConfiguration();
 $config->stringifyTypes(false);
 // $config->analyzeQueryPlans(true);
 // $config->debugMode(true);
+// $config->utilizeSqlAst(true); // requires sqlftw/sqlftw
 
 (new Dotenv())->bootEnv(__DIR__ . '/.env');
 $dsn = parse_url($_SERVER['DATABASE_URL']);

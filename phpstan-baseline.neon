@@ -25,10 +25,22 @@ parameters:
 			path: src/Entity/AuditRecordRepository.php
 
 		-
+			message: '#^Method App\\Entity\\PackageRepository\:\:getSuggestCount\(\) should return int\<0, max\> but returns int\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Entity/PackageRepository.php
+
+		-
 			message: '#^Query error\: Unknown column ''d\.total'' in ''order clause'' \(1054\)\.$#'
 			identifier: dba.syntaxError
 			count: 1
 			path: src/Entity/PackageRepository.php
+
+		-
+			message: '#^Method App\\Entity\\PhpStatRepository\:\:getStatVersions\(\) should return list\<array\{version\: string, depth\: 0\|1\|2\|3\}\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Entity/PhpStatRepository.php
 
 		-
 			message: '#^Offset ''name'' on array\{name\: string, description\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
