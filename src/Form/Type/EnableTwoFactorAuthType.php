@@ -21,7 +21,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * @author Igor Wiedler <igor@wiedler.ch>
+ * @extends AbstractType<EnableTwoFactorRequest>
  */
 class EnableTwoFactorAuthType extends AbstractType
 {

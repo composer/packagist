@@ -60,7 +60,7 @@ class Job
     #[ORM\Column(type: 'string')]
     private string $status = self::STATUS_QUEUED;
 
-    /** @var (JobResult&array<string, int|string|bool|null|array<mixed>|\Throwable>)|null */
+    /** @var JobResult|null */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $result = null;
 
@@ -97,7 +97,7 @@ class Job
     }
 
     /**
-     * @param JobResult&array<string, int|string|bool|null|array<mixed>|\Throwable> $result
+     * @param JobResult $result
      */
     public function complete(array $result): void
     {
@@ -158,7 +158,7 @@ class Job
     }
 
     /**
-     * @return JobResult&array<string, int|string|bool|null|array<mixed>|\Throwable>
+     * @return JobResult
      */
     public function getResult(): ?array
     {

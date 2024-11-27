@@ -16,10 +16,6 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @method Dependent|null find($id, $lockMode = null, $lockVersion = null)
- * @method Dependent|null findOneBy(array $criteria, array $orderBy = null)
- * @method Dependent[]    findAll()
- * @method Dependent[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  * @extends ServiceEntityRepository<Dependent>
  */
 class DependentRepository extends ServiceEntityRepository
@@ -63,33 +59,4 @@ class DependentRepository extends ServiceEntityRepository
         $conn->executeStatement('DELETE FROM dependent WHERE package_id = :id', ['id' => $packageId]);
         $conn->executeStatement('DELETE FROM suggester WHERE package_id = :id', ['id' => $packageId]);
     }
-
-    // /**
-    //  * @return Dependent[] Returns an array of Dependent objects
-    //  */
-    /*
-    public function findByExampleField($value)
-    {
-        return $this->createQueryBuilder('d')
-            ->andWhere('d.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('d.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
-
-    /*
-    public function findOneBySomeField($value): ?Dependent
-    {
-        return $this->createQueryBuilder('d')
-            ->andWhere('d.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
 }

@@ -186,6 +186,7 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param Query<mixed, array{name: string}> $query
      * @return list<string>
      */
     private function getPackageNamesForQuery(Query $query): array
@@ -500,7 +501,7 @@ class PackageRepository extends ServiceEntityRepository
      * @param string   $name Package name to find the dependents of
      * @param int|null $type One of Dependent::TYPE_*
      * @param 'downloads'|'name' $orderBy
-     * @return array<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
+     * @return list<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
      */
     public function getDependents(string $name, int $offset = 0, int $limit = 15, string $orderBy = 'name', ?int $type = null): array
     {
@@ -526,6 +527,7 @@ class PackageRepository extends ServiceEntityRepository
             ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $res = [];
+        /** @var array{id: int, name: string, description: string|null, language: string|null, abandoned: bool, replacementPackage: string|null} $row */
         foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }

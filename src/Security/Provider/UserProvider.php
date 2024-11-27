@@ -23,7 +23,8 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 /**
- * @template-implements UserProviderInterface<User>
+ * @implements UserProviderInterface<User>
+ * @implements PasswordUpgraderInterface<User>
  */
 class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {

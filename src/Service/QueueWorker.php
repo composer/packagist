@@ -137,6 +137,7 @@ class QueueWorker
                     'status' => 'type_errored',
                 ]);
             }
+            /** @phpstan-var ErroredResult $result */
             $result = [
                 'status' => Job::STATUS_ERRORED,
                 'message' => 'An unexpected failure occurred',
@@ -186,6 +187,7 @@ class QueueWorker
         if (isset($result['exception'])) {
             $result['exceptionMsg'] = $result['exception']->getMessage();
             $result['exceptionClass'] = get_class($result['exception']);
+            unset($result['exception']);
         }
 
         $job->complete($result);
