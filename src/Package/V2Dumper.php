@@ -59,7 +59,7 @@ class V2Dumper
     /**
      * Dump a set of packages to the web root
      *
-     * @param int[] $packageIds
+     * @param list<int> $packageIds
      */
     public function dump(array $packageIds, bool $force = false, bool $verbose = false): void
     {
@@ -223,12 +223,8 @@ class V2Dumper
         $name = strtolower($package->getName());
         $forceDump = $package->getDumpedAtV2() === null;
 
-        $versions = $package->getVersions();
-        if (is_object($versions)) {
-            $versions = $versions->toArray();
-        }
-
-        usort($versions, Package::class.'::sortVersions');
+        $versions = $package->getVersions()->toArray();
+        usort($versions, Package::sortVersions(...));
 
         $tags = [];
         $branches = [];

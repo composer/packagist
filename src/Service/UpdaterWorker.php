@@ -95,6 +95,7 @@ class UpdaterWorker
 
     /**
      * @param Job<PackageUpdateJob> $job
+     * @return PackageCompletedResult|PackageFailedResult|PackageGoneResult|RescheduleResult
      * @return array{status: Job::STATUS_*, message?: string, after?: \DateTimeInterface, vendor?: string, details?: string, exception?: \Throwable}
      */
     public function process(Job $job, SignalHandler $signal): array
@@ -114,7 +115,7 @@ class UpdaterWorker
 
         $lockAcquired = $this->locker->lockPackageUpdate($id);
         if (!$lockAcquired) {
-            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+5 seconds'), 'vendor' => $packageVendor];
+            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+5 seconds'), 'vendor' => $packageVendor, 'message' => 'Could not acquire lock'];
         }
 
         $this->logger->info('Updating '.$packageName);
@@ -434,7 +435,7 @@ class UpdaterWorker
     }
 
     /**
-     * @return array{status: Job::STATUS_*, message: string, details: string, exception: TransportException, vendor: string}|null
+     * @return PackageGoneResult|PackageDeletedResult|null
      */
     private function checkForDeadGitHubPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output): ?array
     {
@@ -459,7 +460,7 @@ class UpdaterWorker
     }
 
     /**
-     * @return array{status: Job::STATUS_*, message: string, details: string, exception: TransportException, vendor: string}|null
+     * @return PackageGoneResult|PackageDeletedResult|null
      */
     private function checkForDeadGitLabPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output): ?array
     {
@@ -481,7 +482,7 @@ class UpdaterWorker
     }
 
     /**
-     * @return array{status: Job::STATUS_*, message: string, details: string, exception: TransportException, vendor: string}|null
+     * @return PackageGoneResult|PackageDeletedResult|null
      */
     private function completeDeadPackageCheck(string $referenceRepoApiUrl, Package $package, HttpDownloader $httpDownloader, string $output, TransportException $e): ?array
     {

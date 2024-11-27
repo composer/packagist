@@ -1571,6 +1571,9 @@ class PackageController extends Controller
         return $this->render('package/security_advisory.html.twig', ['securityAdvisories' => $securityAdvisories, 'id' => $id]);
     }
 
+    /**
+     * @return FormInterface<MaintainerRequest>
+     */
     private function createAddMaintainerForm(Package $package): FormInterface
     {
         $maintainerRequest = new MaintainerRequest();
@@ -1578,6 +1581,9 @@ class PackageController extends Controller
         return $this->createForm(AddMaintainerRequestType::class, $maintainerRequest);
     }
 
+    /**
+     * @return FormInterface<MaintainerRequest>
+     */
     private function createRemoveMaintainerForm(Package $package): FormInterface
     {
         $maintainerRequest = new MaintainerRequest();
@@ -1587,6 +1593,9 @@ class PackageController extends Controller
         ]);
     }
 
+    /**
+     * @return FormInterface<array{}>
+     */
     private function createDeletePackageForm(Package $package): FormInterface
     {
         return $this->createFormBuilder([])->getForm();

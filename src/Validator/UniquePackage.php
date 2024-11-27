@@ -18,7 +18,6 @@ use Symfony\Component\Validator\Constraint;
 #[Attribute(Attribute::TARGET_CLASS)]
 class UniquePackage extends Constraint
 {
-    /** @readonly */
     public string $message = '';
 
     public function getTargets(): string

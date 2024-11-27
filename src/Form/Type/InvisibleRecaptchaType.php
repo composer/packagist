@@ -22,6 +22,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
  * InvisibleRecaptchaType enables recaptcha on the form after 3 wrong passwords are entered
+ *
+ * @extends AbstractType<array{}>
  */
 class InvisibleRecaptchaType extends AbstractType
 {

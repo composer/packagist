@@ -63,7 +63,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     private bool $enabled = false;
 
     /**
-     * @var list<string>
+     * @var array<string>
      */
     #[ORM\Column(type: 'json')]
     private array $roles = [];

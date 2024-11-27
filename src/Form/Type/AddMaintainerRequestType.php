@@ -18,7 +18,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * @author Jordi Boggiano <j.boggiano@seld.be>
+ * @extends AbstractType<MaintainerRequest>
  */
 class AddMaintainerRequestType extends AbstractType
 {

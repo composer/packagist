@@ -20,6 +20,8 @@ use Symfony\Component\Form\FormBuilderInterface;
  * Class AbandonedType
  *
  * Form used to acquire replacement Package information for abandoned package.
+ *
+ * @extends AbstractType<array{replacement?: string}>
  */
 class AbandonedType extends AbstractType
 {

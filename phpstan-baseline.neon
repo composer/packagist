@@ -1,61 +1,73 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Dead catch \\- Symfony\\\\Component\\\\Lock\\\\Exception\\\\LockReleasingException is never thrown in the try block\\.$#"
+			message: '#^Dead catch \- Symfony\\Component\\Lock\\Exception\\LockReleasingException is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
 			count: 1
 			path: src/Command/RunWorkersCommand.php
 
 		-
-			message: "#^Parameter \\#1 \\$job of method App\\\\Service\\\\UpdaterWorker\\:\\:process\\(\\) expects App\\\\Entity\\\\Job\\<array\\{id\\: int, update_equal_refs\\: bool, delete_before\\: bool, force_dump\\: bool\\}\\>, App\\\\Entity\\\\Job\\<array\\{id\\: int, update_equal_refs\\: false, delete_before\\: false, force_dump\\: false\\}\\> given\\.$#"
-			count: 1
-			path: src/DataFixtures/PackageFixtures.php
-
-		-
-			message: "#^Query error\\: Column \"audit_log\\.attributes\" expects value type string, got type array\\<string, mixed\\>$#"
+			message: '#^Query error\: Column "audit_log\.attributes" expects value type string, got type array\<string, mixed\>$#'
+			identifier: dba.keyValue
 			count: 1
 			path: src/Entity/AuditRecordRepository.php
 
 		-
-			message: "#^Query error\\: Column \"audit_log\\.datetime\" expects value type string, got type DateTimeImmutable$#"
+			message: '#^Query error\: Column "audit_log\.datetime" expects value type string, got type DateTimeImmutable$#'
+			identifier: dba.keyValue
 			count: 1
 			path: src/Entity/AuditRecordRepository.php
 
 		-
-			message: "#^Query error\\: Column \"audit_log\\.id\" expects value type string, got type Symfony\\\\Component\\\\Uid\\\\Ulid$#"
+			message: '#^Query error\: Column "audit_log\.id" expects value type string, got type Symfony\\Component\\Uid\\Ulid$#'
+			identifier: dba.keyValue
 			count: 1
 			path: src/Entity/AuditRecordRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getDependents\\(\\) should return array\\<array\\{id\\: int, name\\: string, description\\: string\\|null, language\\: string\\|null, abandoned\\: int, replacementPackage\\: string\\|null\\}\\> but returns array\\<int\\<0, max\\>, non\\-empty\\-array\\<string, mixed\\>\\>\\.$#"
+			message: '#^Query error\: Unknown column ''d\.total'' in ''order clause'' \(1054\)\.$#'
+			identifier: dba.syntaxError
 			count: 1
 			path: src/Entity/PackageRepository.php
 
 		-
-			message: "#^Method App\\\\Entity\\\\PackageRepository\\:\\:getSuggestCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Query error\\: Unknown column 'd\\.total' in 'order clause' \\(1054\\)\\.$#"
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
-			message: "#^Offset 'name' on array\\{name\\: string, description\\?\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			message: '#^Offset ''name'' on array\{name\: string, description\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
 			count: 2
 			path: src/Entity/Version.php
 
 		-
-			message: "#^Method App\\\\Model\\\\FavoriteManager\\:\\:getFavoriteCount\\(\\) should return int\\<0, max\\> but returns int\\.$#"
+			message: '#^Method App\\Model\\FavoriteManager\:\:getFavoriteCount\(\) should return int\<0, max\> but returns int\.$#'
+			identifier: return.type
 			count: 1
 			path: src/Model/FavoriteManager.php
 
 		-
-			message: "#^Parameter \\#1 \\$job of method App\\\\Service\\\\GitHubUserMigrationWorker\\:\\:process\\(\\) expects App\\\\Entity\\\\Job\\<array\\{id\\: int, update_equal_refs\\: bool, delete_before\\: bool, force_dump\\: bool\\}\\>\\|App\\\\Entity\\\\Job\\<array\\{id\\: int, old_scope\\: string, new_scope\\: string\\}\\>\\|App\\\\Entity\\\\Job\\<array\\{source\\: string\\}\\>, App\\\\Entity\\\\Job\\<array\\<string, bool\\|int\\|string\\>\\> given\\.$#"
+			message: '#^Parameter \#1 \$ids of method App\\Entity\\PackageRepository\:\:getPackagesWithVersions\(\) expects list\<int\>\|null, array\<int\<0, max\>, int\> given\.$#'
+			identifier: argument.type
 			count: 1
-			path: src/Service/QueueWorker.php
+			path: src/Package/SymlinkDumper.php
 
 		-
-			message: "#^Parameter \\#1 \\$result of method App\\\\Entity\\\\Job\\<array\\<string, bool\\|int\\|string\\>\\>\\:\\:complete\\(\\) expects array\\{status\\: 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone'\\|'queued'\\|'reschedule'\\|'started'\\|'timeout', message\\?\\: string, after\\?\\: DateTimeInterface&Throwable, details\\?\\: string, exception\\?\\: Throwable, exceptionMsg\\?\\: string, exceptionClass\\?\\: class\\-string\\<Throwable\\>, results\\?\\: array, \\.\\.\\.\\}, array\\{status\\: 'completed'\\|'errored'\\|'failed'\\|'package_deleted'\\|'package_gone', message\\: string, after\\?\\: DateTimeInterface, details\\?\\: string, exception\\?\\: Throwable, exceptionMsg\\?\\: string, exceptionClass\\?\\: class\\-string\\<Throwable\\>, results\\?\\: array, \\.\\.\\.\\} given\\.$#"
+			message: '#^Method App\\Package\\Updater\:\:sanitize\(\) should return T of string\|null but returns null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: '#^Method App\\Package\\Updater\:\:sanitize\(\) should return T of string\|null but returns string\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: '#^Parameter \#1 \$ids of method App\\Entity\\PackageRepository\:\:getPackagesWithVersions\(\) expects list\<int\>\|null, array\<int\<0, max\>, int\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Package/V2Dumper.php
+
+		-
+			message: '#^Parameter \#1 \$job of method App\\Service\\GitHubUserMigrationWorker\:\:process\(\) expects App\\Entity\\Job\<array\{id\: int, update_equal_refs\: bool, delete_before\: bool, force_dump\: bool\}\>\|App\\Entity\\Job\<array\{id\: int, old_scope\: string, new_scope\: string\}\>\|App\\Entity\\Job\<array\{source\: string\}\>, App\\Entity\\Job\<array\<string, bool\|int\|string\>\> given\.$#'
+			identifier: argument.type
 			count: 1
 			path: src/Service/QueueWorker.php

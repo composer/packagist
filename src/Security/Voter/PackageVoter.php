@@ -8,8 +8,12 @@ use App\Model\DownloadManager;
 use Predis\Connection\ConnectionException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
-class PackageVoter extends \Symfony\Component\Security\Core\Authorization\Voter\Voter
+/**
+ * @extends Voter<value-of<PackageActions>, Package>
+ */
+class PackageVoter extends Voter
 {
     public function __construct(
         private Security $security,

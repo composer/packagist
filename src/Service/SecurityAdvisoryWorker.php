@@ -44,7 +44,7 @@ class SecurityAdvisoryWorker
 
     /**
      * @param Job<SecurityAdvisoryJob> $job
-     * @return JobResult
+     * @return AdvisoriesCompletedResult|AdvisoriesErroredResult|RescheduleResult
      */
     public function process(Job $job, SignalHandler $signal): array
     {
@@ -52,7 +52,7 @@ class SecurityAdvisoryWorker
 
         $lockAcquired = $this->locker->lockSecurityAdvisory(self::ADVISORY_WORKER_RUN);
         if (!$lockAcquired) {
-            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+2 minutes')];
+            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+2 minutes'), 'message' => 'Could not acquire lock'];
         }
 
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));

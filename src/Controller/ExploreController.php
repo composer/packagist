@@ -111,7 +111,6 @@ class ExploreController extends Controller
                 'total' => $packages->getNbResults(),
             ];
 
-            /** @var Package $package */
             foreach ($packages as $package) {
                 $url = $this->generateUrl('view_package', ['name' => $package->getName()], UrlGeneratorInterface::ABSOLUTE_URL);
 

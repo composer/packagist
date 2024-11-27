@@ -16,10 +16,6 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @method Suggester|null find($id, $lockMode = null, $lockVersion = null)
- * @method Suggester|null findOneBy(array $criteria, array $orderBy = null)
- * @method Suggester[]    findAll()
- * @method Suggester[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  * @extends ServiceEntityRepository<Suggester>
  */
 class SuggesterRepository extends ServiceEntityRepository
@@ -28,33 +24,4 @@ class SuggesterRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Suggester::class);
     }
-
-    // /**
-    //  * @return Suggester[] Returns an array of Suggester objects
-    //  */
-    /*
-    public function findByExampleField($value)
-    {
-        return $this->createQueryBuilder('d')
-            ->andWhere('d.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('d.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
-
-    /*
-    public function findOneBySomeField($value): ?Suggester
-    {
-        return $this->createQueryBuilder('d')
-            ->andWhere('d.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
 }

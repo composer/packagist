@@ -25,7 +25,7 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 
 /**
- * @author Jordi Boggiano <j.boggiano@seld.be>
+ * @extends AbstractType<User>
  */
 class ProfileFormType extends AbstractType
 {
