@@ -62,6 +62,21 @@ import 'bootstrap';
             scrollTo(0, $($(e.target).attr('href')).offset().top - 65);
         }, 0);
     });
+
+    let currentBannerId = $('.banner .banner-close').data('banner-id');
+    $('.banner .banner-close').click(function () {
+        $('.banner').addClass('hidden');
+        try {
+            window.localStorage.setItem('banner-read', currentBannerId);
+        } catch (e) {}
+    });
+    if (currentBannerId !== undefined) {
+        try {
+            if (window.localStorage.getItem('banner-read') !== currentBannerId) {
+                $('.banner').removeClass('hidden');
+            }
+        } catch (e) {}
+    }
 })(jQuery);
 
 if (window.trackPageload !== false && location.host === 'packagist.org') {

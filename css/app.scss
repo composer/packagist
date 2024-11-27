@@ -150,6 +150,28 @@ strong {
     background: #2d2d32;
 }
 
+.banner {
+    position: absolute;
+    text-align: center;
+    left: 50%;
+    top: 9px;
+    width: 340px;
+    height: 40px;
+    margin-left: -170px;
+    background: red;
+    padding: 10px;
+    border-radius: 5px;
+    &.alert-error::before {
+        content: '';
+    }
+    z-index: 500;
+    .banner-close {
+        float: right;
+        padding-top: 2px;
+        cursor: pointer;
+    }
+}
+
 .navbar {
     margin: 0;
     border: 0;
