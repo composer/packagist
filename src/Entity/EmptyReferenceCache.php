@@ -28,7 +28,7 @@ class EmptyReferenceCache
     /**
      * @var list<string>
      */
-    #[ORM\Column(type: 'array')]
+    #[ORM\Column(type: 'json')]
     private array $emptyReferences = [];
 
     public function __construct(Package $package)

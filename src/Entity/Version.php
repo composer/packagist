@@ -82,7 +82,7 @@ class Version
     /**
      * @var array<mixed>
      */
-    #[ORM\Column(type: 'array')]
+    #[ORM\Column(type: 'json')]
     private array $extra = [];
 
     /**

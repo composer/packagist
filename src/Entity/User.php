@@ -65,7 +65,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     /**
      * @var list<string>
      */
-    #[ORM\Column(type: 'array')]
+    #[ORM\Column(type: 'json')]
     private array $roles = [];
 
     /**
