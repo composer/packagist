@@ -28,6 +28,11 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
 {
     public const SOURCE_NAME = 'GitHub';
 
+    private const IGNORE_CVES = [
+        'CVE-2024-36611', // @see https://phpc.social/@wouterj/113588554019692959
+        'CVE-2024-36610', // @see https://phpc.social/@wouterj/113588554019692959
+    ];
+
     /**
      * @param list<string> $fallbackGhTokens
      */
@@ -92,6 +97,10 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                     }
                 }
                 if (null === $remoteId) {
+                    continue;
+                }
+
+                if (in_array($cve, self::IGNORE_CVES, true)) {
                     continue;
                 }
 
