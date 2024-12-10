@@ -79,7 +79,7 @@ parameters:
 			path: src/Package/V2Dumper.php
 
 		-
-			message: '#^Parameter \#1 \$job of method App\\Service\\GitHubUserMigrationWorker\:\:process\(\) expects App\\Entity\\Job\<array\{id\: int, update_equal_refs\: bool, delete_before\: bool, force_dump\: bool\}\>\|App\\Entity\\Job\<array\{id\: int, old_scope\: string, new_scope\: string\}\>\|App\\Entity\\Job\<array\{source\: string\}\>, App\\Entity\\Job\<array\<string, bool\|int\|string\>\> given\.$#'
+			message: '#^Parameter \#1 \$job of method App\\Service\\GitHubUserMigrationWorker\:\:process\(\) expects App\\Entity\\Job\<array\{id\: int, update_equal_refs\: bool, delete_before\: bool, force_dump\: bool, source\: string\}\>\|App\\Entity\\Job\<array\{id\: int, old_scope\: string, new_scope\: string\}\>\|App\\Entity\\Job\<array\{source\: string\}\>, App\\Entity\\Job\<array\<string, bool\|int\|string\>\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Service/QueueWorker.php

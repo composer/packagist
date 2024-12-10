@@ -112,6 +112,7 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface, Fixt
             'update_equal_refs' => false,
             'delete_before'     => false,
             'force_dump'        => false,
+            'source'            => 'fixtures',
         ]);
 
         $this->updaterWorker->process($job, $this->signalHandler);
