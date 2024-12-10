@@ -851,7 +851,7 @@ class PackageController extends Controller
             }
 
             if ($update) {
-                $job = $this->scheduler->scheduleUpdate($package, $updateEqualRefs, false, null, $manualUpdate);
+                $job = $this->scheduler->scheduleUpdate($package, 'button/api', $updateEqualRefs, false, null, $manualUpdate);
 
                 return new JsonResponse(['status' => 'success', 'job' => $job->getId()], 202);
             }

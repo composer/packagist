@@ -54,7 +54,7 @@ parameters:
         PackageSource: 'array{url: string|null, type: string|null, reference: string|null}|null'
 
         AnyJob: 'array<string, bool|int|string>'
-        PackageUpdateJob: 'array{id: int, update_equal_refs: bool, delete_before: bool, force_dump: bool}'
+        PackageUpdateJob: 'array{id: int, update_equal_refs: bool, delete_before: bool, force_dump: bool, source: string}'
         GitHubUserMigrateJob: 'array{id: int, old_scope: string, new_scope: string}'
         SecurityAdvisoryJob: 'array{source: string}'
 

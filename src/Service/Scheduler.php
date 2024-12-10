@@ -31,7 +31,7 @@ class Scheduler
      * @param Package|int $packageOrId
      * @return Job<PackageUpdateJob>
      */
-    public function scheduleUpdate($packageOrId, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeInterface $executeAfter = null, bool $forceDump = false): Job
+    public function scheduleUpdate($packageOrId, string $source, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeInterface $executeAfter = null, bool $forceDump = false): Job
     {
         if ($packageOrId instanceof Package) {
             $packageOrId = $packageOrId->getId();
@@ -60,7 +60,7 @@ class Scheduler
             $this->getEM()->flush();
         }
 
-        return $this->createJob('package:updates', ['id' => $packageOrId, 'update_equal_refs' => $updateEqualRefs, 'delete_before' => $deleteBefore, 'force_dump' => $forceDump], $packageOrId, $executeAfter);
+        return $this->createJob('package:updates', ['id' => $packageOrId, 'update_equal_refs' => $updateEqualRefs, 'delete_before' => $deleteBefore, 'force_dump' => $forceDump, 'source' => $source], $packageOrId, $executeAfter);
     }
 
     /**

@@ -419,6 +419,7 @@ class ApiController extends Controller
         $user = null;
         $autoUpdated = Package::AUTO_MANUAL_HOOK;
         $receiveType = 'manual';
+        $source = 'unknown';
 
         // manual hook set up with user API token as secret
         if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature')) {
@@ -428,8 +429,9 @@ class ApiController extends Controller
             if ($sig && $user && $user->isEnabled()) {
                 [$algo, $sig] = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
+                $source = 'manual_github_hook';
                 if (hash_equals($expected, $sig)) {
-                    $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $user);
+                    $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $source, $user);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
                 } else {
@@ -443,6 +445,9 @@ class ApiController extends Controller
         if (!$user) {
             // find the user
             $user = $this->findUser($request, ApiType::Safe);
+            if ($user) {
+                $source = 'manual_hook ('.$user->getUsername().' @ '.$request->getPathInfo().')';
+            }
         }
 
         if (!$user && $match['host'] === 'github.com' && $request->getContent()) {
@@ -450,8 +455,10 @@ class ApiController extends Controller
             if ($sig) {
                 [$algo, $sig] = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $githubWebhookSecret);
+                $source = 'github_official_hook';
+
                 if (hash_equals($expected, $sig)) {
-                    $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId);
+                    $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $source);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_auto';
                 }
@@ -477,7 +484,7 @@ class ApiController extends Controller
         foreach ($packages as $package) {
             $package->setAutoUpdated($autoUpdated);
 
-            $job = $this->scheduler->scheduleUpdate($package);
+            $job = $this->scheduler->scheduleUpdate($package, $source);
             $jobs[] = $job->getId();
         }
 
@@ -566,7 +573,7 @@ class ApiController extends Controller
      * @param User|null $user If provided it means the request came with a user's API token and not the packagist-configured secret, so we cannot be sure it is a request coming directly from github
      * @return Package[] the packages found
      */
-    protected function findGitHubPackagesByRepository(string $path, string $remoteId, ?User $user = null): array
+    protected function findGitHubPackagesByRepository(string $path, string $remoteId, string $source, ?User $user = null): array
     {
         $url = 'https://github.com/'.$path;
 
@@ -617,7 +624,7 @@ class ApiController extends Controller
                 $package->setRepository($url);
                 if ($url !== $previousUrl) {
                     // ensure we do a full update of all versions to update the repo URL
-                    $this->scheduler->scheduleUpdate($package, updateEqualRefs: true, forceDump: true);
+                    $this->scheduler->scheduleUpdate($package, $source, updateEqualRefs: true, forceDump: true);
                 }
             }
         }
