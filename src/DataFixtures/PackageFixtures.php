@@ -61,8 +61,7 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface, Fixt
         $progressBar->setMessage('');
         $progressBar->start();
 
-        /** @var User $maintainer */
-        $maintainer = $this->getReference(UserFixtures::PACKAGE_MAINTAINER);
+        $maintainer = $this->getReference(UserFixtures::PACKAGE_MAINTAINER, User::class);
 
         foreach ($packages as [$repoUrl, $createdAt]) {
             $mtime = microtime(true);
