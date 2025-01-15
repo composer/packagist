@@ -778,9 +778,8 @@ class Updater
     }
 
     /**
-     * @template T of string|null
-     * @phpstan-param T $str
-     * @phpstan-return T
+     * @phpstan-param string|null $str
+     * @phpstan-return ($str is string ? string : null)
      */
     private function sanitize(string|null $str): string|null
     {

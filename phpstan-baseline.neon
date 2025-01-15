@@ -61,18 +61,6 @@ parameters:
 			path: src/Package/SymlinkDumper.php
 
 		-
-			message: '#^Method App\\Package\\Updater\:\:sanitize\(\) should return T of string\|null but returns null\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Package/Updater.php
-
-		-
-			message: '#^Method App\\Package\\Updater\:\:sanitize\(\) should return T of string\|null but returns string\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Package/Updater.php
-
-		-
 			message: '#^Parameter \#1 \$ids of method App\\Entity\\PackageRepository\:\:getPackagesWithVersions\(\) expects list\<int\>\|null, array\<int\<0, max\>, int\> given\.$#'
 			identifier: argument.type
 			count: 1
