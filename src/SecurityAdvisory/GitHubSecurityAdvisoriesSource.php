@@ -31,6 +31,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
     private const IGNORE_CVES = [
         'CVE-2024-36611', // @see https://phpc.social/@wouterj/113588554019692959
         'CVE-2024-36610', // @see https://phpc.social/@wouterj/113588554019692959
+        'CVE-2024-57610', // store.sylius.com issue incorrectly filed as general sylius vulnerability https://github.com/nca785/CVE-2024-57610
     ];
 
     /**
