@@ -253,8 +253,8 @@ GET https://repo.{{ packagist_host }}/p2/[vendor]/[package].json
 
 <p>Looking to remain up to date and know when packages updated? See the <a href="#track-package-updates">Track package updates</a> API.</p>
 
-
-<h4 id="get-package-metadata-v1">Using the Composer v1 metadata (DEPRECATED)</h4>
+{% if 'now'|date('Ymd') < '20251001' %}
+<h4 id="get-package-metadata-v1">Using the Composer v1 metadata (<a href="https://blog.packagist.com/shutting-down-packagist-org-support-for-composer-1-x/">DEPRECATED</a>, not updated anymore as of February 1st 2025, will be inaccessible from August 1st 2025)</h4>
 
 <p>You can also send <code>If-Modified-Since</code> headers to limit your bandwidth usage and cache the files on your end with the proper filemtime set according to our <code>Last-Modified</code> header.</p>
 
@@ -287,7 +287,7 @@ GET https://repo.{{ packagist_host }}/p/[vendor]/[package].json
 }
 </code></pre>
 <p>Working example: <code><a href="https://repo.{{ packagist_host }}/p/monolog/monolog.json">https://repo.{{ packagist_host }}/p/monolog/monolog.json</a></code></p>
-
+{% endif %}
 
 <h4 id="get-package-by-name">Using the API</h4>
 
