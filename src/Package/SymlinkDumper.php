@@ -99,10 +99,6 @@ class SymlinkDumper
      */
     public function dump(array $packageIds, bool $force = false, bool $verbose = false, ?SignalHandler $signal = null): bool
     {
-        if (!MetadataDirCheck::isMetadataStoreMounted($this->awsMetadata)) {
-            throw new \RuntimeException('Metadata store not mounted, can not dump metadata');
-        }
-
         // prepare build dir
         $webDir = $this->webDir;
 

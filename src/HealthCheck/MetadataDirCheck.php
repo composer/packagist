@@ -32,25 +32,6 @@ class MetadataDirCheck implements CheckInterface
         return 'Check if Packagist metadata dir is present.';
     }
 
-    /**
-     * @phpstan-param AwsMetadata $awsMeta
-     */
-    public static function isMetadataStoreMounted(array $awsMeta): bool
-    {
-        if (empty($awsMeta)) {
-            return true;
-        }
-
-        if ($awsMeta['primary'] && $awsMeta['has_instance_store']) {
-            $proc = Process::fromShellCommandline('lsblk -io NAME,TYPE,SIZE,MOUNTPOINT,FSTYPE,MODEL | grep Instance | grep sdeph');
-            if (0 !== $proc->run()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     public function check(): ResultInterface
     {
         if (empty($this->awsMetadata)) {
@@ -58,12 +39,6 @@ class MetadataDirCheck implements CheckInterface
         }
 
         if ($this->awsMetadata['primary']) {
-            if ($this->awsMetadata['has_instance_store']) {
-                if (!self::isMetadataStoreMounted($this->awsMetadata)) {
-                    return new Failure('Instance store needs configuring');
-                }
-            }
-
             $packagesJson = __DIR__ . '/../../web/packages.json';
 
             if (!file_exists($packagesJson)) {

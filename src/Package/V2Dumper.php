@@ -63,10 +63,6 @@ class V2Dumper
      */
     public function dump(array $packageIds, bool $force = false, bool $verbose = false): void
     {
-        if (!MetadataDirCheck::isMetadataStoreMounted($this->awsMetadata)) {
-            throw new \RuntimeException('Metadata store not mounted, can not dump metadata');
-        }
-
         // prepare build dir
         $webDir = $this->webDir;
 
@@ -133,10 +129,6 @@ class V2Dumper
             unset($packages, $package, $version, $advisories, $packageNames);
             $this->getEM()->clear();
             $this->logger->reset();
-        }
-
-        if ($verbose) {
-            echo 'Putting new files in production'.PHP_EOL;
         }
 
         if (!file_exists($webDir.'/p2') && !@symlink($buildDirV2, $webDir.'/p2')) {

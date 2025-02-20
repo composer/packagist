@@ -69,9 +69,6 @@ class HealthCheckController
         }
 
         $runner->addCheck(new Check\DiskUsage(80, 90, '/'));
-        if (($this->awsMeta['has_instance_store'] ?? false) === true) {
-            $runner->addCheck(new Check\DiskUsage(80, 90, '/mnt/sdephemeral'));
-        }
         $runner->addCheck(new Check\DiskFree(100 * 1024 * 1024, '/tmp'));
         $runner->addCheck(new Check\PDOCheck('mysql:dbname='.$dbname.';host='.$dbhost.';port='.$dbport, $dbuser, $dbpass));
         $runner->addCheck(new RedisHealthCheck($this->redisClient));
