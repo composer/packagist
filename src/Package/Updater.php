@@ -42,6 +42,7 @@ use Doctrine\DBAL\Connection;
 use App\Service\VersionCache;
 use Composer\Package\CompletePackageInterface;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerAction;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -737,21 +738,19 @@ class Updater
             'dl', 'dd', 'dt',
             'pre', 'code', 'samp', 'kbd',
             'q', 'blockquote', 'abbr', 'cite',
-            'table', 'thead', 'tbody', 'th', 'tr', 'td',
-            'a', 'span',
-            'details', 'summary',
+            'table', 'thead', 'tbody', 'tr',
+            'span',
+            'summary',
         ];
 
         $config = (new HtmlSanitizerConfig());
+        $config = $config->defaultAction(HtmlSanitizerAction::Block);
+
         foreach ($elements as $el) {
             $config = $config->allowElement($el);
         }
 
         $config = $config
-            // TODO symfony/html-sanitizer:7.2 ->defaultAction(HtmlSanitizerAction::Block)
-            ->blockElement('div')
-            ->blockElement('article')
-            ->blockElement('g-emoji')
             ->allowElement('img', ['src', 'title', 'alt', 'width', 'height'])
             ->allowElement('a', ['href', 'target', 'id'])
             ->allowElement('td', ['colspan', 'rowspan'])
