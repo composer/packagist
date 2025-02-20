@@ -72,7 +72,7 @@ class PackageRepository extends ServiceEntityRepository
     public function getPackageNames(): array
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.frozen IS NULL");
+            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.frozen IS NULL OR p.frozen != 'spam'");
 
         $names = $this->getPackageNamesForQuery($query);
 
