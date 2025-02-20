@@ -26,7 +26,6 @@ class UserAgentParser
     public function __construct(?string $userAgent)
     {
         if ($userAgent && Preg::isMatch('#^Composer/(?P<composer>[a-z0-9.+-]+) \((?P<os>[^\s;]+)[^;]*?; (?P<osversion>[^;]*?); (?P<engine>HHVM|PHP) (?P<php>[0-9.]+)[^;]*(?:; (?P<http>streams|curl \d+\.\d+)[^;)]*)?(?:; Platform-PHP (?P<platform_php>[0-9.]+)[^;]*)?(?P<ci>; CI)?#i', $userAgent, $matches)) {
-            assert(isset($matches['composer'], $matches['engine'], $matches['os'], $matches['php']));
             if ($matches['composer'] === 'source' || Preg::isMatch('{^[a-f0-9]{40}$}', $matches['composer'])) {
                 $matches['composer'] = 'pre-1.8.5';
             }

@@ -45,8 +45,6 @@ class V2Dumper
         private Client $redis,
         private string $webDir,
         private string $buildDir,
-        /** @var AwsMetadata */
-        private array $awsMetadata,
         private StatsDClient $statsd,
         private ProviderManager $providerManager,
         private Logger $logger,

@@ -281,8 +281,6 @@ class PhpStatRepository extends ServiceEntityRepository
             throw new \LogicException('Expected keys for package id '.$package->getId().', got '.$key);
         }
 
-        assert(isset($match['package'], $match['version'], $match['phpversion'], $match['date']));
-
         return [
             'type' => $match['platform'] === 'platform' ? PhpStat::TYPE_PLATFORM : PhpStat::TYPE_PHP,
             'version' => $match['version'],

@@ -363,6 +363,10 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function getUserIdentifier(): string
     {
+        if ($this->usernameCanonical === '') {
+            throw new \LogicException('usernameCanonical cannot be empty string');
+        }
+
         return $this->usernameCanonical;
     }
 

@@ -81,8 +81,6 @@ class SymlinkDumper
          * @var int 0 disabled, 9 maximum.
          */
         private int $compress,
-        /** @var AwsMetadata */
-        private array $awsMetadata,
         private StatsDClient $statsd,
         private Logger $logger,
     ) {
