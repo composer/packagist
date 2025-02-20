@@ -109,7 +109,7 @@
         },
         "sort-packages": true,
         "platform": {
-            "php": "8.3.3"
+            "php": "8.3.17"
         },
         "allow-plugins": {
             "symfony/flex": true,
