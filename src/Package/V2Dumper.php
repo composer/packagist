@@ -12,8 +12,11 @@
 
 namespace App\Package;
 
+use App\Audit\AuditRecordType;
+use App\Entity\AuditRecord;
 use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
+use App\Service\CdnClient;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
 use Symfony\Component\Filesystem\Filesystem;
@@ -28,6 +31,7 @@ use App\HealthCheck\MetadataDirCheck;
 use Predis\Client;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Webmozart\Assert\Assert;
 
 /**
@@ -48,6 +52,7 @@ class V2Dumper
         private StatsDClient $statsd,
         private ProviderManager $providerManager,
         private Logger $logger,
+        private readonly CdnClient $cdnClient,
     ) {
         $webDir = realpath($webDir);
         Assert::string($webDir);
@@ -226,8 +231,8 @@ class V2Dumper
             }
         }
 
-        $this->dumpVersionsToV2File($dir, $name.'.json', $name, $tags, $versionData, $forceDump, $advisories);
-        $this->dumpVersionsToV2File($dir, $name.'~dev.json', $name, $branches, $versionData, $forceDump);
+        $this->dumpVersionsToV2File($package, $name, $dir, $name.'.json', $name, $tags, $versionData, $forceDump, $advisories);
+        $this->dumpVersionsToV2File($package, $name, $dir, $name.'~dev.json', $name, $branches, $versionData, $forceDump);
     }
 
     /**
@@ -235,7 +240,7 @@ class V2Dumper
      * @param array<Version> $versions
      * @param VersionData $versionData
      */
-    private function dumpVersionsToV2File(string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, array|null $advisories = null): void
+    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, array|null $advisories = null): void
     {
         $versionArrays = [];
         foreach ($versions as $version) {
@@ -256,10 +261,10 @@ class V2Dumper
         }
 
         $json = json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-        $this->writeV2File($path, $json, $forceDump);
+        $this->writeV2File($package, $name, $path, $json, $forceDump);
     }
 
-    private function writeV2File(string $path, string $contents, bool $forceDump = false): void
+    private function writeV2File(Package $package, string $name, string $path, string $contents, bool $forceDump = false): void
     {
         if (
             !$forceDump
@@ -271,17 +276,41 @@ class V2Dumper
             return;
         }
 
-        $this->filesystem->mkdir(dirname($path));
-
-        // get time before file_put_contents to be sure we return a time at least as old as the filemtime, if it is older it doesn't matter
-        $timestamp = round(microtime(true) * 10000);
-        file_put_contents($path.'.tmp', $contents);
-        rename($path.'.tmp', $path);
-
         if (!Preg::isMatch('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
             throw new \LogicException('Could not match package name from '.$path);
         }
 
-        $this->redis->zadd('metadata-dumps', [$match[1] => $timestamp]);
+        // ensure we do not upload files to the cdn for packages that have been recently deleted to avoid race conditions
+        $deletion = $this->redis->zscore('metadata-deletes', $name);
+        if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditRecordType::PackageDeleted]) !== null) {
+            $this->logger->error('Skipped dumping a file as it is marked as having been deleted in the last 30seconds', ['file' => $path, 'deletion' => $deletion, 'time' => time()]);
+            return;
+        }
+
+        $pkgWithDevFlag = $match[1];
+        $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
+        $this->filesystem->mkdir(dirname($path));
+
+        $retries = 3;
+        do {
+            try {
+                $filemtime = $this->cdnClient->uploadMetadata($relativePath, $contents);
+                break;
+            } catch (TransportExceptionInterface $e) {
+                if ($retries === 0) {
+                    throw $e;
+                }
+                $this->logger->debug('Retrying due to failure', ['exception' => $e]);
+                sleep(1);
+            }
+        } while ($retries-- > 0);
+
+        assert(isset($filemtime));
+
+        file_put_contents($path.'.tmp', $contents);
+        touch($path.'.tmp', intval(ceil($filemtime/10000)));
+        rename($path.'.tmp', $path);
+
+        $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
     }
 }

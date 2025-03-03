@@ -123,3 +123,10 @@ services:
 
     Symfony\Component\HttpClient\NoPrivateNetworkHttpClient:
         autoconfigure: false
+
+    App\Service\CdnClient:
+        arguments:
+            $metadataEndpoint: '%env(default::CDN_METADATA_ENDPOINT)%'
+            $metadataPublicEndpoint: '%env(default::CDN_METADATA_PUBLIC_ENDPOINT)%'
+            $metadataApiKey: '%env(default::CDN_METADATA_API_KEY)%'
+            $cdnApiKey: '%env(default::CDN_API_KEY)%'

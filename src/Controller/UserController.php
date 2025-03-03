@@ -21,6 +21,7 @@ use App\Entity\User;
 use App\Entity\VersionRepository;
 use App\Form\Model\EnableTwoFactorRequest;
 use App\Form\Type\EnableTwoFactorAuthType;
+use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\RedisAdapter;
 use App\Security\TwoFactorAuthManager;
@@ -56,11 +57,13 @@ class UserController extends Controller
 {
     private ProviderManager $providerManager;
     private Scheduler $scheduler;
+    private PackageManager $packageManager;
 
-    public function __construct(ProviderManager $providerManager, Scheduler $scheduler)
+    public function __construct(ProviderManager $providerManager, Scheduler $scheduler, PackageManager $packageManager)
     {
         $this->providerManager = $providerManager;
         $this->scheduler = $scheduler;
+        $this->packageManager = $packageManager;
     }
 
     #[IsGranted('ROLE_USER')]
@@ -124,6 +127,9 @@ class UserController extends Controller
                 }
 
                 $this->providerManager->deletePackage($package);
+                $this->packageManager->deletePackageMetadata($package->getName());
+                $this->packageManager->deletePackageCdnMetadata($package->getName());
+                $this->packageManager->deletePackageSearchIndex($package->getName());
             }
 
             $this->getEM()->flush();

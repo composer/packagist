@@ -16,6 +16,7 @@ use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use App\Entity\Dependent;
 use App\Entity\PhpStat;
 use App\Entity\User;
+use App\Service\CdnClient;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
 use App\Entity\Version;
@@ -53,6 +54,7 @@ class PackageManager
         private string $metadataDir,
         private Client $redis,
         private VersionIdCache $versionIdCache,
+        private readonly CdnClient $cdnClient,
     ) {
     }
 
@@ -78,6 +80,9 @@ class PackageManager
 
         $em = $this->doctrine->getManager();
 
+        // delete the files from the CDN first so if anything bad happens below we do not leave stale files on the CDN storage
+        $this->deletePackageCdnMetadata($package->getName());
+
         $downloadRepo = $this->doctrine->getRepository(Download::class);
         $downloadRepo->deletePackageDownloads($package);
 
@@ -102,6 +107,24 @@ class PackageManager
         $em->remove($package);
         $em->flush();
 
+        $this->deletePackageMetadata($packageName);
+
+        // delete redis stats
+        try {
+            $this->redis->del('views:'.$packageId);
+        } catch (\Predis\Connection\ConnectionException $e) {
+        }
+
+        // attempt search index cleanup
+        $this->deletePackageSearchIndex($packageName);
+
+        // delete the files again just in case they got dumped above while the deletion was ongoing
+        usleep(500000);
+        $this->deletePackageCdnMetadata($packageName);
+    }
+
+    public function deletePackageMetadata(string $packageName): void
+    {
         $metadataV2 = $this->metadataDir.'/p2/'.strtolower($packageName).'.json';
         if (file_exists($metadataV2)) {
             @unlink($metadataV2);
@@ -117,15 +140,17 @@ class PackageManager
             @unlink($metadataV2Dev.'.gz');
         }
 
-        // delete redis stats
-        try {
-            $this->redis->del('views:'.$packageId);
-        } catch (\Predis\Connection\ConnectionException $e) {
-        }
-
         $this->redis->zadd('metadata-deletes', [strtolower($packageName) => round(microtime(true) * 10000)]);
+    }
 
-        // attempt search index cleanup
+    public function deletePackageCdnMetadata(string $packageName): void
+    {
+        $this->cdnClient->deleteMetadata('p2/'.strtolower($packageName.'.json'));
+        $this->cdnClient->deleteMetadata('p2/'.strtolower($packageName.'~dev.json'));
+    }
+
+    public function deletePackageSearchIndex(string $packageName): void
+    {
         try {
             $indexName = $this->algoliaIndexName;
             $algolia = $this->algoliaClient;
