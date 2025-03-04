@@ -98,6 +98,8 @@ class DumpPackagesV2Command extends Command
 
         $iterations = $force ? 1 : 120;
         try {
+            $this->dumper->dumpRoot($verbose);
+
             while ($iterations--) {
                 if ($force) {
                     $ids = $this->getEM()->getConnection()->fetchFirstColumn('SELECT id FROM package WHERE frozen IS NULL ORDER BY id ASC');

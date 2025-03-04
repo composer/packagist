@@ -61,39 +61,10 @@ class V2Dumper
         $this->webDir = $webDir;
     }
 
-    /**
-     * Dump a set of packages to the web root
-     *
-     * @param list<int> $packageIds
-     */
-    public function dump(array $packageIds, bool $force = false, bool $verbose = false): void
+    public function dumpRoot(bool $verbose = false): void
     {
-        // prepare build dir
-        $webDir = $this->webDir;
-
-        $buildDirV2 = $this->buildDir.'/p2';
-
-        // initialize
-        $initialRun = false;
-        if (!is_dir($buildDirV2)) {
-            $initialRun = true;
-            $this->filesystem->mkdir($buildDirV2);
-        }
-        $buildDirV2 = realpath($buildDirV2);
-        Assert::string($buildDirV2);
-
-        // copy existing stuff for smooth BC transition
-        if ($initialRun && !$force) {
-            throw new \RuntimeException('Run this again with --force the first time around to make sure it dumps all packages');
-        }
-
-        if ($verbose) {
-            echo 'Web dir is '.$webDir.'/p2 ('.realpath($webDir.'/p2').')'.PHP_EOL;
-            echo 'Build v2 dir is '.$buildDirV2.PHP_EOL;
-        }
-
         // prepare root file
-        $rootFile = $webDir.'/packages.json';
+        $rootFile = $this->webDir.'/packages.json';
         $rootFileContents = [
             'packages' => []
         ];
@@ -138,6 +109,38 @@ class V2Dumper
             echo 'Dumping root'.PHP_EOL;
         }
         $this->dumpRootFile($rootFile, json_encode($rootFileContents, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * Dump a set of packages to the web root
+     *
+     * @param list<int> $packageIds
+     */
+    public function dump(array $packageIds, bool $force = false, bool $verbose = false): void
+    {
+        // prepare build dir
+        $webDir = $this->webDir;
+
+        $buildDirV2 = $this->buildDir.'/p2';
+
+        // initialize
+        $initialRun = false;
+        if (!is_dir($buildDirV2)) {
+            $initialRun = true;
+            $this->filesystem->mkdir($buildDirV2);
+        }
+        $buildDirV2 = realpath($buildDirV2);
+        Assert::string($buildDirV2);
+
+        // copy existing stuff for smooth BC transition
+        if ($initialRun && !$force) {
+            throw new \RuntimeException('Run this again with --force the first time around to make sure it dumps all packages');
+        }
+
+        if ($verbose) {
+            echo 'Web dir is '.$webDir.'/p2 ('.realpath($webDir.'/p2').')'.PHP_EOL;
+            echo 'Build v2 dir is '.$buildDirV2.PHP_EOL;
+        }
 
         $dumpTimeUpdates = [];
 
