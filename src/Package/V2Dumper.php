@@ -31,6 +31,7 @@ use App\HealthCheck\MetadataDirCheck;
 use Predis\Client;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Webmozart\Assert\Assert;
 
@@ -53,6 +54,7 @@ class V2Dumper
         private ProviderManager $providerManager,
         private Logger $logger,
         private readonly CdnClient $cdnClient,
+        private readonly UrlGeneratorInterface $router,
     ) {
         $webDir = realpath($webDir);
         Assert::string($webDir);
@@ -89,6 +91,53 @@ class V2Dumper
             echo 'Web dir is '.$webDir.'/p2 ('.realpath($webDir.'/p2').')'.PHP_EOL;
             echo 'Build v2 dir is '.$buildDirV2.PHP_EOL;
         }
+
+        // prepare root file
+        $rootFile = $webDir.'/packages.json';
+        $rootFileContents = [
+            'packages' => []
+        ];
+
+        $rootFileContents['notify-batch'] = $this->router->generate('track_download_batch', [], UrlGeneratorInterface::ABSOLUTE_URL);
+        $rootFileContents['providers-url'] = $this->router->generate('home', []) . 'p/%package%$%hash%.json';
+        $rootFileContents['metadata-url'] = str_replace('https://', 'https://repo.', $this->router->generate('home', [], UrlGeneratorInterface::ABSOLUTE_URL)) . 'p2/%package%.json';
+        $rootFileContents['metadata-changes-url'] = $this->router->generate('metadata_changes', [], UrlGeneratorInterface::ABSOLUTE_URL);
+        $rootFileContents['search'] = $this->router->generate('search_api', [], UrlGeneratorInterface::ABSOLUTE_URL) . '?q=%query%&type=%type%';
+        $rootFileContents['list'] = $this->router->generate('list', [], UrlGeneratorInterface::ABSOLUTE_URL);
+        $rootFileContents['security-advisories'] = [
+            'metadata' => true, // whether advisories are part of the metadata v2 files
+            'api-url' => $this->router->generate('api_security_advisories', [], UrlGeneratorInterface::ABSOLUTE_URL),
+        ];
+        $rootFileContents['providers-api'] = str_replace('VND/PKG', '%package%', $this->router->generate('view_providers', ['name' => 'VND/PKG', '_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL));
+        $rootFileContents['warning'] = 'Support for Composer 1 will be shutdown on August 1st 2025. You should upgrade to Composer 2. See https://blog.packagist.com/shutting-down-packagist-org-support-for-composer-1-x/';
+        $rootFileContents['warning-versions'] = '<1.99';
+
+        // hardcoded v1 data for BC
+        $rootFileContents['provider-includes'] = [
+            'p/provider-2013$%hash%.json' => ['sha256' => 'a2b47ec1a1bb999e53d88aff50728aebbd3d68225c74aab1ff5f071bac42f5b7'],
+            'p/provider-2014$%hash%.json' => ['sha256' => '347426977f09ca7feb7306fd990c2db8bf28b3f3d57716f8b90a12f1c21f1065'],
+            'p/provider-2015$%hash%.json' => ['sha256' => 'd9fa6571b23af36e89a1f73eb3be340c81743ae5b71e523cf228552d8e02d029'],
+            'p/provider-2016$%hash%.json' => ['sha256' => '27c3687c41821dca9f6d65a0ca636ae6675120d4f045d132a097d8c0311818d4'],
+            'p/provider-2017$%hash%.json' => ['sha256' => 'f82637fef38646359f09365a7aef1bcbdf7db5d63b0511b3a1f9f8f58a9c2854'],
+            'p/provider-2018$%hash%.json' => ['sha256' => 'f4870961f191584a8e58a5683ef5882459e5f66ea2d70881750a53400b401857'],
+            'p/provider-2019$%hash%.json' => ['sha256' => '70145dae32ee55bd86351b2e7520fd573c642917b7787009bb5b13bfa7208517'],
+            'p/provider-2020$%hash%.json' => ['sha256' => '261d9f1aaca76417647dad0922781fffeac007531dffd9d5ff8eea9b69826430'],
+            'p/provider-2021$%hash%.json' => ['sha256' => '231acb00ca80397db2f2ed9cfdaa7045839584e9f39dd03b87b9cebbb9ccf5d7'],
+            'p/provider-2022$%hash%.json' => ['sha256' => 'fbd72f659dbd3b7f28c2f4a03bb903759e1d7641c300e1eaea0dec25bd05683e'],
+            'p/provider-2023$%hash%.json' => ['sha256' => '0b8c3c321c716153c450fe69d8fd4d23279fdc451212e28ccccbb25db0aef094'],
+            'p/provider-2024$%hash%.json' => ['sha256' => '745def0c1dd86019d31400fa0899b9293bc5c9bc5ab2c790866cb365dcbb16f8'],
+            'p/provider-2024-04$%hash%.json' => ['sha256' => '1128944b800d6c07420ddbe33aa14667f2ef6ea0833cddf84b92ca96ac3078d8'],
+            'p/provider-2024-07$%hash%.json' => ['sha256' => '3582960dd2ea8d007e7e1bfb07938b08ab5a4179332d0ec65424a506332b8197'],
+            'p/provider-2024-10$%hash%.json' => ['sha256' => '82ea763e72f57755471cf9a4cb2f99f7ef7a15b9675146528fb041a4345d3df1'],
+            'p/provider-2025-01$%hash%.json' => ['sha256' => 'f11d8fd77adedb70d261f92a09242b68ab67019920f6ec4fb8868bca6ab098aa'],
+            'p/provider-archived$%hash%.json' => ['sha256' => '8bb3f3566d1b440250f124cb7e56479912c1ebc3471ac2924bf94382101d06a4'],
+            'p/provider-latest$%hash%.json' => ['sha256' => 'd2d84dcbc41a33a96cc1a39c91a29861f33e93ec0c1086c04754663eaad831c5'],
+        ];
+
+        if ($verbose) {
+            echo 'Dumping root'.PHP_EOL;
+        }
+        $this->dumpRootFile($rootFile, json_encode($rootFileContents, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
 
         $dumpTimeUpdates = [];
 
@@ -209,6 +258,29 @@ class V2Dumper
         $this->redis->zremrangebyscore('metadata-deletes', 0, $time - 1);
     }
 
+    private function dumpRootFile(string $file, string $json): void
+    {
+        if (file_exists($file) && file_get_contents($file) === $json) {
+            return;
+        }
+        // TODO change this to upload the file to the CDN eventually
+        $time = time();
+
+        $this->writeFileAtomic($file, $json, $time);
+        $encoded = gzencode($json, 8);
+        assert(is_string($encoded));
+        $this->writeFileAtomic($file . '.gz', $encoded, $time);
+    }
+
+    private function writeFileAtomic(string $path, string $contents, ?int $mtime = null): void
+    {
+        file_put_contents($path.'.tmp', $contents);
+        if ($mtime !== null) {
+            touch($path.'.tmp', $mtime);
+        }
+        rename($path.'.tmp', $path);
+    }
+
     /**
      * @param mixed[] $versionData
      * @param array<array{advisoryId: string, affectedVersions: string}> $advisories
@@ -307,9 +379,7 @@ class V2Dumper
 
         assert(isset($filemtime));
 
-        file_put_contents($path.'.tmp', $contents);
-        touch($path.'.tmp', intval(ceil($filemtime/10000)));
-        rename($path.'.tmp', $path);
+        $this->writeFileAtomic($path, $contents, intval(ceil($filemtime/10000)));
 
         $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
     }
