@@ -17,6 +17,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>

@@ -342,7 +342,7 @@ class ApiController extends Controller
     #[Route(path: '/api/security-advisories/', name: 'api_security_advisories', defaults: ['_format' => 'json'], methods: ['GET', 'POST'])]
     public function securityAdvisoryAction(Request $request, ProviderManager $providerManager, StatsDClient $statsd): JsonResponse
     {
-        if ($resp = $this->blockAbusers($req)) {
+        if ($resp = $this->blockAbusers($request)) {
             return $resp;
         }
 
