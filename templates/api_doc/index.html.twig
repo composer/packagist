@@ -469,7 +469,11 @@ GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestam
   }
 }
 </code></pre>
-    <p>Working example: <code><a href="https://{{ packagist_host }}/api/security-advisories/?packages[]=monolog/monolog">https://{{ packagist_host }}/api/security-advisories/?packages[]=monolog/monolog</a></code></p>
+    <p>Working examples:</p>
+    <ul>
+      <li>Using one or more package names: <code><a href="https://{{ packagist_host }}/api/security-advisories/?packages[]=monolog/monolog">https://{{ packagist_host }}/api/security-advisories/?packages[]=monolog/monolog</a></code></li>
+      <li>Fetching new data / updates: <code><a href="https://{{ packagist_host }}/api/security-advisories/?updatedSince={{ '-1week'|date('U') }}">https://{{ packagist_host }}/api/security-advisories/?updatedSince={{ '-1week'|date('U') }}</a></code></li>
+    </ul>
 
 </section>
 

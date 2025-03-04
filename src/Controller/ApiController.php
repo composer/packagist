@@ -342,6 +342,10 @@ class ApiController extends Controller
     #[Route(path: '/api/security-advisories/', name: 'api_security_advisories', defaults: ['_format' => 'json'], methods: ['GET', 'POST'])]
     public function securityAdvisoryAction(Request $request, ProviderManager $providerManager, StatsDClient $statsd): JsonResponse
     {
+        if ($resp = $this->blockAbusers($req)) {
+            return $resp;
+        }
+
         $packageNames = array_filter((array) $request->get('packages'), static fn ($name) => is_string($name) && $name !== '');
         if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);

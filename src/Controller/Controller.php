@@ -69,4 +69,35 @@ abstract class Controller extends AbstractController
 
         return ['downloads' => $downloads, 'favers' => $favorites];
     }
+
+    protected function blockAbusers(Request $req): ?JsonResponse
+    {
+        if (str_contains((string) $req->headers->get('User-Agent'), 'Bytespider; spider-feedback@bytedance.com')) {
+            return new JsonResponse("Please respect noindex/nofollow meta tags, and email contact@packagist.org to get unblocked once this is resolved", 429, ['Retry-After' => 31536000]);
+        }
+
+        if ($req->getClientIp() === '18.190.1.42') {
+            return new JsonResponse("Please use the updatedSince flag to fetch new security advisories, and email contact@packagist.org to get unblocked once this is resolved", 429, ['Retry-After' => 31536000]);
+        }
+
+        $abusers = [
+            '193.13.144.72',
+            '185.167.99.27',
+            '82.77.112.123',
+            '14.116.239.33', '14.116.239.34', '14.116.239.35', '14.116.239.36', '14.116.239.37',
+            '14.22.11.161', '14.22.11.162', '14.22.11.163', '14.22.11.164', '14.22.11.165',
+            '216.251.130.74',
+            '212.107.30.81', '35.89.149.248',
+            '82.180.155.159',
+            '212.107.30.81',
+            '107.158.141.2',
+            '2a02:4780:d:5838::1',
+            '82.180.155.159',
+        ];
+        if (in_array($req->getClientIp(), $abusers, true)) {
+            return new JsonResponse("Please use a proper user-agent with contact information or get in touch before abusing the API", 429, ['Retry-After' => 31536000]);
+        }
+
+        return null;
+    }
 }
