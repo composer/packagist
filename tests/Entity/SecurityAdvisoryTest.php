@@ -108,8 +108,16 @@ class SecurityAdvisoryTest extends TestCase
         $this->assertSame(Severity::HIGH, $advisory->getSeverity(), "GitHub should update the severity severity");
         $this->assertSame(Severity::HIGH, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getSeverity(), 'GitHub should update the source data');
 
+        $advisory->updateAdvisory($this->generateGitHubAdvisory(Severity::MEDIUM));
+        $this->assertSame(Severity::MEDIUM, $advisory->getSeverity(), "GitHub should update the severity severity");
+        $this->assertSame(Severity::MEDIUM, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getSeverity(), 'GitHub should update the source data');
+
         $advisory->updateAdvisory($friendsOfPhpRemoteAdvisory);
-        $this->assertSame(Severity::HIGH, $advisory->getSeverity(), "FriendsOfPHP shouldn't reset the severity information");
+        $this->assertSame(Severity::MEDIUM, $advisory->getSeverity(), "FriendsOfPHP shouldn't reset the severity information");
+
+        $advisory->updateAdvisory($this->generateGitHubAdvisory(Severity::HIGH));
+        $this->assertSame(Severity::HIGH, $advisory->getSeverity(), "GitHub should update the severity severity");
+        $this->assertSame(Severity::HIGH, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getSeverity(), 'GitHub should update the source data');
     }
 
     private function generateGitHubAdvisory(Severity|null $severity): RemoteSecurityAdvisory
