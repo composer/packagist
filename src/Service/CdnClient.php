@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Symfony\Contracts\HttpClient\ResponseStreamInterface;
@@ -14,6 +15,7 @@ class CdnClient
         private ?string $metadataPublicEndpoint,
         private ?string $metadataApiKey,
         private ?string $cdnApiKey,
+        private readonly LoggerInterface $logger,
     ) {}
 
     /**
@@ -46,7 +48,9 @@ class CdnClient
             ],
         ]);
         // wait for status code at least
-        $resp->getStatusCode();
+        if ($resp->getStatusCode() !== 200) {
+            $this->logger->error('Failed purging '.$path.' from CDN while writing an update to it', ['filemtime' => $time/10000]);
+        }
 
         return $time;
     }

@@ -109,6 +109,7 @@ class V2Dumper
             echo 'Dumping root'.PHP_EOL;
         }
         $this->dumpRootFile($rootFile, json_encode($rootFileContents, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $this->statsd->increment('packagist.metadata_dump_root');
     }
 
     /**
@@ -151,7 +152,10 @@ class V2Dumper
         $step = 50;
         while ($packageIds) {
             $dumpTime = new \DateTime;
-            $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions(array_splice($packageIds, 0, $step));
+            $idBatch = array_splice($packageIds, 0, $step);
+            $this->logger->debug('Dumping package ids', ['ids' => $idBatch]);
+            $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions($idBatch);
+            unset($idBatch);
             $packageNames = array_map(static fn (Package $pkg) => $pkg->getName(), $packages);
             $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
 
@@ -232,8 +236,6 @@ class V2Dumper
                 sleep(1);
             }
         }
-
-        $this->statsd->increment('packagist.metadata_dump_v2');
     }
 
     public function gc(): void
@@ -385,5 +387,6 @@ class V2Dumper
         $this->writeFileAtomic($path, $contents, intval(ceil($filemtime/10000)));
 
         $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
+        $this->statsd->increment('packagist.metadata_dump_v2');
     }
 }
