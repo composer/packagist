@@ -1,4 +1,5 @@
 {
+    "name": "composer/packagist.org",
     "description": "Package Repository Website",
     "keywords": ["package", "composer"],
     "homepage": "https://packagist.org/",
