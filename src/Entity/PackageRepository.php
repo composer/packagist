@@ -412,7 +412,7 @@ class PackageRepository extends ServiceEntityRepository
             $qb->leftJoin('v.tags', 't');
         }
 
-        $qb->andWhere('p.frozen IS NULL');
+        $qb->andWhere('(p.frozen IS NULL OR p.frozen != \'spam\')');
 
         $qb->orderBy('p.abandoned');
         if (true === $orderByName) {
