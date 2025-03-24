@@ -137,7 +137,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
 
         $credentials['username'] = trim($credentials['username']);
 
-        if (\strlen($credentials['username']) > UserBadge::MAX_USERNAME_LENGTH) {
+        if (\strlen($credentials['username']) > UserBadge::MAX_USERNAME_LENGTH || '' === $credentials['username']) {
             throw new BadCredentialsException('Invalid username.');
         }
 
