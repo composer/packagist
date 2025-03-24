@@ -128,7 +128,7 @@ class ApiController extends Controller
                 $githubUserMigrationWorker->setupWebHook($user->getGithubToken(), $package);
             }
         } catch (\Exception $e) {
-            $this->logger->critical($e->getMessage(), ['exception', $e]);
+            $this->logger->critical('Unable to create package', ['exception' => $e]);
 
             return new JsonResponse(['status' => 'error', 'message' => 'Error saving package'], 500);
         }

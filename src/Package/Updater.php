@@ -12,8 +12,13 @@
 
 namespace App\Package;
 
+use App\Entity\ConflictLink;
 use App\Entity\Dependent;
+use App\Entity\DevRequireLink;
 use App\Entity\PackageFreezeReason;
+use App\Entity\ProvideLink;
+use App\Entity\ReplaceLink;
+use App\Entity\RequireLink;
 use App\HtmlSanitizer\ReadmeImageSanitizer;
 use App\HtmlSanitizer\ReadmeLinkSanitizer;
 use App\Util\HttpDownloaderOptionsFactory;
@@ -63,24 +68,34 @@ class Updater
 
     private const SUPPORTED_LINK_TYPES = [
         'require' => [
-            'method' => 'getRequires',
-            'entity' => 'RequireLink',
+            'composer-getter' => 'getRequires',
+            'getter' => 'getRequire',
+            'setter' => 'addRequireLink',
+            'entity' => RequireLink::class,
         ],
         'conflict' => [
-            'method' => 'getConflicts',
-            'entity' => 'ConflictLink',
+            'composer-getter' => 'getConflicts',
+            'getter' => 'getConflict',
+            'setter' => 'addConflictLink',
+            'entity' => ConflictLink::class,
         ],
         'provide' => [
-            'method' => 'getProvides',
-            'entity' => 'ProvideLink',
+            'composer-getter' => 'getProvides',
+            'getter' => 'getProvide',
+            'setter' => 'addProvideLink',
+            'entity' => ProvideLink::class,
         ],
         'replace' => [
-            'method' => 'getReplaces',
-            'entity' => 'ReplaceLink',
+            'composer-getter' => 'getReplaces',
+            'getter' => 'getReplace',
+            'setter' => 'addReplaceLink',
+            'entity' => ReplaceLink::class,
         ],
         'devRequire' => [
-            'method' => 'getDevRequires',
-            'entity' => 'DevRequireLink',
+            'composer-getter' => 'getDevRequires',
+            'getter' => 'getDevRequire',
+            'setter' => 'addDevRequireLink',
+            'entity' => DevRequireLink::class,
         ],
     ];
 
@@ -510,9 +525,9 @@ class Updater
         }
 
         // handle links
-        foreach (self::SUPPORTED_LINK_TYPES as $linkType => $opts) {
+        foreach (self::SUPPORTED_LINK_TYPES as $opts) {
             $links = [];
-            foreach ($data->{$opts['method']}() as $link) {
+            foreach ($data->{$opts['composer-getter']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
                 if (false !== strpos($constraint, ',') && false !== strpos($constraint, '@')) {
                     $constraint = Preg::replaceCallbackStrictGroups('{([><]=?\s*[^@]+?)@([a-z]+)}i', static function ($matches) {
@@ -527,10 +542,10 @@ class Updater
                 $links[$link->getTarget()] = $constraint;
             }
 
-            foreach ($version->{'get'.$linkType}() as $link) {
+            foreach ($version->{$opts['getter']}() as $link) {
                 // clear links that have changed/disappeared (for updates)
                 if (!isset($links[$link->getPackageName()]) || $links[$link->getPackageName()] !== $link->getPackageVersion()) {
-                    $version->{'get'.$linkType}()->removeElement($link);
+                    $version->{$opts['getter']}()->removeElement($link);
                     $em->remove($link);
                 } else {
                     // clear those that are already set
@@ -539,11 +554,11 @@ class Updater
             }
 
             foreach ($links as $linkPackageName => $linkPackageVersion) {
-                $class = 'App\Entity\\'.$opts['entity'];
+                $class = $opts['entity'];
                 $link = new $class;
                 $link->setPackageName((string) $linkPackageName);
                 $link->setPackageVersion($linkPackageVersion);
-                $version->{'add'.$linkType.'Link'}($link);
+                $version->{$opts['setter']}($link);
                 $link->setVersion($version);
                 $em->persist($link);
             }

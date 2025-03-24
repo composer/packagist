@@ -61,6 +61,36 @@ parameters:
 			path: src/Package/SymlinkDumper.php
 
 		-
+			message: '#^Parameter \#1 \$conflict of method App\\Entity\\Version\:\:addConflictLink\(\) expects App\\Entity\\ConflictLink, App\\Entity\\ConflictLink\|App\\Entity\\DevRequireLink\|App\\Entity\\ProvideLink\|App\\Entity\\ReplaceLink\|App\\Entity\\RequireLink given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: '#^Parameter \#1 \$devRequire of method App\\Entity\\Version\:\:addDevRequireLink\(\) expects App\\Entity\\DevRequireLink, App\\Entity\\ConflictLink\|App\\Entity\\DevRequireLink\|App\\Entity\\ProvideLink\|App\\Entity\\ReplaceLink\|App\\Entity\\RequireLink given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: '#^Parameter \#1 \$provide of method App\\Entity\\Version\:\:addProvideLink\(\) expects App\\Entity\\ProvideLink, App\\Entity\\ConflictLink\|App\\Entity\\DevRequireLink\|App\\Entity\\ProvideLink\|App\\Entity\\ReplaceLink\|App\\Entity\\RequireLink given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: '#^Parameter \#1 \$replace of method App\\Entity\\Version\:\:addReplaceLink\(\) expects App\\Entity\\ReplaceLink, App\\Entity\\ConflictLink\|App\\Entity\\DevRequireLink\|App\\Entity\\ProvideLink\|App\\Entity\\ReplaceLink\|App\\Entity\\RequireLink given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Package/Updater.php
+
+		-
+			message: '#^Parameter \#1 \$require of method App\\Entity\\Version\:\:addRequireLink\(\) expects App\\Entity\\RequireLink, App\\Entity\\ConflictLink\|App\\Entity\\DevRequireLink\|App\\Entity\\ProvideLink\|App\\Entity\\ReplaceLink\|App\\Entity\\RequireLink given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Package/Updater.php
+
+		-
 			message: '#^Parameter \#1 \$ids of method App\\Entity\\PackageRepository\:\:getPackagesWithVersions\(\) expects list\<int\>\|null, array\<int\<0, max\>, int\> given\.$#'
 			identifier: argument.type
 			count: 1
