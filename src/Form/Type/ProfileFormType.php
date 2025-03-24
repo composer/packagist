@@ -14,6 +14,7 @@ namespace App\Form\Type;
 
 use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -58,7 +59,7 @@ class ProfileFormType extends AbstractType
             });
 
         $builder
-            ->add('failureNotifications', null, ['required' => false, 'label' => 'Notify me of package update failures']);
+            ->add('failureNotifications', CheckboxType::class, ['required' => false, 'label' => 'Notify me of package update failures']);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
