@@ -5458,16 +5458,16 @@
         },
         {
             "name": "scheb/2fa-backup-code",
-            "version": "v7.6.0",
+            "version": "v7.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/scheb/2fa-backup-code.git",
-                "reference": "7bb1ff62bfc8623676576328fa57143f76f78c72"
+                "reference": "f52e912460ba9fc6af4b451962176ce68146f456"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/scheb/2fa-backup-code/zipball/7bb1ff62bfc8623676576328fa57143f76f78c72",
-                "reference": "7bb1ff62bfc8623676576328fa57143f76f78c72",
+                "url": "https://api.github.com/repos/scheb/2fa-backup-code/zipball/f52e912460ba9fc6af4b451962176ce68146f456",
+                "reference": "f52e912460ba9fc6af4b451962176ce68146f456",
                 "shasum": ""
             },
             "require": {
@@ -5501,22 +5501,22 @@
                 "two-step"
             ],
             "support": {
-                "source": "https://github.com/scheb/2fa-backup-code/tree/v7.6.0"
+                "source": "https://github.com/scheb/2fa-backup-code/tree/v7.7.0"
             },
-            "time": "2024-10-20T10:14:58+00:00"
+            "time": "2025-03-20T08:56:30+00:00"
         },
         {
             "name": "scheb/2fa-bundle",
-            "version": "v7.6.0",
+            "version": "v7.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/scheb/2fa-bundle.git",
-                "reference": "3011e0b8242e12cdcd64ed12a95ddb2e5899ba37"
+                "reference": "6fbb15ca8e62b1272e398dde21d1216b1ad59dab"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/scheb/2fa-bundle/zipball/3011e0b8242e12cdcd64ed12a95ddb2e5899ba37",
-                "reference": "3011e0b8242e12cdcd64ed12a95ddb2e5899ba37",
+                "url": "https://api.github.com/repos/scheb/2fa-bundle/zipball/6fbb15ca8e62b1272e398dde21d1216b1ad59dab",
+                "reference": "6fbb15ca8e62b1272e398dde21d1216b1ad59dab",
                 "shasum": ""
             },
             "require": {
@@ -5530,6 +5530,7 @@
                 "symfony/http-kernel": "^6.4 || ^7.0",
                 "symfony/property-access": "^6.4 || ^7.0",
                 "symfony/security-bundle": "^6.4 || ^7.0",
+                "symfony/service-contracts": "^2.5|^3",
                 "symfony/twig-bundle": "^6.4 || ^7.0"
             },
             "conflict": {
@@ -5568,22 +5569,22 @@
                 "two-step"
             ],
             "support": {
-                "source": "https://github.com/scheb/2fa-bundle/tree/v7.6.0"
+                "source": "https://github.com/scheb/2fa-bundle/tree/v7.7.0"
             },
-            "time": "2024-10-20T10:14:58+00:00"
+            "time": "2025-03-23T09:49:33+00:00"
         },
         {
             "name": "scheb/2fa-totp",
-            "version": "v7.6.0",
+            "version": "v7.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/scheb/2fa-totp.git",
-                "reference": "be68996ec98f310716195bb5d50fcb0678a412b3"
+                "reference": "11155ba1333b3ee6c4f105c6d8172a39c8e277d9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/scheb/2fa-totp/zipball/be68996ec98f310716195bb5d50fcb0678a412b3",
-                "reference": "be68996ec98f310716195bb5d50fcb0678a412b3",
+                "url": "https://api.github.com/repos/scheb/2fa-totp/zipball/11155ba1333b3ee6c4f105c6d8172a39c8e277d9",
+                "reference": "11155ba1333b3ee6c4f105c6d8172a39c8e277d9",
                 "shasum": ""
             },
             "require": {
@@ -5618,22 +5619,22 @@
                 "two-step"
             ],
             "support": {
-                "source": "https://github.com/scheb/2fa-totp/tree/v7.6.0"
+                "source": "https://github.com/scheb/2fa-totp/tree/v7.7.0"
             },
-            "time": "2024-10-20T10:14:58+00:00"
+            "time": "2025-03-20T08:56:30+00:00"
         },
         {
             "name": "scheb/2fa-trusted-device",
-            "version": "v7.6.0",
+            "version": "v7.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/scheb/2fa-trusted-device.git",
-                "reference": "04af29f5dd1b96af6fd5ae736726e4777c4f62b2"
+                "reference": "fd73c5f4cfcfe0aa073e9aefbcadebadc2d31491"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/scheb/2fa-trusted-device/zipball/04af29f5dd1b96af6fd5ae736726e4777c4f62b2",
-                "reference": "04af29f5dd1b96af6fd5ae736726e4777c4f62b2",
+                "url": "https://api.github.com/repos/scheb/2fa-trusted-device/zipball/fd73c5f4cfcfe0aa073e9aefbcadebadc2d31491",
+                "reference": "fd73c5f4cfcfe0aa073e9aefbcadebadc2d31491",
                 "shasum": ""
             },
             "require": {
@@ -5669,9 +5670,9 @@
                 "two-step"
             ],
             "support": {
-                "source": "https://github.com/scheb/2fa-trusted-device/tree/v7.6.0"
+                "source": "https://github.com/scheb/2fa-trusted-device/tree/v7.7.0"
             },
-            "time": "2024-10-20T10:14:58+00:00"
+            "time": "2025-03-23T09:49:33+00:00"
         },
         {
             "name": "seld/jsonlint",
