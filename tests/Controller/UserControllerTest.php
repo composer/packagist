@@ -17,7 +17,7 @@ use App\Tests\Mock\TotpAuthenticatorStub;
 
 class UserControllerTest extends ControllerTestCase
 {
-    public function testEnableTwoFactoCode(): void
+    public function testEnableTwoFactorCode(): void
     {
         $user = self::createUser();
         $this->store($user);

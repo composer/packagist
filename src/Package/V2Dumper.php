@@ -17,6 +17,7 @@ use App\Entity\AuditRecord;
 use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
 use App\Service\CdnClient;
+use App\Service\ReplicaClient;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
 use Symfony\Component\Filesystem\Filesystem;
@@ -54,6 +55,7 @@ class V2Dumper
         private ProviderManager $providerManager,
         private Logger $logger,
         private readonly CdnClient $cdnClient,
+        private readonly ReplicaClient $replicaClient,
         private readonly UrlGeneratorInterface $router,
     ) {
         $webDir = realpath($webDir);
@@ -384,7 +386,24 @@ class V2Dumper
 
         assert(isset($filemtime));
 
-        $this->writeFileAtomic($path, $contents, intval(ceil($filemtime/10000)));
+        $timeUnix = intval(ceil($filemtime/10000));
+        $this->writeFileAtomic($path, $contents, $timeUnix);
+
+        $retries = 3;
+        do {
+            try {
+                $this->replicaClient->uploadMetadata($relativePath, $contents, $timeUnix);
+                break;
+            } catch (TransportExceptionInterface $e) {
+                if ($retries === 0) {
+                    throw $e;
+                }
+                $this->logger->debug('Retrying due to failure', ['exception' => $e]);
+                sleep(1);
+            }
+        } while ($retries-- > 0);
+
+        $this->cdnClient->purgeMetadataCache($relativePath);
 
         $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
         $this->statsd->increment('packagist.metadata_dump_v2');

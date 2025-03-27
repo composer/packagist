@@ -13,6 +13,7 @@ parameters:
     trusted_ip_header: ''
     github.webhook_secret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
     fallback_gh_tokens: []
+    replica_ips: []
 
 services:
     # default configuration for services in *this* file
@@ -44,6 +45,7 @@ services:
             $mailFromName: "%env(APP_MAILER_FROM_NAME)%"
             $fallbackGhTokens: "%fallback_gh_tokens%"
             $configDir: '%kernel.project_dir%/config/'
+            $internalSecret: '%env(APP_SECRET)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -130,3 +132,7 @@ services:
             $metadataPublicEndpoint: '%env(default::CDN_METADATA_PUBLIC_ENDPOINT)%'
             $metadataApiKey: '%env(default::CDN_METADATA_API_KEY)%'
             $cdnApiKey: '%env(default::CDN_API_KEY)%'
+
+    App\Service\ReplicaClient:
+        arguments:
+            $replicaIps: '%replica_ips%'

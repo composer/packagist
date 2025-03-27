@@ -42,6 +42,11 @@ class CdnClient
         ]);
         $time = strtotime($resp->getHeaders()['last-modified'][0]) * 10000;
 
+        return $time;
+    }
+
+    public function purgeMetadataCache(string $path): void
+    {
         $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'true']), [
             'headers' => [
                 'AccessKey' => $this->cdnApiKey,
@@ -49,10 +54,8 @@ class CdnClient
         ]);
         // wait for status code at least
         if ($resp->getStatusCode() !== 200) {
-            $this->logger->error('Failed purging '.$path.' from CDN while writing an update to it', ['filemtime' => $time/10000]);
+            $this->logger->error('Failed purging '.$path.' from CDN');
         }
-
-        return $time;
     }
 
     public function sendUploadMetadataRequest(string $path, string $contents): ResponseInterface
