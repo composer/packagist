@@ -3,7 +3,7 @@
         {% for version in versions %}
             {% set expanded = version.id == expandedId|default(false) %}
             <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
-                <a href="#{{ version.version }}" class="version-number">
+                <a rel="nofollow noindex" href="#{{ version.version }}" class="version-number">
                     {{- version.version -}}
                     {% if version.hasVersionAlias() %}
                         / {{ version.versionAlias }}
