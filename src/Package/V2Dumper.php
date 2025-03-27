@@ -386,6 +386,24 @@ class V2Dumper
 
         assert(isset($filemtime));
 
+        // we need to make sure dumps happen always with incrementing times to avoid race conditions when
+        // fetching metadata changes in the currently elapsing second (new items dumped after the fetch can then
+        // be skipped as they appear to have been dumped before the "since" param)
+        // so this ensures a sequence even when we cannot rely on sub-second timing info in the filemtime
+        if (str_ends_with((string) $filemtime, '0000')) {
+            $counterKey = 'metadata:'.substr((string) $filemtime, 0, -4);
+            $counter = $this->redis->incrby($counterKey, 10);
+            if ($counter === 10) {
+                $this->redis->expire($counterKey, 10);
+            }
+            // safe-guard to avoid going beyond the current second in the very unlikely
+            // case we'd dump more than 1000 packages in one second
+            if ($counter > 9950) {
+                sleep(1);
+            }
+            $filemtime += $counter;
+        }
+
         $timeUnix = intval(ceil($filemtime/10000));
         $this->writeFileAtomic($path, $contents, $timeUnix);
 

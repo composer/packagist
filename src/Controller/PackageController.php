@@ -177,6 +177,7 @@ class PackageController extends Controller
     {
         $topDump = $redis->zrevrange('metadata-dumps', 0, 0, ['WITHSCORES' => true]) ?: ['foo' => 0];
         $topDelete = $redis->zrevrange('metadata-deletes', 0, 0, ['WITHSCORES' => true]) ?: ['foo' => 0];
+        // to force a resync of all clients, set metadata-oldest manually to time()*10000
         $oldestSyncPoint = (int) $redis->get('metadata-oldest') ?: 15850612240000;
         $now = max((int) current($topDump), (int) current($topDelete)) + 1;
 
