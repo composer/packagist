@@ -51,7 +51,7 @@ class InternalController extends Controller
             throw new \RuntimeException('Failed gzencoding '.$contents);
         }
 
-        $path = $this->metadataDir . '/' . $path;
+        $path = $this->metadataDir . '/' . $path.'.gz';
         file_put_contents($path.'.tmp', $gzipped);
         touch($path.'.tmp', $filemtime);
         rename($path.'.tmp', $path);
