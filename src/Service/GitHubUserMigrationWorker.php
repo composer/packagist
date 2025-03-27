@@ -105,6 +105,7 @@ class GitHubUserMigrationWorker
 
         try {
             $hooks = $this->getHooks($token, $repoKey);
+            $this->logger->debug(count($hooks).' existing hooks', ['hooks' => $hooks]);
 
             $legacyHooks = array_values(array_filter(
                 $hooks,
@@ -118,6 +119,10 @@ class GitHubUserMigrationWorker
                     return $hook['name'] === 'web' && (strpos($hook['config']['url'], self::HOOK_URL) === 0 || strpos($hook['config']['url'], self::HOOK_URL_ALT) === 0);
                 }
             ));
+            // sort shorter urls first as that should lead us to find the correct one first
+            usort($currentHooks, static function ($a, $b) {
+                return $a['config']['url'] <=> $a['config']['url'];
+            });
 
             $hookData = $this->getGitHubHookData();
             $hasValidHook = false;
@@ -126,13 +131,17 @@ class GitHubUserMigrationWorker
                 $configWithoutSecret = $hook['config'];
                 unset($configWithoutSecret['secret'], $expectedConfigWithoutSecret['secret']);
 
+                // we don't need to keep multiple valid hooks, once we have a valid one wipe the rest
+                if ($hasValidHook) {
+                    continue;
+                }
                 if (
                     $hook['updated_at'] < '2018-09-04T13:00:00'
                     || $hook['events'] != $hookData['events']
                     || $configWithoutSecret != $expectedConfigWithoutSecret
                     || !$hook['active']
                 ) {
-                    $this->logger->debug('Updating hook '.$hook['id']);
+                    $this->logger->debug('Updating hook '.$hook['id'], ['config' => $expectedConfigWithoutSecret]);
                     $this->request($token, 'PATCH', 'repos/'.$repoKey.'/hooks/'.$hook['id'], $hookData);
                     $changed = true;
                 } elseif (!$package->isAutoUpdated()) {
