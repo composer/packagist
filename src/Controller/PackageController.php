@@ -776,13 +776,19 @@ class PackageController extends Controller
         try {
             $html = $this->renderView(
                 'package/version_details.html.twig',
-                ['version' => $repo->getFullVersion($versionId)]
+                ['version' => $version = $repo->getFullVersion($versionId)]
             );
         } catch (NoResultException $e) {
             return new JsonResponse(['status' => 'error', 'message' => 'The version could not be found, it may have been deleted in the meantime? Try reloading the page.'], 404);
         }
 
-        return new JsonResponse(['content' => $html]);
+        $resp = new JsonResponse(['content' => $html]);
+        if (!$version->isDevelopment()) {
+            $resp->setSharedMaxAge(24 * 3600);
+            $resp->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+        }
+
+        return $resp;
     }
 
     #[Route(path: '/versions/{versionId}/delete', name: 'delete_version', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'versionId' => '[0-9]+'], methods: ['DELETE'])]
