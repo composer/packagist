@@ -11,7 +11,7 @@
                 </a>
 
                 {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
-                    <a class="advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
+                    <a rel="nofollow noindex" class="advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
                         <i class="glyphicon glyphicon-alert " title="Version has security advisories"></i>
                     </a>
                 {% endif %}
