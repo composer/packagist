@@ -52,6 +52,9 @@ class InternalController extends Controller
         }
 
         $path = $this->metadataDir . '/' . $path.'.gz';
+        if (!is_dir(dirname($path))) {
+            mkdir(dirname($path), recursive: true);
+        }
         file_put_contents($path.'.tmp', $gzipped);
         touch($path.'.tmp', $filemtime);
         rename($path.'.tmp', $path);
