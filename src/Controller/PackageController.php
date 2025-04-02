@@ -353,7 +353,11 @@ class PackageController extends Controller
         $providers = $repo->findProviders($name);
         if (!$providers) {
             if ($req->getRequestFormat() === 'json') {
-                return new JsonResponse(['providers' => []]);
+                $response = new JsonResponse(['providers' => []]);
+                $response->setSharedMaxAge(300);
+                $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+                return $response;
             }
 
             return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
@@ -392,7 +396,11 @@ class PackageController extends Controller
                 ];
             }
 
-            return new JsonResponse(['providers' => $response]);
+            $response = new JsonResponse(['providers' => $response]);
+            $response->setSharedMaxAge(300);
+            $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+            return $response;
         }
 
         return $this->render('package/providers.html.twig', [
