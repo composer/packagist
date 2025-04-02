@@ -27,6 +27,7 @@ use Doctrine\Persistence\ManagerRegistry;
 class PackageRepository extends ServiceEntityRepository
 {
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
+    // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
     public function __construct(ManagerRegistry $registry)
