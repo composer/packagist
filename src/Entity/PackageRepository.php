@@ -26,6 +26,9 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class PackageRepository extends ServiceEntityRepository
 {
+    private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
+    private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Package::class);
@@ -37,7 +40,7 @@ class PackageRepository extends ServiceEntityRepository
     public function findProviders(string $name): array
     {
         $query = $this->createQueryBuilder('p')
-            ->select('p')
+            ->select('partial p.{'.self::LISTING_FIELDS.'}')
             ->leftJoin('p.versions', 'pv')
             ->leftJoin('pv.provide', 'pr')
             ->where('pv.development = true')
