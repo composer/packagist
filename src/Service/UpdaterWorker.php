@@ -16,6 +16,7 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Composer\Pcre\Preg;
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
@@ -24,6 +25,8 @@ use Composer\Console\HtmlOutputFormatter;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Repository\VcsRepository;
 use Composer\IO\BufferIO;
+use Psr\SimpleCache\CacheInterface;
+use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Console\Output\OutputInterface;
 use App\Entity\Package;
 use App\Entity\Version;
@@ -62,6 +65,7 @@ class UpdaterWorker
     private Scheduler $scheduler;
     private PackageManager $packageManager;
     private DownloadManager $downloadManager;
+    private CacheInterface $cache;
     /** For use in fixtures loader only */
     private bool $loadMinimalVersions = false;
 
@@ -75,7 +79,9 @@ class UpdaterWorker
         DownloadManager $downloadManager,
         private StatsDClient $statsd,
         private readonly FallbackGitHubAuthProvider $fallbackGitHubAuthProvider,
+        CacheItemPoolInterface $cache,
     ) {
+        $this->cache = new Psr16Cache($cache);
         $this->logger = $logger;
         $this->doctrine = $doctrine;
         $this->updater = $updater;
@@ -127,7 +133,6 @@ class UpdaterWorker
         $usesPackagistToken = false;
         if (Preg::isMatch('{^https://github\.com/(?P<repo>[^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $matches)) {
             $usesPackagistToken = true;
-            $apc = extension_loaded('apcu');
 
             foreach ($package->getMaintainers() as $maintainer) {
                 if ($maintainer->getId() === 1) {
@@ -137,26 +142,26 @@ class UpdaterWorker
                     continue;
                 }
 
-                $valid = null;
-                if ($apc) {
-                    $valid = apcu_fetch('is_token_valid_'.$maintainer->getUsernameCanonical());
-                }
-
-                if (true !== $valid) {
-                    $context = stream_context_create(['http' => ['header' => ['User-agent: packagist-token-check', 'Authorization: token '.$newGithubToken]]]);
-                    $rate = json_decode((string) @file_get_contents('https://api.github.com/repos/'.$matches['repo'].'/git/refs/heads?per_page=1', false, $context), true);
+                $valid = $this->cache->get('is_token_valid_'.$maintainer->getUsernameCanonical());
+                if ('1' !== $valid) {
+                    $context = stream_context_create(['http' => [
+                        'header' => ['User-agent: packagist-token-check', 'Authorization: token '.$newGithubToken],
+                        'ignore_errors' => true,
+                    ]]);
+                    $rateResponse = json_decode((string) @file_get_contents('https://api.github.com/repos/'.$matches['repo'].'/git/refs/heads?per_page=1', false, $context), true);
                     // invalid/outdated token, wipe it so we don't try it again
-                    if (!$rate && isset($http_response_header[0]) && (strpos($http_response_header[0], '403') || strpos($http_response_header[0], '401'))) {
-                        $maintainer->setGithubToken(null);
-                        $em->persist($maintainer);
-                        $em->flush();
-                        continue;
+                    if (!$rateResponse || (isset($http_response_header[0]) && Preg::isMatch('{HTTP/\s+ 4[0-9][0-9] }', $http_response_header[0]))) {
+                        if (str_contains($http_response_header[0], '403') || str_contains($http_response_header[0], '401')) {
+                            $this->logger->error('Invalid token check response for '.$maintainer->getUsernameCanonical().' on '.$matches['repo'], ['headers' => $http_response_header, 'response' => $rateResponse]);
+                            $maintainer->setGithubToken(null);
+                            $em->persist($maintainer);
+                            $em->flush();
+                            continue;
+                        }
                     }
                 }
 
-                if ($apc) {
-                    apcu_store('is_token_valid_'.$maintainer->getUsernameCanonical(), true, 86400);
-                }
+                $this->cache->set('is_token_valid_'.$maintainer->getUsernameCanonical(), '1', 86400);
 
                 $usesPackagistToken = false;
                 $io->setAuthentication('github.com', $newGithubToken, 'x-oauth-basic');
