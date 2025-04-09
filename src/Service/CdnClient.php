@@ -45,7 +45,7 @@ class CdnClient
         return $time;
     }
 
-    public function purgeMetadataCache(string $path): void
+    public function purgeMetadataCache(string $path): bool
     {
         $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'true']), [
             'headers' => [
@@ -54,8 +54,12 @@ class CdnClient
         ]);
         // wait for status code at least
         if ($resp->getStatusCode() !== 200) {
-            $this->logger->error('Failed purging '.$path.' from CDN');
+            $this->logger->error('Failed purging '.$path.' from CDN', ['response' => $resp->getContent(false), 'status' => $resp->getStatusCode()]);
+
+            return false;
         }
+
+        return true;
     }
 
     public function sendUploadMetadataRequest(string $path, string $contents): ResponseInterface

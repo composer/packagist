@@ -421,7 +421,16 @@ class V2Dumper
             }
         } while ($retries-- > 0);
 
-        $this->cdnClient->purgeMetadataCache($relativePath);
+        $retries = 3;
+        do {
+            if ($this->cdnClient->purgeMetadataCache($relativePath)) {
+                break;
+            }
+            if ($retries === 0) {
+                throw new \RuntimeException('Failed to purge cache for '.$relativePath);
+            }
+            sleep(1);
+        } while ($retries-- > 0);
 
         $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
         $this->statsd->increment('packagist.metadata_dump_v2');
