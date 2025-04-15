@@ -40,7 +40,7 @@ class DownloadManager
      *
      * @return array{total: int, monthly: int, daily: float, views?: int}
      */
-    public function getDownloads(Package|int $package, Version|int $version = null, bool $incrViews = false): array
+    public function getDownloads(Package|int $package, Version|int|null $version = null, bool $incrViews = false): array
     {
         if ($package instanceof Package) {
             $package = $package->getId();

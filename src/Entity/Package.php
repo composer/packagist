@@ -696,7 +696,7 @@ class Package
         return $this->type;
     }
 
-    public function getInstallCommand(Version $version = null): string
+    public function getInstallCommand(Version|null $version = null): string
     {
         if (in_array($this->getType(), ['php-ext', 'php-ext-zend'], true)) {
             return 'pie install '.$this->getName();
