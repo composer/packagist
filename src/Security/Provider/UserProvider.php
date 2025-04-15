@@ -24,7 +24,6 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 /**
  * @implements UserProviderInterface<User>
- * @implements PasswordUpgraderInterface<User>
  */
 class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
