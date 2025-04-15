@@ -46,6 +46,7 @@ services:
             $fallbackGhTokens: "%fallback_gh_tokens%"
             $configDir: '%kernel.project_dir%/config/'
             $internalSecret: '%env(APP_SECRET)%'
+            $updaterWorkerCacheDir: '%env(UPDATER_WORKER_CACHE_DIR)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

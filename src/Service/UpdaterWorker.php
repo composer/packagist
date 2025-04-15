@@ -80,6 +80,7 @@ class UpdaterWorker
         private StatsDClient $statsd,
         private readonly FallbackGitHubAuthProvider $fallbackGitHubAuthProvider,
         CacheItemPoolInterface $cache,
+        private readonly string $updaterWorkerCacheDir,
     ) {
         $this->cache = new Psr16Cache($cache);
         $this->logger = $logger;
@@ -129,6 +130,14 @@ class UpdaterWorker
         $config = Factory::createConfig();
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
         $io->loadConfiguration($config);
+
+        // sandbox into a unique cache dir per package id to avoid potential cache reuse issues
+        if (trim($this->updaterWorkerCacheDir) !== '' && is_dir($this->updaterWorkerCacheDir)) {
+            $subDir = str_pad((string)$package->getId(), 9, '0', STR_PAD_LEFT);
+            $subDir = substr($subDir, 0, 6).'/'.$package->getId();
+            $config->merge(['config' => ['cache-dir' => $this->updaterWorkerCacheDir.'/'.$subDir]]);
+            unset($subDir);
+        }
 
         $usesPackagistToken = false;
         if (Preg::isMatch('{^https://github\.com/(?P<repo>[^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $matches)) {
