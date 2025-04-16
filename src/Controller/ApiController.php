@@ -366,8 +366,11 @@ class ApiController extends Controller
 
         // Ensure known packages are returned even if no advisory is present to ensure they do not get retried by composer in lower prio repos
         // Do a max of 1000 packages to prevent abuse
-        foreach (array_slice($packageNames, 0, 1000) as $name) {
-            if (!isset($response['advisories'][$name]) && $providerManager->packageExists($name)) {
+        $packagesToCheck = array_slice($packageNames, 0, 1000);
+        $packageExists = $providerManager->packagesExist($packagesToCheck);
+        
+        foreach ($packagesToCheck as $name) {
+            if (!isset($response['advisories'][$name]) && ($packageExists[strtolower($name)] ?? false)) {
                 $response['advisories'][$name] = [];
             }
         }

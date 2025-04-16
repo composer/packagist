@@ -18,6 +18,7 @@ snc_redis:
                 commands:
                     fetchVersionIds: 'App\Redis\FetchVersionIds'
                     downloadsIncr: 'App\Redis\DownloadsIncr'
+                    packagesExist: 'App\Redis\PackagesExist'
 
         cache:
             type: predis

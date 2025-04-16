@@ -33,7 +33,7 @@ class VersionIdCache
             $args[] = 'ids:'.strtolower($package['name']);
             $args[] = strtolower($package['version']);
         }
-        /** @phpstan-ignore-next-line */
+        /** @phpstan-ignore-next-line method.notFound */
         $results = $this->redis->fetchVersionIds(...$args);
 
         foreach ($results as $key => $result) {

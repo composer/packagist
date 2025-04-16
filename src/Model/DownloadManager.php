@@ -186,7 +186,7 @@ class DownloadManager
         $args[] = $month;
         $args[] = $throttleExpiry;
 
-        /** @phpstan-ignore-next-line */
+        /** @phpstan-ignore-next-line method.notFound */
         $this->redis->downloadsIncr(...$args);
     }
 

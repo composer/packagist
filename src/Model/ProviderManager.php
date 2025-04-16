@@ -29,6 +29,30 @@ class ProviderManager
         return (bool) $this->redis->sismember('set:packages', strtolower($name));
     }
 
+    /**
+     * Check if multiple packages exist in the registry
+     *
+     * @param string[] $names Package names to check
+     * @return array<string, bool> Associative array of package name => exists
+     */
+    public function packagesExist(array $names): array
+    {
+        if (0 === count($names)) {
+            return [];
+        }
+
+        $names = array_map('strtolower', $names);
+        /** @phpstan-ignore-next-line method.notFound */
+        $results = $this->redis->packagesExist(...$names);
+
+        $exists = [];
+        foreach ($results as $i => $result) {
+            $exists[$names[$i]] = (bool) $result;
+        }
+
+        return $exists;
+    }
+
     public function packageIsProvided(string $name): bool
     {
         if (false === $this->initializedProviders) {
