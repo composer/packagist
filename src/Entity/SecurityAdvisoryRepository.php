@@ -184,7 +184,8 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             if ($useCache) {
                 $cacheData = [];
                 foreach ($packageNames as $name) {
-                    $this->redisCache->setex('sec-adv:'.$name, 86400 + random_int(0, 3600), isset($advisories[$name]) ? json_encode($advisories[$name], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : 'false');
+                    // Cache for 7 days with a random 1-hour variance, the cache is busted by SecurityAdvisoryUpdateListener when advisories change
+                    $this->redisCache->setex('sec-adv:'.$name, 604800 + random_int(0, 3600), isset($advisories[$name]) ? json_encode($advisories[$name], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : 'false');
                 }
             }
         }
