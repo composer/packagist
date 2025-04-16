@@ -147,10 +147,6 @@ class SecurityAdvisory
 
     public function getPackagistAdvisoryId(): string
     {
-        if (!isset($this->packagistAdvisoryId)) {
-            $this->assignPackagistAdvisoryId();
-        }
-
         return $this->packagistAdvisoryId;
     }
 
@@ -247,11 +243,6 @@ class SecurityAdvisory
         }
 
         return $score;
-    }
-
-    public function hasPackagistAdvisoryId(): bool
-    {
-        return (bool) $this->packagistAdvisoryId;
     }
 
     private function assignPackagistAdvisoryId(): void
