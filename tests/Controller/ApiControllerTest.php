@@ -15,6 +15,7 @@ namespace App\Tests\Controller;
 use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
 use App\Entity\User;
+use App\Entity\Version;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;
@@ -180,5 +181,32 @@ class ApiControllerTest extends ControllerTestCase
         $content = json_decode($this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('acme/package', $content['advisories']);
         $this->assertCount(1, $content['advisories']['acme/package']);
+    }
+
+    public function testDeletePackageVersion(): void
+    {
+        $url = 'https://github.com/composer/composer';
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), $url, maintainers: [$user]);
+
+        $packageVersion = new Version();
+        $packageVersion->setName($package->getName());
+        $packageVersion->setVersion('1.0.0');
+        $packageVersion->setNormalizedVersion('1.0.0.0');
+        $packageVersion->setDevelopment(false);
+        $packageVersion->setLicense(['MIT']);
+        $packageVersion->setAutoload([]);
+        $packageVersion->setSource([]);
+        $packageVersion->setDist([]);
+        $packageVersion->setPackage($package);
+
+        $package->addVersion($packageVersion);
+        $this->store($user, $package, $packageVersion);
+
+        $this->client->request('POST', '/api/packages/'.$package->getName().'/delete-version/1.0.0', ['username' => $user->getUsername(), 'apiToken' => 'api-token']);
+        $this->assertEquals(200, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+
+        $this->client->request('POST', '/api/packages/'.$package->getName().'/delete-version/1.0.0', ['username' => $user->getUsername(), 'apiToken' => 'api-token']);
+        $this->assertEquals(404, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 }

@@ -16,6 +16,7 @@ use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Entity\Vendor;
+use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
@@ -24,6 +25,7 @@ use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\UserAgentParser;
 use Composer\Pcre\Preg;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -183,14 +185,14 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'json'], methods: ['PUT'])]
-    public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
+    public function editPackageAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
     {
         $user = $this->findUser($request);
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
         }
         if (!$package->getMaintainers()->contains($user)) {
-            throw new AccessDeniedException;
+            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], 403);
         }
 
         $statsd->increment('edit_package_api');
@@ -221,6 +223,35 @@ class ApiController extends Controller
         $em = $this->getEM();
         $em->persist($package);
         $em->flush();
+
+        return new JsonResponse(['status' => 'success'], 200);
+    }
+
+    #[Route(path: '/api/packages/{package}/delete-version/{version}', name: 'api_delete_package_version', requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'json'], methods: ['POST'])]
+    public function deletePackageVersionAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $version, StatsDClient $statsd): JsonResponse
+    {
+        $user = $this->findUser($request);
+        if (!$user) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
+        }
+        if (!$package->getMaintainers()->contains($user)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to delete this package version'], 403);
+        }
+
+        $statsd->increment('delete_package_version_api');
+
+        $packageVersion = $package->getVersions()->findFirst(static function (int $index, Version $innerVersion) use ($version) {
+            return $innerVersion->getVersion() === $version;
+        });
+
+        if (!$packageVersion) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Version not found'], 404);
+        }
+
+        $repo = $this->getEM()->getRepository(Version::class);
+        $repo->remove($packageVersion);
+        $this->getEM()->flush();
+        $this->getEM()->clear();
 
         return new JsonResponse(['status' => 'success'], 200);
     }
