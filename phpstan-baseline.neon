@@ -55,12 +55,6 @@ parameters:
 			path: src/Model/FavoriteManager.php
 
 		-
-			message: '#^Parameter \#1 \$ids of method App\\Entity\\PackageRepository\:\:getPackagesWithVersions\(\) expects list\<int\>\|null, array\<int\<0, max\>, int\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Package/SymlinkDumper.php
-
-		-
 			message: '#^Parameter \#1 \$conflict of method App\\Entity\\Version\:\:addConflictLink\(\) expects App\\Entity\\ConflictLink, App\\Entity\\ConflictLink\|App\\Entity\\DevRequireLink\|App\\Entity\\ProvideLink\|App\\Entity\\ReplaceLink\|App\\Entity\\RequireLink given\.$#'
 			identifier: argument.type
 			count: 1
@@ -89,12 +83,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: src/Package/Updater.php
-
-		-
-			message: '#^Parameter \#1 \$ids of method App\\Entity\\PackageRepository\:\:getPackagesWithVersions\(\) expects list\<int\>\|null, array\<int\<0, max\>, int\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Package/V2Dumper.php
 
 		-
 			message: '#^Parameter \#1 \$job of method App\\Service\\GitHubUserMigrationWorker\:\:process\(\) expects App\\Entity\\Job\<array\{id\: int, update_equal_refs\: bool, delete_before\: bool, force_dump\: bool, source\: string\}\>\|App\\Entity\\Job\<array\{id\: int, old_scope\: string, new_scope\: string\}\>\|App\\Entity\\Job\<array\{source\: string\}\>, App\\Entity\\Job\<array\<string, bool\|int\|string\>\> given\.$#'
