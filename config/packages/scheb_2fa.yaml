@@ -17,3 +17,6 @@ scheb_two_factor:
     trusted_device:
         enabled: true
         lifetime: 2592000 # 30 days
+
+    # prevent reusing 2FA codes
+    code_reuse_cache: 'cache.app'
