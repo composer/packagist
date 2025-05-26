@@ -523,7 +523,7 @@ PUT https://{{ packagist_host }}/api/packages/[package name]?username=[username]
     <p>This endpoint is considered SAFE and allows either your main or safe <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
 
     <pre>
-POST https://{{ packagist_host }}/api/update-package?username=[username]&amp;apiToken=[apiToken] {"repository":"[url]"}
+PUT https://{{ packagist_host }}/api/update-package?username=[username]&amp;apiToken=[apiToken] {"repository":"[url]"}
 <code>
 {
   "status": "success",
@@ -531,8 +531,27 @@ POST https://{{ packagist_host }}/api/update-package?username=[username]&amp;api
 }
 </code></pre>
     <p>Working examples:<br/>
-        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code><br/>
-        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://packagist.org/monolog/monolog"}'</code>
+        <code>curl -X PUT -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code><br/>
+        <code>curl -X PUT -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://packagist.org/monolog/monolog"}'</code>
+    </p>
+
+</section>
+
+<section class="col-d-12">
+    <h3 id="delete-package-version">Delete a package version</h3>
+
+    <p>This endpoint deletes a package version by package name and version. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
+    <p>This endpoint is considered SAFE and allows either your main or safe <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
+
+    <pre>
+POST https://{{ packagist_host }}/api/packages/[package name]/delete-version/[version]?username=[username]&amp;apiToken=[apiToken]
+<code>
+{
+  "status": "success"
+}
+</code></pre>
+    <p>Working examples:<br/>
+        <code>curl -X POST 'https://{{ packagist_host }}/api/packages/monolog/monolog/delete-version/1.0.0?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********'</code><br/>
     </p>
 
 </section>
