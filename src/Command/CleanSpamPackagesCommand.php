@@ -14,6 +14,7 @@ namespace App\Command;
 
 use App\Entity\PackageFreezeReason;
 use App\Entity\Version;
+use App\Entity\VersionRepository;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use Doctrine\Persistence\ManagerRegistry;

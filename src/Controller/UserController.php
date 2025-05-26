@@ -116,10 +116,10 @@ class UserController extends Controller
 
             /** @var VersionRepository $versionRepo */
             $versionRepo = $em->getRepository(Version::class);
-            $packages = $em
+            $qb = $em
                 ->getRepository(Package::class)
-                ->createQueryBuilder('p')
-                ->leftJoin('p.maintainers', 'm')
+                ->createQueryBuilder('p');
+            $packages = $qb->leftJoin('p.maintainers', 'm')
                 ->where($qb->expr()->in('m.id', ':maintainer'))
                 ->setParameter('maintainer', [$user->getId()])
                 ->getQuery()->getResult();
