@@ -94,7 +94,7 @@
         "phpstan/phpstan-symfony": "^2",
         "phpstan/phpstan-webmozart-assert": "^2",
         "phpunit/phpunit": "^12.1",
-        "staabm/phpstan-dba": "^0.3",
+        "staabm/phpstan-dba": "^0.4.0",
         "staabm/phpstan-todo-by": "^0.2",
         "symfony/browser-kit": "^7",
         "symfony/css-selector": "^7",

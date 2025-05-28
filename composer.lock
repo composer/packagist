@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "acba7525c24ca507b10caecc97d5e891",
+    "content-hash": "55111a40c17eca0291a2732dff7e45b8",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -13761,22 +13761,22 @@
         },
         {
             "name": "staabm/phpstan-dba",
-            "version": "0.3.6",
+            "version": "0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/staabm/phpstan-dba.git",
-                "reference": "f33136c81acc3ae6aae576df98e292024e2cff2e"
+                "reference": "d93014580232b604cbd5f7498100586d60fe3a40"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/f33136c81acc3ae6aae576df98e292024e2cff2e",
-                "reference": "f33136c81acc3ae6aae576df98e292024e2cff2e",
+                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/d93014580232b604cbd5f7498100586d60fe3a40",
+                "reference": "d93014580232b604cbd5f7498100586d60fe3a40",
                 "shasum": ""
             },
             "require": {
                 "composer-runtime-api": "^2.0",
                 "composer/semver": "^3.2",
-                "doctrine/dbal": "3.*",
+                "doctrine/dbal": "3.*|4.*",
                 "php": "^7.4 || ^8.0",
                 "phpstan/phpstan": "^2.0"
             },
@@ -13827,7 +13827,7 @@
             ],
             "support": {
                 "issues": "https://github.com/staabm/phpstan-dba/issues",
-                "source": "https://github.com/staabm/phpstan-dba/tree/0.3.6"
+                "source": "https://github.com/staabm/phpstan-dba/tree/0.4"
             },
             "funding": [
                 {
@@ -13835,7 +13835,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-03-06T15:23:27+00:00"
+            "time": "2025-05-16T12:47:17+00:00"
         },
         {
             "name": "staabm/phpstan-todo-by",
