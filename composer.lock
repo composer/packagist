@@ -5930,16 +5930,16 @@
         },
         {
             "name": "snc/redis-bundle",
-            "version": "4.9.0",
+            "version": "4.9.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/snc/SncRedisBundle.git",
-                "reference": "3ab9aef70625d5d780801d175bc153c4e09caa31"
+                "reference": "6c37565de4f1286f98007ab332c970ab39d94d82"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/3ab9aef70625d5d780801d175bc153c4e09caa31",
-                "reference": "3ab9aef70625d5d780801d175bc153c4e09caa31",
+                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/6c37565de4f1286f98007ab332c970ab39d94d82",
+                "reference": "6c37565de4f1286f98007ab332c970ab39d94d82",
                 "shasum": ""
             },
             "require": {
@@ -5962,7 +5962,7 @@
                 "friendsofphp/proxy-manager-lts": "^1.0.6",
                 "monolog/monolog": "*",
                 "phpunit/phpunit": "^9.5.28 || ^10",
-                "predis/predis": "^2.0",
+                "predis/predis": "^2.0 || ^3.0 ",
                 "seec/phpunit-consecutive-params": "dev-master",
                 "symfony/browser-kit": "^5.4.20 ||^6.0 || ^7.0",
                 "symfony/cache": "^5.4.20 ||^6.0 || ^7.0",
@@ -6015,9 +6015,9 @@
             ],
             "support": {
                 "issues": "https://github.com/snc/SncRedisBundle/issues",
-                "source": "https://github.com/snc/SncRedisBundle/tree/4.9.0"
+                "source": "https://github.com/snc/SncRedisBundle/tree/4.9.1"
             },
-            "time": "2025-03-23T08:49:06+00:00"
+            "time": "2025-05-28T11:42:58+00:00"
         },
         {
             "name": "spomky-labs/otphp",
