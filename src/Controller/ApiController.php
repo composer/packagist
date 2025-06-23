@@ -368,7 +368,7 @@ class ApiController extends Controller
         // Do a max of 1000 packages to prevent abuse
         $packagesToCheck = array_slice($packageNames, 0, 1000);
         $packageExists = $providerManager->packagesExist($packagesToCheck);
-        
+
         foreach ($packagesToCheck as $name) {
             if (!isset($response['advisories'][$name]) && ($packageExists[strtolower($name)] ?? false)) {
                 $response['advisories'][$name] = [];
@@ -437,7 +437,7 @@ class ApiController extends Controller
                 [$algo, $sig] = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
                 $source = 'manual_github_hook';
-                if (hash_equals($expected, $sig)) {
+                if (hash_equals($expected, $sig) || hash_equals(hash_hmac($algo, $request->getContent(), $user->getSafeApiToken()), $sig)) {
                     $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $source, $user);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
