@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "55111a40c17eca0291a2732dff7e45b8",
+    "content-hash": "bdf6ad31992c356f8fdfc0905c4b239e",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -5930,16 +5930,16 @@
         },
         {
             "name": "snc/redis-bundle",
-            "version": "4.9.1",
+            "version": "4.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/snc/SncRedisBundle.git",
-                "reference": "6c37565de4f1286f98007ab332c970ab39d94d82"
+                "reference": "05bfb149e57dcc206025a920be6b420259106fde"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/6c37565de4f1286f98007ab332c970ab39d94d82",
-                "reference": "6c37565de4f1286f98007ab332c970ab39d94d82",
+                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/05bfb149e57dcc206025a920be6b420259106fde",
+                "reference": "05bfb149e57dcc206025a920be6b420259106fde",
                 "shasum": ""
             },
             "require": {
@@ -5963,7 +5963,7 @@
                 "monolog/monolog": "*",
                 "phpunit/phpunit": "^9.5.28 || ^10",
                 "predis/predis": "^2.0 || ^3.0 ",
-                "seec/phpunit-consecutive-params": "dev-master",
+                "seec/phpunit-consecutive-params": "^1.1.4",
                 "symfony/browser-kit": "^5.4.20 ||^6.0 || ^7.0",
                 "symfony/cache": "^5.4.20 ||^6.0 || ^7.0",
                 "symfony/config": "^5.4.20 ||^6.0 || ^7.0",
@@ -6015,9 +6015,9 @@
             ],
             "support": {
                 "issues": "https://github.com/snc/SncRedisBundle/issues",
-                "source": "https://github.com/snc/SncRedisBundle/tree/4.9.1"
+                "source": "https://github.com/snc/SncRedisBundle/tree/4.10.0"
             },
-            "time": "2025-05-28T11:42:58+00:00"
+            "time": "2025-06-29T12:30:01+00:00"
         },
         {
             "name": "spomky-labs/otphp",
