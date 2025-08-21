@@ -75,7 +75,7 @@ class CdnClient
             return false;
         }
 
-        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->packagistHost.$path, 'async' => 'true']), [
+        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => 'https://'.$this->packagistHost.'/'.$path, 'async' => 'true']), [
             'headers' => [
                 'AccessKey' => $this->cdnApiKey,
             ],
