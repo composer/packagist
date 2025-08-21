@@ -1832,3 +1832,26 @@ body {
 .icon-lock:before { content: '🔒'; } /* '\1f512' */
 .icon-lock-open:before { content: '🔓'; } /* '\1f513' */
 .icon-rocket:before { content: '🚀'; } /* '\1f680' */
+
+// API Documentation badges
+.badge {
+    display: inline-block;
+    min-width: 10px;
+    padding: 3px 7px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    border-radius: 10px;
+    margin-left: 8px;
+
+    &.bg-success {
+        background-color: #83c129;
+    }
+    &.bg-warning {
+        background-color: #ed9e2e;
+    }
+}
