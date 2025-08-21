@@ -206,6 +206,7 @@ class WebController extends Controller
             '8.2',
             '8.3',
             '8.4',
+            '8.5',
             // 'hhvm', // honorable mention here but excluded as it's so low (below 0.00%) it's irrelevant
         ];
 
