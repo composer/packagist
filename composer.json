@@ -160,7 +160,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "7.2.*"
+            "require": "7.3.*"
         },
         "symfony-bin-dir": "bin",
         "symfony-web-dir": "web",

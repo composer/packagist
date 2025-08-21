@@ -39,6 +39,9 @@ framework:
     # Use all X-Forwarded-* headers from ELB except X-Forwarded-For as nginx handles the IP resolution
     trusted_headers: ['x-forwarded-proto', 'x-forwarded-port']
 
+    property_info:
+        with_constructor_extractor: true
+
 when@test:
     framework:
         test: true
