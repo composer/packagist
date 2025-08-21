@@ -25,6 +25,7 @@ class CdnClient
         private ?string $metadataPublicEndpoint,
         private ?string $metadataApiKey,
         private ?string $cdnApiKey,
+        private string $packagistHost,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -58,6 +59,10 @@ class CdnClient
 
     public function purgeMetadataCache(string $path): bool
     {
+        if ($this->metadataApiKey === null || $this->metadataEndpoint === null || $this->metadataPublicEndpoint === null || $this->cdnApiKey === null) {
+            return true;
+        }
+
         $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'true']), [
             'headers' => [
                 'AccessKey' => $this->cdnApiKey,
@@ -65,7 +70,19 @@ class CdnClient
         ]);
         // wait for status code at least
         if ($resp->getStatusCode() !== 200) {
-            $this->logger->error('Failed purging '.$path.' from CDN', ['response' => $resp->getContent(false), 'status' => $resp->getStatusCode()]);
+            $this->logger->error('Failed purging '.$path.' from metadata CDN', ['response' => $resp->getContent(false), 'status' => $resp->getStatusCode()]);
+
+            return false;
+        }
+
+        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->packagistHost.$path, 'async' => 'true']), [
+            'headers' => [
+                'AccessKey' => $this->cdnApiKey,
+            ],
+        ]);
+        // wait for status code at least
+        if ($resp->getStatusCode() !== 200) {
+            $this->logger->error('Failed purging '.$path.' from main host CDN', ['response' => $resp->getContent(false), 'status' => $resp->getStatusCode()]);
 
             return false;
         }

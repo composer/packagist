@@ -81,7 +81,7 @@ class V2Dumper
         ];
         $rootFileContents['providers-api'] = str_replace('VND/PKG', '%package%', $this->router->generate('view_providers', ['name' => 'VND/PKG', '_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL));
         $rootFileContents['warning'] = 'Support for Composer 1 will be shutdown on August 1st 2025. You should upgrade to Composer 2. See https://blog.packagist.com/shutting-down-packagist-org-support-for-composer-1-x/';
-        $rootFileContents['warning-versions'] = '<1.99';
+        $rootFileContents['warning-versions'] = '<1.999';
 
         // hardcoded v1 data for BC
         $rootFileContents['provider-includes'] = [
@@ -268,13 +268,15 @@ class V2Dumper
         if (file_exists($file) && file_get_contents($file) === $json) {
             return;
         }
-        // TODO change this to upload the file to the CDN eventually
-        $time = time();
 
-        $this->writeFileAtomic($file, $json, $time);
+        $filemtime = $this->writeCdn('packages.json', $json);
+
+        $this->writeFileAtomic($file, $json, $filemtime);
         $encoded = gzencode($json, 8);
         assert(is_string($encoded));
-        $this->writeFileAtomic($file . '.gz', $encoded, $time);
+        $this->writeFileAtomic($file . '.gz', $encoded, $filemtime);
+
+        $this->purgeCdn('packages.json');
     }
 
     private function writeFileAtomic(string $path, string $contents, ?int $mtime = null): void
@@ -369,21 +371,7 @@ class V2Dumper
         $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
         $this->filesystem->mkdir(dirname($path));
 
-        $retries = 3;
-        do {
-            try {
-                $filemtime = $this->cdnClient->uploadMetadata($relativePath, $contents);
-                break;
-            } catch (TransportExceptionInterface $e) {
-                if ($retries === 0) {
-                    throw $e;
-                }
-                $this->logger->debug('Retrying due to failure', ['exception' => $e]);
-                sleep(1);
-            }
-        } while ($retries-- > 0);
-
-        assert(isset($filemtime));
+        $filemtime = $this->writeCdn($relativePath, $contents);
 
         // we need to make sure dumps happen always with incrementing times to avoid race conditions when
         // fetching metadata changes in the currently elapsing second (new items dumped after the fetch can then
@@ -406,6 +394,40 @@ class V2Dumper
         $timeUnix = intval(ceil($filemtime / 10000));
         $this->writeFileAtomic($path, $contents, $timeUnix);
 
+        $this->writeToReplica($path, $contents, $timeUnix);
+
+        $this->purgeCdn($relativePath);
+
+        $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
+        $this->statsd->increment('packagist.metadata_dump_v2');
+    }
+
+    /**
+     * @param non-empty-string $relativePath
+     * @throws TransportExceptionInterface
+     */
+    private function writeCdn(string $relativePath, string $contents): int
+    {
+        $retries = 3;
+        do {
+            try {
+                $filemtime = $this->cdnClient->uploadMetadata($relativePath, $contents);
+
+                return $filemtime;
+            } catch (TransportExceptionInterface $e) {
+                if ($retries === 0) {
+                    throw $e;
+                }
+                $this->logger->debug('Retrying due to failure', ['exception' => $e]);
+                sleep(1);
+            }
+        } while ($retries-- > 0);
+
+        throw $e;
+    }
+
+    private function writeToReplica(string $relativePath, string $contents, int $timeUnix): void
+    {
         $retries = 3;
         do {
             try {
@@ -419,7 +441,10 @@ class V2Dumper
                 sleep(1);
             }
         } while ($retries-- > 0);
+    }
 
+    private function purgeCdn(string $relativePath): void
+    {
         $retries = 3;
         do {
             if ($this->cdnClient->purgeMetadataCache($relativePath)) {
@@ -430,8 +455,5 @@ class V2Dumper
             }
             sleep(1);
         } while ($retries-- > 0);
-
-        $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
-        $this->statsd->increment('packagist.metadata_dump_v2');
     }
 }
