@@ -25,16 +25,14 @@ class Password extends Compound
     protected function getConstraints(array $options): array
     {
         return [
-            new Assert\NotBlank([
-                'message' => 'Please enter a password',
-            ]),
+            new Assert\NotBlank(message: 'Please enter a password'),
             new Assert\Type('string'),
-            new Assert\Length([
-                'min' => 8,
-                'minMessage' => 'Your password should be at least {{ limit }} characters',
+            new Assert\Length(
+                min: 8,
+                minMessage: 'Your password should be at least {{ limit }} characters',
                 // max length allowed by Symfony for security reasons
-                'max' => 4096,
-            ]),
+                max: 4096,
+            ),
             new Assert\NotCompromisedPassword(skipOnError: true),
         ];
     }
