@@ -21,7 +21,7 @@
           "email": "contact@packagist.org"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "algolia/algoliasearch-client-php": "^3.0",
@@ -110,7 +110,7 @@
         },
         "sort-packages": true,
         "platform": {
-            "php": "8.3.17"
+            "php": "8.4.11"
         },
         "allow-plugins": {
             "symfony/flex": true,
