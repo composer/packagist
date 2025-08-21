@@ -27,8 +27,6 @@ use Symfony\Component\Finder\Finder;
 use App\Entity\Version;
 use App\Entity\Package;
 use App\Model\ProviderManager;
-use Doctrine\DBAL\Connection;
-use App\HealthCheck\MetadataDirCheck;
 use Predis\Client;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
@@ -68,7 +66,7 @@ class V2Dumper
         // prepare root file
         $rootFile = $this->webDir.'/packages.json';
         $rootFileContents = [
-            'packages' => []
+            'packages' => [],
         ];
 
         $rootFileContents['notify-batch'] = $this->router->generate('track_download_batch', [], UrlGeneratorInterface::ABSOLUTE_URL);
@@ -363,6 +361,7 @@ class V2Dumper
         $deletion = $this->redis->zscore('metadata-deletes', $name);
         if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditRecordType::PackageDeleted]) !== null) {
             $this->logger->error('Skipped dumping a file as it is marked as having been deleted in the last 30seconds', ['file' => $path, 'deletion' => $deletion, 'time' => time()]);
+
             return;
         }
 
@@ -404,7 +403,7 @@ class V2Dumper
             $filemtime += $counter;
         }
 
-        $timeUnix = intval(ceil($filemtime/10000));
+        $timeUnix = intval(ceil($filemtime / 10000));
         $this->writeFileAtomic($path, $contents, $timeUnix);
 
         $retries = 3;

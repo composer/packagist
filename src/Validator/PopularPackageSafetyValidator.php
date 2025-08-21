@@ -13,14 +13,12 @@
 namespace App\Validator;
 
 use App\Entity\Package;
-use App\Entity\PackageRepository;
 use App\Entity\User;
 use App\Model\DownloadManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Connection\ConnectionException;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;

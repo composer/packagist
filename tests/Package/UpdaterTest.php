@@ -323,6 +323,6 @@ the correct directories. So if you change the dependencies, make sure you run <c
 
 
 EXPECTED
-, $readme);
+            , $readme);
     }
 }

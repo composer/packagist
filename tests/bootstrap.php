@@ -34,7 +34,8 @@ if ($_SERVER['APP_DEBUG']) {
  *
  * @throws Exception when the return code is not 0.
  */
-function executeCommand(string $command, bool $errorHandling = true): void {
+function executeCommand(string $command, bool $errorHandling = true): void
+{
     $output = [];
 
     $returnCode = null;
@@ -61,4 +62,4 @@ if (!getenv('QUICK')) {
     executeCommand('php ./bin/console redis:query flushall --env=test -n -q');
 }
 
-\Composer\Util\Platform::putEnv('PACKAGIST_TESTS_ARE_RUNNING', '1');
+Composer\Util\Platform::putEnv('PACKAGIST_TESTS_ARE_RUNNING', '1');

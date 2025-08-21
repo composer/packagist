@@ -15,7 +15,6 @@ namespace App\EventListener;
 use App\Logger\LogIdProcessor;
 use Graze\DogStatsD\Client;
 use Monolog\Logger;
-use Monolog\LogRecord;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;

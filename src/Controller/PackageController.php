@@ -27,7 +27,6 @@ use Composer\Pcre\Preg;
 use Composer\Semver\Constraint\Constraint;
 use Composer\Semver\Constraint\MatchNoneConstraint;
 use Composer\Semver\Constraint\MultiConstraint;
-use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\NoResultException;
 use App\Entity\Download;
@@ -99,12 +98,12 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/list.json', name: 'list', defaults: ['_format' => 'json'], methods: ['GET'])]
-    public function listAction(Request $req,
+    public function listAction(
+        Request $req,
         PackageRepository $repo,
-        #[MapQueryParameter] ?string $type=null,
-        #[MapQueryParameter] ?string $vendor=null,
-    ): JsonResponse
-    {
+        #[MapQueryParameter] ?string $type = null,
+        #[MapQueryParameter] ?string $vendor = null,
+    ): JsonResponse {
         $queryParams = $req->query->all();
         $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
@@ -113,7 +112,7 @@ class PackageController extends Controller
             $filters = array_filter([
                 'type' => $type,
                 'vendor' => $vendor,
-            ], fn ($val) => $val !== null);
+            ], static fn ($val) => $val !== null);
 
             $response = new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);
             $response->setSharedMaxAge(300);
@@ -458,7 +457,7 @@ class PackageController extends Controller
     public function markSafeAction(Request $req): RedirectResponse
     {
         /** @var string[] $vendors */
-        $vendors = array_filter($req->request->all('vendor'), fn ($vendor) => $vendor !== '' && $vendor !== null);
+        $vendors = array_filter($req->request->all('vendor'), static fn ($vendor) => $vendor !== '' && $vendor !== null);
         if (!$this->isCsrfTokenValid('mark_safe', (string) $req->request->get('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
         }
@@ -1443,7 +1442,7 @@ class PackageController extends Controller
         $normalizer = new VersionParser;
         try {
             $normVersion = $normalizer->normalize($version);
-        } catch (\UnexpectedValueException $e) {
+        } catch (UnexpectedValueException $e) {
             return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
 

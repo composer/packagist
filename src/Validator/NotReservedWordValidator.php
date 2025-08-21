@@ -12,8 +12,6 @@
 
 namespace App\Validator;
 
-use App\Entity\User;
-use Symfony\Component\Form\Form;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;

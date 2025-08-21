@@ -44,7 +44,7 @@ class UploadMetadataToCdnCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $verbose = (bool)$input->getOption('verbose');
+        $verbose = (bool) $input->getOption('verbose');
 
         $finder = Finder::create()
             ->in($this->webDir.'p2')

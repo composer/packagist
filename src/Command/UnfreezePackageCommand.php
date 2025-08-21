@@ -55,6 +55,7 @@ class UnfreezePackageCommand extends Command
         $package = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $name]);
         if ($package === null) {
             $output->writeln('<error>Package '.$name.' not found</error>');
+
             return 1;
         }
 

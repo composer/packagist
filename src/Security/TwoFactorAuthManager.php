@@ -56,7 +56,6 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $user->invalidateAllBackupCodes();
         $this->doctrine->getManager()->flush();
 
-
         $this->userNotifier->notifyChange(
             $user->getEmail(),
             template: 'email/two_factor_disabled.txt.twig',

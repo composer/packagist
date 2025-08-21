@@ -201,7 +201,7 @@ class Package
 
     /**
      * @internal
-     * @var true|null|\Composer\Repository\Vcs\VcsDriverInterface
+     * @var true|null|VcsDriverInterface
      */
     public VcsDriverInterface|bool|null $vcsDriver = true;
     /**
@@ -219,7 +219,7 @@ class Package
         $this->versions = new ArrayCollection();
         $this->maintainers = new ArrayCollection();
         $this->downloads = new ArrayCollection();
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = new DateTimeImmutable();
     }
 
     /**
@@ -621,7 +621,7 @@ class Package
 
     public function wasUpdatedInTheLast24Hours(): bool
     {
-        return $this->updatedAt && $this->updatedAt > new \DateTimeImmutable('-24 hours');
+        return $this->updatedAt && $this->updatedAt > new DateTimeImmutable('-24 hours');
     }
 
     public function setCrawledAt(?DateTimeImmutable $crawledAt): void

@@ -28,7 +28,7 @@ class EnableTwoFactorAuthType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('code', TextType::class, [
-            'constraints' => [new TwoFactorCode($options['user'])]
+            'constraints' => [new TwoFactorCode($options['user'])],
         ]);
     }
 

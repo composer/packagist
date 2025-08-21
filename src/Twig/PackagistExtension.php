@@ -16,7 +16,6 @@ use App\Entity\PackageLink;
 use App\Model\ProviderManager;
 use App\Security\RecaptchaHelper;
 use Composer\Pcre\Preg;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Composer\Repository\PlatformRepository;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;

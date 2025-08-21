@@ -24,7 +24,8 @@ class FormInvalidPasswordSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private readonly RecaptchaHelper $recaptchaHelper,
-    ) {}
+    ) {
+    }
 
     public function onPostSubmit(FormEvent $event): void
     {

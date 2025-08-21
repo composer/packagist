@@ -16,7 +16,6 @@ use Laminas\Diagnostics\Check\CheckInterface;
 use Laminas\Diagnostics\Result\Failure;
 use Laminas\Diagnostics\Result\ResultInterface;
 use Laminas\Diagnostics\Result\Success;
-use Symfony\Component\Process\Process;
 
 class MetadataDirCheck implements CheckInterface
 {

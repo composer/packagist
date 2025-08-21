@@ -12,10 +12,6 @@
 
 namespace App\Tests\Controller;
 
-use App\Entity\Package;
-use App\Search\Query;
-use App\Tests\Search\AlgoliaMock;
-
 class PackageControllerTest extends ControllerTestCase
 {
     public function testView(): void

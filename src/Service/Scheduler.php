@@ -28,15 +28,12 @@ class Scheduler
     }
 
     /**
-     * @param Package|int $packageOrId
      * @return Job<PackageUpdateJob>
      */
-    public function scheduleUpdate($packageOrId, string $source, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeImmutable $executeAfter = null, bool $forceDump = false): Job
+    public function scheduleUpdate(Package|int $packageOrId, string $source, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeImmutable $executeAfter = null, bool $forceDump = false): Job
     {
         if ($packageOrId instanceof Package) {
             $packageOrId = $packageOrId->getId();
-        } elseif (!is_int($packageOrId)) {
-            throw new \UnexpectedValueException('Expected Package instance or int package id');
         }
 
         $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateEqualRefs, $deleteBefore);

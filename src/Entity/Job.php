@@ -87,12 +87,12 @@ class Job
         $this->id = $id;
         $this->type = $type;
         $this->payload = $payload;
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = new DateTimeImmutable();
     }
 
     public function start(): void
     {
-        $this->startedAt = new \DateTimeImmutable();
+        $this->startedAt = new DateTimeImmutable();
         $this->status = self::STATUS_STARTED;
     }
 
@@ -102,7 +102,7 @@ class Job
     public function complete(array $result): void
     {
         $this->result = $result;
-        $this->completedAt = new \DateTimeImmutable();
+        $this->completedAt = new DateTimeImmutable();
         $this->status = $result['status'];
     }
 

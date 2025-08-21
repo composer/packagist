@@ -13,7 +13,6 @@
 namespace App\Service;
 
 use App\Logger\LogIdProcessor;
-use Monolog\LogRecord;
 use Predis\Client as Redis;
 use Monolog\Logger;
 use Doctrine\Persistence\ManagerRegistry;

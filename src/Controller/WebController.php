@@ -217,7 +217,7 @@ class WebController extends Controller
 
             return [
                 $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'days', $type),
-                $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'months', $type)
+                $this->getEM()->getRepository(PhpStat::class)->getGlobalChartData($versions, 'months', $type),
             ];
         });
 

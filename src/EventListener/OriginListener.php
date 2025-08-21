@@ -12,13 +12,10 @@
 
 namespace App\EventListener;
 
-use App\Entity\Package;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\KernelEvents;
-use Teamup\Exception\ApplicationException;
 
 /**
  * Checks that POST, PUT, PATCH and DELETE requests always have an Origin set

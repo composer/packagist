@@ -16,7 +16,6 @@ use App\Entity\User;
 use App\Form\Type\InvisibleRecaptchaType;
 use App\Validator\NotProhibitedPassword;
 use App\Validator\Password;
-use App\Validator\RateLimitingRecaptcha;
 use App\Validator\TwoFactorCode;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;

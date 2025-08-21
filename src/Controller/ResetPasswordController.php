@@ -18,7 +18,6 @@ use App\Form\ResetPasswordRequestFormType;
 use App\Security\BruteForceLoginFormAuthenticator;
 use App\Security\Passport\Badge\ResolvedTwoFactorCodeCredentials;
 use App\Security\UserChecker;
-use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaException;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\RedirectResponse;

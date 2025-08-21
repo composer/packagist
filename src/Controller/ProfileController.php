@@ -161,6 +161,7 @@ class ProfileController extends Controller
     {
         if (!$this->isCsrfTokenValid('rotate_api', (string) $request->request->get('token'))) {
             $this->addFlash('error', 'Invalid csrf token, try again.');
+
             return $this->redirectToRoute('my_profile');
         }
 

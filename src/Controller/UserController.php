@@ -34,7 +34,6 @@ use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -47,8 +46,6 @@ use Symfony\Component\Security\Http\Event\LogoutEvent;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
-use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -199,8 +196,7 @@ class UserController extends Controller
         #[CurrentUser] User $loggedUser,
         #[MapEntity(mapping: ['package' => 'name'])] Package $package,
         FavoriteManager $favoriteManager,
-    ): Response
-    {
+    ): Response {
         if ($user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You can only change your own favorites');
         }

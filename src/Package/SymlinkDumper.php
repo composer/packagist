@@ -23,8 +23,6 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Finder\Finder;
 use App\Entity\Version;
 use App\Entity\Package;
-use Doctrine\DBAL\Connection;
-use App\HealthCheck\MetadataDirCheck;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
 use Webmozart\Assert\Assert;

@@ -1,4 +1,14 @@
-<?php
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace App\Service;
 
@@ -16,7 +26,8 @@ class CdnClient
         private ?string $metadataApiKey,
         private ?string $cdnApiKey,
         private readonly LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     /**
      * @param non-empty-string $path
@@ -111,7 +122,6 @@ class CdnClient
 
     /**
      * @param array<ResponseInterface> $requests
-     * @return ResponseStreamInterface
      */
     public function stream(array $requests): ResponseStreamInterface
     {

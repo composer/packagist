@@ -28,7 +28,8 @@ class UserNotifier
         private string $mailFromName,
         private MailerInterface $mailer,
         private LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     /**
      * @param array<string, mixed> $templateVars
@@ -42,7 +43,7 @@ class UserNotifier
             ->textTemplate($template)
             ->context([
                 'reason' => $reason,
-                ...$templateVars
+                ...$templateVars,
             ]);
 
         try {

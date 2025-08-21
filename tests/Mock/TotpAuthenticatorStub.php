@@ -23,7 +23,8 @@ class TotpAuthenticatorStub implements TotpAuthenticatorInterface
 
     public function __construct(
         private readonly TotpFactory $totpFactory,
-    ) {}
+    ) {
+    }
 
     public function checkCode(TwoFactorInterface $user, string $code): bool
     {

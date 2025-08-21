@@ -23,7 +23,8 @@ class RateLimitingRecaptchaValidator extends ConstraintValidator
     public function __construct(
         private readonly RecaptchaHelper $recaptchaHelper,
         private readonly RecaptchaVerifier $recaptchaVerifier,
-    ) {}
+    ) {
+    }
 
     /**
      * @param RateLimitingRecaptcha $constraint

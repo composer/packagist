@@ -300,12 +300,12 @@ class PackageRepository extends ServiceEntityRepository
             ->leftJoin('p.downloads', 'd')
             ->where('((d.type = :type AND d.lastUpdated < :time) OR d.lastUpdated IS NULL)')
             ->setParameter('type', Download::TYPE_PACKAGE)
-            ->setParameter('time', new \DateTimeImmutable('-20hours'))
+            ->setParameter('time', new DateTimeImmutable('-20hours'))
             ->getQuery()
             ->getResult();
 
         foreach ($res as $row) {
-            yield ['id' => (int) $row['id'], 'lastUpdated' => is_null($row['lastUpdated']) ? new \DateTimeImmutable($row['createdAt']->format('r')) : new \DateTimeImmutable($row['lastUpdated']->format('r'))];
+            yield ['id' => (int) $row['id'], 'lastUpdated' => is_null($row['lastUpdated']) ? new DateTimeImmutable($row['createdAt']->format('r')) : new DateTimeImmutable($row['lastUpdated']->format('r'))];
         }
     }
 

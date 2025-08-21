@@ -15,14 +15,12 @@ namespace App\Model;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
-use Doctrine\DBAL\Connection;
 use App\Entity\Package;
 use App\Entity\Version;
 use App\Entity\Download;
 use App\Util\DoctrineTrait;
 use Predis\Client;
 use DateTimeImmutable;
-use Predis\Profile\RedisProfile;
 
 /**
  * Manages the download counts for packages.

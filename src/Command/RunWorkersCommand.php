@@ -87,7 +87,8 @@ class RunWorkersCommand extends Command
                 try {
                     // force destructor as that will trigger another lock release attempt
                     $this->lock = null;
-                } catch (LockReleasingException) {}
+                } catch (LockReleasingException) {
+                }
             }
         }
 

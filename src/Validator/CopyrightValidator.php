@@ -52,11 +52,11 @@ class CopyrightValidator extends ConstraintValidator
         $copyrightWatches = [
             'flarum' => [
                 'allow' => ['flarum', 'flarum-lang', 'flarum-com'],
-                'email' => 'legal@flarum.org'
+                'email' => 'legal@flarum.org',
             ],
             'symfony' => [
                 'allow' => ['symfony'],
-                'email' => 'fabien@symfony.com'
+                'email' => 'fabien@symfony.com',
             ],
         ];
 

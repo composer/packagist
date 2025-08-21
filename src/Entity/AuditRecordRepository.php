@@ -61,7 +61,7 @@ class AuditRecordRepository extends ServiceEntityRepository
         ], [
             'id' => UlidType::NAME,
             'datetime' => Types::DATETIME_IMMUTABLE,
-            'attributes' => Types::JSON
+            'attributes' => Types::JSON,
         ]);
     }
 }

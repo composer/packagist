@@ -48,6 +48,7 @@ class RemoteSecurityAdvisory
         public readonly ?Severity $severity,
     ) {
     }
+
     public function withAddedAffectedVersion(string $version): self
     {
         return new self(
@@ -105,7 +106,7 @@ class RemoteSecurityAdvisory
             } elseif ($fallbackYearDate) {
                 $date = $fallbackYearDate;
             } else {
-                $date = (new \DateTimeImmutable())->setTime(0, 0, 0);
+                $date = (new DateTimeImmutable())->setTime(0, 0, 0);
             }
         }
 

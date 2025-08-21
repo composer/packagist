@@ -20,7 +20,8 @@ class TwoFactorCodeValidator extends ConstraintValidator
 {
     public function __construct(
         private readonly TotpAuthenticatorInterface $totpAuthenticator,
-    ) {}
+    ) {
+    }
 
     /**
      * @param TwoFactorCode $constraint

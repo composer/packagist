@@ -44,7 +44,6 @@ use App\Model\VersionIdCache;
 use DateTimeImmutable;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
-use Doctrine\DBAL\Connection;
 use App\Service\VersionCache;
 use Composer\Package\CompletePackageInterface;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
@@ -54,7 +53,6 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Webmozart\Assert\Assert;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -127,7 +125,7 @@ class Updater
     {
         $httpDownloader = new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
 
-        $deleteDate = new \DateTimeImmutable('-1day');
+        $deleteDate = new DateTimeImmutable('-1day');
 
         $em = $this->getEM();
         $rootIdentifier = null;
@@ -329,7 +327,8 @@ class Updater
             if (null !== $gitDriverProperty->getValue($driver)) {
                 $usingDetails = ' (via GitDriver fallback instance)';
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
         $io->writeError('Updated from '.$package->getRepository().' using ' . $driver::class . $usingDetails);
 
         // make sure the package exists in the package list if for some reason adding it on submit failed
@@ -337,8 +336,8 @@ class Updater
             $this->providerManager->insertPackage($package);
         }
 
-        $package->setUpdatedAt(new \DateTimeImmutable());
-        $package->setCrawledAt(new \DateTimeImmutable());
+        $package->setUpdatedAt(new DateTimeImmutable());
+        $package->setCrawledAt(new DateTimeImmutable());
 
         if ($flags & self::FORCE_DUMP) {
             $package->setDumpedAt(null);
@@ -426,7 +425,7 @@ class Updater
         $version->setLicense($data->getLicense() ?: []);
 
         $version->setPackage($package);
-        $version->setUpdatedAt(new \DateTimeImmutable());
+        $version->setUpdatedAt(new DateTimeImmutable());
         $version->setSoftDeletedAt(null);
         $version->setReleasedAt($data->getReleaseDate() === null ? null : DateTimeImmutable::createFromInterface($data->getReleaseDate()));
 

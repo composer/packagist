@@ -15,7 +15,6 @@ namespace App\Entity;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
-use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
 

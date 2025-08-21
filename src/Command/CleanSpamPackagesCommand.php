@@ -19,12 +19,8 @@ use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
-use App\Service\Locker;
-use Psr\Log\LoggerInterface;
-use Seld\Signal\SignalHandler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**

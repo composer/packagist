@@ -132,7 +132,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function __construct()
     {
         $this->packages = new ArrayCollection();
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = new DateTimeImmutable();
         $this->initializeApiToken();
         $this->initializeSafeApiToken();
     }
@@ -567,7 +567,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function isPasswordRequestExpired(int $ttl): bool
     {
-        return !$this->getPasswordRequestedAt() instanceof \DateTimeImmutable || $this->getPasswordRequestedAt()->getTimestamp() + $ttl <= time();
+        return !$this->getPasswordRequestedAt() instanceof DateTimeImmutable || $this->getPasswordRequestedAt()->getTimestamp() + $ttl <= time();
     }
 
     public function getSessionBuster(): int

@@ -12,9 +12,7 @@
 
 namespace App\Tests\Controller;
 
-use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
-use App\Entity\User;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;

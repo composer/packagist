@@ -12,26 +12,10 @@
 
 namespace App\Command;
 
-use App\Entity\Dist;
-use App\Entity\DistType;
-use App\Entity\Version;
-use App\Service\FallbackGitHubAuthProvider;
-use Composer\Util\HttpDownloader;
-use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\Package;
-use App\Package\V2Dumper;
-use App\Service\Locker;
-use Psr\Log\LoggerInterface;
-use Seld\Signal\SignalHandler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\HttpClient\Exception\TimeoutException;
-use Symfony\Component\HttpClient\Exception\TransportException;
-use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
-use ZipArchive;
 
 class MigrateDataTypesCommand extends Command
 {

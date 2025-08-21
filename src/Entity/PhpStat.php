@@ -98,7 +98,7 @@ class PhpStat
         }
 
         $this->data = [];
-        $this->lastUpdated = new \DateTimeImmutable();
+        $this->lastUpdated = new DateTimeImmutable();
     }
 
     /**

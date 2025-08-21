@@ -35,6 +35,7 @@ class FallbackGitHubAuthProvider
             if (null === $fallbackToken) {
                 throw new \LogicException('Invalid fallback user '.$fallbackUser->getUsername().' has no token');
             }
+
             return $fallbackToken;
         }
 

@@ -15,7 +15,6 @@ namespace App\Security;
 use App\Entity\User;
 use Predis\Client;
 use Predis\Connection\ConnectionException;
-use Predis\Profile\RedisProfile;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
@@ -28,7 +27,8 @@ class RecaptchaHelper
         private readonly RequestStack $requestStack,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly AuthenticationUtils $authenticationUtils,
-    ){}
+    ) {
+    }
 
     public function buildContext(): RecaptchaContext
     {

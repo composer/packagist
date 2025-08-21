@@ -234,8 +234,8 @@ class Version
         $this->provide = new ArrayCollection();
         $this->devRequire = new ArrayCollection();
         $this->suggest = new ArrayCollection();
-        $this->createdAt = new \DateTimeImmutable;
-        $this->updatedAt = new \DateTimeImmutable;
+        $this->createdAt = new DateTimeImmutable;
+        $this->updatedAt = new DateTimeImmutable;
     }
 
     /**
@@ -349,7 +349,7 @@ class Version
             ksort($array['support']);
         }
         if (isset($array['php-ext']['configure-options']) && is_array($array['php-ext']['configure-options'])) {
-            usort($array['php-ext']['configure-options'], fn ($a, $b) => ($a['name'] ?? '') <=> ($b['name'] ?? ''));
+            usort($array['php-ext']['configure-options'], static fn ($a, $b) => ($a['name'] ?? '') <=> ($b['name'] ?? ''));
         }
 
         return $array;

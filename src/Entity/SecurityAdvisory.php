@@ -98,7 +98,7 @@ class SecurityAdvisory
         $this->findSecurityAdvisorySource($advisory->source)?->update($advisory);
 
         $now = new DateTimeImmutable();
-        $allSeverities = $this->sources->map(fn (SecurityAdvisorySource $source) => $source->getSeverity())->toArray();
+        $allSeverities = $this->sources->map(static fn (SecurityAdvisorySource $source) => $source->getSeverity())->toArray();
         if ($advisory->severity && (!$this->severity || !in_array($this->severity, $allSeverities, true))) {
             $this->updatedAt = $now;
             $this->severity = $advisory->severity;

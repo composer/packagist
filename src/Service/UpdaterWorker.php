@@ -14,7 +14,6 @@ namespace App\Service;
 
 use Doctrine\ORM\EntityNotFoundException;
 use App\Entity\PackageFreezeReason;
-use App\Entity\User;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use Composer\Pcre\Preg;
 use Psr\Cache\CacheItemPoolInterface;
@@ -134,7 +133,7 @@ class UpdaterWorker
 
         // sandbox into a unique cache dir per package id to avoid potential cache reuse issues
         if (trim($this->updaterWorkerCacheDir) !== '' && is_dir($this->updaterWorkerCacheDir)) {
-            $subDir = str_pad((string)$package->getId(), 9, '0', STR_PAD_LEFT);
+            $subDir = str_pad((string) $package->getId(), 9, '0', STR_PAD_LEFT);
             $subDir = substr($subDir, 0, 6).'/'.$package->getId();
             $config->merge(['config' => ['cache-dir' => $this->updaterWorkerCacheDir.'/'.$subDir]]);
             unset($subDir);
@@ -451,6 +450,7 @@ class UpdaterWorker
             ->allowAttribute('style', ['span'])
             ->withMaxInputLength(10_000_000);
         $sanitizer = new HtmlSanitizer($config);
+
         return $sanitizer->sanitize($str);
     }
 

@@ -23,7 +23,8 @@ class RecaptchaExtension extends AbstractTypeExtension
     public function __construct(
         private readonly FormInvalidPasswordSubscriber $formInvalidPasswordSubscriber,
         private readonly FormBruteForceSubscriber $formBruteForceSubscriber,
-    ) {}
+    ) {
+    }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
