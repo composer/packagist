@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Validator\NotReservedWord;
+use Deprecated;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
@@ -352,6 +353,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         $this->sessionBuster = $data['session_buster'] ?? 0;
     }
 
+    #[Deprecated]
     public function eraseCredentials(): void
     {
     }
