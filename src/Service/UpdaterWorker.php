@@ -310,6 +310,9 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Please ask the owner to check their account')) {
                 // git clone says account is disabled on github for private repos(?) if cloning via https
                 $found404 = true;
+            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Your account is suspended.')) {
+                // git clone says account is suspended on github
+                $found404 = true;
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), 'Access to this repository has been disabled by GitHub staff due to excessive resource use.')) {
                 // git clone says repo is disabled on github
                 $found404 = true;

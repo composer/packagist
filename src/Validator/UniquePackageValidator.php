@@ -46,7 +46,7 @@ class UniquePackageValidator extends ConstraintValidator
 
         try {
             if ($this->packageRepository->findOneByName($value->getName())) {
-                $this->context->buildViolation('A package with the name <a href="'.$this->urlGenerator->generate('view_package', ['name' => $value->getName()]).'">'.$value->getName().'</a> already exists.')
+                $this->context->buildViolation('A package with the name <a href="'.$this->urlGenerator->generate('view_package', ['name' => $value->getName()]).'">'.$value->getName().'</a> already exists. You should update the name property in your composer.json file.')
                     ->atPath('repository')
                     ->addViolation()
                 ;
