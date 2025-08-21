@@ -299,7 +299,8 @@ class PackageRepository extends ServiceEntityRepository
             ->select('p.id, d.lastUpdated, p.createdAt')
             ->leftJoin('p.downloads', 'd')
             ->where('((d.type = :type AND d.lastUpdated < :time) OR d.lastUpdated IS NULL)')
-            ->setParameters(['type' => Download::TYPE_PACKAGE, 'time' => new \DateTime('-20hours')])
+            ->setParameter('type', Download::TYPE_PACKAGE)
+            ->setParameter('time', new \DateTimeImmutable('-20hours'))
             ->getQuery()
             ->getResult();
 
@@ -314,8 +315,8 @@ class PackageRepository extends ServiceEntityRepository
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
             ->from('App\Entity\Package', 'p')
-            ->where('p.name = ?0')
-            ->setParameters([$name]);
+            ->where('p.name = :name')
+            ->setParameter('name', $name);
         $pkg = $qb->getQuery()->getSingleResult();
 
         // then fetch partial version data here to avoid fetching tons of data,
@@ -326,8 +327,8 @@ class PackageRepository extends ServiceEntityRepository
             ->from('App\Entity\Version', 'v')
             ->orderBy('v.development', 'DESC')
             ->addOrderBy('v.releasedAt', 'DESC')
-            ->where('v.package = ?0')
-            ->setParameters([$pkg]);
+            ->where('v.package = :package')
+            ->setParameter('package', $pkg);
 
         $versions = [];
         $reflId = new \ReflectionProperty(Version::class, 'id');
@@ -357,8 +358,8 @@ class PackageRepository extends ServiceEntityRepository
         $qb->select('p', 'm')
             ->from(Package::class, 'p')
             ->leftJoin('p.maintainers', 'm')
-            ->where('p.name = ?0')
-            ->setParameters([$name]);
+            ->where('p.name = :name')
+            ->setParameter('name', $name);
 
         return $qb->getQuery()->getSingleResult();
     }

@@ -27,7 +27,7 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use DateTimeInterface;
+use DateTimeImmutable;
 
 #[ORM\Entity(repositoryClass: 'App\Entity\UserRepository')]
 #[ORM\Table(name: 'fos_user')]
@@ -80,8 +80,8 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[ORM\Column(type: 'string', nullable: true)]
     private string|null $salt = null;
 
-    #[ORM\Column(type: 'datetime', name: 'last_login', nullable: true)]
-    private DateTimeInterface|null $lastLogin = null;
+    #[ORM\Column(type: 'datetime_immutable', name: 'last_login', nullable: true)]
+    private DateTimeImmutable|null $lastLogin = null;
 
     /**
      * Random string sent to the user email address in order to verify it.
@@ -89,8 +89,8 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[ORM\Column(type: 'string', name: 'confirmation_token', length: 180, nullable: true, unique: true)]
     private string|null $confirmationToken = null;
 
-    #[ORM\Column(type: 'datetime', name: 'password_requested_at', nullable: true)]
-    private DateTimeInterface|null $passwordRequestedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', name: 'password_requested_at', nullable: true)]
+    private DateTimeImmutable|null $passwordRequestedAt = null;
 
     /**
      * @var Collection<int, Package>&Selectable<int, Package>
@@ -98,8 +98,8 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[ORM\ManyToMany(targetEntity: Package::class, mappedBy: 'maintainers')]
     private Collection $packages;
 
-    #[ORM\Column(type: 'datetime')]
-    private DateTimeInterface $createdAt;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'string', length: 40)]
     private string $apiToken;
@@ -165,7 +165,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return $this->packages;
     }
 
-    public function getCreatedAt(): DateTimeInterface
+    public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -400,7 +400,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return $this->password;
     }
 
-    public function getLastLogin(): DateTimeInterface|null
+    public function getLastLogin(): DateTimeImmutable|null
     {
         return $this->lastLogin;
     }
@@ -473,12 +473,12 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         $this->password = $password;
     }
 
-    public function setLastLogin(DateTimeInterface|null $time = null): void
+    public function setLastLogin(DateTimeImmutable|null $time = null): void
     {
         $this->lastLogin = $time;
     }
 
-    public function setPasswordRequestedAt(DateTimeInterface|null $date = null): void
+    public function setPasswordRequestedAt(DateTimeImmutable|null $date = null): void
     {
         $this->passwordRequestedAt = $date;
     }
@@ -492,7 +492,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     /**
      * Gets the timestamp that the user requested a password reset.
      */
-    public function getPasswordRequestedAt(): DateTimeInterface|null
+    public function getPasswordRequestedAt(): DateTimeImmutable|null
     {
         return $this->passwordRequestedAt;
     }
@@ -565,7 +565,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function isPasswordRequestExpired(int $ttl): bool
     {
-        return !$this->getPasswordRequestedAt() instanceof \DateTime || $this->getPasswordRequestedAt()->getTimestamp() + $ttl <= time();
+        return !$this->getPasswordRequestedAt() instanceof \DateTimeImmutable || $this->getPasswordRequestedAt()->getTimestamp() + $ttl <= time();
     }
 
     public function getSessionBuster(): int

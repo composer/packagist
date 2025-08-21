@@ -63,7 +63,7 @@ class ResetPasswordControllerTest extends ControllerTestCase
     {
         $user = self::createUser();
         $user->initializeConfirmationToken();
-        $user->setPasswordRequestedAt(new \DateTime());
+        $user->setPasswordRequestedAt(new \DateTimeImmutable());
 
         if ($withTwoFactor) {
             $user->setTotpSecret('secret');

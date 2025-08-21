@@ -177,7 +177,7 @@ class SymlinkDumper
             $current = 0;
             $step = 50;
             while ($packageIds) {
-                $dumpTime = new \DateTime;
+                $dumpTime = new \DateTimeImmutable();
                 $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions(array_splice($packageIds, 0, $step));
 
                 if ($verbose) {

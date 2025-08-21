@@ -160,7 +160,7 @@ class FeedController extends Controller
         if ($feed->count()) {
             $feed->setDateModified($feed->getEntry(0)->getDateModified());
         } else {
-            $feed->setDateModified(new \DateTime());
+            $feed->setDateModified(new \DateTimeImmutable());
         }
 
         return $feed;

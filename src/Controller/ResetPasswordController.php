@@ -144,7 +144,7 @@ class ResetPasswordController extends Controller
         if (null === $user->getConfirmationToken() || $user->isPasswordRequestExpired(self::RESET_TTL)) {
             // only regenerate a new token once every 24h or as needed
             $user->initializeConfirmationToken();
-            $user->setPasswordRequestedAt(new \DateTime());
+            $user->setPasswordRequestedAt(new \DateTimeImmutable());
             $this->getEM()->flush();
         }
 

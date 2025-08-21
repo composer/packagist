@@ -264,7 +264,7 @@ class DownloadManager
         $isNewRecord = false;
         if (!$record) {
             $record = new Download();
-            $record->setId((string) $id);
+            $record->setId($id);
             $record->setType($type);
             $record->setPackage($package);
             $isNewRecord = true;

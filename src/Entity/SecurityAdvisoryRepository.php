@@ -92,7 +92,8 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->leftJoin('a.sources', 's')
             ->where('s.source = :source')
             ->andWhere('s.remoteId = :id')
-            ->setParameters(['source' => $source, 'id' => $id])
+            ->setParameter('source', $source)
+            ->setParameter('id', $id)
             ->getQuery()
             ->getResult();
     }
@@ -108,7 +109,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->leftJoin('a.sources', 's')
             ->where('a.packageName = :packageName')
             ->orderBy('a.reportedAt', 'DESC')
-            ->setParameters(['packageName' => $packageName])
+            ->setParameter('packageName', $packageName)
             ->getQuery()
             ->getResult();
     }

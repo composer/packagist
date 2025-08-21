@@ -41,6 +41,7 @@ use App\Entity\VersionRepository;
 use App\Entity\SuggestLink;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
+use DateTimeImmutable;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Connection;
@@ -126,8 +127,7 @@ class Updater
     {
         $httpDownloader = new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
 
-        $deleteDate = new \DateTime();
-        $deleteDate->modify('-1day');
+        $deleteDate = new \DateTimeImmutable('-1day');
 
         $em = $this->getEM();
         $rootIdentifier = null;
@@ -426,9 +426,9 @@ class Updater
         $version->setLicense($data->getLicense() ?: []);
 
         $version->setPackage($package);
-        $version->setUpdatedAt(new \DateTime);
+        $version->setUpdatedAt(new \DateTimeImmutable());
         $version->setSoftDeletedAt(null);
-        $version->setReleasedAt($data->getReleaseDate());
+        $version->setReleasedAt($data->getReleaseDate() === null ? null : DateTimeImmutable::createFromInterface($data->getReleaseDate()));
 
         if ($data->getSourceType()) {
             $source['type'] = $data->getSourceType();

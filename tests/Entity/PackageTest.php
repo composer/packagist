@@ -25,10 +25,10 @@ class PackageTest extends TestCase
         $package = new Package();
         $this->assertFalse($package->wasUpdatedInTheLast24Hours());
 
-        $package->setUpdatedAt(new \DateTime('2019-01-01'));
+        $package->setUpdatedAt(new \DateTimeImmutable('2019-01-01'));
         $this->assertFalse($package->wasUpdatedInTheLast24Hours());
 
-        $package->setUpdatedAt(new \DateTime('now'));
+        $package->setUpdatedAt(new \DateTimeImmutable('now'));
         $this->assertTrue($package->wasUpdatedInTheLast24Hours());
     }
 

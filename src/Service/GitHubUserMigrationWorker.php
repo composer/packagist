@@ -81,7 +81,7 @@ class GitHubUserMigrationWorker
             return [
                 'status' => Job::STATUS_RESCHEDULE,
                 'message' => 'Got error, rescheduling: '.$e->getMessage(),
-                'after' => new \DateTime('+5 minutes'),
+                'after' => new \DateTimeImmutable('+5 minutes'),
             ];
         }
 

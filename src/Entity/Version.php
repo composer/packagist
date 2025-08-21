@@ -19,7 +19,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use DateTimeInterface;
+use DateTimeImmutable;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -213,17 +213,17 @@ class Version
     #[ORM\Column(name: 'defaultBranch', type: 'boolean', options: ['default' => false])]
     private bool $isDefaultBranch = false;
 
-    #[ORM\Column(type: 'datetime')]
-    private DateTimeInterface $createdAt;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private DateTimeImmutable $createdAt;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $softDeletedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $softDeletedAt = null;
 
-    #[ORM\Column(type: 'datetime')]
-    private DateTimeInterface $updatedAt;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private DateTimeImmutable $updatedAt;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $releasedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $releasedAt = null;
 
     public function __construct()
     {
@@ -601,22 +601,22 @@ class Version
         return $funding;
     }
 
-    public function setCreatedAt(DateTimeInterface $createdAt): void
+    public function setCreatedAt(DateTimeImmutable $createdAt): void
     {
         $this->createdAt = $createdAt;
     }
 
-    public function getCreatedAt(): DateTimeInterface
+    public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setReleasedAt(DateTimeInterface|null $releasedAt): void
+    public function setReleasedAt(DateTimeImmutable|null $releasedAt): void
     {
         $this->releasedAt = $releasedAt;
     }
 
-    public function getReleasedAt(): DateTimeInterface|null
+    public function getReleasedAt(): DateTimeImmutable|null
     {
         return $this->releasedAt;
     }
@@ -654,22 +654,22 @@ class Version
         return false;
     }
 
-    public function setUpdatedAt(DateTimeInterface $updatedAt): void
+    public function setUpdatedAt(DateTimeImmutable $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
     }
 
-    public function getUpdatedAt(): DateTimeInterface
+    public function getUpdatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function setSoftDeletedAt(DateTimeInterface|null $softDeletedAt): void
+    public function setSoftDeletedAt(DateTimeImmutable|null $softDeletedAt): void
     {
         $this->softDeletedAt = $softDeletedAt;
     }
 
-    public function getSoftDeletedAt(): DateTimeInterface|null
+    public function getSoftDeletedAt(): DateTimeImmutable|null
     {
         return $this->softDeletedAt;
     }

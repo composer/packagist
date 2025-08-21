@@ -68,9 +68,6 @@ class UpdaterTest extends TestCase
 
         $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn([]);
         $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
-        $emMock->expects($this->any())->method('merge')->willReturnCallback(static function ($package) {
-            return $package;
-        });
         $emMock->expects($this->any())->method('persist')->willReturnCallback(static function ($object) {
             if ($reflProperty = new \ReflectionProperty($object, 'id')) {
                 $reflProperty->setValue($object, random_int(0, 10000));

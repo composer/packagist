@@ -12,6 +12,7 @@
 
 namespace App\Service;
 
+use Doctrine\ORM\EntityNotFoundException;
 use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
@@ -102,8 +103,8 @@ class UpdaterWorker
 
     /**
      * @param Job<PackageUpdateJob> $job
-     * @return PackageCompletedResult|PackageFailedResult|PackageGoneResult|RescheduleResult
-     * @return array{status: Job::STATUS_*, message?: string, after?: \DateTimeInterface, vendor?: string, details?: string, exception?: \Throwable}
+     * @phpstan-return PackageCompletedResult|PackageFailedResult|PackageGoneResult|PackageDeletedResult|RescheduleResult
+     * @return array{status: Job::STATUS_*, message?: string, after?: \DateTimeImmutable, vendor?: string, details?: string, exception?: \Throwable}
      */
     public function process(Job $job, SignalHandler $signal): array
     {
@@ -114,7 +115,7 @@ class UpdaterWorker
         if (!$package) {
             $this->logger->info('Package is gone, skipping', ['id' => $id]);
 
-            return ['status' => Job::STATUS_PACKAGE_GONE, 'message' => 'Package was deleted, skipped'];
+            return ['status' => Job::STATUS_PACKAGE_GONE, 'message' => 'Package was deleted, skipped', 'vendor' => 'unknown', 'exception' => EntityNotFoundException::fromClassNameAndIdentifier(Package::class, ['id' => (string) $id])];
         }
 
         $packageName = $package->getName();
@@ -122,7 +123,7 @@ class UpdaterWorker
 
         $lockAcquired = $this->locker->lockPackageUpdate($id);
         if (!$lockAcquired) {
-            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+5 seconds'), 'vendor' => $packageVendor, 'message' => 'Could not acquire lock'];
+            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTimeImmutable('+5 seconds'), 'vendor' => $packageVendor, 'message' => 'Could not acquire lock'];
         }
 
         $this->logger->info('Updating '.$packageName);
@@ -344,7 +345,7 @@ class UpdaterWorker
                 || Preg::isMatch('{svn: E170013: Unable to connect to a repository at URL}', $e->getMessage())
             )) {
                 // unreachable host, skip for a week as this may be a temporary failure
-                $found404 = new \DateTime('+7 days');
+                $found404 = new \DateTimeImmutable('+7 days');
             } elseif ($e instanceof TransportException && $e->getStatusCode() === 409 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?/git/refs/heads\?per_page=100" file could not be downloaded \(HTTP/2 409 \)}', $e->getMessage())) {
                 $found404 = true;
             } elseif ($e instanceof TransportException && $e->getStatusCode() === 451 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded \(HTTP/2 451 \)}', $e->getMessage())) {

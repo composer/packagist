@@ -31,7 +31,7 @@ class Scheduler
      * @param Package|int $packageOrId
      * @return Job<PackageUpdateJob>
      */
-    public function scheduleUpdate($packageOrId, string $source, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeInterface $executeAfter = null, bool $forceDump = false): Job
+    public function scheduleUpdate($packageOrId, string $source, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeImmutable $executeAfter = null, bool $forceDump = false): Job
     {
         if ($packageOrId instanceof Package) {
             $packageOrId = $packageOrId->getId();
@@ -74,7 +74,7 @@ class Scheduler
     /**
      * @return Job<SecurityAdvisoryJob>
      */
-    public function scheduleSecurityAdvisory(string $source, int $packageId, ?\DateTimeInterface $executeAfter = null): Job
+    public function scheduleSecurityAdvisory(string $source, int $packageId, ?\DateTimeImmutable $executeAfter = null): Job
     {
         return $this->createJob('security:advisory', ['source' => $source], $packageId, $executeAfter);
     }
@@ -141,7 +141,7 @@ class Scheduler
      * @param T $payload
      * @return Job<T>
      */
-    private function createJob(string $type, array $payload, ?int $packageId = null, ?\DateTimeInterface $executeAfter = null): Job
+    private function createJob(string $type, array $payload, ?int $packageId = null, ?\DateTimeImmutable $executeAfter = null): Job
     {
         $jobId = bin2hex(random_bytes(20));
 
@@ -149,7 +149,7 @@ class Scheduler
         if ($packageId) {
             $job->setPackageId($packageId);
         }
-        if ($executeAfter instanceof \DateTimeInterface) {
+        if ($executeAfter instanceof \DateTimeImmutable) {
             $job->setExecuteAfter($executeAfter);
         }
 

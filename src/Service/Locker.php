@@ -48,7 +48,7 @@ class Locker
 
     public function unlockSecurityAdvisory(string $processId): void
     {
-        $this->getConn()->connect();
+        $this->ensurePrimaryConnection();
 
         $this->getConn()->fetchOne('SELECT RELEASE_LOCK(:id)', ['id' => 'security_advisory_'.$processId]);
     }

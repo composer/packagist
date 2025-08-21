@@ -33,7 +33,7 @@
         "doctrine/annotations": "^2",
         "doctrine/common": "^3",
         "doctrine/doctrine-bundle": "^2.2",
-        "doctrine/orm": "^2.7",
+        "doctrine/orm": "^3",
         "endroid/qr-code": "^6",
         "graze/dog-statsd": "^1",
         "knplabs/knp-menu-bundle": "^3",
@@ -87,7 +87,7 @@
         "twig/twig": "^3.0"
     },
     "require-dev": {
-        "doctrine/doctrine-fixtures-bundle": "^3.4",
+        "doctrine/doctrine-fixtures-bundle": "^4",
         "phpstan/phpstan": "^2",
         "phpstan/phpstan-deprecation-rules": "^2",
         "phpstan/phpstan-doctrine": "^2",

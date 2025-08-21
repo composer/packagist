@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use DateTimeInterface;
 
@@ -27,7 +28,7 @@ class Download
 
     #[ORM\Id]
     #[ORM\Column(type: 'bigint')]
-    public string $id;
+    public int $id;
 
     /**
      * @var int one of self::TYPE_*
@@ -45,8 +46,8 @@ class Download
     #[ORM\Column(type: 'integer')]
     public int $total = 0;
 
-    #[ORM\Column(type: 'datetime')]
-    public DateTimeInterface $lastUpdated;
+    #[ORM\Column(type: 'datetime_immutable')]
+    public DateTimeImmutable $lastUpdated;
 
     #[ORM\ManyToOne(targetEntity: 'App\Entity\Package', inversedBy: 'downloads')]
     public Package|null $package = null;
@@ -56,12 +57,12 @@ class Download
         $this->total = array_sum($this->data);
     }
 
-    public function setId(string $id): void
+    public function setId(int $id): void
     {
         $this->id = $id;
     }
 
-    public function getId(): string
+    public function getId(): int
     {
         return $this->id;
     }
@@ -105,12 +106,12 @@ class Download
         return $this->total;
     }
 
-    public function setLastUpdated(DateTimeInterface $lastUpdated): void
+    public function setLastUpdated(DateTimeImmutable $lastUpdated): void
     {
         $this->lastUpdated = $lastUpdated;
     }
 
-    public function getLastUpdated(): DateTimeInterface
+    public function getLastUpdated(): DateTimeImmutable
     {
         return $this->lastUpdated;
     }

@@ -62,7 +62,7 @@ parameters:
         JobResult: 'array{status: \App\Entity\Job::STATUS_*, message: string, vendor?: string, details?: string, exceptionMsg?: string, exceptionClass?: class-string<\Throwable>, results?: array{hooks_setup: int, hooks_failed: array<int, array{package: string, reason: mixed}>, hooks_ok_unchanged: int}}'
         ErroredResult: 'array{status: \App\Entity\Job::STATUS_ERRORED, message: string, exception: \Throwable}'
         GenericCompletedResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string}'
-        RescheduleResult: 'array{status: \App\Entity\Job::STATUS_RESCHEDULE, after: \DateTimeInterface, message: string, vendor?: string}'
+        RescheduleResult: 'array{status: \App\Entity\Job::STATUS_RESCHEDULE, after: \DateTimeImmutable, message: string, vendor?: string}'
         PackageCompletedResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string, details: string, vendor: string}'
         PackageFailedResult: 'array{status: \App\Entity\Job::STATUS_FAILED, message: string, vendor: string, exception: \Throwable, details?: string}'
         PackageGoneResult: 'array{status: \App\Entity\Job::STATUS_PACKAGE_GONE, message: string, vendor: string, exception: \Throwable, details?: string}'

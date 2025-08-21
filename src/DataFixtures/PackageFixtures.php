@@ -11,6 +11,7 @@ use App\Entity\Vendor;
 use App\Model\ProviderManager;
 use App\Service\UpdaterWorker;
 use DateTime;
+use DateTimeImmutable;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
@@ -77,7 +78,7 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface, Fixt
             $progressBar->display();
 
             $package = new Package;
-            $package->setCreatedAt(new DateTime($createdAt));
+            $package->setCreatedAt(new DateTimeImmutable($createdAt));
             $package->addMaintainer($maintainer);
             $package->setRepository($repoUrl);
 

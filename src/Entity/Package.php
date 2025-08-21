@@ -32,7 +32,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Util\HttpDownloader;
-use DateTimeInterface;
+use DateTimeImmutable;
 
 enum PackageFreezeReason: string
 {
@@ -145,23 +145,23 @@ class Package
     #[Assert\NotBlank(groups: ['Update', 'Default'])]
     private string $repository;
 
-    #[ORM\Column(type: 'datetime')]
-    private DateTimeInterface $createdAt;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private DateTimeImmutable $createdAt;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $updatedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $updatedAt = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $crawledAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $crawledAt = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $indexedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $indexedAt = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $dumpedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $dumpedAt = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $dumpedAtV2 = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $dumpedAtV2 = null;
 
     /**
      * @var Collection<int, Download>&Selectable<int, Download>
@@ -219,7 +219,7 @@ class Package
         $this->versions = new ArrayCollection();
         $this->maintainers = new ArrayCollection();
         $this->downloads = new ArrayCollection();
-        $this->createdAt = new \DateTime;
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     /**
@@ -458,12 +458,12 @@ class Package
         return $this->gitHubOpenIssues;
     }
 
-    public function setCreatedAt(DateTimeInterface $createdAt): void
+    public function setCreatedAt(DateTimeImmutable $createdAt): void
     {
         $this->createdAt = $createdAt;
     }
 
-    public function getCreatedAt(): DateTimeInterface
+    public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -608,13 +608,13 @@ class Package
         return null;
     }
 
-    public function setUpdatedAt(DateTimeInterface $updatedAt): void
+    public function setUpdatedAt(DateTimeImmutable $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
         $this->setUpdateFailureNotified(false);
     }
 
-    public function getUpdatedAt(): ?DateTimeInterface
+    public function getUpdatedAt(): ?DateTimeImmutable
     {
         return $this->updatedAt;
     }
@@ -624,42 +624,42 @@ class Package
         return $this->updatedAt && $this->updatedAt > new \DateTimeImmutable('-24 hours');
     }
 
-    public function setCrawledAt(?DateTimeInterface $crawledAt): void
+    public function setCrawledAt(?DateTimeImmutable $crawledAt): void
     {
         $this->crawledAt = $crawledAt;
     }
 
-    public function getCrawledAt(): ?DateTimeInterface
+    public function getCrawledAt(): ?DateTimeImmutable
     {
         return $this->crawledAt;
     }
 
-    public function setIndexedAt(?DateTimeInterface $indexedAt): void
+    public function setIndexedAt(?DateTimeImmutable $indexedAt): void
     {
         $this->indexedAt = $indexedAt;
     }
 
-    public function getIndexedAt(): ?DateTimeInterface
+    public function getIndexedAt(): ?DateTimeImmutable
     {
         return $this->indexedAt;
     }
 
-    public function setDumpedAt(?DateTimeInterface $dumpedAt): void
+    public function setDumpedAt(?DateTimeImmutable $dumpedAt): void
     {
         $this->dumpedAt = $dumpedAt;
     }
 
-    public function getDumpedAt(): ?DateTimeInterface
+    public function getDumpedAt(): ?DateTimeImmutable
     {
         return $this->dumpedAt;
     }
 
-    public function setDumpedAtV2(?DateTimeInterface $dumpedAt): void
+    public function setDumpedAtV2(?DateTimeImmutable $dumpedAt): void
     {
         $this->dumpedAtV2 = $dumpedAt;
     }
 
-    public function getDumpedAtV2(): ?DateTimeInterface
+    public function getDumpedAtV2(): ?DateTimeImmutable
     {
         return $this->dumpedAtV2;
     }

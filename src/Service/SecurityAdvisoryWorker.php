@@ -52,7 +52,7 @@ class SecurityAdvisoryWorker
 
         $lockAcquired = $this->locker->lockSecurityAdvisory(self::ADVISORY_WORKER_RUN);
         if (!$lockAcquired) {
-            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTime('+2 minutes'), 'message' => 'Could not acquire lock'];
+            return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTimeImmutable('+2 minutes'), 'message' => 'Could not acquire lock'];
         }
 
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));

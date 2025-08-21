@@ -57,9 +57,6 @@
         },
         "files": []
     },
-    "doctrine/cache": {
-        "version": "1.10.2"
-    },
     "doctrine/collections": {
         "version": "1.6.7"
     },

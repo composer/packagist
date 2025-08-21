@@ -12,8 +12,8 @@
 
 namespace App\Entity;
 
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
-use DateTimeInterface;
 
 /**
  * @template T of array<string, string|int|bool>
@@ -64,17 +64,17 @@ class Job
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $result = null;
 
-    #[ORM\Column(type: 'datetime')]
-    private DateTimeInterface $createdAt;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private DateTimeImmutable $createdAt;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $startedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $startedAt = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $completedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $completedAt = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $executeAfter = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private DateTimeImmutable|null $executeAfter = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private int|null $packageId = null;
@@ -106,7 +106,7 @@ class Job
         $this->status = $result['status'];
     }
 
-    public function reschedule(DateTimeInterface $when): void
+    public function reschedule(DateTimeImmutable $when): void
     {
         $this->status = self::STATUS_QUEUED;
         $this->startedAt = null;
@@ -165,32 +165,32 @@ class Job
         return $this->result;
     }
 
-    public function setCreatedAt(DateTimeInterface $createdAt): void
+    public function setCreatedAt(DateTimeImmutable $createdAt): void
     {
         $this->createdAt = $createdAt;
     }
 
-    public function getCreatedAt(): DateTimeInterface
+    public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function getStartedAt(): DateTimeInterface|null
+    public function getStartedAt(): DateTimeImmutable|null
     {
         return $this->startedAt;
     }
 
-    public function setExecuteAfter(DateTimeInterface|null $executeAfter): void
+    public function setExecuteAfter(DateTimeImmutable|null $executeAfter): void
     {
         $this->executeAfter = $executeAfter;
     }
 
-    public function getExecuteAfter(): DateTimeInterface|null
+    public function getExecuteAfter(): DateTimeImmutable|null
     {
         return $this->executeAfter;
     }
 
-    public function getCompletedAt(): DateTimeInterface|null
+    public function getCompletedAt(): DateTimeImmutable|null
     {
         return $this->completedAt;
     }
