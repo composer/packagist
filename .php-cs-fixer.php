@@ -26,6 +26,7 @@ return $config
         '@PHP84Migration' => true,
         '@PHPUnit100Migration:risky' => true,
         '@PER-CS' => true,
+        '@PER-CS:risky' => true,
         '@Symfony' => true,
         '@Symfony:risky' => true,
 
