@@ -16,10 +16,11 @@ use App\Entity\SecurityAdvisory;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;
+use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 
-class ApiControllerTest extends ControllerTestCase
+class ApiControllerTest extends IntegrationTestCase
 {
     public function testGithubFailsOnGet(): void
     {
