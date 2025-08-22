@@ -13,9 +13,10 @@
 namespace App\Tests\Controller;
 
 use App\Entity\User;
+use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
 
-class UserControllerTest extends ControllerTestCase
+class UserControllerTest extends IntegrationTestCase
 {
     public function testEnableTwoFactorCode(): void
     {

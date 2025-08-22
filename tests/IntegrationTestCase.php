@@ -10,7 +10,7 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Tests\Controller;
+namespace App\Tests;
 
 use App\Entity\Package;
 use App\Entity\User;
@@ -21,7 +21,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
-class ControllerTestCase extends WebTestCase
+class IntegrationTestCase extends WebTestCase
 {
     protected KernelBrowser $client;
 

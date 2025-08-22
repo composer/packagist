@@ -13,11 +13,12 @@
 namespace App\Tests\Controller;
 
 use App\Entity\User;
+use App\Tests\IntegrationTestCase;
 use App\Validator\NotProhibitedPassword;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-class ChangePasswordControllerTest extends ControllerTestCase
+class ChangePasswordControllerTest extends IntegrationTestCase
 {
     #[TestWith(['SuperSecret123', 'ok'])]
     #[TestWith(['test@example.org', 'prohibited-password-error'])]

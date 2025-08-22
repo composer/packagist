@@ -13,8 +13,9 @@
 namespace App\Tests\Controller;
 
 use App\Entity\User;
+use App\Tests\IntegrationTestCase;
 
-class ProfileControllerTest extends ControllerTestCase
+class ProfileControllerTest extends IntegrationTestCase
 {
     public function testEditProfile(): void
     {
