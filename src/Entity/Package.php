@@ -113,9 +113,6 @@ class Package
     #[ORM\Column(type: 'string', nullable: true)]
     private ?string $language = null;
 
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $readme = null;
-
     #[ORM\Column(type: 'integer', nullable: true, name: 'github_stars')]
     private ?int $gitHubStars = null;
 
@@ -372,28 +369,6 @@ class Package
     public function getLanguage(): ?string
     {
         return $this->language;
-    }
-
-    public function setReadme(string $readme): void
-    {
-        $this->readme = $readme;
-    }
-
-    public function getReadme(): string
-    {
-        return (string) $this->readme;
-    }
-
-    /**
-     * Get readme with transformations that should not be done in the stored readme as they might not be valid in the long run
-     */
-    public function getOptimizedReadme(): string
-    {
-        if ($this->readme === null) {
-            return '';
-        }
-
-        return str_replace(['<img src="https://raw.github.com/', '<img src="https://raw.githubusercontent.com/'], '<img src="https://rawcdn.githack.com/', $this->readme);
     }
 
     public function setGitHubStars(?int $val): void

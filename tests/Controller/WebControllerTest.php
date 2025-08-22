@@ -14,9 +14,10 @@ namespace App\Tests\Controller;
 
 use App\Entity\Package;
 use App\Search\Query;
+use App\Tests\IntegrationTestCase;
 use App\Tests\Search\AlgoliaMock;
 
-class WebControllerTest extends ControllerTestCase
+class WebControllerTest extends IntegrationTestCase
 {
     public function testHomepage(): void
     {

@@ -13,10 +13,11 @@
 namespace App\Tests\Controller;
 
 use App\Entity\User;
+use App\Tests\IntegrationTestCase;
 use App\Validator\NotProhibitedPassword;
 use PHPUnit\Framework\Attributes\TestWith;
 
-class RegistrationControllerTest extends ControllerTestCase
+class RegistrationControllerTest extends IntegrationTestCase
 {
     public function testRegisterWithoutOAuth(): void
     {

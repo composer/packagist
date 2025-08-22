@@ -13,12 +13,13 @@
 namespace App\Tests\Controller;
 
 use App\Entity\User;
+use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
 use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
-class ResetPasswordControllerTest extends ControllerTestCase
+class ResetPasswordControllerTest extends IntegrationTestCase
 {
     public function testResetPassword(): void
     {

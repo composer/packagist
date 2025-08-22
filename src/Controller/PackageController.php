@@ -17,6 +17,7 @@ use App\Entity\Download;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
+use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
 use App\Entity\PhpStat;
 use App\Entity\SecurityAdvisory;
@@ -727,6 +728,8 @@ class PackageController extends Controller
         if ($this->isGranted('ROLE_ADMIN')) {
             $data['unfreezeCsrfToken'] = $csrfTokenManager->getToken('unfreeze');
         }
+
+        $data['readme'] = $this->getEM()->find(PackageReadme::class, $package->getId());
 
         return $this->render('package/view_package.html.twig', $data);
     }
