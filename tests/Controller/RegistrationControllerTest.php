@@ -36,7 +36,7 @@ class RegistrationControllerTest extends ControllerTestCase
         $em = self::getEM();
         $user = $em->getRepository(User::class)->findOneBy(['username' => 'max.example']);
         $this->assertInstanceOf(User::class, $user);
-        $this->assertSame('max@example.com', $user->getEmailCanonical(), "user email should have been canonicalized");
+        $this->assertSame('max@example.com', $user->getEmailCanonical(), 'user email should have been canonicalized');
     }
 
     #[TestWith(['max.example'])]
@@ -57,6 +57,6 @@ class RegistrationControllerTest extends ControllerTestCase
         $crawler = $this->client->submit($form);
         $this->assertResponseStatusCodeSame(422, 'Should be invalid because password is the same as email or username');
 
-        $this->assertFormError((new NotProhibitedPassword)->message, 'registration_form', $crawler);
+        $this->assertFormError(new NotProhibitedPassword()->message, 'registration_form', $crawler);
     }
 }

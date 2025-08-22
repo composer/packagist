@@ -32,6 +32,7 @@ class CdnClient
 
     /**
      * @param non-empty-string $path
+     *
      * @return int file modified time in units of 100-microseconds (i.e. 1.2345 seconds = a return value of 12345)
      */
     public function uploadMetadata(string $path, string $contents): int

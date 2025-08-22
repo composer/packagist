@@ -12,16 +12,16 @@
 
 namespace App\Command;
 
-use Composer\Pcre\Preg;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Seld\Signal\SignalHandler;
 use App\Model\DownloadManager;
 use App\Service\Locker;
+use Composer\Pcre\Preg;
+use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
+use Seld\Signal\SignalHandler;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class MigrateDownloadCountsCommand extends Command
 {

@@ -13,10 +13,10 @@
 namespace App\Tests\Controller;
 
 use App\Audit\AuditRecordType;
+use App\Entity\Package;
 use App\Entity\Version;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\Package;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class VersionAuditRecordTest extends KernelTestCase

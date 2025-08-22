@@ -24,6 +24,8 @@ use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\UserAgentParser;
 use Composer\Pcre\Preg;
+use Graze\DogStatsD\Client as StatsDClient;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,10 +33,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Graze\DogStatsD\Client as StatsDClient;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -106,7 +106,7 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
         }
 
-        $package = new Package;
+        $package = new Package();
         $package->addMaintainer($user);
         $package->setRepository($url);
         $errors = $validator->validate($package, groups: ['Default', 'Create']);
@@ -191,7 +191,7 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
         }
         if (!$package->getMaintainers()->contains($user)) {
-            throw new AccessDeniedException;
+            throw new AccessDeniedException();
         }
 
         $statsd->increment('edit_package_api');
@@ -207,7 +207,7 @@ class ApiController extends Controller
 
         $package->setRepository($payload['repository']);
 
-        $errors = $validator->validate($package, null, ["Update"]);
+        $errors = $validator->validate($package, null, ['Update']);
         if (count($errors) > 0) {
             $errorArray = [];
             foreach ($errors as $error) {
@@ -409,7 +409,7 @@ class ApiController extends Controller
     /**
      * Perform the package update
      *
-     * @param string $url the repository's URL (deducted from the request)
+     * @param string                  $url      the repository's URL (deducted from the request)
      * @param value-of<self::REGEXES> $urlRegex the regex used to split the user packages into domain and path
      */
     protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret): JsonResponse
@@ -506,13 +506,13 @@ class ApiController extends Controller
      */
     protected function findUser(Request $request, ApiType $apiType = ApiType::Unsafe): ?User
     {
-        $username = $request->request->has('username') ?
-            $request->request->get('username') :
-            $request->query->get('username');
+        $username = $request->request->has('username')
+            ? $request->request->get('username')
+            : $request->query->get('username');
 
-        $apiToken = $request->request->has('apiToken') ?
-            $request->request->get('apiToken') :
-            $request->query->get('apiToken');
+        $apiToken = $request->request->has('apiToken')
+            ? $request->request->get('apiToken')
+            : $request->query->get('apiToken');
 
         if (!$apiToken || !$username) {
             return null;
@@ -539,6 +539,7 @@ class ApiController extends Controller
      * Find a user package given by its full URL
      *
      * @param value-of<self::REGEXES> $urlRegex
+     *
      * @return list<Package>
      */
     protected function findPackagesByUrl(User $user, string $url, string $urlRegex, string|int|null $remoteId): array
@@ -577,6 +578,7 @@ class ApiController extends Controller
 
     /**
      * @param User|null $user If provided it means the request came with a user's API token and not the packagist-configured secret, so we cannot be sure it is a request coming directly from github
+     *
      * @return Package[] the packages found
      */
     protected function findGitHubPackagesByRepository(string $path, string $remoteId, string $source, ?User $user = null): array

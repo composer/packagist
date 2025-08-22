@@ -32,6 +32,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
     /**
      * @param string[] $packageNames
+     *
      * @return SecurityAdvisory[]
      */
     public function getPackageAdvisoriesWithSources(array $packageNames, string $sourceName): array
@@ -123,6 +124,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
     /**
      * @param string[] $packageNames
+     *
      * @return array<string, array<string, array{advisoryId: string, packageName: string, remoteId: string, title: string, link: string|null, cve: string|null, affectedVersions: string, sources: array<array{name: string, remoteId: string}>, reportedAt: string, composerRepository: string|null}>> An array of packageName => advisoryId => advisory-data
      */
     public function searchSecurityAdvisories(array $packageNames, int $updatedSince): array
@@ -155,8 +157,8 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId, s.severity
                 FROM security_advisory s
                 INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
-                WHERE s.updatedAt >= :updatedSince '.
-                ($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
+                WHERE s.updatedAt >= :updatedSince '
+                .($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
                 .' ORDER BY '.($filterByNames ? 's.reportedAt DESC, ' : '').'s.id DESC';
 
             $params = ['updatedSince' => date('Y-m-d H:i:s', $updatedSince)];
@@ -195,6 +197,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
     /**
      * @param string[] $packageNames
+     *
      * @return array<string, array<array{advisoryId: string, affectedVersions: string}>>
      */
     public function getAdvisoryIdsAndVersions(array $packageNames): array

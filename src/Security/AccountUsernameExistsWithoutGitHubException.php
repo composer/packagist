@@ -23,6 +23,6 @@ class AccountUsernameExistsWithoutGitHubException extends UserNotFoundException
     public function getMessageKey(): string
     {
         return 'An account with your GitHub username ('.$this->username.') already exists on Packagist.org but it is not linked to your GitHub account. '
-            . 'Please log in to it via username/password and then connect your GitHub account from the Profile > Settings page.';
+            .'Please log in to it via username/password and then connect your GitHub account from the Profile > Settings page.';
     }
 }

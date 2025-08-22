@@ -13,8 +13,8 @@
 namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 
 /**

@@ -23,7 +23,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class RequestStatsListener
 {
-    private float|null $pageTiming = null;
+    private ?float $pageTiming = null;
 
     public function __construct(
         private Client $statsd,

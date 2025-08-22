@@ -53,7 +53,7 @@ class ChangePasswordControllerTest extends ControllerTestCase
 
         if ($expectedResult === 'prohibited-password-error') {
             $this->assertResponseStatusCodeSame(422);
-            $this->assertFormError((new NotProhibitedPassword)->message, 'change_password_form', $crawler);
+            $this->assertFormError(new NotProhibitedPassword()->message, 'change_password_form', $crawler);
         }
     }
 }

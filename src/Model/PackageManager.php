@@ -13,27 +13,27 @@
 namespace App\Model;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
+use Algolia\AlgoliaSearch\SearchClient;
 use App\Entity\Dependent;
-use App\Entity\PhpStat;
-use App\Entity\User;
-use App\Service\CdnClient;
-use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\Package;
-use App\Entity\Version;
 use App\Entity\Download;
 use App\Entity\EmptyReferenceCache;
-use Psr\Log\LoggerInterface;
-use Composer\Pcre\Preg;
-use Algolia\AlgoliaSearch\SearchClient;
-use Predis\Client;
+use App\Entity\Package;
+use App\Entity\PhpStat;
+use App\Entity\User;
+use App\Entity\Version;
+use App\Service\CdnClient;
 use App\Service\GitHubUserMigrationWorker;
+use Composer\Pcre\Preg;
+use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Twig\Environment;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Address;
-use Symfony\Component\Mime\Email;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -72,7 +72,7 @@ class PackageManager
                     if ($token && $this->githubWorker->deleteWebHook($token, $package)) {
                         break;
                     }
-                } catch (TransportExceptionInterface | DecodingExceptionInterface | HttpExceptionInterface $e) {
+                } catch (TransportExceptionInterface|DecodingExceptionInterface|HttpExceptionInterface $e) {
                     // ignore
                 }
             }
@@ -184,7 +184,7 @@ class PackageManager
                     'details' => $details,
                 ]);
 
-                $message = (new Email())
+                $message = new Email()
                     ->subject($package->getName().' failed to update, invalid composer.json data')
                     ->from(new Address($this->options['from'], $this->options['fromName']))
                     ->to(...array_values($recipients))
@@ -220,8 +220,8 @@ class PackageManager
             'package_name' => $package->getName(),
         ]);
 
-        $message = (new Email)
-            ->subject('You have been added to ' . $package->getName() . ' as a maintainer')
+        $message = new Email()
+            ->subject('You have been added to '.$package->getName().' as a maintainer')
             ->from(new Address($this->options['from'], $this->options['fromName']))
             ->to((string) $user->getEmail())
             ->text($body)

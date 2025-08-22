@@ -12,16 +12,16 @@
 
 namespace App\Controller;
 
-use Doctrine\ORM\QueryBuilder;
 use App\Entity\Package;
 use App\Entity\Version;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Doctrine\ORM\QueryBuilder;
 use Laminas\Feed\Writer\Entry;
 use Laminas\Feed\Writer\Feed;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * @author Rafael Dohms <rafael@doh.ms>
@@ -120,6 +120,7 @@ class FeedController extends Controller
 
     /**
      * Limits a query to the desired number of results
+     *
      * @return iterable<Package>|iterable<Version>
      */
     protected function getLimitedResults(QueryBuilder $queryBuilder): iterable

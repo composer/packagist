@@ -44,6 +44,5 @@ class NotReservedWordValidator extends ConstraintValidator
                 return;
             }
         }
-
     }
 }

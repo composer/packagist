@@ -18,7 +18,7 @@ use Symfony\Component\HtmlSanitizer\Visitor\AttributeSanitizer\AttributeSanitize
 
 class ReadmeImageSanitizer implements AttributeSanitizerInterface
 {
-    public function __construct(private string|null $host, private string $ownerRepo, private string $basePath)
+    public function __construct(private ?string $host, private string $ownerRepo, private string $basePath)
     {
     }
 

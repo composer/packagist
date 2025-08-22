@@ -17,16 +17,16 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Service\Locker;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Doctrine\Persistence\ManagerRegistry;
-use App\Service\Locker;
-use Predis\Client;
-use Symfony\Component\Console\Command\Command;
 
 class IndexPackagesCommand extends Command
 {
@@ -124,7 +124,7 @@ class IndexPackagesCommand extends Command
 
         // update package index
         while ($ids) {
-            $indexTime = new \DateTime;
+            $indexTime = new \DateTime();
             $idsSlice = array_splice($ids, 0, 50);
             $packages = $this->getEM()->getRepository(Package::class)->findBy(['id' => $idsSlice]);
 
@@ -192,7 +192,8 @@ class IndexPackagesCommand extends Command
 
     /**
      * @param string[] $tags
-     * @return array<string, int|string|float|null|array<string, string|int>>
+     *
+     * @return array<string, int|string|float|array<string, string|int>|null>
      */
     private function packageToSearchableArray(Package $package, array $tags): array
     {
@@ -213,9 +214,9 @@ class IndexPackagesCommand extends Command
             'type' => $package->getType(),
             'repository' => $package->getRepository(),
             'language' => $package->getLanguage(),
-            # log10 of downloads over the last 7days
+            // log10 of downloads over the last 7days
             'trendiness' => $trendiness > 0 ? log($trendiness, 10) : 0,
-            # log10 of downloads + gh stars
+            // log10 of downloads + gh stars
             'popularity' => $popularity,
             'meta' => [
                 'downloads' => $downloads['total'],

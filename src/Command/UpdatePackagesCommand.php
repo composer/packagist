@@ -12,10 +12,10 @@
 
 namespace App\Command;
 
-use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
 use App\Service\Locker;
 use App\Service\Scheduler;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;

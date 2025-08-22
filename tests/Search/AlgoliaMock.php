@@ -24,7 +24,7 @@ final class AlgoliaMock extends SearchClient
 
     public static function setup(KernelBrowser $client, Query $query, string $resultName): self
     {
-        $mock = (new \ReflectionClass(__CLASS__))->newInstanceWithoutConstructor();
+        $mock = new \ReflectionClass(__CLASS__)->newInstanceWithoutConstructor();
         $mock->query = $query;
 
         if (false === $result = @include __DIR__.'/results/'.$resultName.'.php') {

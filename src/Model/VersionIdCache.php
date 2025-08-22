@@ -24,6 +24,7 @@ class VersionIdCache
 
     /**
      * @param array<array{name: string, version: string}> $payload
+     *
      * @return array<array{name: string, version: string, id?: int, vid?: int}>
      */
     public function augmentDownloadPayloadWithIds(array $payload): array

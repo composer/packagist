@@ -12,17 +12,17 @@
 
 namespace App\Service;
 
+use App\Entity\Job;
+use App\Entity\SecurityAdvisory;
 use App\EventListener\SecurityAdvisoryUpdateListener;
 use App\SecurityAdvisory\SecurityAdvisoryResolver;
+use App\SecurityAdvisory\SecurityAdvisorySourceInterface;
 use Composer\Console\HtmlOutputFormatter;
 use Composer\Factory;
 use Composer\IO\BufferIO;
-use App\Entity\Job;
-use App\Entity\SecurityAdvisory;
-use App\SecurityAdvisory\SecurityAdvisorySourceInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler;
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class SecurityAdvisoryWorker
@@ -44,6 +44,7 @@ class SecurityAdvisoryWorker
 
     /**
      * @param Job<SecurityAdvisoryJob> $job
+     *
      * @return AdvisoriesCompletedResult|AdvisoriesErroredResult|RescheduleResult
      */
     public function process(Job $job, SignalHandler $signal): array

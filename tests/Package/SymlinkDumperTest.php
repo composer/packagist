@@ -12,9 +12,9 @@
 
 namespace App\Tests\Package;
 
+use App\Package\SymlinkDumper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use App\Package\SymlinkDumper;
 
 class SymlinkDumperTest extends TestCase
 {

@@ -17,6 +17,7 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ *
  * @extends ServiceEntityRepository<Vendor>
  */
 class VendorRepository extends ServiceEntityRepository

@@ -51,7 +51,7 @@ class InternalController extends Controller
             throw new \RuntimeException('Failed gzencoding '.$contents);
         }
 
-        $path = $this->metadataDir . '/' . $path.'.gz';
+        $path = $this->metadataDir.'/'.$path.'.gz';
         if (!is_dir(dirname($path))) {
             mkdir(dirname($path), recursive: true);
         }

@@ -13,9 +13,9 @@
 namespace App\Security;
 
 use App\Entity\User;
+use Doctrine\Persistence\ManagerRegistry;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 
@@ -81,7 +81,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
     /**
      * Check if the code is a valid backup code of the user.
      *
-     * @param User   $user
+     * @param User $user
      */
     public function isBackupCode(object $user, string $code): bool
     {
@@ -97,7 +97,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
      *
      * This should only be called after the backup code has been confirmed and consumed.
      *
-     * @param User   $user
+     * @param User $user
      */
     public function invalidateBackupCode(object $user, string $code): void
     {

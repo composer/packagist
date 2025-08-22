@@ -74,7 +74,7 @@ final class Query
                     $tags[] = 'tags:"'.strtr($tag, ' ', '-').'"';
                 }
             }
-            $filters[] = '(' . implode(' OR ', $tags) . ')';
+            $filters[] = '('.implode(' OR ', $tags).')';
         }
 
         if (0 !== count($filters)) {

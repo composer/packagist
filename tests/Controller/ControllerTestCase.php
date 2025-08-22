@@ -17,7 +17,6 @@ use App\Entity\User;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use ReflectionProperty;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -53,7 +52,7 @@ class ControllerTestCase extends WebTestCase
         $formCrawler = $crawler->filter(sprintf('[name="%s"]', $formName));
         $this->assertCount(
             1,
-            $formCrawler->filter('.alert-danger:contains("' . $message . '")'),
+            $formCrawler->filter('.alert-danger:contains("'.$message.'")'),
             $formCrawler->html()."\nShould find an .alert-danger within the form with the message: '$message'",
         );
     }
@@ -88,7 +87,7 @@ class ControllerTestCase extends WebTestCase
 
         $package->setName($name);
         $package->setRemoteId($remoteId);
-        (new ReflectionProperty($package, 'repository'))->setValue($package, $repository);
+        new \ReflectionProperty($package, 'repository')->setValue($package, $repository);
         if (\count($maintainers) > 0) {
             foreach ($maintainers as $user) {
                 $package->addMaintainer($user);

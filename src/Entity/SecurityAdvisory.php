@@ -15,13 +15,12 @@ namespace App\Entity;
 use App\SecurityAdvisory\AdvisoryIdGenerator;
 use App\SecurityAdvisory\AdvisoryParser;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
+use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;
-use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
-use App\SecurityAdvisory\RemoteSecurityAdvisory;
 
 #[ORM\Entity(repositoryClass: 'App\Entity\SecurityAdvisoryRepository')]
 #[ORM\Table(name: 'security_advisory')]
@@ -51,10 +50,10 @@ class SecurityAdvisory
     private string $title;
 
     #[ORM\Column(type: 'string', nullable: true)]
-    private string|null $link = null;
+    private ?string $link = null;
 
     #[ORM\Column(type: 'string', nullable: true)]
-    private string|null $cve = null;
+    private ?string $cve = null;
 
     #[ORM\Column(type: 'text')]
     private string $affectedVersions;
@@ -63,16 +62,16 @@ class SecurityAdvisory
     private string $source;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private DateTimeImmutable $reportedAt;
+    private \DateTimeImmutable $reportedAt;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private DateTimeImmutable $updatedAt;
+    private \DateTimeImmutable $updatedAt;
 
     #[ORM\Column(type: 'string', nullable: true)]
-    private string|null $composerRepository = null;
+    private ?string $composerRepository = null;
 
     #[ORM\Column(nullable: true)]
-    private Severity|null $severity = null;
+    private ?Severity $severity = null;
 
     /**
      * @var Collection<int, SecurityAdvisorySource>&Selectable<int, SecurityAdvisorySource>
@@ -87,7 +86,7 @@ class SecurityAdvisory
         $this->source = $source;
         $this->assignPackagistAdvisoryId();
 
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
 
         $this->copyAdvisory($advisory, true);
         $this->addSource($advisory->id, $source, $advisory->severity);
@@ -97,7 +96,7 @@ class SecurityAdvisory
     {
         $this->findSecurityAdvisorySource($advisory->source)?->update($advisory);
 
-        $now = new DateTimeImmutable();
+        $now = new \DateTimeImmutable();
         $allSeverities = $this->sources->map(static fn (SecurityAdvisorySource $source) => $source->getSeverity())->toArray();
         if ($advisory->severity && (!$this->severity || !in_array($this->severity, $allSeverities, true))) {
             $this->updatedAt = $now;
@@ -109,15 +108,15 @@ class SecurityAdvisory
         }
 
         if (
-            $this->remoteId !== $advisory->id ||
-            $this->packageName !== $advisory->packageName ||
-            $this->title !== $advisory->title ||
-            $this->link !== $advisory->link ||
-            $this->cve !== $advisory->cve ||
-            $this->affectedVersions !== $advisory->affectedVersions ||
-            $this->reportedAt != $advisory->date ||
-            $this->composerRepository !== $advisory->composerRepository ||
-            ($this->severity !== $advisory->severity && $advisory->severity)
+            $this->remoteId !== $advisory->id
+            || $this->packageName !== $advisory->packageName
+            || $this->title !== $advisory->title
+            || $this->link !== $advisory->link
+            || $this->cve !== $advisory->cve
+            || $this->affectedVersions !== $advisory->affectedVersions
+            || $this->reportedAt != $advisory->date
+            || $this->composerRepository !== $advisory->composerRepository
+            || ($this->severity !== $advisory->severity && $advisory->severity)
         ) {
             $this->updatedAt = $now;
         }
@@ -260,7 +259,7 @@ class SecurityAdvisory
         return !$this->sources->isEmpty();
     }
 
-    public function addSource(string $remoteId, string $source, Severity|null $severity): void
+    public function addSource(string $remoteId, string $source, ?Severity $severity): void
     {
         if (null === $this->getSourceRemoteId($source)) {
             $this->sources->add(new SecurityAdvisorySource($this, $remoteId, $source, $severity));

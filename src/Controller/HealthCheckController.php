@@ -12,18 +12,18 @@
 
 namespace App\Controller;
 
+use App\HealthCheck\MetadataDirCheck;
+use App\HealthCheck\RedisHealthCheck;
+use Laminas\Diagnostics\Check;
 use Laminas\Diagnostics\Result\Collection;
 use Laminas\Diagnostics\Result\ResultInterface;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Laminas\Diagnostics\Check;
 use Laminas\Diagnostics\Runner\Runner;
-use App\HealthCheck\RedisHealthCheck;
-use App\HealthCheck\MetadataDirCheck;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Attribute\Route;
 
 class HealthCheckController
 {

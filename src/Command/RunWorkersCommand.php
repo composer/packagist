@@ -12,14 +12,14 @@
 
 namespace App\Command;
 
+use App\Service\QueueWorker;
 use App\Util\Killswitch;
 use Monolog\Logger;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\Command;
-use App\Service\QueueWorker;
 use Symfony\Component\Lock\Exception\LockReleasingException;
 
 class RunWorkersCommand extends Command
@@ -53,7 +53,7 @@ class RunWorkersCommand extends Command
 
         ini_set('memory_limit', '1G');
 
-        if (!$this->lock('packagist_run_' . $input->getOption('worker-id'))) {
+        if (!$this->lock('packagist_run_'.$input->getOption('worker-id'))) {
             if ($input->getOption('verbose')) {
                 $output->writeln('Aborting, another of the same worker is still active');
             }

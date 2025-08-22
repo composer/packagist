@@ -12,16 +12,16 @@
 
 namespace App\Entity;
 
-use DateTimeImmutable;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\Query;
-use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\DBAL\Cache\QueryCacheProfile;
+use Doctrine\ORM\Query;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ *
  * @extends ServiceEntityRepository<Package>
  */
 class PackageRepository extends ServiceEntityRepository
@@ -152,7 +152,8 @@ class PackageRepository extends ServiceEntityRepository
 
     /**
      * @param array<string, string|int|bool> $filters
-     * @param array<string> $fields
+     * @param array<string>                  $fields
+     *
      * @return array<string, array<string, string|int|bool|null>>
      */
     public function getPackagesWithFields(array $filters, array $fields): array
@@ -180,7 +181,7 @@ class PackageRepository extends ServiceEntityRepository
             $name = $row['name'];
             unset($row['name']);
             if (isset($row['abandoned']) && array_key_exists('replacementPackage', $row)) {
-                $row['abandoned'] = $row['abandoned'] == "1" ? ($row['replacementPackage'] ?? true) : false;
+                $row['abandoned'] = $row['abandoned'] == '1' ? ($row['replacementPackage'] ?? true) : false;
             }
             unset($row['replacementPackage']);
             $result[$name] = $row;
@@ -191,6 +192,7 @@ class PackageRepository extends ServiceEntityRepository
 
     /**
      * @param Query<mixed, array{name: string}> $query
+     *
      * @return list<string>
      */
     private function getPackageNamesForQuery(Query $query): array
@@ -290,7 +292,7 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return iterable<array{id: int, lastUpdated: DateTimeImmutable}>
+     * @return iterable<array{id: int, lastUpdated: \DateTimeImmutable}>
      */
     public function iterateStaleDownloadCountPackageIds(): iterable
     {
@@ -300,12 +302,12 @@ class PackageRepository extends ServiceEntityRepository
             ->leftJoin('p.downloads', 'd')
             ->where('((d.type = :type AND d.lastUpdated < :time) OR d.lastUpdated IS NULL)')
             ->setParameter('type', Download::TYPE_PACKAGE)
-            ->setParameter('time', new DateTimeImmutable('-20hours'))
+            ->setParameter('time', new \DateTimeImmutable('-20hours'))
             ->getQuery()
             ->getResult();
 
         foreach ($res as $row) {
-            yield ['id' => (int) $row['id'], 'lastUpdated' => is_null($row['lastUpdated']) ? new DateTimeImmutable($row['createdAt']->format('r')) : new DateTimeImmutable($row['lastUpdated']->format('r'))];
+            yield ['id' => (int) $row['id'], 'lastUpdated' => is_null($row['lastUpdated']) ? new \DateTimeImmutable($row['createdAt']->format('r')) : new \DateTimeImmutable($row['lastUpdated']->format('r'))];
         }
     }
 
@@ -333,7 +335,7 @@ class PackageRepository extends ServiceEntityRepository
         $versions = [];
         $reflId = new \ReflectionProperty(Version::class, 'id');
         foreach ($qb->getQuery()->getArrayResult() as $row) {
-            $versions[] = $v = new Version;
+            $versions[] = $v = new Version();
             $reflId->setValue($v, $row['id']);
             $v->setName($pkg->getName());
             $v->setPackage($pkg);
@@ -365,8 +367,9 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param list<int>|null $ids
+     * @param list<int>|null                 $ids
      * @param array<string, string|int|null> $filters
+     *
      * @return Package[]
      */
     public function getPackagesWithVersions(?array $ids = null, array $filters = []): array
@@ -390,6 +393,7 @@ class PackageRepository extends ServiceEntityRepository
 
     /**
      * @param int[] $ids
+     *
      * @return array<array{gitHubStars: int|null, id: int}>
      */
     public function getGitHubStars(array $ids): array
@@ -488,6 +492,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @param string   $name Package name to find the dependents of
      * @param int|null $type One of Dependent::TYPE_*
+     *
      * @return int<0, max>
      */
     public function getDependentCount(string $name, ?int $type = null): int
@@ -503,9 +508,10 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param string   $name Package name to find the dependents of
-     * @param int|null $type One of Dependent::TYPE_*
+     * @param string             $name    Package name to find the dependents of
+     * @param int|null           $type    One of Dependent::TYPE_*
      * @param 'downloads'|'name' $orderBy
+     *
      * @return list<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
      */
     public function getDependents(string $name, int $offset = 0, int $limit = 15, string $orderBy = 'name', ?int $type = null): array

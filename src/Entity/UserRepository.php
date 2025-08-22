@@ -19,6 +19,7 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ *
  * @extends ServiceEntityRepository<User>
  */
 class UserRepository extends ServiceEntityRepository

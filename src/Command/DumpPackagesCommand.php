@@ -12,10 +12,10 @@
 
 namespace App\Command;
 
-use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Package;
 use App\Package\SymlinkDumper;
 use App\Service\Locker;
+use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler;
 use Symfony\Component\Console\Command\Command;

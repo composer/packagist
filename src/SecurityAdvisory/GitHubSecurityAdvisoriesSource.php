@@ -60,7 +60,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
             if (count($this->fallbackGhTokens) > 0) {
                 $fallbackUser = $this->doctrine->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
                 if (null !== $fallbackUser?->getGithubToken()) {
-                    $headers = ['Authorization' => 'token ' . $fallbackUser->getGithubToken()];
+                    $headers = ['Authorization' => 'token '.$fallbackUser->getGithubToken()];
                 }
             }
 
@@ -171,35 +171,35 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
         }
 
         $query = <<<QUERY
-query {
-  securityVulnerabilities(ecosystem:COMPOSER,first:100%s) {
-    nodes {
-      advisory {
-        summary,
-        permalink,
-        publishedAt,
-        withdrawnAt,
-        severity,
-        identifiers {
-          type,
-          value
-        },
-        references {
-          url
-        }
-      },
-      vulnerableVersionRange,
-      package {
-        name
-      }
-    },
-    pageInfo {
-      hasNextPage,
-      endCursor
-    }
-  }
-}
-QUERY;
+            query {
+              securityVulnerabilities(ecosystem:COMPOSER,first:100%s) {
+                nodes {
+                  advisory {
+                    summary,
+                    permalink,
+                    publishedAt,
+                    withdrawnAt,
+                    severity,
+                    identifiers {
+                      type,
+                      value
+                    },
+                    references {
+                      url
+                    }
+                  },
+                  vulnerableVersionRange,
+                  package {
+                    name
+                  }
+                },
+                pageInfo {
+                  hasNextPage,
+                  endCursor
+                }
+              }
+            }
+            QUERY;
 
         return Preg::replace('/[ \t\n]+/', '', sprintf($query, $after));
     }

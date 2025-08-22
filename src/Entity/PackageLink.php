@@ -75,7 +75,7 @@ abstract class PackageLink
         $this->version = $version;
     }
 
-    public function getVersion(): Version|null
+    public function getVersion(): ?Version
     {
         return $this->version;
     }

@@ -13,39 +13,39 @@
 namespace App\Controller;
 
 use App\Attribute\VarName;
-use App\Entity\TemporaryTwoFactorUser;
-use App\Model\FavoriteManager;
 use App\Entity\Package;
-use App\Entity\Version;
+use App\Entity\TemporaryTwoFactorUser;
 use App\Entity\User;
+use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Form\Model\EnableTwoFactorRequest;
 use App\Form\Type\EnableTwoFactorAuthType;
+use App\Model\FavoriteManager;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\RedisAdapter;
 use App\Security\TwoFactorAuthManager;
 use App\Service\Scheduler;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\SvgWriter;
 use Pagerfanta\Pagerfanta;
+use Predis\Client as RedisClient;
 use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Predis\Client as RedisClient;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
-use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Encoding\Encoding;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -138,7 +138,7 @@ class UserController extends Controller
         }
 
         return $this->redirect(
-            $this->generateUrl("user_profile", ["name" => $user->getUsername()])
+            $this->generateUrl('user_profile', ['name' => $user->getUsername()])
         );
     }
 
@@ -192,9 +192,12 @@ class UserController extends Controller
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/users/{name}/favorites/{package}', name: 'user_remove_fav', defaults: ['_format' => 'json'], requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], methods: ['DELETE'])]
     public function deleteFavoriteAction(
-        #[VarName('name')] User $user,
-        #[CurrentUser] User $loggedUser,
-        #[MapEntity(mapping: ['package' => 'name'])] Package $package,
+        #[VarName('name')]
+        User $user,
+        #[CurrentUser]
+        User $loggedUser,
+        #[MapEntity(mapping: ['package' => 'name'])]
+        Package $package,
         FavoriteManager $favoriteManager,
     ): Response {
         if ($user->getId() !== $loggedUser->getId()) {

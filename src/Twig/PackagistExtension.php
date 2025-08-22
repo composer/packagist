@@ -116,6 +116,7 @@ class PackagistExtension extends AbstractExtension
 
     /**
      * @param PackageLink[] $links
+     *
      * @return PackageLink[]
      */
     public function sortLinks(array $links): array

@@ -32,8 +32,8 @@ class RecaptchaContext
     public function getRedisKeys(bool $forClear = false): array
     {
         return array_filter([
-            !$forClear && $this->ip ? self::LOGIN_BASE_KEY_IP . $this->ip : null,
-            $this->username ? self::LOGIN_BASE_KEY_USER . strtolower($this->username) : null,
+            !$forClear && $this->ip ? self::LOGIN_BASE_KEY_IP.$this->ip : null,
+            $this->username ? self::LOGIN_BASE_KEY_USER.strtolower($this->username) : null,
         ]);
     }
 

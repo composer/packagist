@@ -23,10 +23,10 @@ class PackageManagerTest extends TestCase
 
         $client = self::createClient();
 
-        $package = new Package;
+        $package = new Package();
         $package->setRepository($url);
 
-        $user = new User;
+        $user = new User();
         $user->addPackage($package);
 
         $repo = $this->createMock('App\Entity\UserRepository');

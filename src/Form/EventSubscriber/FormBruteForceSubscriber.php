@@ -31,12 +31,12 @@ class FormBruteForceSubscriber implements EventSubscriberInterface
 
         if ($form->isRoot() && $form instanceof Form) {
             foreach ($form->getErrors(true) as $error) {
-                $recaptchaMessage = (new Recaptcha2)->message;
+                $recaptchaMessage = new Recaptcha2()->message;
                 $cause = $error->getCause();
                 if (
                     $cause instanceof ConstraintViolation && (
-                        $cause->getCode() === RateLimitingRecaptcha::INVALID_RECAPTCHA_ERROR ||
-                        $error->getMessage() === $recaptchaMessage
+                        $cause->getCode() === RateLimitingRecaptcha::INVALID_RECAPTCHA_ERROR
+                        || $error->getMessage() === $recaptchaMessage
                     )) {
                     $form->clearErrors(true);
                     $error->getOrigin()?->addError($error);

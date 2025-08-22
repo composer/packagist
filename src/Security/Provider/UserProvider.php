@@ -12,15 +12,15 @@
 
 namespace App\Security\Provider;
 
+use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\User;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 /**
  * @implements UserProviderInterface<User>
@@ -44,9 +44,6 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         return $user;
     }
 
-    /**
-     * @inheritDoc
-     */
     public function refreshUser(UserInterface $user): User
     {
         if (!$user instanceof User) {

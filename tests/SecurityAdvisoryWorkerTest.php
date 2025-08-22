@@ -12,26 +12,26 @@
 
 namespace App\Tests;
 
+use App\Entity\Job;
 use App\Entity\Package;
+use App\Entity\SecurityAdvisory;
 use App\Entity\SecurityAdvisoryRepository;
 use App\EventListener\SecurityAdvisoryUpdateListener;
+use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\RemoteSecurityAdvisoryCollection;
 use App\SecurityAdvisory\SecurityAdvisoryResolver;
-use Doctrine\DBAL\Connection;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\EntityRepository;
-use App\Entity\Job;
-use App\Entity\SecurityAdvisory;
-use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\SecurityAdvisorySourceInterface;
 use App\Service\Locker;
 use App\Service\SecurityAdvisoryWorker;
+use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Psr\Log\NullLogger;
 use Seld\Signal\SignalHandler;
-use Doctrine\Persistence\ManagerRegistry;
 
 class SecurityAdvisoryWorkerTest extends TestCase
 {
@@ -170,10 +170,10 @@ class SecurityAdvisoryWorkerTest extends TestCase
     {
         return new RemoteSecurityAdvisory(
             $remoteId,
-            'Advisory' . $packageName,
+            'Advisory'.$packageName,
             $packageName,
             '^1.0',
-            'https://example/' . $packageName,
+            'https://example/'.$packageName,
             null,
             new \DateTimeImmutable(),
             null,

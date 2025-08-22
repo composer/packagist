@@ -14,25 +14,24 @@ namespace App\Entity;
 
 use App\Service\UpdaterWorker;
 use App\Util\HttpDownloaderOptionsFactory;
+use App\Validator\Copyright;
 use App\Validator\PopularPackageSafety;
 use App\Validator\TypoSquatters;
-use App\Validator\Copyright;
 use App\Validator\UniquePackage;
 use App\Validator\ValidPackageRepository;
 use App\Validator\VendorWritable;
 use Composer\Factory;
 use Composer\IO\NullIO;
 use Composer\Pcre\Preg;
+use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
+use Composer\Util\HttpDownloader;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use Composer\Repository\Vcs\GitHubDriver;
-use Composer\Util\HttpDownloader;
-use DateTimeImmutable;
 
 enum PackageFreezeReason: string
 {
@@ -42,7 +41,7 @@ enum PackageFreezeReason: string
 
     public function translationKey(): string
     {
-        return 'freezing_reasons.' . $this->value;
+        return 'freezing_reasons.'.$this->value;
     }
 
     public function isSpam(): bool
@@ -63,6 +62,7 @@ enum PackageFreezeReason: string
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ *
  * @phpstan-import-type VersionArray from Version
  */
 #[ORM\Entity(repositoryClass: 'App\Entity\PackageRepository')]
@@ -105,28 +105,28 @@ class Package
     private string $vendor = '';
 
     #[ORM\Column(nullable: true)]
-    private string|null $type = null;
+    private ?string $type = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    private string|null $description = null;
+    private ?string $description = null;
 
     #[ORM\Column(type: 'string', nullable: true)]
-    private string|null $language = null;
+    private ?string $language = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    private string|null $readme = null;
+    private ?string $readme = null;
 
     #[ORM\Column(type: 'integer', nullable: true, name: 'github_stars')]
-    private int|null $gitHubStars = null;
+    private ?int $gitHubStars = null;
 
     #[ORM\Column(type: 'integer', nullable: true, name: 'github_watches')]
-    private int|null $gitHubWatches = null;
+    private ?int $gitHubWatches = null;
 
     #[ORM\Column(type: 'integer', nullable: true, name: 'github_forks')]
-    private int|null $gitHubForks = null;
+    private ?int $gitHubForks = null;
 
     #[ORM\Column(type: 'integer', nullable: true, name: 'github_open_issues')]
-    private int|null $gitHubOpenIssues = null;
+    private ?int $gitHubOpenIssues = null;
 
     /**
      * @var Collection<int, Version>&Selectable<int, Version>
@@ -146,22 +146,22 @@ class Package
     private string $repository;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private DateTimeImmutable $createdAt;
+    private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $updatedAt = null;
+    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $crawledAt = null;
+    private ?\DateTimeImmutable $crawledAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $indexedAt = null;
+    private ?\DateTimeImmutable $indexedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $dumpedAt = null;
+    private ?\DateTimeImmutable $dumpedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $dumpedAtV2 = null;
+    private ?\DateTimeImmutable $dumpedAtV2 = null;
 
     /**
      * @var Collection<int, Download>&Selectable<int, Download>
@@ -170,7 +170,7 @@ class Package
     private Collection $downloads;
 
     #[ORM\Column(type: 'string', nullable: true)]
-    private string|null $remoteId = null;
+    private ?string $remoteId = null;
 
     /**
      * @var int one of self::AUTO_*
@@ -182,7 +182,7 @@ class Package
     private bool $abandoned = false;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private string|null $replacementPackage = null;
+    private ?string $replacementPackage = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $updateFailureNotified = false;
@@ -191,39 +191,41 @@ class Package
      * If set, the content is the reason for being marked suspicious
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private string|null $suspect = null;
+    private ?string $suspect = null;
 
     /**
      * If set, the content is the reason for being frozen
      */
     #[ORM\Column(nullable: true)]
-    private PackageFreezeReason|null $frozen = null;
+    private ?PackageFreezeReason $frozen = null;
 
     /**
      * @internal
-     * @var true|null|VcsDriverInterface
+     *
+     * @var true|VcsDriverInterface|null
      */
     public VcsDriverInterface|bool|null $vcsDriver = true;
     /**
      * @internal
      */
-    public string|null $vcsDriverError = null;
+    public ?string $vcsDriverError = null;
 
     /**
      * @var array<string, Version>|null lookup table for versions
      */
-    private array|null $cachedVersions = null;
+    private ?array $cachedVersions = null;
 
     public function __construct()
     {
         $this->versions = new ArrayCollection();
         $this->maintainers = new ArrayCollection();
         $this->downloads = new ArrayCollection();
-        $this->createdAt = new DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     /**
      * @param VersionRepository|array<string,VersionArray> $versionRepo Version repo or an already array-ified version dataset
+     *
      * @return array{
      *     name: string,
      *     description: string|null,
@@ -313,7 +315,7 @@ class Package
     /**
      * @return array<string>|null Vendor and package name
      */
-    public function getGitHubComponents(): array|null
+    public function getGitHubComponents(): ?array
     {
         if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)github.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
             return $match;
@@ -325,7 +327,7 @@ class Package
     /**
      * @return array<string>|null Vendor and package name
      */
-    public function getGitLabComponents(): array|null
+    public function getGitLabComponents(): ?array
     {
         if (Preg::isMatchStrictGroups('{^(?:git://|git@|https?://)gitlab.com[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $this->getRepository(), $match)) {
             return $match;
@@ -352,12 +354,12 @@ class Package
         return Preg::replace('{^[^/]*/}', '', $this->name);
     }
 
-    public function setDescription(string|null $description): void
+    public function setDescription(?string $description): void
     {
         $this->description = $description;
     }
 
-    public function getDescription(): string|null
+    public function getDescription(): ?string
     {
         return $this->description;
     }
@@ -367,7 +369,7 @@ class Package
         $this->language = $language;
     }
 
-    public function getLanguage(): string|null
+    public function getLanguage(): ?string
     {
         return $this->language;
     }
@@ -394,76 +396,76 @@ class Package
         return str_replace(['<img src="https://raw.github.com/', '<img src="https://raw.githubusercontent.com/'], '<img src="https://rawcdn.githack.com/', $this->readme);
     }
 
-    public function setGitHubStars(int|null $val): void
+    public function setGitHubStars(?int $val): void
     {
         $this->gitHubStars = $val;
     }
 
-    public function getGitHubStars(): int|null
+    public function getGitHubStars(): ?int
     {
         return $this->gitHubStars;
     }
 
-    public function getGitHubStarsUrl(): string|null
+    public function getGitHubStarsUrl(): ?string
     {
         if ($this->isGitHub()) {
-            return $this->getBrowsableRepository() . '/stargazers';
+            return $this->getBrowsableRepository().'/stargazers';
         }
         if ($this->isGitLab()) {
-            return $this->getBrowsableRepository() . '/-/starrers';
+            return $this->getBrowsableRepository().'/-/starrers';
         }
 
         return null;
     }
 
-    public function setGitHubWatches(int|null $val): void
+    public function setGitHubWatches(?int $val): void
     {
         $this->gitHubWatches = $val;
     }
 
-    public function getGitHubWatches(): int|null
+    public function getGitHubWatches(): ?int
     {
         return $this->gitHubWatches;
     }
 
-    public function setGitHubForks(int|null $val): void
+    public function setGitHubForks(?int $val): void
     {
         $this->gitHubForks = $val;
     }
 
-    public function getGitHubForks(): int|null
+    public function getGitHubForks(): ?int
     {
         return $this->gitHubForks;
     }
 
-    public function getGitHubForksUrl(): string|null
+    public function getGitHubForksUrl(): ?string
     {
         if ($this->isGitHub()) {
-            return $this->getBrowsableRepository() . '/forks';
+            return $this->getBrowsableRepository().'/forks';
         }
         if ($this->isGitLab()) {
-            return $this->getBrowsableRepository() . '/-/forks';
+            return $this->getBrowsableRepository().'/-/forks';
         }
 
         return null;
     }
 
-    public function setGitHubOpenIssues(int|null $val): void
+    public function setGitHubOpenIssues(?int $val): void
     {
         $this->gitHubOpenIssues = $val;
     }
 
-    public function getGitHubOpenIssues(): int|null
+    public function getGitHubOpenIssues(): ?int
     {
         return $this->gitHubOpenIssues;
     }
 
-    public function setCreatedAt(DateTimeImmutable $createdAt): void
+    public function setCreatedAt(\DateTimeImmutable $createdAt): void
     {
         $this->createdAt = $createdAt;
     }
 
-    public function getCreatedAt(): DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -493,7 +495,7 @@ class Package
         $repoUrl = Preg::replace('{^(https://bitbucket.org/[^/]+/[^/]+)/src/[^.]+}i', '$1.git', $repoUrl);
 
         // normalize protocol case
-        $repoUrl = Preg::replaceCallbackStrictGroups('{^(https?|git|svn)://}i', static fn ($match) => strtolower($match[1]) . '://', $repoUrl);
+        $repoUrl = Preg::replaceCallbackStrictGroups('{^(https?|git|svn)://}i', static fn ($match) => strtolower($match[1]).'://', $repoUrl);
 
         $this->repository = $repoUrl;
         $this->remoteId = null;
@@ -592,7 +594,7 @@ class Package
         return $this->versions;
     }
 
-    public function getVersion(string $normalizedVersion): Version|null
+    public function getVersion(string $normalizedVersion): ?Version
     {
         if (null === $this->cachedVersions) {
             $this->cachedVersions = [];
@@ -608,58 +610,58 @@ class Package
         return null;
     }
 
-    public function setUpdatedAt(DateTimeImmutable $updatedAt): void
+    public function setUpdatedAt(\DateTimeImmutable $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
         $this->setUpdateFailureNotified(false);
     }
 
-    public function getUpdatedAt(): ?DateTimeImmutable
+    public function getUpdatedAt(): ?\DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
     public function wasUpdatedInTheLast24Hours(): bool
     {
-        return $this->updatedAt && $this->updatedAt > new DateTimeImmutable('-24 hours');
+        return $this->updatedAt && $this->updatedAt > new \DateTimeImmutable('-24 hours');
     }
 
-    public function setCrawledAt(?DateTimeImmutable $crawledAt): void
+    public function setCrawledAt(?\DateTimeImmutable $crawledAt): void
     {
         $this->crawledAt = $crawledAt;
     }
 
-    public function getCrawledAt(): ?DateTimeImmutable
+    public function getCrawledAt(): ?\DateTimeImmutable
     {
         return $this->crawledAt;
     }
 
-    public function setIndexedAt(?DateTimeImmutable $indexedAt): void
+    public function setIndexedAt(?\DateTimeImmutable $indexedAt): void
     {
         $this->indexedAt = $indexedAt;
     }
 
-    public function getIndexedAt(): ?DateTimeImmutable
+    public function getIndexedAt(): ?\DateTimeImmutable
     {
         return $this->indexedAt;
     }
 
-    public function setDumpedAt(?DateTimeImmutable $dumpedAt): void
+    public function setDumpedAt(?\DateTimeImmutable $dumpedAt): void
     {
         $this->dumpedAt = $dumpedAt;
     }
 
-    public function getDumpedAt(): ?DateTimeImmutable
+    public function getDumpedAt(): ?\DateTimeImmutable
     {
         return $this->dumpedAt;
     }
 
-    public function setDumpedAtV2(?DateTimeImmutable $dumpedAt): void
+    public function setDumpedAtV2(?\DateTimeImmutable $dumpedAt): void
     {
         $this->dumpedAtV2 = $dumpedAt;
     }
 
-    public function getDumpedAtV2(): ?DateTimeImmutable
+    public function getDumpedAtV2(): ?\DateTimeImmutable
     {
         return $this->dumpedAtV2;
     }
@@ -691,12 +693,12 @@ class Package
         $this->type = $type;
     }
 
-    public function getType(): string|null
+    public function getType(): ?string
     {
         return $this->type;
     }
 
-    public function getInstallCommand(Version|null $version = null): string
+    public function getInstallCommand(?Version $version = null): string
     {
         if (in_array($this->getType(), ['php-ext', 'php-ext-zend'], true)) {
             return 'pie install '.$this->getName();
@@ -715,12 +717,12 @@ class Package
         return sprintf('composer %s %s', $command, $this->getName());
     }
 
-    public function setRemoteId(string|null $remoteId): void
+    public function setRemoteId(?string $remoteId): void
     {
         $this->remoteId = $remoteId;
     }
 
-    public function getRemoteId(): string|null
+    public function getRemoteId(): ?string
     {
         return $this->remoteId;
     }

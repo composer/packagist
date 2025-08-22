@@ -70,7 +70,7 @@ class RecaptchaHelper
             return;
         }
 
-        /** @phpstan-ignore-next-line method.notFound */
+        /* @phpstan-ignore-next-line method.notFound */
         $this->redisCache->incrFailedLoginCounter(...$context->getRedisKeys());
     }
 

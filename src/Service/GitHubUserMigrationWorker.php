@@ -12,13 +12,13 @@
 
 namespace App\Service;
 
-use Composer\Pcre\Preg;
-use Psr\Log\LoggerInterface;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\User;
-use App\Entity\Job;
 use App\Util\DoctrineTrait;
+use Composer\Pcre\Preg;
+use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler;
 use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
@@ -43,6 +43,7 @@ class GitHubUserMigrationWorker
 
     /**
      * @param Job<GitHubUserMigrateJob> $job
+     *
      * @return GenericCompletedResult|GitHubMigrationFailedResult|RescheduleResult|GitHubMigrationResult
      */
     public function process(Job $job, SignalHandler $signal): array
@@ -77,7 +78,7 @@ class GitHubUserMigrationWorker
                 }
                 // null result means not processed as not a github-like URL
             }
-        } catch (TransportExceptionInterface | DecodingExceptionInterface | HttpExceptionInterface $e) {
+        } catch (TransportExceptionInterface|DecodingExceptionInterface|HttpExceptionInterface $e) {
             return [
                 'status' => Job::STATUS_RESCHEDULE,
                 'message' => 'Got error, rescheduling: '.$e->getMessage(),
@@ -92,7 +93,7 @@ class GitHubUserMigrationWorker
         ];
     }
 
-    public function setupWebHook(string $token, Package $package): null|bool|string
+    public function setupWebHook(string $token, Package $package): bool|string|null
     {
         if (!Preg::isMatch('#^(?:(?:https?|git)://([^/]+)/|git@([^:]+):)(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git|/)?$#', $package->getRepository(), $match)) {
             return null;
@@ -270,7 +271,7 @@ class GitHubUserMigrationWorker
             $opts['json'] = $json;
         }
 
-        return $this->httpClient->request($method, 'https://api.github.com/' . $url, $opts);
+        return $this->httpClient->request($method, 'https://api.github.com/'.$url, $opts);
     }
 
     /**

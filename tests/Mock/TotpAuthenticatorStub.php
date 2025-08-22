@@ -12,10 +12,10 @@
 
 namespace App\Tests\Mock;
 
+use ParagonIE\ConstantTime\Base32;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpFactory;
-use ParagonIE\ConstantTime\Base32;
 
 class TotpAuthenticatorStub implements TotpAuthenticatorInterface
 {

@@ -70,7 +70,7 @@ class CopyrightValidator extends ConstraintValidator
                 continue;
             }
 
-            $message = (new Email())
+            $message = new Email()
                 ->subject('Packagist.org package submission notification: '.$value->getName().' contains '.$vendor.' in its vendor name')
                 ->from(new Address($this->mailFromEmail))
                 ->to($config['email'])

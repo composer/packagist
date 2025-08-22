@@ -12,19 +12,19 @@
 
 namespace App\Package;
 
-use App\Entity\PackageFreezeReason;
-use Composer\Pcre\Preg;
-use Doctrine\DBAL\ArrayParameterType;
-use Seld\Signal\SignalHandler;
-use Symfony\Component\Filesystem\Filesystem;
-use Composer\Util\Filesystem as ComposerFilesystem;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Finder\Finder;
-use App\Entity\Version;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
+use App\Entity\Version;
+use Composer\Pcre\Preg;
+use Composer\Util\Filesystem as ComposerFilesystem;
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
+use Seld\Signal\SignalHandler;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Webmozart\Assert\Assert;
 
 /**
@@ -40,30 +40,35 @@ class SymlinkDumper
 
     /**
      * Data cache
+     *
      * @var array<string, mixed>
      */
     private array $rootFile;
 
     /**
      * Data cache
+     *
      * @var array<string, mixed>
      */
     private array $listings = [];
 
     /**
      * Data cache
+     *
      * @var array<string, mixed>
      */
     private array $individualFiles = [];
 
     /**
      * Modified times of individual files
+     *
      * @var array<string, mixed>
      */
     private array $individualFilesMtime = [];
 
     /**
      * Stores all the disk writes to be replicated in the second build dir after the symlink has been swapped
+     *
      * @var array<string, array{string, int|null}>|false
      */
     private array|bool $writeLog = [];
@@ -76,7 +81,8 @@ class SymlinkDumper
         private string $buildDir,
         /**
          * Generate compressed files.
-         * @var int 0 disabled, 9 maximum.
+         *
+         * @var int 0 disabled, 9 maximum
          */
         private int $compress,
         private StatsDClient $statsd,
@@ -85,7 +91,7 @@ class SymlinkDumper
         $webDir = realpath($webDir);
         Assert::string($webDir);
         $this->webDir = $webDir;
-        $this->cfs = new ComposerFilesystem;
+        $this->cfs = new ComposerFilesystem();
     }
 
     /**
@@ -297,10 +303,10 @@ class SymlinkDumper
             $rootFile = $buildDir.'/packages.json';
             $this->rootFile = ['packages' => []];
             $this->rootFile['notify-batch'] = $this->router->generate('track_download_batch', [], UrlGeneratorInterface::ABSOLUTE_URL);
-            $this->rootFile['providers-url'] = $this->router->generate('home', []) . 'p/%package%$%hash%.json';
-            $this->rootFile['metadata-url'] = $this->router->generate('home', []) . 'p2/%package%.json';
+            $this->rootFile['providers-url'] = $this->router->generate('home', []).'p/%package%$%hash%.json';
+            $this->rootFile['metadata-url'] = $this->router->generate('home', []).'p2/%package%.json';
             $this->rootFile['metadata-changes-url'] = $this->router->generate('metadata_changes', [], UrlGeneratorInterface::ABSOLUTE_URL);
-            $this->rootFile['search'] = $this->router->generate('search_api', [], UrlGeneratorInterface::ABSOLUTE_URL) . '?q=%query%&type=%type%';
+            $this->rootFile['search'] = $this->router->generate('search_api', [], UrlGeneratorInterface::ABSOLUTE_URL).'?q=%query%&type=%type%';
             $this->rootFile['list'] = $this->router->generate('list', [], UrlGeneratorInterface::ABSOLUTE_URL);
             $this->rootFile['security-advisories'] = [
                 'metadata' => true, // whether advisories are part of the metadata v2 files
@@ -576,7 +582,7 @@ class SymlinkDumper
         if ($this->compress) {
             $encoded = gzencode($json, $this->compress);
             assert(is_string($encoded));
-            $this->writeFile($file . '.gz', $encoded, $time);
+            $this->writeFile($file.'.gz', $encoded, $time);
         }
     }
 
@@ -592,7 +598,7 @@ class SymlinkDumper
 
         $json = json_encode($this->listings[$key], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $hash = hash('sha256', $json);
-        $path = substr($path, 0, -5) . '$' . $hash . '.json';
+        $path = substr($path, 0, -5).'$'.$hash.'.json';
         $time = time();
 
         if (!file_exists($path)) {
@@ -600,7 +606,7 @@ class SymlinkDumper
             if ($this->compress) {
                 $encoded = gzencode($json, $this->compress);
                 assert(is_string($encoded));
-                $this->writeFile($path . '.gz', $encoded, $time);
+                $this->writeFile($path.'.gz', $encoded, $time);
             }
         }
 
@@ -651,7 +657,7 @@ class SymlinkDumper
         $this->writeFile($path, $json, $this->individualFilesMtime[$key]);
 
         // write the hashed provider file
-        $hashedFile = substr($path, 0, -5) . '$' . hash('sha256', $json) . '.json';
+        $hashedFile = substr($path, 0, -5).'$'.hash('sha256', $json).'.json';
         $this->writeFile($hashedFile, $json);
     }
 
@@ -748,7 +754,7 @@ class SymlinkDumper
             }
         }
 
-        return "provider-archived.json";
+        return 'provider-archived.json';
     }
 
     private function writeFile(string $path, string $contents, ?int $mtime = null): void

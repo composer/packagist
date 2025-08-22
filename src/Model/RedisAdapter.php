@@ -18,6 +18,7 @@ use Pagerfanta\Adapter\AdapterInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ *
  * @template-implements AdapterInterface<Package>
  */
 class RedisAdapter implements AdapterInterface

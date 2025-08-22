@@ -1,4 +1,4 @@
-<?php declare(strict_types = 1);
+<?php declare(strict_types=1);
 
 /*
  * This file is part of Packagist.
@@ -38,7 +38,7 @@ class MetadataDirCheck implements CheckInterface
         }
 
         if ($this->awsMetadata['primary']) {
-            $packagesJson = __DIR__ . '/../../web/packages.json';
+            $packagesJson = __DIR__.'/../../web/packages.json';
 
             if (!file_exists($packagesJson)) {
                 return new Failure($packagesJson.' not found on primary server');
@@ -47,7 +47,7 @@ class MetadataDirCheck implements CheckInterface
             return new Success('Primary server metadata has been dumped');
         }
 
-        $packagesJson = __DIR__ . '/../../web/packages.json';
+        $packagesJson = __DIR__.'/../../web/packages.json';
         if (!file_exists($packagesJson)) {
             return new Failure($packagesJson.' not found');
         }
@@ -60,8 +60,8 @@ class MetadataDirCheck implements CheckInterface
         if (substr($fileContent, 0, 1) !== '{') {
             return new Failure($packagesJson.' does not look like it has json in it');
         }
-        $metaDir = __DIR__ . '/../../web/p';
-        $metaV2Dir = __DIR__ . '/../../web/p2';
+        $metaDir = __DIR__.'/../../web/p';
+        $metaV2Dir = __DIR__.'/../../web/p2';
         if (!is_dir($metaDir)) {
             return new Failure($metaDir.' not found');
         }

@@ -15,7 +15,7 @@ namespace App\SecurityAdvisory;
 class AdvisoryIdGenerator
 {
     // All alphanumeric symbols except vowels and some to avoid misspellings (I, O, l, 0), case insensitive, 34 character alphabet
-    private const ALNUM_SAFE_CI = "bcdfghjkmnpqrstvwxyz123456789";
+    private const ALNUM_SAFE_CI = 'bcdfghjkmnpqrstvwxyz123456789';
 
     public static function generate(): string
     {

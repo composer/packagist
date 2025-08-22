@@ -77,7 +77,7 @@ class VersionListener
         }
     }
 
-    private function getUser(): User|null
+    private function getUser(): ?User
     {
         $user = $this->security->getUser();
 

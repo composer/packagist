@@ -12,9 +12,9 @@
 
 namespace App\Tests\Security;
 
-use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use App\Security\BruteForceLoginFormAuthenticator;
 use App\Security\RecaptchaHelper;
+use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;

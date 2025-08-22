@@ -12,10 +12,10 @@
 
 namespace App\Service;
 
-use Composer\Pcre\Preg;
-use Composer\Repository\VersionCacheInterface;
 use App\Entity\Package;
 use App\Entity\Version;
+use Composer\Pcre\Preg;
+use Composer\Repository\VersionCacheInterface;
 use Composer\Semver\VersionParser;
 
 class VersionCache implements VersionCacheInterface
@@ -25,12 +25,12 @@ class VersionCache implements VersionCacheInterface
 
     /**
      * @param array<string|int, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null}> $existingVersions
-     * @param string[] $emptyReferences
+     * @param string[]                                                                                                                                              $emptyReferences
      */
     public function __construct(
         private Package $package,
         array $existingVersions,
-        private array $emptyReferences
+        private array $emptyReferences,
     ) {
         foreach ($existingVersions as $version) {
             $this->versionCache[$version['version']] = $version;

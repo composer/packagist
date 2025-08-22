@@ -48,7 +48,7 @@ class DownloadRepository extends ServiceEntityRepository
         $stmt = $this->getEntityManager()->getConnection()
             ->executeQuery(
                 $sql,
-                ['package' => $package->getId(), 'versionType' => Download::TYPE_VERSION, 'majorVersion' => $majorVersion . '.%']
+                ['package' => $package->getId(), 'versionType' => Download::TYPE_VERSION, 'majorVersion' => $majorVersion.'.%']
             );
         $result = $stmt->fetchAllAssociative();
         $stmt->free();

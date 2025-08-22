@@ -41,6 +41,7 @@ use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 /**
  * @phpstan-type Credentials array{username: string, password: string, ip: string|null, recaptcha: string}
+ *
  * @template-covariant TUser of UserInterface
  */
 class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator implements AuthenticationEntryPointInterface

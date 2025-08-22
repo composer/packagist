@@ -147,7 +147,7 @@ class ResetPasswordController extends Controller
             $this->getEM()->flush();
         }
 
-        $email = (new TemplatedEmail())
+        $email = new TemplatedEmail()
             ->from(new Address($this->mailFromEmail, $this->mailFromName))
             ->to($user->getEmail())
             ->subject('Your password reset request')

@@ -12,8 +12,8 @@
 
 namespace App\Model;
 
-use App\Entity\PackageRepository;
 use App\Entity\Package;
+use App\Entity\PackageRepository;
 use Predis\Client;
 
 class ProviderManager
@@ -33,6 +33,7 @@ class ProviderManager
      * Check if multiple packages exist in the registry
      *
      * @param string[] $names Package names to check
+     *
      * @return array<string, bool> Associative array of package name => exists
      */
     public function packagesExist(array $names): array

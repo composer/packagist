@@ -16,9 +16,9 @@ use App\Entity\User;
 use App\Util\DoctrineTrait;
 use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
+use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use KnpU\OAuth2ClientBundle\Client\Provider\GithubClient;
 use KnpU\OAuth2ClientBundle\Security\Authenticator\OAuth2Authenticator;
-use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use League\OAuth2\Client\Provider\GithubResourceOwner;
 use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
 use Symfony\Component\HttpFoundation\Request;
@@ -52,9 +52,6 @@ class GitHubAuthenticator extends OAuth2Authenticator
         return $request->attributes->get('_route') === 'login_github_check';
     }
 
-    /**
-     * @inheritDoc
-     */
     public function authenticate(Request $request): Passport
     {
         $accessToken = $this->fetchAccessToken($this->getGitHubClient());

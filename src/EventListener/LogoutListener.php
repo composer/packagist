@@ -13,10 +13,10 @@
 namespace App\EventListener;
 
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\Security\Core\Exception\LogoutException;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class LogoutListener
 {

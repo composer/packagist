@@ -13,7 +13,6 @@
 namespace App\Entity;
 
 use App\Validator\NotReservedWord;
-use Deprecated;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
@@ -23,12 +22,11 @@ use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\LegacyPasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use DateTimeImmutable;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: 'App\Entity\UserRepository')]
 #[ORM\Table(name: 'fos_user')]
@@ -79,19 +77,19 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
      * The salt to use for hashing.
      */
     #[ORM\Column(type: 'string', nullable: true)]
-    private string|null $salt = null;
+    private ?string $salt = null;
 
     #[ORM\Column(type: 'datetime_immutable', name: 'last_login', nullable: true)]
-    private DateTimeImmutable|null $lastLogin = null;
+    private ?\DateTimeImmutable $lastLogin = null;
 
     /**
      * Random string sent to the user email address in order to verify it.
      */
     #[ORM\Column(type: 'string', name: 'confirmation_token', length: 180, nullable: true, unique: true)]
-    private string|null $confirmationToken = null;
+    private ?string $confirmationToken = null;
 
     #[ORM\Column(type: 'datetime_immutable', name: 'password_requested_at', nullable: true)]
-    private DateTimeImmutable|null $passwordRequestedAt = null;
+    private ?\DateTimeImmutable $passwordRequestedAt = null;
 
     /**
      * @var Collection<int, Package>&Selectable<int, Package>
@@ -100,7 +98,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     private Collection $packages;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private DateTimeImmutable $createdAt;
+    private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'string', length: 40)]
     private string $apiToken;
@@ -109,22 +107,22 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     private string $safeApiToken;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private string|null $githubId = null;
+    private ?string $githubId = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private string|null $githubToken = null;
+    private ?string $githubToken = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private string|null $githubScope = null;
+    private ?string $githubScope = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $failureNotifications = true;
 
     #[ORM\Column(name: 'totpSecret', type: 'string', nullable: true)]
-    private string|null $totpSecret = null;
+    private ?string $totpSecret = null;
 
     #[ORM\Column(type: 'string', length: 8, nullable: true)]
-    private string|null $backupCode = null;
+    private ?string $backupCode = null;
 
     #[ORM\Column(type: 'smallint', options: ['unsigned' => true, 'default' => 0])]
     private int $sessionBuster = 0;
@@ -132,7 +130,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function __construct()
     {
         $this->packages = new ArrayCollection();
-        $this->createdAt = new DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
         $this->initializeApiToken();
         $this->initializeSafeApiToken();
     }
@@ -166,7 +164,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return $this->packages;
     }
 
-    public function getCreatedAt(): DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -191,12 +189,12 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return $this->safeApiToken;
     }
 
-    public function getGithubId(): string|null
+    public function getGithubId(): ?string
     {
         return $this->githubId;
     }
 
-    public function getGithubUsername(): string|null
+    public function getGithubUsername(): ?string
     {
         if ($this->githubId) {
             if (!$this->githubToken) {
@@ -215,27 +213,27 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return null;
     }
 
-    public function setGithubId(string|null $githubId): void
+    public function setGithubId(?string $githubId): void
     {
         $this->githubId = $githubId;
     }
 
-    public function getGithubToken(): string|null
+    public function getGithubToken(): ?string
     {
         return $this->githubToken;
     }
 
-    public function setGithubToken(string|null $githubToken): void
+    public function setGithubToken(?string $githubToken): void
     {
         $this->githubToken = $githubToken;
     }
 
-    public function getGithubScope(): string|null
+    public function getGithubScope(): ?string
     {
         return $this->githubScope;
     }
 
-    public function setGithubScope(string|null $githubScope): void
+    public function setGithubScope(?string $githubScope): void
     {
         $this->githubScope = $githubScope;
     }
@@ -260,7 +258,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return 'https://www.gravatar.com/avatar/'.hash('md5', strtolower($this->getEmail())).'?d=identicon';
     }
 
-    public function setTotpSecret(string|null $secret): void
+    public function setTotpSecret(?string $secret): void
     {
         $this->totpSecret = $secret;
         $this->invalidateAllSessions();
@@ -346,14 +344,14 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
             $this->enabled,
             $this->id,
             $this->email,
-            $this->emailCanonical
+            $this->emailCanonical,
         ] = $data;
 
         // session_buster might not be available yet in the session
         $this->sessionBuster = $data['session_buster'] ?? 0;
     }
 
-    #[Deprecated]
+    #[\Deprecated]
     public function eraseCredentials(): void
     {
     }
@@ -382,7 +380,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return $this->usernameCanonical;
     }
 
-    public function getSalt(): string|null
+    public function getSalt(): ?string
     {
         return $this->salt;
     }
@@ -397,12 +395,12 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return $this->emailCanonical;
     }
 
-    public function getPassword(): string|null
+    public function getPassword(): ?string
     {
         return $this->password;
     }
 
-    public function getLastLogin(): DateTimeImmutable|null
+    public function getLastLogin(): ?\DateTimeImmutable
     {
         return $this->lastLogin;
     }
@@ -449,7 +447,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         $this->usernameCanonical = mb_strtolower($usernameCanonical);
     }
 
-    public function setSalt(string|null $salt): void
+    public function setSalt(?string $salt): void
     {
         $this->salt = $salt;
     }
@@ -475,12 +473,12 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         $this->password = $password;
     }
 
-    public function setLastLogin(DateTimeImmutable|null $time = null): void
+    public function setLastLogin(?\DateTimeImmutable $time = null): void
     {
         $this->lastLogin = $time;
     }
 
-    public function setPasswordRequestedAt(DateTimeImmutable|null $date = null): void
+    public function setPasswordRequestedAt(?\DateTimeImmutable $date = null): void
     {
         $this->passwordRequestedAt = $date;
     }
@@ -494,7 +492,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     /**
      * Gets the timestamp that the user requested a password reset.
      */
-    public function getPasswordRequestedAt(): DateTimeImmutable|null
+    public function getPasswordRequestedAt(): ?\DateTimeImmutable
     {
         return $this->passwordRequestedAt;
     }
@@ -550,7 +548,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         $this->safeApiToken = bin2hex(random_bytes(20));
     }
 
-    public function getConfirmationToken(): string|null
+    public function getConfirmationToken(): ?string
     {
         return $this->confirmationToken;
     }
@@ -567,7 +565,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function isPasswordRequestExpired(int $ttl): bool
     {
-        return !$this->getPasswordRequestedAt() instanceof DateTimeImmutable || $this->getPasswordRequestedAt()->getTimestamp() + $ttl <= time();
+        return !$this->getPasswordRequestedAt() instanceof \DateTimeImmutable || $this->getPasswordRequestedAt()->getTimestamp() + $ttl <= time();
     }
 
     public function getSessionBuster(): int

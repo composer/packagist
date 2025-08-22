@@ -18,8 +18,8 @@ use App\Entity\User;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\EntityManager;
-use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
 
@@ -80,7 +80,7 @@ class PackageListener
         }
     }
 
-    private function getUser(): User|null
+    private function getUser(): ?User
     {
         $user = $this->security->getUser();
 

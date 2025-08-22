@@ -13,7 +13,6 @@
 namespace App\Entity;
 
 use App\Audit\AuditRecordType;
-use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
@@ -31,7 +30,7 @@ class AuditRecord
     public readonly Ulid $id;
 
     #[ORM\Column]
-    public readonly DateTimeImmutable $datetime;
+    public readonly \DateTimeImmutable $datetime;
 
     private function __construct(
         #[ORM\Column]
@@ -41,39 +40,39 @@ class AuditRecord
         #[ORM\Column(type: Types::JSON)]
         public readonly array $attributes,
         #[ORM\Column(nullable: true)]
-        public readonly int|null $userId = null,
+        public readonly ?int $userId = null,
         #[ORM\Column(nullable: true)]
-        public readonly string|null $vendor = null,
+        public readonly ?string $vendor = null,
         #[ORM\Column(nullable: true)]
-        public readonly int|null $packageId = null,
+        public readonly ?int $packageId = null,
     ) {
         $this->id = new Ulid();
-        $this->datetime = new DateTimeImmutable();
+        $this->datetime = new \DateTimeImmutable();
     }
 
-    public static function packageCreated(Package $package, User|null $user): self
+    public static function packageCreated(Package $package, ?User $user): self
     {
         return new self(AuditRecordType::PackageCreated, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($user)], $user?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function packageDeleted(Package $package, User|null $user): self
+    public static function packageDeleted(Package $package, ?User $user): self
     {
         return new self(AuditRecordType::PackageDeleted, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($user, 'automation')], $user?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function canonicalUrlChange(Package $package, User|null $user, string $oldRepository): self
+    public static function canonicalUrlChange(Package $package, ?User $user, string $oldRepository): self
     {
         return new self(AuditRecordType::CanonicalUrlChange, ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($user)], $user?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function versionDeleted(Version $version, User|null $user): self
+    public static function versionDeleted(Version $version, ?User $user): self
     {
         $package = $version->getPackage();
 
         return new self(AuditRecordType::VersionDeleted, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($user, 'automation')], $user?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function versionReferenceChange(Version $version, string|null $oldSourceReference, string|null $oldDistReference): self
+    public static function versionReferenceChange(Version $version, ?string $oldSourceReference, ?string $oldDistReference): self
     {
         $package = $version->getPackage();
 
@@ -88,7 +87,7 @@ class AuditRecord
     /**
      * @return array{id: int, username: string}|string
      */
-    private static function getUserData(User|null $user, string $fallbackString = 'unknown'): array|string
+    private static function getUserData(?User $user, string $fallbackString = 'unknown'): array|string
     {
         if ($user === null) {
             return $fallbackString;

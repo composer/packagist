@@ -246,7 +246,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         return [
             'advisory' => [
                 'summary' => $summary,
-                'permalink' => 'https://github.com/advisories/' . $advisoryId,
+                'permalink' => 'https://github.com/advisories/'.$advisoryId,
                 'publishedAt' => $publishedAt,
                 'withdrawnAt' => null,
                 'severity' => 'MODERATE',

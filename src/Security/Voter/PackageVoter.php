@@ -49,7 +49,7 @@ class PackageVoter extends Voter
         /** @var Package $package */
         $package = $subject;
 
-        return match(PackageActions::from($attribute)) {
+        return match (PackageActions::from($attribute)) {
             PackageActions::Abandon => $this->canEdit($package, $user),
             PackageActions::Delete => $this->canDelete($package, $user),
             PackageActions::DeleteVersion => $this->canDeleteVersion($package, $user),

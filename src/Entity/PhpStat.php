@@ -14,7 +14,6 @@ namespace App\Entity;
 
 use Composer\Pcre\Preg;
 use Doctrine\ORM\Mapping as ORM;
-use DateTimeImmutable;
 
 #[ORM\Entity(repositoryClass: 'App\Entity\PhpStatRepository')]
 #[ORM\Table(name: 'php_stat')]
@@ -71,7 +70,7 @@ class PhpStat
     public array $data;
 
     #[ORM\Column(type: 'datetime_immutable', name: 'last_updated')]
-    public DateTimeImmutable $lastUpdated;
+    public \DateTimeImmutable $lastUpdated;
 
     #[ORM\Id]
     #[ORM\ManyToOne(targetEntity: 'App\Entity\Package')]
@@ -98,7 +97,7 @@ class PhpStat
         }
 
         $this->data = [];
-        $this->lastUpdated = new DateTimeImmutable();
+        $this->lastUpdated = new \DateTimeImmutable();
     }
 
     /**
@@ -148,12 +147,12 @@ class PhpStat
         return $this->data;
     }
 
-    public function setLastUpdated(DateTimeImmutable $lastUpdated): void
+    public function setLastUpdated(\DateTimeImmutable $lastUpdated): void
     {
         $this->lastUpdated = $lastUpdated;
     }
 
-    public function getLastUpdated(): DateTimeImmutable
+    public function getLastUpdated(): \DateTimeImmutable
     {
         return $this->lastUpdated;
     }

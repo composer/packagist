@@ -12,10 +12,10 @@
 
 namespace App\Service;
 
+use App\Util\DoctrineTrait;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Connections\PrimaryReadReplicaConnection;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Util\DoctrineTrait;
 
 class Locker
 {
