@@ -12,20 +12,20 @@
 
 namespace App\Tests\Package;
 
+use App\Package\SymlinkDumper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use App\Package\SymlinkDumper;
 
 class SymlinkDumperTest extends TestCase
 {
     private $mockDumper;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->mockDumper = $this->createMock(SymlinkDumper::class);
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         $this->mockDumper = null;
     }
@@ -87,7 +87,7 @@ class SymlinkDumperTest extends TestCase
     {
         $refl = new \ReflectionMethod($object, $method);
 
-        $args = func_get_args();
+        $args = \func_get_args();
         array_shift($args); // object
         array_shift($args); // method
 

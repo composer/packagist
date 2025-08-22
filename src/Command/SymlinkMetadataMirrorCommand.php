@@ -25,7 +25,7 @@ class SymlinkMetadataMirrorCommand extends Command
         private string $webDir,
         private string $metadataDir,
         /** @phpstan-var AwsMetadata */
-        private array $awsMetadata
+        private array $awsMetadata,
     ) {
         parent::__construct();
     }

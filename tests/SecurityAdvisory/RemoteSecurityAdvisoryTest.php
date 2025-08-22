@@ -55,7 +55,6 @@ class RemoteSecurityAdvisoryTest extends TestCase
                     'time' => null,
                     'versions' => ['<1.7.2'],
                 ],
-
             ],
             'reference' => 'composer://erusev/parsedown',
         ]);
@@ -74,7 +73,6 @@ class RemoteSecurityAdvisoryTest extends TestCase
                     'time' => 1570492800,
                     'versions' => ['>=1', '<1.14.4.3'],
                 ],
-
             ],
             'reference' => 'composer://magento/magento1ee',
             'composer-repository' => false,

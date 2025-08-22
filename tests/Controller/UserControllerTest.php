@@ -24,7 +24,7 @@ class UserControllerTest extends ControllerTestCase
 
         $this->client->loginUser($user);
 
-        $crawler = $this->client->request('GET', sprintf('/users/%s/2fa/enable', $user->getUsername()));
+        $crawler = $this->client->request('GET', \sprintf('/users/%s/2fa/enable', $user->getUsername()));
         $form = $crawler->selectButton('Enable Two-Factor Authentication')->form();
         $form->setValues([
             'enable_two_factor_auth[code]' => 123456,

@@ -12,6 +12,8 @@
 
 namespace App\SecurityAdvisory;
 
+use App\Entity\Package;
+use App\Entity\Version;
 use Composer\Downloader\TransportException;
 use Composer\Factory;
 use Composer\IO\ConsoleIO;
@@ -19,10 +21,8 @@ use Composer\Package\CompletePackage;
 use Composer\Package\Loader\ArrayLoader;
 use Composer\Util\Loop;
 use Composer\Util\ProcessExecutor;
-use App\Entity\Package;
-use App\Entity\Version;
-use Psr\Log\LoggerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
@@ -57,8 +57,8 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
 
         $localCwdDir = null;
         try {
-            $localCwdDir = sys_get_temp_dir() . '/' . uniqid(self::SOURCE_NAME, true);
-            $localDir = $localCwdDir . '/' . self::SOURCE_NAME;
+            $localCwdDir = sys_get_temp_dir().'/'.uniqid(self::SOURCE_NAME, true);
+            $localDir = $localCwdDir.'/'.self::SOURCE_NAME;
             $config = Factory::createConfig($io, $localCwdDir);
             $process = new ProcessExecutor();
             $factory = new Factory();
@@ -85,7 +85,7 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
 
             return new RemoteSecurityAdvisoryCollection($advisories);
         } catch (TransportException $e) {
-            $this->logger->error(sprintf('Failed to download "%s" zip file', self::SECURITY_PACKAGE), [
+            $this->logger->error(\sprintf('Failed to download "%s" zip file', self::SECURITY_PACKAGE), [
                 'exception' => $e,
             ]);
 

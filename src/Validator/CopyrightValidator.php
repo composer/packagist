@@ -66,11 +66,11 @@ class CopyrightValidator extends ConstraintValidator
         }
 
         foreach ($copyrightWatches as $vendor => $config) {
-            if (in_array($value->getVendor(), $config['allow']) || !str_contains($value->getVendor(), $vendor)) {
+            if (\in_array($value->getVendor(), $config['allow']) || !str_contains($value->getVendor(), $vendor)) {
                 continue;
             }
 
-            $message = (new Email())
+            $message = new Email()
                 ->subject('Packagist.org package submission notification: '.$value->getName().' contains '.$vendor.' in its vendor name')
                 ->from(new Address($this->mailFromEmail))
                 ->to($config['email'])

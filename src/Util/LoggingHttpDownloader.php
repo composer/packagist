@@ -44,7 +44,7 @@ class LoggingHttpDownloader extends HttpDownloader
         if ($this->loadMinimalVersions && Preg::isMatch('{/(tags|git/refs/heads)(\?|$)}', $url)) {
             $reflProp = new \ReflectionProperty(Response::class, 'request');
             $newBody = $result->decodeJson();
-            $newBody = array_slice($newBody, 0, 1);
+            $newBody = \array_slice($newBody, 0, 1);
             $result = new Response($reflProp->getValue($result), $result->getStatusCode(), [], (string) json_encode($newBody));
         }
 

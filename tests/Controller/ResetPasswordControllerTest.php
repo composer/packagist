@@ -25,7 +25,7 @@ class ResetPasswordControllerTest extends ControllerTestCase
         $user = $this->setupUserWithPasswordResetRequest(false);
         $oldPassword = $user->getPassword();
 
-        $crawler = $this->client->request('GET', '/reset-password/reset/' . $user->getConfirmationToken());
+        $crawler = $this->client->request('GET', '/reset-password/reset/'.$user->getConfirmationToken());
         $this->assertResponseStatusCodeSame(200);
 
         $this->submitPasswordResetFormAndAsserStatusCode($crawler, 'new-password', 302);
@@ -37,7 +37,7 @@ class ResetPasswordControllerTest extends ControllerTestCase
         $user = $this->setupUserWithPasswordResetRequest(true);
         $oldPassword = $user->getPassword();
 
-        $crawler = $this->client->request('GET', '/reset-password/reset/' . $user->getConfirmationToken());
+        $crawler = $this->client->request('GET', '/reset-password/reset/'.$user->getConfirmationToken());
         $this->assertResponseStatusCodeSame(200);
 
         $this->submitPasswordResetFormAndAsserStatusCode($crawler, 'new-password', 422);
@@ -52,7 +52,7 @@ class ResetPasswordControllerTest extends ControllerTestCase
         $user = $this->setupUserWithPasswordResetRequest(false);
         $oldPassword = $user->getPassword();
 
-        $crawler = $this->client->request('GET', '/reset-password/reset/' . $user->getConfirmationToken());
+        $crawler = $this->client->request('GET', '/reset-password/reset/'.$user->getConfirmationToken());
         $this->assertResponseStatusCodeSame(200);
 
         $this->submitPasswordResetFormAndAsserStatusCode($crawler, newPassword: $user->getEmail(), expectedStatusCode: 422);

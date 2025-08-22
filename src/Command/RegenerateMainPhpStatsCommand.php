@@ -14,15 +14,15 @@ namespace App\Command;
 
 use App\Entity\Package;
 use App\Entity\PhpStat;
+use App\Service\Locker;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
+use Seld\Signal\SignalHandler;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Seld\Signal\SignalHandler;
-use App\Service\Locker;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\Console\Command\Command;
 
 class RegenerateMainPhpStatsCommand extends Command
 {

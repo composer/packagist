@@ -15,37 +15,36 @@ namespace App\Package;
 use App\Entity\ConflictLink;
 use App\Entity\Dependent;
 use App\Entity\DevRequireLink;
+use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\ProvideLink;
 use App\Entity\ReplaceLink;
 use App\Entity\RequireLink;
-use App\HtmlSanitizer\ReadmeImageSanitizer;
-use App\HtmlSanitizer\ReadmeLinkSanitizer;
-use App\Util\HttpDownloaderOptionsFactory;
-use cebe\markdown\GithubMarkdown;
-use Composer\Package\AliasPackage;
-use Composer\Pcre\Preg;
-use Composer\Repository\VcsRepository;
-use Composer\Repository\Vcs\GitHubDriver;
-use Composer\Repository\Vcs\GitLabDriver;
-use Composer\Repository\Vcs\VcsDriverInterface;
-use Composer\Repository\InvalidRepositoryException;
-use Composer\Util\ErrorHandler;
-use Composer\Util\HttpDownloader;
-use Composer\Config;
-use Composer\IO\IOInterface;
-use App\Entity\Package;
+use App\Entity\SuggestLink;
 use App\Entity\Tag;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
-use App\Entity\SuggestLink;
+use App\HtmlSanitizer\ReadmeImageSanitizer;
+use App\HtmlSanitizer\ReadmeLinkSanitizer;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
-use DateTimeImmutable;
+use App\Service\VersionCache;
+use App\Util\HttpDownloaderOptionsFactory;
+use cebe\markdown\GithubMarkdown;
+use Composer\Config;
+use Composer\IO\IOInterface;
+use Composer\Package\AliasPackage;
+use Composer\Package\CompletePackageInterface;
+use Composer\Pcre\Preg;
+use Composer\Repository\InvalidRepositoryException;
+use Composer\Repository\Vcs\GitHubDriver;
+use Composer\Repository\Vcs\GitLabDriver;
+use Composer\Repository\Vcs\VcsDriverInterface;
+use Composer\Repository\VcsRepository;
+use Composer\Util\ErrorHandler;
+use Composer\Util\HttpDownloader;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Service\VersionCache;
-use Composer\Package\CompletePackageInterface;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerAction;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
@@ -117,15 +116,15 @@ class Updater
     /**
      * Update a project
      *
-     * @param VcsRepository $repository the repository instance used to update from
-     * @param int $flags a few of the constants of this class
+     * @param VcsRepository                  $repository       the repository instance used to update from
+     * @param int                            $flags            a few of the constants of this class
      * @param ExistingVersionsForUpdate|null $existingVersions
      */
     public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, int $flags = 0, ?array $existingVersions = null, ?VersionCache $versionCache = null): Package
     {
         $httpDownloader = new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
 
-        $deleteDate = new DateTimeImmutable('-1day');
+        $deleteDate = new \DateTimeImmutable('-1day');
 
         $em = $this->getEM();
         $rootIdentifier = null;
@@ -159,9 +158,9 @@ class Updater
             if ($package->getRemoteId() !== $remoteId) {
                 $package->freeze(PackageFreezeReason::RemoteIdMismatch);
                 $em->flush();
-                $io->writeError('<error>Skipping update as the source repository has a remote id mismatch. Expected '.$package->getRemoteId().' but got ' . $remoteId.'.</error>');
+                $io->writeError('<error>Skipping update as the source repository has a remote id mismatch. Expected '.$package->getRemoteId().' but got '.$remoteId.'.</error>');
 
-                $message = (new Email())
+                $message = new Email()
                     ->subject($package->getName().' frozen due to remote id mismatch')
                     ->from(new Address($this->mailFromEmail))
                     ->to($this->mailFromEmail)
@@ -235,14 +234,14 @@ class Updater
         $lastProcessed = null;
         $idsToMarkUpdated = [];
 
-        /** @var int|null|false $dependentSuggesterSource Version id to use as dependent/suggester source */
+        /** @var int|false|null $dependentSuggesterSource Version id to use as dependent/suggester source */
         $dependentSuggesterSource = null;
         foreach ($versions as $version) {
             if ($version instanceof AliasPackage) {
                 continue;
             }
             if (!$version instanceof CompletePackageInterface) {
-                throw new \LogicException('Received a package instance of type '.get_class($version).', expected a CompletePackageInterface instance');
+                throw new \LogicException('Received a package instance of type '.$version::class.', expected a CompletePackageInterface instance');
             }
 
             if (isset($processedVersions[strtolower($version->getVersion())])) {
@@ -254,7 +253,7 @@ class Updater
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
             $versionId = false;
             if ($result['updated']) {
-                assert($result['object'] instanceof Version);
+                \assert($result['object'] instanceof Version);
                 $em->flush();
 
                 // detach version once flushed to avoid gathering lots of data in memory
@@ -294,7 +293,7 @@ class Updater
         foreach ($existingVersions as $version) {
             if (
                 // soft-deleted versions are really purged after a day
-                (!is_null($version['softDeletedAt']) && new \DateTime($version['softDeletedAt']) < $deleteDate)
+                (null !== $version['softDeletedAt'] && new \DateTime($version['softDeletedAt']) < $deleteDate)
                 // remove v1 normalized versions of dev-master/trunk/default immediately as they have been recreated as dev-master/trunk/default in a non-normalized way
                 || ($version['normalizedVersion'] === '9999999-dev')
             ) {
@@ -329,15 +328,15 @@ class Updater
             }
         } catch (\Throwable $e) {
         }
-        $io->writeError('Updated from '.$package->getRepository().' using ' . $driver::class . $usingDetails);
+        $io->writeError('Updated from '.$package->getRepository().' using '.$driver::class.$usingDetails);
 
         // make sure the package exists in the package list if for some reason adding it on submit failed
         if (!$this->providerManager->packageExists($package->getName())) {
             $this->providerManager->insertPackage($package);
         }
 
-        $package->setUpdatedAt(new DateTimeImmutable());
-        $package->setCrawledAt(new DateTimeImmutable());
+        $package->setUpdatedAt(new \DateTimeImmutable());
+        $package->setCrawledAt(new \DateTimeImmutable());
 
         if ($flags & self::FORCE_DUMP) {
             $package->setDumpedAt(null);
@@ -361,6 +360,7 @@ class Updater
      *  - object (Version instance if it was updated)
      *
      * @param ExistingVersionsForUpdate $existingVersions
+     *
      * @return array{updated: true, id: int|null, version: string, object: Version}|array{updated: false, id: int|null, version: string, object: null}
      */
     private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier): array
@@ -378,7 +378,7 @@ class Updater
                 // update if the source reference has changed (re-tag or new commit on branch)
                 ($source['reference'] ?? null) !== $data->getSourceReference()
                 // or the source has some corrupted github private url
-                || (isset($source['url']) && is_string($source['url']) && Preg::isMatch('{^git@github.com:.*?\.git$}', $source['url']))
+                || (isset($source['url']) && \is_string($source['url']) && Preg::isMatch('{^git@github.com:.*?\.git$}', $source['url']))
                 // or if the right flag is set
                 || ($flags & self::UPDATE_EQUAL_REFS)
                 // or if the package must be marked abandoned from composer.json
@@ -425,15 +425,15 @@ class Updater
         $version->setLicense($data->getLicense() ?: []);
 
         $version->setPackage($package);
-        $version->setUpdatedAt(new DateTimeImmutable());
+        $version->setUpdatedAt(new \DateTimeImmutable());
         $version->setSoftDeletedAt(null);
-        $version->setReleasedAt($data->getReleaseDate() === null ? null : DateTimeImmutable::createFromInterface($data->getReleaseDate()));
+        $version->setReleasedAt($data->getReleaseDate() === null ? null : \DateTimeImmutable::createFromInterface($data->getReleaseDate()));
 
         if ($data->getSourceType()) {
             $source['type'] = $data->getSourceType();
             $source['url'] = $data->getSourceUrl();
             // force public URLs even if the package somehow got downgraded to a GitDriver
-            if (is_string($source['url']) && Preg::isMatch('{^git@github.com:(?P<repo>.*?)\.git$}', $source['url'], $match)) {
+            if (\is_string($source['url']) && Preg::isMatch('{^git@github.com:(?P<repo>.*?)\.git$}', $source['url'], $match)) {
                 $source['url'] = 'https://github.com/'.$match['repo'];
             }
             $source['reference'] = $data->getSourceReference();
@@ -494,7 +494,7 @@ class Updater
             foreach ($existingTags as $tag) {
                 $version->getTags()->removeElement($tag);
             }
-        } elseif (count($version->getTags())) {
+        } elseif (\count($version->getTags())) {
             $version->getTags()->clear();
         }
 
@@ -528,7 +528,7 @@ class Updater
             $links = [];
             foreach ($data->{$opts['composer-getter']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
-                if (false !== strpos($constraint, ',') && false !== strpos($constraint, '@')) {
+                if (str_contains($constraint, ',') && str_contains($constraint, '@')) {
                     $constraint = Preg::replaceCallbackStrictGroups('{([><]=?\s*[^@]+?)@([a-z]+)}i', static function ($matches) {
                         if ($matches[2] === 'stable') {
                             return $matches[1];
@@ -554,7 +554,7 @@ class Updater
 
             foreach ($links as $linkPackageName => $linkPackageVersion) {
                 $class = $opts['entity'];
-                $link = new $class;
+                $link = new $class();
                 $link->setPackageName((string) $linkPackageName);
                 $link->setPackageVersion($linkPackageVersion);
                 $version->{$opts['setter']}($link);
@@ -577,14 +577,14 @@ class Updater
             }
 
             foreach ($suggests as $linkPackageName => $linkPackageVersion) {
-                $link = new SuggestLink;
+                $link = new SuggestLink();
                 $link->setPackageName($linkPackageName);
                 $link->setPackageVersion($linkPackageVersion);
                 $version->addSuggestLink($link);
                 $link->setVersion($version);
                 $em->persist($link);
             }
-        } elseif (count($version->getSuggest())) {
+        } elseif (\count($version->getSuggest())) {
             // clear existing suggests if present
             foreach ($version->getSuggest() as $link) {
                 $em->remove($link);
@@ -608,7 +608,7 @@ class Updater
 
         try {
             $composerInfo = $driver->getComposerInformation($driver->getRootIdentifier());
-            if (isset($composerInfo['readme']) && is_string($composerInfo['readme'])) {
+            if (isset($composerInfo['readme']) && \is_string($composerInfo['readme'])) {
                 $readmeFile = $composerInfo['readme'];
             } else {
                 $readmeFile = 'README.md';
@@ -623,7 +623,7 @@ class Updater
                 case '.txt':
                     $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
                     if (!empty($source)) {
-                        $package->setReadme('<pre>' . htmlspecialchars($source) . '</pre>');
+                        $package->setReadme('<pre>'.htmlspecialchars($source).'</pre>');
                     }
                     break;
 
@@ -646,7 +646,7 @@ class Updater
         } catch (\Exception $e) {
             // we ignore all errors for this minor function
             $io->write(
-                'Can not update readme. Error: ' . $e->getMessage(),
+                'Can not update readme. Error: '.$e->getMessage(),
                 true,
                 IOInterface::VERBOSE
             );
@@ -679,7 +679,7 @@ class Updater
             $package->setReadme($this->prepareReadme($readme, 'github.com', $owner, $repo));
         }
 
-        if (!empty($repoData['language']) && is_string($repoData['language'])) {
+        if (!empty($repoData['language']) && \is_string($repoData['language'])) {
             $package->setLanguage($repoData['language']);
         }
         if (isset($repoData['stargazers_count']) && is_numeric($repoData['stargazers_count'])) {
@@ -731,8 +731,8 @@ class Updater
     {
         // detect base path for github readme if file is located in a subfolder like docs/README.md
         $basePath = '';
-        if ($host === 'github.com' && Preg::isMatchStrictGroups('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
-            $basePath = dirname($match[1]);
+        if ($host === 'github.com' && Preg::isMatchStrictGroups('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && str_contains($match[1], '/')) {
+            $basePath = \dirname($match[1]);
         }
         if ($basePath) {
             $basePath .= '/';
@@ -792,9 +792,10 @@ class Updater
 
     /**
      * @phpstan-param string|null $str
+     *
      * @phpstan-return ($str is string ? string : null)
      */
-    private function sanitize(string|null $str): string|null
+    private function sanitize(?string $str): ?string
     {
         if (null === $str) {
             return null;

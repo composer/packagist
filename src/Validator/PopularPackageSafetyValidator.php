@@ -55,14 +55,14 @@ class PopularPackageSafetyValidator extends ConstraintValidator
 
         // bypass download check for some accounts which requested it
         $user = $this->security->getUser();
-        if ($user instanceof User && in_array($user->getUsernameCanonical(), [''], true)) {
+        if ($user instanceof User && \in_array($user->getUsernameCanonical(), [''], true)) {
             return;
         }
 
         try {
             $downloads = $this->downloadManager->getTotalDownloads($value);
         } catch (ConnectionException $e) {
-            $downloads = PHP_INT_MAX;
+            $downloads = \PHP_INT_MAX;
         }
 
         // more than 50000 downloads = established package, do not allow editing URL anymore
@@ -74,7 +74,7 @@ class PopularPackageSafetyValidator extends ConstraintValidator
                 /** @var Connection $conn */
                 $conn = $this->doctrine->getConnection();
                 $oldRemoteId = $conn->fetchOne('SELECT remoteId FROM package WHERE id = :id', ['id' => $value->getId()]);
-                if (is_string($oldRemoteId)) {
+                if (\is_string($oldRemoteId)) {
                     if ($oldRemoteId === $value->getRemoteId()) {
                         return;
                     }

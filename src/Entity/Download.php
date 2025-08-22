@@ -12,7 +12,6 @@
 
 namespace App\Entity;
 
-use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: 'App\Entity\DownloadRepository')]
@@ -46,10 +45,10 @@ class Download
     public int $total = 0;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    public DateTimeImmutable $lastUpdated;
+    public \DateTimeImmutable $lastUpdated;
 
     #[ORM\ManyToOne(targetEntity: 'App\Entity\Package', inversedBy: 'downloads')]
-    public Package|null $package = null;
+    public ?Package $package = null;
 
     public function computeSum(): void
     {
@@ -105,12 +104,12 @@ class Download
         return $this->total;
     }
 
-    public function setLastUpdated(DateTimeImmutable $lastUpdated): void
+    public function setLastUpdated(\DateTimeImmutable $lastUpdated): void
     {
         $this->lastUpdated = $lastUpdated;
     }
 
-    public function getLastUpdated(): DateTimeImmutable
+    public function getLastUpdated(): \DateTimeImmutable
     {
         return $this->lastUpdated;
     }
@@ -120,7 +119,7 @@ class Download
         $this->package = $package;
     }
 
-    public function getPackage(): Package|null
+    public function getPackage(): ?Package
     {
         return $this->package;
     }

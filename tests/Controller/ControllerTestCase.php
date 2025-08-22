@@ -17,7 +17,6 @@ use App\Entity\User;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use ReflectionProperty;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -26,7 +25,7 @@ class ControllerTestCase extends WebTestCase
 {
     protected KernelBrowser $client;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->client = self::createClient();
         $this->client->disableReboot(); // prevent reboot to keep the transaction
@@ -36,7 +35,7 @@ class ControllerTestCase extends WebTestCase
         parent::setUp();
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         static::getContainer()->get(Connection::class)->rollBack();
 
@@ -50,10 +49,10 @@ class ControllerTestCase extends WebTestCase
 
     protected function assertFormError(string $message, string $formName, Crawler $crawler): void
     {
-        $formCrawler = $crawler->filter(sprintf('[name="%s"]', $formName));
+        $formCrawler = $crawler->filter(\sprintf('[name="%s"]', $formName));
         $this->assertCount(
             1,
-            $formCrawler->filter('.alert-danger:contains("' . $message . '")'),
+            $formCrawler->filter('.alert-danger:contains("'.$message.'")'),
             $formCrawler->html()."\nShould find an .alert-danger within the form with the message: '$message'",
         );
     }
@@ -65,7 +64,7 @@ class ControllerTestCase extends WebTestCase
     {
         $em = $this->getEM();
         foreach ($objects as $obj) {
-            if (is_array($obj)) {
+            if (\is_array($obj)) {
                 foreach ($obj as $obj2) {
                     $em->persist($obj2);
                 }
@@ -88,7 +87,7 @@ class ControllerTestCase extends WebTestCase
 
         $package->setName($name);
         $package->setRemoteId($remoteId);
-        (new ReflectionProperty($package, 'repository'))->setValue($package, $repository);
+        new \ReflectionProperty($package, 'repository')->setValue($package, $repository);
         if (\count($maintainers) > 0) {
             foreach ($maintainers as $user) {
                 $package->addMaintainer($user);

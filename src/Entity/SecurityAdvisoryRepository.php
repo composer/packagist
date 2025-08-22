@@ -32,11 +32,12 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
     /**
      * @param string[] $packageNames
+     *
      * @return SecurityAdvisory[]
      */
     public function getPackageAdvisoriesWithSources(array $packageNames, string $sourceName): array
     {
-        if (count($packageNames) === 0) {
+        if (\count($packageNames) === 0) {
             return [];
         }
 
@@ -51,7 +52,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
 
-        if ($sourceName !== FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME || count($advisories) > 0) {
+        if ($sourceName !== FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME || \count($advisories) > 0) {
             return $advisories;
         }
 
@@ -123,12 +124,13 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
     /**
      * @param string[] $packageNames
+     *
      * @return array<string, array<string, array{advisoryId: string, packageName: string, remoteId: string, title: string, link: string|null, cve: string|null, affectedVersions: string, sources: array<array{name: string, remoteId: string}>, reportedAt: string, composerRepository: string|null}>> An array of packageName => advisoryId => advisory-data
      */
     public function searchSecurityAdvisories(array $packageNames, int $updatedSince): array
     {
         $packageNames = array_values(array_unique($packageNames));
-        $filterByNames = count($packageNames) > 0;
+        $filterByNames = \count($packageNames) > 0;
         $useCache = $filterByNames;
         $advisories = [];
 
@@ -142,21 +144,21 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
                     // cache as false means the name does not have any advisories
                     if ($advisoryCache[$index] !== 'false') {
-                        $advisories[$name] = json_decode($advisoryCache[$index], true, JSON_THROW_ON_ERROR);
+                        $advisories[$name] = json_decode($advisoryCache[$index], true, \JSON_THROW_ON_ERROR);
                     }
                 }
             }
 
             // check if we still need to query SQL
-            $filterByNames = count($packageNames) > 0;
+            $filterByNames = \count($packageNames) > 0;
         }
 
         if (!$useCache || $filterByNames) {
             $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId, s.severity
                 FROM security_advisory s
                 INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
-                WHERE s.updatedAt >= :updatedSince '.
-                ($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
+                WHERE s.updatedAt >= :updatedSince '
+                .($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
                 .' ORDER BY '.($filterByNames ? 's.reportedAt DESC, ' : '').'s.id DESC';
 
             $params = ['updatedSince' => date('Y-m-d H:i:s', $updatedSince)];
@@ -185,7 +187,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
                 $cacheData = [];
                 foreach ($packageNames as $name) {
                     // Cache for 7 days with a random 1-hour variance, the cache is busted by SecurityAdvisoryUpdateListener when advisories change
-                    $this->redisCache->setex('sec-adv:'.$name, 604800 + random_int(0, 3600), isset($advisories[$name]) ? json_encode($advisories[$name], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : 'false');
+                    $this->redisCache->setex('sec-adv:'.$name, 604800 + random_int(0, 3600), isset($advisories[$name]) ? json_encode($advisories[$name], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE) : 'false');
                 }
             }
         }
@@ -195,11 +197,12 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
     /**
      * @param string[] $packageNames
+     *
      * @return array<string, array<array{advisoryId: string, affectedVersions: string}>>
      */
     public function getAdvisoryIdsAndVersions(array $packageNames): array
     {
-        $filterByNames = count($packageNames) > 0;
+        $filterByNames = \count($packageNames) > 0;
 
         $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.affectedVersions
             FROM security_advisory s

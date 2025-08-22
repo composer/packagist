@@ -67,7 +67,7 @@ class WebControllerTest extends ControllerTestCase
 
         $this->client->request('GET', '/search.json', ['q' => 'monolog']);
         static::assertResponseStatusCodeSame(200);
-        static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query.json', $this->client->getResponse()->getContent());
+        static::assertJsonStringEqualsJsonFile(__DIR__.'/responses/search-with-query.json', $this->client->getResponse()->getContent());
     }
 
     public function testSearchJsonWithQueryAndTag(): void
@@ -76,7 +76,7 @@ class WebControllerTest extends ControllerTestCase
 
         $this->client->request('GET', '/search.json', ['q' => 'pro', 'tags' => 'testing']);
         static::assertResponseStatusCodeSame(200);
-        static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query-tag.json', $this->client->getResponse()->getContent());
+        static::assertJsonStringEqualsJsonFile(__DIR__.'/responses/search-with-query-tag.json', $this->client->getResponse()->getContent());
     }
 
     public function testSearchJsonWithQueryAndTagsAndTypes(): void
@@ -85,14 +85,14 @@ class WebControllerTest extends ControllerTestCase
 
         $this->client->request('GET', '/search.json', ['q' => 'pro', 'tags' => ['testing', 'mock'], 'type' => 'library']);
         static::assertResponseStatusCodeSame(200);
-        static::assertJsonStringEqualsJsonFile(__DIR__ . '/responses/search-with-query-tags.json', $this->client->getResponse()->getContent());
+        static::assertJsonStringEqualsJsonFile(__DIR__.'/responses/search-with-query-tags.json', $this->client->getResponse()->getContent());
     }
 
     public function testPackages(): void
     {
         $this->initializePackages();
 
-        //we expect at least one package
+        // we expect at least one package
         $crawler = $this->client->request('GET', '/explore/');
         $this->assertGreaterThan(0, $crawler->filter('.packages-short li')->count());
     }
@@ -101,7 +101,7 @@ class WebControllerTest extends ControllerTestCase
     {
         $this->initializePackages();
 
-        //we expect package to be clickable and showing at least 'package' div
+        // we expect package to be clickable and showing at least 'package' div
         $crawler = $this->client->request('GET', '/packages/symfony/symfony');
         $this->assertGreaterThan(0, $crawler->filter('.package')->count());
     }

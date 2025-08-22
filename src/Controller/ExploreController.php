@@ -12,20 +12,20 @@
 
 namespace App\Controller;
 
+use App\Entity\Package;
+use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use Doctrine\DBAL\ConnectionException;
-use App\Entity\Package;
-use App\Entity\Version;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
+use Predis\Client as RedisClient;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Predis\Client as RedisClient;
-use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 
 #[Route(path: '/explore')]
 class ExploreController extends Controller

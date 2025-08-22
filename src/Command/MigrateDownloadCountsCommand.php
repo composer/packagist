@@ -12,16 +12,16 @@
 
 namespace App\Command;
 
-use Composer\Pcre\Preg;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Seld\Signal\SignalHandler;
 use App\Model\DownloadManager;
 use App\Service\Locker;
+use Composer\Pcre\Preg;
+use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
+use Seld\Signal\SignalHandler;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class MigrateDownloadCountsCommand extends Command
 {
@@ -69,7 +69,7 @@ class MigrateDownloadCountsCommand extends Command
 
             // skip today datapoints as we will store that to the DB tomorrow
             $keysToUpdate = array_filter($keysToUpdate, static function ($key) use ($todaySuffix) {
-                return strpos($key, $todaySuffix) === false;
+                return !str_contains($key, $todaySuffix);
             });
 
             // sort by package id, then package datapoint first followed by version datapoints

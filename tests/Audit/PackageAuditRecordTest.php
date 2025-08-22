@@ -13,14 +13,14 @@
 namespace App\Tests\Controller;
 
 use App\Audit\AuditRecordType;
+use App\Entity\Package;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\Package;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class PackageAuditRecordTest extends KernelTestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         self::bootKernel();
         static::getContainer()->get(Connection::class)->beginTransaction();
@@ -28,7 +28,7 @@ class PackageAuditRecordTest extends KernelTestCase
         parent::setUp();
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         static::getContainer()->get(Connection::class)->rollBack();
 

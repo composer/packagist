@@ -51,12 +51,12 @@ class OriginListener
         }
 
         // valid origin
-        if ($event->getRequest()->headers->get('Origin') === 'https://' . $this->packagistHost) {
+        if ($event->getRequest()->headers->get('Origin') === 'https://'.$this->packagistHost) {
             return;
         }
 
         // valid as well with HTTP in dev
-        if ('dev' === $this->environment && $event->getRequest()->headers->get('Origin') === 'http://' . $this->packagistHost) {
+        if ('dev' === $this->environment && $event->getRequest()->headers->get('Origin') === 'http://'.$this->packagistHost) {
             return;
         }
 

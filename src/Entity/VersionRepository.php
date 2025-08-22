@@ -13,17 +13,19 @@
 namespace App\Entity;
 
 use App\Model\VersionIdCache;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
-use Predis\Client;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ *
  * @extends ServiceEntityRepository<Version>
+ *
  * @phpstan-import-type VersionArray from Version
  */
 class VersionRepository extends ServiceEntityRepository
@@ -68,6 +70,7 @@ class VersionRepository extends ServiceEntityRepository
 
     /**
      * @param Version[] $versions
+     *
      * @return Version[]
      */
     public function refreshVersions(array $versions): array
@@ -92,8 +95,9 @@ class VersionRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param Version[] $versions
+     * @param Version[]   $versions
      * @param VersionData $versionData
+     *
      * @return array<string, VersionArray>
      */
     public function detachToArray(array $versions, array $versionData, bool $serializeForApi = false): array
@@ -109,6 +113,7 @@ class VersionRepository extends ServiceEntityRepository
 
     /**
      * @param int[] $versionIds
+     *
      * @return VersionData
      */
     public function getVersionData(array $versionIds): array
@@ -198,7 +203,7 @@ class VersionRepository extends ServiceEntityRepository
     /**
      * Returns the latest versions released
      *
-     * @param string $vendor optional vendor filter
+     * @param string $vendor  optional vendor filter
      * @param string $package optional vendor/package filter
      */
     public function getQueryBuilderForLatestVersionWithPackage(?string $vendor = null, ?string $package = null): QueryBuilder
@@ -233,7 +238,7 @@ class VersionRepository extends ServiceEntityRepository
     public function getLatestReleases(int $count = 10): array
     {
         if ($cached = $this->redisCache->get('new_releases')) {
-            return json_decode($cached, true, flags: JSON_THROW_ON_ERROR);
+            return json_decode($cached, true, flags: \JSON_THROW_ON_ERROR);
         }
 
         $qb = $this->getEntityManager()->createQueryBuilder();
@@ -246,7 +251,7 @@ class VersionRepository extends ServiceEntityRepository
             ->setParameter('now', date('Y-m-d H:i:s'));
 
         $res = $qb->getQuery()->getResult();
-        $this->redisCache->setex('new_releases', 600, json_encode($res, JSON_THROW_ON_ERROR));
+        $this->redisCache->setex('new_releases', 600, json_encode($res, \JSON_THROW_ON_ERROR));
 
         return $res;
     }

@@ -13,21 +13,21 @@
 namespace App\Controller;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
-use App\Entity\Version;
 use App\Entity\Package;
 use App\Entity\PhpStat;
+use App\Entity\Version;
 use App\Search\Algolia;
 use App\Search\Query;
 use App\Util\Killswitch;
+use Predis\Client as RedisClient;
 use Predis\Connection\ConnectionException;
 use Psr\Cache\CacheItemInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
-use Predis\Client as RedisClient;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Cache\CacheInterface;
 
 /**
@@ -59,10 +59,10 @@ class WebController extends Controller
     public function searchApi(Request $req, Algolia $algolia): JsonResponse
     {
         $blockList = ['2400:6180:100:d0::83b:b001', '34.235.38.170'];
-        if (in_array($req->getClientIp(), $blockList, true)) {
-            return (new JsonResponse([
+        if (\in_array($req->getClientIp(), $blockList, true)) {
+            return new JsonResponse([
                 'error' => 'Too many requests, reach out to contact@packagist.org',
-            ], 400))->setCallback($req->query->get('callback'));
+            ], 400)->setCallback($req->query->get('callback'));
         }
 
         try {
@@ -74,22 +74,22 @@ class WebController extends Controller
                 $req->query->getInt('page', 1)
             );
         } catch (\InvalidArgumentException $e) {
-            return (new JsonResponse([
+            return new JsonResponse([
                 'status' => 'error',
                 'message' => $e->getMessage(),
-            ], 400))->setCallback($req->query->get('callback'));
+            ], 400)->setCallback($req->query->get('callback'));
         }
 
         try {
             $result = $algolia->search($query);
         } catch (AlgoliaException) {
-            return (new JsonResponse([
+            return new JsonResponse([
                 'status' => 'error',
                 'message' => 'Could not connect to the search server',
-            ], 500))->setCallback($req->query->get('callback'));
+            ], 500)->setCallback($req->query->get('callback'));
         }
 
-        $response = (new JsonResponse($result))->setCallback($req->query->get('callback'));
+        $response = new JsonResponse($result)->setCallback($req->query->get('callback'));
         $response->setSharedMaxAge(300);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
@@ -109,8 +109,8 @@ class WebController extends Controller
         $chart = ['versions' => [], 'packages' => [], 'months' => []];
 
         // prepare x axis
-        $date = new \DateTime($packages[0]['year'] . '-' . $packages[0]['month'] . '-01');
-        $now = new \DateTime;
+        $date = new \DateTime($packages[0]['year'].'-'.$packages[0]['month'].'-01');
+        $now = new \DateTime();
         while ($date < $now) {
             $chart['months'][] = $month = $date->format('Y-m');
             $date->modify('+1month');
@@ -120,24 +120,24 @@ class WebController extends Controller
         $count = 0;
         foreach ($packages as $dataPoint) {
             $count += $dataPoint['count'];
-            $chart['packages'][$dataPoint['year'] . '-' . str_pad((string) $dataPoint['month'], 2, '0', STR_PAD_LEFT)] = $count;
+            $chart['packages'][$dataPoint['year'].'-'.str_pad((string) $dataPoint['month'], 2, '0', \STR_PAD_LEFT)] = $count;
         }
 
         $count = 0;
         foreach ($versions as $dataPoint) {
-            $yearMonth = $dataPoint['year'] . '-' . str_pad((string) $dataPoint['month'], 2, '0', STR_PAD_LEFT);
+            $yearMonth = $dataPoint['year'].'-'.str_pad((string) $dataPoint['month'], 2, '0', \STR_PAD_LEFT);
             $count += $dataPoint['count'];
-            if (in_array($yearMonth, $chart['months'])) {
+            if (\in_array($yearMonth, $chart['months'])) {
                 $chart['versions'][$yearMonth] = $count;
             }
         }
 
         // fill gaps at the end of the chart
-        if (count($chart['months']) > count($chart['packages'])) {
-            $chart['packages'] += array_fill(0, count($chart['months']) - count($chart['packages']), !empty($chart['packages']) ? max($chart['packages']) : 0);
+        if (\count($chart['months']) > \count($chart['packages'])) {
+            $chart['packages'] += array_fill(0, \count($chart['months']) - \count($chart['packages']), !empty($chart['packages']) ? max($chart['packages']) : 0);
         }
-        if (count($chart['months']) > count($chart['versions'])) {
-            $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), !empty($chart['versions']) ? max($chart['versions']) : 0);
+        if (\count($chart['months']) > \count($chart['versions'])) {
+            $chart['versions'] += array_fill(0, \count($chart['months']) - \count($chart['versions']), !empty($chart['versions']) ? max($chart['versions']) : 0);
         }
 
         $downloadsStartDate = '2012-04-13';
@@ -212,7 +212,7 @@ class WebController extends Controller
 
         $type = $req->query->getInt('platform', 0) > 0 ? 'phpplatform' : 'php';
 
-        [$dailyData, $monthlyData] = $cache->get('php-statistics-' . $type, function (CacheItemInterface $item) use ($versions, $type) {
+        [$dailyData, $monthlyData] = $cache->get('php-statistics-'.$type, function (CacheItemInterface $item) use ($versions, $type) {
             $item->expiresAfter(1800);
 
             return [
@@ -251,7 +251,7 @@ class WebController extends Controller
         return new JsonResponse(['totals' => $totals], 200);
     }
 
-    private function checkForQueryMatch(Request $req): RedirectResponse|null
+    private function checkForQueryMatch(Request $req): ?RedirectResponse
     {
         $q = $req->query->has('q') ? $req->query->get('q') : $req->query->get('query');
 

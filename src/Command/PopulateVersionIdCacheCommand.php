@@ -12,12 +12,12 @@
 
 namespace App\Command;
 
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use App\Model\VersionIdCache;
 use App\Service\Locker;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -51,7 +51,7 @@ class PopulateVersionIdCacheCommand extends Command
         /** @var int[] $ids */
         $ids = array_map('intval', $ids);
 
-        $total = count($ids);
+        $total = \count($ids);
         $done = 0;
         while ($id = array_shift($ids)) {
             if (!$this->locker->lockPackageUpdate($id)) {

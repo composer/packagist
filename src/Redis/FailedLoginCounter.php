@@ -25,7 +25,7 @@ class FailedLoginCounter extends \Predis\Command\ScriptCommand
             throw new \LogicException('getKeysCount called before setArguments');
         }
 
-        return count($this->args);
+        return \count($this->args);
     }
 
     /**
@@ -41,10 +41,10 @@ class FailedLoginCounter extends \Predis\Command\ScriptCommand
     public function getScript(): string
     {
         return <<<LUA
-for i, key in ipairs(KEYS) do
-  redis.call("INCR", key)
-  redis.call("EXPIRE", key, 604800)
-end
-LUA;
+            for i, key in ipairs(KEYS) do
+              redis.call("INCR", key)
+              redis.call("EXPIRE", key, 604800)
+            end
+            LUA;
     }
 }

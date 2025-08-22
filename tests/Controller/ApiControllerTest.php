@@ -175,7 +175,7 @@ class ApiControllerTest extends ControllerTestCase
         $this->client->request('GET', '/api/security-advisories/?packages[]=acme/package');
         $this->assertEquals(200, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
 
-        $content = json_decode($this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        $content = json_decode($this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('acme/package', $content['advisories']);
         $this->assertCount(1, $content['advisories']['acme/package']);
     }

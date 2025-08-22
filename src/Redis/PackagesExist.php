@@ -17,13 +17,13 @@ class PackagesExist extends \Predis\Command\ScriptCommand
     public function getScript(): string
     {
         return <<<LUA
-local results = {};
-for i, packageName in ipairs(ARGV) do
-    local exists = redis.call("SISMEMBER", "set:packages", packageName);
-    table.insert(results, exists);
-end
+            local results = {};
+            for i, packageName in ipairs(ARGV) do
+                local exists = redis.call("SISMEMBER", "set:packages", packageName);
+                table.insert(results, exists);
+            end
 
-return results;
-LUA;
+            return results;
+            LUA;
     }
 }

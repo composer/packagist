@@ -12,15 +12,15 @@
 
 namespace App\Security\Provider;
 
+use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\User;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 /**
  * @implements UserProviderInterface<User>
@@ -44,13 +44,10 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
         return $user;
     }
 
-    /**
-     * @inheritDoc
-     */
     public function refreshUser(UserInterface $user): User
     {
         if (!$user instanceof User) {
-            throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
+            throw new \UnexpectedValueException('Expected '.User::class.', got '.$user::class);
         }
 
         $user = $this->getRepo()->find($user->getId());
@@ -64,7 +61,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
     public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
     {
         if (!$user instanceof User) {
-            throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
+            throw new \UnexpectedValueException('Expected '.User::class.', got '.$user::class);
         }
 
         $user->setPassword($newHashedPassword);

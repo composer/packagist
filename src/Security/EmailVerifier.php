@@ -36,7 +36,7 @@ class EmailVerifier
     public function sendEmailConfirmation(string $verifyEmailRouteName, UserInterface $user, TemplatedEmail $email): void
     {
         if (!$user instanceof User) {
-            throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
+            throw new \UnexpectedValueException('Expected '.User::class.', got '.$user::class);
         }
 
         $signatureComponents = $this->verifyEmailHelper->generateSignature(
@@ -62,7 +62,7 @@ class EmailVerifier
     public function handleEmailConfirmation(Request $request, UserInterface $user): void
     {
         if (!$user instanceof User) {
-            throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
+            throw new \UnexpectedValueException('Expected '.User::class.', got '.$user::class);
         }
 
         $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $user->getId(), $user->getEmail());

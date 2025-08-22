@@ -71,7 +71,7 @@ class PackagistExtension extends AbstractExtension
 
     public function numericTest(mixed $val): bool
     {
-        if (!is_string($val) && !is_int($val)) {
+        if (!\is_string($val) && !\is_int($val)) {
             return false;
         }
 
@@ -80,7 +80,7 @@ class PackagistExtension extends AbstractExtension
 
     public function packageExistsTest(mixed $package): bool
     {
-        if (!is_string($package)) {
+        if (!\is_string($package)) {
             return false;
         }
 
@@ -93,7 +93,7 @@ class PackagistExtension extends AbstractExtension
 
     public function providerExistsTest(mixed $package): bool
     {
-        if (!is_string($package)) {
+        if (!\is_string($package)) {
             return false;
         }
 
@@ -116,6 +116,7 @@ class PackagistExtension extends AbstractExtension
 
     /**
      * @param PackageLink[] $links
+     *
      * @return PackageLink[]
      */
     public function sortLinks(array $links): array

@@ -12,15 +12,14 @@
 
 namespace App\Model;
 
+use App\Entity\Download;
+use App\Entity\Package;
+use App\Entity\Version;
+use App\Util\DoctrineTrait;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\Package;
-use App\Entity\Version;
-use App\Entity\Download;
-use App\Util\DoctrineTrait;
 use Predis\Client;
-use DateTimeImmutable;
 
 /**
  * Manages the download counts for packages.
@@ -109,13 +108,14 @@ class DownloadManager
             $package = $package->getId();
         }
 
-        return (int) $this->redis->get('dl:' . $package) ?: 0;
+        return (int) $this->redis->get('dl:'.$package) ?: 0;
     }
 
     /**
      * Gets total download counts for multiple package IDs.
      *
      * @param array<int> $packageIds
+     *
      * @return array<int, int> a map of package ID to download count
      */
     public function getPackagesDownloads(array $packageIds): array
@@ -184,14 +184,14 @@ class DownloadManager
         $args[] = $month;
         $args[] = $throttleExpiry;
 
-        /** @phpstan-ignore-next-line method.notFound */
+        /* @phpstan-ignore-next-line method.notFound */
         $this->redis->downloadsIncr(...$args);
     }
 
     /**
      * @param string[] $keys
      */
-    public function transferDownloadsToDb(int $packageId, array $keys, DateTimeImmutable $now): void
+    public function transferDownloadsToDb(int $packageId, array $keys, \DateTimeImmutable $now): void
     {
         $package = $this->getEM()->getRepository(Package::class)->find($packageId);
         // package was deleted in the meantime, abort
@@ -245,16 +245,16 @@ class DownloadManager
     }
 
     /**
-     * @param array<string, int> $keys array of keys => dl count
-     * @param list<int>    $validVersionIds
+     * @param array<string, int> $keys            array of keys => dl count
+     * @param list<int>          $validVersionIds
      */
-    private function createDbRecordsForKeys(Package $package, array $keys, array $validVersionIds, DateTimeImmutable $now): void
+    private function createDbRecordsForKeys(Package $package, array $keys, array $validVersionIds, \DateTimeImmutable $now): void
     {
         reset($keys);
         [$id, $type] = $this->getKeyInfo((string) key($keys));
 
         // skip if the version was deleted in the meantime
-        if ($type === Download::TYPE_VERSION && !in_array($id, $validVersionIds, true)) {
+        if ($type === Download::TYPE_VERSION && !\in_array($id, $validVersionIds, true)) {
             return;
         }
 
@@ -282,7 +282,7 @@ class DownloadManager
         }
 
         // only store records for packages or for versions that have had downloads to avoid storing empty records
-        if (!$isNewRecord || $type === Download::TYPE_PACKAGE || count($record->getData()) > 0) {
+        if (!$isNewRecord || $type === Download::TYPE_PACKAGE || \count($record->getData()) > 0) {
             $this->getEM()->persist($record);
         }
 

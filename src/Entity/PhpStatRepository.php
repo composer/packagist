@@ -16,7 +16,6 @@ use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
-use DateTimeImmutable;
 
 /**
  * @extends ServiceEntityRepository<PhpStat>
@@ -118,7 +117,7 @@ class PhpStatRepository extends ServiceEntityRepository
     /**
      * @param array<non-empty-string> $keys
      */
-    public function transferStatsToDb(int $packageId, array $keys, DateTimeImmutable $now, DateTimeImmutable $updateDateForMajor): void
+    public function transferStatsToDb(int $packageId, array $keys, \DateTimeImmutable $now, \DateTimeImmutable $updateDateForMajor): void
     {
         $package = $this->getEntityManager()->getRepository(Package::class)->find($packageId);
         // package was deleted in the meantime, abort
@@ -166,7 +165,7 @@ class PhpStatRepository extends ServiceEntityRepository
     /**
      * @param non-empty-array<string, int> $keys array of keys => dl count
      */
-    private function createDbRecordsForKeys(Package $package, array $keys, DateTimeImmutable $now): bool
+    private function createDbRecordsForKeys(Package $package, array $keys, \DateTimeImmutable $now): bool
     {
         reset($keys);
         $info = $this->getKeyInfo($package, key($keys));
@@ -183,9 +182,9 @@ class PhpStatRepository extends ServiceEntityRepository
 
     /**
      * @param non-empty-array<string, int> $keys array of keys => dl count
-     * @param PhpStat::TYPE_* $type
+     * @param PhpStat::TYPE_*              $type
      */
-    private function createOrUpdateRecord(Package $package, int $type, string $version, array $keys, DateTimeImmutable $now): ?PhpStat
+    private function createOrUpdateRecord(Package $package, int $type, string $version, array $keys, \DateTimeImmutable $now): ?PhpStat
     {
         $record = $this->getEntityManager()->getRepository(PhpStat::class)->findOneBy(['package' => $package, 'type' => $type, 'version' => $version]);
         $newRecord = !$record;
@@ -225,7 +224,7 @@ class PhpStatRepository extends ServiceEntityRepository
     /**
      * @param PhpStat::TYPE_* $type
      */
-    public function createOrUpdateMainRecord(Package $package, int $type, DateTimeImmutable $now, DateTimeImmutable $updateDate): void
+    public function createOrUpdateMainRecord(Package $package, int $type, \DateTimeImmutable $now, \DateTimeImmutable $updateDate): void
     {
         $minorPhpVersions = $this->getEntityManager()->getConnection()->fetchFirstColumn(
             'SELECT DISTINCT stats.php_minor AS php_minor
@@ -234,7 +233,7 @@ class PhpStatRepository extends ServiceEntityRepository
             ['package' => $package->getId(), 'type' => $type, 'exact' => PhpStat::DEPTH_EXACT, 'major' => PhpStat::DEPTH_MAJOR]
         );
 
-        $minorPhpVersions = array_filter($minorPhpVersions, static fn ($version) => is_string($version));
+        $minorPhpVersions = array_filter($minorPhpVersions, static fn ($version) => \is_string($version));
         if (!$minorPhpVersions) {
             return;
         }
@@ -254,7 +253,7 @@ class PhpStatRepository extends ServiceEntityRepository
             'SELECT '.implode(', ', $sumQueries).' FROM php_stat p WHERE p.package_id = :package AND p.type = :type AND p.depth IN (:exact, :major)',
             ['package' => $package->getId(), 'type' => $type, 'exact' => PhpStat::DEPTH_EXACT, 'major' => PhpStat::DEPTH_MAJOR]
         );
-        assert(is_array($sums));
+        \assert(\is_array($sums));
 
         foreach ($minorPhpVersions as $index => $version) {
             if (is_numeric($sums[$index]) && $sums[$index] > 0) {

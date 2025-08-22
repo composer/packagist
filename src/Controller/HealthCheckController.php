@@ -12,18 +12,18 @@
 
 namespace App\Controller;
 
+use App\HealthCheck\MetadataDirCheck;
+use App\HealthCheck\RedisHealthCheck;
+use Laminas\Diagnostics\Check;
 use Laminas\Diagnostics\Result\Collection;
 use Laminas\Diagnostics\Result\ResultInterface;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Laminas\Diagnostics\Check;
 use Laminas\Diagnostics\Runner\Runner;
-use App\HealthCheck\RedisHealthCheck;
-use App\HealthCheck\MetadataDirCheck;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Attribute\Route;
 
 class HealthCheckController
 {
@@ -53,11 +53,11 @@ class HealthCheckController
 
         $runner = new Runner();
 
-        $dbhost = (string) parse_url($this->dbUrl, PHP_URL_HOST);
-        $dbname = trim((string) parse_url($this->dbUrl, PHP_URL_PATH), '/');
-        $dbuser = (string) parse_url($this->dbUrl, PHP_URL_USER);
-        $dbpass = (string) parse_url($this->dbUrl, PHP_URL_PASS);
-        $dbport = (string) parse_url($this->dbUrl, PHP_URL_PORT);
+        $dbhost = (string) parse_url($this->dbUrl, \PHP_URL_HOST);
+        $dbname = trim((string) parse_url($this->dbUrl, \PHP_URL_PATH), '/');
+        $dbuser = (string) parse_url($this->dbUrl, \PHP_URL_USER);
+        $dbpass = (string) parse_url($this->dbUrl, \PHP_URL_PASS);
+        $dbport = (string) parse_url($this->dbUrl, \PHP_URL_PORT);
         if ($dbport === '') {
             $dbport = '3306';
         }
@@ -96,10 +96,10 @@ class HealthCheckController
             $result = $results[$checker];
 
             return [
-                'checker' => get_class($checker),
+                'checker' => $checker::class,
                 'message' => $result->getMessage(),
                 'details' => $result->getData(),
-                'result' => strtoupper(str_replace('ZendDiagnostics\\Result\\', '', get_class($result))),
+                'result' => strtoupper(str_replace('ZendDiagnostics\\Result\\', '', $result::class)),
             ];
         }, iterator_to_array($results)));
     }

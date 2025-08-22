@@ -12,10 +12,9 @@
 
 namespace App\Validator;
 
-use Attribute;
 use Symfony\Component\Validator\Constraint;
 
-#[Attribute(Attribute::TARGET_CLASS)]
+#[\Attribute(\Attribute::TARGET_CLASS)]
 class NotProhibitedPassword extends Constraint
 {
     public string $message = 'Password should not match your email or any of your names.';

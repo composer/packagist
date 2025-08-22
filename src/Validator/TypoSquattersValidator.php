@@ -16,12 +16,12 @@ use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
@@ -96,7 +96,7 @@ class TypoSquattersValidator extends ConstraintValidator
 
                 $req = $this->requestStack->getMainRequest();
                 if ($req && $req->attributes->get('_route') !== 'submit.fetch_info') {
-                    $message = (new Email())
+                    $message = new Email()
                         ->subject($value->getName().' is suspiciously close to '.$existingPackage['name'])
                         ->from(new Address($this->mailFromEmail))
                         ->to($this->mailFromEmail)

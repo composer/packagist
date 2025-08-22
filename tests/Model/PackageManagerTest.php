@@ -23,10 +23,10 @@ class PackageManagerTest extends TestCase
 
         $client = self::createClient();
 
-        $package = new Package;
+        $package = new Package();
         $package->setRepository($url);
 
-        $user = new User;
+        $user = new User();
         $user->addPackage($package);
 
         $repo = $this->createMock('App\Entity\UserRepository');
@@ -36,7 +36,7 @@ class PackageManagerTest extends TestCase
         $repo->expects($this->once())
             ->method('findOneBy')
             ->with($this->equalTo(['username' => 'test', 'apiToken' => 'token']))
-            ->will($this->returnValue($user));
+            ->willReturn($user);
 
         static::$kernel->getContainer()->set('test.user_repo', $repo);
         static::$kernel->getContainer()->set('doctrine.orm.entity_manager', $em);

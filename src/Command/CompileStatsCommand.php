@@ -12,14 +12,14 @@
 
 namespace App\Command;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use App\Entity\Download;
 use App\Service\Locker;
+use Doctrine\DBAL\Connection;
+use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>

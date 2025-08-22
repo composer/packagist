@@ -12,11 +12,11 @@
 
 namespace App\Controller;
 
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -37,6 +37,7 @@ abstract class Controller extends AbstractController
 
     /**
      * @param array<Package|array{id: int}> $packages
+     *
      * @return array{downloads: array<int, int>, favers: array<int, int>}
      */
     protected function getPackagesMetadata(FavoriteManager $favMgr, DownloadManager $dlMgr, iterable $packages): array
@@ -53,7 +54,7 @@ abstract class Controller extends AbstractController
                     $ids[] = $package->getId();
                     // fetch one by one to avoid re-fetching the github stars as we already have them on the package object
                     $favorites[$package->getId()] = $favMgr->getFaverCount($package);
-                } elseif (is_array($package)) {
+                } elseif (\is_array($package)) {
                     $ids[] = $package['id'];
                     // fetch all in one query if we do not have objects
                     $search = true;
@@ -75,11 +76,11 @@ abstract class Controller extends AbstractController
     protected function blockAbusers(Request $req): ?JsonResponse
     {
         if (str_contains((string) $req->headers->get('User-Agent'), 'Bytespider; spider-feedback@bytedance.com')) {
-            return new JsonResponse("Please respect noindex/nofollow meta tags, and email contact@packagist.org to get unblocked once this is resolved", 429, ['Retry-After' => 31536000]);
+            return new JsonResponse('Please respect noindex/nofollow meta tags, and email contact@packagist.org to get unblocked once this is resolved', 429, ['Retry-After' => 31536000]);
         }
 
         if ($req->getClientIp() === '18.190.1.42') {
-            return new JsonResponse("Please use the updatedSince flag to fetch new security advisories, and email contact@packagist.org to get unblocked once this is resolved", 429, ['Retry-After' => 31536000]);
+            return new JsonResponse('Please use the updatedSince flag to fetch new security advisories, and email contact@packagist.org to get unblocked once this is resolved', 429, ['Retry-After' => 31536000]);
         }
 
         $abusers = [
@@ -96,8 +97,8 @@ abstract class Controller extends AbstractController
             '2a02:4780:d:5838::1',
             '82.180.155.159',
         ];
-        if (in_array($req->getClientIp(), $abusers, true)) {
-            return new JsonResponse("Please use a proper user-agent with contact information or get in touch before abusing the API", 429, ['Retry-After' => 31536000]);
+        if (\in_array($req->getClientIp(), $abusers, true)) {
+            return new JsonResponse('Please use a proper user-agent with contact information or get in touch before abusing the API', 429, ['Retry-After' => 31536000]);
         }
 
         return null;

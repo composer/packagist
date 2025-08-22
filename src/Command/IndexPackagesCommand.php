@@ -17,16 +17,16 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Service\Locker;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Doctrine\Persistence\ManagerRegistry;
-use App\Service\Locker;
-use Predis\Client;
-use Symfony\Component\Console\Command\Command;
 
 class IndexPackagesCommand extends Command
 {
@@ -119,12 +119,12 @@ class IndexPackagesCommand extends Command
             $index->clear();
         }
 
-        $total = count($ids);
+        $total = \count($ids);
         $current = 0;
 
         // update package index
         while ($ids) {
-            $indexTime = new \DateTime;
+            $indexTime = new \DateTime();
             $idsSlice = array_splice($ids, 0, 50);
             $packages = $this->getEM()->getRepository(Package::class)->findBy(['id' => $idsSlice]);
 
@@ -134,7 +134,7 @@ class IndexPackagesCommand extends Command
             foreach ($packages as $package) {
                 $current++;
                 if ($verbose) {
-                    $output->writeln('['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
+                    $output->writeln('['.\sprintf('%'.\strlen((string) $total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
                 }
 
                 // delete spam packages from the search index
@@ -168,7 +168,7 @@ class IndexPackagesCommand extends Command
             try {
                 $index->saveObjects($records);
             } catch (\Exception $e) {
-                $output->writeln('<error>'.get_class($e).': '.$e->getMessage().', occurred while processing packages: '.implode(',', $idsSlice).'</error>');
+                $output->writeln('<error>'.$e::class.': '.$e->getMessage().', occurred while processing packages: '.implode(',', $idsSlice).'</error>');
                 continue;
             }
 
@@ -192,7 +192,8 @@ class IndexPackagesCommand extends Command
 
     /**
      * @param string[] $tags
-     * @return array<string, int|string|float|null|array<string, string|int>>
+     *
+     * @return array<string, int|string|float|array<string, string|int>|null>
      */
     private function packageToSearchableArray(Package $package, array $tags): array
     {
@@ -213,9 +214,9 @@ class IndexPackagesCommand extends Command
             'type' => $package->getType(),
             'repository' => $package->getRepository(),
             'language' => $package->getLanguage(),
-            # log10 of downloads over the last 7days
+            // log10 of downloads over the last 7days
             'trendiness' => $trendiness > 0 ? log($trendiness, 10) : 0,
-            # log10 of downloads + gh stars
+            // log10 of downloads + gh stars
             'popularity' => $popularity,
             'meta' => [
                 'downloads' => $downloads['total'],
@@ -233,7 +234,7 @@ class IndexPackagesCommand extends Command
             $record['replacementPackage'] = '';
         }
 
-        if (in_array($package->getType(), ['php-ext', 'php-ext-zend'], true)) {
+        if (\in_array($package->getType(), ['php-ext', 'php-ext-zend'], true)) {
             $record['extension'] = 1;
         }
 

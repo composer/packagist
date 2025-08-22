@@ -105,22 +105,22 @@ class SecurityAdvisoryTest extends TestCase
         $this->assertNull($advisory->getSeverity(), "FriendsOfPHP doesn't provide severity information");
         $advisory->addSource($gitHubRemoteAdvisor->id, GitHubSecurityAdvisoriesSource::SOURCE_NAME, null);
         $advisory->updateAdvisory($this->generateGitHubAdvisory(Severity::HIGH));
-        $this->assertSame(Severity::HIGH, $advisory->getSeverity(), "GitHub should update the advisory severity");
+        $this->assertSame(Severity::HIGH, $advisory->getSeverity(), 'GitHub should update the advisory severity');
         $this->assertSame(Severity::HIGH, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getSeverity(), 'GitHub should update the source data');
 
         $advisory->updateAdvisory($this->generateGitHubAdvisory(Severity::MEDIUM));
-        $this->assertSame(Severity::MEDIUM, $advisory->getSeverity(), "GitHub should update the advisory severity");
+        $this->assertSame(Severity::MEDIUM, $advisory->getSeverity(), 'GitHub should update the advisory severity');
         $this->assertSame(Severity::MEDIUM, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getSeverity(), 'GitHub should update the source data');
 
         $advisory->updateAdvisory($friendsOfPhpRemoteAdvisory);
         $this->assertSame(Severity::MEDIUM, $advisory->getSeverity(), "FriendsOfPHP shouldn't reset the severity information");
 
         $advisory->updateAdvisory($this->generateGitHubAdvisory(Severity::HIGH));
-        $this->assertSame(Severity::HIGH, $advisory->getSeverity(), "GitHub should update the advisory severity");
+        $this->assertSame(Severity::HIGH, $advisory->getSeverity(), 'GitHub should update the advisory severity');
         $this->assertSame(Severity::HIGH, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getSeverity(), 'GitHub should update the source data');
     }
 
-    private function generateGitHubAdvisory(Severity|null $severity): RemoteSecurityAdvisory
+    private function generateGitHubAdvisory(?Severity $severity): RemoteSecurityAdvisory
     {
         return new RemoteSecurityAdvisory(
             'GHSA-1234-1234-1234',
@@ -139,7 +139,7 @@ class SecurityAdvisoryTest extends TestCase
 
     private function generateFriendsOfPhpRemoteAdvisory(string $title, string $link, string $cve): RemoteSecurityAdvisory
     {
-        return RemoteSecurityAdvisory::createFromFriendsOfPhp(sprintf('symfony/framework-bundle/%s.yaml', $cve), [
+        return RemoteSecurityAdvisory::createFromFriendsOfPhp(\sprintf('symfony/framework-bundle/%s.yaml', $cve), [
             'title' => $title,
             'link' => $link,
             'cve' => $cve,

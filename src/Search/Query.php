@@ -38,7 +38,7 @@ final class Query
             new UnicodeString($tag);
         }
 
-        if ('' === $this->query && '' === $this->type && count($this->tags) === 0) {
+        if ('' === $this->query && '' === $this->type && \count($this->tags) === 0) {
             throw new \InvalidArgumentException('Missing search query, example: ?q=example');
         }
 
@@ -74,10 +74,10 @@ final class Query
                     $tags[] = 'tags:"'.strtr($tag, ' ', '-').'"';
                 }
             }
-            $filters[] = '(' . implode(' OR ', $tags) . ')';
+            $filters[] = '('.implode(' OR ', $tags).')';
         }
 
-        if (0 !== count($filters)) {
+        if (0 !== \count($filters)) {
             $queryParams['filters'] = implode(' AND ', $filters);
         }
 

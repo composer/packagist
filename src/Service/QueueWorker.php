@@ -12,14 +12,13 @@
 
 namespace App\Service;
 
-use App\Logger\LogIdProcessor;
-use Predis\Client as Redis;
-use Monolog\Logger;
-use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Job;
-use Seld\Signal\SignalHandler;
+use App\Logger\LogIdProcessor;
+use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
-use TypeError;
+use Monolog\Logger;
+use Predis\Client as Redis;
+use Seld\Signal\SignalHandler;
 use Webmozart\Assert\Assert;
 
 class QueueWorker
@@ -124,12 +123,12 @@ class QueueWorker
         $processor = $this->jobWorkers[$job->getType()];
 
         $this->logger->reset();
-        $this->logger->debug('Processing ' . $job->getType() . ' job', ['job' => $job->getPayload()]);
+        $this->logger->debug('Processing '.$job->getType().' job', ['job' => $job->getPayload()]);
 
         try {
             $result = $processor->process($job, $signal);
         } catch (\Throwable $e) {
-            if ($e instanceof TypeError) {
+            if ($e instanceof \TypeError) {
                 $this->logger->error('TypeError: '.$e->getMessage(), ['exception' => $e]);
                 $this->statsd->increment('worker.queue.processed', 1, 1, [
                     'jobType' => $job->getType(),
@@ -185,7 +184,7 @@ class QueueWorker
 
         if (isset($result['exception'])) {
             $result['exceptionMsg'] = $result['exception']->getMessage();
-            $result['exceptionClass'] = get_class($result['exception']);
+            $result['exceptionClass'] = \get_class($result['exception']);
             unset($result['exception']);
         }
 

@@ -32,13 +32,14 @@ class CdnClient
 
     /**
      * @param non-empty-string $path
+     *
      * @return int file modified time in units of 100-microseconds (i.e. 1.2345 seconds = a return value of 12345)
      */
     public function uploadMetadata(string $path, string $contents): int
     {
         $path = ltrim($path, '/');
         if ($this->metadataApiKey === null || $this->metadataEndpoint === null || $this->metadataPublicEndpoint === null || $this->cdnApiKey === null) {
-            return intval(time() * 10000);
+            return (int) (time() * 10000);
         }
 
         $resp = $this->sendUploadMetadataRequest($path, $contents);

@@ -14,22 +14,22 @@ namespace App\Package;
 
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
+use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
+use App\Entity\Version;
+use App\Model\ProviderManager;
 use App\Service\CdnClient;
 use App\Service\ReplicaClient;
+use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
-use Symfony\Component\Filesystem\Filesystem;
-use Composer\MetadataMinifier\MetadataMinifier;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Finder\Finder;
-use App\Entity\Version;
-use App\Entity\Package;
-use App\Model\ProviderManager;
-use Predis\Client;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
+use Predis\Client;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Webmozart\Assert\Assert;
@@ -70,10 +70,10 @@ class V2Dumper
         ];
 
         $rootFileContents['notify-batch'] = $this->router->generate('track_download_batch', [], UrlGeneratorInterface::ABSOLUTE_URL);
-        $rootFileContents['providers-url'] = $this->router->generate('home', []) . 'p/%package%$%hash%.json';
-        $rootFileContents['metadata-url'] = str_replace('https://', 'https://repo.', $this->router->generate('home', [], UrlGeneratorInterface::ABSOLUTE_URL)) . 'p2/%package%.json';
+        $rootFileContents['providers-url'] = $this->router->generate('home', []).'p/%package%$%hash%.json';
+        $rootFileContents['metadata-url'] = str_replace('https://', 'https://repo.', $this->router->generate('home', [], UrlGeneratorInterface::ABSOLUTE_URL)).'p2/%package%.json';
         $rootFileContents['metadata-changes-url'] = $this->router->generate('metadata_changes', [], UrlGeneratorInterface::ABSOLUTE_URL);
-        $rootFileContents['search'] = $this->router->generate('search_api', [], UrlGeneratorInterface::ABSOLUTE_URL) . '?q=%query%&type=%type%';
+        $rootFileContents['search'] = $this->router->generate('search_api', [], UrlGeneratorInterface::ABSOLUTE_URL).'?q=%query%&type=%type%';
         $rootFileContents['list'] = $this->router->generate('list', [], UrlGeneratorInterface::ABSOLUTE_URL);
         $rootFileContents['security-advisories'] = [
             'metadata' => true, // whether advisories are part of the metadata v2 files
@@ -106,9 +106,9 @@ class V2Dumper
         ];
 
         if ($verbose) {
-            echo 'Dumping root'.PHP_EOL;
+            echo 'Dumping root'.\PHP_EOL;
         }
-        $this->dumpRootFile($rootFile, json_encode($rootFileContents, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $this->dumpRootFile($rootFile, json_encode($rootFileContents, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR));
         $this->statsd->increment('packagist.metadata_dump_root');
     }
 
@@ -139,19 +139,19 @@ class V2Dumper
         }
 
         if ($verbose) {
-            echo 'Web dir is '.$webDir.'/p2 ('.realpath($webDir.'/p2').')'.PHP_EOL;
-            echo 'Build v2 dir is '.$buildDirV2.PHP_EOL;
+            echo 'Web dir is '.$webDir.'/p2 ('.realpath($webDir.'/p2').')'.\PHP_EOL;
+            echo 'Build v2 dir is '.$buildDirV2.\PHP_EOL;
         }
 
         $dumpTimeUpdates = [];
 
         $versionRepo = $this->getEM()->getRepository(Version::class);
 
-        $total = count($packageIds);
+        $total = \count($packageIds);
         $current = 0;
         $step = 50;
         while ($packageIds) {
-            $dumpTime = new \DateTime;
+            $dumpTime = new \DateTime();
             $idBatch = array_splice($packageIds, 0, $step);
             $this->logger->debug('Dumping package ids', ['ids' => $idBatch]);
             $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions($idBatch);
@@ -160,7 +160,7 @@ class V2Dumper
             $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
 
             if ($verbose) {
-                echo '['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.PHP_EOL;
+                echo '['.\sprintf('%'.\strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.\PHP_EOL;
             }
 
             $current += $step;
@@ -196,7 +196,7 @@ class V2Dumper
         }
 
         if ($verbose) {
-            echo 'Updating package dump times'.PHP_EOL;
+            echo 'Updating package dump times'.\PHP_EOL;
         }
 
         $maxDumpTime = 0;
@@ -273,8 +273,8 @@ class V2Dumper
 
         $this->writeFileAtomic($file, $json, $filemtime);
         $encoded = gzencode($json, 8);
-        assert(is_string($encoded));
-        $this->writeFileAtomic($file . '.gz', $encoded, $filemtime);
+        \assert(\is_string($encoded));
+        $this->writeFileAtomic($file.'.gz', $encoded, $filemtime);
 
         $this->purgeCdn('packages.json');
     }
@@ -289,7 +289,7 @@ class V2Dumper
     }
 
     /**
-     * @param mixed[] $versionData
+     * @param mixed[]                                                    $versionData
      * @param array<array{advisoryId: string, affectedVersions: string}> $advisories
      */
     private function dumpPackageToV2File(string $dir, Package $package, array $versionData, array $advisories): void
@@ -316,17 +316,17 @@ class V2Dumper
 
     /**
      * @param array<array{advisoryId: string, affectedVersions: string}>|null $advisories
-     * @param array<Version> $versions
-     * @param VersionData $versionData
+     * @param array<Version>                                                  $versions
+     * @param VersionData                                                     $versionData
      */
-    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, array|null $advisories = null): void
+    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, ?array $advisories = null): void
     {
         $versionArrays = [];
         foreach ($versions as $version) {
             $versionArrays[] = $version->toV2Array($versionData);
         }
 
-        $path = $dir . '/' . $filename;
+        $path = $dir.'/'.$filename;
 
         $metadata = [
             'minified' => 'composer/2.0',
@@ -339,7 +339,7 @@ class V2Dumper
             $metadata['security-advisories'] = $advisories;
         }
 
-        $json = json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $json = json_encode($metadata, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR);
         $this->writeV2File($package, $name, $path, $json, $forceDump);
     }
 
@@ -369,7 +369,7 @@ class V2Dumper
 
         $pkgWithDevFlag = $match[1];
         $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
-        $this->filesystem->mkdir(dirname($path));
+        $this->filesystem->mkdir(\dirname($path));
 
         $filemtime = $this->writeCdn($relativePath, $contents);
 
@@ -391,7 +391,7 @@ class V2Dumper
             $filemtime += $counter;
         }
 
-        $timeUnix = intval(ceil($filemtime / 10000));
+        $timeUnix = (int) ceil($filemtime / 10000);
         $this->writeFileAtomic($path, $contents, $timeUnix);
 
         $this->writeToReplica($path, $contents, $timeUnix);
@@ -404,6 +404,7 @@ class V2Dumper
 
     /**
      * @param non-empty-string $relativePath
+     *
      * @throws TransportExceptionInterface
      */
     private function writeCdn(string $relativePath, string $contents): int

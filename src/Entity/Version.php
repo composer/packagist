@@ -19,10 +19,10 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use DateTimeImmutable;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
+ *
  * @phpstan-type VersionArray array{
  *     name: string,
  *     description: string,
@@ -71,13 +71,13 @@ class Version
     private string $name;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    private string|null $description = null;
+    private ?string $description = null;
 
     #[ORM\Column(nullable: true)]
-    private string|null $type = null;
+    private ?string $type = null;
 
     #[ORM\Column(nullable: true)]
-    private string|null $targetDir = null;
+    private ?string $targetDir = null;
 
     /**
      * @var array<mixed>
@@ -96,11 +96,11 @@ class Version
 
     #[ORM\ManyToOne(targetEntity: Package::class, inversedBy: 'versions')]
     #[Assert\Type(type: Package::class)]
-    private Package|null $package;
+    private ?Package $package;
 
     #[ORM\Column(nullable: true)]
     #[Assert\Url]
-    private string|null $homepage = null;
+    private ?string $homepage = null;
 
     #[ORM\Column]
     #[Assert\NotBlank]
@@ -160,13 +160,13 @@ class Version
      * @var array{type: string|null, url: string|null, reference: string|null}|null
      */
     #[ORM\Column(type: 'json', nullable: true)]
-    private array|null $source = null;
+    private ?array $source = null;
 
     /**
      * @var array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null
      */
     #[ORM\Column(type: 'json', nullable: true)]
-    private array|null $dist = null;
+    private ?array $dist = null;
 
     /**
      * @var array{psr-0?: array<string, string|string[]>, psr-4?: array<string, string|string[]>, classmap?: list<string>, files?: list<string>}
@@ -178,25 +178,25 @@ class Version
      * @var array<string>|null
      */
     #[ORM\Column(type: 'json', nullable: true)]
-    private array|null $binaries = null;
+    private ?array $binaries = null;
 
     /**
      * @var array<string>
      */
     #[ORM\Column(type: 'json', nullable: true)]
-    private array|null $includePaths = null;
+    private ?array $includePaths = null;
 
     /**
      * @var array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string, security?: string}|null
      */
     #[ORM\Column(type: 'json', nullable: true)]
-    private array|null $support = null;
+    private ?array $support = null;
 
     /**
      * @var array<array{type?: string, url?: string}>|null
      */
     #[ORM\Column(type: 'json', nullable: true)]
-    private array|null $funding = null;
+    private ?array $funding = null;
 
     /**
      * @var array<array{name?: string, homepage?: string, email?: string, role?: string}>
@@ -208,22 +208,22 @@ class Version
      * @var array{priority?: int, configure-options?: list<array{name: string, description?: string}>}|null
      */
     #[ORM\Column(type: 'json', options: ['default' => null], nullable: true)]
-    private array|null $phpExt = null;
+    private ?array $phpExt = null;
 
     #[ORM\Column(name: 'defaultBranch', type: 'boolean', options: ['default' => false])]
     private bool $isDefaultBranch = false;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private DateTimeImmutable $createdAt;
+    private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $softDeletedAt = null;
+    private ?\DateTimeImmutable $softDeletedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private DateTimeImmutable $updatedAt;
+    private \DateTimeImmutable $updatedAt;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $releasedAt = null;
+    private ?\DateTimeImmutable $releasedAt = null;
 
     public function __construct()
     {
@@ -234,12 +234,13 @@ class Version
         $this->provide = new ArrayCollection();
         $this->devRequire = new ArrayCollection();
         $this->suggest = new ArrayCollection();
-        $this->createdAt = new DateTimeImmutable;
-        $this->updatedAt = new DateTimeImmutable;
+        $this->createdAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     /**
      * @param VersionData $versionData
+     *
      * @return VersionArray
      */
     public function toArray(array $versionData, bool $serializeForApi = false): array
@@ -339,6 +340,7 @@ class Version
 
     /**
      * @param VersionData $versionData
+     *
      * @return VersionArray
      */
     public function toV2Array(array $versionData): array
@@ -348,14 +350,14 @@ class Version
         if (isset($array['support'])) {
             ksort($array['support']);
         }
-        if (isset($array['php-ext']['configure-options']) && is_array($array['php-ext']['configure-options'])) {
+        if (isset($array['php-ext']['configure-options']) && \is_array($array['php-ext']['configure-options'])) {
             usort($array['php-ext']['configure-options'], static fn ($a, $b) => ($a['name'] ?? '') <=> ($b['name'] ?? ''));
         }
 
         return $array;
     }
 
-    public function equals(Version $version): bool
+    public function equals(self $version): bool
     {
         return strtolower($version->getName()) === strtolower($this->getName())
             && strtolower($version->getNormalizedVersion()) === strtolower($this->getNormalizedVersion());
@@ -378,6 +380,7 @@ class Version
 
     /**
      * @param VersionData|null $versionData
+     *
      * @return list<string>
      */
     public function getNames(?array $versionData = null): array
@@ -407,22 +410,22 @@ class Version
         return array_keys($names);
     }
 
-    public function setDescription(string|null $description): void
+    public function setDescription(?string $description): void
     {
         $this->description = $description;
     }
 
-    public function getDescription(): string|null
+    public function getDescription(): ?string
     {
         return $this->description;
     }
 
-    public function setHomepage(string|null $homepage): void
+    public function setHomepage(?string $homepage): void
     {
         $this->homepage = $homepage;
     }
 
-    public function getHomepage(): string|null
+    public function getHomepage(): ?string
     {
         return $this->homepage;
     }
@@ -471,7 +474,7 @@ class Version
     /**
      * @param PackageSource $source
      */
-    public function setSource(array|null $source): void
+    public function setSource(?array $source): void
     {
         $this->source = $source;
     }
@@ -479,7 +482,7 @@ class Version
     /**
      * @return PackageSource
      */
-    public function getSource(): array|null
+    public function getSource(): ?array
     {
         return $this->source;
     }
@@ -487,7 +490,7 @@ class Version
     /**
      * @param PackageDist $dist
      */
-    public function setDist(array|null $dist): void
+    public function setDist(?array $dist): void
     {
         $this->dist = $dist;
     }
@@ -495,7 +498,7 @@ class Version
     /**
      * @return PackageDist
      */
-    public function getDist(): array|null
+    public function getDist(): ?array
     {
         return $this->dist;
     }
@@ -519,7 +522,7 @@ class Version
     /**
      * @param array<string>|null $binaries
      */
-    public function setBinaries(array|null $binaries): void
+    public function setBinaries(?array $binaries): void
     {
         $this->binaries = $binaries;
     }
@@ -527,7 +530,7 @@ class Version
     /**
      * @return array<string>|null
      */
-    public function getBinaries(): array|null
+    public function getBinaries(): ?array
     {
         return $this->binaries;
     }
@@ -535,7 +538,7 @@ class Version
     /**
      * @param array<string>|null $paths
      */
-    public function setIncludePaths(array|null $paths): void
+    public function setIncludePaths(?array $paths): void
     {
         $this->includePaths = $paths;
     }
@@ -543,7 +546,7 @@ class Version
     /**
      * @return array<string>|null
      */
-    public function getIncludePaths(): array|null
+    public function getIncludePaths(): ?array
     {
         return $this->includePaths;
     }
@@ -551,7 +554,7 @@ class Version
     /**
      * @param array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string, security?: string}|null $support
      */
-    public function setSupport(array|null $support): void
+    public function setSupport(?array $support): void
     {
         $this->support = $support;
     }
@@ -559,7 +562,7 @@ class Version
     /**
      * @return array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string, security?: string}|null
      */
-    public function getSupport(): array|null
+    public function getSupport(): ?array
     {
         return $this->support;
     }
@@ -567,7 +570,7 @@ class Version
     /**
      * @param array<array{type?: string, url?: string}>|null $funding
      */
-    public function setFunding(array|null $funding): void
+    public function setFunding(?array $funding): void
     {
         $this->funding = $funding;
     }
@@ -582,6 +585,7 @@ class Version
 
     /**
      * Get funding, sorted to help the V2 metadata compression algo
+     *
      * @return array<array{type?: string, url?: string}>|null
      */
     public function getFundingSorted(): ?array
@@ -592,8 +596,8 @@ class Version
 
         $funding = $this->funding;
         usort($funding, static function ($a, $b) {
-            $keyA = ($a['type'] ?? '') . ($a['url'] ?? '');
-            $keyB = ($b['type'] ?? '') . ($b['url'] ?? '');
+            $keyA = ($a['type'] ?? '').($a['url'] ?? '');
+            $keyB = ($b['type'] ?? '').($b['url'] ?? '');
 
             return $keyA <=> $keyB;
         });
@@ -601,22 +605,22 @@ class Version
         return $funding;
     }
 
-    public function setCreatedAt(DateTimeImmutable $createdAt): void
+    public function setCreatedAt(\DateTimeImmutable $createdAt): void
     {
         $this->createdAt = $createdAt;
     }
 
-    public function getCreatedAt(): DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setReleasedAt(DateTimeImmutable|null $releasedAt): void
+    public function setReleasedAt(?\DateTimeImmutable $releasedAt): void
     {
         $this->releasedAt = $releasedAt;
     }
 
-    public function getReleasedAt(): DateTimeImmutable|null
+    public function getReleasedAt(): ?\DateTimeImmutable
     {
         return $this->releasedAt;
     }
@@ -628,7 +632,7 @@ class Version
 
     public function getPackage(): Package
     {
-        assert($this->package instanceof Package);
+        \assert($this->package instanceof Package);
 
         return $this->package;
     }
@@ -654,22 +658,22 @@ class Version
         return false;
     }
 
-    public function setUpdatedAt(DateTimeImmutable $updatedAt): void
+    public function setUpdatedAt(\DateTimeImmutable $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
     }
 
-    public function getUpdatedAt(): DateTimeImmutable
+    public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function setSoftDeletedAt(DateTimeImmutable|null $softDeletedAt): void
+    public function setSoftDeletedAt(?\DateTimeImmutable $softDeletedAt): void
     {
         $this->softDeletedAt = $softDeletedAt;
     }
 
-    public function getSoftDeletedAt(): DateTimeImmutable|null
+    public function getSoftDeletedAt(): ?\DateTimeImmutable
     {
         return $this->softDeletedAt;
     }
@@ -693,7 +697,7 @@ class Version
     /**
      * @return array{priority?: int, configure-options?: list<array{name: string, description?: string}>}|null
      */
-    public function getPhpExt(): array|null
+    public function getPhpExt(): ?array
     {
         return $this->phpExt;
     }
@@ -701,7 +705,7 @@ class Version
     /**
      * @param array{priority?: int, configure-options?: list<array{name: string, description?: string}>}|null $phpExt
      */
-    public function setPhpExt(array|null $phpExt): void
+    public function setPhpExt(?array $phpExt): void
     {
         $this->phpExt = $phpExt;
     }
@@ -716,22 +720,22 @@ class Version
         $this->isDefaultBranch = $isDefaultBranch;
     }
 
-    public function setType(string|null $type): void
+    public function setType(?string $type): void
     {
         $this->type = $type;
     }
 
-    public function getType(): string|null
+    public function getType(): ?string
     {
         return $this->type;
     }
 
-    public function setTargetDir(string|null $targetDir): void
+    public function setTargetDir(?string $targetDir): void
     {
         $this->targetDir = $targetDir;
     }
 
-    public function getTargetDir(): string|null
+    public function getTargetDir(): ?string
     {
         return $this->targetDir;
     }
@@ -872,7 +876,7 @@ class Version
         $extra = $this->getExtra();
 
         if (isset($extra['branch-alias'][$this->getVersion()])) {
-            $parser = new VersionParser;
+            $parser = new VersionParser();
             $version = $parser->normalizeBranch(str_replace('-dev', '', $extra['branch-alias'][$this->getVersion()]));
 
             return Preg::replace('{(\.9{7})+}', '.x', $version);

@@ -30,8 +30,8 @@ class UserAgentParser
                 $matches['composer'] = 'pre-1.8.5';
             }
             $this->composerVersion = Preg::replace('{\+[a-f0-9]{40}}', '', $matches['composer']);
-            $this->phpVersion = (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['php'];
-            $this->platformPhpVersion = null !== $matches['platform_php'] ? (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '') . $matches['platform_php'] : null;
+            $this->phpVersion = (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '').$matches['php'];
+            $this->platformPhpVersion = null !== $matches['platform_php'] ? (strtolower($matches['engine']) === 'hhvm' ? 'hhvm-' : '').$matches['platform_php'] : null;
             $this->os = Preg::replace('{^cygwin_nt-.*}', 'cygwin', strtolower($matches['os']));
             if (str_contains(strtolower((string) $matches['osversion']), 'microsoft')) { // likely WSL 1 e.g. version-Microsoft
                 $this->os = 'wsl';

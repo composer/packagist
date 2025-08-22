@@ -41,6 +41,7 @@ use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 /**
  * @phpstan-type Credentials array{username: string, password: string, ip: string|null, recaptcha: string}
+ *
  * @template-covariant TUser of UserInterface
  */
 class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator implements AuthenticationEntryPointInterface
@@ -103,7 +104,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
             $this->getEM()->flush();
         }
 
-        if (($targetPath = $request->getSession()->get('_security.'.$firewallName.'.target_path')) && is_string($targetPath)) {
+        if (($targetPath = $request->getSession()->get('_security.'.$firewallName.'.target_path')) && \is_string($targetPath)) {
             return $this->httpUtils->createRedirectResponse($request, $targetPath, Response::HTTP_FOUND);
         }
 
@@ -132,7 +133,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
         ];
 
         if (!\is_string($credentials['username'])) {
-            throw new BadRequestHttpException(sprintf('The key "_username" must be a string, "%s" given.', \gettype($credentials['username'])));
+            throw new BadRequestHttpException(\sprintf('The key "_username" must be a string, "%s" given.', \gettype($credentials['username'])));
         }
 
         $credentials['username'] = trim($credentials['username']);

@@ -73,7 +73,7 @@ class SecurityAdvisoryUpdateListener
         $this->packagesToMarkStale = [];
 
         $redisKeys = array_map(static fn ($pkg) => 'sec-adv:'.$pkg, $packageNames);
-        while (count($redisKeys) > 0) {
+        while (\count($redisKeys) > 0) {
             $keys = array_splice($redisKeys, 0, 1000);
             $this->redisCache->del($keys);
         }

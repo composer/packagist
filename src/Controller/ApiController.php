@@ -24,6 +24,8 @@ use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\UserAgentParser;
 use Composer\Pcre\Preg;
+use Graze\DogStatsD\Client as StatsDClient;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,10 +33,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Graze\DogStatsD\Client as StatsDClient;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -90,12 +90,12 @@ class ApiController extends Controller
             $payload = json_decode($request->getContent(), true);
         }
 
-        if (!$payload || !is_array($payload)) {
+        if (!$payload || !\is_array($payload)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
         }
-        if (isset($payload['repository']['url']) && is_string($payload['repository']['url'])) { // supported for BC
+        if (isset($payload['repository']['url']) && \is_string($payload['repository']['url'])) { // supported for BC
             $url = $payload['repository']['url'];
-        } elseif (isset($payload['repository']) && is_string($payload['repository'])) {
+        } elseif (isset($payload['repository']) && \is_string($payload['repository'])) {
             $url = $payload['repository'];
         } else {
             return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in payload'], 406);
@@ -106,11 +106,11 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
         }
 
-        $package = new Package;
+        $package = new Package();
         $package->addMaintainer($user);
         $package->setRepository($url);
         $errors = $validator->validate($package, groups: ['Default', 'Create']);
-        if (count($errors) > 0) {
+        if (\count($errors) > 0) {
             $errorArray = [];
             foreach ($errors as $error) {
                 $errorArray[$error->getPropertyPath()] = $error->getMessage();
@@ -148,7 +148,7 @@ class ApiController extends Controller
             $payload = json_decode($request->getContent(), true);
         }
 
-        if (!$payload || !is_array($payload)) {
+        if (!$payload || !\is_array($payload)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
         }
 
@@ -156,14 +156,14 @@ class ApiController extends Controller
             $urlRegex = self::REGEXES['gitlab'];
             $url = $payload['project']['git_http_url'];
             $remoteId = null;
-        } elseif (isset($payload['repository']) && is_string($payload['repository'])) { // anything hook
+        } elseif (isset($payload['repository']) && \is_string($payload['repository'])) { // anything hook
             $urlRegex = self::REGEXES['any'];
             $url = $payload['repository'];
             $remoteId = null;
-        } elseif (isset($payload['repository']['url']) && is_string($payload['repository']['url'])) { // github hook
+        } elseif (isset($payload['repository']['url']) && \is_string($payload['repository']['url'])) { // github hook
             $urlRegex = self::REGEXES['any'];
             $url = $payload['repository']['url'];
-            $remoteId = isset($payload['repository']['id']) && (is_string($payload['repository']['id']) || is_int($payload['repository']['id'])) ? $payload['repository']['id'] : null;
+            $remoteId = isset($payload['repository']['id']) && (\is_string($payload['repository']['id']) || \is_int($payload['repository']['id'])) ? $payload['repository']['id'] : null;
         } elseif (isset($payload['repository']['links']['html']['href'])) { // bitbucket push event payload
             $urlRegex = self::REGEXES['bitbucket_push'];
             $url = $payload['repository']['links']['html']['href'];
@@ -191,7 +191,7 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
         }
         if (!$package->getMaintainers()->contains($user)) {
-            throw new AccessDeniedException;
+            throw new AccessDeniedException();
         }
 
         $statsd->increment('edit_package_api');
@@ -201,14 +201,14 @@ class ApiController extends Controller
             $payload = json_decode($request->getContent(), true);
         }
 
-        if (!isset($payload['repository']) || !is_string($payload['repository'])) {
+        if (!isset($payload['repository']) || !\is_string($payload['repository'])) {
             return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in request body'], 406);
         }
 
         $package->setRepository($payload['repository']);
 
-        $errors = $validator->validate($package, null, ["Update"]);
-        if (count($errors) > 0) {
+        $errors = $validator->validate($package, null, ['Update']);
+        if (\count($errors) > 0) {
             $errorArray = [];
             foreach ($errors as $error) {
                 $errorArray[$error->getPropertyPath()] = $error->getMessage();
@@ -254,7 +254,7 @@ class ApiController extends Controller
             return !isset($item['name'], $item['version']);
         };
 
-        if (!is_array($contents) || !isset($contents['downloads']) || !is_array($contents['downloads']) || array_filter($contents['downloads'], $invalidInputs)) {
+        if (!\is_array($contents) || !isset($contents['downloads']) || !\is_array($contents['downloads']) || array_filter($contents['downloads'], $invalidInputs)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid request format, must be a json object containing a downloads key filled with an array of name/version objects'], 200);
         }
 
@@ -347,7 +347,7 @@ class ApiController extends Controller
             return $resp;
         }
 
-        $packageNames = array_filter((array) $request->get('packages'), static fn ($name) => is_string($name) && $name !== '');
+        $packageNames = array_filter((array) $request->get('packages'), static fn ($name) => \is_string($name) && $name !== '');
         if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);
         }
@@ -367,7 +367,7 @@ class ApiController extends Controller
 
         // Ensure known packages are returned even if no advisory is present to ensure they do not get retried by composer in lower prio repos
         // Do a max of 1000 packages to prevent abuse
-        $packagesToCheck = array_slice($packageNames, 0, 1000);
+        $packagesToCheck = \array_slice($packageNames, 0, 1000);
         $packageExists = $providerManager->packagesExist($packagesToCheck);
 
         foreach ($packagesToCheck as $name) {
@@ -409,7 +409,7 @@ class ApiController extends Controller
     /**
      * Perform the package update
      *
-     * @param string $url the repository's URL (deducted from the request)
+     * @param string                  $url      the repository's URL (deducted from the request)
      * @param value-of<self::REGEXES> $urlRegex the regex used to split the user packages into domain and path
      */
     protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret): JsonResponse
@@ -506,13 +506,13 @@ class ApiController extends Controller
      */
     protected function findUser(Request $request, ApiType $apiType = ApiType::Unsafe): ?User
     {
-        $username = $request->request->has('username') ?
-            $request->request->get('username') :
-            $request->query->get('username');
+        $username = $request->request->has('username')
+            ? $request->request->get('username')
+            : $request->query->get('username');
 
-        $apiToken = $request->request->has('apiToken') ?
-            $request->request->get('apiToken') :
-            $request->query->get('apiToken');
+        $apiToken = $request->request->has('apiToken')
+            ? $request->request->get('apiToken')
+            : $request->query->get('apiToken');
 
         if (!$apiToken || !$username) {
             return null;
@@ -539,6 +539,7 @@ class ApiController extends Controller
      * Find a user package given by its full URL
      *
      * @param value-of<self::REGEXES> $urlRegex
+     *
      * @return list<Package>
      */
     protected function findPackagesByUrl(User $user, string $url, string $urlRegex, string|int|null $remoteId): array
@@ -577,6 +578,7 @@ class ApiController extends Controller
 
     /**
      * @param User|null $user If provided it means the request came with a user's API token and not the packagist-configured secret, so we cannot be sure it is a request coming directly from github
+     *
      * @return Package[] the packages found
      */
     protected function findGitHubPackagesByRepository(string $path, string $remoteId, string $source, ?User $user = null): array

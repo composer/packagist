@@ -36,7 +36,7 @@ class GitHubLoginController extends Controller
     public function connect(ClientRegistry $clientRegistry): RedirectResponse
     {
         $user = $this->getUser();
-        if (!is_object($user)) {
+        if (!\is_object($user)) {
             throw $this->createAccessDeniedException('This user does not have access to this section.');
         }
 
@@ -116,7 +116,7 @@ class GitHubLoginController extends Controller
             $userNotifier->notifyChange($user->getEmail(), 'A GitHub account ('.$ghUser->getNickname().') has been connected to your Packagist.org account.');
 
             $this->addFlash('success', 'You have connected your GitHub account ('.$ghUser->getNickname().') to your Packagist.org account.');
-        } catch (IdentityProviderException | InvalidStateException $e) {
+        } catch (IdentityProviderException|InvalidStateException $e) {
             $this->addFlash('error', 'Failed OAuth Login: '.$e->getMessage());
         }
 

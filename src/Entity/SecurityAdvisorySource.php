@@ -35,9 +35,9 @@ class SecurityAdvisorySource
     private string $source;
 
     #[ORM\Column(nullable: true)]
-    private Severity|null $severity;
+    private ?Severity $severity;
 
-    public function __construct(SecurityAdvisory $securityAdvisory, string $remoteId, string $source, Severity|null $severity)
+    public function __construct(SecurityAdvisory $securityAdvisory, string $remoteId, string $source, ?Severity $severity)
     {
         $this->securityAdvisory = $securityAdvisory;
         $this->remoteId = $remoteId;

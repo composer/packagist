@@ -13,11 +13,11 @@
 namespace App\Command;
 
 use App\Entity\Dependent;
+use App\Service\Locker;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use App\Service\Locker;
-use Symfony\Component\Console\Command\Command;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -52,7 +52,7 @@ class PopulateDependentsSuggestersCommand extends Command
         $ids = $conn->fetchFirstColumn('SELECT id FROM package ORDER BY id ASC');
         $ids = array_map('intval', $ids);
 
-        $total = count($ids);
+        $total = \count($ids);
         $done = 0;
         while ($id = array_shift($ids)) {
             if (!$this->locker->lockPackageUpdate($id)) {

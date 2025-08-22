@@ -14,7 +14,6 @@ namespace App\SecurityAdvisory;
 
 use App\Entity\SecurityAdvisory;
 use Composer\Pcre\Preg;
-use DateTimeImmutable;
 
 /**
  * @phpstan-type FriendsOfPhpSecurityAdvisory array{
@@ -41,7 +40,7 @@ class RemoteSecurityAdvisory
         public readonly string $affectedVersions,
         public readonly string $link,
         public readonly ?string $cve,
-        public readonly DateTimeImmutable $date,
+        public readonly \DateTimeImmutable $date,
         public readonly ?string $composerRepository,
         public readonly array $references,
         public readonly string $source,
@@ -69,14 +68,14 @@ class RemoteSecurityAdvisory
     /**
      * @phpstan-param FriendsOfPhpSecurityAdvisory $info
      */
-    public static function createFromFriendsOfPhp(string $fileNameWithPath, array $info): RemoteSecurityAdvisory
+    public static function createFromFriendsOfPhp(string $fileNameWithPath, array $info): self
     {
         $date = null;
         $fallbackYearDate = null;
         if (Preg::isMatch('#(\d{4}-\d{2}-\d{2})#', basename($fileNameWithPath), $matches)) {
-            $date = new DateTimeImmutable($matches[1] . ' 00:00:00');
+            $date = new \DateTimeImmutable($matches[1].' 00:00:00');
         } elseif (Preg::isMatch('#CVE-(2\d{3})-\d#', basename($fileNameWithPath), $matches)) {
-            $fallbackYearDate = new DateTimeImmutable($matches[1] . '-01-01 00:00:00');
+            $fallbackYearDate = new \DateTimeImmutable($matches[1].'-01-01 00:00:00');
         }
 
         $affectedVersions = [];
@@ -85,14 +84,14 @@ class RemoteSecurityAdvisory
             $affectedVersions[] = implode(',', $branchInfo['versions']);
             if (!$date && isset($branchInfo['time'])) {
                 $timestamp = null;
-                if (is_int($branchInfo['time'])) {
+                if (\is_int($branchInfo['time'])) {
                     $timestamp = $branchInfo['time'];
-                } elseif (is_string($branchInfo['time'])) {
+                } elseif (\is_string($branchInfo['time'])) {
                     $timestamp = strtotime($branchInfo['time']);
                 }
 
                 if ($timestamp) {
-                    $branchDate = new DateTimeImmutable('@' . $timestamp);
+                    $branchDate = new \DateTimeImmutable('@'.$timestamp);
                     if (!$lowestBranchDate || $branchDate < $lowestBranchDate) {
                         $lowestBranchDate = $branchDate;
                     }
@@ -106,7 +105,7 @@ class RemoteSecurityAdvisory
             } elseif ($fallbackYearDate) {
                 $date = $fallbackYearDate;
             } else {
-                $date = (new DateTimeImmutable())->setTime(0, 0, 0);
+                $date = new \DateTimeImmutable()->setTime(0, 0, 0);
             }
         }
 
@@ -125,7 +124,7 @@ class RemoteSecurityAdvisory
             $cve = $info['cve'];
         }
 
-        return new RemoteSecurityAdvisory(
+        return new self(
             $fileNameWithPath,
             $info['title'],
             str_replace('composer://', '', $info['reference']),

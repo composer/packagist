@@ -12,7 +12,6 @@
 
 namespace App\Entity;
 
-use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -65,19 +64,19 @@ class Job
     private ?array $result = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private DateTimeImmutable $createdAt;
+    private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $startedAt = null;
+    private ?\DateTimeImmutable $startedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $completedAt = null;
+    private ?\DateTimeImmutable $completedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private DateTimeImmutable|null $executeAfter = null;
+    private ?\DateTimeImmutable $executeAfter = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    private int|null $packageId = null;
+    private ?int $packageId = null;
 
     /**
      * @param T $payload
@@ -87,12 +86,12 @@ class Job
         $this->id = $id;
         $this->type = $type;
         $this->payload = $payload;
-        $this->createdAt = new DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function start(): void
     {
-        $this->startedAt = new DateTimeImmutable();
+        $this->startedAt = new \DateTimeImmutable();
         $this->status = self::STATUS_STARTED;
     }
 
@@ -102,11 +101,11 @@ class Job
     public function complete(array $result): void
     {
         $this->result = $result;
-        $this->completedAt = new DateTimeImmutable();
+        $this->completedAt = new \DateTimeImmutable();
         $this->status = $result['status'];
     }
 
-    public function reschedule(DateTimeImmutable $when): void
+    public function reschedule(\DateTimeImmutable $when): void
     {
         $this->status = self::STATUS_QUEUED;
         $this->startedAt = null;
@@ -118,12 +117,12 @@ class Job
         return $this->id;
     }
 
-    public function setPackageId(int|null $packageId): void
+    public function setPackageId(?int $packageId): void
     {
         $this->packageId = $packageId;
     }
 
-    public function getPackageId(): int|null
+    public function getPackageId(): ?int
     {
         return $this->packageId;
     }
@@ -165,32 +164,32 @@ class Job
         return $this->result;
     }
 
-    public function setCreatedAt(DateTimeImmutable $createdAt): void
+    public function setCreatedAt(\DateTimeImmutable $createdAt): void
     {
         $this->createdAt = $createdAt;
     }
 
-    public function getCreatedAt(): DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function getStartedAt(): DateTimeImmutable|null
+    public function getStartedAt(): ?\DateTimeImmutable
     {
         return $this->startedAt;
     }
 
-    public function setExecuteAfter(DateTimeImmutable|null $executeAfter): void
+    public function setExecuteAfter(?\DateTimeImmutable $executeAfter): void
     {
         $this->executeAfter = $executeAfter;
     }
 
-    public function getExecuteAfter(): DateTimeImmutable|null
+    public function getExecuteAfter(): ?\DateTimeImmutable
     {
         return $this->executeAfter;
     }
 
-    public function getCompletedAt(): DateTimeImmutable|null
+    public function getCompletedAt(): ?\DateTimeImmutable
     {
         return $this->completedAt;
     }

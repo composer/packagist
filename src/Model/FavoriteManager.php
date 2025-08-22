@@ -26,7 +26,7 @@ class FavoriteManager
     public function __construct(
         private Client $redis,
         private PackageRepository $packageRepo,
-        private UserRepository $userRepo
+        private UserRepository $userRepo,
     ) {
     }
 
@@ -79,6 +79,7 @@ class FavoriteManager
 
     /**
      * @param array<int> $packageIds
+     *
      * @return array<int, int>
      */
     public function getFaverCounts(array $packageIds): array

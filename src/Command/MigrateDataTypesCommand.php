@@ -43,7 +43,7 @@ class MigrateDataTypesCommand extends Command
             $em = $this->getEM();
             $versions = $em->getConnection()->fetchAllAssociative('SELECT id, extra FROM package_version WHERE extra LIKE "a%" LIMIT 5000');
 
-            $output->writeln(count($versions).' versions to update');
+            $output->writeln(\count($versions).' versions to update');
             $em->getConnection()->beginTransaction();
             foreach ($versions as $version) {
                 $extra = unserialize($version['extra']);
@@ -57,12 +57,12 @@ class MigrateDataTypesCommand extends Command
                 $em->getConnection()->update('package_version', ['extra' => $extra], ['id' => $version['id']]);
             }
             $em->getConnection()->commit();
-        } while (count($versions) > 0);
+        } while (\count($versions) > 0);
 
         do {
             $emptyRefs = $em->getConnection()->fetchAllAssociative('SELECT package_id, emptyReferences FROM empty_references WHERE emptyReferences LIKE "a%" LIMIT 1000');
 
-            $output->writeln(count($emptyRefs).' empty refs to update');
+            $output->writeln(\count($emptyRefs).' empty refs to update');
             $em->getConnection()->beginTransaction();
             foreach ($emptyRefs as $emptyRef) {
                 $emptyReferences = unserialize($emptyRef['emptyReferences']);
@@ -76,12 +76,12 @@ class MigrateDataTypesCommand extends Command
                 $em->getConnection()->update('empty_references', ['emptyReferences' => $emptyReferences], ['package_id' => $emptyRef['package_id']]);
             }
             $em->getConnection()->commit();
-        } while (count($emptyRefs) > 0);
+        } while (\count($emptyRefs) > 0);
 
         do {
             $users = $em->getConnection()->fetchAllAssociative('SELECT id, roles FROM fos_user WHERE roles LIKE "a%" LIMIT 1000');
 
-            $output->writeln(count($users).' users to update');
+            $output->writeln(\count($users).' users to update');
             $em->getConnection()->beginTransaction();
             foreach ($users as $user) {
                 $roles = unserialize($user['roles']);
@@ -95,7 +95,7 @@ class MigrateDataTypesCommand extends Command
                 $em->getConnection()->update('fos_user', ['roles' => $roles], ['id' => $user['id']]);
             }
             $em->getConnection()->commit();
-        } while (count($users) > 0);
+        } while (\count($users) > 0);
 
         return 0;
     }

@@ -12,10 +12,10 @@
 
 namespace App\Service;
 
+use App\Entity\Job;
+use App\Entity\Package;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client as RedisClient;
-use App\Entity\Package;
-use App\Entity\Job;
 
 class Scheduler
 {
@@ -23,7 +23,7 @@ class Scheduler
 
     public function __construct(
         private RedisClient $redis,
-        private ManagerRegistry $doctrine
+        private ManagerRegistry $doctrine,
     ) {
     }
 
@@ -113,6 +113,7 @@ class Scheduler
 
     /**
      * @param array<Job<AnyJob>> $jobs
+     *
      * @return array<string, array{status: mixed}>
      */
     public function getJobsStatus(array $jobs): array
@@ -135,7 +136,9 @@ class Scheduler
 
     /**
      * @template T of AnyJob
+     *
      * @param T $payload
+     *
      * @return Job<T>
      */
     private function createJob(string $type, array $payload, ?int $packageId = null, ?\DateTimeImmutable $executeAfter = null): Job

@@ -24,7 +24,7 @@ final class AlgoliaMock extends SearchClient
 
     public static function setup(KernelBrowser $client, Query $query, string $resultName): self
     {
-        $mock = (new \ReflectionClass(__CLASS__))->newInstanceWithoutConstructor();
+        $mock = new \ReflectionClass(__CLASS__)->newInstanceWithoutConstructor();
         $mock->query = $query;
 
         if (false === $result = @include __DIR__.'/results/'.$resultName.'.php') {
@@ -51,7 +51,7 @@ final class AlgoliaMock extends SearchClient
      */
     public function search($query, $requestOptions = []): array
     {
-        $queryMessage = sprintf('AlgoliaMock expected query string \'%s\', but got \'%s\'.', $this->query->query, $query);
+        $queryMessage = \sprintf('AlgoliaMock expected query string \'%s\', but got \'%s\'.', $this->query->query, $query);
         Assert::assertSame($this->query->query, $query, $queryMessage);
         Assert::assertSame($this->query->getOptions(), $requestOptions, 'AlgoliaMock expected different request options.');
 

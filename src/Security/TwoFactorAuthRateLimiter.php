@@ -36,7 +36,7 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
         $count = (int) $this->redisCache->get($key);
 
         if ($count >= self::MAX_ATTEMPTS) {
-            throw new CustomUserMessageAuthenticationException(sprintf('Too many authentication failures. Try again in %d minutes.', self::RATE_LIMIT_DURATION));
+            throw new CustomUserMessageAuthenticationException(\sprintf('Too many authentication failures. Try again in %d minutes.', self::RATE_LIMIT_DURATION));
         }
     }
 

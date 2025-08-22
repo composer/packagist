@@ -13,10 +13,10 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Form\RegistrationFormType;
-use App\Security\EmailVerifier;
-use App\Security\BruteForceLoginFormAuthenticator;
 use App\Entity\UserRepository;
+use App\Form\RegistrationFormType;
+use App\Security\BruteForceLoginFormAuthenticator;
+use App\Security\EmailVerifier;
 use App\Security\UserChecker;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\Request;
@@ -61,7 +61,7 @@ class RegistrationController extends Controller
             $this->emailVerifier->sendEmailConfirmation(
                 'register_confirm_email',
                 $user,
-                (new TemplatedEmail())
+                new TemplatedEmail()
                     ->from(new Address($mailFromEmail, $mailFromName))
                     ->to($user->getEmail())
                     ->subject('Please confirm your email')

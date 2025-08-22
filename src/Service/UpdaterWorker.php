@@ -12,36 +12,36 @@
 
 namespace App\Service;
 
-use Doctrine\ORM\EntityNotFoundException;
-use App\Entity\PackageFreezeReason;
-use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
-use Composer\Pcre\Preg;
-use Psr\Cache\CacheItemPoolInterface;
-use Psr\Log\LoggerInterface;
-use Composer\Package\Loader\ArrayLoader;
-use Composer\Package\Loader\ValidatingArrayLoader;
-use Doctrine\Persistence\ManagerRegistry;
-use Composer\Console\HtmlOutputFormatter;
-use Composer\Repository\InvalidRepositoryException;
-use Composer\Repository\VcsRepository;
-use Composer\IO\BufferIO;
-use Psr\SimpleCache\CacheInterface;
-use Symfony\Component\Cache\Psr16Cache;
-use Symfony\Component\Console\Output\OutputInterface;
-use App\Entity\Package;
-use App\Entity\Version;
-use App\Package\Updater;
-use App\Entity\Job;
 use App\Entity\EmptyReferenceCache;
-use App\Model\PackageManager;
+use App\Entity\Job;
+use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
+use App\Entity\Version;
 use App\Model\DownloadManager;
+use App\Model\PackageManager;
+use App\Package\Updater;
+use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\Util\DoctrineTrait;
 use App\Util\LoggingHttpDownloader;
-use Seld\Signal\SignalHandler;
-use Composer\Factory;
+use Composer\Console\HtmlOutputFormatter;
 use Composer\Downloader\TransportException;
+use Composer\Factory;
+use Composer\IO\BufferIO;
+use Composer\Package\Loader\ArrayLoader;
+use Composer\Package\Loader\ValidatingArrayLoader;
+use Composer\Pcre\Preg;
+use Composer\Repository\InvalidRepositoryException;
+use Composer\Repository\VcsRepository;
 use Composer\Util\HttpDownloader;
+use Doctrine\ORM\EntityNotFoundException;
+use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
+use Psr\Cache\CacheItemPoolInterface;
+use Psr\Log\LoggerInterface;
+use Psr\SimpleCache\CacheInterface;
+use Seld\Signal\SignalHandler;
+use Symfony\Component\Cache\Psr16Cache;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 
@@ -102,8 +102,10 @@ class UpdaterWorker
 
     /**
      * @param Job<PackageUpdateJob> $job
-     * @phpstan-return PackageCompletedResult|PackageFailedResult|PackageGoneResult|PackageDeletedResult|RescheduleResult
+     *
      * @return array{status: Job::STATUS_*, message?: string, after?: \DateTimeImmutable, vendor?: string, details?: string, exception?: \Throwable}
+     *
+     * @phpstan-return PackageCompletedResult|PackageFailedResult|PackageGoneResult|PackageDeletedResult|RescheduleResult
      */
     public function process(Job $job, SignalHandler $signal): array
     {
@@ -133,7 +135,7 @@ class UpdaterWorker
 
         // sandbox into a unique cache dir per package id to avoid potential cache reuse issues
         if (trim($this->updaterWorkerCacheDir) !== '' && is_dir($this->updaterWorkerCacheDir)) {
-            $subDir = str_pad((string) $package->getId(), 9, '0', STR_PAD_LEFT);
+            $subDir = str_pad((string) $package->getId(), 9, '0', \STR_PAD_LEFT);
             $subDir = substr($subDir, 0, 6).'/'.$package->getId();
             $config->merge(['config' => ['cache-dir' => $this->updaterWorkerCacheDir.'/'.$subDir]]);
             unset($subDir);
@@ -445,7 +447,7 @@ class UpdaterWorker
             (?P<cache>Found\ cached\ composer.json\ of\ <span(.+?)>(?P=pkg)</span>\ \(<span(.+?)>(?P=version)</span>\)\r?\n)
         }x', '$5', $str);
 
-        $config = (new HtmlSanitizerConfig())
+        $config = new HtmlSanitizerConfig()
             ->allowElement('span')
             ->allowAttribute('style', ['span'])
             ->withMaxInputLength(10_000_000);
@@ -468,7 +470,7 @@ class UpdaterWorker
             if (
                 $e instanceof TransportException
                 && (
-                    in_array($e->getStatusCode(), [404, 409, 451], true)
+                    \in_array($e->getStatusCode(), [404, 409, 451], true)
                     || ($e->getStatusCode() === 403 && str_contains('"message": "Repository access blocked"', (string) $e->getResponse()))
                 )
             ) {
@@ -490,9 +492,7 @@ class UpdaterWorker
             // 404 indicates the repo does not exist
             if (
                 $e instanceof TransportException
-                && (
-                    in_array($e->getStatusCode(), [404], true)
-                )
+                    && \in_array($e->getStatusCode(), [404], true)
             ) {
                 return $this->completeDeadPackageCheck('https://gitlab.com/api/v4/projects/'.urlencode('packagist/vcs-repository-test'), $package, $httpDownloader, $output, $e);
             }

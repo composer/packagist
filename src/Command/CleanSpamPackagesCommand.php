@@ -12,13 +12,13 @@
 
 namespace App\Command;
 
+use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\Package;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;

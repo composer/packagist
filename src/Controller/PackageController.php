@@ -13,65 +13,63 @@
 namespace App\Controller;
 
 use App\Entity\Dependent;
+use App\Entity\Download;
+use App\Entity\Job;
+use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
 use App\Entity\PhpStat;
-use App\Security\Voter\PackageActions;
-use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
-use App\Util\Killswitch;
+use App\Entity\SecurityAdvisory;
+use App\Entity\SecurityAdvisoryRepository;
+use App\Entity\User;
+use App\Entity\Vendor;
+use App\Entity\Version;
+use App\Form\Model\MaintainerRequest;
+use App\Form\Type\AbandonedType;
+use App\Form\Type\AddMaintainerRequestType;
+use App\Form\Type\PackageType;
+use App\Form\Type\RemoveMaintainerRequestType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Model\PackageManager;
+use App\Model\ProviderManager;
+use App\Security\Voter\PackageActions;
+use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
+use App\Service\GitHubUserMigrationWorker;
+use App\Service\Scheduler;
+use App\Util\Killswitch;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use Composer\Semver\Constraint\Constraint;
 use Composer\Semver\Constraint\MatchNoneConstraint;
 use Composer\Semver\Constraint\MultiConstraint;
-use DateTimeImmutable;
 use Doctrine\ORM\NoResultException;
-use App\Entity\Download;
-use App\Entity\Job;
-use App\Entity\Package;
-use App\Entity\SecurityAdvisory;
-use App\Entity\SecurityAdvisoryRepository;
-use App\Entity\Version;
-use App\Entity\Vendor;
-use App\Entity\User;
-use App\Form\Model\MaintainerRequest;
-use App\Form\Type\AbandonedType;
-use App\Form\Type\AddMaintainerRequestType;
-use App\Form\Type\PackageType;
-use App\Form\Type\RemoveMaintainerRequestType;
-use App\Model\PackageManager;
-use App\Model\ProviderManager;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
+use Predis\Client as RedisClient;
 use Predis\Connection\ConnectionException;
+use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
+use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use App\Service\GitHubUserMigrationWorker;
-use App\Service\Scheduler;
 use Symfony\Component\Routing\RouterInterface;
-use Predis\Client as RedisClient;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\Form\FormError;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
-use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
-use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use UnexpectedValueException;
 use Webmozart\Assert\Assert;
 
 /**
@@ -101,14 +99,16 @@ class PackageController extends Controller
     public function listAction(
         Request $req,
         PackageRepository $repo,
-        #[MapQueryParameter] ?string $type = null,
-        #[MapQueryParameter] ?string $vendor = null,
+        #[MapQueryParameter]
+        ?string $type = null,
+        #[MapQueryParameter]
+        ?string $vendor = null,
     ): JsonResponse {
         $queryParams = $req->query->all();
         $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
 
-        if (count($fields) > 0) {
+        if (\count($fields) > 0) {
             $filters = array_filter([
                 'type' => $type,
                 'vendor' => $vendor,
@@ -159,7 +159,7 @@ class PackageController extends Controller
         }
 
         try {
-            $since = new DateTimeImmutable('@'.$since);
+            $since = new \DateTimeImmutable('@'.$since);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Invalid "since" query parameter, make sure you store the timestamp returned and re-use it in the next query. Use '.$this->generateUrl('updated_packages', ['since' => time() - 180], UrlGeneratorInterface::ABSOLUTE_URL).' to initialize it.'], 400);
         }
@@ -207,7 +207,7 @@ class PackageController extends Controller
             }
         }
 
-        if (count($actions) > 100_000) {
+        if (\count($actions) > 100_000) {
             return new JsonResponse(['actions' => [['type' => 'resync', 'time' => floor($now / 10000), 'package' => '*']], 'timestamp' => $now]);
         }
 
@@ -217,7 +217,7 @@ class PackageController extends Controller
     #[Route(path: '/packages/submit', name: 'submit')]
     public function submitPackageAction(Request $req, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, LoggerInterface $logger, MailerInterface $mailer, string $mailFromEmail, #[CurrentUser] User $user): Response
     {
-        $package = new Package;
+        $package = new Package();
         $package->addMaintainer($user);
         $form = $this->createForm(PackageType::class, $package, [
             'action' => $this->generateUrl('submit'),
@@ -256,7 +256,7 @@ class PackageController extends Controller
     #[Route(path: '/packages/fetch-info', name: 'submit.fetch_info', defaults: ['_format' => 'json'])]
     public function fetchInfoAction(Request $req, RouterInterface $router, #[CurrentUser] User $user): JsonResponse
     {
-        $package = new Package;
+        $package = new Package();
         $package->addMaintainer($user);
         $form = $this->createForm(PackageType::class, $package);
 
@@ -283,7 +283,7 @@ class PackageController extends Controller
 
         if ($form->isSubmitted()) {
             $errors = [];
-            if (count($form->getErrors())) {
+            if (\count($form->getErrors())) {
                 foreach ($form->getErrors() as $error) {
                     if ($error instanceof FormError) {
                         $errors[] = $error->getMessage();
@@ -291,7 +291,7 @@ class PackageController extends Controller
                 }
             }
             foreach ($form->all() as $child) {
-                if (count($child->getErrors())) {
+                if (\count($child->getErrors())) {
                     foreach ($child->getErrors() as $error) {
                         if ($error instanceof FormError) {
                             $errors[] = $error->getMessage();
@@ -372,7 +372,7 @@ class PackageController extends Controller
         try {
             $trendiness = [];
             foreach ($providers as $package) {
-                /** @var Package $package */
+                /* @var Package $package */
                 $trendiness[$package->getId()] = (int) $redis->zscore('downloads:trending', (string) $package->getId());
             }
             usort($providers, static function (Package $a, Package $b) use ($trendiness) {
@@ -438,7 +438,7 @@ class PackageController extends Controller
         foreach ($packages as $pkg) {
             $dls = $data['meta']['downloads'][$pkg['id']] ?? 0;
             $vendor = Preg::replace('{/.*$}', '', $pkg['name']);
-            if ($dls > 10 && !in_array($vendor, $verified, true)) {
+            if ($dls > 10 && !\in_array($vendor, $verified, true)) {
                 $vendorRepo->verify($vendor);
                 $this->addFlash('success', 'Marked '.$vendor.' with '.$dls.' downloads.');
                 $verified[] = $vendor;
@@ -575,13 +575,13 @@ class PackageController extends Controller
                 }
                 $data['downloads'] = $this->downloadManager->getDownloads($package);
                 $data['favers'] = $this->favoriteManager->getFaverCount($package);
-            } catch (\RuntimeException | ConnectionException $e) {
+            } catch (\RuntimeException|ConnectionException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
             }
 
             if (empty($data['versions'])) {
-                $data['versions'] = new \stdClass;
+                $data['versions'] = new \stdClass();
             }
 
             $response = new JsonResponse(['package' => $data]);
@@ -600,7 +600,7 @@ class PackageController extends Controller
 
         usort($versions, Package::class.'::sortVersions');
 
-        if (count($versions)) {
+        if (\count($versions)) {
             $versionRepo = $this->getEM()->getRepository(Version::class);
 
             // load the default branch version as it is used to display the latest available source.* and homepage info
@@ -660,7 +660,7 @@ class PackageController extends Controller
             if ($user) {
                 $data['is_favorite'] = $this->favoriteManager->isMarked($user, $package);
             }
-        } catch (\RuntimeException | ConnectionException) {
+        } catch (\RuntimeException|ConnectionException) {
         }
 
         $data['dependents'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getDependentCount($package->getName()) : 0;
@@ -669,7 +669,7 @@ class PackageController extends Controller
         if (Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED)) {
             $securityAdvisoryRepository = $this->getEM()->getRepository(SecurityAdvisory::class);
             $securityAdvisories = $securityAdvisoryRepository->getPackageSecurityAdvisories($package->getName());
-            $data['securityAdvisories'] = count($securityAdvisories);
+            $data['securityAdvisories'] = \count($securityAdvisories);
             $data['hasVersionSecurityAdvisories'] = [];
             $versionParser = new VersionParser();
             $affectedVersionsConstraint = new MatchNoneConstraint();
@@ -677,7 +677,7 @@ class PackageController extends Controller
                 try {
                     $advisoryConstraint = $versionParser->parseConstraints($advisory['affectedVersions']);
                     $affectedVersionsConstraint = MultiConstraint::create([$affectedVersionsConstraint, $advisoryConstraint], false);
-                } catch (UnexpectedValueException) {
+                } catch (\UnexpectedValueException) {
                     // ignore parsing errors, advisory must be invalid
                 }
             }
@@ -859,7 +859,7 @@ class PackageController extends Controller
             }
 
             if (null !== $autoUpdated) {
-                $package->setAutoUpdated(filter_var($autoUpdated, FILTER_VALIDATE_BOOLEAN) ? Package::AUTO_MANUAL_HOOK : 0);
+                $package->setAutoUpdated(filter_var($autoUpdated, \FILTER_VALIDATE_BOOLEAN) ? Package::AUTO_MANUAL_HOOK : 0);
                 $this->getEM()->flush();
             }
 
@@ -985,7 +985,7 @@ class PackageController extends Controller
     {
         $this->denyAccessUnlessGranted(PackageActions::Edit->value, $package);
 
-        $form = $this->createFormBuilder($package, ["validation_groups" => ["Update"]])
+        $form = $this->createFormBuilder($package, ['validation_groups' => ['Update']])
             ->add('repository', TextType::class)
             ->setMethod('POST')
             ->setAction($this->generateUrl('edit_package', ['name' => $package->getName()]))
@@ -1002,7 +1002,7 @@ class PackageController extends Controller
             $em->persist($package);
             $em->flush();
 
-            $this->addFlash("success", "Changes saved.");
+            $this->addFlash('success', 'Changes saved.');
 
             return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
         }
@@ -1024,8 +1024,8 @@ class PackageController extends Controller
             $package->setAbandoned(true);
             $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData()));
             $package->setIndexedAt(null);
-            $package->setCrawledAt(new DateTimeImmutable());
-            $package->setUpdatedAt(new DateTimeImmutable());
+            $package->setCrawledAt(new \DateTimeImmutable());
+            $package->setUpdatedAt(new \DateTimeImmutable());
             $package->setDumpedAt(null);
             $package->setDumpedAtV2(null);
 
@@ -1049,8 +1049,8 @@ class PackageController extends Controller
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
         $package->setIndexedAt(null);
-        $package->setCrawledAt(new DateTimeImmutable());
-        $package->setUpdatedAt(new DateTimeImmutable());
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $package->setUpdatedAt(new \DateTimeImmutable());
         $package->setDumpedAt(null);
         $package->setDumpedAtV2(null);
 
@@ -1089,7 +1089,7 @@ class PackageController extends Controller
 
         if ($req->getRequestFormat() === 'json') {
             $data['versions'] = array_map(static function ($version) {
-                /** @var Version $version */
+                /* @var Version $version */
                 return $version->getVersion();
             }, $data['versions']);
 
@@ -1152,7 +1152,7 @@ class PackageController extends Controller
                 $label = 'All';
             } elseif (str_ends_with($version['version'], '.9999999')) {
                 $label = Preg::replace('{\.9999999$}', '.x-dev', $version['version']);
-            } elseif (in_array($version['depth'], [PhpStat::DEPTH_MINOR, PhpStat::DEPTH_MAJOR], true)) {
+            } elseif (\in_array($version['depth'], [PhpStat::DEPTH_MINOR, PhpStat::DEPTH_MAJOR], true)) {
                 $label = $version['version'].'.*';
             } else {
                 $label = $version['version'];
@@ -1204,14 +1204,14 @@ class PackageController extends Controller
         }
 
         if ($from = $req->query->get('from')) {
-            $from = new DateTimeImmutable($from);
+            $from = new \DateTimeImmutable($from);
         } else {
             $from = $this->guessPhpStatsStartDate($package);
         }
         if ($to = $req->query->get('to')) {
-            $to = new DateTimeImmutable($to);
+            $to = new \DateTimeImmutable($to);
         } else {
-            $to = new DateTimeImmutable('today 00:00:00');
+            $to = new \DateTimeImmutable('today 00:00:00');
         }
 
         $average = $req->query->get('average', $this->guessStatsAverage($from, $to));
@@ -1223,7 +1223,7 @@ class PackageController extends Controller
 
         $datePoints = $this->createDatePoints($from, $to, $average);
         $series = [];
-        $totals = array_fill(0, count($datePoints), 0);
+        $totals = array_fill(0, \count($datePoints), 0);
 
         $index = 0;
         foreach ($datePoints as $label => $values) {
@@ -1233,7 +1233,7 @@ class PackageController extends Controller
                     $value += $seriesData[$valueKey] ?? 0;
                 }
                 // average the value over the datapoints in this current label
-                $value = (int) ceil($value / count($values));
+                $value = (int) ceil($value / \count($values));
 
                 $series[$seriesName][] = $value;
                 $totals[$index] += $value;
@@ -1253,12 +1253,12 @@ class PackageController extends Controller
 
         // delete last datapoint or two if they are still 0 as the nightly job syncing the data in mysql may not have run yet
         for ($i = 0; $i < 2; $i++) {
-            if (0 === $totals[count($totals) - 1]) {
-                unset($totals[count($totals) - 1]);
+            if (0 === $totals[\count($totals) - 1]) {
+                unset($totals[\count($totals) - 1]);
                 end($datePoints);
                 unset($datePoints[key($datePoints)]);
                 foreach ($series as $seriesName => $data) {
-                    unset($series[$seriesName][count($data) - 1]);
+                    unset($series[$seriesName][\count($data) - 1]);
                 }
             }
         }
@@ -1315,7 +1315,7 @@ class PackageController extends Controller
         }
 
         $orderBy = $req->query->get('order_by', 'name');
-        if (!in_array($orderBy, ['name', 'downloads'], true)) {
+        if (!\in_array($orderBy, ['name', 'downloads'], true)) {
             throw new BadRequestHttpException('Invalid order_by parameter provided');
         }
 
@@ -1439,10 +1439,10 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name:package}/stats/{version}.json', name: 'version_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'version' => '.+?'])]
     public function versionStatsAction(Request $req, #[MapEntity] Package $package, string $version): JsonResponse
     {
-        $normalizer = new VersionParser;
+        $normalizer = new VersionParser();
         try {
             $normVersion = $normalizer->normalize($version);
-        } catch (UnexpectedValueException $e) {
+        } catch (\UnexpectedValueException $e) {
             return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
 
@@ -1461,14 +1461,14 @@ class PackageController extends Controller
     private function computeStats(Request $req, Package $package, ?Version $version = null, ?string $majorVersion = null): JsonResponse
     {
         if ($from = $req->query->get('from')) {
-            $from = new DateTimeImmutable($from);
+            $from = new \DateTimeImmutable($from);
         } else {
             $from = $this->guessStatsStartDate($version ?: $package);
         }
         if ($to = $req->query->get('to')) {
-            $to = new DateTimeImmutable($to);
+            $to = new \DateTimeImmutable($to);
         } else {
-            $to = new DateTimeImmutable('-2days 00:00:00');
+            $to = new \DateTimeImmutable('-2days 00:00:00');
         }
         $average = $req->query->get('average', $this->guessStatsAverage($from, $to));
 
@@ -1501,7 +1501,7 @@ class PackageController extends Controller
                         $value += $data[$valueKey] ?? 0;
                     }
                 }
-                $series[$seriesName][] = ceil($value / count($values));
+                $series[$seriesName][] = ceil($value / \count($values));
             }
         }
 
@@ -1545,7 +1545,7 @@ class PackageController extends Controller
                 foreach ($securityAdvisories as $advisory) {
                     try {
                         $affectedVersionConstraint = $versionParser->parseConstraints($advisory->getAffectedVersions());
-                    } catch (UnexpectedValueException) {
+                    } catch (\UnexpectedValueException) {
                         // ignore parsing errors, advisory must be invalid
                         continue;
                     }
@@ -1560,7 +1560,7 @@ class PackageController extends Controller
         }
 
         $data['securityAdvisories'] = $securityAdvisories;
-        $data['count'] = count($securityAdvisories);
+        $data['count'] = \count($securityAdvisories);
 
         return $this->render('package/security_advisories.html.twig', $data);
     }
@@ -1577,7 +1577,7 @@ class PackageController extends Controller
             $securityAdvisories = array_filter([$repo->findOneBy(['packagistAdvisoryId' => $id])]);
         }
 
-        if (0 === count($securityAdvisories)) {
+        if (0 === \count($securityAdvisories)) {
             throw new NotFoundHttpException();
         }
 
@@ -1655,7 +1655,7 @@ class PackageController extends Controller
     /**
      * @return array<string, string[]>
      */
-    private function createDatePoints(DateTimeImmutable $from, DateTimeImmutable $to, string $average): array
+    private function createDatePoints(\DateTimeImmutable $from, \DateTimeImmutable $to, string $average): array
     {
         $interval = $this->getStatsInterval($average);
 
@@ -1666,7 +1666,7 @@ class PackageController extends Controller
         $nextDataPointLabel = $from->format($dateFormat);
 
         if ($average === 'monthly') {
-            $nextDataPoint = new DateTimeImmutable('first day of ' . $from->format('Y-m'));
+            $nextDataPoint = new \DateTimeImmutable('first day of '.$from->format('Y-m'));
             $nextDataPoint = $nextDataPoint->modify($interval);
         } else {
             $nextDataPoint = $from->modify($interval);
@@ -1686,17 +1686,17 @@ class PackageController extends Controller
         return $datePoints;
     }
 
-    private function guessStatsStartDate(Package|Version $packageOrVersion): DateTimeImmutable
+    private function guessStatsStartDate(Package|Version $packageOrVersion): \DateTimeImmutable
     {
         if ($packageOrVersion instanceof Package) {
-            $date = DateTimeImmutable::createFromInterface($packageOrVersion->getCreatedAt());
+            $date = \DateTimeImmutable::createFromInterface($packageOrVersion->getCreatedAt());
         } elseif ($packageOrVersion->getReleasedAt()) {
-            $date = DateTimeImmutable::createFromInterface($packageOrVersion->getReleasedAt());
+            $date = \DateTimeImmutable::createFromInterface($packageOrVersion->getReleasedAt());
         } else {
             throw new \LogicException('Version with release date expected');
         }
 
-        $statsRecordDate = new DateTimeImmutable('2012-04-13 00:00:00');
+        $statsRecordDate = new \DateTimeImmutable('2012-04-13 00:00:00');
         if ($date < $statsRecordDate) {
             $date = $statsRecordDate;
         }
@@ -1704,11 +1704,11 @@ class PackageController extends Controller
         return $date->setTime(0, 0, 0);
     }
 
-    private function guessPhpStatsStartDate(Package $package): DateTimeImmutable
+    private function guessPhpStatsStartDate(Package $package): \DateTimeImmutable
     {
-        $date = DateTimeImmutable::createFromInterface($package->getCreatedAt());
+        $date = \DateTimeImmutable::createFromInterface($package->getCreatedAt());
 
-        $statsRecordDate = new DateTimeImmutable('2021-05-18 00:00:00');
+        $statsRecordDate = new \DateTimeImmutable('2021-05-18 00:00:00');
         if ($date < $statsRecordDate) {
             $date = $statsRecordDate;
         }
@@ -1716,10 +1716,10 @@ class PackageController extends Controller
         return $date->setTime(0, 0, 0);
     }
 
-    private function guessStatsAverage(DateTimeImmutable $from, ?DateTimeImmutable $to = null): string
+    private function guessStatsAverage(\DateTimeImmutable $from, ?\DateTimeImmutable $to = null): string
     {
         if ($to === null) {
-            $to = new DateTimeImmutable('-2 days');
+            $to = new \DateTimeImmutable('-2 days');
         }
         if ($from < $to->modify('-48months')) {
             $average = 'monthly';

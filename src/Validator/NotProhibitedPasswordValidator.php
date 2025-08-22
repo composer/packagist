@@ -55,6 +55,5 @@ class NotProhibitedPasswordValidator extends ConstraintValidator
                 return;
             }
         }
-
     }
 }

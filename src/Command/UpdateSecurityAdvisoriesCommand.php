@@ -45,8 +45,8 @@ class UpdateSecurityAdvisoriesCommand extends Command
     {
         $source = $input->getArgument('source');
         $sources = [GitHubSecurityAdvisoriesSource::SOURCE_NAME, FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME];
-        if (!in_array($source, $sources, true)) {
-            $output->writeln('source must be one of ' . implode(', ', $sources));
+        if (!\in_array($source, $sources, true)) {
+            $output->writeln('source must be one of '.implode(', ', $sources));
 
             return self::INVALID;
         }

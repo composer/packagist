@@ -36,7 +36,7 @@ class UserNotifier
      */
     public function notifyChange(string $email, string $reason = '', string $template = 'email/alert_change.txt.twig', string $subject = 'A change has been made to your Packagist.org account', ...$templateVars): void
     {
-        $email = (new TemplatedEmail())
+        $email = new TemplatedEmail()
             ->from(new Address($this->mailFromEmail, $this->mailFromName))
             ->to($email)
             ->subject($subject)
@@ -49,7 +49,7 @@ class UserNotifier
         try {
             $this->mailer->send($email);
         } catch (TransportExceptionInterface $e) {
-            $this->logger->error('['.get_class($e).'] '.$e->getMessage());
+            $this->logger->error('['.$e::class.'] '.$e->getMessage());
         }
     }
 }

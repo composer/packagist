@@ -60,7 +60,7 @@ class UploadMetadataToCdnCommand extends Command
                 $batch = [];
             }
             if (($processed % 10000) === 0) {
-                echo 'Processed '.$processed.PHP_EOL;
+                echo 'Processed '.$processed.\PHP_EOL;
             }
         }
 
@@ -68,7 +68,7 @@ class UploadMetadataToCdnCommand extends Command
             $this->uploadBatch($batch);
         }
 
-        echo PHP_EOL.'Done'.PHP_EOL;
+        echo \PHP_EOL.'Done'.\PHP_EOL;
 
         return 0;
     }
@@ -87,7 +87,7 @@ class UploadMetadataToCdnCommand extends Command
             $pkgWithDevFlag = $match[1];
             $pkgName = str_replace('~dev', '', $pkgWithDevFlag);
             if (!$this->providerManager->packageExists($pkgName)) {
-                echo 'Skip uploading '.$pkgName.' metadata as the package does not seem to exist anymore'.PHP_EOL;
+                echo 'Skip uploading '.$pkgName.' metadata as the package does not seem to exist anymore'.\PHP_EOL;
                 continue;
             }
             $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
@@ -112,11 +112,11 @@ class UploadMetadataToCdnCommand extends Command
             } catch (\Throwable $e) {
                 $response->cancel();
 
-                echo 'Failed to upload '.$response->getInfo('user_data')['path'].PHP_EOL;
+                echo 'Failed to upload '.$response->getInfo('user_data')['path'].\PHP_EOL;
             }
         }
 
-        if ($successful === count($responses)) {
+        if ($successful === \count($responses)) {
             echo '.';
         }
     }

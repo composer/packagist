@@ -12,10 +12,10 @@
 
 namespace App\Service;
 
-use Composer\Pcre\Preg;
-use Composer\Repository\VersionCacheInterface;
 use App\Entity\Package;
 use App\Entity\Version;
+use Composer\Pcre\Preg;
+use Composer\Repository\VersionCacheInterface;
 use Composer\Semver\VersionParser;
 
 class VersionCache implements VersionCacheInterface
@@ -25,12 +25,12 @@ class VersionCache implements VersionCacheInterface
 
     /**
      * @param array<string|int, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null}> $existingVersions
-     * @param string[] $emptyReferences
+     * @param string[]                                                                                                                                              $emptyReferences
      */
     public function __construct(
         private Package $package,
         array $existingVersions,
-        private array $emptyReferences
+        private array $emptyReferences,
     ) {
         foreach ($existingVersions as $version) {
             $this->versionCache[$version['version']] = $version;
@@ -44,7 +44,7 @@ class VersionCache implements VersionCacheInterface
     {
         if (!empty($this->versionCache[$version]['source']['reference']) && $this->versionCache[$version]['source']['reference'] === $identifier) {
             // if the source has some corrupted github private url we do not return a cached version to ensure full metadata gets loaded
-            if (isset($this->versionCache[$version]['source']['url']) && is_string($this->versionCache[$version]['source']['url']) && Preg::isMatch('{^git@github.com:.*?\.git$}', $this->versionCache[$version]['source']['url'])) {
+            if (isset($this->versionCache[$version]['source']['url']) && \is_string($this->versionCache[$version]['source']['url']) && Preg::isMatch('{^git@github.com:.*?\.git$}', $this->versionCache[$version]['source']['url'])) {
                 return null;
             }
 
@@ -56,7 +56,7 @@ class VersionCache implements VersionCacheInterface
             ];
         }
 
-        if (in_array($identifier, $this->emptyReferences, true)) {
+        if (\in_array($identifier, $this->emptyReferences, true)) {
             return false;
         }
 

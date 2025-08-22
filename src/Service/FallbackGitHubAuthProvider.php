@@ -12,8 +12,8 @@
 
 namespace App\Service;
 
-use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\User;
+use Doctrine\Persistence\ManagerRegistry;
 
 class FallbackGitHubAuthProvider
 {
@@ -24,10 +24,10 @@ class FallbackGitHubAuthProvider
     ) {
     }
 
-    public function getAuthToken(): string|null
+    public function getAuthToken(): ?string
     {
         if ($this->fallbackGhTokens) {
-            $fallbackUser = $this->doctrine->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, count($this->fallbackGhTokens) - 1)]]);
+            $fallbackUser = $this->doctrine->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, \count($this->fallbackGhTokens) - 1)]]);
             if (null === $fallbackUser) {
                 throw new \LogicException('Invalid fallback user was not found');
             }

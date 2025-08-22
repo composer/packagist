@@ -18,6 +18,7 @@ class SecurityAdvisoryResolver
 {
     /**
      * @param SecurityAdvisory[] $existingAdvisories
+     *
      * @return array{SecurityAdvisory[], SecurityAdvisory[]}
      */
     public function resolve(array $existingAdvisories, RemoteSecurityAdvisoryCollection $remoteAdvisories, string $sourceName): array
