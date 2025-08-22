@@ -142,7 +142,7 @@ class GitHubAuthenticator extends OAuth2Authenticator
                 $this->getEM()->flush();
 
                 $session = $request->getSession();
-                assert($session instanceof FlashBagAwareSessionInterface);
+                \assert($session instanceof FlashBagAwareSessionInterface);
                 $session->getFlashBag()->add('success', 'A new account was automatically created. You are now logged in.');
 
                 return $user;
@@ -159,7 +159,7 @@ class GitHubAuthenticator extends OAuth2Authenticator
             $this->getEM()->flush();
         }
 
-        if (($targetPath = $request->getSession()->get('_security.'.$firewallName.'.target_path')) && is_string($targetPath)) {
+        if (($targetPath = $request->getSession()->get('_security.'.$firewallName.'.target_path')) && \is_string($targetPath)) {
             return $this->httpUtils->createRedirectResponse($request, $targetPath, Response::HTTP_FOUND);
         }
 
@@ -175,7 +175,7 @@ class GitHubAuthenticator extends OAuth2Authenticator
         }
 
         $session = $request->getSession();
-        assert($session instanceof FlashBagAwareSessionInterface);
+        \assert($session instanceof FlashBagAwareSessionInterface);
         $session->getFlashBag()->add('warning', $message);
 
         return $this->httpUtils->createRedirectResponse($request, 'login', Response::HTTP_FOUND);

@@ -69,7 +69,7 @@ class GitHubUserMigrationWorker
             $results = ['hooks_setup' => 0, 'hooks_failed' => [], 'hooks_ok_unchanged' => 0];
             foreach ($packageRepository->getGitHubPackagesByMaintainer($id) as $package) {
                 $result = $this->setupWebHook($user->getGithubToken(), $package);
-                if (is_string($result)) {
+                if (\is_string($result)) {
                     $results['hooks_failed'][] = ['package' => $package->getName(), 'reason' => $result];
                 } elseif ($result === true) {
                     $results['hooks_setup']++;
@@ -106,7 +106,7 @@ class GitHubUserMigrationWorker
 
         try {
             $hooks = $this->getHooks($token, $repoKey);
-            $this->logger->debug(count($hooks).' existing hooks', ['hooks' => $hooks]);
+            $this->logger->debug(\count($hooks).' existing hooks', ['hooks' => $hooks]);
 
             $legacyHooks = array_values(array_filter(
                 $hooks,
@@ -117,7 +117,7 @@ class GitHubUserMigrationWorker
             $currentHooks = array_values(array_filter(
                 $hooks,
                 static function ($hook) {
-                    return $hook['name'] === 'web' && (strpos($hook['config']['url'], self::HOOK_URL) === 0 || strpos($hook['config']['url'], self::HOOK_URL_ALT) === 0);
+                    return $hook['name'] === 'web' && (str_starts_with($hook['config']['url'], self::HOOK_URL) || str_starts_with($hook['config']['url'], self::HOOK_URL_ALT));
                 }
             ));
             // sort shorter urls first as that should lead us to find the correct one first
@@ -169,7 +169,7 @@ class GitHubUserMigrationWorker
                 }
             }
 
-            if (count($hooks) && !Preg::isMatch('{^https://api\.github\.com/repos/'.$repoKey.'/hooks/}', $hooks[0]['url'])) {
+            if (\count($hooks) && !Preg::isMatch('{^https://api\.github\.com/repos/'.$repoKey.'/hooks/}', $hooks[0]['url'])) {
                 if (Preg::isMatch('{https://api\.github\.com/repos/([^/]+/[^/]+)/hooks}', $hooks[0]['url'], $match)) {
                     $package->setRepository('https://github.com/'.$match[1]);
                     $this->getEM()->persist($package);
@@ -205,7 +205,7 @@ class GitHubUserMigrationWorker
             $hooks = $this->getHooks($token, $repoKey);
 
             foreach ($hooks as $hook) {
-                if ($hook['name'] === 'web' && strpos($hook['config']['url'], self::HOOK_URL) === 0) {
+                if ($hook['name'] === 'web' && str_starts_with($hook['config']['url'], self::HOOK_URL)) {
                     $this->logger->debug('Deleting hook '.$hook['id'], ['hook' => $hook]);
                     $this->request($token, 'DELETE', 'repos/'.$repoKey.'/hooks/'.$hook['id']);
                 }

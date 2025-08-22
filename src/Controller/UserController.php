@@ -217,7 +217,7 @@ class UserController extends Controller
             throw $this->createAccessDeniedException('You cannot delete this user');
         }
 
-        if (count($user->getPackages()) > 0) {
+        if (\count($user->getPackages()) > 0) {
             throw $this->createAccessDeniedException('The user has packages so it can not be deleted');
         }
 

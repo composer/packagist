@@ -350,14 +350,14 @@ class Version
         if (isset($array['support'])) {
             ksort($array['support']);
         }
-        if (isset($array['php-ext']['configure-options']) && is_array($array['php-ext']['configure-options'])) {
+        if (isset($array['php-ext']['configure-options']) && \is_array($array['php-ext']['configure-options'])) {
             usort($array['php-ext']['configure-options'], static fn ($a, $b) => ($a['name'] ?? '') <=> ($b['name'] ?? ''));
         }
 
         return $array;
     }
 
-    public function equals(Version $version): bool
+    public function equals(self $version): bool
     {
         return strtolower($version->getName()) === strtolower($this->getName())
             && strtolower($version->getNormalizedVersion()) === strtolower($this->getNormalizedVersion());
@@ -632,7 +632,7 @@ class Version
 
     public function getPackage(): Package
     {
-        assert($this->package instanceof Package);
+        \assert($this->package instanceof Package);
 
         return $this->package;
     }

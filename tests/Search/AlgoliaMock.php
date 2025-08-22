@@ -51,7 +51,7 @@ final class AlgoliaMock extends SearchClient
      */
     public function search($query, $requestOptions = []): array
     {
-        $queryMessage = sprintf('AlgoliaMock expected query string \'%s\', but got \'%s\'.', $this->query->query, $query);
+        $queryMessage = \sprintf('AlgoliaMock expected query string \'%s\', but got \'%s\'.', $this->query->query, $query);
         Assert::assertSame($this->query->query, $query, $queryMessage);
         Assert::assertSame($this->query->getOptions(), $requestOptions, 'AlgoliaMock expected different request options.');
 

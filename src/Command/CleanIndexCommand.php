@@ -76,9 +76,9 @@ class CleanIndexCommand extends Command
         do {
             $results = $index->search('', ['facets' => '*,type,tags', 'facetFilters' => ['type:virtual-package'], 'numericFilters' => ['trendiness=100'], 'hitsPerPage' => $perPage, 'page' => $page]);
             foreach ($results['hits'] as $result) {
-                if (0 !== strpos($result['objectID'], 'virtual:')) {
+                if (!str_starts_with($result['objectID'], 'virtual:')) {
                     $duplicate = $index->search('', ['facets' => '*,objectID,type,tags', 'facetFilters' => ['objectID:virtual:'.$result['objectID']]]);
-                    if (count($duplicate['hits']) === 1) {
+                    if (\count($duplicate['hits']) === 1) {
                         if ($verbose) {
                             $output->writeln('Deleting '.$result['objectID'].' which is a duplicate of '.$duplicate['hits'][0]['objectID']);
                         }
@@ -95,7 +95,7 @@ class CleanIndexCommand extends Command
                 }
             }
             $page++;
-        } while (count($results['hits']) >= $perPage);
+        } while (\count($results['hits']) >= $perPage);
 
         $this->locker->unlockCommand(__CLASS__);
 

@@ -85,7 +85,7 @@ class FriendsOfPhpSecurityAdvisoriesSource implements SecurityAdvisorySourceInte
 
             return new RemoteSecurityAdvisoryCollection($advisories);
         } catch (TransportException $e) {
-            $this->logger->error(sprintf('Failed to download "%s" zip file', self::SECURITY_PACKAGE), [
+            $this->logger->error(\sprintf('Failed to download "%s" zip file', self::SECURITY_PACKAGE), [
                 'exception' => $e,
             ]);
 

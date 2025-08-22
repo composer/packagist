@@ -49,7 +49,7 @@ class Tag
     /**
      * @throws \Doctrine\ORM\NoResultException
      */
-    public static function getByName(EntityManager $em, string $name, bool $create = false): Tag
+    public static function getByName(EntityManager $em, string $name, bool $create = false): self
     {
         try {
             $qb = $em->createQueryBuilder();
@@ -89,7 +89,7 @@ class Tag
     public function isDev(): bool
     {
         // see Composer\Command\RequireCommand
-        return in_array(strtolower($this->name), ['dev', 'testing', 'static analysis'], true);
+        return \in_array(strtolower($this->name), ['dev', 'testing', 'static analysis'], true);
     }
 
     public function addVersions(Version $versions): void

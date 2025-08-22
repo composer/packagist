@@ -25,7 +25,7 @@ class ControllerTestCase extends WebTestCase
 {
     protected KernelBrowser $client;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->client = self::createClient();
         $this->client->disableReboot(); // prevent reboot to keep the transaction
@@ -35,7 +35,7 @@ class ControllerTestCase extends WebTestCase
         parent::setUp();
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         static::getContainer()->get(Connection::class)->rollBack();
 
@@ -49,7 +49,7 @@ class ControllerTestCase extends WebTestCase
 
     protected function assertFormError(string $message, string $formName, Crawler $crawler): void
     {
-        $formCrawler = $crawler->filter(sprintf('[name="%s"]', $formName));
+        $formCrawler = $crawler->filter(\sprintf('[name="%s"]', $formName));
         $this->assertCount(
             1,
             $formCrawler->filter('.alert-danger:contains("'.$message.'")'),
@@ -64,7 +64,7 @@ class ControllerTestCase extends WebTestCase
     {
         $em = $this->getEM();
         foreach ($objects as $obj) {
-            if (is_array($obj)) {
+            if (\is_array($obj)) {
                 foreach ($obj as $obj2) {
                     $em->persist($obj2);
                 }

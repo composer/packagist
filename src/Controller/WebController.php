@@ -59,7 +59,7 @@ class WebController extends Controller
     public function searchApi(Request $req, Algolia $algolia): JsonResponse
     {
         $blockList = ['2400:6180:100:d0::83b:b001', '34.235.38.170'];
-        if (in_array($req->getClientIp(), $blockList, true)) {
+        if (\in_array($req->getClientIp(), $blockList, true)) {
             return new JsonResponse([
                 'error' => 'Too many requests, reach out to contact@packagist.org',
             ], 400)->setCallback($req->query->get('callback'));
@@ -120,24 +120,24 @@ class WebController extends Controller
         $count = 0;
         foreach ($packages as $dataPoint) {
             $count += $dataPoint['count'];
-            $chart['packages'][$dataPoint['year'].'-'.str_pad((string) $dataPoint['month'], 2, '0', STR_PAD_LEFT)] = $count;
+            $chart['packages'][$dataPoint['year'].'-'.str_pad((string) $dataPoint['month'], 2, '0', \STR_PAD_LEFT)] = $count;
         }
 
         $count = 0;
         foreach ($versions as $dataPoint) {
-            $yearMonth = $dataPoint['year'].'-'.str_pad((string) $dataPoint['month'], 2, '0', STR_PAD_LEFT);
+            $yearMonth = $dataPoint['year'].'-'.str_pad((string) $dataPoint['month'], 2, '0', \STR_PAD_LEFT);
             $count += $dataPoint['count'];
-            if (in_array($yearMonth, $chart['months'])) {
+            if (\in_array($yearMonth, $chart['months'])) {
                 $chart['versions'][$yearMonth] = $count;
             }
         }
 
         // fill gaps at the end of the chart
-        if (count($chart['months']) > count($chart['packages'])) {
-            $chart['packages'] += array_fill(0, count($chart['months']) - count($chart['packages']), !empty($chart['packages']) ? max($chart['packages']) : 0);
+        if (\count($chart['months']) > \count($chart['packages'])) {
+            $chart['packages'] += array_fill(0, \count($chart['months']) - \count($chart['packages']), !empty($chart['packages']) ? max($chart['packages']) : 0);
         }
-        if (count($chart['months']) > count($chart['versions'])) {
-            $chart['versions'] += array_fill(0, count($chart['months']) - count($chart['versions']), !empty($chart['versions']) ? max($chart['versions']) : 0);
+        if (\count($chart['months']) > \count($chart['versions'])) {
+            $chart['versions'] += array_fill(0, \count($chart['months']) - \count($chart['versions']), !empty($chart['versions']) ? max($chart['versions']) : 0);
         }
 
         $downloadsStartDate = '2012-04-13';

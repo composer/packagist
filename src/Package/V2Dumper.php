@@ -106,9 +106,9 @@ class V2Dumper
         ];
 
         if ($verbose) {
-            echo 'Dumping root'.PHP_EOL;
+            echo 'Dumping root'.\PHP_EOL;
         }
-        $this->dumpRootFile($rootFile, json_encode($rootFileContents, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $this->dumpRootFile($rootFile, json_encode($rootFileContents, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR));
         $this->statsd->increment('packagist.metadata_dump_root');
     }
 
@@ -139,15 +139,15 @@ class V2Dumper
         }
 
         if ($verbose) {
-            echo 'Web dir is '.$webDir.'/p2 ('.realpath($webDir.'/p2').')'.PHP_EOL;
-            echo 'Build v2 dir is '.$buildDirV2.PHP_EOL;
+            echo 'Web dir is '.$webDir.'/p2 ('.realpath($webDir.'/p2').')'.\PHP_EOL;
+            echo 'Build v2 dir is '.$buildDirV2.\PHP_EOL;
         }
 
         $dumpTimeUpdates = [];
 
         $versionRepo = $this->getEM()->getRepository(Version::class);
 
-        $total = count($packageIds);
+        $total = \count($packageIds);
         $current = 0;
         $step = 50;
         while ($packageIds) {
@@ -160,7 +160,7 @@ class V2Dumper
             $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
 
             if ($verbose) {
-                echo '['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.PHP_EOL;
+                echo '['.\sprintf('%'.\strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.\PHP_EOL;
             }
 
             $current += $step;
@@ -196,7 +196,7 @@ class V2Dumper
         }
 
         if ($verbose) {
-            echo 'Updating package dump times'.PHP_EOL;
+            echo 'Updating package dump times'.\PHP_EOL;
         }
 
         $maxDumpTime = 0;
@@ -273,7 +273,7 @@ class V2Dumper
 
         $this->writeFileAtomic($file, $json, $filemtime);
         $encoded = gzencode($json, 8);
-        assert(is_string($encoded));
+        \assert(\is_string($encoded));
         $this->writeFileAtomic($file.'.gz', $encoded, $filemtime);
 
         $this->purgeCdn('packages.json');
@@ -339,7 +339,7 @@ class V2Dumper
             $metadata['security-advisories'] = $advisories;
         }
 
-        $json = json_encode($metadata, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $json = json_encode($metadata, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR);
         $this->writeV2File($package, $name, $path, $json, $forceDump);
     }
 
@@ -369,7 +369,7 @@ class V2Dumper
 
         $pkgWithDevFlag = $match[1];
         $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
-        $this->filesystem->mkdir(dirname($path));
+        $this->filesystem->mkdir(\dirname($path));
 
         $filemtime = $this->writeCdn($relativePath, $contents);
 
@@ -391,7 +391,7 @@ class V2Dumper
             $filemtime += $counter;
         }
 
-        $timeUnix = intval(ceil($filemtime / 10000));
+        $timeUnix = (int) ceil($filemtime / 10000);
         $this->writeFileAtomic($path, $contents, $timeUnix);
 
         $this->writeToReplica($path, $contents, $timeUnix);

@@ -44,7 +44,7 @@ class ProfileController extends Controller
             'githubSync' => $lastGithubSync,
         ];
 
-        if (!count($packages)) {
+        if (!\count($packages)) {
             $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
         $data['rotateApiCsrfToken'] = $csrfTokenManager->getToken('rotate_api');
@@ -69,7 +69,7 @@ class ProfileController extends Controller
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['spammerForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
-        if (!count($packages) && ($this->isGranted('ROLE_ADMIN') || $loggedUser?->getId() === $user->getId())) {
+        if (!\count($packages) && ($this->isGranted('ROLE_ADMIN') || $loggedUser?->getId() === $user->getId())) {
             $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
 
@@ -135,7 +135,7 @@ class ProfileController extends Controller
             ]);
 
             if (!empty($diffs)) {
-                $reason = sprintf('Your %s has been changed', implode(' and ', $diffs));
+                $reason = \sprintf('Your %s has been changed', implode(' and ', $diffs));
 
                 if ($oldEmail !== $user->getEmail()) {
                     $userNotifier->notifyChange($oldEmail, $reason);

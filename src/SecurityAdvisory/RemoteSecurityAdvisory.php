@@ -68,7 +68,7 @@ class RemoteSecurityAdvisory
     /**
      * @phpstan-param FriendsOfPhpSecurityAdvisory $info
      */
-    public static function createFromFriendsOfPhp(string $fileNameWithPath, array $info): RemoteSecurityAdvisory
+    public static function createFromFriendsOfPhp(string $fileNameWithPath, array $info): self
     {
         $date = null;
         $fallbackYearDate = null;
@@ -84,9 +84,9 @@ class RemoteSecurityAdvisory
             $affectedVersions[] = implode(',', $branchInfo['versions']);
             if (!$date && isset($branchInfo['time'])) {
                 $timestamp = null;
-                if (is_int($branchInfo['time'])) {
+                if (\is_int($branchInfo['time'])) {
                     $timestamp = $branchInfo['time'];
-                } elseif (is_string($branchInfo['time'])) {
+                } elseif (\is_string($branchInfo['time'])) {
                     $timestamp = strtotime($branchInfo['time']);
                 }
 
@@ -124,7 +124,7 @@ class RemoteSecurityAdvisory
             $cve = $info['cve'];
         }
 
-        return new RemoteSecurityAdvisory(
+        return new self(
             $fileNameWithPath,
             $info['title'],
             str_replace('composer://', '', $info['reference']),

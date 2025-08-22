@@ -36,7 +36,7 @@ class GitHubLoginController extends Controller
     public function connect(ClientRegistry $clientRegistry): RedirectResponse
     {
         $user = $this->getUser();
-        if (!is_object($user)) {
+        if (!\is_object($user)) {
             throw $this->createAccessDeniedException('This user does not have access to this section.');
         }
 

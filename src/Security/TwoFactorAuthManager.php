@@ -112,7 +112,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
             return;
         }
 
-        assert($session instanceof FlashBagAwareSessionInterface);
+        \assert($session instanceof FlashBagAwareSessionInterface);
         $session->getFlashBag()->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
     }
 }

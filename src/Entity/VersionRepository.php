@@ -238,7 +238,7 @@ class VersionRepository extends ServiceEntityRepository
     public function getLatestReleases(int $count = 10): array
     {
         if ($cached = $this->redisCache->get('new_releases')) {
-            return json_decode($cached, true, flags: JSON_THROW_ON_ERROR);
+            return json_decode($cached, true, flags: \JSON_THROW_ON_ERROR);
         }
 
         $qb = $this->getEntityManager()->createQueryBuilder();
@@ -251,7 +251,7 @@ class VersionRepository extends ServiceEntityRepository
             ->setParameter('now', date('Y-m-d H:i:s'));
 
         $res = $qb->getQuery()->getResult();
-        $this->redisCache->setex('new_releases', 600, json_encode($res, JSON_THROW_ON_ERROR));
+        $this->redisCache->setex('new_releases', 600, json_encode($res, \JSON_THROW_ON_ERROR));
 
         return $res;
     }

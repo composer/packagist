@@ -179,7 +179,7 @@ class PackageManager
 
                 $body = $this->twig->render('email/update_failed.txt.twig', [
                     'package' => $package,
-                    'exception' => get_class($e),
+                    'exception' => $e::class,
                     'exceptionMessage' => $e->getMessage(),
                     'details' => $details,
                 ]);
@@ -196,7 +196,7 @@ class PackageManager
                 try {
                     $this->mailer->send($message);
                 } catch (\Symfony\Component\Mailer\Exception\TransportExceptionInterface $e) {
-                    $this->logger->error('['.get_class($e).'] '.$e->getMessage());
+                    $this->logger->error('['.$e::class.'] '.$e->getMessage());
 
                     return false;
                 }
@@ -232,7 +232,7 @@ class PackageManager
         try {
             $this->mailer->send($message);
         } catch (\Symfony\Component\Mailer\Exception\TransportExceptionInterface $e) {
-            $this->logger->error('['.get_class($e).'] '.$e->getMessage());
+            $this->logger->error('['.$e::class.'] '.$e->getMessage());
 
             return false;
         }

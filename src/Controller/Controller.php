@@ -54,7 +54,7 @@ abstract class Controller extends AbstractController
                     $ids[] = $package->getId();
                     // fetch one by one to avoid re-fetching the github stars as we already have them on the package object
                     $favorites[$package->getId()] = $favMgr->getFaverCount($package);
-                } elseif (is_array($package)) {
+                } elseif (\is_array($package)) {
                     $ids[] = $package['id'];
                     // fetch all in one query if we do not have objects
                     $search = true;
@@ -97,7 +97,7 @@ abstract class Controller extends AbstractController
             '2a02:4780:d:5838::1',
             '82.180.155.159',
         ];
-        if (in_array($req->getClientIp(), $abusers, true)) {
+        if (\in_array($req->getClientIp(), $abusers, true)) {
             return new JsonResponse('Please use a proper user-agent with contact information or get in touch before abusing the API', 429, ['Retry-After' => 31536000]);
         }
 

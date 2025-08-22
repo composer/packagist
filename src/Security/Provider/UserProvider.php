@@ -47,7 +47,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
     public function refreshUser(UserInterface $user): User
     {
         if (!$user instanceof User) {
-            throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
+            throw new \UnexpectedValueException('Expected '.User::class.', got '.$user::class);
         }
 
         $user = $this->getRepo()->find($user->getId());
@@ -61,7 +61,7 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
     public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
     {
         if (!$user instanceof User) {
-            throw new \UnexpectedValueException('Expected '.User::class.', got '.get_class($user));
+            throw new \UnexpectedValueException('Expected '.User::class.', got '.$user::class);
         }
 
         $user->setPassword($newHashedPassword);

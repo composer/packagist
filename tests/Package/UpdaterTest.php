@@ -92,7 +92,7 @@ class UpdaterTest extends TestCase
         $this->updater = new Updater($registryMock, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock);
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         parent::tearDown();
         unset($this->updater);

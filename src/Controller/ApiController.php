@@ -90,12 +90,12 @@ class ApiController extends Controller
             $payload = json_decode($request->getContent(), true);
         }
 
-        if (!$payload || !is_array($payload)) {
+        if (!$payload || !\is_array($payload)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
         }
-        if (isset($payload['repository']['url']) && is_string($payload['repository']['url'])) { // supported for BC
+        if (isset($payload['repository']['url']) && \is_string($payload['repository']['url'])) { // supported for BC
             $url = $payload['repository']['url'];
-        } elseif (isset($payload['repository']) && is_string($payload['repository'])) {
+        } elseif (isset($payload['repository']) && \is_string($payload['repository'])) {
             $url = $payload['repository'];
         } else {
             return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in payload'], 406);
@@ -110,7 +110,7 @@ class ApiController extends Controller
         $package->addMaintainer($user);
         $package->setRepository($url);
         $errors = $validator->validate($package, groups: ['Default', 'Create']);
-        if (count($errors) > 0) {
+        if (\count($errors) > 0) {
             $errorArray = [];
             foreach ($errors as $error) {
                 $errorArray[$error->getPropertyPath()] = $error->getMessage();
@@ -148,7 +148,7 @@ class ApiController extends Controller
             $payload = json_decode($request->getContent(), true);
         }
 
-        if (!$payload || !is_array($payload)) {
+        if (!$payload || !\is_array($payload)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
         }
 
@@ -156,14 +156,14 @@ class ApiController extends Controller
             $urlRegex = self::REGEXES['gitlab'];
             $url = $payload['project']['git_http_url'];
             $remoteId = null;
-        } elseif (isset($payload['repository']) && is_string($payload['repository'])) { // anything hook
+        } elseif (isset($payload['repository']) && \is_string($payload['repository'])) { // anything hook
             $urlRegex = self::REGEXES['any'];
             $url = $payload['repository'];
             $remoteId = null;
-        } elseif (isset($payload['repository']['url']) && is_string($payload['repository']['url'])) { // github hook
+        } elseif (isset($payload['repository']['url']) && \is_string($payload['repository']['url'])) { // github hook
             $urlRegex = self::REGEXES['any'];
             $url = $payload['repository']['url'];
-            $remoteId = isset($payload['repository']['id']) && (is_string($payload['repository']['id']) || is_int($payload['repository']['id'])) ? $payload['repository']['id'] : null;
+            $remoteId = isset($payload['repository']['id']) && (\is_string($payload['repository']['id']) || \is_int($payload['repository']['id'])) ? $payload['repository']['id'] : null;
         } elseif (isset($payload['repository']['links']['html']['href'])) { // bitbucket push event payload
             $urlRegex = self::REGEXES['bitbucket_push'];
             $url = $payload['repository']['links']['html']['href'];
@@ -201,14 +201,14 @@ class ApiController extends Controller
             $payload = json_decode($request->getContent(), true);
         }
 
-        if (!isset($payload['repository']) || !is_string($payload['repository'])) {
+        if (!isset($payload['repository']) || !\is_string($payload['repository'])) {
             return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in request body'], 406);
         }
 
         $package->setRepository($payload['repository']);
 
         $errors = $validator->validate($package, null, ['Update']);
-        if (count($errors) > 0) {
+        if (\count($errors) > 0) {
             $errorArray = [];
             foreach ($errors as $error) {
                 $errorArray[$error->getPropertyPath()] = $error->getMessage();
@@ -254,7 +254,7 @@ class ApiController extends Controller
             return !isset($item['name'], $item['version']);
         };
 
-        if (!is_array($contents) || !isset($contents['downloads']) || !is_array($contents['downloads']) || array_filter($contents['downloads'], $invalidInputs)) {
+        if (!\is_array($contents) || !isset($contents['downloads']) || !\is_array($contents['downloads']) || array_filter($contents['downloads'], $invalidInputs)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid request format, must be a json object containing a downloads key filled with an array of name/version objects'], 200);
         }
 
@@ -347,7 +347,7 @@ class ApiController extends Controller
             return $resp;
         }
 
-        $packageNames = array_filter((array) $request->get('packages'), static fn ($name) => is_string($name) && $name !== '');
+        $packageNames = array_filter((array) $request->get('packages'), static fn ($name) => \is_string($name) && $name !== '');
         if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);
         }
@@ -367,7 +367,7 @@ class ApiController extends Controller
 
         // Ensure known packages are returned even if no advisory is present to ensure they do not get retried by composer in lower prio repos
         // Do a max of 1000 packages to prevent abuse
-        $packagesToCheck = array_slice($packageNames, 0, 1000);
+        $packagesToCheck = \array_slice($packageNames, 0, 1000);
         $packageExists = $providerManager->packagesExist($packagesToCheck);
 
         foreach ($packagesToCheck as $name) {

@@ -119,7 +119,7 @@ class IndexPackagesCommand extends Command
             $index->clear();
         }
 
-        $total = count($ids);
+        $total = \count($ids);
         $current = 0;
 
         // update package index
@@ -134,7 +134,7 @@ class IndexPackagesCommand extends Command
             foreach ($packages as $package) {
                 $current++;
                 if ($verbose) {
-                    $output->writeln('['.sprintf('%'.strlen((string) $total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
+                    $output->writeln('['.\sprintf('%'.\strlen((string) $total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
                 }
 
                 // delete spam packages from the search index
@@ -168,7 +168,7 @@ class IndexPackagesCommand extends Command
             try {
                 $index->saveObjects($records);
             } catch (\Exception $e) {
-                $output->writeln('<error>'.get_class($e).': '.$e->getMessage().', occurred while processing packages: '.implode(',', $idsSlice).'</error>');
+                $output->writeln('<error>'.$e::class.': '.$e->getMessage().', occurred while processing packages: '.implode(',', $idsSlice).'</error>');
                 continue;
             }
 
@@ -234,7 +234,7 @@ class IndexPackagesCommand extends Command
             $record['replacementPackage'] = '';
         }
 
-        if (in_array($package->getType(), ['php-ext', 'php-ext-zend'], true)) {
+        if (\in_array($package->getType(), ['php-ext', 'php-ext-zend'], true)) {
             $record['extension'] = 1;
         }
 

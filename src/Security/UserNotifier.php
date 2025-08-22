@@ -49,7 +49,7 @@ class UserNotifier
         try {
             $this->mailer->send($email);
         } catch (TransportExceptionInterface $e) {
-            $this->logger->error('['.get_class($e).'] '.$e->getMessage());
+            $this->logger->error('['.$e::class.'] '.$e->getMessage());
         }
     }
 }

@@ -241,7 +241,7 @@ class Updater
                 continue;
             }
             if (!$version instanceof CompletePackageInterface) {
-                throw new \LogicException('Received a package instance of type '.get_class($version).', expected a CompletePackageInterface instance');
+                throw new \LogicException('Received a package instance of type '.$version::class.', expected a CompletePackageInterface instance');
             }
 
             if (isset($processedVersions[strtolower($version->getVersion())])) {
@@ -253,7 +253,7 @@ class Updater
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
             $versionId = false;
             if ($result['updated']) {
-                assert($result['object'] instanceof Version);
+                \assert($result['object'] instanceof Version);
                 $em->flush();
 
                 // detach version once flushed to avoid gathering lots of data in memory
@@ -293,7 +293,7 @@ class Updater
         foreach ($existingVersions as $version) {
             if (
                 // soft-deleted versions are really purged after a day
-                (!is_null($version['softDeletedAt']) && new \DateTime($version['softDeletedAt']) < $deleteDate)
+                (null !== $version['softDeletedAt'] && new \DateTime($version['softDeletedAt']) < $deleteDate)
                 // remove v1 normalized versions of dev-master/trunk/default immediately as they have been recreated as dev-master/trunk/default in a non-normalized way
                 || ($version['normalizedVersion'] === '9999999-dev')
             ) {
@@ -378,7 +378,7 @@ class Updater
                 // update if the source reference has changed (re-tag or new commit on branch)
                 ($source['reference'] ?? null) !== $data->getSourceReference()
                 // or the source has some corrupted github private url
-                || (isset($source['url']) && is_string($source['url']) && Preg::isMatch('{^git@github.com:.*?\.git$}', $source['url']))
+                || (isset($source['url']) && \is_string($source['url']) && Preg::isMatch('{^git@github.com:.*?\.git$}', $source['url']))
                 // or if the right flag is set
                 || ($flags & self::UPDATE_EQUAL_REFS)
                 // or if the package must be marked abandoned from composer.json
@@ -433,7 +433,7 @@ class Updater
             $source['type'] = $data->getSourceType();
             $source['url'] = $data->getSourceUrl();
             // force public URLs even if the package somehow got downgraded to a GitDriver
-            if (is_string($source['url']) && Preg::isMatch('{^git@github.com:(?P<repo>.*?)\.git$}', $source['url'], $match)) {
+            if (\is_string($source['url']) && Preg::isMatch('{^git@github.com:(?P<repo>.*?)\.git$}', $source['url'], $match)) {
                 $source['url'] = 'https://github.com/'.$match['repo'];
             }
             $source['reference'] = $data->getSourceReference();
@@ -494,7 +494,7 @@ class Updater
             foreach ($existingTags as $tag) {
                 $version->getTags()->removeElement($tag);
             }
-        } elseif (count($version->getTags())) {
+        } elseif (\count($version->getTags())) {
             $version->getTags()->clear();
         }
 
@@ -528,7 +528,7 @@ class Updater
             $links = [];
             foreach ($data->{$opts['composer-getter']}() as $link) {
                 $constraint = $link->getPrettyConstraint();
-                if (false !== strpos($constraint, ',') && false !== strpos($constraint, '@')) {
+                if (str_contains($constraint, ',') && str_contains($constraint, '@')) {
                     $constraint = Preg::replaceCallbackStrictGroups('{([><]=?\s*[^@]+?)@([a-z]+)}i', static function ($matches) {
                         if ($matches[2] === 'stable') {
                             return $matches[1];
@@ -584,7 +584,7 @@ class Updater
                 $link->setVersion($version);
                 $em->persist($link);
             }
-        } elseif (count($version->getSuggest())) {
+        } elseif (\count($version->getSuggest())) {
             // clear existing suggests if present
             foreach ($version->getSuggest() as $link) {
                 $em->remove($link);
@@ -608,7 +608,7 @@ class Updater
 
         try {
             $composerInfo = $driver->getComposerInformation($driver->getRootIdentifier());
-            if (isset($composerInfo['readme']) && is_string($composerInfo['readme'])) {
+            if (isset($composerInfo['readme']) && \is_string($composerInfo['readme'])) {
                 $readmeFile = $composerInfo['readme'];
             } else {
                 $readmeFile = 'README.md';
@@ -679,7 +679,7 @@ class Updater
             $package->setReadme($this->prepareReadme($readme, 'github.com', $owner, $repo));
         }
 
-        if (!empty($repoData['language']) && is_string($repoData['language'])) {
+        if (!empty($repoData['language']) && \is_string($repoData['language'])) {
             $package->setLanguage($repoData['language']);
         }
         if (isset($repoData['stargazers_count']) && is_numeric($repoData['stargazers_count'])) {
@@ -731,8 +731,8 @@ class Updater
     {
         // detect base path for github readme if file is located in a subfolder like docs/README.md
         $basePath = '';
-        if ($host === 'github.com' && Preg::isMatchStrictGroups('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && false !== strpos($match[1], '/')) {
-            $basePath = dirname($match[1]);
+        if ($host === 'github.com' && Preg::isMatchStrictGroups('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && str_contains($match[1], '/')) {
+            $basePath = \dirname($match[1]);
         }
         if ($basePath) {
             $basePath .= '/';

@@ -66,7 +66,7 @@ class CopyrightValidator extends ConstraintValidator
         }
 
         foreach ($copyrightWatches as $vendor => $config) {
-            if (in_array($value->getVendor(), $config['allow']) || !str_contains($value->getVendor(), $vendor)) {
+            if (\in_array($value->getVendor(), $config['allow']) || !str_contains($value->getVendor(), $vendor)) {
                 continue;
             }
 

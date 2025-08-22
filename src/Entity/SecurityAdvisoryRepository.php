@@ -37,7 +37,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
      */
     public function getPackageAdvisoriesWithSources(array $packageNames, string $sourceName): array
     {
-        if (count($packageNames) === 0) {
+        if (\count($packageNames) === 0) {
             return [];
         }
 
@@ -52,7 +52,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
 
-        if ($sourceName !== FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME || count($advisories) > 0) {
+        if ($sourceName !== FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME || \count($advisories) > 0) {
             return $advisories;
         }
 
@@ -130,7 +130,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
     public function searchSecurityAdvisories(array $packageNames, int $updatedSince): array
     {
         $packageNames = array_values(array_unique($packageNames));
-        $filterByNames = count($packageNames) > 0;
+        $filterByNames = \count($packageNames) > 0;
         $useCache = $filterByNames;
         $advisories = [];
 
@@ -144,13 +144,13 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
                     // cache as false means the name does not have any advisories
                     if ($advisoryCache[$index] !== 'false') {
-                        $advisories[$name] = json_decode($advisoryCache[$index], true, JSON_THROW_ON_ERROR);
+                        $advisories[$name] = json_decode($advisoryCache[$index], true, \JSON_THROW_ON_ERROR);
                     }
                 }
             }
 
             // check if we still need to query SQL
-            $filterByNames = count($packageNames) > 0;
+            $filterByNames = \count($packageNames) > 0;
         }
 
         if (!$useCache || $filterByNames) {
@@ -187,7 +187,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
                 $cacheData = [];
                 foreach ($packageNames as $name) {
                     // Cache for 7 days with a random 1-hour variance, the cache is busted by SecurityAdvisoryUpdateListener when advisories change
-                    $this->redisCache->setex('sec-adv:'.$name, 604800 + random_int(0, 3600), isset($advisories[$name]) ? json_encode($advisories[$name], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : 'false');
+                    $this->redisCache->setex('sec-adv:'.$name, 604800 + random_int(0, 3600), isset($advisories[$name]) ? json_encode($advisories[$name], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE) : 'false');
                 }
             }
         }
@@ -202,7 +202,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
      */
     public function getAdvisoryIdsAndVersions(array $packageNames): array
     {
-        $filterByNames = count($packageNames) > 0;
+        $filterByNames = \count($packageNames) > 0;
 
         $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.affectedVersions
             FROM security_advisory s

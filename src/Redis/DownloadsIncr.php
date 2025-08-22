@@ -25,7 +25,7 @@ class DownloadsIncr extends \Predis\Command\ScriptCommand
             throw new \LogicException('getKeysCount called before setArguments');
         }
 
-        return count($this->args) - 4 /* ACTUAL ARGS */;
+        return \count($this->args) - 4 /* ACTUAL ARGS */;
     }
 
     /**

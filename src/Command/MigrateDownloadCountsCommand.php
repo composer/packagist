@@ -69,7 +69,7 @@ class MigrateDownloadCountsCommand extends Command
 
             // skip today datapoints as we will store that to the DB tomorrow
             $keysToUpdate = array_filter($keysToUpdate, static function ($key) use ($todaySuffix) {
-                return strpos($key, $todaySuffix) === false;
+                return !str_contains($key, $todaySuffix);
             });
 
             // sort by package id, then package datapoint first followed by version datapoints

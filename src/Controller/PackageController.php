@@ -108,7 +108,7 @@ class PackageController extends Controller
         $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
 
-        if (count($fields) > 0) {
+        if (\count($fields) > 0) {
             $filters = array_filter([
                 'type' => $type,
                 'vendor' => $vendor,
@@ -207,7 +207,7 @@ class PackageController extends Controller
             }
         }
 
-        if (count($actions) > 100_000) {
+        if (\count($actions) > 100_000) {
             return new JsonResponse(['actions' => [['type' => 'resync', 'time' => floor($now / 10000), 'package' => '*']], 'timestamp' => $now]);
         }
 
@@ -283,7 +283,7 @@ class PackageController extends Controller
 
         if ($form->isSubmitted()) {
             $errors = [];
-            if (count($form->getErrors())) {
+            if (\count($form->getErrors())) {
                 foreach ($form->getErrors() as $error) {
                     if ($error instanceof FormError) {
                         $errors[] = $error->getMessage();
@@ -291,7 +291,7 @@ class PackageController extends Controller
                 }
             }
             foreach ($form->all() as $child) {
-                if (count($child->getErrors())) {
+                if (\count($child->getErrors())) {
                     foreach ($child->getErrors() as $error) {
                         if ($error instanceof FormError) {
                             $errors[] = $error->getMessage();
@@ -438,7 +438,7 @@ class PackageController extends Controller
         foreach ($packages as $pkg) {
             $dls = $data['meta']['downloads'][$pkg['id']] ?? 0;
             $vendor = Preg::replace('{/.*$}', '', $pkg['name']);
-            if ($dls > 10 && !in_array($vendor, $verified, true)) {
+            if ($dls > 10 && !\in_array($vendor, $verified, true)) {
                 $vendorRepo->verify($vendor);
                 $this->addFlash('success', 'Marked '.$vendor.' with '.$dls.' downloads.');
                 $verified[] = $vendor;
@@ -600,7 +600,7 @@ class PackageController extends Controller
 
         usort($versions, Package::class.'::sortVersions');
 
-        if (count($versions)) {
+        if (\count($versions)) {
             $versionRepo = $this->getEM()->getRepository(Version::class);
 
             // load the default branch version as it is used to display the latest available source.* and homepage info
@@ -669,7 +669,7 @@ class PackageController extends Controller
         if (Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED)) {
             $securityAdvisoryRepository = $this->getEM()->getRepository(SecurityAdvisory::class);
             $securityAdvisories = $securityAdvisoryRepository->getPackageSecurityAdvisories($package->getName());
-            $data['securityAdvisories'] = count($securityAdvisories);
+            $data['securityAdvisories'] = \count($securityAdvisories);
             $data['hasVersionSecurityAdvisories'] = [];
             $versionParser = new VersionParser();
             $affectedVersionsConstraint = new MatchNoneConstraint();
@@ -859,7 +859,7 @@ class PackageController extends Controller
             }
 
             if (null !== $autoUpdated) {
-                $package->setAutoUpdated(filter_var($autoUpdated, FILTER_VALIDATE_BOOLEAN) ? Package::AUTO_MANUAL_HOOK : 0);
+                $package->setAutoUpdated(filter_var($autoUpdated, \FILTER_VALIDATE_BOOLEAN) ? Package::AUTO_MANUAL_HOOK : 0);
                 $this->getEM()->flush();
             }
 
@@ -1152,7 +1152,7 @@ class PackageController extends Controller
                 $label = 'All';
             } elseif (str_ends_with($version['version'], '.9999999')) {
                 $label = Preg::replace('{\.9999999$}', '.x-dev', $version['version']);
-            } elseif (in_array($version['depth'], [PhpStat::DEPTH_MINOR, PhpStat::DEPTH_MAJOR], true)) {
+            } elseif (\in_array($version['depth'], [PhpStat::DEPTH_MINOR, PhpStat::DEPTH_MAJOR], true)) {
                 $label = $version['version'].'.*';
             } else {
                 $label = $version['version'];
@@ -1223,7 +1223,7 @@ class PackageController extends Controller
 
         $datePoints = $this->createDatePoints($from, $to, $average);
         $series = [];
-        $totals = array_fill(0, count($datePoints), 0);
+        $totals = array_fill(0, \count($datePoints), 0);
 
         $index = 0;
         foreach ($datePoints as $label => $values) {
@@ -1233,7 +1233,7 @@ class PackageController extends Controller
                     $value += $seriesData[$valueKey] ?? 0;
                 }
                 // average the value over the datapoints in this current label
-                $value = (int) ceil($value / count($values));
+                $value = (int) ceil($value / \count($values));
 
                 $series[$seriesName][] = $value;
                 $totals[$index] += $value;
@@ -1253,12 +1253,12 @@ class PackageController extends Controller
 
         // delete last datapoint or two if they are still 0 as the nightly job syncing the data in mysql may not have run yet
         for ($i = 0; $i < 2; $i++) {
-            if (0 === $totals[count($totals) - 1]) {
-                unset($totals[count($totals) - 1]);
+            if (0 === $totals[\count($totals) - 1]) {
+                unset($totals[\count($totals) - 1]);
                 end($datePoints);
                 unset($datePoints[key($datePoints)]);
                 foreach ($series as $seriesName => $data) {
-                    unset($series[$seriesName][count($data) - 1]);
+                    unset($series[$seriesName][\count($data) - 1]);
                 }
             }
         }
@@ -1315,7 +1315,7 @@ class PackageController extends Controller
         }
 
         $orderBy = $req->query->get('order_by', 'name');
-        if (!in_array($orderBy, ['name', 'downloads'], true)) {
+        if (!\in_array($orderBy, ['name', 'downloads'], true)) {
             throw new BadRequestHttpException('Invalid order_by parameter provided');
         }
 
@@ -1501,7 +1501,7 @@ class PackageController extends Controller
                         $value += $data[$valueKey] ?? 0;
                     }
                 }
-                $series[$seriesName][] = ceil($value / count($values));
+                $series[$seriesName][] = ceil($value / \count($values));
             }
         }
 
@@ -1560,7 +1560,7 @@ class PackageController extends Controller
         }
 
         $data['securityAdvisories'] = $securityAdvisories;
-        $data['count'] = count($securityAdvisories);
+        $data['count'] = \count($securityAdvisories);
 
         return $this->render('package/security_advisories.html.twig', $data);
     }
@@ -1577,7 +1577,7 @@ class PackageController extends Controller
             $securityAdvisories = array_filter([$repo->findOneBy(['packagistAdvisoryId' => $id])]);
         }
 
-        if (0 === count($securityAdvisories)) {
+        if (0 === \count($securityAdvisories)) {
             throw new NotFoundHttpException();
         }
 

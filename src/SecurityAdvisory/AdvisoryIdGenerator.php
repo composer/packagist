@@ -21,7 +21,7 @@ class AdvisoryIdGenerator
     {
         $letterPool = self::ALNUM_SAFE_CI;
         $token = 'PKSA-';
-        $len = strlen($letterPool) - 1;
+        $len = \strlen($letterPool) - 1;
         for ($i = 0; $i < 3; $i++) {
             for ($j = 0; $j < 4; $j++) {
                 $token .= $letterPool[random_int(0, $len)];

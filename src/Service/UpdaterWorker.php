@@ -135,7 +135,7 @@ class UpdaterWorker
 
         // sandbox into a unique cache dir per package id to avoid potential cache reuse issues
         if (trim($this->updaterWorkerCacheDir) !== '' && is_dir($this->updaterWorkerCacheDir)) {
-            $subDir = str_pad((string) $package->getId(), 9, '0', STR_PAD_LEFT);
+            $subDir = str_pad((string) $package->getId(), 9, '0', \STR_PAD_LEFT);
             $subDir = substr($subDir, 0, 6).'/'.$package->getId();
             $config->merge(['config' => ['cache-dir' => $this->updaterWorkerCacheDir.'/'.$subDir]]);
             unset($subDir);
@@ -470,7 +470,7 @@ class UpdaterWorker
             if (
                 $e instanceof TransportException
                 && (
-                    in_array($e->getStatusCode(), [404, 409, 451], true)
+                    \in_array($e->getStatusCode(), [404, 409, 451], true)
                     || ($e->getStatusCode() === 403 && str_contains('"message": "Repository access blocked"', (string) $e->getResponse()))
                 )
             ) {
@@ -492,7 +492,7 @@ class UpdaterWorker
             // 404 indicates the repo does not exist
             if (
                 $e instanceof TransportException
-                    && in_array($e->getStatusCode(), [404], true)
+                    && \in_array($e->getStatusCode(), [404], true)
             ) {
                 return $this->completeDeadPackageCheck('https://gitlab.com/api/v4/projects/'.urlencode('packagist/vcs-repository-test'), $package, $httpDownloader, $output, $e);
             }

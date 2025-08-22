@@ -24,9 +24,10 @@ return $config
     ->setParallelConfig(PhpCsFixer\Runner\Parallel\ParallelConfigFactory::detect())
     ->setRules([
         '@PHP84Migration' => true,
-//        '@PHPUnit100Migration:risky' => true,
+        '@PHPUnit100Migration:risky' => true,
         '@PER-CS' => true,
         '@Symfony' => true,
+        '@Symfony:risky' => true,
 
         // overrides
         'blank_line_after_opening_tag' => false,

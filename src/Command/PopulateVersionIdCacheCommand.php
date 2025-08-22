@@ -51,7 +51,7 @@ class PopulateVersionIdCacheCommand extends Command
         /** @var int[] $ids */
         $ids = array_map('intval', $ids);
 
-        $total = count($ids);
+        $total = \count($ids);
         $done = 0;
         while ($id = array_shift($ids)) {
             if (!$this->locker->lockPackageUpdate($id)) {

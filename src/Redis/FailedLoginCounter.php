@@ -25,7 +25,7 @@ class FailedLoginCounter extends \Predis\Command\ScriptCommand
             throw new \LogicException('getKeysCount called before setArguments');
         }
 
-        return count($this->args);
+        return \count($this->args);
     }
 
     /**

@@ -184,7 +184,7 @@ class QueueWorker
 
         if (isset($result['exception'])) {
             $result['exceptionMsg'] = $result['exception']->getMessage();
-            $result['exceptionClass'] = get_class($result['exception']);
+            $result['exceptionClass'] = \get_class($result['exception']);
             unset($result['exception']);
         }
 

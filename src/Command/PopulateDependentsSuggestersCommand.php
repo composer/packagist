@@ -52,7 +52,7 @@ class PopulateDependentsSuggestersCommand extends Command
         $ids = $conn->fetchFirstColumn('SELECT id FROM package ORDER BY id ASC');
         $ids = array_map('intval', $ids);
 
-        $total = count($ids);
+        $total = \count($ids);
         $done = 0;
         while ($id = array_shift($ids)) {
             if (!$this->locker->lockPackageUpdate($id)) {

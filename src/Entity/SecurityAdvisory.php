@@ -98,12 +98,12 @@ class SecurityAdvisory
 
         $now = new \DateTimeImmutable();
         $allSeverities = $this->sources->map(static fn (SecurityAdvisorySource $source) => $source->getSeverity())->toArray();
-        if ($advisory->severity && (!$this->severity || !in_array($this->severity, $allSeverities, true))) {
+        if ($advisory->severity && (!$this->severity || !\in_array($this->severity, $allSeverities, true))) {
             $this->updatedAt = $now;
             $this->severity = $advisory->severity;
         }
 
-        if (!in_array($advisory->source, [null, $this->source], true)) {
+        if (!\in_array($advisory->source, [null, $this->source], true)) {
             return;
         }
 
@@ -216,7 +216,7 @@ class SecurityAdvisory
             $score += $increase;
         }
 
-        if ($advisory->link !== $this->getLink() && !in_array($this->getLink(), $advisory->references, true)) {
+        if ($advisory->link !== $this->getLink() && !\in_array($this->getLink(), $advisory->references, true)) {
             $score++;
         }
 

@@ -163,7 +163,7 @@ class PackageRepository extends ServiceEntityRepository
             $selector .= ', p.'.$field;
         }
 
-        if (in_array('abandoned', $fields, true)) {
+        if (\in_array('abandoned', $fields, true)) {
             $selector .= ', p.replacementPackage';
         }
 
@@ -180,7 +180,7 @@ class PackageRepository extends ServiceEntityRepository
         foreach ($query->getScalarResult() as $row) {
             $name = $row['name'];
             unset($row['name']);
-            if (isset($row['abandoned']) && array_key_exists('replacementPackage', $row)) {
+            if (isset($row['abandoned']) && \array_key_exists('replacementPackage', $row)) {
                 $row['abandoned'] = $row['abandoned'] == '1' ? ($row['replacementPackage'] ?? true) : false;
             }
             unset($row['replacementPackage']);
@@ -199,13 +199,13 @@ class PackageRepository extends ServiceEntityRepository
     {
         $names = [];
         foreach ($query->getScalarResult() as $row) {
-            if (!is_array($row) || !isset($row['name']) || !is_string($row['name'])) {
+            if (!\is_array($row) || !isset($row['name']) || !\is_string($row['name'])) {
                 throw new \LogicException('Excepted rows with a name field, got '.json_encode($row));
             }
             $names[] = $row['name'];
         }
 
-        sort($names, SORT_STRING | SORT_FLAG_CASE);
+        sort($names, \SORT_STRING | \SORT_FLAG_CASE);
 
         return $names;
     }
@@ -307,7 +307,7 @@ class PackageRepository extends ServiceEntityRepository
             ->getResult();
 
         foreach ($res as $row) {
-            yield ['id' => (int) $row['id'], 'lastUpdated' => is_null($row['lastUpdated']) ? new \DateTimeImmutable($row['createdAt']->format('r')) : new \DateTimeImmutable($row['lastUpdated']->format('r'))];
+            yield ['id' => (int) $row['id'], 'lastUpdated' => null === $row['lastUpdated'] ? new \DateTimeImmutable($row['createdAt']->format('r')) : new \DateTimeImmutable($row['lastUpdated']->format('r'))];
         }
     }
 

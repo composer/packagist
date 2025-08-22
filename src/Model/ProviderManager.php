@@ -38,7 +38,7 @@ class ProviderManager
      */
     public function packagesExist(array $names): array
     {
-        if (0 === count($names)) {
+        if (0 === \count($names)) {
             return [];
         }
 
@@ -80,7 +80,7 @@ class ProviderManager
         }
 
         $names = $this->redis->smembers('set:packages');
-        sort($names, SORT_STRING | SORT_FLAG_CASE);
+        sort($names, \SORT_STRING | \SORT_FLAG_CASE);
 
         return $names;
     }

@@ -53,11 +53,11 @@ class HealthCheckController
 
         $runner = new Runner();
 
-        $dbhost = (string) parse_url($this->dbUrl, PHP_URL_HOST);
-        $dbname = trim((string) parse_url($this->dbUrl, PHP_URL_PATH), '/');
-        $dbuser = (string) parse_url($this->dbUrl, PHP_URL_USER);
-        $dbpass = (string) parse_url($this->dbUrl, PHP_URL_PASS);
-        $dbport = (string) parse_url($this->dbUrl, PHP_URL_PORT);
+        $dbhost = (string) parse_url($this->dbUrl, \PHP_URL_HOST);
+        $dbname = trim((string) parse_url($this->dbUrl, \PHP_URL_PATH), '/');
+        $dbuser = (string) parse_url($this->dbUrl, \PHP_URL_USER);
+        $dbpass = (string) parse_url($this->dbUrl, \PHP_URL_PASS);
+        $dbport = (string) parse_url($this->dbUrl, \PHP_URL_PORT);
         if ($dbport === '') {
             $dbport = '3306';
         }
@@ -96,10 +96,10 @@ class HealthCheckController
             $result = $results[$checker];
 
             return [
-                'checker' => get_class($checker),
+                'checker' => $checker::class,
                 'message' => $result->getMessage(),
                 'details' => $result->getData(),
-                'result' => strtoupper(str_replace('ZendDiagnostics\\Result\\', '', get_class($result))),
+                'result' => strtoupper(str_replace('ZendDiagnostics\\Result\\', '', $result::class)),
             ];
         }, iterator_to_array($results)));
     }

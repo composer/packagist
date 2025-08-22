@@ -254,7 +254,7 @@ class DownloadManager
         [$id, $type] = $this->getKeyInfo((string) key($keys));
 
         // skip if the version was deleted in the meantime
-        if ($type === Download::TYPE_VERSION && !in_array($id, $validVersionIds, true)) {
+        if ($type === Download::TYPE_VERSION && !\in_array($id, $validVersionIds, true)) {
             return;
         }
 
@@ -282,7 +282,7 @@ class DownloadManager
         }
 
         // only store records for packages or for versions that have had downloads to avoid storing empty records
-        if (!$isNewRecord || $type === Download::TYPE_PACKAGE || count($record->getData()) > 0) {
+        if (!$isNewRecord || $type === Download::TYPE_PACKAGE || \count($record->getData()) > 0) {
             $this->getEM()->persist($record);
         }
 

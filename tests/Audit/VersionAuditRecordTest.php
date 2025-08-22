@@ -21,7 +21,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class VersionAuditRecordTest extends KernelTestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         self::bootKernel();
         static::getContainer()->get(Connection::class)->beginTransaction();
@@ -29,7 +29,7 @@ class VersionAuditRecordTest extends KernelTestCase
         parent::setUp();
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         static::getContainer()->get(Connection::class)->rollBack();
 

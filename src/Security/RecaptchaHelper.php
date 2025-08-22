@@ -81,7 +81,7 @@ class RecaptchaHelper
         }
 
         $keys = $context->getRedisKeys(true);
-        if (count($keys) > 0) {
+        if (\count($keys) > 0) {
             $this->redisCache->del($keys);
         }
     }

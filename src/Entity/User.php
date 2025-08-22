@@ -308,7 +308,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
             return;
         }
 
-        if (!in_array($role, $this->roles, true)) {
+        if (!\in_array($role, $this->roles, true)) {
             $this->roles[] = $role;
         }
     }
@@ -420,7 +420,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function hasRole(string $role): bool
     {
-        return in_array(strtoupper($role), $this->getRoles(), true);
+        return \in_array(strtoupper($role), $this->getRoles(), true);
     }
 
     public function isEnabled(): bool
@@ -511,7 +511,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function isEqualTo(UserInterface $user): bool
     {
-        if (!$user instanceof User) {
+        if (!$user instanceof self) {
             return false;
         }
 

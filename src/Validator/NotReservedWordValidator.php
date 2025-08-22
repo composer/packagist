@@ -24,7 +24,7 @@ class NotReservedWordValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, NotReservedWord::class);
         }
 
-        if (!is_string($value)) {
+        if (!\is_string($value)) {
             return;
         }
 

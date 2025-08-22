@@ -249,7 +249,7 @@ class Package
             $maintainers[] = $maintainer->toArray();
         }
 
-        if (is_array($versionRepo)) {
+        if (\is_array($versionRepo)) {
             $versions = $versionRepo;
         } else {
             $versions = [];
@@ -527,7 +527,7 @@ class Package
                 return;
             }
             $information = $driver->getComposerInformation($driver->getRootIdentifier());
-            if (!isset($information['name']) || !is_string($information['name'])) {
+            if (!isset($information['name']) || !\is_string($information['name'])) {
                 return;
             }
             if ('' === $this->name) {
@@ -536,7 +536,7 @@ class Package
             if ($driver instanceof GitHubDriver) {
                 $this->repository = $driver->getRepositoryUrl();
                 if ($repoData = $driver->getRepoData()) {
-                    $this->remoteId = parse_url($this->repository, PHP_URL_HOST).'/'.$repoData['id'];
+                    $this->remoteId = parse_url($this->repository, \PHP_URL_HOST).'/'.$repoData['id'];
                 }
             }
 
@@ -545,7 +545,7 @@ class Package
                 $this->unfreeze();
             }
         } catch (\Exception $e) {
-            $this->vcsDriverError = '['.get_class($e).'] '.$e->getMessage();
+            $this->vcsDriverError = '['.$e::class.'] '.$e->getMessage();
         }
     }
 
@@ -700,7 +700,7 @@ class Package
 
     public function getInstallCommand(?Version $version = null): string
     {
-        if (in_array($this->getType(), ['php-ext', 'php-ext-zend'], true)) {
+        if (\in_array($this->getType(), ['php-ext', 'php-ext-zend'], true)) {
             return 'pie install '.$this->getName();
         }
 
@@ -714,7 +714,7 @@ class Package
             }
         }
 
-        return sprintf('composer %s %s', $command, $this->getName());
+        return \sprintf('composer %s %s', $command, $this->getName());
     }
 
     public function setRemoteId(?string $remoteId): void
@@ -740,7 +740,7 @@ class Package
      */
     public function getAutoUpdated(): int
     {
-        assert(in_array($this->autoUpdated, [self::AUTO_NONE, self::AUTO_MANUAL_HOOK, self::AUTO_GITHUB_HOOK], true));
+        \assert(\in_array($this->autoUpdated, [self::AUTO_NONE, self::AUTO_MANUAL_HOOK, self::AUTO_GITHUB_HOOK], true));
 
         return $this->autoUpdated;
     }
@@ -776,7 +776,7 @@ class Package
 
     public function isSuspect(): bool
     {
-        return !is_null($this->suspect);
+        return null !== $this->suspect;
     }
 
     public function getSuspect(): ?string
@@ -804,7 +804,7 @@ class Package
 
     public function isFrozen(): bool
     {
-        return !is_null($this->frozen);
+        return null !== $this->frozen;
     }
 
     public function getFreezeReason(): ?PackageFreezeReason
