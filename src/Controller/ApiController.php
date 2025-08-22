@@ -514,6 +514,20 @@ class ApiController extends Controller
             ? $request->request->get('apiToken')
             : $request->query->get('apiToken');
 
+        // Check for Bearer token authentication in format "username:apiToken"
+        // Bearer token takes precedence over query parameters
+        if ($request->headers->has('Authorization')) {
+            $authHeader = $request->headers->get('Authorization', '');
+            if (str_starts_with($authHeader, 'Bearer ')) {
+                $bearerToken = substr($authHeader, 7); // Remove 'Bearer ' prefix
+                if (str_contains($bearerToken, ':')) {
+                    [$bearerUsername, $bearerApiToken] = explode(':', $bearerToken, 2);
+                    $username = $bearerUsername;
+                    $apiToken = $bearerApiToken;
+                }
+            }
+        }
+
         if (!$apiToken || !$username) {
             return null;
         }

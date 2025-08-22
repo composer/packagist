@@ -179,4 +179,106 @@ class ApiControllerTest extends ControllerTestCase
         $this->assertArrayHasKey('acme/package', $content['advisories']);
         $this->assertCount(1, $content['advisories']['acme/package']);
     }
+
+    public function testBearerTokenAuthentication(): void
+    {
+        $url = 'https://github.com/composer/composer';
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), $url, maintainers: [$user]);
+        $this->store($user, $package);
+
+        $payload = json_encode(['repository' => $url]);
+
+        // Test with Bearer token in format username:apiToken
+        $this->client->request(
+            'POST',
+            '/api/update-package',
+            [],
+            [],
+            ['HTTP_Authorization' => 'Bearer test:api-token', 'CONTENT_TYPE' => 'application/json'],
+            $payload
+        );
+
+        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
+
+    public function testBearerTokenAuthenticationWithSafeToken(): void
+    {
+        $url = 'https://github.com/composer/composer';
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), $url, maintainers: [$user]);
+        $this->store($user, $package);
+
+        $payload = json_encode(['repository' => $url]);
+
+        // Test with Bearer token using safe API token for safe endpoint
+        $this->client->request(
+            'POST',
+            '/api/update-package',
+            [],
+            [],
+            ['HTTP_Authorization' => 'Bearer test:safe-api-token', 'CONTENT_TYPE' => 'application/json'],
+            $payload
+        );
+
+        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
+
+    public function testBearerTokenAuthenticationInvalidCredentials(): void
+    {
+        $payload = json_encode(['repository' => 'https://github.com/composer/composer']);
+
+        // Test with invalid Bearer token
+        $this->client->request(
+            'POST',
+            '/api/update-package',
+            [],
+            [],
+            ['HTTP_Authorization' => 'Bearer invalid:invalid-token', 'CONTENT_TYPE' => 'application/json'],
+            $payload
+        );
+
+        $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
+    }
+
+    public function testBearerTokenAuthenticationMalformed(): void
+    {
+        $payload = json_encode(['repository' => 'https://github.com/composer/composer']);
+
+        // Test with malformed Bearer token (no colon)
+        $this->client->request(
+            'POST',
+            '/api/update-package',
+            [],
+            [],
+            ['HTTP_Authorization' => 'Bearer invalidtoken', 'CONTENT_TYPE' => 'application/json'],
+            $payload
+        );
+
+        $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
+    }
+
+    public function testBearerTokenAuthenticationOverridesQuery(): void
+    {
+        $url = 'https://github.com/composer/composer';
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), $url, maintainers: [$user]);
+        $this->store($user, $package);
+
+        $payload = json_encode(['repository' => $url]);
+
+        // Test that Bearer token is used even when query params are present but invalid
+        $this->client->request(
+            'POST',
+            '/api/update-package?username=invalid&apiToken=invalid',
+            [],
+            [],
+            ['HTTP_Authorization' => 'Bearer test:api-token', 'CONTENT_TYPE' => 'application/json'],
+            $payload
+        );
+
+        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
 }

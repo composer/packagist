@@ -5,6 +5,7 @@
 
 <ul class="toc">
   <li><a href="#best-practices">Best practices</a></li>
+  <li><a href="#authentication">Authentication</a></li>
   <li><a href="#list-packages">{{ 'api_doc.listing_names'|trans }}</a>
     <ul>
       <li><a href="#list-packages-all">{{ 'api_doc.all_packages'|trans }}</a></li>
@@ -43,7 +44,19 @@
 </section>
 
 <section class="col-d-12">
-<h3 id="list-packages">{{ 'api_doc.listing_names'|trans }}</h3>
+<h3 id="authentication">Authentication</h3>
+<p>A lot of our API is accessible <span class="badge bg-success">Anonymously</span>. For API endpoints that <span class="badge bg-warning">require authentication</span>, you can authenticate using either Bearer token authorization or query/request parameters:</p>
+<ul>
+    <li><strong>Bearer token:</strong> <code>Authorization: Bearer [username]:[apiToken]</code> header</li>
+    <li><strong>Query or request parameters:</strong> <code>username</code> and <code>apiToken</code> as query or POST parameters</li>
+</ul>
+<p>The Bearer token method is recommended as it keeps credentials out of URLs and logs.</p>
+<p>You have two API tokens accessible in your <a href="{{ path('my_profile') }}">profile page</a>. The SAFE one is meant to be used for readonly-style operations and can be leaked without causing too much trouble, so use this if possible when putting it in CI systems etc where it might not remain safe. The MAIN token is required for all API endpoints that are marked UNSAFE.</p>
+</p>
+</section>
+
+<section class="col-d-12">
+<h3 id="list-packages">{{ 'api_doc.listing_names'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 <h4 id="list-packages-all">{{ 'api_doc.all_packages'|trans }}</h4>
 <pre>
 GET https://{{ packagist_host }}/packages/list.json
@@ -108,7 +121,7 @@ GET https://{{ packagist_host }}/packages/list.json?vendor=[type]&amp;fields[]=t
 
 
 <section class="col-d-12">
-<h3 id="list-popular-packages">List popular packages</h3>
+<h3 id="list-popular-packages">List popular packages <span class="badge bg-success">Anonymous</span></h3>
     <p>If you need to retrieve the most popular (this is sorted by downloads over the last week, not overall downloads to ensure we demote formerly-popular packages) packages please use this endpoint to avoid having to request the download stats for all of our 300K+ packages individually. This also includes faver count (github stars + packagist.org favorites) and downloads count. The API is paginated if you need more than 100.</p>
 <pre>
 GET https://{{ packagist_host }}/explore/popular.json?per_page=100
@@ -134,7 +147,7 @@ GET https://{{ packagist_host }}/explore/popular.json?per_page=100
 
 
 <section class="col-d-12">
-<h3 id="search-packages">{{ 'api_doc.searching'|trans }}</h3>
+<h3 id="search-packages">{{ 'api_doc.searching'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
 <p>Search results are paginated and you can change the pagination step by using the per_page parameter. For example <code>https://{{ packagist_host }}/search.json?q=[query]&amp;per_page=5</code></p>
 
@@ -206,7 +219,7 @@ GET https://{{ packagist_host }}/search.json?q=[query]&amp;type=symfony-bundle
 
 
 <section class="col-d-12">
-<h3 id="get-package-data">{{ 'api_doc.get_package_data'|trans }}</h3>
+<h3 id="get-package-data">{{ 'api_doc.get_package_data'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
 <h4 id="get-package-metadata-v2">Using the Composer v2 metadata</h4>
 
@@ -319,7 +332,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package].json
 </section>
 
 <section class="col-d-12">
-<h3 id="get-package-stats">Get package download stats</h3>
+<h3 id="get-package-stats">Get package download stats <span class="badge bg-success">Anonymous</span></h3>
 <p>If you need complete package information and use <a href="#get-package-by-name">the JSON API</a> already then please use the <code>downloads</code> key to retrieve stats from that response.</p>
 
 <p>However if you are only interested in download stats for a set of package names, you can use the stats endpoint which includes overall download stats + the faver count (github stars + packagist.org favorites):</p>
@@ -345,7 +358,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package]/stats.json
 
 
 <section class="col-d-12">
-<h3 id="track-package-updates">Track package updates</h3>
+<h3 id="track-package-updates">Track package updates <span class="badge bg-success">Anonymous</span></h3>
 
 <p>This endpoint provides you with a feed of metadata changes you can poll to know what packages you need to update.</p>
 
@@ -416,7 +429,7 @@ GET https://{{ packagist_host }}/metadata/changes.json?since=16140636710498
 
 
 <section class="col-d-12">
-    <h3 id="get-statistics">{{ 'api_doc.get_statistics'|trans }}</h3>
+    <h3 id="get-statistics">{{ 'api_doc.get_statistics'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
     <p>This endpoint provides basic some statistics.</p>
 
@@ -434,7 +447,7 @@ GET https://{{ packagist_host }}/statistics.json
 </section>
 
 <section class="col-d-12">
-    <h3 id="list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</h3>
+    <h3 id="list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
     <p>This endpoint provides a list of security advisories. Either a list of packages as query or request parameter or a timestamp as updatedSince query parameter need to be passed.</p>
 
@@ -479,51 +492,51 @@ GET https://{{ packagist_host }}/api/security-advisories/?updatedSince=[timestam
 
 
 <section class="col-d-12">
-    <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }}</h3>
+    <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }} <span class="badge bg-warning">Authentication Required</span></h3>
 
-    <p>This endpoint creates a package for a specific repo. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
+    <p>This endpoint creates a package for a specific repo. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
     <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
 
     <pre>
-POST https://{{ packagist_host }}/api/create-package?username=[username]&amp;apiToken=[apiToken] {"repository":"[url]"}
+POST https://{{ packagist_host }}/api/create-package {"repository":"[url]"}
 <code>
 {
   "status": "success"
 }
 </code></pre>
     <p>Working example:<br/>
-        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/create-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code>
+        <code>curl -X POST -H'Content-Type:application/json' -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/create-package' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code>
     </p>
 
 </section>
 
 <section class="col-d-12">
-    <h3 id="edit-package">Edit a package</h3>
+    <h3 id="edit-package">Edit a package <span class="badge bg-warning">Authentication Required</span></h3>
 
-    <p>This endpoint allows you to edit a package URL. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>PUT</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
+    <p>This endpoint allows you to edit a package URL. Only the <code>PUT</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
     <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
 
     <pre>
-PUT https://{{ packagist_host }}/api/packages/[package name]?username=[username]&amp;apiToken=[apiToken] {"repository":"[url]"}
+PUT https://{{ packagist_host }}/api/packages/[package name] {"repository":"[url]"}
 <code>
 {
   "status": "success"
 }
 </code></pre>
     <p>Working example:<br/>
-        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/packages/monolog/monolog?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code>
+        <code>curl -X PUT -H'Content-Type:application/json' -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/packages/monolog/monolog' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code>
     </p>
 
 </section>
 
 <section class="col-d-12">
-    <h3 id="update-package">Update a package</h3>
+    <h3 id="update-package">Update a package <span class="badge bg-warning">Authentication Required</span></h3>
 
-    <p>This endpoint updates a package by canonical repository URL or packagist.org package URL. Parameters <code>username</code> and <code>apiToken</code> are required. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
+    <p>This endpoint updates a package by canonical repository URL or packagist.org package URL. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
     <p>This endpoint is considered SAFE and allows either your main or safe <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
 
     <pre>
-POST https://{{ packagist_host }}/api/update-package?username=[username]&amp;apiToken=[apiToken] {"repository":"[url]"}
+POST https://{{ packagist_host }}/api/update-package {"repository":"[url]"}
 <code>
 {
   "status": "success",
@@ -531,8 +544,8 @@ POST https://{{ packagist_host }}/api/update-package?username=[username]&amp;api
 }
 </code></pre>
     <p>Working examples:<br/>
-        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code><br/>
-        <code>curl -X POST -H'Content-Type:application/json' 'https://{{ packagist_host }}/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=********' -d '{"repository":"https://packagist.org/monolog/monolog"}'</code>
+        <code>curl -X POST -H'Content-Type:application/json' -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/update-package' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code><br/>
+        <code>curl -X POST -H'Content-Type:application/json' -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/update-package' -d '{"repository":"https://packagist.org/monolog/monolog"}'</code>
     </p>
 
 </section>
