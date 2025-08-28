@@ -122,7 +122,7 @@ class GitHubUserMigrationWorker
             ));
             // sort shorter urls first as that should lead us to find the correct one first
             usort($currentHooks, static function ($a, $b) {
-                return $a['config']['url'] <=> $a['config']['url'];
+                return strlen($a['config']['url']) - strlen($b['config']['url']);
             });
 
             $hookData = $this->getGitHubHookData();
