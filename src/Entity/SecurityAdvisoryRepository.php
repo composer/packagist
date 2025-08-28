@@ -161,7 +161,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
                 .($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
                 .' ORDER BY '.($filterByNames ? 's.reportedAt DESC, ' : '').'s.id DESC';
 
-            $params = ['updatedSince' => date('Y-m-d H:i:s', $updatedSince)];
+            $params = ['updatedSince' => date('Y-m-d H:i:s', $filterByNames ? 0 : $updatedSince)];
             $types = [];
             if ($filterByNames) {
                 $params['packageNames'] = $packageNames;

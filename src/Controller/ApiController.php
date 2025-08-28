@@ -359,6 +359,9 @@ class ApiController extends Controller
         if ($updatedSince < 0) {
             return new JsonResponse(['status' => 'error', 'message' => 'Invalid updatedSince parameter: timestamp should not be negative.'], 400);
         }
+        if ($updatedSince > 0 && \count($packageNames) > 0) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Pass only one of "updatedSince" OR "packages" parameters, they cannot be provided together.'], 400);
+        }
 
         $statsd->increment('advisory_api');
 
