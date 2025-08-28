@@ -664,6 +664,7 @@ class Updater
             if ($readme) {
                 $this->getEM()->remove($readme);
             }
+
             return;
         }
 

@@ -801,7 +801,7 @@ class PackageController extends Controller
         return $resp;
     }
 
-    #[Route(path: '/versions/{versionId}/delete', name: 'delete_version', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'versionId' => '[0-9]+'], methods: ['DELETE'])]
+    #[Route(path: '/versions/{versionId}', name: 'delete_version', requirements: ['versionId' => '[0-9]+'], methods: ['DELETE'])]
     public function deletePackageVersionAction(Request $req, int $versionId): Response
     {
         $repo = $this->getEM()->getRepository(Version::class);

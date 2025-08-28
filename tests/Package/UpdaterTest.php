@@ -12,12 +12,8 @@
 
 namespace App\Tests\Package;
 
-use App\Entity\Dependent;
-use App\Entity\DependentRepository;
 use App\Entity\Package;
 use App\Entity\PackageReadme;
-use App\Entity\Version;
-use App\Entity\VersionRepository;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\Updater;
@@ -30,13 +26,8 @@ use Composer\Repository\RepositoryInterface;
 use Composer\Repository\Vcs\GitDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
-use Doctrine\Bundle\DoctrineBundle\Registry;
-use Doctrine\DBAL\Connection;
-use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 

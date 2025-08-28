@@ -26,6 +26,7 @@ use App\Util\UserAgentParser;
 use Composer\Pcre\Preg;
 use Graze\DogStatsD\Client as StatsDClient;
 use Psr\Log\LoggerInterface;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,7 +35,6 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -184,14 +184,14 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'json'], methods: ['PUT'])]
-    public function editPackageAction(Request $request, Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
+    public function editPackageAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
     {
         $user = $this->findUser($request);
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
         }
         if (!$package->getMaintainers()->contains($user)) {
-            throw new AccessDeniedException();
+            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], 403);
         }
 
         $statsd->increment('edit_package_api');
