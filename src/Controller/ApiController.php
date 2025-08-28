@@ -365,6 +365,12 @@ class ApiController extends Controller
 
         $statsd->increment('advisory_api');
 
+        // resolve Package-URL to package names https://github.com/package-url/purl-spec/blob/main/PURL-SPECIFICATION.rst
+        $packageNames = array_map(
+            fn ($name) => Preg::replace('{^pkg:/?/?composer/([^/]+/[^/@?]+).*}', '$1', $name),
+            $packageNames
+        );
+
         $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->searchSecurityAdvisories($packageNames, $updatedSince);
         $response = ['advisories' => $advisories];
 
