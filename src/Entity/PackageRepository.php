@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
@@ -544,6 +545,33 @@ class PackageRepository extends ServiceEntityRepository
         }
 
         return $res;
+    }
+
+    /**
+     * @param list<string> $requirers
+     * @return array<string, string|null> array keyed by requirer name and the value is requirement or null if not found
+     */
+    public function getDefaultBranchRequireFor(array $requirers, string $requiree): array
+    {
+        $requires = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            <<<'SQL'
+            SELECT p.name, COALESCE(lr.packageVersion, lrd.packageVersion, NULL) AS requirement
+            FROM package p
+            LEFT JOIN package_version pv ON pv.package_id = p.id AND pv.defaultBranch = 1
+            LEFT JOIN link_require lr ON lr.version_id = pv.id AND lr.packageName = :requiree
+            LEFT JOIN link_require_dev lrd ON lrd.version_id = pv.id AND lrd.packageName = :requiree
+            WHERE p.name IN (:requirers)
+            SQL,
+            ['requiree' => $requiree, 'requirers' => $requirers],
+            ['requirers' => ArrayParameterType::STRING],
+        );
+
+        $result = [];
+        foreach ($requires as $row) {
+            $result[$row['name']] = $row['requirement'];
+        }
+
+        return $result;
     }
 
     /**
