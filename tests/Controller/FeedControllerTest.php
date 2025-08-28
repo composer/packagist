@@ -12,10 +12,11 @@
 
 namespace App\Tests\Controller;
 
+use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-class FeedControllerTest extends ControllerTestCase
+class FeedControllerTest extends IntegrationTestCase
 {
     #[DataProvider('provideForFeed')]
     public function testFeedAction(string $feed, string $format, ?string $vendor = null): void

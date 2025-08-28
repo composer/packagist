@@ -12,7 +12,9 @@
 
 namespace App\Tests\Controller;
 
-class AboutControllerTest extends ControllerTestCase
+use App\Tests\IntegrationTestCase;
+
+class AboutControllerTest extends IntegrationTestCase
 {
     public function testPackagist(): void
     {

@@ -15,11 +15,13 @@ namespace App\Tests\Package;
 use App\Entity\Dependent;
 use App\Entity\DependentRepository;
 use App\Entity\Package;
+use App\Entity\PackageReadme;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\Updater;
+use App\Tests\IntegrationTestCase;
 use Composer\Config;
 use Composer\IO\IOInterface;
 use Composer\IO\NullIO;
@@ -31,12 +33,14 @@ use Composer\Repository\VcsRepository;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
+use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
-class UpdaterTest extends TestCase
+class UpdaterTest extends IntegrationTestCase
 {
     private IOInterface&MockObject $ioMock;
     private Config $config;
@@ -50,35 +54,19 @@ class UpdaterTest extends TestCase
         parent::setUp();
 
         $this->config = new Config();
-        $this->package = new Package();
-        $this->package->setName('test/pkg');
-        new \ReflectionProperty($this->package, 'repository')->setValue($this->package, 'https://example.com/test/pkg');
-        new \ReflectionProperty($this->package, 'id')->setValue($this->package, 1);
+
+        $this->package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $this->store($this->package);
 
         $this->ioMock = $this->createMock(NullIO::class);
         $this->repositoryMock = $this->createMock(VcsRepository::class);
-        $registryMock = $this->createMock(Registry::class);
+
+        $registry = static::getContainer()->get(ManagerRegistry::class);
+
         $providerManagerMock = $this->createMock(ProviderManager::class);
-        $emMock = $this->createMock(EntityManager::class);
-        $connectionMock = $this->createMock(Connection::class);
-        $package = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
         $this->driverMock = $this->createMock(GitDriver::class);
-        $versionRepoMock = $this->createMock(VersionRepository::class);
-        $dependentRepoMock = $this->createMock(DependentRepository::class);
 
-        $versionRepoMock->expects($this->any())->method('getVersionMetadataForUpdate')->willReturn([]);
-        $emMock->expects($this->any())->method('getConnection')->willReturn($connectionMock);
-        $emMock->expects($this->any())->method('persist')->willReturnCallback(static function ($object) {
-            if ($reflProperty = new \ReflectionProperty($object, 'id')) {
-                $reflProperty->setValue($object, random_int(0, 10000));
-            }
-        });
-
-        $registryMock->method('getManager')->willReturn($emMock);
-        $registryMock->method('getRepository')->willReturnMap([
-            [Version::class, null, $versionRepoMock],
-            [Dependent::class, null, $dependentRepoMock],
-        ]);
+        $package = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
         $this->repositoryMock->expects($this->any())->method('getPackages')->willReturn([
             $package,
         ]);
@@ -89,7 +77,7 @@ class UpdaterTest extends TestCase
         $mailerMock = $this->createMock(MailerInterface::class);
         $routerMock = $this->createMock(UrlGeneratorInterface::class);
 
-        $this->updater = new Updater($registryMock, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock);
+        $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock);
     }
 
     protected function tearDown(): void
@@ -108,7 +96,8 @@ class UpdaterTest extends TestCase
 
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
 
-        $this->assertStringContainsString('This is the readme', $this->package->getReadme());
+        $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
+        $this->assertStringContainsString('This is the readme', $readme->contents);
     }
 
     public function testConvertsMarkdownForReadme(): void
@@ -141,7 +130,8 @@ class UpdaterTest extends TestCase
 
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
 
-        self::assertSame($readmeHtml, $this->package->getReadme());
+        $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
+        self::assertSame($readmeHtml, $readme->contents);
     }
 
     /**
@@ -170,7 +160,8 @@ class UpdaterTest extends TestCase
 
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
 
-        self::assertSame($readmeHtml, $this->package->getReadme());
+        $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
+        self::assertSame($readmeHtml, $readme->contents);
     }
 
     public function testSurroundsTextReadme(): void
@@ -183,7 +174,8 @@ class UpdaterTest extends TestCase
 
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
 
-        self::assertSame('<pre>This is the readme</pre>', $this->package->getReadme());
+        $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
+        self::assertSame('<pre>This is the readme</pre>', $readme->contents);
     }
 
     public function testUnderstandsDifferentFileNames(): void
@@ -196,7 +188,8 @@ class UpdaterTest extends TestCase
 
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
 
-        self::assertSame('<pre>This is the readme</pre>', $this->package->getReadme());
+        $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
+        self::assertSame('<pre>This is the readme</pre>', $readme->contents);
     }
 
     public function testReadmeParsing(): void

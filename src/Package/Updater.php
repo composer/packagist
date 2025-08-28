@@ -17,6 +17,7 @@ use App\Entity\Dependent;
 use App\Entity\DevRequireLink;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
+use App\Entity\PackageReadme;
 use App\Entity\ProvideLink;
 use App\Entity\ReplaceLink;
 use App\Entity\RequireLink;
@@ -623,7 +624,9 @@ class Updater
                 case '.txt':
                     $source = $driver->getFileContent($readmeFile, $driver->getRootIdentifier());
                     if (!empty($source)) {
-                        $package->setReadme('<pre>'.htmlspecialchars($source).'</pre>');
+                        $this->updatePackageReadme($package, '<pre>'.htmlspecialchars($source).'</pre>');
+                    } else {
+                        $this->updatePackageReadme($package, null);
                     }
                     break;
 
@@ -635,9 +638,9 @@ class Updater
 
                         if (!empty($readme)) {
                             if (Preg::isMatch('{^(?:git://|git@|https?://)(gitlab.com|bitbucket.org)[:/]([^/]+)/(.+?)(?:\.git|/)?$}i', $package->getRepository(), $match)) {
-                                $package->setReadme($this->prepareReadme($readme, $match[1], $match[2], $match[3]));
+                                $this->updatePackageReadme($package, $this->prepareReadme($readme, $match[1], $match[2], $match[3]));
                             } else {
-                                $package->setReadme($this->prepareReadme($readme));
+                                $this->updatePackageReadme($package, $this->prepareReadme($readme));
                             }
                         }
                     }
@@ -653,6 +656,26 @@ class Updater
         }
     }
 
+    private function updatePackageReadme(Package $package, ?string $contents): void
+    {
+        $readme = $this->getEM()->find(PackageReadme::class, $package->getId());
+
+        if ($contents === '' || $contents === null) {
+            if ($readme) {
+                $this->getEM()->remove($readme);
+            }
+            return;
+        }
+
+        if (!$readme) {
+            $readme = new PackageReadme($package, $contents);
+        } else {
+            $readme->contents = $contents;
+        }
+
+        $this->getEM()->persist($readme);
+    }
+
     private function updateGitHubInfo(HttpDownloader $httpDownloader, Package $package, string $owner, string $repo, VcsDriverInterface $driver): void
     {
         if (!$driver instanceof GitHubDriver) {
@@ -662,22 +685,6 @@ class Updater
         $baseApiUrl = 'https://api.github.com/repos/'.$owner.'/'.$repo;
 
         $repoData = $driver->getRepoData();
-
-        try {
-            $opts = ['http' => ['header' => ['Accept: application/vnd.github.html+json', 'X-GitHub-Api-Version: 2022-11-28']]];
-            $readme = $httpDownloader->get($baseApiUrl.'/readme', $opts)->getBody();
-        } catch (\Exception $e) {
-            if (!$e instanceof \Composer\Downloader\TransportException || $e->getCode() !== 404) {
-                return;
-            }
-            // 404s just mean no readme present so we proceed with the rest
-        }
-
-        if (!empty($readme)) {
-            // The content of all readmes, regardless of file type,
-            // is returned as HTML by GitHub API
-            $package->setReadme($this->prepareReadme($readme, 'github.com', $owner, $repo));
-        }
 
         if (!empty($repoData['language']) && \is_string($repoData['language'])) {
             $package->setLanguage($repoData['language']);
@@ -694,6 +701,21 @@ class Updater
         if (isset($repoData['open_issues_count']) && is_numeric($repoData['open_issues_count'])) {
             $package->setGitHubOpenIssues((int) $repoData['open_issues_count']);
         }
+
+        try {
+            $opts = ['http' => ['header' => ['Accept: application/vnd.github.html+json', 'X-GitHub-Api-Version: 2022-11-28']]];
+            $readme = $httpDownloader->get($baseApiUrl.'/readme', $opts)->getBody();
+        } catch (\Exception $e) {
+            if (!$e instanceof \Composer\Downloader\TransportException || $e->getCode() !== 404) {
+                return;
+            }
+            // 404s just mean no readme present so we proceed with the rest
+            $readme = null;
+        }
+
+        // The content of all readmes, regardless of file type,
+        // is returned as HTML by GitHub API
+        $this->updatePackageReadme($package, $this->prepareReadme($readme, 'github.com', $owner, $repo));
     }
 
     private function updateGitLabInfo(HttpDownloader $httpDownloader, IOInterface $io, Package $package, string $owner, string $repo, VcsDriverInterface $driver): void
@@ -727,8 +749,12 @@ class Updater
     /**
      * Prepare the readme by stripping elements and attributes that are not supported .
      */
-    private function prepareReadme(string $readme, ?string $host = null, ?string $owner = null, ?string $repo = null): string
+    private function prepareReadme(?string $readme, ?string $host = null, ?string $owner = null, ?string $repo = null): ?string
     {
+        if ($readme === null) {
+            return null;
+        }
+
         // detect base path for github readme if file is located in a subfolder like docs/README.md
         $basePath = '';
         if ($host === 'github.com' && Preg::isMatchStrictGroups('{^<div id="readme" [^>]+?data-path="([^"]+)"}', $readme, $match) && str_contains($match[1], '/')) {
