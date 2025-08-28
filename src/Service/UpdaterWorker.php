@@ -337,6 +337,7 @@ class UpdaterWorker
                 $found404 = true;
             } elseif ($e instanceof \RuntimeException && (
                 Preg::isMatch('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
+                || Preg::isMatch('{fatal: could not read Username for \'[^\']+\': terminal prompts disabled}i', $e->getMessage())
                 || Preg::isMatch('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
                 || Preg::isMatch('{fatal: unable to access \'[^\']+\': The requested URL returned error: 503}i', $e->getMessage())
                 || Preg::isMatch('{fatal: unable to access \'[^\']+\': server certificate verification failed}i', $e->getMessage())
