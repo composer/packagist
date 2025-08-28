@@ -270,6 +270,8 @@
                             {% if package.type is not empty and package.type != 'library' %}
                                 <p><span>Type:</span>{{ package.type }}</p>
                             {% endif %}
+
+                            <p><span title="PURL / Package-URL">pkg:composer/{{ package.name }}</span></p>
                         </div>
                     </div>
                 </div>
