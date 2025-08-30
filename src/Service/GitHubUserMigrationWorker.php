@@ -125,6 +125,8 @@ class GitHubUserMigrationWorker
                 return \strlen($a['config']['url']) - \strlen($b['config']['url']);
             });
 
+            $this->logger->debug(\count($currentHooks).' current hooks (sorted)', ['hooks' => $currentHooks]);
+
             $hookData = $this->getGitHubHookData();
             $hasValidHook = false;
             foreach ($currentHooks as $index => $hook) {
@@ -146,8 +148,8 @@ class GitHubUserMigrationWorker
                     $this->request($token, 'PATCH', 'repos/'.$repoKey.'/hooks/'.$hook['id'], $hookData);
                     $changed = true;
                 } elseif (!$package->isAutoUpdated()) {
-                    // if the hook looks correct but package is not marked auto-updated, we do not mark it valid so it gets recreated below
-                    continue;
+                    // if the hook looks correct but package is not marked auto-updated, we abort so it all gets recreated below
+                    break;
                 }
 
                 $hasValidHook = true;
