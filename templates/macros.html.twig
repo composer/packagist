@@ -1,6 +1,6 @@
 {% macro listPackages(packages, paginate, showAutoUpdateWarning, meta) %}
     <ul class="packages list-unstyled">
-        {% for package in packages|filter(package => not package.isFrozen() or not package.getFreezeReason().isSpam()) %}
+        {% for package in packages|filter(package => package.isFrozen() is not defined or not package.isFrozen() or not package.getFreezeReason().isSpam()) %}
             {% if package.id is numeric %}
                 {% set packageUrl = path('view_package', { 'name' : package.name }) %}
             {% else %}
@@ -36,6 +36,9 @@
                                         See <a href="{{ '://' in package.replacementPackage ? package.replacementPackage : path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a>
                                     {% endif %}
                                 </p>
+                            {% endif %}
+                            {% if package.meta is defined %}
+                                <p class="meta">{{ package.meta }}</p>
                             {% endif %}
                         </div>
                         <div class="col-sm-3 col-lg-2">

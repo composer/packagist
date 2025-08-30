@@ -1334,6 +1334,17 @@ class PackageController extends Controller
         $depCount = $repo->getDependentCount($name, $requireType);
         $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
 
+        $requires = $repo->getDefaultBranchRequireFor(array_column($packages, 'name'), $name);
+        foreach ($packages as $index => $pkg) {
+            if (isset($requires[$pkg['name']])) {
+                if ($req->getRequestFormat() === 'json') {
+                    $packages[$index]['require'] = $requires[$pkg['name']];
+                } else {
+                    $packages[$index]['meta'] = 'Latest version requires '.$name.' '.$requires[$pkg['name']];
+                }
+            }
+        }
+
         $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
         $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage($perPage);
