@@ -67,8 +67,8 @@
 {% if version.isPiePackage() %}
 <div class="pie-metadata">
     <p class="pie-extension">Extension name: {{ version.pieName }}</p>
-    <p class="pie-details">Supports Zend Thread Safety (ZTS): {{ version.phpExt['support-zts']|default(true)|json_encode }}</p>
-    <p class="pie-details">Supports non-Thread Safe mode (NTS): {{ version.phpExt['support-nts']|default(true)|json_encode }}</p>
+    <p class="pie-details">Supports Zend Thread Safety (ZTS): {% if version.phpExt['support-zts']|default(true) %}✅{% else %}❌{% endif %}</p>
+    <p class="pie-details">Supports non-Thread Safe mode (NTS): {% if version.phpExt['support-nts']|default(true) %}✅{% else %}❌{% endif %}</p>
     <p class="pie-details">Supported operating systems: {% for os in version.pieSupportedOS %}{{ os }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
     {% if version.phpExt['configure-options']|default([])|length %}
         <p class="pie-details">Configure flags:</p>
