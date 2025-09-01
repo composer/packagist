@@ -436,9 +436,9 @@ class ApiController extends Controller
         $source = 'unknown';
 
         // manual hook set up with user API token as secret
-        if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature')) {
+        if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature-256')) {
             $username = $request->query->get('username');
-            $sig = $request->headers->get('X-Hub-Signature');
+            $sig = $request->headers->get('X-Hub-Signature-256');
             $user = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => $username]);
             if ($sig && $user && $user->isEnabled()) {
                 [$algo, $sig] = explode('=', $sig);
@@ -465,7 +465,7 @@ class ApiController extends Controller
         }
 
         if (!$user && $match['host'] === 'github.com' && $request->getContent()) {
-            $sig = $request->headers->get('X-Hub-Signature');
+            $sig = $request->headers->get('X-Hub-Signature-256');
             if ($sig) {
                 [$algo, $sig] = explode('=', $sig);
                 $expected = hash_hmac($algo, $request->getContent(), $githubWebhookSecret);
@@ -475,6 +475,8 @@ class ApiController extends Controller
                     $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $source);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_auto';
+                } else {
+                    $this->logger->error('Failed validating GitHub webhook signature', ['sig' => $sig, 'expected' => $expected, 'request' => $request->getContent()]);
                 }
             }
         }
