@@ -164,6 +164,9 @@ class ApiController extends Controller
             $urlRegex = self::REGEXES['any'];
             $url = $payload['repository']['url'];
             $remoteId = isset($payload['repository']['id']) && (\is_string($payload['repository']['id']) || \is_int($payload['repository']['id'])) ? $payload['repository']['id'] : null;
+
+            // workaround issue with github webhooks using internal API URLs
+            $url = str_replace('https://internal-api.service.iad.github.net', 'https://api.github.com', $url);
         } elseif (isset($payload['repository']['links']['html']['href'])) { // bitbucket push event payload
             $urlRegex = self::REGEXES['bitbucket_push'];
             $url = $payload['repository']['links']['html']['href'];
