@@ -270,6 +270,9 @@
                             {% if package.type is not empty and package.type != 'library' %}
                                 <p><span>Type:</span>{{ package.type }}</p>
                             {% endif %}
+                            {% if package.isPiePackage() %}
+                                <p><span>Ext name:</span>{{ version.pieName }}</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

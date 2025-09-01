@@ -12,7 +12,7 @@
                         <div class="col-sm-9 col-lg-10">
                             {% if package.language is defined and package.language is not empty %}<p class="pull-right language">{{ package.language }}</p>{% endif %}
                             <h4 class="font-bold">
-                                <a href="{{ packageUrl }}">{{ package.name }}</a>
+                                <a href="{{ packageUrl }}">{{ package.name }}</a>{% if package.type in ['php-ext', 'php-ext-zend'] %}<span title="PIE installable extension package">🥧</span>{% endif %}
                                 {% if package.id is not numeric %}
                                     <small>(Virtual Package)</small>
                                 {% endif %}

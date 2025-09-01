@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
@@ -50,7 +51,29 @@ class PackageRepository extends ServiceEntityRepository
             ->getQuery()
             ->setParameters(['name' => $name]);
 
-        return $query->getResult();
+        $result = $query->getResult();
+
+        if (Preg::isMatch('{^ext-(.*)$}', $name, $match)) {
+            $query = $this->createQueryBuilder('p')
+                ->select('partial p.{'.self::LISTING_FIELDS.'}')
+                ->leftJoin('p.versions', 'pv')
+                ->where('pv.development = true')
+                ->andWhere('(p.type = :extType OR p.type = :extTypeAlt)')
+                ->andWhere('(JSON_EXTRACT(pv.phpExt, \'$."extension-name"\') IN (:name, :altName) OR (JSON_EXTRACT(pv.phpExt, \'$."extension-name"\') IS NULL AND p.name LIKE :pkgName))')
+                ->orderBy('p.name')
+                ->getQuery()
+                ->setParameters([
+                    'extType' => 'php-ext',
+                    'extTypeAlt' => 'php-ext-zend',
+                    'name' => $match[1],
+                    'altName' => 'ext-'.$match[1],
+                    'pkgName' => '%/'.$match[1],
+                ]);;
+
+            $result = array_merge($result, $query->getResult());
+        }
+
+        return $result;
     }
 
     /**

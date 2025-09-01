@@ -710,6 +710,41 @@ class Version
         $this->phpExt = $phpExt;
     }
 
+    public function getPieName(): ?string
+    {
+        if (!$this->isPiePackage()) {
+            return null;
+        }
+        $name = $this->getPhpExt()['extension-name'] ?? explode('/', $this->getName())[1];
+
+        if (!str_starts_with($name, 'ext-')) {
+            $name = 'ext-'.$name;
+        }
+
+        return $name;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getPieSupportedOS(): array
+    {
+        if (!$this->isPiePackage()) {
+            return [];
+        }
+
+        if (isset($this->phpExt['os-families'])) {
+            return $this->phpExt['os-families'];
+        }
+
+        return array_values(array_diff(["windows", "bsd", "darwin", "solaris", "linux", "unknown"], $this->phpExt['os-families-exclude'] ?? ['any']));
+    }
+
+    public function isPiePackage(): bool
+    {
+        return \in_array($this->getType(), ['php-ext', 'php-ext-zend'], true);
+    }
+
     public function isDefaultBranch(): bool
     {
         return $this->isDefaultBranch;

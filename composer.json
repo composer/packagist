@@ -52,6 +52,7 @@
         "scheb/2fa-bundle": "^7",
         "scheb/2fa-totp": "^7",
         "scheb/2fa-trusted-device": "^7",
+        "scienta/doctrine-json-functions": "^6.3",
         "seld/signal-handler": "^2",
         "snc/redis-bundle": "^4.10",
         "symfony/asset": "^7",
