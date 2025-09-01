@@ -16,7 +16,7 @@ use App\Entity\Package;
 use App\Package\V2Dumper;
 use App\Service\Locker;
 use Doctrine\Persistence\ManagerRegistry;
-use Psr\Log\LoggerInterface;
+use Monolog\Logger;
 use Seld\Signal\SignalHandler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -35,7 +35,7 @@ class DumpPackagesV2Command extends Command
     private ManagerRegistry $doctrine;
     private string $cacheDir;
 
-    public function __construct(V2Dumper $dumper, Locker $locker, ManagerRegistry $doctrine, string $cacheDir, private LoggerInterface $logger)
+    public function __construct(V2Dumper $dumper, Locker $locker, ManagerRegistry $doctrine, string $cacheDir, private Logger $logger)
     {
         $this->dumper = $dumper;
         $this->locker = $locker;
@@ -114,6 +114,8 @@ class DumpPackagesV2Command extends Command
                     $ids = array_map('intval', $ids);
 
                     $this->dumper->dump($ids, $force, $verbose);
+
+                    $this->logger->reset();
                 }
 
                 if ($signal !== null && $signal->isTriggered()) {
