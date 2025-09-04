@@ -1,6 +1,30 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^QueryBuilder\: \[Semantical Error\] line 0, col 144 near ''p\.name \= \?1 ORDER''\: Error\: ''p'' is not defined\.$#'
+			identifier: doctrine.dql
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: '#^QueryBuilder\: \[Semantical Error\] line 0, col 144 near ''p\.vendor \= \?1''\: Error\: ''p'' is not defined\.$#'
+			identifier: doctrine.dql
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: '#^QueryBuilder\: \[Semantical Error\] line 0, col 90 near ''p\.name \= \?1 ORDER''\: Error\: ''p'' is not defined\.$#'
+			identifier: doctrine.dql
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
+			message: '#^QueryBuilder\: \[Semantical Error\] line 0, col 90 near ''p\.vendor \= \?1''\: Error\: ''p'' is not defined\.$#'
+			identifier: doctrine.dql
+			count: 1
+			path: src/Command/IndexPackagesCommand.php
+
+		-
 			message: '#^Dead catch \- Symfony\\Component\\Lock\\Exception\\LockReleasingException is never thrown in the try block\.$#'
 			identifier: catch.neverThrown
 			count: 1

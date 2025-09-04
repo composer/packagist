@@ -84,8 +84,46 @@ class FeedController extends Controller
         $feed = $this->buildFeed(
             $req,
             "$vendor packages",
-            "Latest packages updated on Packagist of $vendor.",
+            "Latest packages updated on Packagist.org of $vendor.",
             $this->generateUrl('view_vendor', ['vendor' => $vendor], UrlGeneratorInterface::ABSOLUTE_URL),
+            $packages
+        );
+
+        return $this->buildResponse($req, $feed);
+    }
+
+    #[Route(path: '/extensions.{_format}', name: 'feed_extensions', requirements: ['_format' => '(rss|atom)'], methods: ['GET'])]
+    public function extensionsAction(Request $req): Response
+    {
+        $repo = $this->doctrine->getRepository(Package::class);
+        $packages = $this->getLimitedResults(
+            $repo->getQueryBuilderForNewestExtensionPackages()
+        );
+
+        $feed = $this->buildFeed(
+            $req,
+            'Newly Submitted PIE Extensions',
+            'Latest PIE extensions submitted to Packagist.',
+            $this->generateUrl('browse_extensions', [], UrlGeneratorInterface::ABSOLUTE_URL),
+            $packages
+        );
+
+        return $this->buildResponse($req, $feed);
+    }
+
+    #[Route(path: '/extension-releases.{_format}', name: 'feed_extension_releases', requirements: ['_format' => '(rss|atom)'], methods: ['GET'])]
+    public function extensionReleasesAction(Request $req): Response
+    {
+        $repo = $this->doctrine->getRepository(Version::class);
+        $packages = $this->getLimitedResults(
+            $repo->getQueryBuilderForLatestVersionWithPackage(onlyPieExtensions: true)
+        );
+
+        $feed = $this->buildFeed(
+            $req,
+            "New Extension Releases",
+            "Latest PIE extension releases on Packagist.org.",
+            $this->generateUrl('browse_extensions', [], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
 
@@ -103,7 +141,7 @@ class FeedController extends Controller
         $feed = $this->buildFeed(
             $req,
             "$package releases",
-            "Latest releases on Packagist of $package.",
+            "Latest releases on Packagist.org of $package.",
             $this->generateUrl('view_package', ['name' => $package], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );
@@ -143,7 +181,7 @@ class FeedController extends Controller
         $feed->setTitle($title);
         $feed->setDescription($description);
         $feed->setLink($url);
-        $feed->setGenerator('Packagist');
+        $feed->setGenerator('Packagist.org');
 
         foreach ($items as $item) {
             $entry = $feed->createEntry();

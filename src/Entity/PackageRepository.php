@@ -706,6 +706,23 @@ class PackageRepository extends ServiceEntityRepository
         $qb->select('p')
             ->from('App\Entity\Package', 'p')
             ->where('p.abandoned = false')
+            ->andWhere('p.frozen IS NULL')
+            ->orderBy('p.id', 'DESC');
+
+        return $qb;
+    }
+
+    /**
+     * Gets the most recent extension packages created
+     */
+    public function getQueryBuilderForNewestExtensionPackages(): QueryBuilder
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p')
+            ->from('App\Entity\Package', 'p')
+            ->where('p.abandoned = false')
+            ->andWhere('p.frozen IS NULL')
+            ->andWhere("(p.type = 'php-ext' OR p.type = 'php-ext-zend')")
             ->orderBy('p.id', 'DESC');
 
         return $qb;

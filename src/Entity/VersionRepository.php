@@ -206,7 +206,7 @@ class VersionRepository extends ServiceEntityRepository
      * @param string $vendor  optional vendor filter
      * @param string $package optional vendor/package filter
      */
-    public function getQueryBuilderForLatestVersionWithPackage(?string $vendor = null, ?string $package = null): QueryBuilder
+    public function getQueryBuilderForLatestVersionWithPackage(?string $vendor = null, ?string $package = null, bool $onlyPieExtensions = false): QueryBuilder
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('v')
@@ -215,6 +215,10 @@ class VersionRepository extends ServiceEntityRepository
             ->andWhere('v.releasedAt <= ?0')
             ->orderBy('v.releasedAt', 'DESC');
         $qb->setParameter(0, date('Y-m-d H:i:s'));
+
+        if ($onlyPieExtensions) {
+            $qb->andWhere("(v.type = 'php-ext' OR v.type = 'php-ext-zend')");
+        }
 
         if ($vendor || $package) {
             $qb->innerJoin('v.package', 'p')
