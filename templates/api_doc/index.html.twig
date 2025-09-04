@@ -37,7 +37,7 @@
 <h3 id="best-practices">Best practices when using the Packagist.org API</h3>
 <ul>
   <li>If you do scheduled jobs, <strong>avoid running things at midnight or once an hour at XX:00</strong>. Most people do so and we do see traffic peaks every hour. Pick a "random" time by hand for your cron jobs, or even better (if you can) is to make it run on a really randomized schedule.</li>
-  <li><strong>Send a User-Agent header</strong> with all your requests including an email or twitter or some sort of contact information so we can reach out to you if we have an issue with the way you use the API. If not you can leave us with no choice but to block IPs which we'd rather not do.</li>
+  <li><strong>Send a User-Agent header</strong> with all your requests including <code>mailto=you@example.com</code> so we can reach out to you if we have an issue with the way you use the API. If not you can leave us with no choice but to block IPs which we'd rather not do.</li>
   <li>If you send requests in parallel, be a good citizen and do a <strong>maximum of 10 concurrent requests</strong>, or up to 20 if you only fetch static files. Huge bursts in requests can cause issues for other regular users so try to spread out the load.</li>
   <li>Use an <strong>HTTP/2</strong>-capable client and make sure you enable that, it is much more efficient than reconnecting for every request.</li>
 </ul>
