@@ -1419,6 +1419,9 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .version-details .package-links .no-links {
     color: #999;
 }
+.package .version-details .pie-metadata {
+  border-top: 1px solid #f28d1a;
+}
 
 .package .requireme {
     margin-top: 15px;
