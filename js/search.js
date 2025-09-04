@@ -158,7 +158,7 @@ search.addWidget(
         <div class="col-sm-9 col-lg-10">
             <p class="pull-right language">{{ language }}</p>
             <h4 class="font-bold">
-                <a href="{{ url }}" tabindex="2">{{{ _highlightResult.name.value }}}</a>
+                <a href="{{ url }}" tabindex="2">{{{ _highlightResult.name.value }}}</a>{{#extension}}<span title="PIE installable extension package">🥧</span>{{/extension}}
                 {{#virtual}}
                     <small>(Virtual Package)</small>
                 {{/virtual}}
