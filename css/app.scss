@@ -1559,6 +1559,11 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     text-decoration: none;
 }
 
+h2.title .php-ext-link {
+    float: right;
+    margin-top: 16px;
+}
+
 @media (max-width: 767px) {
     .wrapper .content h2.title {
         font-size: 26px;
