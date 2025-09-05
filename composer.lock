@@ -1278,16 +1278,16 @@
         },
         {
             "name": "doctrine/dbal",
-            "version": "4.3.2",
+            "version": "4.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/dbal.git",
-                "reference": "7669f131d43b880de168b2d2df9687d152d6c762"
+                "reference": "231959669bb2173194c95636eae7f1b41b2a8b19"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/dbal/zipball/7669f131d43b880de168b2d2df9687d152d6c762",
-                "reference": "7669f131d43b880de168b2d2df9687d152d6c762",
+                "url": "https://api.github.com/repos/doctrine/dbal/zipball/231959669bb2173194c95636eae7f1b41b2a8b19",
+                "reference": "231959669bb2173194c95636eae7f1b41b2a8b19",
                 "shasum": ""
             },
             "require": {
@@ -1297,10 +1297,10 @@
                 "psr/log": "^1|^2|^3"
             },
             "require-dev": {
-                "doctrine/coding-standard": "13.0.0",
+                "doctrine/coding-standard": "13.0.1",
                 "fig/log-test": "^1",
                 "jetbrains/phpstorm-stubs": "2023.2",
-                "phpstan/phpstan": "2.1.17",
+                "phpstan/phpstan": "2.1.22",
                 "phpstan/phpstan-phpunit": "2.0.6",
                 "phpstan/phpstan-strict-rules": "^2",
                 "phpunit/phpunit": "11.5.23",
@@ -1364,7 +1364,7 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/dbal/issues",
-                "source": "https://github.com/doctrine/dbal/tree/4.3.2"
+                "source": "https://github.com/doctrine/dbal/tree/4.3.3"
             },
             "funding": [
                 {
@@ -1380,7 +1380,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-08-05T13:30:38+00:00"
+            "time": "2025-09-04T23:52:42+00:00"
         },
         {
             "name": "doctrine/deprecations",
