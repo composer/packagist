@@ -182,6 +182,12 @@ class QueueWorker
         Assert::keyExists($result, 'status');
         Assert::inArray($result['status'], [Job::STATUS_COMPLETED, Job::STATUS_FAILED, Job::STATUS_ERRORED, Job::STATUS_PACKAGE_GONE, Job::STATUS_PACKAGE_DELETED]);
 
+        if ($result['status'] === Job::STATUS_FAILED) {
+            $this->logger->warning('Job '.$job->getId().' failed', $result);
+        } elseif ($result['status'] === Job::STATUS_ERRORED) {
+            $this->logger->error('Job '.$job->getId().' errored', $result);
+        }
+
         if (isset($result['exception'])) {
             $result['exceptionMsg'] = $result['exception']->getMessage();
             $result['exceptionClass'] = \get_class($result['exception']);
@@ -195,12 +201,6 @@ class QueueWorker
 
         $em->flush();
         $em->clear();
-
-        if ($result['status'] === Job::STATUS_FAILED) {
-            $this->logger->warning('Job '.$job->getId().' failed', $result);
-        } elseif ($result['status'] === Job::STATUS_ERRORED) {
-            $this->logger->error('Job '.$job->getId().' errored', $result);
-        }
 
         $this->logger->reset();
 
