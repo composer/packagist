@@ -72,13 +72,14 @@ class PackageVoter extends Voter
         }
 
         try {
-            $downloads = $this->downloadManager->getTotalDownloads($package);
+            $downloads = $this->downloadManager->getDownloads($package);
         } catch (ConnectionException $e) {
             return false;
         }
 
         // more than 1000 downloads = established package, do not allow deletion by maintainers
-        if ($downloads > 1_000) {
+        // unless it has 0 monthly downloads then it is maybe just unused at this point
+        if ($downloads['total'] > 1_000 && $downloads['monthly'] > 0) {
             return false;
         }
 
