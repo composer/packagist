@@ -28,10 +28,13 @@ use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
 use Predis\Client;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\Service\ResetInterface;
 use Webmozart\Assert\Assert;
 
 /**
@@ -58,6 +61,8 @@ class V2Dumper
         private readonly CdnClient $cdnClient,
         private readonly ReplicaClient $replicaClient,
         private readonly UrlGeneratorInterface $router,
+        #[Autowire(service: 'http_client')]
+        private readonly HttpClientInterface&ResetInterface $httpClient,
     ) {
         $webDir = realpath($webDir);
         Assert::string($webDir);
@@ -419,6 +424,7 @@ class V2Dumper
                 }
                 $this->logger->debug('Retrying due to failure', ['exception' => $e]);
                 sleep(1);
+                $this->httpClient->reset();
             }
         } while ($retries-- > 0);
 
@@ -439,6 +445,7 @@ class V2Dumper
                 }
                 $this->logger->debug('Retrying due to failure', ['file' => $relativePath, 'exception' => $e]);
                 sleep(1);
+                $this->httpClient->reset();
             }
         } while ($retries-- > 0);
     }
@@ -454,6 +461,7 @@ class V2Dumper
                 throw new \RuntimeException('Failed to purge cache for '.$relativePath);
             }
             sleep(1);
+            $this->httpClient->reset();
         } while ($retries-- > 0);
     }
 
@@ -515,6 +523,7 @@ class V2Dumper
                     throw $e;
                 }
                 sleep(1);
+                $this->httpClient->reset();
             }
         } while ($retries-- > 0);
 

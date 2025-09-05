@@ -19,7 +19,9 @@ use Composer\IO\ConsoleIO;
 use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * @author Yanick Witschi <yanick.witschi@terminal42.ch>
@@ -38,7 +40,8 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
      * @param list<string> $fallbackGhTokens
      */
     public function __construct(
-        private HttpClientInterface $httpClient,
+        #[Autowire(service: 'http_client')]
+        private readonly HttpClientInterface&ResetInterface $httpClient,
         private LoggerInterface $logger,
         private ProviderManager $providerManager,
         private array $fallbackGhTokens,
@@ -64,21 +67,33 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                 }
             }
 
-            try {
-                $response = $this->httpClient->request('POST', 'https://api.github.com/graphql', [
-                    'headers' => $headers,
-                    'json' => ['query' => $this->getQuery($after)],
-                ]);
-            } catch (\RuntimeException $e) {
-                $this->logger->error('Failed to fetch GitHub advisories', [
-                    'exception' => $e,
-                ]);
+            $retries = 3;
+            do {
+                try {
+                    $response = $this->httpClient->request('POST', 'https://api.github.com/graphql', [
+                        'headers' => $headers,
+                        'json' => ['query' => $this->getQuery($after)],
+                    ]);
+                    $data = json_decode($response->getContent(), true, \JSON_THROW_ON_ERROR);
+                    $data = $data['data'];
+                    break;
+                } catch (\RuntimeException $e) {
+                    if ($retries === 0) {
+                        $this->logger->error('Failed to fetch GitHub advisories, aborting.', [
+                            'exception' => $e,
+                        ]);
+                        return null;
+                    }
 
-                return null;
-            }
+                    $this->logger->debug('Failed to fetch GitHub advisories, retrying', [
+                        'exception' => $e,
+                    ]);
+                    sleep(1);
+                    $this->httpClient->reset();
+                }
+            } while ($retries-- > 0);
 
-            $data = json_decode($response->getContent(), true, \JSON_THROW_ON_ERROR);
-            $data = $data['data'];
+            assert(isset($data));
 
             foreach ($data['securityVulnerabilities']['nodes'] as $node) {
                 $remoteId = null;
