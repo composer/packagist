@@ -72,7 +72,7 @@ class DumpPackagesV2Command extends Command
         }
 
         // another dumper is still active
-        $lockName = $this->getName();
+        $lockName = $this->getName() ?? __CLASS__;
         if ($gc) {
             $lockName .= '-gc';
         }
