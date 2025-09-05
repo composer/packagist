@@ -373,7 +373,7 @@ class V2Dumper
         $timeUnix = (int) ceil($filemtime / 10000);
         $this->writeFileAtomic($path, $contents, $timeUnix);
 
-        $this->writeToReplica($path, $contents, $timeUnix);
+        $this->writeToReplica($relativePath, $contents, $timeUnix);
 
         $this->purgeCdn($relativePath);
 
@@ -415,9 +415,10 @@ class V2Dumper
                 break;
             } catch (TransportExceptionInterface $e) {
                 if ($retries === 0) {
+                    $this->logger->error('Failed writing to replica after 3 attempts', ['file' => $relativePath, 'exception' => $e]);
                     throw $e;
                 }
-                $this->logger->debug('Retrying due to failure', ['exception' => $e]);
+                $this->logger->debug('Retrying due to failure', ['file' => $relativePath, 'exception' => $e]);
                 sleep(1);
             }
         } while ($retries-- > 0);
