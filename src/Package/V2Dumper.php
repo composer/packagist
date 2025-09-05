@@ -43,6 +43,9 @@ class V2Dumper
 {
     use \App\Util\DoctrineTrait;
 
+    /** @var list<string> */
+    private array $writtenFiles = [];
+
     public function __construct(
         private ManagerRegistry $doctrine,
         private Filesystem $filesystem,
@@ -98,6 +101,9 @@ class V2Dumper
      */
     public function dump(array $packageIds, bool $force = false, bool $verbose = false): void
     {
+        // clear written files tracking for this run
+        $this->writtenFiles = [];
+
         // prepare build dir
         $webDir = $this->webDir;
 
@@ -167,6 +173,14 @@ class V2Dumper
             unset($packages, $package, $version, $advisories, $packageNames);
             $this->getEM()->clear();
             $this->logger->reset();
+        }
+
+        // Verify all written files match CDN versions
+        if (!empty($this->writtenFiles) && !$force) {
+            if ($verbose) {
+                echo 'Verifying ' . count($this->writtenFiles) . ' written files match CDN versions'.\PHP_EOL;
+            }
+            $this->verifyCdnFiles($verbose);
         }
 
         if (!file_exists($webDir.'/p2') && !@symlink($buildDirV2, $webDir.'/p2')) {
@@ -324,6 +338,25 @@ class V2Dumper
 
     private function writeV2File(Package $package, string $name, string $path, string $contents, bool $forceDump = false): void
     {
+        // ensure we do not upload files to the cdn for packages that have been recently deleted to avoid race conditions
+        $deletion = $this->redis->zscore('metadata-deletes', $name);
+        if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditRecordType::PackageDeleted]) !== null) {
+            $this->logger->error('Skipped dumping a file as it is marked as having been deleted in the last 30seconds', ['file' => $path, 'deletion' => $deletion, 'time' => time()]);
+
+            return;
+        }
+
+        if (!Preg::isMatch('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
+            throw new \LogicException('Could not match package name from '.$path);
+        }
+
+        $pkgWithDevFlag = $match[1];
+        $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
+
+        // Always track files for CDN verification, even if they don't need updating
+        // so that stuff gets purged in case it is outdated on the CDN still for some reason
+        $this->writtenFiles[] = $relativePath;
+
         if (
             !$forceDump
             && file_exists($path)
@@ -334,20 +367,6 @@ class V2Dumper
             return;
         }
 
-        if (!Preg::isMatch('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
-            throw new \LogicException('Could not match package name from '.$path);
-        }
-
-        // ensure we do not upload files to the cdn for packages that have been recently deleted to avoid race conditions
-        $deletion = $this->redis->zscore('metadata-deletes', $name);
-        if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditRecordType::PackageDeleted]) !== null) {
-            $this->logger->error('Skipped dumping a file as it is marked as having been deleted in the last 30seconds', ['file' => $path, 'deletion' => $deletion, 'time' => time()]);
-
-            return;
-        }
-
-        $pkgWithDevFlag = $match[1];
-        $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
         $this->filesystem->mkdir(\dirname($path));
 
         $filemtime = $this->writeCdn($relativePath, $contents);
@@ -436,5 +455,69 @@ class V2Dumper
             }
             sleep(1);
         } while ($retries-- > 0);
+    }
+
+    /**
+     * Verify written files match their CDN counterparts
+     */
+    private function verifyCdnFiles(bool $verbose = false): void
+    {
+        if (!$this->cdnClient->isConfigured()) {
+            return;
+        }
+
+        $this->logger->debug('Verifying CDN files', ['files' => $this->writtenFiles]);
+
+        $mismatchedFiles = [];
+        foreach ($this->writtenFiles as $relativePath) {
+            $localPath = $this->webDir . '/' . $relativePath;
+            if (!file_exists($localPath)) {
+                continue; // Skip if local file doesn't exist
+            }
+
+            $localContent = (string) file_get_contents($localPath);
+            $cdnContent = $this->fetchCdnFile($relativePath);
+
+            if ($localContent !== $cdnContent) {
+                $this->logger->error(
+                    'Mismatch detected for CDN file: '.$relativePath.', purging again',
+                    ['file' => $relativePath, 'local' => base64_encode($localContent), 'cdn' => base64_encode($cdnContent)]
+                );
+                $this->purgeCdn($relativePath);
+
+                $cdnContent = $this->fetchCdnFile($relativePath);
+                if ($localContent !== $cdnContent) {
+                    $this->logger->error(
+                        'Mismatch still present after another cache purge: '.$relativePath,
+                        ['file' => $relativePath, 'local' => base64_encode($localContent), 'cdn' => base64_encode($cdnContent)]
+                    );
+                } else {
+                    $this->logger->info('Cache purge worked now for '.$relativePath);
+                }
+            }
+        }
+    }
+
+    /**
+     * Fetch file content from CDN as a regular client for verification
+     */
+    private function fetchCdnFile(string $relativePath): string
+    {
+        $retries = 3;
+        do {
+            try {
+                return $this->cdnClient->fetchPublicMetadata($relativePath);
+            } catch (\Exception $e) {
+                if ($e->getCode() === 404) {
+                    $this->logger->debug('File not found on CDN, retrying...', ['file' => $relativePath]);
+                }
+                if ($retries === 0) {
+                    throw $e;
+                }
+                sleep(1);
+            }
+        } while ($retries-- > 0);
+
+        throw new \LogicException('Unreachable');
     }
 }
