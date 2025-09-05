@@ -1432,16 +1432,16 @@
         },
         {
             "name": "doctrine/doctrine-bundle",
-            "version": "2.16.0",
+            "version": "2.16.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/DoctrineBundle.git",
-                "reference": "cb2ad28708f870ff9534e82798c557bdc79809ba"
+                "reference": "152d5083f0cd205a278131dc4351a8c94d007fe1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/DoctrineBundle/zipball/cb2ad28708f870ff9534e82798c557bdc79809ba",
-                "reference": "cb2ad28708f870ff9534e82798c557bdc79809ba",
+                "url": "https://api.github.com/repos/doctrine/DoctrineBundle/zipball/152d5083f0cd205a278131dc4351a8c94d007fe1",
+                "reference": "152d5083f0cd205a278131dc4351a8c94d007fe1",
                 "shasum": ""
             },
             "require": {
@@ -1478,6 +1478,7 @@
                 "phpunit/phpunit": "^9.6.22",
                 "psr/log": "^1.1.4 || ^2.0 || ^3.0",
                 "symfony/doctrine-messenger": "^6.4 || ^7.0",
+                "symfony/expression-language": "^6.4 || ^7.0",
                 "symfony/messenger": "^6.4 || ^7.0",
                 "symfony/phpunit-bridge": "^7.2",
                 "symfony/property-info": "^6.4 || ^7.0",
@@ -1534,7 +1535,7 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/DoctrineBundle/issues",
-                "source": "https://github.com/doctrine/DoctrineBundle/tree/2.16.0"
+                "source": "https://github.com/doctrine/DoctrineBundle/tree/2.16.1"
             },
             "funding": [
                 {
@@ -1550,7 +1551,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-09-02T17:41:12+00:00"
+            "time": "2025-09-05T15:24:53+00:00"
         },
         {
             "name": "doctrine/event-manager",
