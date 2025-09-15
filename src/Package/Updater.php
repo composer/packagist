@@ -384,14 +384,25 @@ class Updater
                 || ($flags & self::UPDATE_EQUAL_REFS)
                 // or if the package must be marked abandoned from composer.json
                 || ($data->isAbandoned() && !$package->isAbandoned())
-                // or if the version default branch state has changed
-                || ($data->isDefaultBranch() !== $version->isDefaultBranch())
             ) {
                 $version = $versionRepo->find($existingVersion['id']);
                 if (null === $version) {
                     throw new \LogicException('At this point a version should always be found');
                 }
                 $versionId = $version->getId();
+            } elseif (
+                // if the version default branch state has changed we update just that
+                $data->isDefaultBranch() !== (bool) $existingVersion['defaultBranch']
+            ) {
+                $version = $versionRepo->find($existingVersion['id']);
+                if (null === $version) {
+                    throw new \LogicException('At this point a version should always be found');
+                }
+                $versionId = $version->getId();
+                $version->setIsDefaultBranch($data->isDefaultBranch());
+                $em->persist($version);
+
+                return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version];
             } else {
                 return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
             }

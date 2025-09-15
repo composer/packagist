@@ -170,7 +170,7 @@ class VersionRepository extends ServiceEntityRepository
     public function getVersionMetadataForUpdate(Package $package): array
     {
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT id, version, normalizedVersion, source, softDeletedAt FROM package_version v WHERE v.package_id = :id',
+            'SELECT id, version, normalizedVersion, source, softDeletedAt, defaultBranch FROM package_version v WHERE v.package_id = :id',
             ['id' => $package->getId()]
         );
 
