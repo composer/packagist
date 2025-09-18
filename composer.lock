@@ -4220,16 +4220,16 @@
         },
         {
             "name": "nelmio/security-bundle",
-            "version": "v3.5.1",
+            "version": "v3.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nelmio/NelmioSecurityBundle.git",
-                "reference": "b1c5e323d71152bc1a61a4f8fbf7d88c6fa3e2e7"
+                "reference": "fc1f8dffd8b6b0d91f812b0c7e3664b1cb14a318"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nelmio/NelmioSecurityBundle/zipball/b1c5e323d71152bc1a61a4f8fbf7d88c6fa3e2e7",
-                "reference": "b1c5e323d71152bc1a61a4f8fbf7d88c6fa3e2e7",
+                "url": "https://api.github.com/repos/nelmio/NelmioSecurityBundle/zipball/fc1f8dffd8b6b0d91f812b0c7e3664b1cb14a318",
+                "reference": "fc1f8dffd8b6b0d91f812b0c7e3664b1cb14a318",
                 "shasum": ""
             },
             "require": {
@@ -4288,9 +4288,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nelmio/NelmioSecurityBundle/issues",
-                "source": "https://github.com/nelmio/NelmioSecurityBundle/tree/v3.5.1"
+                "source": "https://github.com/nelmio/NelmioSecurityBundle/tree/v3.6.0"
             },
-            "time": "2025-03-13T09:17:16+00:00"
+            "time": "2025-09-18T10:37:53+00:00"
         },
         {
             "name": "pagerfanta/core",
