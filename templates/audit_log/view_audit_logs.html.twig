@@ -1,0 +1,38 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}
+    Packagist - Audit Logs
+{% endblock %}
+
+{% block content %}
+    <h2 class="title">Audit Logs</h2>
+
+    {% if auditLogs|length %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Type</th>
+                    <th>Vendor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in auditLogs %}
+                    <tr>
+                        <td>{{ log.datetime|date('Y-m-d H:i:s') }} UTC</td>
+                        <td data-test="audit-log-type">{{ log.type.value }}</td>
+                        <td>{{ log.vendor ?? '-' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if auditLogs.haveToPaginate() %}
+            {{ pagerfanta(auditLogs, 'twitter_bootstrap', {'proximity': 2}) }}
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <p>No audit logs found.</p>
+        </div>
+    {% endif %}
+{% endblock %}
