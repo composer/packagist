@@ -168,3 +168,11 @@ freezing_reasons:
     spam: This package was marked as spam and has been frozen as a result.
     remote_id: This package's canonical repository id has changed and the package has been frozen as a result. Email us for help if needed.
     gone: This package's canonical repository appears to be gone and the package has been frozen as a result. Email us for help if needed.
+
+audit_log:
+    type:
+        package_created: Package created
+        package_deleted: Package deleted
+        version_deleted: Version deleted
+        version_reference_change: Version reference changed
+        canonical_url_change: Canonical URL changed

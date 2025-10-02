@@ -24,10 +24,10 @@ class AuditLogControllerTest extends IntegrationTestCase
 
         $this->store($user, $package);
 
-        $auditLog1 = AuditRecord::canonicalUrlChange($package, $user, 'https://github.com/vendor1/package1-new');
-        $auditLog2 = AuditRecord::packageDeleted($package, $user);
+        $auditRecord1 = AuditRecord::canonicalUrlChange($package, $user, 'https://github.com/vendor1/package1-new');
+        $auditRecord = AuditRecord::packageDeleted($package, $user);
 
-        $this->store($auditLog1, $auditLog2);
+        $this->store($auditRecord1, $auditRecord);
 
         $this->client->loginUser($user);
         $crawler = $this->client->request('GET', '/audit-log');
@@ -36,9 +36,9 @@ class AuditLogControllerTest extends IntegrationTestCase
         $rows = $crawler->filter('[data-test=audit-log-type]');
         static::assertGreaterThanOrEqual(3, $rows->count(), 'Should have at least 3 audit log entries');
         static::assertSame([
-            'package_deleted',
-            'canonical_url_change',
-            'package_created',
+            'Package deleted',
+            'Canonical URL changed',
+            'Package created',
         ], $rows->each(fn ($element) => trim($element->text())));
     }
 }

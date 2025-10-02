@@ -20,7 +20,7 @@
                 {% for log in auditLogs %}
                     <tr>
                         <td>{{ log.datetime|date('Y-m-d H:i:s') }} UTC</td>
-                        <td data-test="audit-log-type">{{ log.type.value }}</td>
+                        <td data-test="audit-log-type">{{ ('audit_log.type.'~log.type.value)|trans }}</td>
                         <td>{{ log.vendor ?? '-' }}</td>
                     </tr>
                 {% endfor %}
