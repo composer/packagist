@@ -168,3 +168,27 @@ freezing_reasons:
     spam: This package was marked as spam and has been frozen as a result.
     remote_id: This package's canonical repository id has changed and the package has been frozen as a result. Email us for help if needed.
     gone: This package's canonical repository appears to be gone and the package has been frozen as a result. Email us for help if needed.
+
+audit_log:
+    type:
+        canonical_url_changed: Canonical URL changed
+        email_changed: Email changed
+        github_disconnected_from_user: GitHub disconnected from user
+        github_linked_with_user: GitHub linked to user
+        maintainer_added: Maintainer added
+        maintainer_removed: Maintainer removed
+        package_abandoned: Package abandoned
+        package_created: Package created
+        package_deleted: Package deleted
+        package_transferred: Package transferred
+        package_unabandoned: Package unabandoned
+        password_changed: Password changed
+        password_reset: Password reset
+        password_reset_requested: Password reset requested
+        two_fa_activated: Two-factor authentication activated
+        two_fa_deactivated: Two-factor authentication deactivated
+        user_created: User created
+        user_deleted: User deleted
+        username_changed: Username changed
+        version_deleted: Version deleted
+        version_reference_changed: Version reference changed

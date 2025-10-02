@@ -12,33 +12,44 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Tests\IntegrationTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class AuditLogControllerTest extends IntegrationTestCase
 {
-    public function testViewAuditLogs(): void
+    #[DataProvider('filterProvider')]
+    public function testViewAuditLogs(array $filters, array $expected): void
     {
-        $user = self::createUser('testuser', 'test@example.com', roles: ['ROLE_ADMIN']);
+        $user = self::createUser('testuser', 'test@example.com', roles: ['ROLE_USER']);
         $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$user]);
 
         $this->store($user, $package);
 
-        $auditLog1 = AuditRecord::canonicalUrlChange($package, $user, 'https://github.com/vendor1/package1-new');
-        $auditLog2 = AuditRecord::packageDeleted($package, $user);
+        $auditRecord1 = AuditRecord::canonicalUrlChange($package, $user, 'https://github.com/vendor1/package1-new');
+        $auditRecord = AuditRecord::packageDeleted($package, $user);
 
-        $this->store($auditLog1, $auditLog2);
+        $this->store($auditRecord1, $auditRecord);
 
         $this->client->loginUser($user);
-        $crawler = $this->client->request('GET', '/audit-log');
+        $crawler = $this->client->request('GET', '/audit-log?' . http_build_query($filters));
         static::assertResponseIsSuccessful();
 
         $rows = $crawler->filter('[data-test=audit-log-type]');
-        static::assertGreaterThanOrEqual(3, $rows->count(), 'Should have at least 3 audit log entries');
-        static::assertSame([
-            'package_deleted',
-            'canonical_url_change',
-            'package_created',
-        ], $rows->each(fn ($element) => trim($element->text())));
+        static::assertSame($expected, $rows->each(fn ($element) => trim($element->text())));
+    }
+
+    public static function filterProvider(): iterable
+    {
+        yield [
+            [],
+            ['Package deleted', 'Canonical URL changed', 'Package created'],
+        ];
+
+        yield [
+            ['type' => [AuditRecordType::CanonicalUrlChanged->value, AuditRecordType::PackageDeleted->value]],
+            ['Package deleted', 'Canonical URL changed'],
+        ];
     }
 }
