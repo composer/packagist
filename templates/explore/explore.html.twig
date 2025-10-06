@@ -3,7 +3,7 @@
 {% import "macros.html.twig" as macros %}
 
 {% block content %}
-    {% block content_title %}<h2 class="title">{{ 'explore.title'|trans }}</h2>{% endblock %}
+    {% block content_title %}<h2 class="title">{{ 'explore.title'|trans }} <small class="php-ext-link"><a href="{{ path('browse_extensions') }}">🥧 Browse PHP Extensions</a></small></h2>{% endblock %}
     {% block lists %}
     <section class="row">
         <section class="packages-short col-lg-6">

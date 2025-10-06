@@ -60,11 +60,11 @@ class CdnClient
 
     public function purgeMetadataCache(string $path): bool
     {
-        if ($this->metadataApiKey === null || $this->metadataEndpoint === null || $this->metadataPublicEndpoint === null || $this->cdnApiKey === null) {
+        if (!$this->isConfigured()) {
             return true;
         }
 
-        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'true']), [
+        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'false']), [
             'headers' => [
                 'AccessKey' => $this->cdnApiKey,
             ],
@@ -76,7 +76,7 @@ class CdnClient
             return false;
         }
 
-        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => 'https://'.$this->packagistHost.'/'.$path, 'async' => 'true']), [
+        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => 'https://'.$this->packagistHost.'/'.$path, 'async' => 'false']), [
             'headers' => [
                 'AccessKey' => $this->cdnApiKey,
             ],
@@ -108,7 +108,7 @@ class CdnClient
 
     public function deleteMetadata(string $path): void
     {
-        if ($this->metadataApiKey === null || $this->metadataEndpoint === null || $this->metadataPublicEndpoint === null || $this->cdnApiKey === null) {
+        if (!$this->isConfigured()) {
             return;
         }
 
@@ -144,5 +144,29 @@ class CdnClient
     public function stream(array $requests): ResponseStreamInterface
     {
         return $this->httpClient->stream($requests);
+    }
+
+    public function isConfigured(): bool
+    {
+        return $this->metadataApiKey !== null && $this->metadataEndpoint !== null && $this->metadataPublicEndpoint !== null && $this->cdnApiKey !== null;
+    }
+
+    /**
+     * Fetch file content from public CDN endpoint for verification
+     */
+    public function fetchPublicMetadata(string $path): string
+    {
+        $path = ltrim($path, '/');
+        if (!$this->isConfigured()) {
+            throw new \RuntimeException('CDN metadata public endpoint not configured');
+        }
+
+        $resp = $this->httpClient->request('GET', $this->metadataPublicEndpoint.$path);
+
+        if ($resp->getStatusCode() !== 200) {
+            throw new \RuntimeException('Failed to fetch public CDN file: '.$path.' (status: '.$resp->getStatusCode().')', $resp->getStatusCode());
+        }
+
+        return $resp->getContent();
     }
 }

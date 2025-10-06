@@ -28,10 +28,13 @@ use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
 use Predis\Client;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\Service\ResetInterface;
 use Webmozart\Assert\Assert;
 
 /**
@@ -42,6 +45,9 @@ use Webmozart\Assert\Assert;
 class V2Dumper
 {
     use \App\Util\DoctrineTrait;
+
+    /** @var list<string> */
+    private array $writtenFiles = [];
 
     public function __construct(
         private ManagerRegistry $doctrine,
@@ -55,6 +61,8 @@ class V2Dumper
         private readonly CdnClient $cdnClient,
         private readonly ReplicaClient $replicaClient,
         private readonly UrlGeneratorInterface $router,
+        #[Autowire(service: 'http_client')]
+        private readonly HttpClientInterface&ResetInterface $httpClient,
     ) {
         $webDir = realpath($webDir);
         Assert::string($webDir);
@@ -80,30 +88,9 @@ class V2Dumper
             'api-url' => $this->router->generate('api_security_advisories', [], UrlGeneratorInterface::ABSOLUTE_URL),
         ];
         $rootFileContents['providers-api'] = str_replace('VND/PKG', '%package%', $this->router->generate('view_providers', ['name' => 'VND/PKG', '_format' => 'json'], UrlGeneratorInterface::ABSOLUTE_URL));
-        $rootFileContents['warning'] = 'Support for Composer 1 will be shutdown on August 1st 2025. You should upgrade to Composer 2. See https://blog.packagist.com/shutting-down-packagist-org-support-for-composer-1-x/';
+        $rootFileContents['warning'] = 'Support for Composer 1 has been shutdown on September 1st 2025. You should upgrade to Composer 2. See https://blog.packagist.com/shutting-down-packagist-org-support-for-composer-1-x/';
         $rootFileContents['warning-versions'] = '<1.999';
-
-        // hardcoded v1 data for BC
-        $rootFileContents['provider-includes'] = [
-            'p/provider-2013$%hash%.json' => ['sha256' => 'a2b47ec1a1bb999e53d88aff50728aebbd3d68225c74aab1ff5f071bac42f5b7'],
-            'p/provider-2014$%hash%.json' => ['sha256' => '347426977f09ca7feb7306fd990c2db8bf28b3f3d57716f8b90a12f1c21f1065'],
-            'p/provider-2015$%hash%.json' => ['sha256' => 'd9fa6571b23af36e89a1f73eb3be340c81743ae5b71e523cf228552d8e02d029'],
-            'p/provider-2016$%hash%.json' => ['sha256' => '27c3687c41821dca9f6d65a0ca636ae6675120d4f045d132a097d8c0311818d4'],
-            'p/provider-2017$%hash%.json' => ['sha256' => 'f82637fef38646359f09365a7aef1bcbdf7db5d63b0511b3a1f9f8f58a9c2854'],
-            'p/provider-2018$%hash%.json' => ['sha256' => 'f4870961f191584a8e58a5683ef5882459e5f66ea2d70881750a53400b401857'],
-            'p/provider-2019$%hash%.json' => ['sha256' => '70145dae32ee55bd86351b2e7520fd573c642917b7787009bb5b13bfa7208517'],
-            'p/provider-2020$%hash%.json' => ['sha256' => '261d9f1aaca76417647dad0922781fffeac007531dffd9d5ff8eea9b69826430'],
-            'p/provider-2021$%hash%.json' => ['sha256' => '231acb00ca80397db2f2ed9cfdaa7045839584e9f39dd03b87b9cebbb9ccf5d7'],
-            'p/provider-2022$%hash%.json' => ['sha256' => 'fbd72f659dbd3b7f28c2f4a03bb903759e1d7641c300e1eaea0dec25bd05683e'],
-            'p/provider-2023$%hash%.json' => ['sha256' => '0b8c3c321c716153c450fe69d8fd4d23279fdc451212e28ccccbb25db0aef094'],
-            'p/provider-2024$%hash%.json' => ['sha256' => '745def0c1dd86019d31400fa0899b9293bc5c9bc5ab2c790866cb365dcbb16f8'],
-            'p/provider-2024-04$%hash%.json' => ['sha256' => '1128944b800d6c07420ddbe33aa14667f2ef6ea0833cddf84b92ca96ac3078d8'],
-            'p/provider-2024-07$%hash%.json' => ['sha256' => '3582960dd2ea8d007e7e1bfb07938b08ab5a4179332d0ec65424a506332b8197'],
-            'p/provider-2024-10$%hash%.json' => ['sha256' => '82ea763e72f57755471cf9a4cb2f99f7ef7a15b9675146528fb041a4345d3df1'],
-            'p/provider-2025-01$%hash%.json' => ['sha256' => 'f11d8fd77adedb70d261f92a09242b68ab67019920f6ec4fb8868bca6ab098aa'],
-            'p/provider-archived$%hash%.json' => ['sha256' => '8bb3f3566d1b440250f124cb7e56479912c1ebc3471ac2924bf94382101d06a4'],
-            'p/provider-latest$%hash%.json' => ['sha256' => 'd2d84dcbc41a33a96cc1a39c91a29861f33e93ec0c1086c04754663eaad831c5'],
-        ];
+        $rootFileContents['providers'] = [];
 
         if ($verbose) {
             echo 'Dumping root'.\PHP_EOL;
@@ -119,6 +106,9 @@ class V2Dumper
      */
     public function dump(array $packageIds, bool $force = false, bool $verbose = false): void
     {
+        // clear written files tracking for this run
+        $this->writtenFiles = [];
+
         // prepare build dir
         $webDir = $this->webDir;
 
@@ -188,6 +178,14 @@ class V2Dumper
             unset($packages, $package, $version, $advisories, $packageNames);
             $this->getEM()->clear();
             $this->logger->reset();
+        }
+
+        // Verify all written files match CDN versions
+        if (!empty($this->writtenFiles) && !$force) {
+            if ($verbose) {
+                echo 'Verifying ' . count($this->writtenFiles) . ' written files match CDN versions'.\PHP_EOL;
+            }
+            $this->verifyCdnFiles($verbose);
         }
 
         if (!file_exists($webDir.'/p2') && !@symlink($buildDirV2, $webDir.'/p2')) {
@@ -345,6 +343,25 @@ class V2Dumper
 
     private function writeV2File(Package $package, string $name, string $path, string $contents, bool $forceDump = false): void
     {
+        // ensure we do not upload files to the cdn for packages that have been recently deleted to avoid race conditions
+        $deletion = $this->redis->zscore('metadata-deletes', $name);
+        if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditRecordType::PackageDeleted]) !== null) {
+            $this->logger->error('Skipped dumping a file as it is marked as having been deleted in the last 30seconds', ['file' => $path, 'deletion' => $deletion, 'time' => time()]);
+
+            return;
+        }
+
+        if (!Preg::isMatch('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
+            throw new \LogicException('Could not match package name from '.$path);
+        }
+
+        $pkgWithDevFlag = $match[1];
+        $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
+
+        // Always track files for CDN verification, even if they don't need updating
+        // so that stuff gets purged in case it is outdated on the CDN still for some reason
+        $this->writtenFiles[] = $relativePath;
+
         if (
             !$forceDump
             && file_exists($path)
@@ -355,20 +372,6 @@ class V2Dumper
             return;
         }
 
-        if (!Preg::isMatch('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
-            throw new \LogicException('Could not match package name from '.$path);
-        }
-
-        // ensure we do not upload files to the cdn for packages that have been recently deleted to avoid race conditions
-        $deletion = $this->redis->zscore('metadata-deletes', $name);
-        if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditRecordType::PackageDeleted]) !== null) {
-            $this->logger->error('Skipped dumping a file as it is marked as having been deleted in the last 30seconds', ['file' => $path, 'deletion' => $deletion, 'time' => time()]);
-
-            return;
-        }
-
-        $pkgWithDevFlag = $match[1];
-        $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
         $this->filesystem->mkdir(\dirname($path));
 
         $filemtime = $this->writeCdn($relativePath, $contents);
@@ -394,7 +397,7 @@ class V2Dumper
         $timeUnix = (int) ceil($filemtime / 10000);
         $this->writeFileAtomic($path, $contents, $timeUnix);
 
-        $this->writeToReplica($path, $contents, $timeUnix);
+        $this->writeToReplica($relativePath, $contents, $timeUnix);
 
         $this->purgeCdn($relativePath);
 
@@ -421,6 +424,7 @@ class V2Dumper
                 }
                 $this->logger->debug('Retrying due to failure', ['exception' => $e]);
                 sleep(1);
+                $this->httpClient->reset();
             }
         } while ($retries-- > 0);
 
@@ -436,10 +440,12 @@ class V2Dumper
                 break;
             } catch (TransportExceptionInterface $e) {
                 if ($retries === 0) {
+                    $this->logger->error('Failed writing to replica after 3 attempts', ['file' => $relativePath, 'exception' => $e]);
                     throw $e;
                 }
-                $this->logger->debug('Retrying due to failure', ['exception' => $e]);
+                $this->logger->debug('Retrying due to failure', ['file' => $relativePath, 'exception' => $e]);
                 sleep(1);
+                $this->httpClient->reset();
             }
         } while ($retries-- > 0);
     }
@@ -455,6 +461,72 @@ class V2Dumper
                 throw new \RuntimeException('Failed to purge cache for '.$relativePath);
             }
             sleep(1);
+            $this->httpClient->reset();
         } while ($retries-- > 0);
+    }
+
+    /**
+     * Verify written files match their CDN counterparts
+     */
+    private function verifyCdnFiles(bool $verbose = false): void
+    {
+        if (!$this->cdnClient->isConfigured()) {
+            return;
+        }
+
+        $this->logger->debug('Verifying CDN files', ['files' => $this->writtenFiles]);
+
+        $mismatchedFiles = [];
+        foreach ($this->writtenFiles as $relativePath) {
+            $localPath = $this->webDir . '/' . $relativePath;
+            if (!file_exists($localPath)) {
+                continue; // Skip if local file doesn't exist
+            }
+
+            $localContent = (string) file_get_contents($localPath);
+            $cdnContent = $this->fetchCdnFile($relativePath);
+
+            if ($localContent !== $cdnContent) {
+                $this->logger->error(
+                    'Mismatch detected for CDN file: '.$relativePath.', purging again',
+                    ['file' => $relativePath, 'local' => base64_encode($localContent), 'cdn' => base64_encode($cdnContent)]
+                );
+                $this->purgeCdn($relativePath);
+
+                $cdnContent = $this->fetchCdnFile($relativePath);
+                if ($localContent !== $cdnContent) {
+                    $this->logger->error(
+                        'Mismatch still present after another cache purge: '.$relativePath,
+                        ['file' => $relativePath, 'local' => base64_encode($localContent), 'cdn' => base64_encode($cdnContent)]
+                    );
+                } else {
+                    $this->logger->info('Cache purge worked now for '.$relativePath);
+                }
+            }
+        }
+    }
+
+    /**
+     * Fetch file content from CDN as a regular client for verification
+     */
+    private function fetchCdnFile(string $relativePath): string
+    {
+        $retries = 3;
+        do {
+            try {
+                return $this->cdnClient->fetchPublicMetadata($relativePath);
+            } catch (\Exception $e) {
+                if ($e->getCode() === 404) {
+                    $this->logger->debug('File not found on CDN, retrying...', ['file' => $relativePath]);
+                }
+                if ($retries === 0) {
+                    throw $e;
+                }
+                sleep(1);
+                $this->httpClient->reset();
+            }
+        } while ($retries-- > 0);
+
+        throw new \LogicException('Unreachable');
     }
 }

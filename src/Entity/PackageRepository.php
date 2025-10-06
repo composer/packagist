@@ -12,8 +12,10 @@
 
 namespace App\Entity;
 
+use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
@@ -50,7 +52,29 @@ class PackageRepository extends ServiceEntityRepository
             ->getQuery()
             ->setParameters(['name' => $name]);
 
-        return $query->getResult();
+        $result = $query->getResult();
+
+        if (Preg::isMatch('{^ext-(.*)$}', $name, $match)) {
+            $query = $this->createQueryBuilder('p')
+                ->select('partial p.{'.self::LISTING_FIELDS.'}')
+                ->leftJoin('p.versions', 'pv')
+                ->where('pv.development = true')
+                ->andWhere('(p.type = :extType OR p.type = :extTypeAlt)')
+                ->andWhere('(JSON_EXTRACT(pv.phpExt, \'$."extension-name"\') IN (:name, :altName) OR (JSON_EXTRACT(pv.phpExt, \'$."extension-name"\') IS NULL AND p.name LIKE :pkgName))')
+                ->orderBy('p.name')
+                ->getQuery()
+                ->setParameters([
+                    'extType' => 'php-ext',
+                    'extTypeAlt' => 'php-ext-zend',
+                    'name' => $match[1],
+                    'altName' => 'ext-'.$match[1],
+                    'pkgName' => '%/'.$match[1],
+                ]);;
+
+            $result = array_merge($result, $query->getResult());
+        }
+
+        return $result;
     }
 
     /**
@@ -547,6 +571,33 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param list<string> $requirers
+     * @return array<string, string|null> array keyed by requirer name and the value is requirement or null if not found
+     */
+    public function getDefaultBranchRequireFor(array $requirers, string $requiree): array
+    {
+        $requires = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            <<<'SQL'
+            SELECT p.name, COALESCE(lr.packageVersion, lrd.packageVersion, NULL) AS requirement
+            FROM package p
+            LEFT JOIN package_version pv ON pv.package_id = p.id AND pv.defaultBranch = 1
+            LEFT JOIN link_require lr ON lr.version_id = pv.id AND lr.packageName = :requiree
+            LEFT JOIN link_require_dev lrd ON lrd.version_id = pv.id AND lrd.packageName = :requiree
+            WHERE p.name IN (:requirers)
+            SQL,
+            ['requiree' => $requiree, 'requirers' => $requirers],
+            ['requirers' => ArrayParameterType::STRING],
+        );
+
+        $result = [];
+        foreach ($requires as $row) {
+            $result[$row['name']] = $row['requirement'];
+        }
+
+        return $result;
+    }
+
+    /**
      * @return int<0, max>
      */
     public function getSuggestCount(string $name): int
@@ -655,6 +706,23 @@ class PackageRepository extends ServiceEntityRepository
         $qb->select('p')
             ->from('App\Entity\Package', 'p')
             ->where('p.abandoned = false')
+            ->andWhere('p.frozen IS NULL')
+            ->orderBy('p.id', 'DESC');
+
+        return $qb;
+    }
+
+    /**
+     * Gets the most recent extension packages created
+     */
+    public function getQueryBuilderForNewestExtensionPackages(): QueryBuilder
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('p')
+            ->from('App\Entity\Package', 'p')
+            ->where('p.abandoned = false')
+            ->andWhere('p.frozen IS NULL')
+            ->andWhere("(p.type = 'php-ext' OR p.type = 'php-ext-zend')")
             ->orderBy('p.id', 'DESC');
 
         return $qb;

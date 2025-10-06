@@ -15,6 +15,7 @@ namespace App\Command;
 use Algolia\AlgoliaSearch\SearchClient;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
+use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Service\Locker;
@@ -234,8 +235,13 @@ class IndexPackagesCommand extends Command
             $record['replacementPackage'] = '';
         }
 
-        if (\in_array($package->getType(), ['php-ext', 'php-ext-zend'], true)) {
+        if ($package->isPiePackage()) {
             $record['extension'] = 1;
+            $latestVersion = $this->getEM()->getRepository(Version::class)->getQueryBuilderForLatestVersionWithPackage(package: $package->getName())
+                ->getQuery()->setMaxResults(1)->getOneOrNullResult();
+            if ($latestVersion) {
+                $record['extensionName'] = $latestVersion->getPieName();
+            }
         }
 
         $record['tags'] = $tags;

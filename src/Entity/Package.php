@@ -675,7 +675,7 @@ class Package
 
     public function getInstallCommand(?Version $version = null): string
     {
-        if (\in_array($this->getType(), ['php-ext', 'php-ext-zend'], true)) {
+        if ($this->isPiePackage()) {
             return 'pie install '.$this->getName();
         }
 
@@ -690,6 +690,11 @@ class Package
         }
 
         return \sprintf('composer %s %s', $command, $this->getName());
+    }
+
+    public function isPiePackage(): bool
+    {
+        return \in_array($this->getType(), ['php-ext', 'php-ext-zend'], true);
     }
 
     public function setRemoteId(?string $remoteId): void

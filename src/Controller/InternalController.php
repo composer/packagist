@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use Composer\Pcre\Preg;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,6 +44,11 @@ class InternalController extends Controller
         $expectedSig = hash_hmac('sha256', $path.$contents.$filemtime, $this->internalSecret);
         if (!hash_equals($expectedSig, $sig)) {
             $this->logger->error('Invalid signature', ['contents' => $contents, 'path' => $path, 'filemtime' => $filemtime, 'sig' => $sig]);
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!Preg::isMatch('{^(packages\.json|p2/.*\.json)$}', $path)) {
+            $this->logger->error('Invalid path received for metadata write: '.$path);
             throw $this->createAccessDeniedException();
         }
 

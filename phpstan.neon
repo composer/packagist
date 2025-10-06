@@ -48,7 +48,7 @@ parameters:
         VersionData: 'array<int, array{require: VersionDataLinks, devRequire: VersionDataLinks, suggest: VersionDataLinks, conflict: VersionDataLinks, provide: VersionDataLinks, replace: VersionDataLinks, tags: list<string>}>'
         VersionDataLinks: 'array<array{version_id: int, name: string, version: string}>'
 
-        ExistingVersionsForUpdate: 'array<string, array{id: int, version: string, normalizedVersion: string, source: PackageSource, softDeletedAt: string|null}>'
+        ExistingVersionsForUpdate: 'array<string, array{id: int, version: string, normalizedVersion: string, source: PackageSource, softDeletedAt: string|null, defaultBranch: int}>'
 
         PackageAutoloadRules: 'array{psr-0?: array<string, string|string[]>, psr-4?: array<string, string|string[]>, classmap?: list<string>, files?: list<string>, exclude-from-classmap?: list<string>}'
         PackageDist: 'array{url: string|null, type: string|null, reference: string|null, shasum: string|null}|null'

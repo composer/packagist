@@ -14,4 +14,8 @@
     <h3>Package Feed</h3>
     <p>New Releases for a specific package: <code>{{ url('feed_package', {package: 'X/X', _format: 'rss'})|replace({'X/X': '%vendor/package%'}) }}</code></p>
     <p>Replace <code>%vendor/package%</code> by the package name, and change rss to atom if you would like an atom feed.</p>
+
+    <h3>🥧PIE Extension Feeds</h3>
+    <p>Newly Submitted Extension Packages: <a href="{{ url('feed_extensions', {_format: 'rss'}) }}">RSS</a>, <a href="{{ url('feed_extensions', {_format: 'atom'}) }}">Atom</a></p>
+    <p>New Extension Releases: <a href="{{ url('feed_extension_releases', {_format: 'rss'}) }}">RSS</a>, <a href="{{ url('feed_extension_releases', {_format: 'atom'}) }}">Atom</a></p>
 {% endblock %}

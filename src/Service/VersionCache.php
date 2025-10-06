@@ -20,12 +20,12 @@ use Composer\Semver\VersionParser;
 
 class VersionCache implements VersionCacheInterface
 {
-    /** @var array<string, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null}> */
+    /** @var array<string, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null, defaultBranch: int}> */
     private array $versionCache = [];
 
     /**
-     * @param array<string|int, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null}> $existingVersions
-     * @param string[]                                                                                                                                              $emptyReferences
+     * @param array<string|int, array{version: string, normalizedVersion: string, source: array{type: string|null, url: string|null, reference: string|null}|null, defaultBranch: int}> $existingVersions
+     * @param string[]                                                                                                                                                                  $emptyReferences
      */
     public function __construct(
         private Package $package,
@@ -38,7 +38,7 @@ class VersionCache implements VersionCacheInterface
     }
 
     /**
-     * @return array{name: string, version: string, version_normalized: string, source: array{type: string|null, url: string|null, reference: string|null}|null}|false|null
+     * @return array{name: string, version: string, version_normalized: string, source: array{type: string|null, url: string|null, reference: string|null}|null, default-branch: bool}|false|null
      */
     public function getVersionPackage(string $version, string $identifier): array|false|null
     {
@@ -53,6 +53,7 @@ class VersionCache implements VersionCacheInterface
                 'version' => $this->versionCache[$version]['version'],
                 'version_normalized' => $this->versionCache[$version]['normalizedVersion'],
                 'source' => $this->versionCache[$version]['source'],
+                'default-branch' => (bool) $this->versionCache[$version]['defaultBranch'],
             ];
         }
 

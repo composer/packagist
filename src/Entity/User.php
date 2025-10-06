@@ -255,7 +255,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function getGravatarUrl(): string
     {
-        return 'https://www.gravatar.com/avatar/'.hash('md5', strtolower($this->getEmail())).'?d=identicon';
+        return 'https://www.gravatar.com/avatar/'.hash('sha256', strtolower($this->getEmail())).'?d=identicon';
     }
 
     public function setTotpSecret(?string $secret): void

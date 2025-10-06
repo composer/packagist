@@ -13,6 +13,9 @@ doctrine:
         enable_lazy_ghost_objects: true
         report_fields_where_declared: true
         auto_mapping: true
+        dql:
+            string_functions:
+                JSON_EXTRACT: Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonExtract
         mappings:
             App:
                 is_bundle: false

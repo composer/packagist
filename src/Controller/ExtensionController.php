@@ -71,6 +71,9 @@ class ExtensionController extends Controller
             return $response;
         }
 
+        // disable PIE icon on extension list
+        array_map(fn (Package $pkg) => $pkg->setType(''), iterator_to_array($packages));
+
         return $this->render('extensions/list.html.twig', $data);
     }
 }

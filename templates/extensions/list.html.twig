@@ -2,6 +2,11 @@
     {% block title %}PHP Extensions - Packagist{% endblock %}
     {% block description %}List of all PHP extensions installable via pie{% endblock %}
     {% block content_title %}
-        <h2 class="title">PHP Extensions <small>installable via <a href="https://github.com/php/pie">pie</a></small></h2>
+        <h2 class="title">PHP Extensions <small>installable via <a href="https://github.com/php/pie">🥧PIE</a></small></h2>
+    {% endblock %}
+
+    {% block head_feeds %}
+    <link rel="alternate" type="application/rss+xml" title="Newly Submitted Extensions - Packagist" href="{{ url('feed_extensions', {_format: 'rss'}) }}" />
+    <link rel="alternate" type="application/rss+xml" title="New Extension Releases - Packagist" href="{{ url('feed_extension_releases', {_format: 'rss'}) }}" />
     {% endblock %}
 {% endembed %}
