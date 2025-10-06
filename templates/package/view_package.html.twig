@@ -273,6 +273,7 @@
                             {% if package.isPiePackage() %}
                                 <p><span>Ext name:</span>{{ version.pieName }}</p>
                             {% endif %}
+                            <p><span title="PURL / Package-URL">pkg:composer/{{ package.name }}</span></p>
                         </div>
                     </div>
                 </div>

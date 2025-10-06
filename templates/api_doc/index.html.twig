@@ -451,7 +451,7 @@ GET https://{{ packagist_host }}/statistics.json
 
     <p>This endpoint provides a list of security advisories. Either a list of packages as query or request parameter OR a timestamp as updatedSince query parameter needs to be passed.</p>
 
-    <p>When querying with a list of packages, known packages will be included in the response with an empty array if they don't have any listed vulnerability. Package names which are not known to have no vulnerability will not be included at all to show that we do not have data on those.</p>
+    <p>When querying with a list of packages, known packages will be included in the response with an empty array if they don't have any listed vulnerability. Package names which are not known to have no vulnerability will not be included at all to show that we do not have data on those. Note that <a href="https://github.com/package-url/purl-spec/blob/main/PURL-SPECIFICATION.rst">PURL</a> package URLs like <code>pkg:composer/foo/bar</code> can also be provided to the packages parameter.</p>
 
     <pre>
 GET https://{{ packagist_host }}/api/security-advisories/?packages[]=[vendor/package]
