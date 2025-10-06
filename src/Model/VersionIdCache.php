@@ -39,6 +39,7 @@ class VersionIdCache
 
         foreach ($results as $key => $result) {
             if ($result) {
+                assert(isset($payload[$key]));
                 [$id, $vid] = explode(',', $result);
                 $payload[$key]['id'] = (int) $id;
                 $payload[$key]['vid'] = (int) $vid;

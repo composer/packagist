@@ -147,6 +147,7 @@ class VersionRepository extends ServiceEntityRepository
                 ['ids' => ArrayParameterType::INTEGER]
             );
             foreach ($rows as $row) {
+                assert(isset($result[$row['version_id']]));
                 $result[$row['version_id']][$link][] = $row;
             }
         }
@@ -158,6 +159,7 @@ class VersionRepository extends ServiceEntityRepository
         );
         foreach ($rows as $row) {
             $versionId = $row['version_id'];
+            assert(isset($result[$versionId]));
             $result[$versionId]['tags'][] = $row['name'];
         }
 
