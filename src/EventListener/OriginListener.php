@@ -51,12 +51,16 @@ class OriginListener
         }
 
         // valid origin
-        if ($event->getRequest()->headers->get('Origin') === 'https://'.$this->packagistHost) {
+        $origin = $event->getRequest()->headers->get('Origin') ?? '';
+        if ($origin === 'https://'.$this->packagistHost) {
             return;
         }
 
         // valid as well with HTTP in dev
-        if ('dev' === $this->environment && $event->getRequest()->headers->get('Origin') === 'http://'.$this->packagistHost) {
+        $scheme = parse_url($origin, PHP_URL_SCHEME);
+        $host = parse_url($origin, PHP_URL_HOST);
+        $knownOrigin = $scheme.'://'.$host;
+        if ('dev' === $this->environment && $knownOrigin === 'http://'.$this->packagistHost) {
             return;
         }
 

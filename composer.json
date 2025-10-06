@@ -24,6 +24,7 @@
         "php": "^8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "ext-apcu": "*",
         "algolia/algoliasearch-client-php": "^3.0",
         "babdev/pagerfanta-bundle": "^4.2",
         "beelab/recaptcha2-bundle": "^2.3",
