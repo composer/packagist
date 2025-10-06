@@ -12,7 +12,10 @@
 
 namespace App\Controller;
 
+use App\Audit\AuditRecordType;
 use App\Entity\AuditRecordRepository;
+use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
+use App\QueryFilter\QueryFilterInterface;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,18 +27,34 @@ class AuditLogController extends Controller
 {
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/audit-log', name: 'view_audit_logs')]
-    public function viewAuditLogs(Request $req, AuditRecordRepository $auditRecordRepository): Response
+    public function viewAuditLogs(Request $request, AuditRecordRepository $auditRecordRepository): Response
     {
-        $query = $auditRecordRepository->createQueryBuilder('a')
+        /** @var QueryFilterInterface[] $filters */
+        $filters = [
+            AuditRecordTypeFilter::fromQuery($request->query),
+        ];
+
+        $qb = $auditRecordRepository->createQueryBuilder('a')
             ->orderBy('a.id', 'DESC');
 
-        $auditLogs = new Pagerfanta(new QueryAdapter($query, false));
+        foreach ($filters as $filter) {
+            $filter->filter($qb);
+        }
+
+        $auditLogs = new Pagerfanta(new QueryAdapter($qb, true));
         $auditLogs->setNormalizeOutOfRangePages(true);
         $auditLogs->setMaxPerPage(20);
-        $auditLogs->setCurrentPage(max(1, $req->query->getInt('page', 1)));
+        $auditLogs->setCurrentPage(max(1, $request->query->getInt('page', 1)));
+
+        $selectedFilters = [];
+        foreach ($filters as $filter) {
+            $selectedFilters[$filter->getKey()] = $filter->getSelectedValue();
+        }
 
         return $this->render('audit_log/view_audit_logs.html.twig', [
             'auditLogs' => $auditLogs,
+            'allTypes' => AuditRecordType::cases(),
+            'selectedFilters' => $selectedFilters,
         ]);
     }
 }
