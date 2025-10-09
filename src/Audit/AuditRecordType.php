@@ -15,27 +15,28 @@ namespace App\Audit;
 enum AuditRecordType: string
 {
     // package ownership
-    case AddMaintainer = 'add_maintainer'; // TODO
-    case RemoveMaintainer = 'remove_maintainer'; // TODO
-    case TransferPackage = 'transfer_package'; // TODO
+    case MaintainerAdded = 'maintainer_added'; // TODO
+    case MaintainerRemoved = 'maintainer_removed'; // TODO
+    case PackageTransferred = 'package_transferred'; // TODO
 
     // package management
     case PackageCreated = 'package_created';
     case PackageDeleted = 'package_deleted';
-    case CanonicalUrlChange = 'canonical_url_change';
+    case CanonicalUrlChanged = 'canonical_url_changed';
     case VersionDeleted = 'version_deleted';
-    case VersionReferenceChange = 'version_reference_change';
+
+    case VersionReferenceChanged = 'version_reference_changed';
     case PackageAbandoned = 'package_abandoned'; // TODO
     case PackageUnabandoned = 'package_unabandoned'; // TODO
 
     // user management
     case UserCreated = 'user_created'; // TODO
     case UserDeleted = 'user_deleted'; // TODO
-    case PasswordResetRequest = 'password_reset_request'; // TODO
+    case PasswordResetRequested = 'password_reset_requested'; // TODO
     case PasswordReset = 'password_reset'; // TODO
-    case PasswordChange = 'password_change'; // TODO
-    case EmailChange = 'email_change'; // TODO
-    case UsernameChange = 'username_change'; // TODO
+    case PasswordChanged = 'password_changed'; // TODO
+    case EmailChanged = 'email_changed'; // TODO
+    case UsernameChanged = 'username_changed'; // TODO
     case GitHubLinkedWithUser = 'github_linked_with_user'; // TODO
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user'; // TODO
     case TwoFaActivated = 'two_fa_activated'; // TODO
