@@ -40,7 +40,7 @@ class AuditRecord
         #[ORM\Column(type: Types::JSON)]
         public readonly array $attributes,
         #[ORM\Column(nullable: true)]
-        public readonly ?int $userId = null,
+        public readonly ?int $actorId = null,
         #[ORM\Column(nullable: true)]
         public readonly ?string $vendor = null,
         #[ORM\Column(nullable: true)]
@@ -50,26 +50,26 @@ class AuditRecord
         $this->datetime = new \DateTimeImmutable();
     }
 
-    public static function packageCreated(Package $package, ?User $user): self
+    public static function packageCreated(Package $package, ?User $actor): self
     {
-        return new self(AuditRecordType::PackageCreated, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($user)], $user?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::PackageCreated, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function packageDeleted(Package $package, ?User $user): self
+    public static function packageDeleted(Package $package, ?User $actor): self
     {
-        return new self(AuditRecordType::PackageDeleted, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($user, 'automation')], $user?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::PackageDeleted, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function canonicalUrlChange(Package $package, ?User $user, string $oldRepository): self
+    public static function canonicalUrlChange(Package $package, ?User $actor, string $oldRepository): self
     {
-        return new self(AuditRecordType::CanonicalUrlChange, ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($user)], $user?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::CanonicalUrlChange, ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function versionDeleted(Version $version, ?User $user): self
+    public static function versionDeleted(Version $version, ?User $actor): self
     {
         $package = $version->getPackage();
 
-        return new self(AuditRecordType::VersionDeleted, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($user, 'automation')], $user?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::VersionDeleted, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function versionReferenceChange(Version $version, ?string $oldSourceReference, ?string $oldDistReference): self
