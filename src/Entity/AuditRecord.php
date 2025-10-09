@@ -62,7 +62,7 @@ class AuditRecord
 
     public static function canonicalUrlChange(Package $package, ?User $actor, string $oldRepository): self
     {
-        return new self(AuditRecordType::CanonicalUrlChange, ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::CanonicalUrlChanged, ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function versionDeleted(Version $version, ?User $actor): self
@@ -77,7 +77,7 @@ class AuditRecord
         $package = $version->getPackage();
 
         return new self(
-            AuditRecordType::VersionReferenceChange,
+            AuditRecordType::VersionReferenceChanged,
             ['name' => $package->getName(), 'version' => $version->getVersion(), 'source_from' => $oldSourceReference, 'source_to' => $version->getSource()['reference'] ?? null, 'dist_from' => $oldDistReference, 'dist_to' => $version->getDist()['reference'] ?? null],
             vendor: $package->getVendor(),
             packageId: $package->getId()
