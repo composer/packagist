@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
 use App\Entity\Job;
@@ -904,7 +905,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name:package}/maintainers/', name: 'add_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
-    public function createMaintainerAction(Request $req, #[MapEntity] Package $package, LoggerInterface $logger): RedirectResponse
+    public function createMaintainerAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger): RedirectResponse
     {
         $this->denyAccessUnlessGranted(PackageActions::AddMaintainer->value, $package);
 
@@ -914,19 +915,20 @@ class PackageController extends Controller
             try {
                 $em = $this->getEM();
                 if ($username = $form->getData()->getUser()) {
-                    $user = $em->getRepository(User::class)->findOneByUsernameOrEmail($username);
+                    $maintainer = $em->getRepository(User::class)->findOneByUsernameOrEmail($username);
                 }
 
-                if (!empty($user)) {
-                    if (!$package->isMaintainer($user)) {
-                        $package->addMaintainer($user);
-                        $this->packageManager->notifyNewMaintainer($user, $package);
+                if (!empty($maintainer)) {
+                    if (!$package->isMaintainer($maintainer)) {
+                        $package->addMaintainer($maintainer);
+                        $em->persist(AuditRecord::maintainerAdded($package, $maintainer, $user));
+                        $this->packageManager->notifyNewMaintainer($maintainer, $package);
                     }
 
                     $em->persist($package);
                     $em->flush();
 
-                    $this->addFlash('success', $user->getUsername().' is now a '.$package->getName().' maintainer.');
+                    $this->addFlash('success', $maintainer->getUsername().' is now a '.$package->getName().' maintainer.');
 
                     return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
                 }
@@ -941,7 +943,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name:package}/maintainers/delete', name: 'remove_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
-    public function removeMaintainerAction(Request $req, #[MapEntity] Package $package, LoggerInterface $logger): Response
+    public function removeMaintainerAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::RemoveMaintainer->value, $package);
 
@@ -951,18 +953,19 @@ class PackageController extends Controller
             try {
                 $em = $this->getEM();
                 if ($username = $removeMaintainerForm->getData()->getUser()) {
-                    $user = $em->getRepository(User::class)->findOneByUsernameOrEmail($username);
+                    $maintainer = $em->getRepository(User::class)->findOneByUsernameOrEmail($username);
                 }
 
-                if (!empty($user)) {
-                    if ($package->isMaintainer($user)) {
-                        $package->getMaintainers()->removeElement($user);
+                if (!empty($maintainer)) {
+                    if ($package->isMaintainer($maintainer)) {
+                        $package->getMaintainers()->removeElement($maintainer);
+                        $em->persist(AuditRecord::maintainerRemoved($package, $maintainer, $user));
                     }
 
                     $em->persist($package);
                     $em->flush();
 
-                    $this->addFlash('success', $user->getUsername().' is no longer a '.$package->getName().' maintainer.');
+                    $this->addFlash('success', $maintainer->getUsername().' is no longer a '.$package->getName().' maintainer.');
 
                     return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
                 }
