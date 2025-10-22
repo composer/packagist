@@ -71,10 +71,10 @@ class AuditRecordTypeFilterTest extends TestCase
     {
         $types = [
             AuditRecordType::PackageCreated->value,
-            AuditRecordType::VersionReferenceChange->value,
+            AuditRecordType::VersionReferenceChanged->value,
         ];
 
-        $bag = new InputBag(['type' => implode(',', $types)]);
+        $bag = new InputBag(['type' => $types]);
         $filter = AuditRecordTypeFilter::fromQuery($bag);
 
         $qb = new QueryBuilder($this->entityManager);

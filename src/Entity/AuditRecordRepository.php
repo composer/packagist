@@ -55,7 +55,7 @@ class AuditRecordRepository extends ServiceEntityRepository
             'datetime' => $record->datetime,
             'type' => $record->type->value,
             'attributes' => $record->attributes,
-            'userId' => $record->userId,
+            'actorId' => $record->actorId,
             'vendor' => $record->vendor,
             'packageId' => $record->packageId,
         ], [

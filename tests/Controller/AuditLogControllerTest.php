@@ -48,7 +48,7 @@ class AuditLogControllerTest extends IntegrationTestCase
         ];
 
         yield [
-            ['type' => [AuditRecordType::CanonicalUrlChange->value, AuditRecordType::PackageDeleted->value]],
+            ['type' => [AuditRecordType::CanonicalUrlChanged->value, AuditRecordType::PackageDeleted->value]],
             ['Package deleted', 'Canonical URL changed'],
         ];
     }

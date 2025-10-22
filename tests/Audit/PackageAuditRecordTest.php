@@ -56,7 +56,7 @@ class PackageAuditRecordTest extends KernelTestCase
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(2, $logs);
-        self::assertSame(AuditRecordType::CanonicalUrlChange->value, $logs[0]['type']);
+        self::assertSame(AuditRecordType::CanonicalUrlChanged->value, $logs[0]['type']);
         self::assertSame('{"name": "composer/composer", "actor": "unknown", "repository_to": "https://github.com/composer/packagist", "repository_from": "https://github.com/composer/composer"}', $logs[0]['attributes']);
 
         $em->remove($package);
