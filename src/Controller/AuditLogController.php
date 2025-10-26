@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Audit\AuditRecordType;
+use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
 use App\QueryFilter\QueryFilterInterface;
@@ -27,7 +28,7 @@ class AuditLogController extends Controller
 {
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/audit-log', name: 'view_audit_logs')]
-    public function viewAuditLogs(Request $request, AuditRecordRepository $auditRecordRepository): Response
+    public function viewAuditLogs(Request $request, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $displayFactory): Response
     {
         /** @var QueryFilterInterface[] $filters */
         $filters = [
@@ -52,7 +53,8 @@ class AuditLogController extends Controller
         }
 
         return $this->render('audit_log/view_audit_logs.html.twig', [
-            'auditLogs' => $auditLogs,
+            'auditLogDisplays' => $displayFactory->build($auditLogs),
+            'auditLogPaginator' => $auditLogs,
             'allTypes' => AuditRecordType::cases(),
             'selectedFilters' => $selectedFilters,
         ]);
