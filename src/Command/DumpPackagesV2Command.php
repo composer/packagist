@@ -22,6 +22,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Graze\DogStatsD\Client as StatsDClient;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -30,17 +31,15 @@ class DumpPackagesV2Command extends Command
 {
     use \App\Util\DoctrineTrait;
 
-    private V2Dumper $dumper;
-    private Locker $locker;
-    private ManagerRegistry $doctrine;
-    private string $cacheDir;
-
-    public function __construct(V2Dumper $dumper, Locker $locker, ManagerRegistry $doctrine, string $cacheDir, private Logger $logger)
+    public function __construct(
+        private V2Dumper $dumper,
+        private Locker $locker,
+        private ManagerRegistry $doctrine,
+        private string $cacheDir,
+        private Logger $logger,
+        private StatsDClient $statsd,
+    )
     {
-        $this->dumper = $dumper;
-        $this->locker = $locker;
-        $this->doctrine = $doctrine;
-        $this->cacheDir = $cacheDir;
         parent::__construct();
     }
 
@@ -105,6 +104,11 @@ class DumpPackagesV2Command extends Command
                     $ids = $this->getEM()->getConnection()->fetchFirstColumn('SELECT id FROM package WHERE frozen IS NULL ORDER BY id ASC');
                 } else {
                     $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2();
+                    $this->statsd->gauge('packagist.metadata_dump_queue', \count($ids));
+                    if (\count($ids) > 2000) {
+                        $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids)]);
+                        $ids = array_slice($ids, 0, 2000);
+                    }
                 }
 
                 if ($ids || $force) {

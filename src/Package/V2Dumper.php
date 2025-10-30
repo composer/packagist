@@ -181,7 +181,7 @@ class V2Dumper
         }
 
         // Verify all written files match CDN versions
-        if (!empty($this->writtenFiles) && !$force) {
+        if (!empty($this->writtenFiles) && !$force && \count($this->writtenFiles) < 50) {
             if ($verbose) {
                 echo 'Verifying ' . count($this->writtenFiles) . ' written files match CDN versions'.\PHP_EOL;
             }
