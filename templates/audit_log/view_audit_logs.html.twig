@@ -1,0 +1,59 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}
+    Packagist - Audit Logs
+{% endblock %}
+
+{% block content %}
+    <h2 class="title">Audit Logs</h2>
+
+    <form method="get" action="{{ path('view_audit_logs') }}" name="filters">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="type-filter">Type:</label>
+                    <select name="type[]" id="type-filter" multiple>
+                        {% for type in allTypes %}
+                            <option value="{{ type.value }}" {% if type.value in selectedFilters.type %}selected="selected"{% endif %}>
+                                {{ ('audit_log.type.'~type.value)|trans }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <input type="submit" value="Filter">
+                <input type="reset" value="Reset">
+            </div>
+        </div>
+    </form>
+
+    {% if auditLogs|length %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Type</th>
+                    <th>Package</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in auditLogs %}
+                    <tr>
+                        <td>{{ log.datetime|date('Y-m-d H:i:s') }} UTC</td>
+                        <td data-test="audit-log-type">{{ ('audit_log.type.'~log.type.value)|trans }}</td>
+                        <td>{{ log.attributes['name'] ?? '-' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if auditLogs.haveToPaginate() %}
+            {{ pagerfanta(auditLogs, 'twitter_bootstrap', {'proximity': 2}) }}
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <p>No audit logs found.</p>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -111,6 +111,7 @@ class IntegrationTestCase extends WebTestCase
         $user->setApiToken($apiToken);
         $user->setSafeApiToken($safeApiToken);
         $user->setGithubId($githubId);
+        $user->setRoles($roles);
 
         return $user;
     }
