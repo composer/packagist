@@ -75,7 +75,7 @@ class AuditRecord
         $previous = array_map($callback, $previousMaintainers);
         $current = array_map($callback, $currentMaintainers);
 
-        return new self(AuditRecordType::PackageTransferred, ['name' => $package->getName(), 'actor' => self::getUserData($actor), 'previous_maintainers' => $previous, 'current_maintainers' => $current], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::PackageTransferred, ['name' => $package->getName(), 'actor' => self::getUserData($actor, 'admin'), 'previous_maintainers' => $previous, 'current_maintainers' => $current], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function versionDeleted(Version $version, ?User $actor): self

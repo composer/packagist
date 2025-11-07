@@ -141,7 +141,7 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         ]);
 
         $this->assertNotNull($record);
-        $this->assertSame('unknown', $record->attributes['actor']);
+        $this->assertSame('admin', $record->attributes['actor']);
         $this->assertSame($package->getId(), $record->packageId);
 
         $callable = fn (array $user) => $user['username'];
