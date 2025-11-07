@@ -19,6 +19,7 @@ use App\Entity\Package;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
 use Doctrine\Persistence\ManagerRegistry;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -48,10 +49,10 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $this->commandTester = new CommandTester($command);
     }
 
-    public function testExecuteSuccessWithAllMaintainersFound(): void
+    public function testExecuteSuccessForVendor(): void
     {
         $this->commandTester->execute([
-            'vendor' => 'vendor1',
+            'vendorOrPackage' => 'vendor1',
             'maintainers' => ['bob', 'alice'],
         ]);
 
@@ -71,17 +72,41 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $callable = fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package1->getMaintainers()->toArray()));
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package2->getMaintainers()->toArray()));
-        $this->assertEqualsCanonicalizing(['john'], array_map($callable, $package3->getMaintainers()->toArray()), 'vendor1 package maintainers should not be changed');
+        $this->assertEqualsCanonicalizing(['john'], array_map($callable, $package3->getMaintainers()->toArray()), 'vendor2 packages should not be changed');
 
         $this->assertAuditLogWasCreated($package1, ['john', 'alice'], ['alice', 'bob']);
         $this->assertAuditLogWasCreated($package2, ['john', 'bob'], ['alice', 'bob']);
+    }
 
+    public function testExecuteSuccessForPackage(): void
+    {
+        $this->commandTester->execute([
+            'vendorOrPackage' => 'vendor2/package1',
+            'maintainers' => ['john', 'alice'],
+        ]);
+
+        $this->commandTester->assertCommandIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+
+        $package2 = $em->find(Package::class, $this->package2->getId());
+        $package3 = $em->find(Package::class, $this->package3->getId());
+
+        $this->assertNotNull($package2);
+        $this->assertNotNull($package3);
+
+        $callable = fn (User $user) => $user->getUsernameCanonical();
+        $this->assertEqualsCanonicalizing(['bob', 'john'], array_map($callable, $package2->getMaintainers()->toArray()), 'vendor1 packages should not be changed');
+        $this->assertEqualsCanonicalizing(['alice', 'john'], array_map($callable, $package3->getMaintainers()->toArray()));
+
+        $this->assertAuditLogWasCreated($package3, ['john'], ['alice', 'john']);
     }
 
     public function testExecuteWithDryRunDoesNothing(): void
     {
         $this->commandTester->execute([
-            'vendor' => 'vendor1',
+            'vendorOrPackage' => 'vendor1',
             'maintainers' => ['alice'],
             '--dry-run' => true,
         ]);
@@ -105,7 +130,7 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
     public function testExecuteFailsWithUnknownMaintainers(): void
     {
         $this->commandTester->execute([
-            'vendor' => 'vendor1',
+            'vendorOrPackage' => 'vendor1',
             'maintainers' => ['unknown1', 'alice', 'unknown2'],
         ]);
 
@@ -118,14 +143,14 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
     public function testExecuteFailsIfNoVendorPackagesFound(): void
     {
         $this->commandTester->execute([
-            'vendor' => 'foobar',
+            'vendorOrPackage' => 'foobar',
             'maintainers' => ['bob', 'alice'],
         ]);
 
         $this->assertSame(Command::FAILURE, $this->commandTester->getStatusCode());
 
         $output = $this->commandTester->getDisplay();
-        $this->assertStringContainsString('No packages found for vendor', $output);
+        $this->assertStringContainsString('No packages found for foobar', $output);
     }
 
     /**

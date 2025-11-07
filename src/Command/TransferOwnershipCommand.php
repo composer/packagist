@@ -41,7 +41,7 @@ class TransferOwnershipCommand extends Command
             ->setName('packagist:transfer-ownership')
             ->setDescription('Transfer all packages of a vendor')
             ->setDefinition([
-                new InputArgument('vendor', InputArgument::REQUIRED,'Vendor prefix'),
+                new InputArgument('vendorOrPackage', InputArgument::REQUIRED,'Vendor or package name'),
                 new InputArgument('maintainers', InputArgument::IS_ARRAY|InputArgument::REQUIRED, 'The usernames of the new maintainers'),
                 new InputOption('dry-run', null, InputOption::VALUE_NONE, 'Dry run'),
             ])
@@ -56,17 +56,17 @@ class TransferOwnershipCommand extends Command
             $output->writeln('ℹ️ DRY RUN');
         }
 
-        $vendor = $input->getArgument('vendor');
+        $vendorOrPackage = $input->getArgument('vendorOrPackage');
         $maintainers = $this->queryAndValidateMaintainers($input, $output);
 
         if (!count($maintainers)) {
             return Command::FAILURE;
         }
 
-        $packages = $this->queryVendorPackages($vendor);
+        $packages = $this->queryPackages($vendorOrPackage);
 
         if (!count($packages)) {
-            $output->writeln(sprintf('<error>No packages found for vendor %s</error>', $vendor));
+            $output->writeln(sprintf('<error>No packages found for %s</error>', $vendorOrPackage));
             return Command::FAILURE;
         }
 
@@ -111,13 +111,20 @@ class TransferOwnershipCommand extends Command
     /**
      * @return Package[]
      */
-    private function queryVendorPackages(string $vendor): array
+    private function queryPackages(string $vendorOrPackage): array
     {
-        return $this->getEM()
-            ->getRepository(Package::class)
-            ->getFilteredQueryBuilder(['vendor' => $vendor], true)
-            ->getQuery()
-            ->getResult();
+        $repository = $this->getEM()->getRepository(Package::class);
+        $isPackageName = str_contains($vendorOrPackage, '/');
+
+        if ($isPackageName) {
+            $package = $repository->findOneBy(['name' => $vendorOrPackage]);
+
+            return $package ? [$package] : [];
+        }
+
+        return $repository->findBy([
+            'vendor' => $vendorOrPackage
+        ]);
     }
 
     /**
@@ -127,6 +134,8 @@ class TransferOwnershipCommand extends Command
     private function outputPackageTable(OutputInterface $output, array $packages, array $maintainers): void
     {
         $rows = [];
+
+        usort($packages, fn (Package $a, Package $b) => strcasecmp($a->getName(), $b->getName()));
 
         $newMaintainers = array_map(fn (User $user) => $user->getUsername(), $maintainers);
 
