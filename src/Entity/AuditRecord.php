@@ -65,6 +65,19 @@ class AuditRecord
         return new self(AuditRecordType::CanonicalUrlChanged, ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
+    /**
+     * @param User[] $previousMaintainers
+     * @param User[] $currentMaintainers
+     */
+    public static function packageTransferred(Package $package, ?User $actor, array $previousMaintainers, array $currentMaintainers): self
+    {
+        $callback = fn (User $user) => self::getUserData($user);
+        $previous = array_map($callback, $previousMaintainers);
+        $current = array_map($callback, $currentMaintainers);
+
+        return new self(AuditRecordType::PackageTransferred, ['name' => $package->getName(), 'actor' => self::getUserData($actor), 'previous_maintainers' => $previous, 'current_maintainers' => $current], $actor?->getId(), $package->getVendor(), $package->getId());
+    }
+
     public static function versionDeleted(Version $version, ?User $actor): self
     {
         $package = $version->getPackage();

@@ -12,6 +12,7 @@
 
 namespace App\Command;
 
+use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Util\DoctrineTrait;
@@ -156,10 +157,14 @@ class TransferOwnershipCommand extends Command
     private function transferOwnership(array $packages, array $maintainers): void
     {
         foreach ($packages as $package) {
+            $oldMaintainers = $package->getMaintainers()->toArray();
+
             $package->getMaintainers()->clear();
             foreach ($maintainers as $maintainer) {
                 $package->addMaintainer($maintainer);
             }
+
+            $this->doctrine->getManager()->persist(AuditRecord::packageTransferred($package, null, $oldMaintainers, array_values($maintainers)));
         }
 
         $this->doctrine->getManager()->flush();

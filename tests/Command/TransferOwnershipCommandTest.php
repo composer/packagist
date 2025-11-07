@@ -12,17 +12,13 @@
 
 namespace App\Tests\Command;
 
+use App\Audit\AuditRecordType;
 use App\Command\TransferOwnershipCommand;
+use App\Entity\AuditRecord;
 use App\Entity\Package;
-use App\Entity\PackageRepository;
 use App\Entity\User;
-use App\Entity\UserRepository;
 use App\Tests\IntegrationTestCase;
-use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
-use PHPUnit\Framework\MockObject\MockObject;
-use Symfony\Bundle\FrameworkBundle\Console\Application;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -76,6 +72,10 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package1->getMaintainers()->toArray()));
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package2->getMaintainers()->toArray()));
         $this->assertEqualsCanonicalizing(['john'], array_map($callable, $package3->getMaintainers()->toArray()), 'vendor1 package maintainers should not be changed');
+
+        $this->assertAuditLogWasCreated($package1, ['john', 'alice'], ['alice', 'bob']);
+        $this->assertAuditLogWasCreated($package2, ['john', 'bob'], ['alice', 'bob']);
+
     }
 
     public function testExecuteWithDryRunDoesNothing(): void
@@ -126,5 +126,26 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
 
         $output = $this->commandTester->getDisplay();
         $this->assertStringContainsString('No packages found for vendor', $output);
+    }
+
+    /**
+     * @param string[] $oldMaintainers
+     * @param string[] $newMaintainers
+     */
+    private function assertAuditLogWasCreated(Package $package, array $oldMaintainers, array $newMaintainers): void
+    {
+        $record = $this->getEM()->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditRecordType::PackageTransferred->value,
+            'packageId' => $package->getId(),
+            'actorId' => null,
+        ]);
+
+        $this->assertNotNull($record);
+        $this->assertSame('unknown', $record->attributes['actor']);
+        $this->assertSame($package->getId(), $record->packageId);
+
+        $callable = fn (array $user) => $user['username'];
+        $this->assertEqualsCanonicalizing($oldMaintainers, array_map($callable, $record->attributes['previous_maintainers']));
+        $this->assertEqualsCanonicalizing($newMaintainers, array_map($callable, $record->attributes['current_maintainers']));
     }
 }
