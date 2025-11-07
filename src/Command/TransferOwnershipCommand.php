@@ -84,7 +84,7 @@ class TransferOwnershipCommand extends Command
      */
     private function queryAndValidateMaintainers(InputInterface $input, OutputInterface $output): array
     {
-        $usernames = array_map('strtolower', $input->getArgument('maintainers'));
+        $usernames = array_map('mb_strtolower', $input->getArgument('maintainers'));
         sort($usernames);
 
         $maintainers = $this->getEM()->getRepository(User::class)->findUsersByUsername($usernames, ['usernameCanonical' => 'ASC']);
