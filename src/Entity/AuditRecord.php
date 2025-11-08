@@ -45,6 +45,8 @@ class AuditRecord
         public readonly ?string $vendor = null,
         #[ORM\Column(nullable: true)]
         public readonly ?int $packageId = null,
+        #[ORM\Column(nullable: true)]
+        public readonly ?int $userId = null,
     ) {
         $this->id = new Ulid();
         $this->datetime = new \DateTimeImmutable();
@@ -95,6 +97,16 @@ class AuditRecord
             vendor: $package->getVendor(),
             packageId: $package->getId()
         );
+    }
+
+    public static function maintainerAdded(Package $package, User $maintainer, ?User $actor): self
+    {
+        return new self(AuditRecordType::MaintainerAdded, ['name' => $package->getName(), 'maintainer' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
+    }
+
+    public static function maintainerRemoved(Package $package, User $maintainer, ?User $actor): self
+    {
+        return new self(AuditRecordType::MaintainerRemoved, ['name' => $package->getName(), 'maintainer' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
     }
 
     /**

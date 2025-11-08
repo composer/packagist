@@ -15,8 +15,8 @@ namespace App\Audit;
 enum AuditRecordType: string
 {
     // package ownership
-    case MaintainerAdded = 'maintainer_added'; // TODO
-    case MaintainerRemoved = 'maintainer_removed'; // TODO
+    case MaintainerAdded = 'maintainer_added';
+    case MaintainerRemoved = 'maintainer_removed';
     case PackageTransferred = 'package_transferred';
 
     // package management
