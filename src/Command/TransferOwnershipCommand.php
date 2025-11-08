@@ -165,8 +165,17 @@ class TransferOwnershipCommand extends Command
      */
     private function transferOwnership(array $packages, array $maintainers): void
     {
+        $normalizedMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $maintainers));
+        sort($normalizedMaintainers, SORT_NUMERIC);
+
         foreach ($packages as $package) {
             $oldMaintainers = $package->getMaintainers()->toArray();
+
+            $normalizedOldMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $oldMaintainers));
+            sort($normalizedOldMaintainers, SORT_NUMERIC);
+            if ($normalizedMaintainers === $normalizedOldMaintainers) {
+                continue;
+            }
 
             $package->getMaintainers()->clear();
             foreach ($maintainers as $maintainer) {
