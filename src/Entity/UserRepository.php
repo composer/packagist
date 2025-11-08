@@ -42,6 +42,23 @@ class UserRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param string[] $usernames
+     * @param ?array<string, string> $orderBy
+     * @return array<string, User>
+     */
+    public function findUsersByUsername(array $usernames, ?array $orderBy = null): array
+    {
+        $matches = $this->findBy(['usernameCanonical' => $usernames], $orderBy);
+
+        $users = [];
+        foreach ($matches as $match) {
+            $users[$match->getUsernameCanonical()] = $match;
+        }
+
+        return $users;
+    }
+
+    /**
      * @return list<User>
      */
     public function findUsersMissingApiToken(): array

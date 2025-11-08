@@ -17,7 +17,7 @@ enum AuditRecordType: string
     // package ownership
     case MaintainerAdded = 'maintainer_added';
     case MaintainerRemoved = 'maintainer_removed';
-    case PackageTransferred = 'package_transferred'; // TODO
+    case PackageTransferred = 'package_transferred';
 
     // package management
     case PackageCreated = 'package_created';
