@@ -45,6 +45,12 @@ class WebController extends Controller
         return $this->render('web/index.html.twig');
     }
 
+    #[Route('/sponsor/', name: 'sponsor')]
+    public function sponsor(Request $req): Response
+    {
+        return $this->render('web/sponsor.html.twig');
+    }
+
     #[Route('/search/', name: 'search_web')]
     public function search(Request $req): RedirectResponse|Response
     {
