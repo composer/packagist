@@ -33,7 +33,7 @@ class AuditLogControllerTest extends IntegrationTestCase
         $this->store($auditRecord1, $auditRecord);
 
         $this->client->loginUser($user);
-        $crawler = $this->client->request('GET', '/audit-log?' . http_build_query($filters));
+        $crawler = $this->client->request('GET', '/transparency-log?' . http_build_query($filters));
         static::assertResponseIsSuccessful();
 
         $rows = $crawler->filter('[data-test=audit-log-type]');
