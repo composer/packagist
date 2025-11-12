@@ -1,4 +1,10 @@
-<strong>{{ display.packageName }}</strong><br>
+<strong>
+    {%- if display.packageName is existing_package -%}
+        <a href="{{ path('view_package', { 'name': display.packageName }) }}">{{ display.packageName }}</a>
+    {%- else -%}
+        {{ display.packageName }}
+    {%- endif -%}
+</strong><br>
 From: {{ display.repositoryFrom }}<br>
 To: {{ display.repositoryTo }}<br>
 Changed by: {{ display.actor.username }}
