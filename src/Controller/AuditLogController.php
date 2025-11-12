@@ -27,7 +27,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class AuditLogController extends Controller
 {
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/audit-log', name: 'view_audit_logs')]
+    #[Route(path: '/transparency-log', name: 'view_audit_logs')]
     public function viewAuditLogs(Request $request, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $displayFactory): Response
     {
         /** @var QueryFilterInterface[] $filters */
