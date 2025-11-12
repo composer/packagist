@@ -1,0 +1,8 @@
+<strong>{{ display.packageName }}</strong> {{ display.version }}<br>
+{% if display.sourceFrom or display.sourceTo %}
+    Source: {{ display.sourceFrom ?? 'none' }} → {{ display.sourceTo ?? 'none' }}<br>
+{% endif %}
+{% if display.distFrom or display.distTo %}
+    Dist: {{ display.distFrom ?? 'none' }} → {{ display.distTo ?? 'none' }}<br>
+{% endif %}
+Changed by: {{ display.actor.username }}

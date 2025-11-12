@@ -28,28 +28,30 @@
         </div>
     </form>
 
-    {% if auditLogs|length %}
-        <table class="table">
+    {% if auditLogDisplays|length %}
+        <table class="table audit-log-table">
             <thead>
-                <tr>
-                    <th>Date & Time</th>
-                    <th>Type</th>
-                    <th>Package</th>
-                </tr>
+            <tr>
+                <th class="audit-log-datetime">Date & Time</th>
+                <th class="audit-log-type">Type</th>
+                <th class="audit-log-details">Details</th>
+            </tr>
             </thead>
             <tbody>
-                {% for log in auditLogs %}
+                {% for display in auditLogDisplays %}
                     <tr>
-                        <td>{{ log.datetime|date('Y-m-d H:i:s') }} UTC</td>
-                        <td data-test="audit-log-type">{{ ('audit_log.type.'~log.type.value)|trans }}</td>
-                        <td>{{ log.attributes['name'] ?? '-' }}</td>
+                        <td class="audit-log-datetime">{{ display.dateTime|date('Y-m-d H:i:s') }} UTC</td>
+                        <td class="audit-log-type" data-test="audit-log-type">{{ display.typeTranslationKey|trans }}</td>
+                        <td class="audit-log-details">
+                            {% include display.templateName with {display} only %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        {% if auditLogs.haveToPaginate() %}
-            {{ pagerfanta(auditLogs, 'twitter_bootstrap', {'proximity': 2}) }}
+        {% if auditLogPaginator.haveToPaginate() %}
+            {{ pagerfanta(auditLogPaginator, 'twitter_bootstrap', {'proximity': 2}) }}
         {% endif %}
     {% else %}
         <div class="alert alert-info">

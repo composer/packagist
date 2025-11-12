@@ -1864,3 +1864,23 @@ body {
         background-color: #ed9e2e;
     }
 }
+
+.audit-log-table {
+    table-layout: fixed;
+
+    .audit-log-datetime {
+        width: 200px;
+
+        @media (max-width: 767px) {
+            width: 130px;
+        }
+    }
+
+    .audit-log-type {
+        width: 180px;
+
+        @media (max-width: 767px) {
+            width: 120px;
+        }
+    }
+}
