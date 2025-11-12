@@ -384,6 +384,7 @@ class Updater
                 || ($flags & self::UPDATE_EQUAL_REFS)
                 // or if the package must be marked abandoned from composer.json
                 || ($data->isAbandoned() && !$package->isAbandoned())
+                || ($data->isAbandoned() && $data->getReplacementPackage() !== $package->getReplacementPackage())
             ) {
                 $version = $versionRepo->find($existingVersion['id']);
                 if (null === $version) {
