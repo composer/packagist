@@ -1,0 +1,10 @@
+<strong>
+    {%- if display.packageName is existing_package -%}
+        <a href="{{ path('view_package', { 'name': display.packageName }) }}">{{ display.packageName }}</a>
+    {%- else -%}
+        {{ display.packageName }}
+    {%- endif -%}
+</strong><br>
+Previous maintainers: {% for maintainer in display.previousMaintainers %}{{ maintainer.username }}{% if not loop.last %}, {% endif %}{% endfor %}<br>
+Current maintainers: {% for maintainer in display.currentMaintainers %}{{ maintainer.username }}{% if not loop.last %}, {% endif %}{% endfor %}<br>
+Transferred by: {{ display.actor.username }}
