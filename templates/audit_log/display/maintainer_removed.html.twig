@@ -1,0 +1,9 @@
+<strong>
+    {%- if display.packageName is existing_package -%}
+        <a href="{{ path('view_package', { 'name': display.packageName }) }}">{{ display.packageName }}</a>
+    {%- else -%}
+        {{ display.packageName }}
+    {%- endif -%}
+</strong><br>
+Maintainer: {{ display.maintainer.username }}<br>
+Removed by: {{ display.actor.username }}
