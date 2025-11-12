@@ -490,7 +490,7 @@ class ApiController extends Controller
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_auto';
                 } else {
-                    $this->logger->error('Failed validating GitHub webhook signature', ['sig' => $sig, 'expected' => $expected, 'request' => $request->getContent()]);
+                    $this->logger->error('Failed validating GitHub webhook signature', ['sig' => $sig, 'expected' => $expected, 'query_params' => $request->query->all(), 'repo' => json_decode($request->getContent(), true)['repository']['html_url'] ?? null]);
                 }
             }
         }
