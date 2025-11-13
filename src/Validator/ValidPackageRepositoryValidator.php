@@ -90,7 +90,7 @@ class ValidPackageRepositoryValidator extends ConstraintValidator
         }
 
         $name = $value->getName();
-        if (!Preg::isMatch('{^[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*$}iD', $name)) {
+        if (!Preg::isMatch(sprintf('{^%s$}D', Package::PACKAGE_NAME_REGEX), $name)) {
             $this->addViolation('The package name '.htmlentities($name, \ENT_COMPAT, 'utf-8').' is invalid, it should have a vendor name, a forward slash, and a package name. The vendor and package name can be words separated by -, . or _. The complete name should match "[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9]([_.-]?[a-z0-9]+)*".');
 
             return;
