@@ -801,7 +801,7 @@ class PackageController extends Controller
         return new Response('', 204);
     }
 
-    #[Route(path: '/packages/{name}', name: 'update_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'], defaults: ['_format' => 'json'], methods: ['PUT'])]
+    #[Route(path: '/packages/{name}', name: 'update_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'json'], methods: ['PUT'])]
     public function updatePackageAction(Request $req, string $name, #[CurrentUser] User $user): Response
     {
         try {
@@ -853,7 +853,7 @@ class PackageController extends Controller
         return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours'], 404);
     }
 
-    #[Route(path: '/packages/{name}', name: 'delete_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'], methods: ['DELETE'])]
+    #[Route(path: '/packages/{name}', name: 'delete_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['DELETE'])]
     public function deletePackageAction(Request $req, string $name): Response
     {
         $package = $this->getPartialPackageWithVersions($req, $name);
@@ -878,7 +878,7 @@ class PackageController extends Controller
         return new Response('Invalid form input', 400);
     }
 
-    #[Route(path: '/packages/{name:package}/maintainers/', name: 'add_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
+    #[Route(path: '/packages/{name:package}/maintainers/', name: 'add_maintainer', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
     public function createMaintainerAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger): RedirectResponse
     {
         $this->denyAccessUnlessGranted(PackageActions::AddMaintainer->value, $package);
@@ -916,7 +916,7 @@ class PackageController extends Controller
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
-    #[Route(path: '/packages/{name:package}/maintainers/delete', name: 'remove_maintainer', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'])]
+    #[Route(path: '/packages/{name:package}/maintainers/delete', name: 'remove_maintainer', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
     public function removeMaintainerAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::RemoveMaintainer->value, $package);
