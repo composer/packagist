@@ -14,6 +14,7 @@ namespace App\Model;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use Algolia\AlgoliaSearch\SearchClient;
+use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
 use App\Entity\EmptyReferenceCache;
@@ -236,6 +237,32 @@ class PackageManager
 
             return false;
         }
+
+        return true;
+    }
+
+    /*
+     * @param User[] $oldMaintainers
+     * @param User[] $newMaintainers
+     */
+    public function transferPackage(Package $package, array $oldMaintainers, array $newMaintainers): bool
+    {
+        $normalizedOldMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $oldMaintainers));
+        sort($normalizedOldMaintainers, SORT_NUMERIC);
+
+        $normalizedMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $newMaintainers));
+        sort($normalizedMaintainers, SORT_NUMERIC);
+
+        if ($normalizedMaintainers === $normalizedOldMaintainers) {
+            return false;
+        }
+
+        $package->getMaintainers()->clear();
+        foreach ($newMaintainers as $maintainer) {
+            $package->addMaintainer($maintainer);
+        }
+
+        $this->doctrine->getManager()->persist(AuditRecord::packageTransferred($package, null, $oldMaintainers, $newMaintainers));
 
         return true;
     }

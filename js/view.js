@@ -7,14 +7,23 @@ const init = function ($) {
     var versionCache = {},
         ongoingRequest = false;
 
-    $('#add-maintainer').on('click', function (e) {
+    const togglePackageForm = function (selector) {
         $('#remove-maintainer-form').addClass('hidden');
-        $('#add-maintainer-form').removeClass('hidden');
+        $('#add-maintainer-form').addClass('hidden');
+        $('#transfer-package-form').addClass('hidden');
+        $(selector).removeClass('hidden');
+    }
+
+    $('#add-maintainer').on('click', function (e) {
+        togglePackageForm('#add-maintainer-form');
         e.preventDefault();
     });
     $('#remove-maintainer').on('click', function (e) {
-        $('#add-maintainer-form').addClass('hidden');
-        $('#remove-maintainer-form').removeClass('hidden');
+        togglePackageForm('#remove-maintainer-form');
+        e.preventDefault();
+    });
+    $('#transfer-package').on('click', function (e) {
+        togglePackageForm('#transfer-package-form');
         e.preventDefault();
     });
 
@@ -226,6 +235,38 @@ const init = function ($) {
             $(this).addClass('hidden');
             $(versionsList).css('max-height', 'inherit');
         });
+    }
+
+    // Handle add/remove buttons for transfer package form
+    $('.add-maintainer-item').on('click', function (e) {
+        e.preventDefault();
+
+        var list = $('.maintainers-list');
+        var prototype = list.data('prototype');
+        var index = list.find('li').length + 1;
+
+        var newForm = prototype.replace(/__name__/g, index);
+        var newItem = $('<li></li>').append(newForm);
+        addMaintainerRemoveButton(newItem);
+        list.append(newItem);
+    });
+
+    $('.maintainers-list').find('li').each(function(index) {
+        addMaintainerRemoveButton($(this));
+    });
+
+    function addMaintainerRemoveButton(item) {
+        var removeButton = $('<button type="button" class="btn btn-danger btn-sm"><i class="glyphicon glyphicon-remove"></i></button>');
+        removeButton.on('click', function(e) {
+            e.preventDefault();
+
+            if ($('.maintainers-list').find('li').length === 1) {
+                return;
+            }
+
+            item.remove();
+        });
+        item.append(removeButton);
     }
 };
 
