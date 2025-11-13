@@ -124,7 +124,33 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
 
         $callable = fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['john', 'alice'], array_map($callable, $package1->getMaintainers()->toArray()));
-        $this->assertEqualsCanonicalizing(['john', 'bob'], array_map($callable, $package2->getMaintainers()->toArray()));
+    }
+
+    public function testExecuteIgnoresIdenticalMaintainers(): void
+    {
+        $this->commandTester->execute([
+            'vendorOrPackage' => 'vendor1',
+            'maintainers' => ['alice', 'john'],
+        ]);
+
+        $this->commandTester->assertCommandIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+
+        $package1 = $em->find(Package::class, $this->package1->getId());
+        $package2 = $em->find(Package::class, $this->package2->getId());
+
+        $this->assertNotNull($package1);
+        $this->assertNotNull($package2);
+
+        $callable = fn (User $user) => $user->getUsernameCanonical();
+        $this->assertEqualsCanonicalizing(['alice', 'john'], array_map($callable, $package1->getMaintainers()->toArray()));
+        $this->assertEqualsCanonicalizing(['alice', 'john'], array_map($callable, $package2->getMaintainers()->toArray()));
+
+        $record = $this->retrieveAuditRecordForPackage($package1);
+        $this->assertNull($record, 'No audit log should be created if package maintainers are identical');
+        $this->assertAuditLogWasCreated($package2, ['john', 'bob'], ['alice', 'john']);
     }
 
     public function testExecuteFailsWithUnknownMaintainers(): void
@@ -159,12 +185,7 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
      */
     private function assertAuditLogWasCreated(Package $package, array $oldMaintainers, array $newMaintainers): void
     {
-        $record = $this->getEM()->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditRecordType::PackageTransferred->value,
-            'packageId' => $package->getId(),
-            'actorId' => null,
-        ]);
-
+        $record = $this->retrieveAuditRecordForPackage($package);
         $this->assertNotNull($record);
         $this->assertSame('admin', $record->attributes['actor']);
         $this->assertSame($package->getId(), $record->packageId);
@@ -172,5 +193,14 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $callable = fn (array $user) => $user['username'];
         $this->assertEqualsCanonicalizing($oldMaintainers, array_map($callable, $record->attributes['previous_maintainers']));
         $this->assertEqualsCanonicalizing($newMaintainers, array_map($callable, $record->attributes['current_maintainers']));
+    }
+
+    private function retrieveAuditRecordForPackage(Package $package): ?AuditRecord
+    {
+        return $this->getEM()->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditRecordType::PackageTransferred->value,
+            'packageId' => $package->getId(),
+            'actorId' => null,
+        ]);
     }
 }
