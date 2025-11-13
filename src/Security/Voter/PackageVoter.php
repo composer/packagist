@@ -54,7 +54,7 @@ class PackageVoter extends Voter
             PackageActions::Delete => $this->canDelete($package, $user),
             PackageActions::DeleteVersion => $this->canDeleteVersion($package, $user),
             PackageActions::Edit => $this->canEdit($package, $user),
-            PackageActions::AddMaintainer => $this->canAddMaintainers($package, $user),
+            PackageActions::AddMaintainer, PackageActions::TransferPackage => $this->canAddMaintainers($package, $user),
             PackageActions::RemoveMaintainer => $this->canRemoveMaintainers($package, $user),
             PackageActions::Update => $package->isMaintainer($user) || $this->security->isGranted('ROLE_UPDATE_PACKAGES'),
         };
