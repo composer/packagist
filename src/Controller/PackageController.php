@@ -27,10 +27,12 @@ use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
 use App\Form\Model\MaintainerRequest;
+use App\Form\Model\TransferPackageRequest;
 use App\Form\Type\AbandonedType;
 use App\Form\Type\AddMaintainerRequestType;
 use App\Form\Type\PackageType;
 use App\Form\Type\RemoveMaintainerRequestType;
+use App\Form\Type\TransferPackageRequestType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Model\PackageManager;
@@ -666,6 +668,7 @@ class PackageController extends Controller
 
             $data['addMaintainerForm'] = $this->createAddMaintainerForm($package)->createView();
             $data['removeMaintainerForm'] = $this->createRemoveMaintainerForm($package)->createView();
+            $data['transferPackageForm'] = $this->createTransferPackageForm($package)->createView();
             $data['deleteForm'] = $this->createDeletePackageForm($package)->createView();
         } else {
             $data['hasVersionSecurityAdvisories'] = [];
@@ -958,6 +961,41 @@ class PackageController extends Controller
             'removeMaintainerForm' => $removeMaintainerForm,
             'show_remove_maintainer_form' => true,
         ]);
+    }
+
+
+    #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
+    public function transferPackageAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger): RedirectResponse
+    {
+        $this->denyAccessUnlessGranted(PackageActions::TransferPackage->value, $package);
+
+        $oldMaintainers = $package->getMaintainers()->toArray();
+
+        $form = $this->createTransferPackageForm($package);
+        $form->handleRequest($req);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $em = $this->getEM();
+                $newMaintainers = $form->getData()->getMaintainers()->toArray();
+                $result = $this->packageManager->transferPackage($package, $oldMaintainers, $newMaintainers);
+                $em->flush();
+
+                if ($result) {
+                    $usernames = array_map(fn (User $user) => $user->getUsername(), $newMaintainers);
+                    $this->addFlash('success', sprintf('Package has been transferred to %s', implode(', ', $usernames)));
+                } else {
+                    $this->addFlash('warning', 'Package maintainers are identical and have not been changed');
+                }
+
+                return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+            } catch (\Exception $e) {
+                $logger->critical($e->getMessage(), ['exception', $e]);
+                $this->addFlash('error', 'The package could not be transferred.');
+            }
+        }
+
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
     #[Route(path: '/packages/{name:package}/edit', name: 'edit_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
@@ -1606,6 +1644,17 @@ class PackageController extends Controller
         return $this->createForm(RemoveMaintainerRequestType::class, $maintainerRequest, [
             'package' => $package,
         ]);
+    }
+
+    /**
+     * @return FormInterface<TransferPackageRequest>
+     */
+    private function createTransferPackageForm(Package $package): FormInterface
+    {
+        $transferRequest = new TransferPackageRequest();
+        $transferRequest->setMaintainers($package->getMaintainers());
+
+        return $this->createForm(TransferPackageRequestType::class, $transferRequest);
     }
 
     /**

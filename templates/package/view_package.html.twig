@@ -146,6 +146,7 @@
                                 {% endfor %}
                                 {% if is_granted('remove_maintainer', package) %}<a title="Remove Maintainer" id="remove-maintainer" href="{{ path('remove_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
                                 {% if is_granted('add_maintainer', package) %}<a title="Add Maintainer" id="add-maintainer" href="{{ path('add_maintainer', {'name': package.name}) }}"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
+                                {% if is_granted('transfer_package', package) %}<a title="Transfer Package" id="transfer-package" href="{{ path('transfer_package', {'name': package.name}) }}"><i class="glyphicon glyphicon-transfer"></i></a>{% endif %}
                             </p>
 
                             <h5>Details</h5>
@@ -316,6 +317,33 @@
                             </div>
                         {{ form_end(removeMaintainerForm) }}
                     {% endif %}
+                </div>
+            {% endif %}
+
+            {% if is_granted('transfer_package', package) %}
+                <div class="row">
+                    {{ form_start(transferPackageForm, {
+                        attr: { id: 'transfer-package-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_transfer_package_form|default(false) ? '': 'hidden') },
+                        action: path('transfer_package', { 'name': package.name })
+                    }) }}
+                        <div>
+                            <h4>Transfer Ownership</h4>
+                            <div class="maintainers-collection-wrapper">
+                                {{ form_errors(transferPackageForm.maintainers) }}
+                                <ul class="maintainers-list" data-prototype="{{ form_widget(transferPackageForm.maintainers.vars.prototype)|e('html_attr') }}">
+                                    {% for maintainerField in transferPackageForm.maintainers %}
+                                        <li>
+                                            {{ form_errors(maintainerField) }}
+                                            {{ form_widget(maintainerField) }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <button type="button" class="btn btn-info btn-sm add-maintainer-item">Add Another Maintainer</button>
+                            </div>
+                            {{ form_rest(transferPackageForm) }}
+                            <input class="btn btn-block btn-success btn-lg" type="submit" value="Transfer Ownership" />
+                        </div>
+                    {{ form_end(transferPackageForm) }}
                 </div>
             {% endif %}
 

@@ -1082,11 +1082,18 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   margin-bottom: 4px;
   margin-right: 4px;
 }
-.package .details #add-maintainer {
+.package .details #add-maintainer{
   margin-top: 3px;
   margin-bottom: 7px;
   float: right;
   font-size: 34px;
+}
+.package .details #transfer-package {
+    margin-top: 7px;
+    margin-bottom: 7px;
+    margin-right: 4px;
+    float: right;
+    font-size: 34px;
 }
 .package .details #remove-maintainer {
   float: right;
@@ -1893,6 +1900,46 @@ body {
 
         @media (max-width: 767px) {
             width: 120px;
+        }
+    }
+}
+
+#transfer-package-form {
+    .maintainers-collection-wrapper {
+        margin-bottom: 15px;
+
+        label {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .maintainers-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 10px;
+
+            li {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+                align-items: center;
+
+                input[type="text"] {
+                    flex: 1;
+                    padding: 6px 12px;
+                    font-size: 14px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                }
+
+                .btn-danger {
+                    flex-shrink: 0;
+                }
+            }
+        }
+
+        .add-maintainer-item {
+            margin-top: 5px;
         }
     }
 }
