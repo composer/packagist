@@ -15,9 +15,10 @@ namespace App\Form\Type;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\CallbackTransformer;
+use Symfony\Component\Form\Exception\TransformationFailedException;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
@@ -41,7 +42,18 @@ class MaintainerType extends AbstractType
                     return null;
                 }
 
-                return $this->em->getRepository(User::class)->findOneByUsernameOrEmail($username);
+                $user = $this->em->getRepository(User::class)->findOneByUsernameOrEmail($username);
+
+                if ($user === null) {
+                    $failure = new TransformationFailedException(sprintf('User "%s" does not exist.', $username));
+                    $failure->setInvalidMessage('The given "{{ value }}" value is not a valid username or email.', [
+                        '{{ value }}' => $username,
+                    ]);
+
+                    throw $failure;
+                }
+
+                return $user;
             }
         ));
     }

@@ -13,12 +13,14 @@
 namespace App\Form\Model;
 
 use App\Entity\User;
+use App\Validator\Constraints\TransferPackageValidMaintainersList;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 class TransferPackageRequest
 {
     /** @var Collection<int, User> */
+    #[TransferPackageValidMaintainersList]
     private Collection $maintainers;
 
     public function __construct()
