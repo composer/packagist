@@ -993,6 +993,10 @@ class PackageController extends Controller
                 $logger->critical($e->getMessage(), ['exception', $e]);
                 $this->addFlash('error', 'The package could not be transferred.');
             }
+        } elseif (!$form->isValid()) {
+            foreach ($form->getErrors(true, true) as $error) {
+                $this->addFlash('error', $error->getMessage());
+            }
         }
 
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
