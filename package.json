@@ -1,7 +1,7 @@
 {
     "name": "packagist.org",
     "dependencies": {
-        "bootstrap": "3.3.5",
+        "bootstrap": "5.0.0",
         "d3": "^3.5.17",
         "instantsearch.js": "^2.7.4",
         "jquery": "^3.7.1",
