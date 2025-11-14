@@ -241,9 +241,8 @@ class PackageManager
         return true;
     }
 
-    /*
-     * @param User[] $oldMaintainers
-     * @param User[] $newMaintainers
+    /**
+     * @param array<User> $newMaintainers
      */
     public function transferPackage(Package $package, array $newMaintainers): bool
     {
