@@ -1905,15 +1905,9 @@ body {
     .maintainers-collection-wrapper {
         margin-bottom: 15px;
 
-        label {
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
         .maintainers-list {
             list-style: none;
             padding: 0;
-            margin-bottom: 10px;
 
             li {
                 display: flex;
@@ -1921,22 +1915,10 @@ body {
                 margin-bottom: 10px;
                 align-items: center;
 
-                input[type="text"] {
-                    flex: 1;
-                    padding: 6px 12px;
-                    font-size: 14px;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                }
-
                 .btn-danger {
-                    flex-shrink: 0;
+                    padding: 5px 10px;
                 }
             }
-        }
-
-        .add-maintainer-item {
-            margin-top: 5px;
         }
     }
 }
