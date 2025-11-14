@@ -1,0 +1,30 @@
+<strong>
+    {%- if display.packageName is existing_package -%}
+        <a href="{{ path('view_package', { 'name': display.packageName }) }}">{{ display.packageName }}</a>
+    {%- else -%}
+        {{ display.packageName }}
+    {%- endif -%}
+</strong><br>
+Repository: {{ display.repository }}<br>
+{%- if display.reason -%}
+    Reason:
+    {% if display.reason == 'repository_archived' -%}
+        Repository archived on GitHub/GitLab
+    {% elseif display.reason == 'composer_json' -%}
+        <em>abandoned</em> flag set in composer.json
+    {% elseif display.reason == 'both' -%}
+        Repository archived and <em>abandoned</em> flag set in composer.json
+    {% elseif display.reason == 'manual' -%}
+        Manually set by maintainer
+    {% else -%}
+        {{ display.reason }}
+    {% endif -%}<br>
+{%- endif -%}
+{%- if display.replacementPackage -%}
+    Replacement: {% if display.replacementPackage is existing_package -%}
+        <a href="{{ path('view_package', { 'name': display.replacementPackage }) }}">{{ display.replacementPackage }}</a>
+    {%- else -%}
+        {{ display.replacementPackage }}
+    {%- endif -%}<br>
+{%- endif -%}
+Abandoned by: {{ display.actor.username }}
