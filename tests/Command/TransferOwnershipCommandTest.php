@@ -12,14 +12,12 @@
 
 namespace App\Tests\Command;
 
-use App\Audit\AuditRecordType;
 use App\Command\TransferOwnershipCommand;
-use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Model\PackageManager;
 use App\Tests\IntegrationTestCase;
 use Doctrine\Persistence\ManagerRegistry;
-use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -45,7 +43,7 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $this->package3 = self::createPackage('vendor2/package1', 'https://github.com/vendor2/package1',maintainers: [$john]);
         $this->store($this->package1, $this->package2, $this->package3);
 
-        $command = new TransferOwnershipCommand(self::getContainer()->get(ManagerRegistry::class));
+        $command = new TransferOwnershipCommand(self::getContainer()->get(ManagerRegistry::class), self::getContainer()->get(PackageManager::class));
         $this->commandTester = new CommandTester($command);
     }
 
@@ -73,9 +71,6 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package1->getMaintainers()->toArray()));
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package2->getMaintainers()->toArray()));
         $this->assertEqualsCanonicalizing(['john'], array_map($callable, $package3->getMaintainers()->toArray()), 'vendor2 packages should not be changed');
-
-        $this->assertAuditLogWasCreated($package1, ['john', 'alice'], ['alice', 'bob']);
-        $this->assertAuditLogWasCreated($package2, ['john', 'bob'], ['alice', 'bob']);
     }
 
     public function testExecuteSuccessForPackage(): void
@@ -99,8 +94,6 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $callable = fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['bob', 'john'], array_map($callable, $package2->getMaintainers()->toArray()), 'vendor1 packages should not be changed');
         $this->assertEqualsCanonicalizing(['alice', 'john'], array_map($callable, $package3->getMaintainers()->toArray()));
-
-        $this->assertAuditLogWasCreated($package3, ['john'], ['alice', 'john']);
     }
 
     public function testExecuteWithDryRunDoesNothing(): void
@@ -124,33 +117,6 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
 
         $callable = fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['john', 'alice'], array_map($callable, $package1->getMaintainers()->toArray()));
-    }
-
-    public function testExecuteIgnoresIdenticalMaintainers(): void
-    {
-        $this->commandTester->execute([
-            'vendorOrPackage' => 'vendor1',
-            'maintainers' => ['alice', 'john'],
-        ]);
-
-        $this->commandTester->assertCommandIsSuccessful();
-
-        $em = self::getEM();
-        $em->clear();
-
-        $package1 = $em->find(Package::class, $this->package1->getId());
-        $package2 = $em->find(Package::class, $this->package2->getId());
-
-        $this->assertNotNull($package1);
-        $this->assertNotNull($package2);
-
-        $callable = fn (User $user) => $user->getUsernameCanonical();
-        $this->assertEqualsCanonicalizing(['alice', 'john'], array_map($callable, $package1->getMaintainers()->toArray()));
-        $this->assertEqualsCanonicalizing(['alice', 'john'], array_map($callable, $package2->getMaintainers()->toArray()));
-
-        $record = $this->retrieveAuditRecordForPackage($package1);
-        $this->assertNull($record, 'No audit log should be created if package maintainers are identical');
-        $this->assertAuditLogWasCreated($package2, ['john', 'bob'], ['alice', 'john']);
     }
 
     public function testExecuteFailsWithUnknownMaintainers(): void
@@ -177,30 +143,5 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
 
         $output = $this->commandTester->getDisplay();
         $this->assertStringContainsString('No packages found for foobar', $output);
-    }
-
-    /**
-     * @param string[] $oldMaintainers
-     * @param string[] $newMaintainers
-     */
-    private function assertAuditLogWasCreated(Package $package, array $oldMaintainers, array $newMaintainers): void
-    {
-        $record = $this->retrieveAuditRecordForPackage($package);
-        $this->assertNotNull($record);
-        $this->assertSame('admin', $record->attributes['actor']);
-        $this->assertSame($package->getId(), $record->packageId);
-
-        $callable = fn (array $user) => $user['username'];
-        $this->assertEqualsCanonicalizing($oldMaintainers, array_map($callable, $record->attributes['previous_maintainers']));
-        $this->assertEqualsCanonicalizing($newMaintainers, array_map($callable, $record->attributes['current_maintainers']));
-    }
-
-    private function retrieveAuditRecordForPackage(Package $package): ?AuditRecord
-    {
-        return $this->getEM()->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditRecordType::PackageTransferred->value,
-            'packageId' => $package->getId(),
-            'actorId' => null,
-        ]);
     }
 }

@@ -245,8 +245,9 @@ class PackageManager
      * @param User[] $oldMaintainers
      * @param User[] $newMaintainers
      */
-    public function transferPackage(Package $package, array $oldMaintainers, array $newMaintainers): bool
+    public function transferPackage(Package $package, array $newMaintainers): bool
     {
+        $oldMaintainers = $package->getMaintainers()->toArray();
         $normalizedOldMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $oldMaintainers));
         sort($normalizedOldMaintainers, SORT_NUMERIC);
 

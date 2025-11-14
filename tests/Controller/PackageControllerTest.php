@@ -16,6 +16,7 @@ use App\Audit\AuditRecordType;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
+use PHPUnit\Framework\Attributes\TestWith;
 
 class PackageControllerTest extends IntegrationTestCase
 {
@@ -143,5 +144,83 @@ class PackageControllerTest extends IntegrationTestCase
         ]);
 
         $this->assertNotNull($auditRecord);
+    }
+
+    public function testTransferPackage(): void
+    {
+        $john = self::createUser('john', 'john@example.org');
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$john, $alice]);
+
+        $this->store($john, $alice, $bob, $package);
+
+        $this->client->loginUser($john);
+
+        $this->assertTrue($package->isMaintainer($john));
+        $this->assertTrue($package->isMaintainer($alice));
+        $this->assertFalse($package->isMaintainer($bob));
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+
+        $form = $crawler->filter('[name="transfer_package_form"]')->form();
+        $form->setValues([
+            'transfer_package_form[maintainers][0]' => 'alice',
+            'transfer_package_form[maintainers][1]' => 'bob@example.org',
+        ]);
+
+        $this->client->submit($form);
+
+        $this->assertResponseRedirects('/packages/test/pkg');
+        $this->client->followRedirect();
+        $this->assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+
+        $package = $em->getRepository(Package::class)->find($package->getId());
+        $this->assertNotNull($package);
+
+        $maintainerIds = array_map(fn (User $user) => $user->getId(), $package->getMaintainers()->toArray());
+        $this->assertContains($alice->getId(), $maintainerIds);
+        $this->assertContains($bob->getId(), $maintainerIds);
+        $this->assertNotContains($john->getId(), $maintainerIds);
+
+        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
+            'type' => AuditRecordType::PackageTransferred->value,
+            'packageId' => $package->getId(),
+        ]);
+
+        $this->assertNotNull($auditRecord, 'Audit record not found');
+    }
+
+    #[TestWith(['does_not_exist', 'value is not a valid username or email'])]
+    #[TestWith([null, 'at least one maintainer must be specified'])]
+    public function testTransferPackageReturnsValidationError(?string $value, string $message): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$alice]);
+
+        $this->store($alice, $package);
+
+        $this->client->loginUser($alice);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+
+        $form = $crawler->filter('[name="transfer_package_form"]')->form();
+        $form->setValues([
+            'transfer_package_form[maintainers][0]' => $value,
+        ]);
+
+        $this->client->submit($form);
+
+        $this->assertResponseRedirects('/packages/test/pkg');
+        $crawler = $this->client->followRedirect();
+        $this->assertResponseIsSuccessful();
+
+        $elements = $crawler->filter('.flash-container .alert-error');
+        $this->assertCount(1, $elements);
+        $text = $elements->text();
+        $this->assertStringContainsStringIgnoringCase($message, $text);
     }
 }

@@ -969,17 +969,14 @@ class PackageController extends Controller
     {
         $this->denyAccessUnlessGranted(PackageActions::TransferPackage->value, $package);
 
-        $oldMaintainers = $package->getMaintainers()->toArray();
-
         $form = $this->createTransferPackageForm($package);
         $form->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $em = $this->getEM();
                 $newMaintainers = $form->getData()->getMaintainers()->toArray();
-                $result = $this->packageManager->transferPackage($package, $oldMaintainers, $newMaintainers);
-                $em->flush();
+                $result = $this->packageManager->transferPackage($package, $newMaintainers);
+                $this->getEM()->flush();
 
                 if ($result) {
                     $usernames = array_map(fn (User $user) => $user->getUsername(), $newMaintainers);
@@ -1656,7 +1653,7 @@ class PackageController extends Controller
     private function createTransferPackageForm(Package $package): FormInterface
     {
         $transferRequest = new TransferPackageRequest();
-        $transferRequest->setMaintainers($package->getMaintainers());
+        $transferRequest->setMaintainers(clone $package->getMaintainers());
 
         return $this->createForm(TransferPackageRequestType::class, $transferRequest);
     }
