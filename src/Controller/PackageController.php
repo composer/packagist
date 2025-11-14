@@ -972,28 +972,34 @@ class PackageController extends Controller
         $form = $this->createTransferPackageForm($package);
         $form->handleRequest($req);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            try {
-                $newMaintainers = $form->getData()->getMaintainers()->toArray();
-                $result = $this->packageManager->transferPackage($package, $newMaintainers);
-                $this->getEM()->flush();
+        if (!$form->isSubmitted()) {
+            return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+        }
 
-                if ($result) {
-                    $usernames = array_map(fn (User $user) => $user->getUsername(), $newMaintainers);
-                    $this->addFlash('success', sprintf('Package has been transferred to %s', implode(', ', $usernames)));
-                } else {
-                    $this->addFlash('warning', 'Package maintainers are identical and have not been changed');
-                }
-
-                return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
-            } catch (\Exception $e) {
-                $logger->critical($e->getMessage(), ['exception', $e]);
-                $this->addFlash('error', 'The package could not be transferred.');
-            }
-        } elseif (!$form->isValid()) {
+        if (!$form->isValid()) {
             foreach ($form->getErrors(true, true) as $error) {
                 $this->addFlash('error', $error->getMessage());
             }
+
+            return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+        }
+
+        try {
+            $newMaintainers = $form->getData()->getMaintainers()->toArray();
+            $result = $this->packageManager->transferPackage($package, $newMaintainers);
+            $this->getEM()->flush();
+
+            if ($result) {
+                $usernames = array_map(fn (User $user) => $user->getUsername(), $newMaintainers);
+                $this->addFlash('success', sprintf('Package has been transferred to %s', implode(', ', $usernames)));
+            } else {
+                $this->addFlash('warning', 'Package maintainers are identical and have not been changed');
+            }
+
+            return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+        } catch (\Exception $e) {
+            $logger->critical($e->getMessage(), ['exception', $e]);
+            $this->addFlash('error', 'The package could not be transferred.');
         }
 
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
