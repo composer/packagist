@@ -109,8 +109,8 @@ class PackageManagerTest extends IntegrationTestCase
     }
 
     /**
-     * @param string[] $oldMaintainers
-     * @param string[] $newMaintainers
+     * @param array<string> $oldMaintainers
+     * @param array<string> $newMaintainers
      */
     private function assertAuditLogWasCreated(Package $package, array $oldMaintainers, array $newMaintainers): void
     {
