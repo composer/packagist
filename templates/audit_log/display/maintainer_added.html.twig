@@ -1,12 +1,5 @@
-{% import "macros.html.twig" as packagist %}
+{% import 'audit_log/macros.html.twig' as auditLog %}
 
-<strong>
-    {%- if display.packageName is existing_package -%}
-        <a href="{{ path('view_package', { 'name': display.packageName }) }}">{{ display.packageName }}</a>
-    {%- else -%}
-        {{ display.packageName }}
-    {%- endif -%}
-    {{ packagist.packageLink(display.packageName, null) }}
-</strong><br>
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
 Maintainer: {{ display.maintainer.username }}<br>
 Added by: {{ display.actor.username }}
