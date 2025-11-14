@@ -81,6 +81,21 @@ class AuditLogDisplayFactory
                 $record->attributes['metadata']['dist']['reference']  ?? null,
                 $this->buildActor($record->attributes['actor']),
             ),
+            AuditRecordType::PackageAbandoned => new PackageAbandonedDisplay(
+                $record->datetime,
+                $record->attributes['name'],
+                $record->attributes['repository'],
+                $record->attributes['replacement_package'] ?? null,
+                $record->attributes['reason'] ?? null,
+                $this->buildActor($record->attributes['actor']),
+            ),
+            AuditRecordType::PackageUnabandoned => new PackageUnabandonedDisplay(
+                $record->datetime,
+                $record->attributes['name'],
+                $record->attributes['repository'],
+                $record->attributes['previous_replacement_package'] ?? null,
+                $this->buildActor($record->attributes['actor']),
+            ),
             AuditRecordType::VersionDeleted => new VersionDeletedDisplay(
                 $record->datetime,
                 $record->attributes['name'],

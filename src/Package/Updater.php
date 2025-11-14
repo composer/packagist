@@ -12,6 +12,7 @@
 
 namespace App\Package;
 
+use App\Audit\AbandonmentReason;
 use App\Entity\ConflictLink;
 use App\Entity\Dependent;
 use App\Entity\DevRequireLink;
@@ -250,7 +251,7 @@ class Updater
             }
             $processedVersions[strtolower($version->getVersion())] = $version;
 
-            $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
+            $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier, $driver);
             $versionId = false;
             if ($result['updated']) {
                 \assert($result['object'] instanceof Version);
@@ -363,7 +364,7 @@ class Updater
      *
      * @return array{updated: true, id: int|null, version: string, object: Version}|array{updated: false, id: int|null, version: string, object: null}
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier): array
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier, VcsDriverInterface $driver): array
     {
         $em = $this->getEM();
         $version = new Version();
@@ -426,6 +427,7 @@ class Updater
             $package->setType($this->sanitize($data->getType()));
             if ($data->isAbandoned() && !$package->isAbandoned()) {
                 $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
+                $package->abandonmentReason = $this->detectAbandonmentReason($driver, $rootIdentifier);
                 $package->setAbandoned(true);
                 if ($data->getReplacementPackage()) {
                     $package->setReplacementPackage($data->getReplacementPackage());
@@ -843,5 +845,42 @@ class Updater
         $str = Preg::replace("{\x1B(?:\[.)?}u", '', $str);
 
         return Preg::replace("{[\x01-\x1A]}u", '', $str);
+    }
+
+    private function detectAbandonmentReason(VcsDriverInterface $driver, string $rootIdentifier): AbandonmentReason
+    {
+        $isArchived = false;
+        $composerHasAbandoned = false;
+
+        // is repository archived (GitHub or GitLab)
+        if ($driver instanceof GitHubDriver || $driver instanceof GitLabDriver) {
+            try {
+                $repoData = $driver->getRepoData();
+                $isArchived = !empty($repoData['archived']);
+            } catch (\Exception $e) {
+                // If we can't get repo data, assume not archived
+            }
+        }
+
+        // abandoned field in composer.json explicitly set
+        try {
+            $composerJson = $driver->getFileContent('composer.json', $rootIdentifier);
+            if ($composerJson) {
+                $composerData = json_decode($composerJson, true);
+                $composerHasAbandoned = isset($composerData['abandoned']);
+            }
+        } catch (\Exception $e) {
+            // composer.json couldn't be read, so the abandoned state couldn't be retrieved
+        }
+
+        if ($isArchived && $composerHasAbandoned) {
+            return AbandonmentReason::Both;
+        } elseif ($isArchived) {
+            return AbandonmentReason::RepositoryArchived;
+        } elseif ($composerHasAbandoned) {
+            return AbandonmentReason::ComposerJson;
+        }
+
+        return AbandonmentReason::Unknown;
     }
 }

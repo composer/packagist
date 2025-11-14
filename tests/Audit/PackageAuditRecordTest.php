@@ -66,4 +66,93 @@ class PackageAuditRecordTest extends KernelTestCase
         self::assertCount(3, $logs);
         self::assertSame(AuditRecordType::PackageDeleted->value, $logs[0]['type']);
     }
+
+    public function testPackageAbandonmentGetRecorded(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        $package = new Package();
+        $package->setName('test/package');
+        $package->setRepository('https://github.com/test/package');
+
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
+        self::assertCount(1, $logs);
+        self::assertSame(AuditRecordType::PackageCreated->value, $logs[0]['type']);
+
+        // Test abandonment with replacement package
+        $package->setAbandoned(true);
+        $package->setReplacementPackage('test/replacement');
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
+        self::assertCount(2, $logs);
+        self::assertSame(AuditRecordType::PackageAbandoned->value, $logs[0]['type']);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertSame('test/package', $attributes['name']);
+        self::assertSame('https://github.com/test/package', $attributes['repository']);
+        self::assertSame('test/replacement', $attributes['replacement_package']);
+        self::assertSame('automation', $attributes['actor']);
+        // When abandoned directly via entity setAbandoned, reason defaults to 'unknown'
+        self::assertArrayHasKey('reason', $attributes);
+        self::assertSame('unknown', $attributes['reason']);
+
+        // Test unabandonment
+        $package->setAbandoned(false);
+        $package->setReplacementPackage(null);
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
+        self::assertCount(3, $logs);
+        self::assertSame(AuditRecordType::PackageUnabandoned->value, $logs[0]['type']);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertSame('test/package', $attributes['name']);
+        self::assertSame('https://github.com/test/package', $attributes['repository']);
+        self::assertSame('test/replacement', $attributes['previous_replacement_package']);
+        self::assertSame('automation', $attributes['actor']);
+    }
+
+    public function testPackageAbandonmentWithoutReplacementGetRecorded(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        $package = new Package();
+        $package->setName('test/package2');
+        $package->setRepository('https://github.com/test/package2');
+
+        $em->persist($package);
+        $em->flush();
+
+        // Test abandonment without replacement package
+        $package->setAbandoned(true);
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageAbandoned->value]);
+        self::assertCount(1, $logs);
+        self::assertSame(AuditRecordType::PackageAbandoned->value, $logs[0]['type']);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertSame('test/package2', $attributes['name']);
+        self::assertNull($attributes['replacement_package']);
+        self::assertArrayHasKey('reason', $attributes);
+        self::assertSame('unknown', $attributes['reason']);
+
+        // Test unabandonment when there was no replacement package
+        $package->setAbandoned(false);
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageUnabandoned->value]);
+        self::assertCount(1, $logs);
+        self::assertSame(AuditRecordType::PackageUnabandoned->value, $logs[0]['type']);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertSame('test/package2', $attributes['name']);
+        self::assertNull($attributes['previous_replacement_package']);
+    }
 }

@@ -12,6 +12,7 @@
 
 namespace App\EventListener;
 
+use App\Audit\AbandonmentReason;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\User;
@@ -63,6 +64,24 @@ class PackageListener
         if ($event->hasChangedField('repository')) {
             // buffering things to be inserted in postUpdate once we can confirm it is done
             $this->buffered[] = AuditRecord::canonicalUrlChange($package, $this->getUser(), $event->getOldValue('repository'));
+        }
+
+        if ($event->hasChangedField('abandoned')) {
+            $newValue = $event->getNewValue('abandoned');
+            if ($newValue === true) {
+                $reason = $package->abandonmentReason;
+
+                if ($this->getUser()) {
+                    $reason = AbandonmentReason::Manual;
+                } else {
+                    $reason = $reason ?? AbandonmentReason::Unknown;
+                }
+
+                $this->buffered[] = AuditRecord::packageAbandoned($package, $this->getUser(), $package->getReplacementPackage(), $reason);
+            } else {
+                $oldReplacementPackage = $event->hasChangedField('replacementPackage') ? $event->getOldValue('replacementPackage') : $package->getReplacementPackage();
+                $this->buffered[] = AuditRecord::packageUnabandoned($package, $this->getUser(), $oldReplacementPackage);
+            }
         }
     }
 

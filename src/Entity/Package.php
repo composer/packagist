@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Audit\AbandonmentReason;
 use App\Service\UpdaterWorker;
 use App\Util\HttpDownloaderOptionsFactory;
 use App\Validator\Copyright;
@@ -208,6 +209,10 @@ class Package
      * @internal
      */
     public ?string $vcsDriverError = null;
+    /**
+     * @internal
+     */
+    public ?AbandonmentReason $abandonmentReason = null;
 
     /**
      * @var array<string, Version>|null lookup table for versions
