@@ -58,6 +58,10 @@ class ProfileController extends Controller
     #[Route(path: '/users/{name}/', name: 'user_profile')]
     public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] ?User $loggedUser = null): Response
     {
+        if ($req->attributes->getString('name') !== $user->getUsername()) {
+            return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
+        }
+
         $packages = $this->getUserPackages($req, $user);
 
         $data = [
