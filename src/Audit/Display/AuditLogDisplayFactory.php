@@ -72,6 +72,12 @@ class AuditLogDisplayFactory
                 $record->attributes['repository_to'],
                 $this->buildActor($record->attributes['actor']),
             ),
+            AuditRecordType::VersionCreated => new VersionCreatedDisplay(
+                $record->datetime,
+                $record->attributes['name'],
+                $record->attributes['version'],
+                $this->buildActor($record->attributes['actor']),
+            ),
             AuditRecordType::VersionDeleted => new VersionDeletedDisplay(
                 $record->datetime,
                 $record->attributes['name'],
