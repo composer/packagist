@@ -80,6 +80,13 @@ class AuditRecord
         return new self(AuditRecordType::PackageTransferred, ['name' => $package->getName(), 'actor' => self::getUserData($actor, 'admin'), 'previous_maintainers' => $previous, 'current_maintainers' => $current], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
+    public static function versionCreated(Version $version, ?User $actor): self
+    {
+        $package = $version->getPackage();
+
+        return new self(AuditRecordType::VersionCreated, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+    }
+
     public static function versionDeleted(Version $version, ?User $actor): self
     {
         $package = $version->getPackage();
