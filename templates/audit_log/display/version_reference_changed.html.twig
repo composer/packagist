@@ -1,10 +1,6 @@
-<strong>
-    {%- if display.packageName is existing_package -%}
-        <a href="{{ path('view_package', { 'name': display.packageName }) }}">{{ display.packageName }}</a>
-    {%- else -%}
-        {{ display.packageName }}
-    {%- endif -%}
-</strong> {{ display.version }}<br>
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
 {% if display.sourceFrom or display.sourceTo %}
     Source: {{ display.sourceFrom ?? 'none' }} → {{ display.sourceTo ?? 'none' }}<br>
 {% endif %}
