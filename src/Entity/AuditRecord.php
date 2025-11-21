@@ -84,7 +84,7 @@ class AuditRecord
     {
         $package = $version->getPackage();
 
-        return new self(AuditRecordType::VersionCreated, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::VersionCreated, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation'), 'source' => $version->getSource()['reference'] ?? null, 'dist' => $version->getDist()['reference'] ?? null], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function versionDeleted(Version $version, ?User $actor): self

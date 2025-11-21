@@ -5,4 +5,10 @@
         {{ display.packageName }}
     {%- endif -%}
 </strong> {{ display.version }}<br>
+{% if display.sourceReference %}
+    Source: {{ display.sourceReference }}<br>
+{% endif %}
+{% if display.distReference %}
+    Dist: {{ display.distReference }}<br>
+{% endif %}
 Created by: {{ display.actor.username }}

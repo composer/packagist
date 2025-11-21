@@ -20,6 +20,8 @@ readonly class VersionCreatedDisplay extends AbstractAuditLogDisplay
         \DateTimeImmutable $datetime,
         public string $packageName,
         public string $version,
+        public ?string $sourceReference,
+        public ?string $distReference,
         ActorDisplay $actor,
     ) {
         parent::__construct($datetime, $actor);
