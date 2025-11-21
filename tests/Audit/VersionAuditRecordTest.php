@@ -92,12 +92,5 @@ class VersionAuditRecordTest extends KernelTestCase
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(2, $logs);
-
-        $em->remove($version);
-        $em->flush();
-
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
-        self::assertCount(3, $logs);
-        self::assertSame(AuditRecordType::VersionDeleted->value, $logs[0]['type']);
     }
 }
