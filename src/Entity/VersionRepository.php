@@ -20,6 +20,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -34,6 +35,7 @@ class VersionRepository extends ServiceEntityRepository
         ManagerRegistry $registry,
         private Client $redisCache,
         private VersionIdCache $versionIdCache,
+        private readonly Security $security,
     ) {
         parent::__construct($registry, Version::class);
     }
@@ -44,7 +46,7 @@ class VersionRepository extends ServiceEntityRepository
         return parent::getEntityManager();
     }
 
-    public function remove(Version $version): void
+    public function remove(Version $version, bool $createAuditRecord = true): void
     {
         $em = $this->getEntityManager();
         $package = $version->getPackage();
@@ -66,6 +68,12 @@ class VersionRepository extends ServiceEntityRepository
         $em->getConnection()->executeQuery('DELETE FROM php_stat WHERE version=:version AND depth = :depth AND package_id=:packageId', ['version' => $version->getId(), 'depth' => PhpStat::DEPTH_EXACT, 'packageId' => $version->getPackage()->getId()]);
 
         $em->remove($version);
+
+        if ($createAuditRecord) {
+            $user = $this->security->getUser();
+            $record = AuditRecord::versionDeleted($version, $user instanceof User ? $user : null);
+            $em->persist($record);
+        }
     }
 
     /**

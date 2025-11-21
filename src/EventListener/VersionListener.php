@@ -21,9 +21,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\SecurityBundle\Security;
 
-#[AsEntityListener(event: 'preRemove', entity: Version::class)]
 #[AsEntityListener(event: 'preUpdate', entity: Version::class)]
 #[AsEntityListener(event: 'postUpdate', entity: Version::class)]
 class VersionListener
@@ -35,18 +33,7 @@ class VersionListener
 
     public function __construct(
         private ManagerRegistry $doctrine,
-        private Security $security,
     ) {
-    }
-
-    /**
-     * @param LifecycleEventArgs<EntityManager> $event
-     */
-    public function preRemove(Version $version, LifecycleEventArgs $event): void
-    {
-        $record = AuditRecord::versionDeleted($version, $this->getUser());
-        $this->getEM()->persist($record);
-        // let the record be flushed together with the entity
     }
 
     public function preUpdate(Version $version, PreUpdateEventArgs $event): void
@@ -75,12 +62,5 @@ class VersionListener
             }
             $this->buffered = [];
         }
-    }
-
-    private function getUser(): ?User
-    {
-        $user = $this->security->getUser();
-
-        return $user instanceof User ? $user : null;
     }
 }
