@@ -12,7 +12,7 @@ Repository: {{ display.repository }}<br>
         Repository archived on GitHub/GitLab
     {% elseif display.reason == 'composer_json' -%}
         <em>abandoned</em> flag set in composer.json
-    {% elseif display.reason == 'both' -%}
+    {% elseif display.reason == 'repository_archived_and_composer_json' -%}
         Repository archived and <em>abandoned</em> flag set in composer.json
     {% elseif display.reason == 'manual' -%}
         Manually set by maintainer

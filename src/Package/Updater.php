@@ -863,7 +863,7 @@ class Updater
             }
         }
 
-        // abandoned field in composer.json explicitly set
+        // is abandoned field in composer.json explicitly set
         try {
             $composerJson = $driver->getFileContent('composer.json', $rootIdentifier);
             if ($composerJson) {
@@ -875,7 +875,7 @@ class Updater
         }
 
         if ($isArchived && $composerHasAbandoned) {
-            return AbandonmentReason::Both;
+            return AbandonmentReason::RepositoryArchivedAndComposerJson;
         } elseif ($isArchived) {
             return AbandonmentReason::RepositoryArchived;
         } elseif ($composerHasAbandoned) {
