@@ -34,6 +34,25 @@ class AuditLogDisplayFactory
     public function buildSingle(AuditRecord $record): AuditLogDisplayInterface
     {
         return match ($record->type) {
+            AuditRecordType::MaintainerAdded => new MaintainerAddedDisplay(
+                $record->datetime,
+                $record->attributes['name'],
+                $this->buildActor($record->attributes['maintainer']),
+                $this->buildActor($record->attributes['actor']),
+            ),
+            AuditRecordType::MaintainerRemoved => new MaintainerRemovedDisplay(
+                $record->datetime,
+                $record->attributes['name'],
+                $this->buildActor($record->attributes['maintainer']),
+                $this->buildActor($record->attributes['actor']),
+            ),
+            AuditRecordType::PackageTransferred => new PackageTransferredDisplay(
+                $record->datetime,
+                $record->attributes['name'],
+                $record->attributes['previous_maintainers'],
+                $record->attributes['current_maintainers'],
+                $this->buildActor($record->attributes['actor']),
+            ),
             AuditRecordType::PackageCreated => new PackageCreatedDisplay(
                 $record->datetime,
                 $record->attributes['name'],
