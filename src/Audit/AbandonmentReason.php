@@ -17,6 +17,6 @@ enum AbandonmentReason: string
     case Manual = 'manual';
     case RepositoryArchived = 'repository_archived';
     case ComposerJson = 'composer_json';
-    case Both = 'both';
+    case RepositoryArchivedAndComposerJson = 'repository_archived_and_composer_json';
     case Unknown = 'unknown';
 }
