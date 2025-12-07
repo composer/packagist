@@ -133,7 +133,7 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
         ];
 
         if (!\is_string($credentials['username'])) {
-            throw new BadRequestHttpException(\sprintf('The key "_username" must be a string, "%s" given.', \gettype($credentials['username'])));
+            throw new BadRequestHttpException(\sprintf('The key "_username" must be a string, "%s" given.', \get_debug_type($credentials['username'])));
         }
 
         $credentials['username'] = trim($credentials['username']);
