@@ -17,6 +17,9 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
+/**
+ * @phpstan-import-type VersionArray from Version
+ */
 #[ORM\Entity(repositoryClass: AuditRecordRepository::class)]
 #[ORM\Table(name: 'audit_log')]
 #[ORM\Index(name: 'type_idx', columns: ['type'])]
@@ -80,11 +83,14 @@ class AuditRecord
         return new self(AuditRecordType::PackageTransferred, ['name' => $package->getName(), 'actor' => self::getUserData($actor, 'admin'), 'previous_maintainers' => $previous, 'current_maintainers' => $current], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function versionCreated(Version $version, ?User $actor): self
+    /**
+     * @param VersionArray $metadata
+     */
+    public static function versionCreated(Version $version, array $metadata, ?User $actor): self
     {
         $package = $version->getPackage();
 
-        return new self(AuditRecordType::VersionCreated, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation'), 'source' => $version->getSource()['reference'] ?? null, 'dist' => $version->getDist()['reference'] ?? null], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::VersionCreated, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation'), 'metadata' => $metadata], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function versionDeleted(Version $version, ?User $actor): self

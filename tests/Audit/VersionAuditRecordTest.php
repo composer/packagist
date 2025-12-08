@@ -15,6 +15,7 @@ namespace App\Tests\Controller;
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
+use App\Entity\RequireLink;
 use App\Entity\Version;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -50,15 +51,14 @@ class VersionAuditRecordTest extends KernelTestCase
         ]);
 
         self::assertNotNull($log, 'No audit record created for new version');
-        self::assertSame('automation', $log->attributes['actor']);
         self::assertSame('composer', $log->vendor);
-        self::assertEqualsCanonicalizing([
-            'name' => 'composer/composer',
-            'actor' => 'automation',
-            'version' => '1.0.0',
-            'source' => 'source-ref',
-            'dist' => 'dist-ref',
-        ], $log->attributes);
+        $attributes = $log->attributes;
+        self::assertSame('composer/composer', $attributes['name']);
+        self::assertSame('automation', $attributes['actor']);
+        self::assertSame('1.0.0', $attributes['version']);
+        self::assertSame('dist-ref', $attributes['metadata']['dist']['reference']);
+        self::assertSame('source-ref', $attributes['metadata']['source']['reference']);
+        self::assertSame('^1.5.0', $attributes['metadata']['require']['composer/ca-bundle']);
     }
 
     public function testVersionChangesGetRecorded(): void
@@ -103,7 +103,7 @@ class VersionAuditRecordTest extends KernelTestCase
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(3, $logs);
 
-        $em->remove($version);
+        $em->getRepository(Version::class)->remove($version);
         $em->flush();
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
@@ -117,6 +117,7 @@ class VersionAuditRecordTest extends KernelTestCase
         $em = $container->get(ManagerRegistry::class)->getManager();
 
         $package = new Package();
+        $package->setName('composer/composer');
         $package->setRepository('https://github.com/composer/composer');
 
         $version = new Version();
@@ -130,6 +131,13 @@ class VersionAuditRecordTest extends KernelTestCase
         $version->setDist(['reference' => 'dist-ref', 'type' => 'zip', 'url' => 'https://example.org/dist.zip']);
         $version->setSource(['reference' => 'source-ref', 'type' => 'git', 'url' => 'https://example.org/dist.git']);
 
+        $link = new RequireLink();
+        $link->setVersion($version);
+        $link->setPackageVersion('^1.5.0');
+        $link->setPackageName('composer/ca-bundle');
+        $version->addRequireLink($link);
+
+        $em->persist($link);
         $em->persist($package);
         $em->persist($version);
         $em->flush();

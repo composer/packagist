@@ -45,7 +45,8 @@ class VersionListener
      */
     public function postPersist(Version $version, LifecycleEventArgs $event): void
     {
-        $record = AuditRecord::versionCreated($version, $this->getUser());
+        $data = $version->toV2Array([]);
+        $record = AuditRecord::versionCreated($version, $data, $this->getUser());
         $this->getEM()->getRepository(AuditRecord::class)->insert($record);
     }
 
