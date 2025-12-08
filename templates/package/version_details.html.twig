@@ -58,7 +58,7 @@
         <p class="tags">
             <i class="glyphicon glyphicon-tag" title="Tags"></i>
             {% for tag in version.tags -%}
-                <a href="{{ url("search_web", {tags: tag.name}) }}">{{ tag.name }}</a>
+                <a rel="nofollow noindex" href="{{ url("search_web", {tags: tag.name}) }}">{{ tag.name }}</a>
             {%- endfor -%}
         </p>
     {% endif %}
