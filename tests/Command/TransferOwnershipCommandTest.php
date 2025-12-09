@@ -132,6 +132,22 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $this->assertStringContainsString('2 maintainers could not be found', $output);
     }
 
+    public function testExecuteFailsWithDisabledMaintainers(): void
+    {
+        $tom = self::createUser('tom', 'tom@example.org', enabled: false);
+        $this->store($tom);
+
+        $this->commandTester->execute([
+            'vendorOrPackage' => 'vendor1',
+            'maintainers' => ['alice', 'tom'],
+        ]);
+
+        $this->assertSame(Command::FAILURE, $this->commandTester->getStatusCode());
+
+        $output = $this->commandTester->getDisplay();
+        $this->assertStringContainsString('1 maintainers could not be found', $output);
+    }
+
     public function testExecuteFailsIfNoVendorPackagesFound(): void
     {
         $this->commandTester->execute([

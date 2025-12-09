@@ -104,7 +104,7 @@ class IntegrationTestCase extends WebTestCase
     protected static function createUser(string $username = 'test', string $email = 'test@example.org', string $password = 'testtest', string $apiToken = 'api-token', string $safeApiToken = 'safe-api-token', string $githubId = '12345', bool $enabled = true, array $roles = []): User
     {
         $user = new User();
-        $user->setEnabled(true);
+        $user->setEnabled($enabled);
         $user->setUsername($username);
         $user->setEmail($email);
         $user->setPassword($password);

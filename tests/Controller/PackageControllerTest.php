@@ -196,12 +196,14 @@ class PackageControllerTest extends IntegrationTestCase
 
     #[TestWith(['does_not_exist', 'value is not a valid username or email'])]
     #[TestWith([null, 'at least one maintainer must be specified'])]
+    #[TestWith(['bob', 'The user "bob" is disabled'])]
     public function testTransferPackageReturnsValidationError(?string $value, string $message): void
     {
         $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org', enabled: false);
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$alice]);
 
-        $this->store($alice, $package);
+        $this->store($alice, $bob, $package);
 
         $this->client->loginUser($alice);
 

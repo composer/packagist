@@ -31,9 +31,10 @@ class UserRepositoryTest extends IntegrationTestCase
         $alice = self::createUser('Alice', 'alice@example.org');
         $bob = self::createUser('Bob', 'bob@example.org');
         $charlie = self::createUser('Charlie', 'charlie@example.org');
-        $this->store($alice, $bob, $charlie);
+        $john = self::createUser('John', 'john@example.org', enabled: false);
+        $this->store($alice, $bob, $charlie, $john);
 
-        $result = $this->userRepository->findUsersByUsername(['alice', 'bob']);
+        $result = $this->userRepository->findEnabledUsersByUsername(['alice', 'bob', 'john']);
 
         $this->assertCount(2, $result);
 

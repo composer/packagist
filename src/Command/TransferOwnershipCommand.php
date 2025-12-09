@@ -89,7 +89,7 @@ class TransferOwnershipCommand extends Command
         $usernames = array_map('mb_strtolower', $input->getArgument('maintainers'));
         sort($usernames);
 
-        $maintainers = $this->getEM()->getRepository(User::class)->findUsersByUsername($usernames, ['usernameCanonical' => 'ASC']);
+        $maintainers = $this->getEM()->getRepository(User::class)->findEnabledUsersByUsername($usernames, ['usernameCanonical' => 'ASC']);
 
         if (array_keys($maintainers) === $usernames) {
             return $maintainers;

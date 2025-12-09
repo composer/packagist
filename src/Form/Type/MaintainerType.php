@@ -53,6 +53,15 @@ class MaintainerType extends AbstractType
                     throw $failure;
                 }
 
+                if (!$user->isEnabled()) {
+                    $failure = new TransformationFailedException(sprintf('User "%s" is disabled.', $username));
+                    $failure->setInvalidMessage('The user "{{ value }}" is disabled.', [
+                        '{{ value }}' => $username,
+                    ]);
+
+                    throw $failure;
+                }
+
                 return $user;
             }
         ));
