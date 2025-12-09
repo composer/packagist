@@ -1,0 +1,33 @@
+{% extends "layout.html.twig" %}
+{% block content %}
+
+<h2 class="title">Security Advisories</h2>
+
+<section class="col-d-12">
+<h3>Search</h3>
+<p>Enter PKSA-, CVE-, or GHSA- IDs to open an advisory</p>
+<form method="post" action="{{ path('security_advisories') }}" class="form-inline" style="margin-top: 15px;">
+    <div class="form-group">
+        <input type="text" name="id" class="form-control" placeholder="e.g., PKSA-xxxx-xxxx-xxxx" style="width: 300px;" required pattern="(PKSA-.{14}|CVE-\d{4}-\d+|GHSA-.{14})">
+    </div>
+    <button type="submit" class="btn btn-primary">View Advisory</button>
+</form>
+</section>
+
+<section class="col-d-12">
+<h3>Packagist Security Advisory Feed</h3>
+<p>Packagist aggregates security advisories from multiple sources to help you stay informed about vulnerabilities in PHP packages:</p>
+<ul>
+    <li><strong>GitHub Security Advisories</strong> - Advisories published on GitHub's Security Advisory Database</li>
+    <li><strong>FriendsOfPHP Security Advisories</strong> - Community-curated advisories from the <a href="https://github.com/FriendsOfPHP/security-advisories">FriendsOfPHP/security-advisories</a> repository</li>
+</ul>
+<p>All advisories get assigned a <strong>PKSA (Packagist Security Advisory)</strong> ID, which is the primary advisory identifier to use in Composer. Advisories may also have associated CVE (Common Vulnerabilities and Exposures) or GHSA (GitHub Security Advisory) identifiers that link to external databases.</p>
+<p>You can access security advisory data through our <a href="{{ path('api_doc') }}#list-security-advisories">API endpoint</a>, which allows you to:</p>
+<ul>
+    <li>Query advisories for specific packages</li>
+    <li>Fetch updates since a specific timestamp</li>
+    <li>Integrate security checks into your CI/CD pipeline</li>
+</ul>
+</section>
+
+{% endblock %}

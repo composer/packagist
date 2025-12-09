@@ -1582,6 +1582,17 @@ class PackageController extends Controller
         return $this->render('package/security_advisories.html.twig', $data);
     }
 
+    #[Route(path: '/security-advisories/', name: 'security_advisories')]
+    public function securityAdvisoriesIndexAction(Request $request): Response
+    {
+        $id = $request->request->get('id') ?? $request->query->get('id');
+        if ($id) {
+            return $this->redirectToRoute('view_advisory', ['id' => trim($id)]);
+        }
+
+        return $this->render('web/security_advisories.html.twig');
+    }
+
     #[Route(path: '/security-advisories/{id}', name: 'view_advisory')]
     public function securityAdvisoryAction(Request $request, string $id): Response
     {
