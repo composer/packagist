@@ -6,9 +6,9 @@
 <section class="col-d-12">
 <h3>Search</h3>
 <p>Enter PKSA-, CVE-, or GHSA- IDs to open an advisory</p>
-<form method="post" action="{{ path('security_advisories') }}" class="form-inline" style="margin-top: 15px;">
+    <form method="post" action="{{ path('security_advisories') }}" class="form-inline" style="margin-top: 15px;">
     <div class="form-group">
-        <input type="text" name="id" class="form-control" placeholder="e.g., PKSA-xxxx-xxxx-xxxx" style="width: 300px;" required pattern="(PKSA-.{14}|CVE-\d{4}-\d+|GHSA-.{14})">
+        <input type="text" name="id" class="form-control" placeholder="e.g., PKSA-xxxx-xxxx-xxxx" style="width: 300px;" required>
     </div>
     <button type="submit" class="btn btn-primary">View Advisory</button>
 </form>

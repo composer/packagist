@@ -1585,8 +1585,8 @@ class PackageController extends Controller
     #[Route(path: '/security-advisories/', name: 'security_advisories')]
     public function securityAdvisoriesIndexAction(Request $request): Response
     {
-        $id = $request->request->get('id') ?? $request->query->get('id');
-        if ($id) {
+        $id = $request->request->getString('id');
+        if (trim($id) !== '') {
             return $this->redirectToRoute('view_advisory', ['id' => trim($id)]);
         }
 
