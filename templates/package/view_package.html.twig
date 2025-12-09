@@ -148,9 +148,11 @@
 
                             {% if is_granted('remove_maintainer', package) or is_granted('add_maintainer', package) or is_granted('transfer_package', package) %}
                                 <h5>Maintainer actions</h5>
-                                {% if is_granted('add_maintainer', package) %}<a title="Add Maintainer" id="add-maintainer"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
-                                {% if is_granted('remove_maintainer', package) %}<a title="Remove Maintainer" id="remove-maintainer"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
-                                {% if is_granted('transfer_package', package) %}<a title="Transfer Package" id="transfer-package"><i class="glyphicon glyphicon-transfer"></i></a>{% endif %}
+                                <p class="maintainer-actions">
+                                    {% if is_granted('add_maintainer', package) %}<a title="Add Maintainer" id="add-maintainer"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
+                                    {% if is_granted('remove_maintainer', package) %}<a title="Remove Maintainer" id="remove-maintainer"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
+                                    {% if is_granted('transfer_package', package) %}<a title="Transfer Package" id="transfer-package"><i class="glyphicon glyphicon-transfer"></i></a>{% endif %}
+                                </p>
                             {% endif %}
 
                             <h5>Details</h5>
@@ -327,7 +329,10 @@
             {% if is_granted('transfer_package', package) %}
                 <div class="row">
                     {{ form_start(transferPackageForm, {
-                        attr: { id: 'transfer-package-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_transfer_package_form|default(false) ? '': 'hidden') },
+                        attr: {
+                            id: 'transfer-package-form',
+                            class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_transfer_package_form|default(false) ? '': 'hidden'),
+                        },
                         action: path('transfer_package', { 'name': package.name })
                     }) }}
                         <div>

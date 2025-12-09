@@ -1082,20 +1082,11 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   margin-bottom: 4px;
   margin-right: 4px;
 }
-.package .details #add-maintainer{
-  margin-top: 3px;
-  margin-bottom: 7px;
-  font-size: 34px;
-}
-.package .details #transfer-package {
-    margin-top: 7px;
-    margin-bottom: 7px;
-    margin-right: 4px;
-    font-size: 34px;
-}
-.package .details #remove-maintainer {
-  font-size: 35px;
-  margin-top: 5px;
+.package .details .maintainer-actions {
+    a {
+        font-size: 34px;
+        cursor: pointer;
+    }
 }
 .package .details .canonical,
 .package .funding p {
