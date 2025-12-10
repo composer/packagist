@@ -97,9 +97,7 @@ class ResetPasswordController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             $user->resetPasswordRequest();
-            if (!$user->hasRole('ROLE_SPAMMER')) {
-                $user->setEnabled(true);
-            }
+            $user->setEnabled(true);
 
             // Encode the plain password, and set it.
             $encodedPassword = $passwordHasher->hashPassword(

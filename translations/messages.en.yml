@@ -190,5 +190,6 @@ audit_log:
         user_created: User created
         user_deleted: User deleted
         username_changed: Username changed
+        version_created: Version created
         version_deleted: Version deleted
         version_reference_changed: Version reference changed

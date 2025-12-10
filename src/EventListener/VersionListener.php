@@ -23,6 +23,7 @@ use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
 
 #[AsEntityListener(event: 'preUpdate', entity: Version::class)]
+#[AsEntityListener(event: 'postPersist', entity: Version::class)]
 #[AsEntityListener(event: 'postUpdate', entity: Version::class)]
 class VersionListener
 {
@@ -34,6 +35,16 @@ class VersionListener
     public function __construct(
         private ManagerRegistry $doctrine,
     ) {
+    }
+
+    /**
+     * @param LifecycleEventArgs<EntityManager> $event
+     */
+    public function postPersist(Version $version, LifecycleEventArgs $event): void
+    {
+        $data = $version->toV2Array([]);
+        $record = AuditRecord::versionCreated($version, $data, $this->getUser());
+        $this->getEM()->getRepository(AuditRecord::class)->insert($record);
     }
 
     public function preUpdate(Version $version, PreUpdateEventArgs $event): void

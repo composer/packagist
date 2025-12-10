@@ -1,0 +1,7 @@
+{% macro packageLink(packageName) %}
+    {%- if packageName is existing_package -%}
+        <a href="{{ path('view_package', { 'name': packageName }) }}">{{ packageName }}</a>
+    {%- else -%}
+        {{ packageName }}
+    {%- endif -%}
+{% endmacro %}

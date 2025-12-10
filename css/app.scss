@@ -1805,10 +1805,22 @@ body {
         margin-bottom: 0;
         line-height: 45px;
     }
+    a.short, a.long {
+        display: inline-block;
+        width: 170px;
+    }
+    @media (min-width: 992px) {
+        a.short {
+            width: 145px;
+        }
+    }
     img {
         height: 45px;
         position: relative;
         top: -3px;
+    }
+    img[alt="Aikido"] {
+        height: 35px;
     }
 }
 

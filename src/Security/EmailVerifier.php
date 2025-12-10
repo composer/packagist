@@ -66,10 +66,7 @@ class EmailVerifier
         }
 
         $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $user->getId(), $user->getEmail());
-
-        if (!$user->hasRole('ROLE_SPAMMER')) {
-            $user->setEnabled(true);
-        }
+        $user->setEnabled(true);
 
         $this->getEM()->persist($user);
         $this->getEM()->flush();

@@ -1,5 +1,5 @@
 {% import 'audit_log/macros.html.twig' as auditLog %}
 
 <strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
-Repository: {{ display.repository }}<br>
-Created by: {{ display.actor.username }}
+Maintainer: {{ display.maintainer.username }}<br>
+Removed by: {{ display.actor.username }}

@@ -1,4 +1,6 @@
 {% embed "web/list.html.twig" %}
     {% block content %}
     {% endblock %}
+
+    {% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 {% endembed %}
