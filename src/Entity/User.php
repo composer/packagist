@@ -465,6 +465,10 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function setEnabled(bool $boolean): void
     {
+        if ($this->hasRole('ROLE_SPAMMER')) {
+            $boolean = false;
+        }
+
         $this->enabled = $boolean;
     }
 
