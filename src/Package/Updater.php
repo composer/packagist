@@ -128,7 +128,6 @@ class Updater
         $deleteDate = new \DateTimeImmutable('-1day');
 
         $em = $this->getEM();
-        $rootIdentifier = null;
 
         $driver = $repository->getDriver();
         if (!$driver) {
