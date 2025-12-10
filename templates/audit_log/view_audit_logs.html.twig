@@ -34,6 +34,14 @@
                 </div>
             </div>
             <div class="col-md-3">
+                <div class="form-group">
+                    <label for="vendor-filter">Vendor:</label>
+                    <input type="text" name="vendor" id="vendor-filter" value="{{ selectedFilters.vendor }}" placeholder="Search by vendor">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
                 <input type="submit" value="Filter">
                 <a href="{{ url('view_audit_logs') }}">Reset filters</a>
             </div>
