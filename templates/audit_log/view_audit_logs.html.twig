@@ -9,7 +9,7 @@
 
     <form method="get" action="{{ path('view_audit_logs') }}" name="filters">
         <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="type-filter">Type:</label>
                     <select name="type[]" id="type-filter" multiple>
@@ -21,13 +21,19 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="actor-filter">Actor:</label>
                     <input type="text" name="actor" id="actor-filter" value="{{ selectedFilters.actor }}" placeholder="Search by username">
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="user-filter">User:</label>
+                    <input type="text" name="user" id="user-filter" value="{{ selectedFilters.user }}" placeholder="Search by username">
+                </div>
+            </div>
+            <div class="col-md-3">
                 <input type="submit" value="Filter">
                 <input type="reset" value="Reset">
             </div>

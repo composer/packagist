@@ -17,6 +17,7 @@ use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\QueryFilter\AuditLog\ActorFilter;
 use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
+use App\QueryFilter\AuditLog\UserFilter;
 use App\QueryFilter\QueryFilterInterface;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
@@ -35,6 +36,7 @@ class TransparencyLogController extends Controller
         $filters = [
             AuditRecordTypeFilter::fromQuery($request->query),
             ActorFilter::fromQuery($request->query),
+            UserFilter::fromQuery($request->query),
         ];
 
         $qb = $auditRecordRepository->createQueryBuilder('a')
