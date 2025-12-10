@@ -24,7 +24,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-class AuditLogController extends Controller
+class TransparencyLogController extends Controller
 {
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/transparency-log', name: 'view_audit_logs')]
