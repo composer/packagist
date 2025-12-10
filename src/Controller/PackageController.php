@@ -985,7 +985,7 @@ class PackageController extends Controller
         }
 
         try {
-            $newMaintainers = $form->getData()->getMaintainers()->toArray();
+            $newMaintainers = $form->getData()->maintainers->toArray();
             $result = $this->packageManager->transferPackage($package, $newMaintainers);
             $this->getEM()->flush();
 

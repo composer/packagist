@@ -90,7 +90,7 @@ class Package
     public const AUTO_MANUAL_HOOK = 1;
     public const AUTO_GITHUB_HOOK = 2;
 
-    public const string PACKAGE_NAME_REGEX = '[a-zA-Z0-9](?:[_.-]?[a-zA-Z0-9]+)*/[a-zA-Z0-9](?:[_.-]?[a-zA-Z0-9]+)*';
+    public const string PACKAGE_NAME_REGEX = '[a-zA-Z0-9]++(?:[_.-]?[a-zA-Z0-9]++)*+/[a-zA-Z0-9]++(?:[_.-]?[a-zA-Z0-9]++)*+';
 
     #[ORM\Id]
     #[ORM\Column(type: 'integer')]
