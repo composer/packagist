@@ -166,7 +166,7 @@ class PackageControllerTest extends IntegrationTestCase
         $form = $crawler->filter('[name="transfer_package_form"]')->form();
         $form->setValues([
             'transfer_package_form[maintainers][0]' => 'alice',
-            'transfer_package_form[maintainers][1]' => 'bob@example.org',
+            'transfer_package_form[maintainers][1]' => 'bob',
         ]);
 
         $this->client->submit($form);
@@ -194,9 +194,8 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertNotNull($auditRecord, 'Audit record not found');
     }
 
-    #[TestWith(['does_not_exist', 'value is not a valid username or email'])]
+    #[TestWith(['does_not_exist', 'value is not a valid username'])]
     #[TestWith([null, 'at least one maintainer must be specified'])]
-    #[TestWith(['bob', 'The user "bob" is disabled'])]
     public function testTransferPackageReturnsValidationError(?string $value, string $message): void
     {
         $alice = self::createUser('alice', 'alice@example.org');

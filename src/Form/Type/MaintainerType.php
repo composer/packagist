@@ -42,27 +42,19 @@ class MaintainerType extends AbstractType
                     return null;
                 }
 
-                $user = $this->em->getRepository(User::class)->findOneByUsernameOrEmail($username);
+                $username = mb_strtolower($username);
+                $users = $this->em->getRepository(User::class)->findEnabledUsersByUsername([$username]);
 
-                if ($user === null) {
+                if (!count($users) || !array_key_exists($username, $users)) {
                     $failure = new TransformationFailedException(sprintf('User "%s" does not exist.', $username));
-                    $failure->setInvalidMessage('The given "{{ value }}" value is not a valid username or email.', [
+                    $failure->setInvalidMessage('The given "{{ value }}" value is not a valid username.', [
                         '{{ value }}' => $username,
                     ]);
 
                     throw $failure;
                 }
 
-                if (!$user->isEnabled()) {
-                    $failure = new TransformationFailedException(sprintf('User "%s" is disabled.', $username));
-                    $failure->setInvalidMessage('The user "{{ value }}" is disabled.', [
-                        '{{ value }}' => $username,
-                    ]);
-
-                    throw $failure;
-                }
-
-                return $user;
+                return $users[$username];
             }
         ));
     }
