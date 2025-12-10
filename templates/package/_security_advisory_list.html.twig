@@ -22,7 +22,7 @@
                                             {% endif %}
                                         {% endfor %}
                                     </p>
-                                    {% if withPackage|default(false) %}<p>Affected package: {{ advisory.packageName }}</p>{% endif %}
+                                    {% if withPackage|default(false) %}<p>Affected package: {% if advisory.packageName is existing_package %}<a href="{{ path('view_package', { 'name': advisory.packageName }) }}">{{ advisory.packageName }}</a>{% else %}{{ advisory.packageName }}{% endif %}</p>{% endif %}
                                     <p>Affected version: {{ advisory.affectedVersions }}</p>
                                 </div>
                                 <div class="col-sm-4 col-lg-3">
