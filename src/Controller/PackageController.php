@@ -964,7 +964,7 @@ class PackageController extends Controller
     }
 
 
-    #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
+    #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET', 'POST'])]
     public function transferPackageAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger): RedirectResponse
     {
         $this->denyAccessUnlessGranted(PackageActions::TransferPackage->value, $package);
@@ -1658,8 +1658,7 @@ class PackageController extends Controller
      */
     private function createTransferPackageForm(Package $package): FormInterface
     {
-        $transferRequest = new TransferPackageRequest();
-        $transferRequest->setMaintainers(clone $package->getMaintainers());
+        $transferRequest = new TransferPackageRequest(clone $package->getMaintainers());
 
         return $this->createForm(TransferPackageRequestType::class, $transferRequest);
     }

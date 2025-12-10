@@ -19,28 +19,10 @@ use Doctrine\Common\Collections\Collection;
 
 class TransferPackageRequest
 {
-    /** @var Collection<int, User> */
-    #[TransferPackageValidMaintainersList]
-    private Collection $maintainers;
-
-    public function __construct()
-    {
-        $this->maintainers = new ArrayCollection();
-    }
-
-    /**
-     * @return Collection<int, User>
-     */
-    public function getMaintainers(): Collection
-    {
-        return $this->maintainers;
-    }
-
-    /**
-     * @param Collection<int, User> $maintainers
-     */
-    public function setMaintainers(Collection $maintainers): void
-    {
-        $this->maintainers = $maintainers;
+    public function __construct(
+        /** @var Collection<int, User> */
+        #[TransferPackageValidMaintainersList]
+        public Collection $maintainers = new ArrayCollection(),
+    ) {
     }
 }
