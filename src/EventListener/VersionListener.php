@@ -25,6 +25,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 
 #[AsEntityListener(event: 'preRemove', entity: Version::class)]
 #[AsEntityListener(event: 'preUpdate', entity: Version::class)]
+#[AsEntityListener(event: 'postPersist', entity: Version::class)]
 #[AsEntityListener(event: 'postUpdate', entity: Version::class)]
 class VersionListener
 {
@@ -37,6 +38,16 @@ class VersionListener
         private ManagerRegistry $doctrine,
         private Security $security,
     ) {
+    }
+
+    /**
+     * @param LifecycleEventArgs<EntityManager> $event
+     */
+    public function postPersist(Version $version, LifecycleEventArgs $event): void
+    {
+        $data = $version->toV2Array([]);
+        $record = AuditRecord::versionCreated($version, $data, $this->getUser());
+        $this->getEM()->getRepository(AuditRecord::class)->insert($record);
     }
 
     /**
