@@ -21,6 +21,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bundle\SecurityBundle\Security;
 
 #[AsEntityListener(event: 'preUpdate', entity: Version::class)]
 #[AsEntityListener(event: 'postPersist', entity: Version::class)]
@@ -34,6 +35,7 @@ class VersionListener
 
     public function __construct(
         private ManagerRegistry $doctrine,
+        private Security $security,
     ) {
     }
 
@@ -73,5 +75,12 @@ class VersionListener
             }
             $this->buffered = [];
         }
+    }
+
+    private function getUser(): ?User
+    {
+        $user = $this->security->getUser();
+
+        return $user instanceof User ? $user : null;
     }
 }
