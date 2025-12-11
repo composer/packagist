@@ -244,7 +244,7 @@ class PackageManager
     /**
      * @param array<User> $newMaintainers
      */
-    public function transferPackage(Package $package, array $newMaintainers): bool
+    public function transferPackage(Package $package, array $newMaintainers, bool $notifyNewMaintainers = false): bool
     {
         $oldMaintainers = $package->getMaintainers()->toArray();
         $normalizedOldMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $oldMaintainers));
@@ -259,7 +259,12 @@ class PackageManager
 
         $package->getMaintainers()->clear();
         foreach ($newMaintainers as $maintainer) {
+            $isNewMaintainer = !in_array($maintainer->getId(), $normalizedOldMaintainers);
             $package->addMaintainer($maintainer);
+
+            if ($notifyNewMaintainers && $isNewMaintainer) {
+                $this->notifyNewMaintainer($maintainer, $package);
+            }
         }
 
         $this->doctrine->getManager()->persist(AuditRecord::packageTransferred($package, null, $oldMaintainers, $newMaintainers));

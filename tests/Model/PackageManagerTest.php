@@ -18,6 +18,7 @@ use App\Entity\Package;
 use App\Entity\User;
 use App\Model\PackageManager;
 use App\Tests\IntegrationTestCase;
+use PHPUnit\Framework\Attributes\TestWith;
 
 class PackageManagerTest extends IntegrationTestCase
 {
@@ -60,7 +61,9 @@ class PackageManagerTest extends IntegrationTestCase
         $this->assertEquals(202, $client->getResponse()->getStatusCode());
     }
 
-    public function testTransferPackageReplacesAllMaintainers(): void
+    #[TestWith([false, 0])]
+    #[TestWith([true, 1])]
+    public function testTransferPackageReplacesAllMaintainers(bool $notifyNewMaintainers, int $expectedEmailCount): void
     {
         $alice = self::createUser('alice', 'alice@example.org');
         $bob = self::createUser('bob', 'bob@example.org');
@@ -70,7 +73,7 @@ class PackageManagerTest extends IntegrationTestCase
         $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$john, $alice]);
         $this->store($package);
 
-        $result = $this->packageManager->transferPackage($package, [$bob, $alice]);
+        $result = $this->packageManager->transferPackage($package, [$bob, $alice], $notifyNewMaintainers);
 
         $em = self::getEM();
         $em->flush();
@@ -81,6 +84,7 @@ class PackageManagerTest extends IntegrationTestCase
         $callable = fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package->getMaintainers()->toArray()));
         $this->assertAuditLogWasCreated($package, ['john', 'alice'], ['bob', 'alice']);
+        $this->assertEmailCount($expectedEmailCount);
     }
 
     public function testTransferPackageWithSameMaintainersDoesNothing(): void
