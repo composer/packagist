@@ -180,7 +180,7 @@ class ApiController extends Controller
 
         $url = str_replace('https://api.github.com/repos', 'https://github.com', $url);
 
-        return $this->receiveUpdateRequest($request, $url, $urlRegex, $remoteId, $githubWebhookSecret);
+        return $this->receiveUpdateRequest($request, $url, $urlRegex, $remoteId, $githubWebhookSecret, $statsd);
     }
 
     #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'json'], methods: ['PUT'])]
@@ -432,7 +432,7 @@ class ApiController extends Controller
      * @param string                  $url      the repository's URL (deducted from the request)
      * @param value-of<self::REGEXES> $urlRegex the regex used to split the user packages into domain and path
      */
-    protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret): JsonResponse
+    protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret, StatsDClient $statsd): JsonResponse
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!Preg::isMatchStrictGroups($urlRegex, $url, $match)) {
