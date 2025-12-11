@@ -26,6 +26,7 @@ use App\Entity\SuggestLink;
 use App\Entity\Tag;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
+use App\Event\PackageAbandonementStateChangedEvent;
 use App\HtmlSanitizer\ReadmeImageSanitizer;
 use App\HtmlSanitizer\ReadmeLinkSanitizer;
 use App\Model\ProviderManager;
@@ -54,6 +55,7 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -106,6 +108,7 @@ class Updater
         private MailerInterface $mailer,
         private string $mailFromEmail,
         private UrlGeneratorInterface $urlGenerator,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
         ErrorHandler::register();
     }
@@ -427,7 +430,9 @@ class Updater
             $package->setType($this->sanitize($data->getType()));
             if ($data->isAbandoned() && !$package->isAbandoned()) {
                 $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
-                $package->abandonmentReason = $this->detectAbandonmentReason($driver, $rootIdentifier);
+                $this->eventDispatcher->dispatch(
+                    new PackageAbandonementStateChangedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier))
+                );
                 $package->setAbandoned(true);
                 if ($data->getReplacementPackage()) {
                     $package->setReplacementPackage($data->getReplacementPackage());

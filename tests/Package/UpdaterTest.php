@@ -28,6 +28,7 @@ use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -67,8 +68,9 @@ class UpdaterTest extends IntegrationTestCase
 
         $mailerMock = $this->createMock(MailerInterface::class);
         $routerMock = $this->createMock(UrlGeneratorInterface::class);
+        $eventDispatcherMock = $this->createMock(EventDispatcher::class);
 
-        $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock);
+        $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock, $eventDispatcherMock);
     }
 
     protected function tearDown(): void

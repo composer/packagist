@@ -16,6 +16,7 @@ use App\Audit\AbandonmentReason;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Event\PackageAbandonementStateChangedEvent;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\EntityManager;
@@ -23,11 +24,13 @@ use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 #[AsEntityListener(event: 'postPersist', entity: Package::class)]
 #[AsEntityListener(event: 'preRemove', entity: Package::class)]
 #[AsEntityListener(event: 'preUpdate', entity: Package::class)]
 #[AsEntityListener(event: 'postUpdate', entity: Package::class)]
+#[AsEventListener(event: PackageAbandonementStateChangedEvent::class, method: 'onPackageAbandonmentStateChange')]
 class PackageListener
 {
     use DoctrineTrait;
@@ -49,6 +52,19 @@ class PackageListener
         $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::packageCreated($package, $this->getUser()));
     }
 
+    public function onPackageAbandonmentStateChange(PackageAbandonementStateChangedEvent $event): void
+    {
+        $package = $event->getPackage();
+
+        if ($package->isAbandoned()) {
+            $this->buffered[] = AuditRecord::packageAbandoned($package, $this->getUser(), $package->getReplacementPackage(), $event->getReason());
+        } else {
+            $this->buffered[] = AuditRecord::packageUnabandoned($package, $this->getUser());
+        }
+    }
+
+
+
     /**
      * @param LifecycleEventArgs<EntityManager> $event
      */
@@ -64,23 +80,6 @@ class PackageListener
         if ($event->hasChangedField('repository')) {
             // buffering things to be inserted in postUpdate once we can confirm it is done
             $this->buffered[] = AuditRecord::canonicalUrlChange($package, $this->getUser(), $event->getOldValue('repository'));
-        }
-
-        if ($event->hasChangedField('abandoned')) {
-            $newValue = $event->getNewValue('abandoned');
-            if ($newValue === true) {
-                $reason = $package->abandonmentReason;
-
-                if ($this->getUser()) {
-                    $reason = AbandonmentReason::Manual;
-                } else {
-                    $reason = $reason ?? AbandonmentReason::Unknown;
-                }
-
-                $this->buffered[] = AuditRecord::packageAbandoned($package, $this->getUser(), $package->getReplacementPackage(), $reason);
-            } else {
-                $this->buffered[] = AuditRecord::packageUnabandoned($package, $this->getUser());
-            }
         }
     }
 
