@@ -111,7 +111,7 @@
                                                 </label>
                                             </div>
 
-                                            {%- if packagist_host and packagist_host in app.request.headers.get('Referer') %}
+                                            {%- if packagist_host and ('://' ~ packagist_host ~ '/') in app.request.headers.get('Referer') %}
                                                 <input type="hidden" name="_target_path" value="{{ app.request.headers.get('Referer') }}" />
                                             {%- endif %}
 
