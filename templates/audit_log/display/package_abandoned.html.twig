@@ -17,7 +17,7 @@ Repository: {{ display.repository }}<br>
     {% elseif display.reason == 'manual' -%}
         Manually set by maintainer
     {% else -%}
-        {{ display.reason }}
+        {{ display.reason|capitalize }}
     {% endif -%}<br>
 {%- endif -%}
 {%- if display.replacementPackage -%}
