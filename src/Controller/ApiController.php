@@ -462,7 +462,9 @@ class ApiController extends Controller
                     $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $source, $user);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
+                    $statsd->increment('update_pkg_api.success', tags: ['mode' => 'github_user_secret']);
                 } else {
+                    $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_user_sig']);
                     return new JsonResponse(['status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.'], 403);
                 }
             } else {
@@ -489,22 +491,31 @@ class ApiController extends Controller
                     $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $source);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_auto';
+                    $statsd->increment('update_pkg_api.success', tags: ['mode' => 'github_auto']);
                 } else {
+                    $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_gh_sig']);
                     $this->logger->error('Failed validating GitHub webhook signature', ['sig' => $sig, 'expected' => $expected, 'query_params' => $request->query->all(), 'repo' => json_decode($request->getContent(), true)['repository']['html_url'] ?? null]);
+
+                    return new JsonResponse(['status' => 'error', 'message' => 'Invalid github signature. Delete this webhook and recreate it using the manual account sync trigger from https://packagist.org/about#how-to-update-packages'], 403);
                 }
             }
         }
 
         if (!$packages) {
             if (!$user) {
+                $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'no_user_found']);
                 return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 403);
             }
 
             // try to find the user package
             $packages = $this->findPackagesByUrl($user, $url, $urlRegex, $remoteId);
+            if ($packages) {
+                $statsd->increment('update_pkg_api.success', tags: ['mode' => 'manual_hook']);
+            }
         }
 
         if (!$packages) {
+            $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'no_package_found']);
             return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)'], 404);
         }
 
