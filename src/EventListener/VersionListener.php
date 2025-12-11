@@ -15,23 +15,20 @@ namespace App\EventListener;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Entity\Version;
+use App\Event\VersionReferenceChangedEvent;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
-#[AsEntityListener(event: 'preUpdate', entity: Version::class)]
 #[AsEntityListener(event: 'postPersist', entity: Version::class)]
-#[AsEntityListener(event: 'postUpdate', entity: Version::class)]
+#[AsEventListener(event: VersionReferenceChangedEvent::class, method: 'onVersionReferenceChanged')]
 class VersionListener
 {
     use DoctrineTrait;
-
-    /** @var list<AuditRecord> */
-    private array $buffered = [];
 
     public function __construct(
         private ManagerRegistry $doctrine,
@@ -49,32 +46,22 @@ class VersionListener
         $this->getEM()->getRepository(AuditRecord::class)->insert($record);
     }
 
-    public function preUpdate(Version $version, PreUpdateEventArgs $event): void
+    public function onVersionReferenceChanged(VersionReferenceChangedEvent $event): void
     {
-        if (($event->hasChangedField('source') || $event->hasChangedField('dist')) && !$version->isDevelopment()) {
-            $oldDistRef = $event->hasChangedField('dist') ? ($event->getOldValue('dist')['reference'] ?? null) : $version->getDist()['reference'] ?? null;
-            $oldSourceRef = $event->hasChangedField('source') ? ($event->getOldValue('source')['reference'] ?? null) : $version->getSource()['reference'] ?? null;
-            $newDistRef = $event->hasChangedField('dist') ? ($event->getNewValue('dist')['reference'] ?? null) : $version->getDist()['reference'] ?? null;
-            $newSourceRef = $event->hasChangedField('source') ? ($event->getNewValue('source')['reference'] ?? null) : $version->getSource()['reference'] ?? null;
-            if ($oldDistRef !== $newDistRef || $oldSourceRef !== $newSourceRef) {
-                // buffering things to be inserted in postUpdate once we can confirm it is done
-                $this->buffered[] = AuditRecord::versionReferenceChange($version, $oldSourceRef, $oldDistRef);
-            }
-        }
-    }
+        $version = $event->getVersion();
 
-    /**
-     * @param LifecycleEventArgs<EntityManager> $event
-     */
-    public function postUpdate(Version $version, LifecycleEventArgs $event): void
-    {
-        if ($this->buffered) {
-            $repo = $this->getEM()->getRepository(AuditRecord::class);
-            foreach ($this->buffered as $record) {
-                $repo->insert($record);
-            }
-            $this->buffered = [];
+        if ($version->isDevelopment() && !$event->hasMetadataChanged()) {
+            return;
         }
+
+        $record = AuditRecord::versionReferenceChange(
+            $version,
+            $event->getOldSourceRef(),
+            $event->getOldDistRef(),
+            $event->getNewMetadata()
+        );
+
+        $this->getEM()->getRepository(AuditRecord::class)->insert($record);
     }
 
     private function getUser(): ?User

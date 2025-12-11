@@ -56,6 +56,7 @@ use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use App\Event\VersionReferenceChangedEvent;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -256,17 +257,21 @@ class Updater
 
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier, $driver);
             $versionId = false;
-            if ($result['updated']) {
-                \assert($result['object'] instanceof Version);
+            if ($result->updated) {
+                \assert($result->entity instanceof Version);
                 $em->flush();
 
-                // detach version once flushed to avoid gathering lots of data in memory
-                $em->detach($result['object']);
+                foreach ($result->events as $event) {
+                    $this->eventDispatcher->dispatch($event);
+                }
 
-                $this->versionIdCache->insertVersion($package, $result['object']);
-                $versionId = $result['object']->getId();
+                // detach version once flushed to avoid gathering lots of data in memory
+                $em->detach($result->entity);
+
+                $this->versionIdCache->insertVersion($package, $result->entity);
+                $versionId = $result->entity->getId();
             } else {
-                $idsToMarkUpdated[] = $result['id'];
+                $idsToMarkUpdated[] = $result->id;
             }
 
             // use the first version which should be the highest stable version by default
@@ -279,7 +284,7 @@ class Updater
             }
 
             // mark the version processed so we can prune leftover ones
-            unset($existingVersions[$result['version']]);
+            unset($existingVersions[$result->version]);
         }
 
         if ($dependentSuggesterSource) {
@@ -364,10 +369,8 @@ class Updater
      *  - object (Version instance if it was updated)
      *
      * @param ExistingVersionsForUpdate $existingVersions
-     *
-     * @return array{updated: true, id: int|null, version: string, object: Version}|array{updated: false, id: int|null, version: string, object: null}
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier, VcsDriverInterface $driver): array
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier, VcsDriverInterface $driver): UpdateVersionInformationResult
     {
         $em = $this->getEM();
         $version = new Version();
@@ -406,11 +409,25 @@ class Updater
                 $version->setIsDefaultBranch($data->isDefaultBranch());
                 $em->persist($version);
 
-                return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version];
+                return new UpdateVersionInformationResult(
+                    updated: true,
+                    id: $versionId,
+                    version: strtolower($normVersion),
+                    entity: $version,
+                );
             } else {
-                return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
+                return new UpdateVersionInformationResult(
+                    updated: false,
+                    id: $existingVersion['id'],
+                    version: strtolower($normVersion),
+                );
             }
         }
+
+        // Capture original metadata and references BEFORE modifications
+        $originalMetadata = $versionId !== null ? $version->toV2Array([]) : null;
+        $oldSourceRef = $version->getSource()['reference'] ?? null;
+        $oldDistRef = $version->getDist()['reference'] ?? null;
 
         $version->setName($package->getName());
         $version->setVersion($data->getPrettyVersion());
@@ -611,7 +628,28 @@ class Updater
             $version->getSuggest()->clear();
         }
 
-        return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version];
+        $newSourceRef = $version->getSource()['reference'] ?? null;
+        $newDistRef = $version->getDist()['reference'] ?? null;
+
+        $events = [];
+        if ($originalMetadata !== null && ($oldSourceRef !== $newSourceRef || $oldDistRef !== $newDistRef)) {
+            $events[] = new VersionReferenceChangedEvent(
+                $version,
+                $originalMetadata,
+                $oldSourceRef,
+                $oldDistRef,
+                $newSourceRef,
+                $newDistRef
+            );
+        }
+
+        return new UpdateVersionInformationResult(
+            updated: true,
+            id: $versionId,
+            version: strtolower($normVersion),
+            entity: $version,
+            events: $events,
+        );
     }
 
     /**
