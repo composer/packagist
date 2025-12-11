@@ -129,9 +129,9 @@ class AuditRecord
         return new self(AuditRecordType::PackageAbandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'replacement_package' => $replacementPackage, 'reason' => $reason?->value, 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function packageUnabandoned(Package $package, ?User $actor, ?string $previousReplacementPackage): self
+    public static function packageUnabandoned(Package $package, ?User $actor): self
     {
-        return new self(AuditRecordType::PackageUnabandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'previous_replacement_package' => $previousReplacementPackage, 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::PackageUnabandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function userCreated(User $user, UserRegistrationMethod $method): self

@@ -79,8 +79,7 @@ class PackageListener
 
                 $this->buffered[] = AuditRecord::packageAbandoned($package, $this->getUser(), $package->getReplacementPackage(), $reason);
             } else {
-                $oldReplacementPackage = $event->hasChangedField('replacementPackage') ? $event->getOldValue('replacementPackage') : $package->getReplacementPackage();
-                $this->buffered[] = AuditRecord::packageUnabandoned($package, $this->getUser(), $oldReplacementPackage);
+                $this->buffered[] = AuditRecord::packageUnabandoned($package, $this->getUser());
             }
         }
     }

@@ -113,7 +113,6 @@ class PackageAuditRecordTest extends KernelTestCase
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('test/package', $attributes['name']);
         self::assertSame('https://github.com/test/package', $attributes['repository']);
-        self::assertSame('test/replacement', $attributes['previous_replacement_package']);
         self::assertSame('automation', $attributes['actor']);
     }
 
@@ -153,6 +152,5 @@ class PackageAuditRecordTest extends KernelTestCase
         self::assertSame(AuditRecordType::PackageUnabandoned->value, $logs[0]['type']);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('test/package2', $attributes['name']);
-        self::assertNull($attributes['previous_replacement_package']);
     }
 }
