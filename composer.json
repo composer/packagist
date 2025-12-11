@@ -161,7 +161,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "7.3.*"
+            "require": "7.4.*"
         },
         "symfony-bin-dir": "bin",
         "symfony-web-dir": "web",

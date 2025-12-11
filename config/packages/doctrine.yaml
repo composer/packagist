@@ -6,7 +6,6 @@ doctrine:
             # PDO::ATTR_TIMEOUT
             2: 1.3
     orm:
-        enable_native_lazy_objects:   true
         validate_xml_mapping: true
         auto_mapping: true
         dql:

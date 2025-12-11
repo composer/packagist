@@ -494,8 +494,6 @@ class ApiController extends Controller
                     $statsd->increment('update_pkg_api.success', tags: ['mode' => 'github_auto']);
                 } else {
                     $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_gh_sig']);
-                    $this->logger->error('Failed validating GitHub webhook signature', ['sig' => $sig, 'expected' => $expected, 'query_params' => $request->query->all(), 'repo' => json_decode($request->getContent(), true)['repository']['html_url'] ?? null]);
-
                     return new JsonResponse(['status' => 'error', 'message' => 'Invalid github signature. Delete this webhook and recreate it using the manual account sync trigger from https://packagist.org/about#how-to-update-packages'], 403);
                 }
             }
