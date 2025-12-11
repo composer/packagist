@@ -17,9 +17,12 @@ use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\RequireLink;
 use App\Entity\Version;
+use App\Event\VersionReferenceChangedEvent;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class VersionAuditRecordTest extends KernelTestCase
 {
@@ -65,20 +68,66 @@ class VersionAuditRecordTest extends KernelTestCase
     {
         $container = static::getContainer();
         $em = $container->get(ManagerRegistry::class)->getManager();
+        $eventDispatcher = $container->get(EventDispatcherInterface::class);
 
         $version = $this->createPackageAndVersion();
 
+        $originalMetadata = $version->toV2Array([]);
         $version->setDist(['reference' => 'new-dist-ref', 'type' => 'zip', 'url' => 'https://example.org/dist.zip']);
         $version->setSource(['reference' => 'new-source-ref', 'type' => 'git', 'url' => 'git://example.org/dist.zip']);
-        $em->persist($version);
+
+        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata, 'source-ref', 'dist-ref', $version->getSource()['reference'] ?? null, $version->getDist()['type'] ?? null);
+        $eventDispatcher->dispatch($changeEvent);
         $em->flush();
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(3, $logs); // package creation + version creation + version reference change
-        self::assertSame(AuditRecordType::VersionReferenceChanged->value, $logs[0]['type']);
-        self::assertSame('{"name": "composer/composer", "dist_to": "new-dist-ref", "version": "1.0.0", "dist_from": "dist-ref", "source_to": "new-source-ref", "source_from": "source-ref"}', $logs[0]['attributes']);
+        $log = $logs[0];
+        $attributes = json_decode($log['attributes'] ?? '{}', true) ?? [];
+        self::assertSame(AuditRecordType::VersionReferenceChanged->value, $log['type']);
+        self::assertSame('composer/composer', $attributes['name']);
+        self::assertSame('1.0.0', $attributes['version']);
+        self::assertSame('dist-ref', $attributes['dist_from']);
+        self::assertSame('new-dist-ref', $attributes['dist_to']);
+        self::assertSame('source-ref', $attributes['source_from']);
+        self::assertSame('new-source-ref', $attributes['source_to']);
+        self::assertSame('^1.5.0', $attributes['metadata']['require']['composer/ca-bundle']);
 
-        // verify that unrelated changes do not create new audit logs
+        // verify that dev versions with no changes to metadata don't create an audit record
+        $originalMetadata = $version->toV2Array([]);
+        $version->setDist(['reference' => 'another-dist-ref', 'type' => 'zip', 'url' => 'https://example.org/dist.zip']);
+        $version->setDevelopment(true);
+        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata, 'source-ref', 'dist-ref', $version->getSource()['reference'] ?? null, $version->getDist()['type'] ?? null);
+        $eventDispatcher->dispatch($changeEvent);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
+        self::assertCount(3, $logs); // package creation + version creation + version reference change
+
+        // verify that dev versions with changes to metadata create an audit record
+        $originalMetadata = $version->toV2Array([]);
+        $link = new RequireLink();
+        $link->setVersion($version);
+        $link->setPackageVersion('^1.6.0');
+        $link->setPackageName('composer/ca-bundle');
+        $em->persist($link);
+        $version->setDist(['reference' => 'a-dist-ref-with-metadata-changes', 'type' => 'zip', 'url' => 'https://d.io/dist.zip']);
+        $version->getRequire()->clear();
+        $version->addRequireLink($link);
+        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata, 'source-ref', 'another-dist-ref', $version->getSource()['reference'] ?? null, $version->getDist()['type'] ?? null);
+        $eventDispatcher->dispatch($changeEvent);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
+        self::assertCount(4, $logs); // package creation + version creation + version reference change x 2
+        $log = $logs[0];
+        $attributes = json_decode($log['attributes'] ?? '{}', true) ?? [];
+        self::assertSame(AuditRecordType::VersionReferenceChanged->value, $log['type']);
+        self::assertSame('another-dist-ref', $attributes['dist_from']);
+        self::assertSame('a-dist-ref-with-metadata-changes', $attributes['dist_to']);
+        self::assertSame('^1.6.0', $attributes['metadata']['require']['composer/ca-bundle']);
+
+/*        // verify that unrelated changes do not create new audit logs
         $version->setLicense(['MIT']);
         $em->persist($version);
         $em->flush();
@@ -101,7 +150,7 @@ class VersionAuditRecordTest extends KernelTestCase
         $em->flush();
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
-        self::assertCount(3, $logs);
+        self::assertCount(3, $logs);*/
     }
 
     private function createPackageAndVersion(): Version

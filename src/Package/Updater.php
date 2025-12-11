@@ -53,6 +53,8 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use App\Event\VersionReferenceChangedEvent;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -105,6 +107,7 @@ class Updater
         private MailerInterface $mailer,
         private string $mailFromEmail,
         private UrlGeneratorInterface $urlGenerator,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
         ErrorHandler::register();
     }
@@ -250,11 +253,15 @@ class Updater
             }
             $processedVersions[strtolower($version->getVersion())] = $version;
 
-            $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier);
+            $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags);
             $versionId = false;
             if ($result['updated']) {
                 \assert($result['object'] instanceof Version);
                 $em->flush();
+
+                foreach ($result['events'] as $event) {
+                    $this->eventDispatcher->dispatch($event);
+                }
 
                 // detach version once flushed to avoid gathering lots of data in memory
                 $em->detach($result['object']);
@@ -363,7 +370,7 @@ class Updater
      *
      * @return array{updated: true, id: int|null, version: string, object: Version}|array{updated: false, id: int|null, version: string, object: null}
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier): array
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags): array
     {
         $em = $this->getEM();
         $version = new Version();
@@ -407,6 +414,11 @@ class Updater
                 return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
             }
         }
+
+        // Capture original metadata and references BEFORE modifications
+        $originalMetadata = $versionId !== null ? $version->toV2Array([]) : null;
+        $oldSourceRef = $version->getSource()['reference'] ?? null;
+        $oldDistRef = $version->getDist()['reference'] ?? null;
 
         $version->setName($package->getName());
         $version->setVersion($data->getPrettyVersion());
@@ -604,7 +616,21 @@ class Updater
             $version->getSuggest()->clear();
         }
 
-        return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version];
+        $newSourceRef = $version->getSource()['reference'] ?? null;
+        $newDistRef = $version->getDist()['reference'] ?? null;
+
+        if ($originalMetadata !== null && ($oldSourceRef !== $newSourceRef || $oldDistRef !== $newDistRef)) {
+            $event = new VersionReferenceChangedEvent(
+                $version,
+                $originalMetadata,
+                $oldSourceRef,
+                $oldDistRef,
+                $newSourceRef,
+                $newDistRef
+            );
+        }
+
+        return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version, 'events' => [$event]];
     }
 
     /**
