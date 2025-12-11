@@ -17,6 +17,7 @@ use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\QueryFilter\AuditLog\ActorFilter;
 use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
+use App\QueryFilter\AuditLog\PackageNameFilter;
 use App\QueryFilter\AuditLog\UserFilter;
 use App\QueryFilter\AuditLog\VendorFilter;
 use App\QueryFilter\QueryFilterInterface;
@@ -39,6 +40,7 @@ class TransparencyLogController extends Controller
             ActorFilter::fromQuery($request->query),
             UserFilter::fromQuery($request->query),
             VendorFilter::fromQuery($request->query),
+            PackageNameFilter::fromQuery($request->query),
         ];
 
         $qb = $auditRecordRepository->createQueryBuilder('a')

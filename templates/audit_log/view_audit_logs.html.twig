@@ -41,7 +41,13 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="package-filter">Package:</label>
+                    <input type="text" name="package" id="package-filter" value="{{ selectedFilters.package }}" placeholder="Search by package name">
+                </div>
+            </div>
+            <div class="col-md-9">
                 <input type="submit" value="Filter">
                 <a href="{{ url('view_audit_logs') }}">Reset filters</a>
             </div>
