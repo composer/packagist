@@ -310,7 +310,6 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(PackageUnabandonedDisplay::class, $display);
         self::assertSame('vendor/restored-package', $display->packageName);
         self::assertSame('https://github.com/vendor/restored-package', $display->repository);
-        self::assertSame('vendor/replacement', $display->previousReplacementPackage);
         self::assertSame(234, $display->actor->id);
         self::assertSame('maintainer', $display->actor->username);
         self::assertSame(AuditRecordType::PackageUnabandoned, $display->getType());
@@ -332,7 +331,6 @@ class AuditLogDisplayFactoryTest extends TestCase
         $display = $this->factory->buildSingle($auditRecord);
 
         self::assertInstanceOf(PackageUnabandonedDisplay::class, $display);
-        self::assertNull($display->previousReplacementPackage);
         self::assertSame(777, $display->actor->id);
         self::assertSame('maintainer', $display->actor->username);
     }

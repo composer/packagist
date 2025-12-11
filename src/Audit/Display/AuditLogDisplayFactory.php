@@ -93,7 +93,6 @@ class AuditLogDisplayFactory
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['repository'],
-                $record->attributes['previous_replacement_package'] ?? null,
                 $this->buildActor($record->attributes['actor']),
             ),
             AuditRecordType::VersionDeleted => new VersionDeletedDisplay(

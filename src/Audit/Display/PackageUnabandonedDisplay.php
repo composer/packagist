@@ -20,7 +20,6 @@ readonly class PackageUnabandonedDisplay extends AbstractAuditLogDisplay
         \DateTimeImmutable $datetime,
         public string $packageName,
         public string $repository,
-        public ?string $previousReplacementPackage,
         ActorDisplay $actor,
     ) {
         parent::__construct($datetime, $actor);

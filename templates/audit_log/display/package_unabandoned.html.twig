@@ -6,11 +6,4 @@
     {%- endif -%}
 </strong><br>
 Repository: {{ display.repository }}<br>
-{%- if display.previousReplacementPackage -%}
-    Previous replacement: {% if display.previousReplacementPackage is existing_package -%}
-        <a href="{{ path('view_package', { 'name': display.previousReplacementPackage }) }}">{{ display.previousReplacementPackage }}</a>
-    {%- else -%}
-        {{ display.previousReplacementPackage }}
-    {%- endif -%}<br>
-{%- endif -%}
 Unabandoned by: {{ display.actor.username }}
