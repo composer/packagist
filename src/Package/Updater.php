@@ -873,14 +873,11 @@ class Updater
             // composer.json couldn't be read, so the abandoned state couldn't be retrieved
         }
 
-        if ($isArchived && $composerHasAbandoned) {
-            return AbandonmentReason::RepositoryArchivedAndComposerJson;
-        } elseif ($isArchived) {
-            return AbandonmentReason::RepositoryArchived;
-        } elseif ($composerHasAbandoned) {
-            return AbandonmentReason::ComposerJson;
-        }
-
-        return AbandonmentReason::Unknown;
+        return match (true) {
+            $isArchived && $composerHasAbandoned => AbandonmentReason::RepositoryArchivedAndComposerJson,
+            $isArchived => AbandonmentReason::RepositoryArchived,
+            $composerHasAbandoned => AbandonmentReason::ComposerJson,
+            default => AbandonmentReason::Unknown,
+        };
     }
 }
