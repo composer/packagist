@@ -31,8 +31,6 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 #[AsEntityListener(event: 'preRemove', entity: Package::class)]
 #[AsEntityListener(event: 'preUpdate', entity: Package::class)]
 #[AsEntityListener(event: 'postUpdate', entity: Package::class)]
-#[AsEventListener(event: PackageAbandonedEvent::class, method: 'onPackageAbandoned')]
-#[AsEventListener(event: PackageUnabandonedEvent::class, method: 'onPackageUnabandoned')]
 class PackageListener
 {
     use DoctrineTrait;
@@ -54,12 +52,14 @@ class PackageListener
         $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::packageCreated($package, $this->getUser()));
     }
 
+    #[AsEventListener]
     public function onPackageAbandoned(PackageAbandonedEvent $event): void
     {
         $package = $event->getPackage();
         $this->buffered[] = AuditRecord::packageAbandoned($package, $this->getUser(), $package->getReplacementPackage(), $event->getReason());
     }
 
+    #[AsEventListener]
     public function onPackageUnabandoned(PackageUnabandonedEvent $event): void
     {
         $package = $event->getPackage();
