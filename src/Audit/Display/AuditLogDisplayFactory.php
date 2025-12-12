@@ -13,6 +13,7 @@
 namespace App\Audit\Display;
 
 use App\Audit\AuditRecordType;
+use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
 
 class AuditLogDisplayFactory
@@ -95,6 +96,12 @@ class AuditLogDisplayFactory
                 $record->attributes['dist_from'] ?? null,
                 $record->attributes['dist_to'] ?? null,
                 $this->buildActor($record->attributes['actor'] ?? null),
+            ),
+            AuditRecordType::UserCreated => new UserCreatedDisplay(
+                $record->datetime,
+                $record->attributes['username'],
+                UserRegistrationMethod::from($record->attributes['method']),
+                $this->buildActor(null),
             ),
             default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
         };

@@ -31,7 +31,7 @@ enum AuditRecordType: string
     case PackageUnabandoned = 'package_unabandoned'; // TODO
 
     // user management
-    case UserCreated = 'user_created'; // TODO
+    case UserCreated = 'user_created';
     case UserDeleted = 'user_deleted'; // TODO
     case PasswordResetRequested = 'password_reset_requested'; // TODO
     case PasswordReset = 'password_reset'; // TODO

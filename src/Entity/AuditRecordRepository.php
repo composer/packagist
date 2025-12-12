@@ -58,6 +58,7 @@ class AuditRecordRepository extends ServiceEntityRepository
             'actorId' => $record->actorId,
             'vendor' => $record->vendor,
             'packageId' => $record->packageId,
+            'userId' => $record->userId,
         ], [
             'id' => UlidType::NAME,
             'datetime' => Types::DATETIME_IMMUTABLE,

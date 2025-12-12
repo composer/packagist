@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Audit\AuditRecordType;
+use App\Audit\UserRegistrationMethod;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
@@ -120,6 +121,19 @@ class AuditRecord
     public static function maintainerRemoved(Package $package, User $maintainer, ?User $actor): self
     {
         return new self(AuditRecordType::MaintainerRemoved, ['name' => $package->getName(), 'maintainer' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
+    }
+
+    public static function userCreated(User $user, UserRegistrationMethod $method): self
+    {
+        return new self(
+            AuditRecordType::UserCreated,
+            [
+                'username' => $user->getUsernameCanonical(),
+                'method' => $method->value,
+                'actor' => 'unknown',
+            ],
+            userId: $user->getId(),
+        );
     }
 
     /**

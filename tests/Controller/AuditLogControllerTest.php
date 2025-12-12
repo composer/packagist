@@ -44,7 +44,7 @@ class AuditLogControllerTest extends IntegrationTestCase
     {
         yield [
             [],
-            ['Package deleted', 'Canonical URL changed', 'Package created'],
+            ['Package deleted', 'Canonical URL changed', 'Package created', 'User created'],
         ];
 
         yield [

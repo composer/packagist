@@ -12,6 +12,9 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
+use App\Audit\UserRegistrationMethod;
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
 use App\Validator\NotProhibitedPassword;
@@ -47,6 +50,14 @@ class RegistrationControllerTest extends IntegrationTestCase
         $this->assertInstanceOf(User::class, $user);
         $this->assertSame('max@example.com', $user->getEmailCanonical(), 'user email should have been canonicalized');
         $this->assertFalse($user->isEnabled(), 'user should not be enabled yet');
+
+        $log = $em->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditRecordType::UserCreated,
+            'userId' => $user->getId(),
+        ]);
+        $this->assertInstanceOf(AuditRecord::class, $log);
+        $this->assertSame($user->getUsernameCanonical(), $log->attributes['username'] ?? null);
+        $this->assertSame(UserRegistrationMethod::REGISTRATION_FORM->value, $log->attributes['method'] ?? null);
     }
 
     #[TestWith(['max.example'])]
