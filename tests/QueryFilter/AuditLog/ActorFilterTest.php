@@ -25,7 +25,7 @@ class ActorFilterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->entityManager = $this->createStub(EntityManagerInterface::class);
     }
 
     public function testFromQueryWithEmptyInput(): void
