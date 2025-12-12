@@ -126,31 +126,6 @@ class VersionAuditRecordTest extends KernelTestCase
         self::assertSame('another-dist-ref', $attributes['dist_from']);
         self::assertSame('a-dist-ref-with-metadata-changes', $attributes['dist_to']);
         self::assertSame('^1.6.0', $attributes['metadata']['require']['composer/ca-bundle']);
-
-/*        // verify that unrelated changes do not create new audit logs
-        $version->setLicense(['MIT']);
-        $em->persist($version);
-        $em->flush();
-
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
-        self::assertCount(3, $logs); // package creation + version creation + version reference change
-
-        // verify that changing dist only without ref change does not create new audit log and does not crash
-        $version->setDist(['reference' => 'new-dist-ref', 'type' => 'zip2', 'url' => 'https://example.org/dist.zip2']);
-        $em->persist($version);
-        $em->flush();
-
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
-        self::assertCount(3, $logs); // package creation + version creation + version reference change
-
-        // verify that only reference changes triggers a new audit log
-        $version->setDist(['reference' => 'new-dist-ref', 'type' => 'zip3', 'url' => 'https://example.org/dist.zip2']);
-        $version->setSource(['reference' => 'new-source-ref', 'type' => 'git2', 'url' => 'git://example.org/dist.zip2']);
-        $em->persist($version);
-        $em->flush();
-
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
-        self::assertCount(3, $logs);*/
     }
 
     private function createPackageAndVersion(): Version
