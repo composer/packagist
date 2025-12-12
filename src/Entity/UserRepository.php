@@ -46,9 +46,12 @@ class UserRepository extends ServiceEntityRepository
      * @param ?array<string, string> $orderBy
      * @return array<string, User>
      */
-    public function findUsersByUsername(array $usernames, ?array $orderBy = null): array
+    public function findEnabledUsersByUsername(array $usernames, ?array $orderBy = null): array
     {
-        $matches = $this->findBy(['usernameCanonical' => $usernames], $orderBy);
+        $matches = $this->findBy([
+            'usernameCanonical' => $usernames,
+            'enabled' => true,
+        ], $orderBy);
 
         $users = [];
         foreach ($matches as $match) {

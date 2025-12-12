@@ -1082,16 +1082,11 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   margin-bottom: 4px;
   margin-right: 4px;
 }
-.package .details #add-maintainer {
-  margin-top: 3px;
-  margin-bottom: 7px;
-  float: right;
-  font-size: 34px;
-}
-.package .details #remove-maintainer {
-  float: right;
-  font-size: 35px;
-  margin-top: 5px;
+.package .details .maintainer-actions {
+    a {
+        font-size: 34px;
+        cursor: pointer;
+    }
 }
 .package .details .canonical,
 .package .funding p {
@@ -1893,6 +1888,28 @@ body {
 
         @media (max-width: 767px) {
             width: 120px;
+        }
+    }
+}
+
+#transfer-package-form {
+    .maintainers-collection-wrapper {
+        margin-bottom: 15px;
+
+        .maintainers-list {
+            list-style: none;
+            padding: 0;
+
+            li {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+                align-items: center;
+
+                .btn-danger {
+                    padding: 5px 10px;
+                }
+            }
         }
     }
 }

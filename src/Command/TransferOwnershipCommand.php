@@ -15,6 +15,7 @@ namespace App\Command;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Model\PackageManager;
 use App\Util\DoctrineTrait;
 use Composer\Console\Input\InputOption;
 use Doctrine\Persistence\ManagerRegistry;
@@ -30,6 +31,7 @@ class TransferOwnershipCommand extends Command
 
     public function __construct(
         private readonly ManagerRegistry $doctrine,
+        private readonly PackageManager $packageManager,
     )
     {
         parent::__construct();
@@ -87,7 +89,7 @@ class TransferOwnershipCommand extends Command
         $usernames = array_map('mb_strtolower', $input->getArgument('maintainers'));
         sort($usernames);
 
-        $maintainers = $this->getEM()->getRepository(User::class)->findUsersByUsername($usernames, ['usernameCanonical' => 'ASC']);
+        $maintainers = $this->getEM()->getRepository(User::class)->findEnabledUsersByUsername($usernames, ['usernameCanonical' => 'ASC']);
 
         if (array_keys($maintainers) === $usernames) {
             return $maintainers;
@@ -165,24 +167,8 @@ class TransferOwnershipCommand extends Command
      */
     private function transferOwnership(array $packages, array $maintainers): void
     {
-        $normalizedMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $maintainers));
-        sort($normalizedMaintainers, SORT_NUMERIC);
-
         foreach ($packages as $package) {
-            $oldMaintainers = $package->getMaintainers()->toArray();
-
-            $normalizedOldMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $oldMaintainers));
-            sort($normalizedOldMaintainers, SORT_NUMERIC);
-            if ($normalizedMaintainers === $normalizedOldMaintainers) {
-                continue;
-            }
-
-            $package->getMaintainers()->clear();
-            foreach ($maintainers as $maintainer) {
-                $package->addMaintainer($maintainer);
-            }
-
-            $this->doctrine->getManager()->persist(AuditRecord::packageTransferred($package, null, $oldMaintainers, array_values($maintainers)));
+            $this->packageManager->transferPackage($package, $maintainers, false);
         }
 
         $this->doctrine->getManager()->flush();
