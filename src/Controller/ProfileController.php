@@ -163,7 +163,7 @@ class ProfileController extends Controller
     #[Route(path: '/profile/token/rotate', name: 'rotate_token', methods: ['POST'])]
     public function tokenRotateAction(Request $request, #[CurrentUser] User $user, UserNotifier $userNotifier): Response
     {
-        if (!$this->isCsrfTokenValid('rotate_api', (string) $request->request->get('token'))) {
+        if (!$this->isCsrfTokenValid('rotate_api', $request->request->getString('token'))) {
             $this->addFlash('error', 'Invalid csrf token, try again.');
 
             return $this->redirectToRoute('my_profile');

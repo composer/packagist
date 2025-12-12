@@ -129,8 +129,8 @@ class PackageController extends Controller
             $names = $this->providerManager->getPackageNames();
         }
 
-        if ($req->query->get('filter')) {
-            $packageFilter = '{^'.str_replace('\\*', '.*?', preg_quote($req->query->get('filter'))).'$}i';
+        if ($req->query->has('filter')) {
+            $packageFilter = '{^'.str_replace('\\*', '.*?', preg_quote($req->query->getString('filter'))).'$}i';
             $filtered = [];
             foreach ($names as $name) {
                 if (Preg::isMatch($packageFilter, $name)) {
@@ -145,32 +145,6 @@ class PackageController extends Controller
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $response;
-    }
-
-    /**
-     * Deprecated legacy change API for metadata v1
-     */
-    #[Route(path: '/packages/updated.json', name: 'updated_packages', defaults: ['_format' => 'json'], methods: ['GET'])]
-    public function updatedSinceAction(Request $req, RedisClient $redis): JsonResponse
-    {
-        $lastDumpTime = $redis->get('last_metadata_dump_time') ?: (time() - 60);
-
-        $since = $req->query->get('since');
-        if (!$since) {
-            return new JsonResponse(['error' => 'Missing "since" query parameter with the latest timestamp you got from this endpoint', 'timestamp' => $lastDumpTime], 400);
-        }
-
-        try {
-            $since = new \DateTimeImmutable('@'.$since);
-        } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Invalid "since" query parameter, make sure you store the timestamp returned and re-use it in the next query. Use '.$this->generateUrl('updated_packages', ['since' => time() - 180], UrlGeneratorInterface::ABSOLUTE_URL).' to initialize it.'], 400);
-        }
-
-        $repo = $this->getEM()->getRepository(Package::class);
-
-        $names = $repo->getPackageNamesUpdatedSince($since);
-
-        return new JsonResponse(['packageNames' => $names, 'timestamp' => $lastDumpTime]);
     }
 
     #[Route(path: '/metadata/changes.json', name: 'metadata_changes', defaults: ['_format' => 'json'], methods: ['GET'])]
@@ -460,7 +434,7 @@ class PackageController extends Controller
     {
         /** @var string[] $vendors */
         $vendors = array_filter($req->request->all('vendor'), static fn ($vendor) => $vendor !== '' && $vendor !== null);
-        if (!$this->isCsrfTokenValid('mark_safe', (string) $req->request->get('token'))) {
+        if (!$this->isCsrfTokenValid('mark_safe', $req->request->getString('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
         }
 
@@ -476,7 +450,7 @@ class PackageController extends Controller
     #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'html'], methods: ['POST'])]
     public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager): Response
     {
-        if (!$this->isCsrfTokenValid('unfreeze', (string) $req->request->get('token'))) {
+        if (!$this->isCsrfTokenValid('unfreeze', $req->request->getString('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
         }
 
@@ -816,7 +790,7 @@ class PackageController extends Controller
 
         $this->denyAccessUnlessGranted(PackageActions::DeleteVersion->value, $package, 'No permission to delete versions');
 
-        if (!$this->isCsrfTokenValid('delete_version', (string) $req->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('delete_version', $req->request->getString('_token'))) {
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
@@ -1220,7 +1194,7 @@ class PackageController extends Controller
             $to = new \DateTimeImmutable('today 00:00:00');
         }
 
-        $average = $req->query->get('average', $this->guessStatsAverage($from, $to));
+        $average = $req->query->getString('average', $this->guessStatsAverage($from, $to));
 
         $phpStat = $this->getEM()->getRepository(PhpStat::class)->findOneBy(['package' => $package, 'type' => $type === 'platform' ? PhpStat::TYPE_PLATFORM : PhpStat::TYPE_PHP, 'version' => $version === 'all' ? '' : $version]);
         if (!$phpStat) {
@@ -1320,12 +1294,12 @@ class PackageController extends Controller
             $perPage = 100;
         }
 
-        $orderBy = $req->query->get('order_by', 'name');
+        $orderBy = $req->query->getString('order_by', 'name');
         if (!\in_array($orderBy, ['name', 'downloads'], true)) {
             throw new BadRequestHttpException('Invalid order_by parameter provided');
         }
 
-        $requires = $req->query->get('requires', 'all');
+        $requires = $req->query->getString('requires', 'all');
         $requireType = match ($requires) {
             'require' => Dependent::TYPE_REQUIRE,
             'require-dev' => Dependent::TYPE_REQUIRE_DEV,
@@ -1487,7 +1461,7 @@ class PackageController extends Controller
         } else {
             $to = new \DateTimeImmutable('-2days 00:00:00');
         }
-        $average = $req->query->get('average', $this->guessStatsAverage($from, $to));
+        $average = $req->query->getString('average', $this->guessStatsAverage($from, $to));
 
         $dlData = [];
         if (null !== $majorVersion) {

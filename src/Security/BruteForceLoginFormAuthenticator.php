@@ -127,9 +127,9 @@ class BruteForceLoginFormAuthenticator extends AbstractLoginFormAuthenticator im
     {
         $credentials = [
             'username' => $request->request->get('_username'),
-            'password' => (string) $request->request->get('_password'),
+            'password' => $request->request->getString('_password'),
             'ip' => $request->getClientIp(),
-            'recaptcha' => (string) $request->request->get('g-recaptcha-response'),
+            'recaptcha' => $request->request->getString('g-recaptcha-response'),
         ];
 
         if (!\is_string($credentials['username'])) {

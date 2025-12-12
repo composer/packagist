@@ -41,7 +41,7 @@ class RecaptchaContext
     {
         return new self(
             $request->getClientIp() ?: '',
-            (string) $request->request->get('_username'),
+            $request->request->getString('_username'),
             $request->request->has('g-recaptcha-response'),
         );
     }
