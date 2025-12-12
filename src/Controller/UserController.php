@@ -175,7 +175,7 @@ class UserController extends Controller
             throw $this->createAccessDeniedException('You can only change your own favorites');
         }
 
-        $packageName = $req->request->get('package');
+        $packageName = $req->request->getString('package');
         $package = $this->getEM()
             ->getRepository(Package::class)
             ->findOneBy(['name' => $packageName]);
@@ -353,7 +353,7 @@ class UserController extends Controller
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        if ($this->isCsrfTokenValid('disable_2fa', $req->query->get('token', ''))) {
+        if ($this->isCsrfTokenValid('disable_2fa', $req->query->getString('token'))) {
             $authManager->disableTwoFactorAuth($user, 'Manually disabled');
 
             $this->addFlash('success', 'Two-factor authentication has been disabled.');

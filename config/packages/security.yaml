@@ -10,6 +10,7 @@ security:
             algorithm:        sha512
             encode_as_base64: false
             iterations:       1
+
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
         packagist:
@@ -17,7 +18,8 @@ security:
 
     firewalls:
         dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            # Ensure dev tools and static assets are always allowed
+            pattern: ^/(_profiler|_wdt)/
             security: false
         main:
             pattern:      .*
@@ -80,10 +82,8 @@ security:
 when@test:
     security:
         password_hashers:
-            # By default, password hashers are resource intensive and take time. This is
-            # important to generate secure password hashes. In tests however, secure hashes
-            # are not important, waste resources and increase test times. The following
-            # reduces the work factor to the lowest possible values.
+            # Password hashers are resource-intensive by design to ensure security.
+            # In tests, it's safe to reduce their cost to improve performance.
             Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
                 algorithm: auto
                 cost: 4 # Lowest possible value for bcrypt

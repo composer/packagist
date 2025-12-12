@@ -49,8 +49,8 @@ class UserResolver implements ValueResolverInterface
             }
         }
 
-        $username = $request->attributes->get($varName);
-        if (!\is_string($username)) {
+        $username = $request->attributes->getString($varName);
+        if ('' === $username) {
             throw new \UnexpectedValueException('Missing "'.$varName.'" in request attributes, cannot resolve $'.$argument->getName());
         }
 

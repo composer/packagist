@@ -357,9 +357,10 @@ class ApiController extends Controller
             return new JsonResponse('Please use a proper user agent with contact information to use our API', Response::HTTP_TOO_MANY_REQUESTS, ['Retry-After' => 31536000]);
         }
 
+        $packagesInput = $request->request->all()['packages'] ?? $request->query->all()['packages'] ?? null;
+        $packageNames = array_filter((array) $packagesInput, static fn ($name) => \is_string($name) && $name !== '');
 
-        $packageNames = array_filter((array) $request->get('packages'), static fn ($name) => \is_string($name) && $name !== '');
-        if ((!$request->query->has('updatedSince') && !$request->get('packages')) || (!$packageNames && $request->get('packages'))) {
+        if ((!$request->query->has('updatedSince') && $packagesInput === null) || (!$packageNames && $packagesInput !== null)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);
         }
 
@@ -451,7 +452,7 @@ class ApiController extends Controller
 
         // manual hook set up with user API token as secret
         if ($match['host'] === 'github.com' && $request->getContent() && $request->query->has('username') && $request->headers->has('X-Hub-Signature-256')) {
-            $username = $request->query->get('username');
+            $username = $request->query->getString('username');
             $sig = $request->headers->get('X-Hub-Signature-256');
             $user = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => $username]);
             if ($sig && $user && $user->isEnabled()) {
@@ -494,8 +495,6 @@ class ApiController extends Controller
                     $statsd->increment('update_pkg_api.success', tags: ['mode' => 'github_auto']);
                 } else {
                     $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_gh_sig']);
-                    $this->logger->error('Failed validating GitHub webhook signature', ['sig' => $sig, 'expected' => $expected, 'query_params' => $request->query->all(), 'repo' => json_decode($request->getContent(), true)['repository']['html_url'] ?? null]);
-
                     return new JsonResponse(['status' => 'error', 'message' => 'Invalid github signature. Delete this webhook and recreate it using the manual account sync trigger from https://packagist.org/about#how-to-update-packages'], 403);
                 }
             }
@@ -540,12 +539,12 @@ class ApiController extends Controller
     protected function findUser(Request $request, ApiType $apiType = ApiType::Unsafe): ?User
     {
         $username = $request->request->has('username')
-            ? $request->request->get('username')
-            : $request->query->get('username');
+            ? $request->request->getString('username')
+            : $request->query->getString('username');
 
         $apiToken = $request->request->has('apiToken')
-            ? $request->request->get('apiToken')
-            : $request->query->get('apiToken');
+            ? $request->request->getString('apiToken')
+            : $request->query->getString('apiToken');
 
         // Check for Bearer token authentication in format "username:apiToken"
         // Bearer token takes precedence over query parameters

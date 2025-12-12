@@ -82,8 +82,8 @@ class ExploreController extends Controller
 
             $popularIds = $redis->zrevrange(
                 'downloads:trending',
-                (max(1, (int) $req->get('page', 1)) - 1) * $perPage,
-                max(1, (int) $req->get('page', 1)) * $perPage - 1
+                (max(1, (int) $req->query->getInt('page', 1)) - 1) * $perPage,
+                max(1, (int) $req->query->getInt('page', 1)) * $perPage - 1
             );
             $popular = $this->getEM()->getRepository(Package::class)
                 ->createQueryBuilder('p')->where('p.id IN (:ids)')->setParameter('ids', $popularIds)

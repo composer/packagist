@@ -153,9 +153,9 @@ class RegistrationController extends Controller
     #[Route(path: '/register/verify', name: 'register_confirm_email')]
     public function confirmEmail(Request $request, UserRepository $userRepository, UserChecker $userChecker, UserAuthenticatorInterface $userAuthenticator, BruteForceLoginFormAuthenticator $authenticator): Response
     {
-        $id = $request->get('id');
+        $id = $request->query->getInt('id');
 
-        if (null === $id) {
+        if (0 === $id) {
             return $this->redirectToRoute('register');
         }
 
