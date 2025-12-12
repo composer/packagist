@@ -430,10 +430,10 @@ class Updater
             $package->setType($this->sanitize($data->getType()));
             if ($data->isAbandoned() && !$package->isAbandoned()) {
                 $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
+                $package->setAbandoned(true);
                 $this->eventDispatcher->dispatch(
                     new PackageAbandonementStateChangedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier))
                 );
-                $package->setAbandoned(true);
                 if ($data->getReplacementPackage()) {
                     $package->setReplacementPackage($data->getReplacementPackage());
                 }
