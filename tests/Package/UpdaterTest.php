@@ -12,8 +12,11 @@
 
 namespace App\Tests\Package;
 
+use App\Audit\AuditRecordType;
+use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageReadme;
+use App\Entity\Version;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\Updater;
@@ -30,6 +33,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class UpdaterTest extends IntegrationTestCase
 {
@@ -68,7 +72,7 @@ class UpdaterTest extends IntegrationTestCase
         $mailerMock = $this->createMock(MailerInterface::class);
         $routerMock = $this->createMock(UrlGeneratorInterface::class);
 
-        $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock);
+        $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock, $this->createMock(EventDispatcherInterface::class));
     }
 
     protected function tearDown(): void
