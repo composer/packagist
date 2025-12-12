@@ -21,34 +21,34 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="form-group">
                     <label for="actor-filter">Actor:</label>
                     <input type="text" name="actor" id="actor-filter" value="{{ selectedFilters.actor }}" placeholder="Search by username">
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="form-group">
                     <label for="user-filter">User:</label>
                     <input type="text" name="user" id="user-filter" value="{{ selectedFilters.user }}" placeholder="Search by username">
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="form-group">
                     <label for="vendor-filter">Vendor:</label>
                     <input type="text" name="vendor" id="vendor-filter" value="{{ selectedFilters.vendor }}" placeholder="Search by vendor">
                 </div>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="form-group">
                     <label for="package-filter">Package:</label>
                     <input type="text" name="package" id="package-filter" value="{{ selectedFilters.package }}" placeholder="Search by package name">
                 </div>
             </div>
+        </div>
+        <div class="row">
             <div class="col-md-9">
-                <input type="submit" value="Filter">
+                <input type="submit" value="Apply filters" class="btn btn-inverse">
                 <a href="{{ url('view_audit_logs') }}">Reset filters</a>
             </div>
         </div>
