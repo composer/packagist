@@ -77,6 +77,9 @@ class VersionReferenceChangedEvent extends Event
         unset($original['dist'], $original['source']);
         unset($new['dist'], $new['source']);
 
+        // Ignore the time key, since this is always different
+        unset($original['time'], $new['time']);
+
         return !$this->arraysAreEqual($original, $new);
     }
 

@@ -255,21 +255,21 @@ class Updater
 
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags);
             $versionId = false;
-            if ($result['updated']) {
-                \assert($result['object'] instanceof Version);
+            if ($result->updated) {
+                \assert($result->entity instanceof Version);
                 $em->flush();
 
-                foreach ($result['events'] as $event) {
+                foreach ($result->events as $event) {
                     $this->eventDispatcher->dispatch($event);
                 }
 
                 // detach version once flushed to avoid gathering lots of data in memory
-                $em->detach($result['object']);
+                $em->detach($result->entity);
 
-                $this->versionIdCache->insertVersion($package, $result['object']);
-                $versionId = $result['object']->getId();
+                $this->versionIdCache->insertVersion($package, $result->entity);
+                $versionId = $result->entity->getId();
             } else {
-                $idsToMarkUpdated[] = $result['id'];
+                $idsToMarkUpdated[] = $result->id;
             }
 
             // use the first version which should be the highest stable version by default
@@ -282,7 +282,7 @@ class Updater
             }
 
             // mark the version processed so we can prune leftover ones
-            unset($existingVersions[$result['version']]);
+            unset($existingVersions[$result->version]);
         }
 
         if ($dependentSuggesterSource) {
@@ -367,10 +367,8 @@ class Updater
      *  - object (Version instance if it was updated)
      *
      * @param ExistingVersionsForUpdate $existingVersions
-     *
-     * @return array{updated: true, id: int|null, version: string, object: Version}|array{updated: false, id: int|null, version: string, object: null}
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags): array
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags): UpdateVersionInformationResult
     {
         $em = $this->getEM();
         $version = new Version();
@@ -409,9 +407,18 @@ class Updater
                 $version->setIsDefaultBranch($data->isDefaultBranch());
                 $em->persist($version);
 
-                return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version];
+                return new UpdateVersionInformationResult(
+                    updated: true,
+                    id: $versionId,
+                    version: strtolower($normVersion),
+                    entity: $version,
+                );
             } else {
-                return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
+                return new UpdateVersionInformationResult(
+                    updated: false,
+                    id: $existingVersion['id'],
+                    version: strtolower($normVersion),
+                );
             }
         }
 
@@ -619,8 +626,9 @@ class Updater
         $newSourceRef = $version->getSource()['reference'] ?? null;
         $newDistRef = $version->getDist()['reference'] ?? null;
 
+        $events = [];
         if ($originalMetadata !== null && ($oldSourceRef !== $newSourceRef || $oldDistRef !== $newDistRef)) {
-            $event = new VersionReferenceChangedEvent(
+            $events[] = new VersionReferenceChangedEvent(
                 $version,
                 $originalMetadata,
                 $oldSourceRef,
@@ -630,7 +638,13 @@ class Updater
             );
         }
 
-        return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version, 'events' => [$event]];
+        return new UpdateVersionInformationResult(
+            updated: true,
+            id: $versionId,
+            version: strtolower($normVersion),
+            entity: $version,
+            events: $events,
+        );
     }
 
     /**
