@@ -19,7 +19,7 @@ use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\Severity;
 use Composer\IO\BufferIO;
 use Doctrine\Persistence\ManagerRegistry;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -30,13 +30,13 @@ use Symfony\Component\HttpClient\Response\MockResponse;
  */
 class GitHubSecurityAdvisoriesSourceTest extends TestCase
 {
-    private ProviderManager&MockObject $providerManager;
-    private ManagerRegistry&MockObject $doctrine;
+    private ProviderManager&Stub $providerManager;
+    private ManagerRegistry&Stub $doctrine;
 
     protected function setUp(): void
     {
-        $this->providerManager = $this->createMock(ProviderManager::class);
-        $this->doctrine = $this->createMock(ManagerRegistry::class);
+        $this->providerManager = $this->createStub(ProviderManager::class);
+        $this->doctrine = $this->createStub(ManagerRegistry::class);
     }
 
     public function testWithoutPagination(): void
