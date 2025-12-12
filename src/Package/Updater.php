@@ -26,7 +26,7 @@ use App\Entity\SuggestLink;
 use App\Entity\Tag;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
-use App\Event\PackageAbandonementStateChangedEvent;
+use App\Event\PackageAbandonedEvent;
 use App\HtmlSanitizer\ReadmeImageSanitizer;
 use App\HtmlSanitizer\ReadmeLinkSanitizer;
 use App\Model\ProviderManager;
@@ -432,7 +432,7 @@ class Updater
                 $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
                 $package->setAbandoned(true);
                 $this->eventDispatcher->dispatch(
-                    new PackageAbandonementStateChangedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier))
+                    new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier))
                 );
                 if ($data->getReplacementPackage()) {
                     $package->setReplacementPackage($data->getReplacementPackage());

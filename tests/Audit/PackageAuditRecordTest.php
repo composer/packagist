@@ -15,7 +15,8 @@ namespace App\Tests\Controller;
 use App\Audit\AbandonmentReason;
 use App\Audit\AuditRecordType;
 use App\Entity\Package;
-use App\Event\PackageAbandonementStateChangedEvent;
+use App\Event\PackageAbandonedEvent;
+use App\Event\PackageUnabandonedEvent;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -90,7 +91,7 @@ class PackageAuditRecordTest extends KernelTestCase
         // Test abandonment with replacement package
         $package->setAbandoned(true);
         $package->setReplacementPackage('test/replacement');
-        $eventDispatcher->dispatch(new PackageAbandonementStateChangedEvent($package, AbandonmentReason::Unknown));
+        $eventDispatcher->dispatch(new PackageAbandonedEvent($package, AbandonmentReason::Unknown));
 
         $em->persist($package);
         $em->flush();
@@ -110,7 +111,7 @@ class PackageAuditRecordTest extends KernelTestCase
         // Test unabandonment
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
-        $eventDispatcher->dispatch(new PackageAbandonementStateChangedEvent($package, AbandonmentReason::Unknown));
+        $eventDispatcher->dispatch(new PackageUnabandonedEvent($package, AbandonmentReason::Unknown));
         $em->persist($package);
         $em->flush();
 
@@ -139,7 +140,7 @@ class PackageAuditRecordTest extends KernelTestCase
         // Test abandonment without replacement package
         $package->setAbandoned(true);
         $em->persist($package);
-        $eventDispatcher->dispatch(new PackageAbandonementStateChangedEvent($package, AbandonmentReason::Unknown));
+        $eventDispatcher->dispatch(new PackageAbandonedEvent($package, AbandonmentReason::Unknown));
         $em->flush();
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageAbandoned->value]);
@@ -154,7 +155,7 @@ class PackageAuditRecordTest extends KernelTestCase
         // Test unabandonment when there was no replacement package
         $package->setAbandoned(false);
         $em->persist($package);
-        $eventDispatcher->dispatch(new PackageAbandonementStateChangedEvent($package, AbandonmentReason::Unknown));
+        $eventDispatcher->dispatch(new PackageUnabandonedEvent($package, AbandonmentReason::Unknown));
         $em->flush();
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageUnabandoned->value]);

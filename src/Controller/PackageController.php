@@ -27,7 +27,8 @@ use App\Entity\SecurityAdvisoryRepository;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
-use App\Event\PackageAbandonementStateChangedEvent;
+use App\Event\PackageAbandonedEvent;
+use App\Event\PackageUnabandonedEvent;
 use App\Form\Model\MaintainerRequest;
 use App\Form\Model\TransferPackageRequest;
 use App\Form\Type\AbandonedType;
@@ -1052,7 +1053,7 @@ class PackageController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             $package->setAbandoned(true);
             $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData()));
-            $this->eventDispatcher->dispatch(new PackageAbandonementStateChangedEvent($package, AbandonmentReason::Manual));
+            $this->eventDispatcher->dispatch(new PackageAbandonedEvent($package, AbandonmentReason::Manual));
 
             $package->setIndexedAt(null);
             $package->setCrawledAt(new \DateTimeImmutable());
@@ -1079,7 +1080,7 @@ class PackageController extends Controller
 
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
-        $this->eventDispatcher->dispatch(new PackageAbandonementStateChangedEvent($package, AbandonmentReason::Manual));
+        $this->eventDispatcher->dispatch(new PackageUnabandonedEvent($package, AbandonmentReason::Manual));
 
         $package->setIndexedAt(null);
         $package->setCrawledAt(new \DateTimeImmutable());

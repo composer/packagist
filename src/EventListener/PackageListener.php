@@ -16,7 +16,8 @@ use App\Audit\AbandonmentReason;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\User;
-use App\Event\PackageAbandonementStateChangedEvent;
+use App\Event\PackageAbandonedEvent;
+use App\Event\PackageUnabandonedEvent;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\EntityManager;
@@ -30,7 +31,8 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 #[AsEntityListener(event: 'preRemove', entity: Package::class)]
 #[AsEntityListener(event: 'preUpdate', entity: Package::class)]
 #[AsEntityListener(event: 'postUpdate', entity: Package::class)]
-#[AsEventListener(event: PackageAbandonementStateChangedEvent::class, method: 'onPackageAbandonmentStateChange')]
+#[AsEventListener(event: PackageAbandonedEvent::class, method: 'onPackageAbandoned')]
+#[AsEventListener(event: PackageUnabandonedEvent::class, method: 'onPackageUnabandoned')]
 class PackageListener
 {
     use DoctrineTrait;
@@ -52,17 +54,17 @@ class PackageListener
         $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::packageCreated($package, $this->getUser()));
     }
 
-    public function onPackageAbandonmentStateChange(PackageAbandonementStateChangedEvent $event): void
+    public function onPackageAbandoned(PackageAbandonedEvent $event): void
     {
         $package = $event->getPackage();
-
-        if ($package->isAbandoned()) {
-            $this->buffered[] = AuditRecord::packageAbandoned($package, $this->getUser(), $package->getReplacementPackage(), $event->getReason());
-        } else {
-            $this->buffered[] = AuditRecord::packageUnabandoned($package, $this->getUser());
-        }
+        $this->buffered[] = AuditRecord::packageAbandoned($package, $this->getUser(), $package->getReplacementPackage(), $event->getReason());
     }
 
+    public function onPackageUnabandoned(PackageUnabandonedEvent $event): void
+    {
+        $package = $event->getPackage();
+        $this->buffered[] = AuditRecord::packageUnabandoned($package, $this->getUser());
+    }
 
 
     /**

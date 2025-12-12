@@ -16,7 +16,7 @@ use App\Audit\AbandonmentReason;
 use App\Entity\Package;
 use Symfony\Contracts\EventDispatcher\Event;
 
-class PackageAbandonementStateChangedEvent extends Event
+class PackageAbandonedEvent extends Event
 {
     public function __construct(
         private readonly Package $package,
