@@ -14,6 +14,7 @@ namespace App\Tests;
 
 use App\Entity\Job;
 use App\Entity\Package;
+use App\Entity\PackageRepository;
 use App\Entity\SecurityAdvisory;
 use App\Entity\SecurityAdvisoryRepository;
 use App\EventListener\SecurityAdvisoryUpdateListener;
@@ -44,9 +45,9 @@ class SecurityAdvisoryWorkerTest extends TestCase
     protected function setUp(): void
     {
         $this->source = $this->createMock(SecurityAdvisorySourceInterface::class);
-        $locker = $this->createMock(Locker::class);
-        $doctrine = $this->createMock(ManagerRegistry::class);
-        $redis = $this->createMock(Client::class);
+        $locker = $this->createStub(Locker::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
+        $redis = $this->createStub(Client::class);
         $this->worker = new SecurityAdvisoryWorker($locker, new NullLogger(), $doctrine, ['test' => $this->source], new SecurityAdvisoryResolver(), new SecurityAdvisoryUpdateListener($doctrine, $redis));
 
         $this->em = $this->createMock(EntityManager::class);
@@ -57,19 +58,17 @@ class SecurityAdvisoryWorkerTest extends TestCase
 
         $this->em
             ->method('getConnection')
-            ->willReturn($this->createMock(Connection::class));
+            ->willReturn($this->createStub(Connection::class));
 
         $locker
             ->method('lockSecurityAdvisory')
             ->willReturn(true);
 
         $this->securityAdvisoryRepository = $this->createMock(SecurityAdvisoryRepository::class);
-        $this->packageRepository = $this->createMock(EntityRepository::class);
 
         $doctrine
             ->method('getRepository')
             ->willReturnMap([
-                [Package::class, null, $this->packageRepository],
                 [SecurityAdvisory::class, null, $this->securityAdvisoryRepository],
             ]);
     }
@@ -101,14 +100,10 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->with($this->equalTo($existingAdvisory2ToBeDeleted));
 
         $this->securityAdvisoryRepository
+            ->expects($this->once())
             ->method('getPackageAdvisoriesWithSources')
             ->with($this->equalTo(['package/existing', 'package/new']))
             ->willReturn([$existingAdvisory1->getPackagistAdvisoryId() => $existingAdvisory1, $existingAdvisory2ToBeDeleted->getPackagistAdvisoryId() => $existingAdvisory2ToBeDeleted]);
-
-        $this->packageRepository
-            ->method('findOneBy')
-            ->with(['id' => 42])
-            ->willReturn(new Package());
 
         $job = new Job('job', 'security:advisory', ['source' => 'test']);
         $job->setPackageId(42);
@@ -127,14 +122,10 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->method('persist');
 
         $this->securityAdvisoryRepository
+            ->expects($this->once())
             ->method('getPackageAdvisoriesWithSources')
             ->with($this->equalTo([]))
             ->willReturn([]);
-
-        $this->packageRepository
-            ->method('findOneBy')
-            ->with(['id' => 42])
-            ->willReturn(new Package());
 
         $job = new Job('job', 'security:advisory', ['source' => 'test']);
         $job->setPackageId(42);
@@ -155,11 +146,6 @@ class SecurityAdvisoryWorkerTest extends TestCase
         $this->securityAdvisoryRepository
             ->expects($this->never())
             ->method('findBy');
-
-        $this->packageRepository
-            ->method('findOneBy')
-            ->with(['id' => 42])
-            ->willReturn(new Package());
 
         $job = new Job('job', 'security:advisory', ['source' => 'test']);
         $job->setPackageId(42);
