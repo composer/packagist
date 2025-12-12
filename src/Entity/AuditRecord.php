@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Audit\AbandonmentReason;
 use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
 use Doctrine\DBAL\Types\Types;
@@ -121,6 +122,16 @@ class AuditRecord
     public static function maintainerRemoved(Package $package, User $maintainer, ?User $actor): self
     {
         return new self(AuditRecordType::MaintainerRemoved, ['name' => $package->getName(), 'maintainer' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
+    }
+
+    public static function packageAbandoned(Package $package, ?User $actor, ?string $replacementPackage, ?AbandonmentReason $reason = null): self
+    {
+        return new self(AuditRecordType::PackageAbandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'replacement_package' => $replacementPackage, 'reason' => $reason?->value, 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+    }
+
+    public static function packageUnabandoned(Package $package, ?User $actor): self
+    {
+        return new self(AuditRecordType::PackageUnabandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function userCreated(User $user, UserRegistrationMethod $method): self

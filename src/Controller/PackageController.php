@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Audit\AbandonmentReason;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
@@ -26,6 +27,8 @@ use App\Entity\SecurityAdvisoryRepository;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
+use App\Event\PackageAbandonedEvent;
+use App\Event\PackageUnabandonedEvent;
 use App\Form\Model\MaintainerRequest;
 use App\Form\Model\TransferPackageRequest;
 use App\Form\Type\AbandonedType;
@@ -74,6 +77,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Webmozart\Assert\Assert;
 
 /**
@@ -90,6 +94,7 @@ class PackageController extends Controller
         private string $buildDir,
         /** @var AwsMetadata */
         private array $awsMetadata,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -1048,6 +1053,8 @@ class PackageController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             $package->setAbandoned(true);
             $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData()));
+            $this->eventDispatcher->dispatch(new PackageAbandonedEvent($package, AbandonmentReason::Manual));
+
             $package->setIndexedAt(null);
             $package->setCrawledAt(new \DateTimeImmutable());
             $package->setUpdatedAt(new \DateTimeImmutable());
@@ -1073,6 +1080,8 @@ class PackageController extends Controller
 
         $package->setAbandoned(false);
         $package->setReplacementPackage(null);
+        $this->eventDispatcher->dispatch(new PackageUnabandonedEvent($package, AbandonmentReason::Manual));
+
         $package->setIndexedAt(null);
         $package->setCrawledAt(new \DateTimeImmutable());
         $package->setUpdatedAt(new \DateTimeImmutable());

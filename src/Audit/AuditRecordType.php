@@ -27,8 +27,8 @@ enum AuditRecordType: string
     case VersionDeleted = 'version_deleted';
 
     case VersionReferenceChanged = 'version_reference_changed';
-    case PackageAbandoned = 'package_abandoned'; // TODO
-    case PackageUnabandoned = 'package_unabandoned'; // TODO
+    case PackageAbandoned = 'package_abandoned';
+    case PackageUnabandoned = 'package_unabandoned';
 
     // user management
     case UserCreated = 'user_created';

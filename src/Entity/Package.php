@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Audit\AbandonmentReason;
 use App\Service\UpdaterWorker;
 use App\Util\HttpDownloaderOptionsFactory;
 use App\Validator\Copyright;

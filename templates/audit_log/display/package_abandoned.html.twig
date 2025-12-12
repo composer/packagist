@@ -1,0 +1,22 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+Repository: {{ display.repository }}<br>
+{%- if display.reason -%}
+    Reason:
+    {% if display.reason == 'repository_archived' -%}
+        Repository archived on GitHub/GitLab
+    {% elseif display.reason == 'composer_json' -%}
+        <em>abandoned</em> flag set in composer.json
+    {% elseif display.reason == 'repository_archived_and_composer_json' -%}
+        Repository archived and <em>abandoned</em> flag set in composer.json
+    {% elseif display.reason == 'manual' -%}
+        Manually set by maintainer
+    {% else -%}
+        {{ display.reason|capitalize }}
+    {% endif -%}<br>
+{%- endif -%}
+{%- if display.replacementPackage -%}
+    Replacement: {{ auditLog.packageLink(display.replacementPackage) }}<br>
+{%- endif -%}
+Abandoned by: {{ display.actor.username }}

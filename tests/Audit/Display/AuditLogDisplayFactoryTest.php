@@ -16,8 +16,10 @@ use App\Audit\AuditRecordType;
 use App\Audit\Display\ActorDisplay;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Audit\Display\CanonicalUrlChangedDisplay;
+use App\Audit\Display\PackageAbandonedDisplay;
 use App\Audit\Display\PackageCreatedDisplay;
 use App\Audit\Display\PackageDeletedDisplay;
+use App\Audit\Display\PackageUnabandonedDisplay;
 use App\Audit\Display\VersionDeletedDisplay;
 use App\Audit\Display\VersionReferenceChangedDisplay;
 use App\Entity\AuditRecord;
@@ -239,6 +241,98 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('4.0.0', $display->version);
         self::assertNull($display->getActor()->id);
         self::assertSame('unknown', $display->getActor()->username);
+    }
+
+    public function testBuildPackageAbandonedWithReplacement(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::PackageAbandoned,
+            [
+                'name' => 'vendor/old-package',
+                'repository' => 'https://github.com/vendor/old-package',
+                'replacement_package' => 'vendor/new-package',
+                'reason' => 'manual',
+                'actor' => ['id' => 123, 'username' => 'maintainer'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(PackageAbandonedDisplay::class, $display);
+        self::assertSame('vendor/old-package', $display->packageName);
+        self::assertSame('https://github.com/vendor/old-package', $display->repository);
+        self::assertSame('vendor/new-package', $display->replacementPackage);
+        self::assertSame('manual', $display->reason);
+        self::assertSame(123, $display->actor->id);
+        self::assertSame('maintainer', $display->actor->username);
+        self::assertSame(AuditRecordType::PackageAbandoned, $display->getType());
+        self::assertSame('audit_log/display/package_abandoned.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildPackageAbandonedWithoutReplacement(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::PackageAbandoned,
+            [
+                'name' => 'vendor/abandoned-package',
+                'repository' => 'https://github.com/vendor/abandoned-package',
+                'replacement_package' => null,
+                'reason' => 'repository_archived',
+                'actor' => 'automation',
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(PackageAbandonedDisplay::class, $display);
+        self::assertSame('vendor/abandoned-package', $display->packageName);
+        self::assertSame('https://github.com/vendor/abandoned-package', $display->repository);
+        self::assertNull($display->replacementPackage);
+        self::assertSame('repository_archived', $display->reason);
+        self::assertNull($display->actor->id);
+        self::assertSame('automation', $display->actor->username);
+    }
+
+    public function testBuildPackageUnabandoned(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::PackageUnabandoned,
+            [
+                'name' => 'vendor/restored-package',
+                'repository' => 'https://github.com/vendor/restored-package',
+                'previous_replacement_package' => 'vendor/replacement',
+                'actor' => ['id' => 234, 'username' => 'maintainer'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(PackageUnabandonedDisplay::class, $display);
+        self::assertSame('vendor/restored-package', $display->packageName);
+        self::assertSame('https://github.com/vendor/restored-package', $display->repository);
+        self::assertSame(234, $display->actor->id);
+        self::assertSame('maintainer', $display->actor->username);
+        self::assertSame(AuditRecordType::PackageUnabandoned, $display->getType());
+        self::assertSame('audit_log/display/package_unabandoned.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildPackageUnabandonedWithoutPreviousReplacement(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::PackageUnabandoned,
+            [
+                'name' => 'vendor/restored-package',
+                'repository' => 'https://github.com/vendor/restored-package',
+                'previous_replacement_package' => null,
+                'actor' => ['id' => 777, 'username' => 'maintainer'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(PackageUnabandonedDisplay::class, $display);
+        self::assertSame(777, $display->actor->id);
+        self::assertSame('maintainer', $display->actor->username);
     }
 
     public function testBuildMultipleRecords(): void
