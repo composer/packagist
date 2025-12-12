@@ -14,7 +14,7 @@ return [
     'results' => [[
         'name' => 'fzaninotto/faker',
         'description' => 'Faker is a PHP library that generates fake data for you.',
-        'url' => 'http://packagist.lo/packages/fzaninotto/faker',
+        'url' => 'http://packagist.wip/packages/fzaninotto/faker',
         'repository' => 'https://github.com/fzaninotto/faker',
         'downloads' => 0,
         'favers' => 0,
@@ -22,7 +22,7 @@ return [
     ], [
         'name' => 'swiftmailer/swiftmailer',
         'description' => 'Swiftmailer, free feature-rich PHP mailer',
-        'url' => 'http://packagist.lo/packages/swiftmailer/swiftmailer',
+        'url' => 'http://packagist.wip/packages/swiftmailer/swiftmailer',
         'repository' => 'https://github.com/swiftmailer/swiftmailer',
         'downloads' => 0,
         'favers' => 0,
