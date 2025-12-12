@@ -244,7 +244,7 @@ class PackageManager
     /**
      * @param array<User> $newMaintainers
      */
-    public function transferPackage(Package $package, array $newMaintainers, bool $notifyNewMaintainers = false): bool
+    public function transferPackage(Package $package, array $newMaintainers, bool $notifyNewMaintainers): bool
     {
         $oldMaintainers = $package->getMaintainers()->toArray();
         $normalizedOldMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $oldMaintainers));

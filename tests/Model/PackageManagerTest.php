@@ -96,7 +96,7 @@ class PackageManagerTest extends IntegrationTestCase
         $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$bob, $alice]);
         $this->store($package);
 
-        $result = $this->packageManager->transferPackage($package, [$alice, $bob]);
+        $result = $this->packageManager->transferPackage($package, [$alice, $bob], false);
 
         $em = self::getEM();
         $em->flush();
