@@ -195,5 +195,5 @@ audit_log:
         version_reference_changed: Version reference changed
     enums:
         user-registration-method:
-            form: 'registration form'
+            form: 'Registration form'
             github-oauth: 'GitHub OAuth'
