@@ -17,10 +17,6 @@ Repository: {{ display.repository }}<br>
     {% endif -%}<br>
 {%- endif -%}
 {%- if display.replacementPackage -%}
-    Replacement: {% if display.replacementPackage is existing_package -%}
-        <a href="{{ path('view_package', { 'name': display.replacementPackage }) }}">{{ display.replacementPackage }}</a>
-    {%- else -%}
-        {{ display.replacementPackage }}
-    {%- endif -%}<br>
+    Replacement: {{ auditLog.packageLink(display.replacementPackage) }}<br>
 {%- endif -%}
 Abandoned by: {{ display.actor.username }}
