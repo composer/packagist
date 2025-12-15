@@ -34,13 +34,15 @@ class TransparencyLogController extends Controller
     #[Route(path: '/transparency-log', name: 'view_audit_logs')]
     public function viewAuditLogs(Request $request, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $displayFactory): Response
     {
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
+
         /** @var QueryFilterInterface[] $filters */
         $filters = [
             AuditRecordTypeFilter::fromQuery($request->query),
-            ActorFilter::fromQuery($request->query),
-            UserFilter::fromQuery($request->query),
-            VendorFilter::fromQuery($request->query),
-            PackageNameFilter::fromQuery($request->query),
+            ActorFilter::fromQuery($request->query, 'actor', $isAdmin),
+            UserFilter::fromQuery($request->query, 'user', $isAdmin),
+            VendorFilter::fromQuery($request->query, 'vendor', $isAdmin),
+            PackageNameFilter::fromQuery($request->query, 'package', $isAdmin),
         ];
 
         $qb = $auditRecordRepository->createQueryBuilder('a')

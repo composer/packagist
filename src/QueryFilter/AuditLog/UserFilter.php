@@ -13,51 +13,24 @@
 namespace App\QueryFilter\AuditLog;
 
 use App\Entity\User;
-use App\QueryFilter\QueryFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
 
-class UserFilter implements QueryFilterInterface
+class UserFilter extends AbstractAdminAwareTextFilter
 {
-    final private function __construct(
-        private readonly string $key,
-        private readonly string $username = '',
-    ) {}
-
-    public function filter(QueryBuilder $qb): QueryBuilder
+    protected function applyFilter(QueryBuilder $qb, string $paramName, string $pattern, bool $useWildcard): QueryBuilder
     {
-        if ($this->username === '') {
-            return $qb;
-        }
+        $qb->setParameter($paramName, $pattern);
 
-        $qb->innerJoin(User::class, 'targetUser', 'WITH', 'a.userId = targetUser.id')
-            ->andWhere('targetUser.username LIKE :targetUsername')
-            ->setParameter('targetUsername', '%' . $this->username . '%');
+        $qb->innerJoin(User::class, 'targetUser', 'WITH', 'a.userId = targetUser.id');
+
+        if ($useWildcard) {
+            $qb->andWhere('targetUser.username LIKE :' . $paramName);
+        } else {
+            $qb->andWhere('targetUser.username = :' . $paramName);
+        }
 
         return $qb;
     }
 
-    public function getSelectedValue(): mixed
-    {
-        return $this->username;
-    }
-
-    public function getKey(): string
-    {
-        return $this->key;
-    }
-
-    /**
-     * @param InputBag<string> $bag
-     */
-    public static function fromQuery(InputBag $bag, string $key = 'user'): static
-    {
-        $value = $bag->get($key, '');
-
-        if (!is_string($value) || $value === '') {
-            return new static($key);
-        }
-
-        return new static($key, trim($value));
-    }
 }
