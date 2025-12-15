@@ -191,6 +191,19 @@ class AuditRecord
         return new self(AuditRecordType::PasswordResetRequested, ['user' => self::getUserData($user), 'actor' => self::getUserData($user)], actorId: $user->getId(), userId: $user->getId());
     }
 
+    public static function userDeleted(User $user, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::UserDeleted,
+            [
+                'user' => self::getUserData($user),
+                'actor' => self::getUserData($actor),
+            ],
+            actorId: $actor?->getId(),
+            userId: $user->getId(),
+        );
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */

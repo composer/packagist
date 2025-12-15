@@ -12,9 +12,12 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
+use PHPUnit\Framework\Attributes\TestWith;
 
 class UserControllerTest extends IntegrationTestCase
 {
@@ -45,5 +48,35 @@ class UserControllerTest extends IntegrationTestCase
         $em = self::getEM();
         $em->clear();
         $this->assertTrue($em->getRepository(User::class)->find($user->getId())->isTotpAuthenticationEnabled());
+    }
+
+    #[TestWith([true])]
+    #[TestWith([false])]
+    public function testDeleteUserAsAdmin(bool $deletedByAdmin): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
+        $bob = self::createUser('bob', 'bob@example.org');
+        $this->store($admin, $bob);
+
+        $userId = $bob->getId();
+
+        $actor = $deletedByAdmin ? $admin : $bob;
+        $actorName = $actor->getUsernameCanonical();
+        $this->client->loginUser($actor);
+        $crawler = $this->client->request('GET', '/users/bob/');
+        $form = $crawler->selectButton('Delete Account Permanently')->form();
+
+        $this->client->submit($form);
+        $this->assertResponseStatusCodeSame(302);
+
+        $em = self::getEM();
+        $em->clear();
+        $deletedUser = $em->getRepository(User::class)->findOneBy(['username' => 'bob']);
+        $this->assertNull($deletedUser);
+
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::UserDeleted->value, 'userId' => $userId]);
+        $this->assertNotNull($record);
+        $this->assertSame('bob', $record->attributes['user']['username'] ?? null);
+        $this->assertSame($actorName, $record->attributes['actor']['username'] ?? null);
     }
 }
