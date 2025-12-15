@@ -15,11 +15,16 @@ namespace App\Audit\Display;
 use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
-use App\Audit\Display\TwoFaActivatedDisplay;
 use App\Audit\Display\TwoFaDeactivatedDisplay;
+use App\Entity\User;
+use Symfony\Bundle\SecurityBundle\Security;
 
 class AuditLogDisplayFactory
 {
+    public function __construct(
+        private readonly Security $security,
+    ) {}
+
     /**
      * @param iterable<AuditRecord> $auditRecords
      * @return array<AuditLogDisplayInterface>
@@ -135,6 +140,12 @@ class AuditLogDisplayFactory
                 $record->type,
                 $record->datetime,
                 $record->attributes['user']['username'] ?? 'unknown',
+                $this->buildACtor($record->attributes['actor'] ?? null),
+            ),
+            AuditRecordType::UserVerified => new UserVerifiedDisplay(
+                $record->datetime,
+                $this->buildActor($record->attributes['user'] ?? null),
+                $this->obfuscateEmail($record->attributes['email'], $record->attributes['user']['id'] ?? null),
                 $this->buildActor(null),
             ),
             default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
@@ -155,5 +166,19 @@ class AuditLogDisplayFactory
         }
 
         return new ActorDisplay($actor['id'], $actor['username']);
+    }
+
+    private function obfuscateEmail(string $email, ?int $userId = null): string
+    {
+        if ($this->security->isGranted('ROLE_ADMIN')) {
+            return $email;
+        }
+
+        $currentUser = $this->security->getUser();
+        if ($currentUser instanceof User && $currentUser->getId() === $userId) {
+            return $email;
+        }
+
+        return '**@**.**';
     }
 }

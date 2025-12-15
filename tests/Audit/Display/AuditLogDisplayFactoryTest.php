@@ -13,7 +13,6 @@
 namespace App\Tests\Audit\Display;
 
 use App\Audit\AuditRecordType;
-use App\Audit\Display\ActorDisplay;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Audit\Display\CanonicalUrlChangedDisplay;
 use App\Audit\Display\GenericUserDisplay;
@@ -21,21 +20,26 @@ use App\Audit\Display\PackageAbandonedDisplay;
 use App\Audit\Display\PackageCreatedDisplay;
 use App\Audit\Display\PackageDeletedDisplay;
 use App\Audit\Display\PackageUnabandonedDisplay;
-use App\Audit\Display\TwoFaActivatedDisplay;
 use App\Audit\Display\TwoFaDeactivatedDisplay;
+use App\Audit\Display\UserVerifiedDisplay;
 use App\Audit\Display\VersionDeletedDisplay;
 use App\Audit\Display\VersionReferenceChangedDisplay;
 use App\Entity\AuditRecord;
-use PHPUnit\Framework\Attributes\DataProvider;
+use App\Entity\User;
+use PHPUnit\Framework\Attributes\TestWith;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\SecurityBundle\Security;
 
 class AuditLogDisplayFactoryTest extends TestCase
 {
     private AuditLogDisplayFactory $factory;
+    private Security&Stub $security;
 
     protected function setUp(): void
     {
-        $this->factory = new AuditLogDisplayFactory();
+        $this->security = $this->createStub(Security::class);
+        $this->factory = new AuditLogDisplayFactory($this->security);
     }
 
     public function testBuildPackageCreatedWithUserActor(): void
@@ -338,6 +342,41 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('maintainer', $display->actor->username);
     }
 
+    #[TestWith([false, 999, '**@**.**'])]
+    #[TestWith([true, 999, 'john@doe.com'])]
+    #[TestWith([false, 999, '**@**.**'])]
+    #[TestWith([false, 123, 'john@doe.com'])]
+    public function testBuildUserVerified(bool $isAdmin, int $authenticatedUserId, string $expectedEmail): void
+    {
+        $this->security
+            ->method('isGranted')
+            ->with('ROLE_ADMIN')
+            ->willReturn($isAdmin);
+
+        $user = new User();
+        $reflectionProperty = new \ReflectionProperty($user, 'id');
+        $reflectionProperty->setValue($user, $authenticatedUserId);
+
+        $this->security
+            ->method('getUser')
+            ->willReturn($user);
+
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::UserVerified,
+            [
+                'user' => ['id' => 123, 'username' => 'johndoe'],
+                'email' => 'john@doe.com',
+                'actor' => 'unknown',
+            ],
+            userId: 123,
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+        self::assertInstanceOf(UserVerifiedDisplay::class, $display);
+        self::assertSame('johndoe', $display->user->username);
+        self::assertSame($expectedEmail, $display->email);
+    }
+
     public function testBuildMultipleRecords(): void
     {
         $records = [
@@ -443,8 +482,10 @@ class AuditLogDisplayFactoryTest extends TestCase
     private function createAuditRecord(
         AuditRecordType $type,
         array $attributes,
-        ?\DateTimeImmutable $datetime = null
-    ): AuditRecord {
+        ?\DateTimeImmutable $datetime = null,
+        ?int $userId = null,
+    ): AuditRecord
+    {
         $datetime = $datetime ?? new \DateTimeImmutable();
 
         $reflection = new \ReflectionClass(AuditRecord::class);
@@ -458,6 +499,9 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $attributesProperty = $reflection->getProperty('attributes');
         $attributesProperty->setValue($instance, $attributes);
+
+        $attributesProperty = $reflection->getProperty('userId');
+        $attributesProperty->setValue($instance, $userId);
 
         return $instance;
     }
