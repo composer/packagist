@@ -55,8 +55,28 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\EventDispatcher\Event;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use App\Event\VersionReferenceChangedEvent;
+
+final readonly class VersionUpdatedResult
+{
+    public function __construct(
+        public ?int $id,
+        public string $version,
+        public Version $entity,
+        /** @var list<Event> $events */
+        public array $events = [],
+    ) {}
+}
+
+final readonly class VersionSkippedResult
+{
+    public function __construct(
+        public int $id,
+        public string $version,
+    ) {}
+}
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -257,8 +277,7 @@ class Updater
 
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier, $driver);
             $versionId = false;
-            if ($result->updated) {
-                \assert($result->entity instanceof Version);
+            if ($result instanceof VersionUpdatedResult) {
                 $em->flush();
 
                 foreach ($result->events as $event) {
@@ -370,7 +389,7 @@ class Updater
      *
      * @param ExistingVersionsForUpdate $existingVersions
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier, VcsDriverInterface $driver): UpdateVersionInformationResult
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier, VcsDriverInterface $driver): VersionSkippedResult|VersionUpdatedResult
     {
         $em = $this->getEM();
         $version = new Version();
@@ -409,15 +428,13 @@ class Updater
                 $version->setIsDefaultBranch($data->isDefaultBranch());
                 $em->persist($version);
 
-                return new UpdateVersionInformationResult(
-                    updated: true,
+                return new VersionUpdatedResult(
                     id: $versionId,
                     version: strtolower($normVersion),
                     entity: $version,
                 );
             } else {
-                return new UpdateVersionInformationResult(
-                    updated: false,
+                return new VersionSkippedResult(
                     id: $existingVersion['id'],
                     version: strtolower($normVersion),
                 );
@@ -643,8 +660,7 @@ class Updater
             );
         }
 
-        return new UpdateVersionInformationResult(
-            updated: true,
+        return new VersionUpdatedResult(
             id: $versionId,
             version: strtolower($normVersion),
             entity: $version,
