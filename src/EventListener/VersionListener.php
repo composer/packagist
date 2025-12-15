@@ -13,6 +13,7 @@
 namespace App\EventListener;
 
 use App\Entity\AuditRecord;
+use App\Entity\Package;
 use App\Entity\User;
 use App\Entity\Version;
 use App\Event\VersionReferenceChangedEvent;
@@ -25,10 +26,14 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 #[AsEntityListener(event: 'postPersist', entity: Version::class)]
+#[AsEntityListener(event: 'postUpdate', entity: Version::class)]
 #[AsEventListener(event: VersionReferenceChangedEvent::class, method: 'onVersionReferenceChanged')]
 class VersionListener
 {
     use DoctrineTrait;
+
+    /** @var list<AuditRecord> */
+    private array $buffered = [];
 
     public function __construct(
         private ManagerRegistry $doctrine,
@@ -54,14 +59,29 @@ class VersionListener
             return;
         }
 
-        $record = AuditRecord::versionReferenceChange(
+        $this->buffered[] = AuditRecord::versionReferenceChange(
             $version,
             $event->getOldSourceRef(),
             $event->getOldDistRef(),
             $event->getNewMetadata()
         );
+    }
 
-        $this->getEM()->getRepository(AuditRecord::class)->insert($record);
+    /**
+     * @param LifecycleEventArgs<EntityManager> $event
+     */
+    public function postUpdate(Version $version, LifecycleEventArgs $event): void
+    {
+        if ($this->buffered === []) {
+            return;
+        }
+
+        $repo = $this->getEM()->getRepository(AuditRecord::class);
+        foreach ($this->buffered as $record) {
+            $repo->insert($record);
+        }
+
+        $this->buffered = [];
     }
 
     private function getUser(): ?User

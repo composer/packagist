@@ -278,11 +278,11 @@ class Updater
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier, $driver);
             $versionId = false;
             if ($result instanceof VersionUpdatedResult) {
-                $em->flush();
-
                 foreach ($result->events as $event) {
                     $this->eventDispatcher->dispatch($event);
                 }
+
+                $em->flush();
 
                 // detach version once flushed to avoid gathering lots of data in memory
                 $em->detach($result->entity);
@@ -394,6 +394,7 @@ class Updater
         $em = $this->getEM();
         $version = new Version();
         $versionId = null;
+        $postUpdateEvents = [];
 
         $normVersion = $data->getVersion();
 
@@ -465,9 +466,7 @@ class Updater
             if ($data->isAbandoned() && !$package->isAbandoned()) {
                 $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
                 $package->setAbandoned(true);
-                $this->eventDispatcher->dispatch(
-                    new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier))
-                );
+                $postUpdateEvents[] = new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier));
                 if ($data->getReplacementPackage()) {
                     $package->setReplacementPackage($data->getReplacementPackage());
                 }
@@ -648,9 +647,8 @@ class Updater
         $newSourceRef = $version->getSource()['reference'] ?? null;
         $newDistRef = $version->getDist()['reference'] ?? null;
 
-        $events = [];
         if ($originalMetadata !== null && ($oldSourceRef !== $newSourceRef || $oldDistRef !== $newDistRef)) {
-            $events[] = new VersionReferenceChangedEvent(
+            $postUpdateEvents[] = new VersionReferenceChangedEvent(
                 $version,
                 $originalMetadata,
                 $oldSourceRef,
@@ -664,7 +662,7 @@ class Updater
             id: $versionId,
             version: strtolower($normVersion),
             entity: $version,
-            events: $events,
+            events: $postUpdateEvents,
         );
     }
 
