@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Form\ResetPasswordFormType;
 use App\Form\ResetPasswordRequestFormType;
@@ -107,6 +108,7 @@ class ResetPasswordController extends Controller
 
             $user->setPassword($encodedPassword);
             $this->getEM()->persist($user);
+            $this->getEM()->persist(AuditRecord::passwordReset($user));
             $this->getEM()->flush();
 
             try {

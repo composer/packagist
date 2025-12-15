@@ -12,6 +12,8 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
@@ -31,6 +33,7 @@ class ResetPasswordControllerTest extends IntegrationTestCase
 
         $this->submitPasswordResetFormAndAsserStatusCode($crawler, 'new-password', 302);
         $this->assertUserHasNewPassword($user, $oldPassword);
+        $this->assertPasswordResetAuditRecordCreated($user);
     }
 
     public function testResetPasswordWithTwoFactor(): void
@@ -46,6 +49,7 @@ class ResetPasswordControllerTest extends IntegrationTestCase
         $this->assertUserHasNewPassword($user, $oldPassword);
 
         $this->assertTrue(self::getContainer()->get(TokenStorageInterface::class)->getToken()?->getAttribute(TwoFactorAuthenticator::FLAG_2FA_COMPLETE));
+        $this->assertPasswordResetAuditRecordCreated($user);
     }
 
     public function testResetPasswordToProhibited(): void
@@ -105,5 +109,16 @@ class ResetPasswordControllerTest extends IntegrationTestCase
         $user = $em->getRepository(User::class)->find($user->getId());
         $this->assertNotNull($user);
         $this->assertSame($oldPassword, $user->getPassword());
+    }
+
+    private function assertPasswordResetAuditRecordCreated(User $user): void
+    {
+        $record = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
+            'userId' => $user->getId(),
+            'type' => AuditRecordType::PasswordReset->value,
+        ]);
+
+        $this->assertNotNull($record, 'No audit record was created');
+        $this->assertSame($user->getUsernameCanonical(), $record->attributes['user']['username'] ?? null);
     }
 }
