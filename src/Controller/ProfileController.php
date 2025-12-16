@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Attribute\VarName;
+use App\Entity\AuditRecord;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\User;
@@ -144,6 +145,11 @@ class ProfileController extends Controller
                 if ($oldEmail !== $user->getEmail()) {
                     $userNotifier->notifyChange($oldEmail, $reason);
                     $user->resetPasswordRequest();
+                    $this->getEM()->persist(AuditRecord::emailChanged($user, $oldEmail));
+                }
+
+                if ($oldUsername !== $user->getUsername()) {
+                    $this->getEM()->persist(AuditRecord::usernameChanged($user, $oldUsername));
                 }
 
                 $userNotifier->notifyChange($user->getEmail(), $reason);

@@ -209,6 +209,37 @@ class AuditRecord
         return new self(AuditRecordType::UserVerified, ['user' => self::getUserdata($user), 'email' => $email, 'actor' => 'unknown'], userId: $user->getId());
     }
 
+    public static function usernameChanged(User $user, string $oldUsername): self
+    {
+        return new self(
+            AuditRecordType::UsernameChanged,
+            [
+                'username_from' => $oldUsername,
+                'username_to' => $user->getUsernameCanonical(),
+                'user' => self::getUserData($user),
+                'actor' => self::getUserData($user),
+            ],
+            actorId: $user->getId(),
+            userId: $user->getId(),
+        );
+    }
+
+    public static function emailChanged(User $user, string $oldEmail): self
+    {
+        return new self(
+            AuditRecordType::EmailChanged,
+            [
+                'username' => $user->getUsernameCanonical(),
+                'email_from' => $oldEmail,
+                'email_to' => $user->getEmail(),
+                'user' => self::getUserData($user),
+                'actor' => self::getUserData($user),
+            ],
+            actorId: $user->getId(),
+            userId: $user->getId(),
+        );
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */

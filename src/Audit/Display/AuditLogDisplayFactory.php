@@ -153,6 +153,19 @@ class AuditLogDisplayFactory
                 $record->attributes['user']['username'] ?? 'unknown',
                 $this->buildActor($record->attributes['actor'] ?? null),
             ),
+            AuditRecordType::UsernameChanged => new UsernameChangedDisplay(
+                $record->datetime,
+                $record->attributes['username_from'],
+                $record->attributes['username_to'],
+                $this->buildActor($record->attributes['actor']),
+            ),
+            AuditRecordType::EmailChanged => new EmailChangedDisplay(
+                $record->datetime,
+                $record->attributes['username'],
+                $this->obfuscateEmail($record->attributes['email_from'], $record->attributes['user']['id'] ?? null),
+                $this->obfuscateEmail($record->attributes['email_to'], $record->attributes['user']['id'] ?? null),
+                $this->buildActor($record->attributes['actor']),
+            ),
             default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
         };
     }
