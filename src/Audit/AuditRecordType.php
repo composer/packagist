@@ -34,8 +34,8 @@ enum AuditRecordType: string
     case UserCreated = 'user_created';
     case UserDeleted = 'user_deleted'; // TODO
     case PasswordResetRequested = 'password_reset_requested'; // TODO
-    case PasswordReset = 'password_reset'; // TODO
-    case PasswordChanged = 'password_changed'; // TODO
+    case PasswordReset = 'password_reset';
+    case PasswordChanged = 'password_changed';
     case EmailChanged = 'email_changed'; // TODO
     case UsernameChanged = 'username_changed'; // TODO
     case GitHubLinkedWithUser = 'github_linked_with_user'; // TODO
