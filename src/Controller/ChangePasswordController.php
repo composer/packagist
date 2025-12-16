@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Form\ChangePasswordFormType;
 use App\Security\UserNotifier;
@@ -41,6 +42,7 @@ class ChangePasswordController extends Controller
             );
 
             $this->getEM()->persist($user);
+            $this->getEM()->persist(AuditRecord::passwordChanged($user));
             $this->getEM()->flush();
 
             $userNotifier->notifyChange($user->getEmail(), 'Your password has been changed');

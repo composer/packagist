@@ -12,6 +12,8 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
 use App\Validator\NotProhibitedPassword;
@@ -42,6 +44,12 @@ class ChangePasswordControllerTest extends IntegrationTestCase
             'change_password_form[plainPassword]' => $newPassword,
         ]);
 
+        $record = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
+            'userId' => $user->getId(),
+            'actorId' => $user->getId(),
+            'type' => AuditRecordType::PasswordChanged->value,
+        ]);
+
         if ($expectedResult == 'ok') {
             $this->assertResponseStatusCodeSame(302);
 
@@ -50,11 +58,15 @@ class ChangePasswordControllerTest extends IntegrationTestCase
             $user = $em->getRepository(User::class)->find($user->getId());
             $this->assertNotNull($user);
             $this->assertNotSame($currentPasswordHash, $user->getPassword());
+            $this->assertNotNull($record, 'No audit record was created');
+            $this->assertSame($user->getUsernameCanonical(), $record->attributes['user']['username'] ?? null);
+            $this->assertSame($user->getUsernameCanonical(), $record->attributes['actor']['username'] ?? null);
         }
 
         if ($expectedResult === 'prohibited-password-error') {
             $this->assertResponseStatusCodeSame(422);
             $this->assertFormError(new NotProhibitedPassword()->message, 'change_password_form', $crawler);
+            $this->assertNull($record, 'Audit record was created');
         }
     }
 }

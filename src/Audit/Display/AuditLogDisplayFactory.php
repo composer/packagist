@@ -135,6 +135,11 @@ class AuditLogDisplayFactory
                 $record->attributes['user']['username'] ?? 'unknown',
                 $this->buildActor(null),
             ),
+            AuditRecordType::PasswordChanged => new PasswordChangedDisplay(
+                $record->datetime,
+                $record->attributes['user']['username'],
+                $this->buildActor(null),
+            ),
             default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
         };
     }

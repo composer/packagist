@@ -175,14 +175,12 @@ class AuditRecord
 
     public static function passwordReset(User $user): self
     {
-        return new self(
-            type: AuditRecordType::PasswordReset,
-            attributes: [
-                'user' => self::getUserData($user),
-                'actor' => self::getUserData($user),
-            ],
-            userId: $user->getId(),
-        );
+        return new self(type: AuditRecordType::PasswordReset, attributes: ['user' => self::getUserData($user), 'actor' => self::getUserData($user)], actorId: $user->getId(), userId: $user->getId());
+    }
+
+    public static function passwordChanged(User $user): self
+    {
+        return new self(AuditRecordType::PasswordChanged, ['user' => self::getUserData($user), 'actor' => self::getUserData($user)], actorId: $user->getId(), userId: $user->getId());
     }
 
     /**
