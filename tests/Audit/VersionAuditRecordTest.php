@@ -76,7 +76,7 @@ class VersionAuditRecordTest extends KernelTestCase
         $version->setDist(['reference' => 'new-dist-ref', 'type' => 'zip', 'url' => 'https://example.org/dist.zip']);
         $version->setSource(['reference' => 'new-source-ref', 'type' => 'git', 'url' => 'git://example.org/dist.zip']);
 
-        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata, 'source-ref', 'dist-ref', $version->getSource()['reference'] ?? null, $version->getDist()['type'] ?? null);
+        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata);
         $eventDispatcher->dispatch($changeEvent);
         $em->flush();
 
@@ -97,7 +97,7 @@ class VersionAuditRecordTest extends KernelTestCase
         $originalMetadata = $version->toV2Array([]);
         $version->setDist(['reference' => 'another-dist-ref', 'type' => 'zip', 'url' => 'https://example.org/dist.zip']);
         $version->setDevelopment(true);
-        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata, 'source-ref', 'dist-ref', $version->getSource()['reference'] ?? null, $version->getDist()['type'] ?? null);
+        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata);
         $eventDispatcher->dispatch($changeEvent);
         $em->flush();
 
@@ -114,7 +114,7 @@ class VersionAuditRecordTest extends KernelTestCase
         $version->setDist(['reference' => 'a-dist-ref-with-metadata-changes', 'type' => 'zip', 'url' => 'https://d.io/dist.zip']);
         $version->getRequire()->clear();
         $version->addRequireLink($link);
-        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata, 'source-ref', 'another-dist-ref', $version->getSource()['reference'] ?? null, $version->getDist()['type'] ?? null);
+        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata);
         $eventDispatcher->dispatch($changeEvent);
         $em->flush();
 

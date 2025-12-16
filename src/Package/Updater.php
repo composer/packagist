@@ -256,7 +256,6 @@ class Updater
         }
 
         $processedVersions = [];
-        $lastProcessed = null;
         $idsToMarkUpdated = [];
 
         /** @var int|false|null $dependentSuggesterSource Version id to use as dependent/suggester source */
@@ -442,10 +441,8 @@ class Updater
             }
         }
 
-        // Capture original metadata and references BEFORE modifications
+        // Capture original metadata BEFORE modifications
         $originalMetadata = $versionId !== null ? $version->toV2Array([]) : null;
-        $oldSourceRef = $version->getSource()['reference'] ?? null;
-        $oldDistRef = $version->getDist()['reference'] ?? null;
 
         $version->setName($package->getName());
         $version->setVersion($data->getPrettyVersion());
@@ -644,18 +641,12 @@ class Updater
             $version->getSuggest()->clear();
         }
 
-        $newSourceRef = $version->getSource()['reference'] ?? null;
-        $newDistRef = $version->getDist()['reference'] ?? null;
+        if ($originalMetadata !== null) {
+            $event = new VersionReferenceChangedEvent($version, $originalMetadata);
 
-        if ($originalMetadata !== null && ($oldSourceRef !== $newSourceRef || $oldDistRef !== $newDistRef)) {
-            $postUpdateEvents[] = new VersionReferenceChangedEvent(
-                $version,
-                $originalMetadata,
-                $oldSourceRef,
-                $oldDistRef,
-                $newSourceRef,
-                $newDistRef
-            );
+            if ($event->hasReferenceChanged()) {
+                $postUpdateEvents[] = $event;
+            }
         }
 
         return new VersionUpdatedResult(

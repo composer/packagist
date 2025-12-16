@@ -27,7 +27,6 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 #[AsEntityListener(event: 'postPersist', entity: Version::class)]
 #[AsEntityListener(event: 'postUpdate', entity: Version::class)]
-#[AsEventListener(event: VersionReferenceChangedEvent::class, method: 'onVersionReferenceChanged')]
 class VersionListener
 {
     use DoctrineTrait;
@@ -51,6 +50,7 @@ class VersionListener
         $this->getEM()->getRepository(AuditRecord::class)->insert($record);
     }
 
+    #[AsEventListener]
     public function onVersionReferenceChanged(VersionReferenceChangedEvent $event): void
     {
         $version = $event->getVersion();

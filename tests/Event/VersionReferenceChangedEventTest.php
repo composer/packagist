@@ -34,33 +34,26 @@ class VersionReferenceChangedEventTest extends TestCase
         ?string $newDistRef,
         bool $expected,
     ): void {
-        $version = $this->createPackageAndVersion();
+        $version = $this->createPackageAndVersion($oldSourceRef, $oldDistRef);
+        $oldMetadata = $version->toV2Array([]);
 
-        $event = new VersionReferenceChangedEvent(
-            $version,
-            [],
-            $oldSourceRef,
-            $oldDistRef,
-            $newSourceRef,
-            $newDistRef
-        );
+        $version->setSource(array_merge($version->getSource(), ['reference' => $newSourceRef]));
+        $version->setDist(array_merge($version->getDist(), ['reference' => $newDistRef]));
+
+        $event = new VersionReferenceChangedEvent($version, $oldMetadata);
 
         $this->assertSame($expected, $event->hasReferenceChanged());
     }
 
     public function testHasMetadataChangedWithIdenticalMetadata(): void
     {
-        $version = $this->createPackageAndVersion();
+        $version = $this->createPackageAndVersion('old-ref', 'old-ref');
         $metadata = $version->toV2Array([]);
 
-        $event = new VersionReferenceChangedEvent(
-            $version,
-            $metadata,
-            'old-ref',
-            'old-ref',
-            'new-ref',
-            'new-ref'
-        );
+        $version->setSource(array_merge($version->getSource(), ['reference' => 'new-ref']));
+        $version->setDist(array_merge($version->getDist(), ['reference' => 'new-ref']));
+
+        $event = new VersionReferenceChangedEvent($version, $metadata);
 
         $this->assertFalse($event->hasMetadataChanged());
     }
@@ -71,18 +64,14 @@ class VersionReferenceChangedEventTest extends TestCase
     #[DataProvider('metadataProvider')]
     public function testHasMetadataChanged(string $key, string|array|null $newValue): void
     {
-        $version = $this->createPackageAndVersion();
+        $version = $this->createPackageAndVersion('old-ref', 'old-ref');
         $originalMetadata = $version->toV2Array([]);
         $originalMetadata[$key] = $newValue;
 
-        $event = new VersionReferenceChangedEvent(
-            $version,
-            array_filter($originalMetadata),
-            'old-ref',
-            'old-ref',
-            'new-ref',
-            'new-ref'
-        );
+        $version->setSource(array_merge($version->getSource(), ['reference' => 'new-ref']));
+        $version->setDist(array_merge($version->getDist(), ['reference' => 'new-ref']));
+
+        $event = new VersionReferenceChangedEvent($version, array_filter($originalMetadata));
 
         $this->assertTrue($event->hasMetadataChanged());
     }
@@ -97,7 +86,7 @@ class VersionReferenceChangedEventTest extends TestCase
         ];
     }
 
-    private function createPackageAndVersion(): Version
+    private function createPackageAndVersion(?string $sourceRef, ?string $distRef): Version
     {
         $start = microtime(true);
         $package = new Package();
@@ -111,8 +100,8 @@ class VersionReferenceChangedEventTest extends TestCase
         $version->setDevelopment(false);
         $version->setLicense(['MIT']);
         $version->setAutoload([]);
-        $version->setDist(['reference' => 'b5c958d3', 'type' => 'zip', 'url' => 'https://example.org/dist.zip']);
-        $version->setSource(['reference' => 'b5c958d3', 'type' => 'git', 'url' => 'https://example.org/dist.git']);
+        $version->setDist(['reference' => $distRef, 'type' => 'zip', 'url' => 'https://example.org/dist.zip']);
+        $version->setSource(['reference' => $sourceRef, 'type' => 'git', 'url' => 'https://example.org/dist.git']);
 
         $link = new RequireLink();
         $link->setVersion($version);

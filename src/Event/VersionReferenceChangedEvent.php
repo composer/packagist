@@ -20,15 +20,25 @@ use Symfony\Contracts\EventDispatcher\Event;
  */
 class VersionReferenceChangedEvent extends Event
 {
+    private readonly ?string $oldSourceRef;
+    private readonly ?string $oldDistRef;
+    private readonly ?string $newSourceRef;
+    private readonly ?string $newDistRef;
+
+    /** @var VersionArray */
+    private readonly array $newMetadata;
+
     public function __construct(
         private readonly Version $version,
         /** @var VersionArray $originalMetadata */
         private readonly array $originalMetadata,
-        private readonly ?string $oldSourceRef,
-        private readonly ?string $oldDistRef,
-        private readonly ?string $newSourceRef,
-        private readonly ?string $newDistRef,
     ) {
+        $this->oldSourceRef = $originalMetadata['source']['reference'] ?? null;
+        $this->oldDistRef = $originalMetadata['dist']['reference'] ?? null;
+
+        $this->newMetadata = $version->toV2Array([]);
+        $this->newSourceRef = $this->newMetadata['source']['reference'] ?? null;
+        $this->newDistRef = $this->newMetadata['dist']['reference'] ?? null;
     }
 
     public function getVersion(): Version
@@ -49,7 +59,7 @@ class VersionReferenceChangedEvent extends Event
      */
     public function getNewMetadata(): array
     {
-        return $this->version->toV2Array([]);
+        return $this->newMetadata;
     }
 
     public function getOldSourceRef(): ?string
