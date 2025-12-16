@@ -130,17 +130,8 @@ class AuditLogDisplayFactory
                 $record->attributes['reason'],
                 $this->buildActor($record->attributes['actor']),
             ),
-            AuditRecordType::PasswordReset => new PasswordResetDisplay(
-                $record->datetime,
-                $record->attributes['user']['username'] ?? 'unknown',
-                $this->buildActor(null),
-            ),
-            AuditRecordType::PasswordChanged => new PasswordChangedDisplay(
-                $record->datetime,
-                $record->attributes['user']['username'],
-                $this->buildActor(null),
-            ),
-            AuditRecordType::PasswordResetRequested => new PasswordResetRequestedDisplay(
+            AuditRecordType::PasswordResetRequested, AuditRecordType::PasswordReset, AuditRecordType::PasswordChanged => new GenericUserDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['user']['username'] ?? 'unknown',
                 $this->buildActor(null),

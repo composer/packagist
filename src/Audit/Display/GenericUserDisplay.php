@@ -14,9 +14,10 @@ namespace App\Audit\Display;
 
 use App\Audit\AuditRecordType;
 
-readonly abstract class AbstractUserDisplay extends AbstractAuditLogDisplay
+readonly class GenericUserDisplay extends AbstractAuditLogDisplay
 {
     public function __construct(
+        private AuditRecordType $type,
         \DateTimeImmutable $datetime,
         public string $username,
         ActorDisplay $actor,
@@ -24,7 +25,10 @@ readonly abstract class AbstractUserDisplay extends AbstractAuditLogDisplay
         parent::__construct($datetime, $actor);
     }
 
-    abstract public function getType(): AuditRecordType;
+    public function getType(): AuditRecordType
+    {
+        return $this->type;
+    }
 
     public function getTemplateName(): string
     {
