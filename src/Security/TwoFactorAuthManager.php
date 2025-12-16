@@ -12,6 +12,8 @@
 
 namespace App\Security;
 
+use App\Entity\AuditRecord;
+use App\Entity\AuditRecordRepository;
 use App\Entity\User;
 use Doctrine\Persistence\ManagerRegistry;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
@@ -28,6 +30,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         private ManagerRegistry $doctrine,
         private RequestStack $requestStack,
         private UserNotifier $userNotifier,
+        private AuditRecordRepository $auditRecordRepository,
     ) {
     }
 
@@ -38,6 +41,8 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
     {
         $user->setTotpSecret($secret);
         $this->doctrine->getManager()->flush();
+
+        $this->auditRecordRepository->insert(AuditRecord::twoFactorAuthenticationActivated($user));
 
         $this->userNotifier->notifyChange(
             $user->getEmail(),
@@ -55,6 +60,8 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
         $user->setTotpSecret(null);
         $user->invalidateAllBackupCodes();
         $this->doctrine->getManager()->flush();
+
+        $this->auditRecordRepository->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $reason));
 
         $this->userNotifier->notifyChange(
             $user->getEmail(),

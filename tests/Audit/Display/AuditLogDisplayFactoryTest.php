@@ -20,6 +20,8 @@ use App\Audit\Display\PackageAbandonedDisplay;
 use App\Audit\Display\PackageCreatedDisplay;
 use App\Audit\Display\PackageDeletedDisplay;
 use App\Audit\Display\PackageUnabandonedDisplay;
+use App\Audit\Display\TwoFaActivatedDisplay;
+use App\Audit\Display\TwoFaDeactivatedDisplay;
 use App\Audit\Display\VersionDeletedDisplay;
 use App\Audit\Display\VersionReferenceChangedDisplay;
 use App\Entity\AuditRecord;
@@ -391,6 +393,48 @@ class AuditLogDisplayFactoryTest extends TestCase
         $display = $this->factory->buildSingle($auditRecord);
 
         self::assertSame($datetime, $display->getDateTime());
+    }
+
+    public function testBuildTwoFaActivated(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::TwoFaAuthenticationActivated,
+            [
+                'username' => 'testuser',
+                'actor' => ['id' => 123, 'username' => 'testuser'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(TwoFaActivatedDisplay::class, $display);
+        self::assertSame('testuser', $display->username);
+        self::assertSame(123, $display->actor->id);
+        self::assertSame('testuser', $display->actor->username);
+        self::assertSame(AuditRecordType::TwoFaAuthenticationActivated, $display->getType());
+        self::assertSame('audit_log/display/two_fa_activated.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildTwoFaDeactivated(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::TwoFaAuthenticationDeactivated,
+            [
+                'username' => 'testuser',
+                'reason' => 'Manually disabled',
+                'actor' => ['id' => 123, 'username' => 'testuser'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(TwoFaDeactivatedDisplay::class, $display);
+        self::assertSame('testuser', $display->username);
+        self::assertSame('Manually disabled', $display->reason);
+        self::assertSame(123, $display->actor->id);
+        self::assertSame('testuser', $display->actor->username);
+        self::assertSame(AuditRecordType::TwoFaAuthenticationDeactivated, $display->getType());
+        self::assertSame('audit_log/display/two_fa_deactivated.html.twig', $display->getTemplateName());
     }
 
     /**
