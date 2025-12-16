@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Form\ResetPasswordFormType;
 use App\Form\ResetPasswordRequestFormType;
@@ -46,7 +47,7 @@ class ResetPasswordController extends Controller
      * Display & process form to request a password reset.
      */
     #[Route(path: '/reset-password', name: 'request_pwd_reset')]
-    public function request(Request $request, MailerInterface $mailer, RecaptchaVerifier $recaptchaVerifier): Response
+    public function request(Request $request, MailerInterface $mailer): Response
     {
         $form = $this->createForm(ResetPasswordRequestFormType::class);
         $form->handleRequest($request);
@@ -107,6 +108,7 @@ class ResetPasswordController extends Controller
 
             $user->setPassword($encodedPassword);
             $this->getEM()->persist($user);
+            $this->getEM()->persist(AuditRecord::passwordReset($user));
             $this->getEM()->flush();
 
             try {
@@ -142,6 +144,7 @@ class ResetPasswordController extends Controller
             // only regenerate a new token once every 24h or as needed
             $user->initializeConfirmationToken();
             $user->setPasswordRequestedAt(new \DateTimeImmutable());
+            $this->getEM()->persist(AuditRecord::passwordResetRequested($user));
             $this->getEM()->flush();
         }
 

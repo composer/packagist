@@ -170,8 +170,22 @@ class AuditRecord
                 'reason' => $reason,
             ],
             actorId: $user->getId(),
-            userId: $user->getId(),
         );
+    }
+
+    public static function passwordReset(User $user): self
+    {
+        return new self(type: AuditRecordType::PasswordReset, attributes: ['user' => self::getUserData($user), 'actor' => self::getUserData($user)], actorId: $user->getId(), userId: $user->getId());
+    }
+
+    public static function passwordChanged(User $user): self
+    {
+        return new self(AuditRecordType::PasswordChanged, ['user' => self::getUserData($user), 'actor' => self::getUserData($user)], actorId: $user->getId(), userId: $user->getId());
+    }
+
+    public static function passwordResetRequested(User $user): self
+    {
+        return new self(AuditRecordType::PasswordResetRequested, ['user' => self::getUserData($user), 'actor' => self::getUserData($user)], actorId: $user->getId(), userId: $user->getId());
     }
 
     /**

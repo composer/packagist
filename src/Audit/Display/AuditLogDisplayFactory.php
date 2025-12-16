@@ -130,6 +130,12 @@ class AuditLogDisplayFactory
                 $record->attributes['reason'],
                 $this->buildActor($record->attributes['actor']),
             ),
+            AuditRecordType::PasswordResetRequested, AuditRecordType::PasswordReset, AuditRecordType::PasswordChanged => new GenericUserDisplay(
+                $record->type,
+                $record->datetime,
+                $record->attributes['user']['username'] ?? 'unknown',
+                $this->buildActor(null),
+            ),
             default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
         };
     }
