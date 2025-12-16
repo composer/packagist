@@ -27,7 +27,7 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
     /**
      * Apply exact or wildcard matching based on admin status.
      *
-     * For admins: Supports * as wildcard. If no * is present, wraps with wildcards for substring search.
+     * For admins: Supports * as wildcard
      * For non-admins: Exact match only.
      */
     final public function filter(QueryBuilder $qb): QueryBuilder
@@ -51,11 +51,6 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
         return $this->applyFilter($qb, $paramName, $pattern, $usePartialMatching);
     }
 
-    /**
-     * @param QueryBuilder $qb
-     * @param string $paramName The parameter name to use in the WHERE clause
-     * @param bool $useWildcard
-     */
     abstract protected function applyFilter(
         QueryBuilder $qb,
         string $paramName,
