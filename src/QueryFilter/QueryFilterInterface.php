@@ -12,7 +12,6 @@
 
 namespace App\QueryFilter;
 
-use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
 use Doctrine\ORM\QueryBuilder;
 
 interface QueryFilterInterface
