@@ -147,6 +147,33 @@ class AuditRecord
         );
     }
 
+    public static function twoFactorAuthenticationActivated(User $user): self
+    {
+        return new self(
+            AuditRecordType::TwoFaAuthenticationActivated,
+            [
+                'username' => $user->getUsernameCanonical(),
+                'actor' => self::getUserData($user),
+            ],
+            actorId: $user->getId(),
+            userId: $user->getId(),
+        );
+    }
+
+    public static function twoFactorAuthenticationDeactivated(User $user, string $reason): self
+    {
+        return new self(
+            AuditRecordType::TwoFaAuthenticationDeactivated,
+            [
+                'username' => $user->getUsernameCanonical(),
+                'actor' => self::getUserData($user),
+                'reason' => $reason,
+            ],
+            actorId: $user->getId(),
+            userId: $user->getId(),
+        );
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */

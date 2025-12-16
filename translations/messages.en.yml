@@ -185,8 +185,8 @@ audit_log:
         password_changed: Password changed
         password_reset: Password reset
         password_reset_requested: Password reset requested
-        two_fa_activated: Two-factor authentication activated
-        two_fa_deactivated: Two-factor authentication deactivated
+        two_fa_activated: 2FA activated
+        two_fa_deactivated: 2FA deactivated
         user_created: User created
         user_deleted: User deleted
         username_changed: Username changed

@@ -15,6 +15,8 @@ namespace App\Audit\Display;
 use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
+use App\Audit\Display\TwoFaActivatedDisplay;
+use App\Audit\Display\TwoFaDeactivatedDisplay;
 
 class AuditLogDisplayFactory
 {
@@ -116,6 +118,17 @@ class AuditLogDisplayFactory
                 $record->attributes['username'],
                 UserRegistrationMethod::from($record->attributes['method']),
                 $this->buildActor(null),
+            ),
+            AuditRecordType::TwoFaAuthenticationActivated => new TwoFaActivatedDisplay(
+                $record->datetime,
+                $record->attributes['username'],
+                $this->buildActor($record->attributes['actor']),
+            ),
+            AuditRecordType::TwoFaAuthenticationDeactivated => new TwoFaDeactivatedDisplay(
+                $record->datetime,
+                $record->attributes['username'],
+                $record->attributes['reason'],
+                $this->buildActor($record->attributes['actor']),
             ),
             default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
         };
