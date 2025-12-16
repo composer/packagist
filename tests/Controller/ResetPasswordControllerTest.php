@@ -23,6 +23,44 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 
 class ResetPasswordControllerTest extends IntegrationTestCase
 {
+    public function testRequestPasswordReset(): void
+    {
+        $user = self::createUser();
+        $this->store($user);
+
+        $crawler = $this->client->request('GET', '/reset-password');
+        $this->assertResponseStatusCodeSame(200);
+
+        $form = $crawler->selectButton('Send password reset email')->form();
+        $form->setValues([
+            'reset_password_request_form[email]' => $user->getEmail(),
+        ]);
+
+        $this->client->submit($form);
+
+        $this->assertResponseRedirects('/reset-password/check-email');
+
+        $this->assertEmailCount(1);
+        $email = $this->getMailerMessage();
+        $this->assertNotNull($email);
+        $this->assertEmailHeaderSame($email, 'To', $user->getEmail());
+        $this->assertEmailHeaderSame($email, 'Subject', 'Your password reset request');
+
+        $em = self::getEM();
+        $em->clear();
+        $user = $em->getRepository(User::class)->find($user->getId());
+        $this->assertNotNull($user);
+        $this->assertNotNull($user->getConfirmationToken(), 'Confirmation token should be set');
+        $this->assertNotNull($user->getPasswordRequestedAt(), 'Password requested at should be set');
+
+        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditRecordType::PasswordResetRequested,
+            'userId' => $user->getId(),
+        ]);
+        $this->assertInstanceOf(AuditRecord::class, $auditRecord);
+        $this->assertSame($user->getUsernameCanonical(), $auditRecord->attributes['user']['username'] ?? null);
+    }
+
     public function testResetPassword(): void
     {
         $user = $this->setupUserWithPasswordResetRequest(false);

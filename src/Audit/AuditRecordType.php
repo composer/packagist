@@ -33,7 +33,7 @@ enum AuditRecordType: string
     // user management
     case UserCreated = 'user_created';
     case UserDeleted = 'user_deleted'; // TODO
-    case PasswordResetRequested = 'password_reset_requested'; // TODO
+    case PasswordResetRequested = 'password_reset_requested';
     case PasswordReset = 'password_reset';
     case PasswordChanged = 'password_changed';
     case EmailChanged = 'email_changed'; // TODO
