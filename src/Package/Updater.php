@@ -55,7 +55,28 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\EventDispatcher\Event;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use App\Event\VersionReferenceChangedEvent;
+
+final readonly class VersionUpdatedResult
+{
+    public function __construct(
+        public ?int $id,
+        public string $version,
+        public Version $entity,
+        /** @var list<Event> $events */
+        public array $events = [],
+    ) {}
+}
+
+final readonly class VersionSkippedResult
+{
+    public function __construct(
+        public int $id,
+        public string $version,
+    ) {}
+}
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -235,7 +256,6 @@ class Updater
         }
 
         $processedVersions = [];
-        $lastProcessed = null;
         $idsToMarkUpdated = [];
 
         /** @var int|false|null $dependentSuggesterSource Version id to use as dependent/suggester source */
@@ -256,17 +276,20 @@ class Updater
 
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier, $driver);
             $versionId = false;
-            if ($result['updated']) {
-                \assert($result['object'] instanceof Version);
+            if ($result instanceof VersionUpdatedResult) {
+                foreach ($result->events as $event) {
+                    $this->eventDispatcher->dispatch($event);
+                }
+
                 $em->flush();
 
                 // detach version once flushed to avoid gathering lots of data in memory
-                $em->detach($result['object']);
+                $em->detach($result->entity);
 
-                $this->versionIdCache->insertVersion($package, $result['object']);
-                $versionId = $result['object']->getId();
+                $this->versionIdCache->insertVersion($package, $result->entity);
+                $versionId = $result->entity->getId();
             } else {
-                $idsToMarkUpdated[] = $result['id'];
+                $idsToMarkUpdated[] = $result->id;
             }
 
             // use the first version which should be the highest stable version by default
@@ -279,7 +302,7 @@ class Updater
             }
 
             // mark the version processed so we can prune leftover ones
-            unset($existingVersions[$result['version']]);
+            unset($existingVersions[$result->version]);
         }
 
         if ($dependentSuggesterSource) {
@@ -364,14 +387,13 @@ class Updater
      *  - object (Version instance if it was updated)
      *
      * @param ExistingVersionsForUpdate $existingVersions
-     *
-     * @return array{updated: true, id: int|null, version: string, object: Version}|array{updated: false, id: int|null, version: string, object: null}
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier, VcsDriverInterface $driver): array
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier, VcsDriverInterface $driver): VersionSkippedResult|VersionUpdatedResult
     {
         $em = $this->getEM();
         $version = new Version();
         $versionId = null;
+        $postUpdateEvents = [];
 
         $normVersion = $data->getVersion();
 
@@ -406,11 +428,21 @@ class Updater
                 $version->setIsDefaultBranch($data->isDefaultBranch());
                 $em->persist($version);
 
-                return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version];
+                return new VersionUpdatedResult(
+                    id: $versionId,
+                    version: strtolower($normVersion),
+                    entity: $version,
+                );
             } else {
-                return ['updated' => false, 'id' => $existingVersion['id'], 'version' => strtolower($normVersion), 'object' => null];
+                return new VersionSkippedResult(
+                    id: $existingVersion['id'],
+                    version: strtolower($normVersion),
+                );
             }
         }
+
+        // Capture original metadata BEFORE modifications
+        $originalMetadata = $versionId !== null ? $version->toV2Array([]) : null;
 
         $version->setName($package->getName());
         $version->setVersion($data->getPrettyVersion());
@@ -431,9 +463,7 @@ class Updater
             if ($data->isAbandoned() && !$package->isAbandoned()) {
                 $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
                 $package->setAbandoned(true);
-                $this->eventDispatcher->dispatch(
-                    new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier))
-                );
+                $postUpdateEvents[] = new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier));
                 if ($data->getReplacementPackage()) {
                     $package->setReplacementPackage($data->getReplacementPackage());
                 }
@@ -611,7 +641,20 @@ class Updater
             $version->getSuggest()->clear();
         }
 
-        return ['updated' => true, 'id' => $versionId, 'version' => strtolower($normVersion), 'object' => $version];
+        if ($originalMetadata !== null) {
+            $event = new VersionReferenceChangedEvent($version, $originalMetadata);
+
+            if ($event->hasReferenceChanged()) {
+                $postUpdateEvents[] = $event;
+            }
+        }
+
+        return new VersionUpdatedResult(
+            id: $versionId,
+            version: strtolower($normVersion),
+            entity: $version,
+            events: $postUpdateEvents,
+        );
     }
 
     /**
