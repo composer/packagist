@@ -169,7 +169,6 @@ class PackageControllerTest extends IntegrationTestCase
             'transfer_package_form[maintainers][1]' => 'bob',
         ]);
 
-        $this->client->enableProfiler(); // This is required in 7.3.4 to assert emails were sent, see https://github.com/symfony/symfony/issues/61873
         $this->client->submit($form);
 
         $this->assertResponseRedirects('/packages/test/pkg');

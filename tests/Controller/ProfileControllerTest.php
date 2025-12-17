@@ -12,14 +12,20 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\RawMessage;
 
 class ProfileControllerTest extends IntegrationTestCase
 {
     public function testEditProfile(): void
     {
         $user = self::createUser();
+        $oldEmail = $user->getEmail();
+        $oldUsername = $user->getUsername();
         $this->store($user);
 
         $this->client->loginUser($user);
@@ -29,17 +35,41 @@ class ProfileControllerTest extends IntegrationTestCase
         $form = $crawler->selectButton('Update')->form();
         $this->client->submit($form, [
             'packagist_user_profile[email]' => $newEmail = 'new-email@example.org',
+            'packagist_user_profile[username]' => $newUsername = 'newusername',
         ]);
 
         $this->assertResponseStatusCodeSame(302);
+
+        $recipients = array_map(fn (Email $mail) => $mail->getTo()[0]->getAddress(), $this->getMailerMessages());
+        $this->assertEqualsCanonicalizing([$oldEmail, $newEmail], $recipients, 'Notification should have been sent to both old and new email');
 
         $em = self::getEM();
         $em->clear();
         $user = $em->getRepository(User::class)->find($user->getId());
         $this->assertNotNull($user);
         $this->assertSame($newEmail, $user->getEmail());
+        $this->assertSame($newUsername, $user->getUsername());
         $this->assertNull($user->getPasswordRequestedAt());
         $this->assertNull($user->getConfirmationToken());
+
+        $emailAuditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditRecordType::EmailChanged,
+            'userId' => $user->getId(),
+        ]);
+        $this->assertInstanceOf(AuditRecord::class, $emailAuditRecord);
+        $this->assertSame($oldEmail, $emailAuditRecord->attributes['email_from'] ?? null);
+        $this->assertSame($newEmail, $emailAuditRecord->attributes['email_to'] ?? null);
+        $this->assertSame($user->getUsernameCanonical(), $emailAuditRecord->attributes['user']['username'] ?? null);
+        $this->assertSame($user->getUsernameCanonical(), $emailAuditRecord->attributes['actor']['username'] ?? null);
+
+        $usernameAuditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditRecordType::UsernameChanged,
+            'userId' => $user->getId(),
+        ]);
+        $this->assertInstanceOf(AuditRecord::class, $usernameAuditRecord);
+        $this->assertSame($oldUsername, $usernameAuditRecord->attributes['username_from'] ?? null);
+        $this->assertSame($user->getUsernameCanonical(), $usernameAuditRecord->attributes['username_to'] ?? null);
+        $this->assertSame($user->getUsernameCanonical(), $usernameAuditRecord->attributes['actor']['username'] ?? null);
     }
 
     public function testTokenRotate(): void

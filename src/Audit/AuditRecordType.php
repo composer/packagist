@@ -37,8 +37,8 @@ enum AuditRecordType: string
     case PasswordResetRequested = 'password_reset_requested';
     case PasswordReset = 'password_reset';
     case PasswordChanged = 'password_changed';
-    case EmailChanged = 'email_changed'; // TODO
-    case UsernameChanged = 'username_changed'; // TODO
+    case EmailChanged = 'email_changed';
+    case UsernameChanged = 'username_changed';
     case GitHubLinkedWithUser = 'github_linked_with_user'; // TODO
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user'; // TODO
     case TwoFaAuthenticationActivated = 'two_fa_activated';
