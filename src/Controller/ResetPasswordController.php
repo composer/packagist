@@ -108,7 +108,7 @@ class ResetPasswordController extends Controller
 
             $user->setPassword($encodedPassword);
             $this->getEM()->persist($user);
-            $this->getEM()->persist(AuditRecord::passwordReset($user));
+            $this->getEM()->persist(AuditRecord::passwordReset($user, $user));
             $this->getEM()->flush();
 
             try {

@@ -56,7 +56,7 @@ class RegistrationControllerTest extends IntegrationTestCase
             'userId' => $user->getId(),
         ]);
         $this->assertInstanceOf(AuditRecord::class, $log);
-        $this->assertSame($user->getUsernameCanonical(), $log->attributes['username'] ?? null);
+        $this->assertSame($user->getUsernameCanonical(), $log->attributes['user']['username']);
         $this->assertSame(UserRegistrationMethod::REGISTRATION_FORM->value, $log->attributes['method'] ?? null);
     }
 

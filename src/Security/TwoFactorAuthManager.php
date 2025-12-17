@@ -37,12 +37,12 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
     /**
      * Enable two-factor auth on the given user account and send confirmation email.
      */
-    public function enableTwoFactorAuth(User $user, string $secret): void
+    public function enableTwoFactorAuth(User $user, User $actor, string $secret): void
     {
         $user->setTotpSecret($secret);
         $this->doctrine->getManager()->flush();
 
-        $this->auditRecordRepository->insert(AuditRecord::twoFactorAuthenticationActivated($user));
+        $this->auditRecordRepository->insert(AuditRecord::twoFactorAuthenticationActivated($user, $actor));
 
         $this->userNotifier->notifyChange(
             $user->getEmail(),
@@ -55,13 +55,13 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
     /**
      * Disable two-factor auth on the given user account and send confirmation email.
      */
-    public function disableTwoFactorAuth(User $user, string $reason): void
+    public function disableTwoFactorAuth(User $user, User $actor, string $reason): void
     {
         $user->setTotpSecret(null);
         $user->invalidateAllBackupCodes();
         $this->doctrine->getManager()->flush();
 
-        $this->auditRecordRepository->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $reason));
+        $this->auditRecordRepository->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $actor, $reason));
 
         $this->userNotifier->notifyChange(
             $user->getEmail(),
@@ -112,7 +112,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
             return;
         }
 
-        $this->disableTwoFactorAuth($user, 'Backup code used');
+        $this->disableTwoFactorAuth($user, $user, 'Backup code used');
         $session = $this->requestStack->getCurrentRequest()?->getSession();
 
         if (null === $session) {

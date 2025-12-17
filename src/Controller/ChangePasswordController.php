@@ -42,7 +42,7 @@ class ChangePasswordController extends Controller
             );
 
             $this->getEM()->persist($user);
-            $this->getEM()->persist(AuditRecord::passwordChanged($user));
+            $this->getEM()->persist(AuditRecord::passwordChanged($user, $user));
             $this->getEM()->flush();
 
             $userNotifier->notifyChange($user->getEmail(), 'Your password has been changed');
