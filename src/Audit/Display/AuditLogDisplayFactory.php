@@ -119,7 +119,8 @@ class AuditLogDisplayFactory
                 UserRegistrationMethod::from($record->attributes['method']),
                 $this->buildActor(null),
             ),
-            AuditRecordType::TwoFaAuthenticationActivated => new TwoFaActivatedDisplay(
+            AuditRecordType::TwoFaAuthenticationActivated => new GenericUserDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['username'],
                 $this->buildActor($record->attributes['actor']),
