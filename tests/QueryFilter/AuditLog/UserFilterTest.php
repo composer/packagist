@@ -78,7 +78,7 @@ class UserFilterTest extends TestCase
 
         $this->assertNotNull($qb->getDQLPart('where'));
         $this->assertSame('testuser', $qb->getParameter('user')->getValue());
-        $this->assertStringContainsString('targetUser.username = :user', (string) $qb->getDQLPart('where'));
+        $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.user.username') = :user", (string) $qb->getDQLPart('where'));
     }
 
     public function testFilterAdminWithWildcard(): void
@@ -90,8 +90,8 @@ class UserFilterTest extends TestCase
         $qb->from(AuditRecord::class, 'a');
         $filter->filter($qb);
 
-        $this->assertSame('test%', $qb->getParameter('user')->getValue());
-        $this->assertStringContainsString('targetUser.username LIKE :user', (string) $qb->getDQLPart('where'));
+        $this->assertSame('"test%"', $qb->getParameter('user')->getValue());
+        $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :user", (string) $qb->getDQLPart('where'));
     }
 
     public function testFilterAdminExactMatch(): void
@@ -104,7 +104,7 @@ class UserFilterTest extends TestCase
         $filter->filter($qb);
 
         $this->assertSame('testuser', $qb->getParameter('user')->getValue());
-        $this->assertStringContainsString('targetUser.username = :user', (string) $qb->getDQLPart('where'));
+        $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.user.username') = :user", (string) $qb->getDQLPart('where'));
     }
 
     public function testFilterAdminEscapesSpecialCharacters(): void
@@ -116,7 +116,7 @@ class UserFilterTest extends TestCase
         $qb->from(AuditRecord::class, 'a');
         $result = $filter->filter($qb);
 
-        $this->assertSame('test\%\_user', $qb->getParameter('user')->getValue());
+        $this->assertSame('"test\%\_user"', $qb->getParameter('user')->getValue());
     }
 
     public function testFilterAdminMultipleWildcards(): void
@@ -128,20 +128,7 @@ class UserFilterTest extends TestCase
         $qb->from(AuditRecord::class, 'a');
         $filter->filter($qb);
 
-        $this->assertSame('test%user%', $qb->getParameter('user')->getValue());
-        $this->assertStringContainsString('targetUser.username LIKE :user', (string) $qb->getDQLPart('where'));
-    }
-
-    public function testFilterCreatesJoinWithUser(): void
-    {
-        $bag = new InputBag(['user' => 'testuser']);
-        $filter = UserFilter::fromQuery($bag, 'user', false);
-
-        $qb = new QueryBuilder($this->entityManager);
-        $qb->from(AuditRecord::class, 'a');
-        $filter->filter($qb);
-
-        $joins = $qb->getDQLPart('join');
-        $this->assertNotEmpty($joins);
+        $this->assertSame('"test%user%"', $qb->getParameter('user')->getValue());
+        $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :user", (string) $qb->getDQLPart('where'));
     }
 }

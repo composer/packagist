@@ -22,12 +22,12 @@ class UserFilter extends AbstractAdminAwareTextFilter
     {
         $qb->setParameter($paramName, $pattern);
 
-        $qb->innerJoin(User::class, 'targetUser', 'WITH', 'a.userId = targetUser.id');
-
         if ($useWildcard) {
-            $qb->andWhere('targetUser.username LIKE :' . $paramName);
+            $qb->setParameter($paramName, sprintf('"%s"', $pattern));
+            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :" . $paramName);
         } else {
-            $qb->andWhere('targetUser.username = :' . $paramName);
+            $qb->setParameter($paramName, $pattern);
+            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.user.username') = :" . $paramName);
         }
 
         return $qb;

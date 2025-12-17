@@ -41,14 +41,14 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
         if ($this->isAdmin) {
             $escapedValue = addcslashes($this->value, '%_\\');
             $pattern = str_replace('*', '%', $escapedValue);
-            $usePartialMatching = str_contains($pattern, '%');
+            $useWildcard = str_contains($pattern, '%');
         } else {
             $pattern = $this->value;
-            $usePartialMatching = false;
+            $useWildcard = false;
         }
 
 
-        return $this->applyFilter($qb, $paramName, $pattern, $usePartialMatching);
+        return $this->applyFilter($qb, $paramName, $pattern, $useWildcard);
     }
 
     abstract protected function applyFilter(

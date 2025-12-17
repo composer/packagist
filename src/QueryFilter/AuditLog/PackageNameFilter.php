@@ -19,8 +19,6 @@ class PackageNameFilter extends AbstractAdminAwareTextFilter
 {
     protected function applyFilter(QueryBuilder $qb, string $paramName, string $pattern, bool $useWildcard): QueryBuilder
     {
-        $qb->setParameter($paramName, $pattern);
-
         if ($useWildcard) {
             $qb->setParameter($paramName, sprintf('"%s"', $pattern));
             $qb->andWhere("JSON_EXTRACT(a.attributes, '$.name') LIKE :" . $paramName);

@@ -21,12 +21,12 @@ class ActorFilter extends AbstractAdminAwareTextFilter
     {
         $qb->setParameter($paramName, $pattern);
 
-        $qb->innerJoin(User::class, 'u', 'WITH', 'a.actorId = u.id');
-
         if ($useWildcard) {
-            $qb->andWhere('u.username LIKE :' . $paramName);
+            $qb->setParameter($paramName, sprintf('"%s"', $pattern));
+            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.actor.username') LIKE :" . $paramName);
         } else {
-            $qb->andWhere('u.username = :' . $paramName);
+            $qb->setParameter($paramName, $pattern);
+            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.actor.username') = :" . $paramName);
         }
 
         return $qb;
