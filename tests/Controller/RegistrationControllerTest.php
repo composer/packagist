@@ -119,6 +119,33 @@ class RegistrationControllerTest extends IntegrationTestCase
         $this->assertResponseRedirects();
         $redirectUrl = $this->client->getResponse()->headers->get('Location');
         $this->assertStringStartsWith('/register/check-email/', $redirectUrl);
+
+        $log = $em->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditRecordType::EmailChanged,
+            'userId' => $user->getId(),
+        ]);
+        $this->assertInstanceOf(AuditRecord::class, $log);
+        $this->assertSame($user->getUsernameCanonical(), $log->attributes['user']['username'] ?? null);
+        $this->assertSame('old@example.com', $log->attributes['email_from'] ?? null);
+        $this->assertSame('new@example.com', $log->attributes['email_to'] ?? null);
+    }
+
+    public function testEmailUpdateDoesNotCreateAuditRecordIfEmailIsUnchanged(): void
+    {
+        $token = $this->registerUserAndGetToken('old@example.com', 'test.user2');
+
+        $crawler = $this->client->request('GET', '/register/check-email/' . $token);
+        $this->assertResponseStatusCodeSame(200);
+
+        $form = $crawler->selectButton('Update & Resend Confirmation Email')->form();
+        $form->setValues([
+            'update_email_form[email]' => 'old@example.com',
+        ]);
+
+        $this->client->submit($form);
+
+        $log = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::EmailChanged]);
+        $this->assertNull($log);
     }
 
     public function testInvalidEmailRejected(): void

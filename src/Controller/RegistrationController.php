@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Form\RegistrationFormType;
@@ -112,12 +113,16 @@ class RegistrationController extends Controller
         }
 
         $user = $result['user'];
+        $oldEmail = $user->getEmail();
+
         $form = $this->createForm(UpdateEmailFormType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Persist email change if it was modified
-            $this->getEM()->flush();
+            if ($oldEmail !== $user->getEmail()) {
+                $this->getEM()->persist(AuditRecord::emailChanged($user, $oldEmail));
+                $this->getEM()->flush();
+            }
 
             // Resend confirmation email
             $this->emailVerifier->sendEmailConfirmation(
