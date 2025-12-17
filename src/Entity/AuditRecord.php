@@ -239,6 +239,33 @@ class AuditRecord
         );
     }
 
+    public static function gitHubLinkedWithUser(User $user, string $githubUsername): self
+    {
+        return new self(
+            AuditRecordType::GitHubLinkedWithUser,
+            [
+                'user' => self::getUserData($user),
+                'github_username' => $githubUsername,
+                'actor' => self::getUserData($user),
+            ],
+            actorId: $user->getId(),
+            userId: $user->getId(),
+        );
+    }
+
+    public static function gitHubDisconnectedFromUser(User $user): self
+    {
+        return new self(
+            AuditRecordType::GitHubDisconnectedFromUser,
+            [
+                'user' => self::getUserData($user),
+                'actor' => self::getUserData($user),
+            ],
+            actorId: $user->getId(),
+            userId: $user->getId(),
+        );
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */

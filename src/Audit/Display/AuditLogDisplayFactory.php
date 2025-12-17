@@ -165,6 +165,18 @@ class AuditLogDisplayFactory
                 $this->obfuscateEmail($record->attributes['email_to'], $record->attributes['user']['id'] ?? null),
                 $this->buildActor($record->attributes['actor']),
             ),
+            AuditRecordType::GitHubLinkedWithUser => new GitHubLinkedWithUserDisplay(
+                $record->datetime,
+                $record->attributes['user']['username'],
+                $record->attributes['github_username'],
+                $this->buildActor($record->attributes['actor']),
+            ),
+            AuditRecordType::GitHubDisconnectedFromUser => new GenericUserDisplay(
+                $record->type,
+                $record->datetime,
+                $record->attributes['user']['username'],
+                $this->buildActor($record->attributes['actor']),
+            ),
             default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
         };
     }
