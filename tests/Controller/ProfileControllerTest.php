@@ -60,6 +60,7 @@ class ProfileControllerTest extends IntegrationTestCase
         $this->assertSame($oldEmail, $emailAuditRecord->attributes['email_from'] ?? null);
         $this->assertSame($newEmail, $emailAuditRecord->attributes['email_to'] ?? null);
         $this->assertSame($user->getUsernameCanonical(), $emailAuditRecord->attributes['user']['username'] ?? null);
+        $this->assertSame($user->getUsernameCanonical(), $emailAuditRecord->attributes['actor']['username'] ?? null);
 
         $usernameAuditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditRecordType::UsernameChanged,
@@ -68,6 +69,7 @@ class ProfileControllerTest extends IntegrationTestCase
         $this->assertInstanceOf(AuditRecord::class, $usernameAuditRecord);
         $this->assertSame($oldUsername, $usernameAuditRecord->attributes['username_from'] ?? null);
         $this->assertSame($user->getUsernameCanonical(), $usernameAuditRecord->attributes['username_to'] ?? null);
+        $this->assertSame($user->getUsernameCanonical(), $usernameAuditRecord->attributes['actor']['username'] ?? null);
     }
 
     public function testTokenRotate(): void

@@ -126,6 +126,7 @@ class RegistrationControllerTest extends IntegrationTestCase
         ]);
         $this->assertInstanceOf(AuditRecord::class, $log);
         $this->assertSame($user->getUsernameCanonical(), $log->attributes['user']['username'] ?? null);
+        $this->assertSame($user->getUsernameCanonical(), $log->attributes['actor']['username'] ?? null);
         $this->assertSame('old@example.com', $log->attributes['email_from'] ?? null);
         $this->assertSame('new@example.com', $log->attributes['email_to'] ?? null);
     }

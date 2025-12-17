@@ -120,7 +120,7 @@ class RegistrationController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             if ($oldEmail !== $user->getEmail()) {
-                $this->getEM()->persist(AuditRecord::emailChanged($user, $oldEmail));
+                $this->getEM()->persist(AuditRecord::emailChanged($user, $user, $oldEmail));
                 $this->getEM()->flush();
             }
 

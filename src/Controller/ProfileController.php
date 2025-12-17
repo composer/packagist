@@ -145,11 +145,11 @@ class ProfileController extends Controller
                 if ($oldEmail !== $user->getEmail()) {
                     $userNotifier->notifyChange($oldEmail, $reason);
                     $user->resetPasswordRequest();
-                    $this->getEM()->persist(AuditRecord::emailChanged($user, $oldEmail));
+                    $this->getEM()->persist(AuditRecord::emailChanged($user, $user, $oldEmail));
                 }
 
                 if ($oldUsername !== $user->getUsername()) {
-                    $this->getEM()->persist(AuditRecord::usernameChanged($user, $oldUsername));
+                    $this->getEM()->persist(AuditRecord::usernameChanged($user, $user, $oldUsername));
                 }
 
                 $userNotifier->notifyChange($user->getEmail(), $reason);
