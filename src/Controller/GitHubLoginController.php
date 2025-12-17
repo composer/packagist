@@ -110,11 +110,11 @@ class GitHubLoginController extends Controller
             if (null !== $previousUser) {
                 $this->disconnectUser($previousUser);
                 $this->getEM()->persist($previousUser);
-                $this->getEM()->persist(AuditRecord::gitHubDisconnectedFromUser($previousUser));
+                $this->getEM()->persist(AuditRecord::gitHubDisconnectedFromUser($previousUser, $user));
             }
 
             $this->getEM()->persist($user);
-            $this->getEM()->persist(AuditRecord::gitHubLinkedWithUser($user, $githubNickname??''));
+            $this->getEM()->persist(AuditRecord::gitHubLinkedWithUser($user, $user, $githubNickname??''));
             $this->getEM()->flush();
 
             $scheduler->scheduleUserScopeMigration($user->getId(), $oldScope, $user->getGithubScope() ?? '');
@@ -148,7 +148,7 @@ class GitHubLoginController extends Controller
         if ($user->getGithubId()) {
             $this->disconnectUser($user);
             $this->getEM()->persist($user);
-            $this->getEM()->persist(AuditRecord::gitHubDisconnectedFromUser($user));
+            $this->getEM()->persist(AuditRecord::gitHubDisconnectedFromUser($user, $user));
             $this->getEM()->flush();
             $userNotifier->notifyChange($user->getEmail(), 'Your GitHub account has been disconnected from your Packagist.org account.');
         }

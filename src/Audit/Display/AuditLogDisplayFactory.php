@@ -177,7 +177,6 @@ class AuditLogDisplayFactory
                 $record->attributes['user']['username'],
                 $this->buildActor($record->attributes['actor']),
             ),
-            default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
         };
     }
 

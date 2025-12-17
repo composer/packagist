@@ -30,15 +30,24 @@ class UserAuditRecordTest extends TestCase
         $idProperty = $reflection->getProperty('id');
         $idProperty->setValue($user, 123);
 
-        $record = AuditRecord::gitHubLinkedWithUser($user, 'github-testuser');
+        $actor = new User();
+        $actor->setUsername('actoruser');
+        $actor->setEmail('test@example.com');
+        $actor->setPassword('password');
+
+        $reflection = new \ReflectionClass($actor);
+        $idProperty = $reflection->getProperty('id');
+        $idProperty->setValue($actor, 234);
+
+        $record = AuditRecord::gitHubLinkedWithUser($user, $actor, 'github-testuser');
 
         self::assertSame(AuditRecordType::GitHubLinkedWithUser, $record->type);
         self::assertSame('testuser', $record->attributes['user']['username']);
         self::assertSame('github-testuser', $record->attributes['github_username']);
         self::assertIsArray($record->attributes['actor']);
-        self::assertSame(123, $record->attributes['actor']['id']);
-        self::assertSame('testuser', $record->attributes['actor']['username']);
-        self::assertSame(123, $record->actorId);
+        self::assertSame(234, $record->attributes['actor']['id']);
+        self::assertSame('actoruser', $record->attributes['actor']['username']);
+        self::assertSame(234, $record->actorId);
         self::assertSame(123, $record->userId);
     }
 
@@ -53,15 +62,24 @@ class UserAuditRecordTest extends TestCase
         $idProperty = $reflection->getProperty('id');
         $idProperty->setValue($user, 456);
 
-        $record = AuditRecord::gitHubDisconnectedFromUser($user);
+        $actor = new User();
+        $actor->setUsername('actoruser');
+        $actor->setEmail('actor@example.com');
+        $actor->setPassword('actor password');
+
+        $reflection = new \ReflectionClass($actor);
+        $idProperty = $reflection->getProperty('id');
+        $idProperty->setValue($actor, 567);
+
+        $record = AuditRecord::gitHubDisconnectedFromUser($user, $actor);
 
         self::assertSame(AuditRecordType::GitHubDisconnectedFromUser, $record->type);
         self::assertSame('testuser', $record->attributes['user']['username']);
         self::assertArrayNotHasKey('github_username', $record->attributes);
         self::assertIsArray($record->attributes['actor']);
-        self::assertSame(456, $record->attributes['actor']['id']);
-        self::assertSame('testuser', $record->attributes['actor']['username']);
-        self::assertSame(456, $record->actorId);
+        self::assertSame(567, $record->attributes['actor']['id']);
+        self::assertSame('actoruser', $record->attributes['actor']['username']);
+        self::assertSame(567, $record->actorId);
         self::assertSame(456, $record->userId);
     }
 }
