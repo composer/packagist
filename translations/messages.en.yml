@@ -188,6 +188,7 @@ audit_log:
         two_fa_activated: 2FA activated
         two_fa_deactivated: 2FA deactivated
         user_created: User created
+        user_verified: User verified
         user_deleted: User deleted
         username_changed: Username changed
         version_created: Version created

@@ -204,6 +204,11 @@ class AuditRecord
         );
     }
 
+    public static function userVerified(User $user, string $email): self
+    {
+        return new self(AuditRecordType::UserVerified, ['user' => self::getUserdata($user), 'email' => $email, 'actor' => 'unknown'], userId: $user->getId());
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */
