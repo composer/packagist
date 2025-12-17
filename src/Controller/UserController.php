@@ -354,7 +354,7 @@ class UserController extends Controller
         }
 
         if ($this->isCsrfTokenValid('disable_2fa', $req->query->getString('token'))) {
-            $authManager->disableTwoFactorAuth($user, 'Manually disabled');
+            $authManager->disableTwoFactorAuth($user, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
 
             $this->addFlash('success', 'Two-factor authentication has been disabled.');
 
