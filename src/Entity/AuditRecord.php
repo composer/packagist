@@ -219,7 +219,7 @@ class AuditRecord
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor),
             ],
-            actorId: $user->getId(),
+            actorId: $actor->getId(),
             userId: $user->getId(),
         );
     }
@@ -234,7 +234,7 @@ class AuditRecord
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor),
             ],
-            actorId: $user->getId(),
+            actorId: $actor->getId(),
             userId: $user->getId(),
         );
     }
