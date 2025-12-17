@@ -199,7 +199,7 @@ class AuditLogDisplayFactory
 
     private function obfuscateEmail(string $email, ?int $userId = null): string
     {
-        if ($this->security->isGranted('ROLE_ADMIN')) {
+        if ($this->security->isGranted('ROLE_AUDITOR')) {
             return $email;
         }
 
