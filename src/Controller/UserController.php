@@ -291,7 +291,7 @@ class UserController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             $user->setTotpSecret($secret);
             $req->getSession()->remove('2fa_secret');
-            $authManager->enableTwoFactorAuth($user, $secret);
+            $authManager->enableTwoFactorAuth($user, $loggedUser, $secret);
             $backupCode = $authManager->generateAndSaveNewBackupCode($user);
 
             $this->addFlash('success', 'Two-factor authentication has been enabled.');
@@ -354,7 +354,7 @@ class UserController extends Controller
         }
 
         if ($this->isCsrfTokenValid('disable_2fa', $req->query->getString('token'))) {
-            $authManager->disableTwoFactorAuth($user, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
+            $authManager->disableTwoFactorAuth($user, $loggedUser, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
 
             $this->addFlash('success', 'Two-factor authentication has been disabled.');
 

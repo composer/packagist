@@ -15,7 +15,6 @@ namespace App\Audit\Display;
 use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
-use App\Audit\Display\TwoFaDeactivatedDisplay;
 use App\Entity\User;
 use Symfony\Bundle\SecurityBundle\Security;
 
@@ -120,38 +119,38 @@ class AuditLogDisplayFactory
             ),
             AuditRecordType::UserCreated => new UserCreatedDisplay(
                 $record->datetime,
-                $record->attributes['username'],
+                $record->attributes['user']['username'],
                 UserRegistrationMethod::from($record->attributes['method']),
-                $this->buildActor(null),
+                $this->buildActor('self'),
             ),
             AuditRecordType::TwoFaAuthenticationActivated => new GenericUserDisplay(
                 $record->type,
                 $record->datetime,
-                $record->attributes['username'],
+                $record->attributes['user']['username'],
                 $this->buildActor($record->attributes['actor']),
             ),
             AuditRecordType::TwoFaAuthenticationDeactivated => new TwoFaDeactivatedDisplay(
                 $record->datetime,
-                $record->attributes['username'],
+                $record->attributes['user']['username'],
                 $record->attributes['reason'],
                 $this->buildActor($record->attributes['actor']),
             ),
             AuditRecordType::PasswordResetRequested, AuditRecordType::PasswordReset, AuditRecordType::PasswordChanged => new GenericUserDisplay(
                 $record->type,
                 $record->datetime,
-                $record->attributes['user']['username'] ?? 'unknown',
-                $this->buildACtor($record->attributes['actor'] ?? null),
+                $record->attributes['user']['username'],
+                $this->buildActor($record->attributes['actor']),
             ),
             AuditRecordType::UserVerified => new UserVerifiedDisplay(
                 $record->datetime,
-                $this->buildActor($record->attributes['user'] ?? null),
-                $this->obfuscateEmail($record->attributes['email'], $record->attributes['user']['id'] ?? null),
-                $this->buildActor(null),
+                $record->attributes['user']['username'],
+                $this->obfuscateEmail($record->attributes['email'], $record->attributes['user']['id']),
+                $this->buildActor($record->attributes['actor']),
             ),
             AuditRecordType::UserDeleted => new UserDeletedDisplay(
                 $record->datetime,
-                $record->attributes['user']['username'] ?? 'unknown',
-                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->attributes['user']['username'],
+                $this->buildActor($record->attributes['actor']),
             ),
             default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
         };

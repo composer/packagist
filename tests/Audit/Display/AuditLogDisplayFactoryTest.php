@@ -373,7 +373,7 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $display = $this->factory->buildSingle($auditRecord);
         self::assertInstanceOf(UserVerifiedDisplay::class, $display);
-        self::assertSame('johndoe', $display->user->username);
+        self::assertSame('johndoe', $display->username);
         self::assertSame($expectedEmail, $display->email);
     }
 
@@ -440,7 +440,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $auditRecord = $this->createAuditRecord(
             AuditRecordType::TwoFaAuthenticationActivated,
             [
-                'username' => 'testuser',
+                'user' => ['id' => 1234, 'username' => 'testuser1234'],
                 'actor' => ['id' => 123, 'username' => 'testuser'],
             ]
         );
@@ -448,7 +448,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $display = $this->factory->buildSingle($auditRecord);
 
         self::assertInstanceOf(GenericUserDisplay::class, $display);
-        self::assertSame('testuser', $display->username);
+        self::assertSame('testuser1234', $display->username);
         self::assertSame(123, $display->actor->id);
         self::assertSame('testuser', $display->actor->username);
         self::assertSame(AuditRecordType::TwoFaAuthenticationActivated, $display->getType());
@@ -459,7 +459,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $auditRecord = $this->createAuditRecord(
             AuditRecordType::TwoFaAuthenticationDeactivated,
             [
-                'username' => 'testuser',
+                'user' => ['id' => 1234, 'username' => 'testuser1234'],
                 'reason' => 'Manually disabled',
                 'actor' => ['id' => 123, 'username' => 'testuser'],
             ]
@@ -468,7 +468,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $display = $this->factory->buildSingle($auditRecord);
 
         self::assertInstanceOf(TwoFaDeactivatedDisplay::class, $display);
-        self::assertSame('testuser', $display->username);
+        self::assertSame('testuser1234', $display->username);
         self::assertSame('Manually disabled', $display->reason);
         self::assertSame(123, $display->actor->id);
         self::assertSame('testuser', $display->actor->username);

@@ -142,53 +142,53 @@ class AuditRecord
         return new self(
             AuditRecordType::UserCreated,
             [
-                'username' => $user->getUsernameCanonical(),
+                'user' => self::getUserData($user),
                 'method' => $method->value,
-                'actor' => 'unknown',
+                'actor' => 'self',
             ],
             userId: $user->getId(),
         );
     }
 
-    public static function twoFactorAuthenticationActivated(User $user): self
+    public static function twoFactorAuthenticationActivated(User $user, User $actor): self
     {
         return new self(
             AuditRecordType::TwoFaAuthenticationActivated,
             [
-                'username' => $user->getUsernameCanonical(),
-                'actor' => self::getUserData($user),
+                'user' => self::getUserData($user),
+                'actor' => self::getUserData($actor),
             ],
-            actorId: $user->getId(),
+            actorId: $actor->getId(),
             userId: $user->getId(),
         );
     }
 
-    public static function twoFactorAuthenticationDeactivated(User $user, string $reason): self
+    public static function twoFactorAuthenticationDeactivated(User $user, User $actor, string $reason): self
     {
         return new self(
             AuditRecordType::TwoFaAuthenticationDeactivated,
             [
-                'username' => $user->getUsernameCanonical(),
-                'actor' => self::getUserData($user),
+                'user' => self::getUserData($user),
+                'actor' => self::getUserData($actor),
                 'reason' => $reason,
             ],
-            actorId: $user->getId(),
+            actorId: $actor->getId(),
         );
     }
 
-    public static function passwordReset(User $user): self
+    public static function passwordReset(User $user, User $actor): self
     {
-        return new self(type: AuditRecordType::PasswordReset, attributes: ['user' => self::getUserData($user), 'actor' => self::getUserData($user)], actorId: $user->getId(), userId: $user->getId());
+        return new self(type: AuditRecordType::PasswordReset, attributes: ['user' => self::getUserData($user), 'actor' => self::getUserData($actor)], actorId: $user->getId(), userId: $user->getId());
     }
 
-    public static function passwordChanged(User $user): self
+    public static function passwordChanged(User $user, User $actor): self
     {
-        return new self(AuditRecordType::PasswordChanged, ['user' => self::getUserData($user), 'actor' => self::getUserData($user)], actorId: $user->getId(), userId: $user->getId());
+        return new self(AuditRecordType::PasswordChanged, ['user' => self::getUserData($user), 'actor' => self::getUserData($actor)], actorId: $actor->getId(), userId: $user->getId());
     }
 
     public static function passwordResetRequested(User $user): self
     {
-        return new self(AuditRecordType::PasswordResetRequested, ['user' => self::getUserData($user), 'actor' => self::getUserData($user)], actorId: $user->getId(), userId: $user->getId());
+        return new self(AuditRecordType::PasswordResetRequested, ['user' => self::getUserData($user), 'actor' => 'anonymous'], userId: $user->getId());
     }
 
     public static function userDeleted(User $user, ?User $actor): self
@@ -197,16 +197,16 @@ class AuditRecord
             AuditRecordType::UserDeleted,
             [
                 'user' => self::getUserData($user),
-                'actor' => self::getUserData($actor),
+                'actor' => self::getUserData($actor, 'automation'),
             ],
             actorId: $actor?->getId(),
             userId: $user->getId(),
         );
     }
 
-    public static function userVerified(User $user, string $email): self
+    public static function userVerified(User $user, User $actor, string $email): self
     {
-        return new self(AuditRecordType::UserVerified, ['user' => self::getUserdata($user), 'email' => $email, 'actor' => 'unknown'], userId: $user->getId());
+        return new self(AuditRecordType::UserVerified, ['user' => self::getUserdata($user), 'email' => $email, 'actor' => self::getUserData($actor)], userId: $user->getId(), actorId: $actor->getId());
     }
 
     /**

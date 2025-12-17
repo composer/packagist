@@ -19,7 +19,7 @@ readonly class UserVerifiedDisplay extends AbstractAuditLogDisplay
 {
     public function __construct(
         \DateTimeImmutable $datetime,
-        public ActorDisplay $user,
+        public string $username,
         public string $email,
         ActorDisplay $actor,
     ) {

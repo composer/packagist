@@ -70,7 +70,7 @@ class EmailVerifier
         $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $user->getId(), $emailToVerify);
         $user->setEnabled(true);
 
-        $this->getEM()->persist(AuditRecord::userVerified($user, $emailToVerify));
+        $this->getEM()->persist(AuditRecord::userVerified($user, $user, $emailToVerify));
         $this->getEM()->persist($user);
         $this->getEM()->flush();
     }
