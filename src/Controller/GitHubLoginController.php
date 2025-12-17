@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Security\UserNotifier;
 use App\Service\Scheduler;
@@ -99,6 +100,8 @@ class GitHubLoginController extends Controller
             }
 
             $oldScope = $user->getGithubScope() ?: '';
+            $githubNickname = $ghUser->getNickname();
+
             $user->setGithubId((string) $ghUser->getId());
             $user->setGithubToken($token->getToken());
             $user->setGithubScope($token->getValues()['scope']);
@@ -107,15 +110,17 @@ class GitHubLoginController extends Controller
             if (null !== $previousUser) {
                 $this->disconnectUser($previousUser);
                 $this->getEM()->persist($previousUser);
+                $this->getEM()->persist(AuditRecord::gitHubDisconnectedFromUser($previousUser, $user));
             }
 
             $this->getEM()->persist($user);
+            $this->getEM()->persist(AuditRecord::gitHubLinkedWithUser($user, $user, $githubNickname??'', $ghUser->getId()));
             $this->getEM()->flush();
 
             $scheduler->scheduleUserScopeMigration($user->getId(), $oldScope, $user->getGithubScope() ?? '');
-            $userNotifier->notifyChange($user->getEmail(), 'A GitHub account ('.$ghUser->getNickname().') has been connected to your Packagist.org account.');
+            $userNotifier->notifyChange($user->getEmail(), 'A GitHub account ('.$githubNickname.') has been connected to your Packagist.org account.');
 
-            $this->addFlash('success', 'You have connected your GitHub account ('.$ghUser->getNickname().') to your Packagist.org account.');
+            $this->addFlash('success', 'You have connected your GitHub account ('.$githubNickname.') to your Packagist.org account.');
         } catch (IdentityProviderException|InvalidStateException $e) {
             $this->addFlash('error', 'Failed OAuth Login: '.$e->getMessage());
         }
@@ -143,6 +148,7 @@ class GitHubLoginController extends Controller
         if ($user->getGithubId()) {
             $this->disconnectUser($user);
             $this->getEM()->persist($user);
+            $this->getEM()->persist(AuditRecord::gitHubDisconnectedFromUser($user, $user));
             $this->getEM()->flush();
             $userNotifier->notifyChange($user->getEmail(), 'Your GitHub account has been disconnected from your Packagist.org account.');
         }

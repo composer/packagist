@@ -16,6 +16,7 @@ use App\Audit\AuditRecordType;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Audit\Display\CanonicalUrlChangedDisplay;
 use App\Audit\Display\GenericUserDisplay;
+use App\Audit\Display\GitHubLinkedWithUserDisplay;
 use App\Audit\Display\PackageAbandonedDisplay;
 use App\Audit\Display\PackageCreatedDisplay;
 use App\Audit\Display\PackageDeletedDisplay;
@@ -433,6 +434,71 @@ class AuditLogDisplayFactoryTest extends TestCase
         $display = $this->factory->buildSingle($auditRecord);
 
         self::assertSame($datetime, $display->getDateTime());
+    }
+
+    public function testBuildGitHubLinkedWithUser(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::GitHubLinkedWithUser,
+            [
+                'user' => ['id' => 123, 'username' => 'johndoe'],
+                'github_username' => 'github-testuser',
+                'github_id' => 123456,
+                'actor' => ['id' => 123, 'username' => 'testuser'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(GitHubLinkedWithUserDisplay::class, $display);
+        self::assertSame('johndoe', $display->username);
+        self::assertSame('github-testuser', $display->githubUsername);
+        self::assertSame(123456, $display->githubId);
+        self::assertSame(123, $display->actor->id);
+        self::assertSame('testuser', $display->actor->username);
+        self::assertSame(AuditRecordType::GitHubLinkedWithUser, $display->getType());
+        self::assertSame('audit_log/display/github_linked_with_user.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildGitHubDisconnectedFromUser(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::GitHubDisconnectedFromUser,
+            [
+                'user' => ['id' => 123, 'username' => 'johndoe'],
+                'actor' => ['id' => 456, 'username' => 'testuser'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(GenericUserDisplay::class, $display);
+        self::assertSame('johndoe', $display->username);
+        self::assertSame(456, $display->actor->id);
+        self::assertSame('testuser', $display->actor->username);
+        self::assertSame(AuditRecordType::GitHubDisconnectedFromUser, $display->getType());
+    }
+
+    public function testBuildGitHubLinkedWithUserSystemActor(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::GitHubLinkedWithUser,
+            [
+                'user' => ['id' => 123, 'username' => 'johndoe'],
+                'github_username' => 'gh-admin',
+                'github_id' => 123456,
+                'actor' => 'admin',
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(GitHubLinkedWithUserDisplay::class, $display);
+        self::assertSame('johndoe', $display->username);
+        self::assertSame('gh-admin', $display->githubUsername);
+        self::assertSame(123456, $display->githubId);
+        self::assertNull($display->actor->id);
+        self::assertSame('admin', $display->actor->username);
     }
 
     public function testBuildTwoFaActivated(): void
