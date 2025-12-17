@@ -16,6 +16,7 @@ use App\Audit\AuditRecordType;
 use App\Audit\Display\ActorDisplay;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Audit\Display\CanonicalUrlChangedDisplay;
+use App\Audit\Display\GenericUserDisplay;
 use App\Audit\Display\PackageAbandonedDisplay;
 use App\Audit\Display\PackageCreatedDisplay;
 use App\Audit\Display\PackageDeletedDisplay;
@@ -407,12 +408,11 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $display = $this->factory->buildSingle($auditRecord);
 
-        self::assertInstanceOf(TwoFaActivatedDisplay::class, $display);
+        self::assertInstanceOf(GenericUserDisplay::class, $display);
         self::assertSame('testuser', $display->username);
         self::assertSame(123, $display->actor->id);
         self::assertSame('testuser', $display->actor->username);
         self::assertSame(AuditRecordType::TwoFaAuthenticationActivated, $display->getType());
-        self::assertSame('audit_log/display/two_fa_activated.html.twig', $display->getTemplateName());
     }
 
     public function testBuildTwoFaDeactivated(): void
