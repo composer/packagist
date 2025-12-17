@@ -12,6 +12,7 @@
 
 namespace App\Security;
 
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
@@ -65,9 +66,11 @@ class EmailVerifier
             throw new \UnexpectedValueException('Expected '.User::class.', got '.$user::class);
         }
 
-        $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $user->getId(), $user->getEmail());
+        $emailToVerify = $user->getEmail();
+        $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $user->getId(), $emailToVerify);
         $user->setEnabled(true);
 
+        $this->getEM()->persist(AuditRecord::userVerified($user, $emailToVerify));
         $this->getEM()->persist($user);
         $this->getEM()->flush();
     }
