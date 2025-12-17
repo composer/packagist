@@ -148,6 +148,11 @@ class AuditLogDisplayFactory
                 $this->obfuscateEmail($record->attributes['email'], $record->attributes['user']['id'] ?? null),
                 $this->buildActor(null),
             ),
+            AuditRecordType::UserDeleted => new UserDeletedDisplay(
+                $record->datetime,
+                $record->attributes['user']['username'] ?? 'unknown',
+                $this->buildActor($record->attributes['actor'] ?? null),
+            ),
             default => throw new \LogicException(sprintf('Unsupported audit record type: %s', $record->type->value)),
         };
     }
