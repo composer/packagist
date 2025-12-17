@@ -161,7 +161,7 @@ class AuditLogDisplayFactory
             ),
             AuditRecordType::EmailChanged => new EmailChangedDisplay(
                 $record->datetime,
-                $record->attributes['username'],
+                $record->attributes['user']['username'],
                 $this->obfuscateEmail($record->attributes['email_from'], $record->attributes['user']['id'] ?? null),
                 $this->obfuscateEmail($record->attributes['email_to'], $record->attributes['user']['id'] ?? null),
                 $this->buildActor($record->attributes['actor']),

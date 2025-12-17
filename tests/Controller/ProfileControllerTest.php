@@ -59,7 +59,7 @@ class ProfileControllerTest extends IntegrationTestCase
         $this->assertInstanceOf(AuditRecord::class, $emailAuditRecord);
         $this->assertSame($oldEmail, $emailAuditRecord->attributes['email_from'] ?? null);
         $this->assertSame($newEmail, $emailAuditRecord->attributes['email_to'] ?? null);
-        $this->assertSame($user->getUsernameCanonical(), $emailAuditRecord->attributes['username'] ?? null);
+        $this->assertSame($user->getUsernameCanonical(), $emailAuditRecord->attributes['user']['username'] ?? null);
 
         $usernameAuditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditRecordType::UsernameChanged,

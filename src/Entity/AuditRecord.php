@@ -229,7 +229,6 @@ class AuditRecord
         return new self(
             AuditRecordType::EmailChanged,
             [
-                'username' => $user->getUsernameCanonical(),
                 'email_from' => $oldEmail,
                 'email_to' => $user->getEmail(),
                 'user' => self::getUserData($user),
