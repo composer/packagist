@@ -37,6 +37,10 @@ class AuditRecord
     #[ORM\Column]
     public readonly \DateTimeImmutable $datetime;
 
+    #[ORM\Column(nullable: true, length: 45)]
+    // @phpstan-ignore property.uninitializedReadonly
+    public readonly ?string $ip;
+
     private function __construct(
         #[ORM\Column]
         public readonly AuditRecordType $type,
@@ -55,6 +59,12 @@ class AuditRecord
     ) {
         $this->id = new Ulid();
         $this->datetime = new \DateTimeImmutable();
+    }
+
+    public function setIp(?string $ip): void
+    {
+        // @phpstan-ignore property.readOnlyAssignNotInConstructor
+        $this->ip = $ip;
     }
 
     public static function packageCreated(Package $package, ?User $actor): self
