@@ -239,13 +239,14 @@ class AuditRecord
         );
     }
 
-    public static function gitHubLinkedWithUser(User $user, User $actor, string $githubUsername): self
+    public static function gitHubLinkedWithUser(User $user, User $actor, string $githubUsername, int $githubId): self
     {
         return new self(
             AuditRecordType::GitHubLinkedWithUser,
             [
                 'user' => self::getUserData($user),
                 'github_username' => $githubUsername,
+                'github_id' => $githubId,
                 'actor' => self::getUserData($actor),
             ],
             actorId: $actor->getId(),

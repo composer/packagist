@@ -443,6 +443,7 @@ class AuditLogDisplayFactoryTest extends TestCase
             [
                 'user' => ['id' => 123, 'username' => 'johndoe'],
                 'github_username' => 'github-testuser',
+                'github_id' => 123456,
                 'actor' => ['id' => 123, 'username' => 'testuser'],
             ]
         );
@@ -452,6 +453,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(GitHubLinkedWithUserDisplay::class, $display);
         self::assertSame('johndoe', $display->username);
         self::assertSame('github-testuser', $display->githubUsername);
+        self::assertSame(123456, $display->githubId);
         self::assertSame(123, $display->actor->id);
         self::assertSame('testuser', $display->actor->username);
         self::assertSame(AuditRecordType::GitHubLinkedWithUser, $display->getType());
@@ -484,6 +486,7 @@ class AuditLogDisplayFactoryTest extends TestCase
             [
                 'user' => ['id' => 123, 'username' => 'johndoe'],
                 'github_username' => 'gh-admin',
+                'github_id' => 123456,
                 'actor' => 'admin',
             ]
         );
@@ -493,6 +496,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(GitHubLinkedWithUserDisplay::class, $display);
         self::assertSame('johndoe', $display->username);
         self::assertSame('gh-admin', $display->githubUsername);
+        self::assertSame(123456, $display->githubId);
         self::assertNull($display->actor->id);
         self::assertSame('admin', $display->actor->username);
     }

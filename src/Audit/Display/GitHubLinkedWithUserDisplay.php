@@ -20,6 +20,7 @@ readonly class GitHubLinkedWithUserDisplay extends AbstractAuditLogDisplay
         \DateTimeImmutable $datetime,
         public string $username,
         public string $githubUsername,
+        public int $githubId,
         ActorDisplay $actor,
     ) {
         parent::__construct($datetime, $actor);

@@ -169,6 +169,7 @@ class AuditLogDisplayFactory
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $record->attributes['github_username'],
+                $record->attributes['github_id'],
                 $this->buildActor($record->attributes['actor']),
             ),
             AuditRecordType::GitHubDisconnectedFromUser => new GenericUserDisplay(

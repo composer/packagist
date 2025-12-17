@@ -114,7 +114,7 @@ class GitHubLoginController extends Controller
             }
 
             $this->getEM()->persist($user);
-            $this->getEM()->persist(AuditRecord::gitHubLinkedWithUser($user, $user, $githubNickname??''));
+            $this->getEM()->persist(AuditRecord::gitHubLinkedWithUser($user, $user, $githubNickname??'', $ghUser->getId()));
             $this->getEM()->flush();
 
             $scheduler->scheduleUserScopeMigration($user->getId(), $oldScope, $user->getGithubScope() ?? '');

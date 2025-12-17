@@ -39,7 +39,7 @@ class UserAuditRecordTest extends TestCase
         $idProperty = $reflection->getProperty('id');
         $idProperty->setValue($actor, 234);
 
-        $record = AuditRecord::gitHubLinkedWithUser($user, $actor, 'github-testuser');
+        $record = AuditRecord::gitHubLinkedWithUser($user, $actor, 'github-testuser', 123456);
 
         self::assertSame(AuditRecordType::GitHubLinkedWithUser, $record->type);
         self::assertSame('testuser', $record->attributes['user']['username']);
@@ -49,6 +49,7 @@ class UserAuditRecordTest extends TestCase
         self::assertSame('actoruser', $record->attributes['actor']['username']);
         self::assertSame(234, $record->actorId);
         self::assertSame(123, $record->userId);
+        self::assertSame(123456, $record->attributes['github_id']);
     }
 
     public function testGithubDisconnectedFromUser(): void
