@@ -19,9 +19,11 @@ class ActorFilter extends AbstractAdminAwareTextFilter
 {
     protected function applyFilter(QueryBuilder $qb, string $paramName, string $pattern, bool $useWildcard): QueryBuilder
     {
-        $qb->setParameter($paramName, $pattern);
-
-        if ($useWildcard) {
+        // If pattern is numeric search by actorId
+        if (is_numeric($pattern) && $this->isAdmin) {
+            $qb->setParameter($paramName, (int) $pattern);
+            $qb->andWhere('a.actorId = :' . $paramName);
+        } elseif ($useWildcard) {
             $qb->setParameter($paramName, sprintf('"%s"', $pattern));
             $qb->andWhere("JSON_EXTRACT(a.attributes, '$.actor.username') LIKE :" . $paramName);
         } else {

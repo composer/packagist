@@ -131,4 +131,17 @@ class UserFilterTest extends TestCase
         $this->assertSame('"test%user%"', $qb->getParameter('user')->getValue());
         $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :user", (string) $qb->getDQLPart('where'));
     }
+
+    public function testFilterAdminNumericSearchesByUserId(): void
+    {
+        $bag = new InputBag(['user' => '123']);
+        $filter = UserFilter::fromQuery($bag, 'user', true);
+
+        $qb = new QueryBuilder($this->entityManager);
+        $qb->from(AuditRecord::class, 'a');
+        $filter->filter($qb);
+
+        $this->assertSame(123, $qb->getParameter('user')->getValue());
+        $this->assertStringContainsString('a.userId = :user', (string) $qb->getDQLPart('where'));
+    }
 }

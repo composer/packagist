@@ -131,4 +131,17 @@ class ActorFilterTest extends TestCase
         $this->assertSame('"test%user%"', $qb->getParameter('actor')->getValue());
         $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.actor.username') LIKE :actor", (string) $qb->getDQLPart('where'));
     }
+
+    public function testFilterAdminNumericSearchesByActorId(): void
+    {
+        $bag = new InputBag(['actor' => '456']);
+        $filter = ActorFilter::fromQuery($bag, 'actor', true);
+
+        $qb = new QueryBuilder($this->entityManager);
+        $qb->from(AuditRecord::class, 'a');
+        $filter->filter($qb);
+
+        $this->assertSame(456, $qb->getParameter('actor')->getValue());
+        $this->assertStringContainsString('a.actorId = :actor', (string) $qb->getDQLPart('where'));
+    }
 }

@@ -20,9 +20,11 @@ class UserFilter extends AbstractAdminAwareTextFilter
 {
     protected function applyFilter(QueryBuilder $qb, string $paramName, string $pattern, bool $useWildcard): QueryBuilder
     {
-        $qb->setParameter($paramName, $pattern);
-
-        if ($useWildcard) {
+        // If pattern is numeric search by userId
+        if (is_numeric($pattern) && $this->isAdmin) {
+            $qb->setParameter($paramName, (int) $pattern);
+            $qb->andWhere('a.userId = :' . $paramName);
+        } elseif ($useWildcard) {
             $qb->setParameter($paramName, sprintf('"%s"', $pattern));
             $qb->andWhere("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :" . $paramName);
         } else {
