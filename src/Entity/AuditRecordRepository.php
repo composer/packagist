@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Service\AuditRecordsManager;
+use App\Util\IpAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
@@ -47,7 +48,7 @@ class AuditRecordRepository extends ServiceEntityRepository
             'vendor' => $record->vendor,
             'packageId' => $record->packageId,
             'userId' => $record->userId,
-            'ip' => $record->ip,
+            'ip' => IpAddress::stringToBinary($record->ip),
         ], [
             'id' => UlidType::NAME,
             'datetime' => Types::DATETIME_IMMUTABLE,

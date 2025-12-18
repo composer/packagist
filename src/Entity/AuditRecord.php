@@ -37,7 +37,7 @@ class AuditRecord
     #[ORM\Column]
     public readonly \DateTimeImmutable $datetime;
 
-    #[ORM\Column(nullable: true, length: 45)]
+    #[ORM\Column(nullable: true, type: 'ipaddress')]
     // @phpstan-ignore property.uninitializedReadonly
     public readonly ?string $ip;
 

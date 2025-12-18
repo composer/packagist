@@ -5,6 +5,8 @@ doctrine:
         options:
             # PDO::ATTR_TIMEOUT
             2: 1.3
+        types:
+            ipaddress: App\Doctrine\Type\IpAddress
     orm:
         validate_xml_mapping: true
         auto_mapping: true

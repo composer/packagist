@@ -63,7 +63,11 @@ class AuditRecordTest extends KernelTestCase
 
         $em->persist($record);
         $em->flush();
+        $em->clear();
 
+        $insertedRecord = $em->getRepository(AuditRecord::class)->find($record->id);
+
+        $this->assertNotNull($insertedRecord);
         $this->assertSame('192.168.1.1', $record->ip);
     }
 }
