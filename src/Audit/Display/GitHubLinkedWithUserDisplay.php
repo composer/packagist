@@ -22,8 +22,9 @@ readonly class GitHubLinkedWithUserDisplay extends AbstractAuditLogDisplay
         public string $githubUsername,
         public int $githubId,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType

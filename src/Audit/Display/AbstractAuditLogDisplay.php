@@ -19,6 +19,7 @@ abstract readonly class AbstractAuditLogDisplay implements AuditLogDisplayInterf
     public function __construct(
         public \DateTimeImmutable $datetime,
         public ActorDisplay $actor,
+        public ?string $ip,
     ) {
     }
 

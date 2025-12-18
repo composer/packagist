@@ -22,8 +22,9 @@ readonly class CanonicalUrlChangedDisplay extends AbstractAuditLogDisplay
         public string $repositoryFrom,
         public string $repositoryTo,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType

@@ -21,8 +21,9 @@ readonly class PackageUnabandonedDisplay extends AbstractAuditLogDisplay
         public string $packageName,
         public string $repository,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType

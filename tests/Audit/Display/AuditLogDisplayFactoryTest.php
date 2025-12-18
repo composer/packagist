@@ -568,6 +568,8 @@ class AuditLogDisplayFactoryTest extends TestCase
         $attributesProperty = $reflection->getProperty('userId');
         $attributesProperty->setValue($instance, $userId);
 
+        $instance->setIp('192.168.1.1');
+
         return $instance;
     }
 }

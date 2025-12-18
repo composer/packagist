@@ -28,8 +28,9 @@ readonly class PackageTransferredDisplay extends AbstractAuditLogDisplay
         /** @var array<string> $currentMaintainers */
         public array $currentMaintainers,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType

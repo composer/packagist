@@ -22,8 +22,9 @@ readonly class UserVerifiedDisplay extends AbstractAuditLogDisplay
         public string $username,
         public string $email,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType

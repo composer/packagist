@@ -21,8 +21,9 @@ readonly class VersionDeletedDisplay extends AbstractAuditLogDisplay
         public string $packageName,
         public string $version,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType
