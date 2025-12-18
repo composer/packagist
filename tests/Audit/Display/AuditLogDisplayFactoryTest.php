@@ -345,14 +345,13 @@ class AuditLogDisplayFactoryTest extends TestCase
 
     #[TestWith([false, 999, '**@**.**'])]
     #[TestWith([true, 999, 'john@doe.com'])]
-    #[TestWith([false, 999, '**@**.**'])]
     #[TestWith([false, 123, 'john@doe.com'])]
-    public function testBuildUserVerified(bool $isAdmin, int $authenticatedUserId, string $expectedEmail): void
+    public function testBuildUserVerified(bool $hasAuditorRole, int $authenticatedUserId, string $expectedEmail): void
     {
         $this->security
             ->method('isGranted')
-            ->with('ROLE_ADMIN')
-            ->willReturn($isAdmin);
+            ->with('ROLE_AUDITOR')
+            ->willReturn($hasAuditorRole);
 
         $user = new User();
         $reflectionProperty = new \ReflectionProperty($user, 'id');
