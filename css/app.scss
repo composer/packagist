@@ -2010,6 +2010,14 @@ body {
     }
 }
 
+.audit-log-ref {
+    width: 103px;
+    text-overflow: ellipsis;
+    display: inline-block;
+    overflow: hidden;
+    line-height: 10px;
+}
+
 #transfer-package-form {
     .maintainers-collection-wrapper {
         margin-bottom: 15px;

@@ -2,9 +2,9 @@
 
 <strong>{{ auditLog.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
 {% if display.sourceFrom or display.sourceTo %}
-    Source: {{ display.sourceFrom ?? 'none' }} → {{ display.sourceTo ?? 'none' }}<br>
+    Source: <span class="audit-log-ref" title="{{ display.sourceFrom ?? 'none' }}">{{ display.sourceFrom ?? 'none' }}</span> → <span class="audit-log-ref" title="{{ display.sourceTo ?? 'none' }}">{{ display.sourceTo ?? 'none' }}</span><br>
 {% endif %}
 {% if display.distFrom or display.distTo %}
-    Dist: {{ display.distFrom ?? 'none' }} → {{ display.distTo ?? 'none' }}<br>
+    Dist: <span class="audit-log-ref" title="{{ display.distFrom ?? 'none' }}">{{ display.distFrom ?? 'none' }}</span> → <span class="audit-log-ref" title="{{ display.distTo ?? 'none' }}">{{ display.distTo ?? 'none' }}</span><br>
 {% endif %}
 Changed by: {{ display.actor.username }}
