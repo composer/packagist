@@ -63,7 +63,7 @@ class TransparencyLogController extends Controller
         }
 
         // Group types by category in desired order
-        $categoryOrder = ['ownership', 'package', 'version', 'user', 'other'];
+        $categoryOrder = ['ownership', 'package', 'version', 'user'];
         $groupedTypes = [];
         foreach (AuditRecordType::cases() as $type) {
             $groupedTypes[$type->category()][] = $type;

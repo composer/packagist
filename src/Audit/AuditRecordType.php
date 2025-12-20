@@ -61,7 +61,6 @@ enum AuditRecordType: string
             self::GitHubDisconnectedFromUser, self::TwoFaAuthenticationActivated,
             self::TwoFaAuthenticationDeactivated
                 => 'user',
-            default => 'other',
         };
     }
 }
