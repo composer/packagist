@@ -62,10 +62,25 @@ class TransparencyLogController extends Controller
             $selectedFilters[$filter->getKey()] = $filter->getSelectedValue();
         }
 
+        // Group types by category in desired order
+        $categoryOrder = ['ownership', 'package', 'version', 'user', 'other'];
+        $groupedTypes = [];
+        foreach (AuditRecordType::cases() as $type) {
+            $groupedTypes[$type->category()][] = $type;
+        }
+
+        // Reorder groups according to defined order
+        $orderedGroupedTypes = [];
+        foreach ($categoryOrder as $category) {
+            if (isset($groupedTypes[$category])) {
+                $orderedGroupedTypes[$category] = $groupedTypes[$category];
+            }
+        }
+
         return $this->render('audit_log/view_audit_logs.html.twig', [
             'auditLogDisplays' => $displayFactory->build($auditLogs),
             'auditLogPaginator' => $auditLogs,
-            'allTypes' => AuditRecordType::cases(),
+            'groupedTypes' => $orderedGroupedTypes,
             'selectedFilters' => $selectedFilters,
         ]);
     }

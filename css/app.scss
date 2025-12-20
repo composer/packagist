@@ -1911,6 +1911,19 @@ body {
                 background-color: #e9ecef;
             }
         }
+
+        optgroup {
+            font-weight: 600;
+            color: #2d2d32;
+            font-style: normal;
+            padding-top: 4px;
+            margin-top: 2px;
+        }
+
+        optgroup option {
+            font-weight: 400;
+            padding-left: 10px;
+        }
     }
 
     .help-block {

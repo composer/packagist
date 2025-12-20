@@ -13,11 +13,15 @@
                 <div class="col-md-3 col-sm-6">
                     <div class="form-group">
                         <label for="type-filter">Type</label>
-                        <select name="type[]" id="type-filter" class="form-control audit-log-type-select" multiple size="8">
-                            {% for type in allTypes %}
-                                <option value="{{ type.value }}" {% if type.value in selectedFilters.type %}selected="selected"{% endif %}>
-                                    {{ ('audit_log.type.'~type.value)|trans }}
-                                </option>
+                        <select name="type[]" id="type-filter" class="form-control audit-log-type-select" multiple size="10">
+                            {% for category, types in groupedTypes %}
+                                <optgroup label="{{ category|capitalize }}">
+                                    {% for type in types %}
+                                        <option value="{{ type.value }}" {% if type.value in selectedFilters.type %}selected="selected"{% endif %}>
+                                            {{ ('audit_log.type.' ~ type.value)|trans }}
+                                        </option>
+                                    {% endfor %}
+                                </optgroup>
                             {% endfor %}
                         </select>
                         <small class="help-block">Hold Ctrl/Cmd to select multiple</small>

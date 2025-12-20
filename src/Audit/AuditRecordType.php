@@ -21,14 +21,15 @@ enum AuditRecordType: string
 
     // package management
     case PackageCreated = 'package_created';
-    case PackageDeleted = 'package_deleted';
     case CanonicalUrlChanged = 'canonical_url_changed';
-    case VersionCreated = 'version_created';
-    case VersionDeleted = 'version_deleted';
-
-    case VersionReferenceChanged = 'version_reference_changed';
     case PackageAbandoned = 'package_abandoned';
     case PackageUnabandoned = 'package_unabandoned';
+    case PackageDeleted = 'package_deleted';
+
+    // version
+    case VersionCreated = 'version_created';
+    case VersionReferenceChanged = 'version_reference_changed';
+    case VersionDeleted = 'version_deleted';
 
     // user management
     case UserCreated = 'user_created';
@@ -43,4 +44,24 @@ enum AuditRecordType: string
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user';
     case TwoFaAuthenticationActivated = 'two_fa_activated';
     case TwoFaAuthenticationDeactivated = 'two_fa_deactivated';
+
+    public function category(): string
+    {
+        return match($this) {
+            self::MaintainerAdded, self::MaintainerRemoved, self::PackageTransferred
+                => 'ownership',
+            self::PackageCreated, self::PackageDeleted, self::CanonicalUrlChanged,
+            self::PackageAbandoned, self::PackageUnabandoned
+                => 'package',
+            self::VersionCreated, self::VersionDeleted, self::VersionReferenceChanged
+                => 'version',
+            self::UserCreated, self::UserVerified, self::UserDeleted,
+            self::PasswordResetRequested, self::PasswordReset, self::PasswordChanged,
+            self::EmailChanged, self::UsernameChanged, self::GitHubLinkedWithUser,
+            self::GitHubDisconnectedFromUser, self::TwoFaAuthenticationActivated,
+            self::TwoFaAuthenticationDeactivated
+                => 'user',
+            default => 'other',
+        };
+    }
 }
