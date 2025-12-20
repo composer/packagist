@@ -88,9 +88,8 @@ class AuditRecord
      */
     public static function packageTransferred(Package $package, ?User $actor, array $previousMaintainers, array $currentMaintainers): self
     {
-        $callback = fn (User $user) => self::getUserData($user);
-        $previous = array_map($callback, $previousMaintainers);
-        $current = array_map($callback, $currentMaintainers);
+        $previous = array_values(array_map(self::getUserData(...), $previousMaintainers));
+        $current = array_values(array_map(self::getUserData(...), $currentMaintainers));
 
         return new self(AuditRecordType::PackageTransferred, ['name' => $package->getName(), 'actor' => self::getUserData($actor, 'admin'), 'previous_maintainers' => $previous, 'current_maintainers' => $current], $actor?->getId(), $package->getVendor(), $package->getId());
     }
@@ -129,12 +128,12 @@ class AuditRecord
 
     public static function maintainerAdded(Package $package, User $maintainer, ?User $actor): self
     {
-        return new self(AuditRecordType::MaintainerAdded, ['name' => $package->getName(), 'maintainer' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
+        return new self(AuditRecordType::MaintainerAdded, ['name' => $package->getName(), 'user' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
     }
 
     public static function maintainerRemoved(Package $package, User $maintainer, ?User $actor): self
     {
-        return new self(AuditRecordType::MaintainerRemoved, ['name' => $package->getName(), 'maintainer' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
+        return new self(AuditRecordType::MaintainerRemoved, ['name' => $package->getName(), 'user' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
     }
 
     public static function packageAbandoned(Package $package, ?User $actor, ?string $replacementPackage, ?AbandonmentReason $reason = null): self

@@ -13,6 +13,7 @@ doctrine:
         dql:
             string_functions:
                 JSON_EXTRACT: Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonExtract
+                JSON_CONTAINS: Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonContains
         mappings:
             App:
                 is_bundle: false
