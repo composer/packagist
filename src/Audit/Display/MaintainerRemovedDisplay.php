@@ -21,8 +21,9 @@ readonly class MaintainerRemovedDisplay extends AbstractAuditLogDisplay
         public string $packageName,
         public ActorDisplay $maintainer,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType

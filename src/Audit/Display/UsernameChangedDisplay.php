@@ -21,8 +21,9 @@ readonly class UsernameChangedDisplay extends AbstractAuditLogDisplay
         public string $usernameFrom,
         public string $usernameTo,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType

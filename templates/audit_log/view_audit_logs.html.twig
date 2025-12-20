@@ -35,6 +35,9 @@
                 <th class="audit-log-datetime">Date & Time</th>
                 <th class="audit-log-type">Type</th>
                 <th class="audit-log-details">Details</th>
+                {% if is_granted('ROLE_AUDITOR') %}
+                  <th class="audit-log-ip">IP</th>
+                {% endif  %}
             </tr>
             </thead>
             <tbody>
@@ -45,6 +48,9 @@
                         <td class="audit-log-details">
                             {% include display.templateName with {display} only %}
                         </td>
+                        {% if is_granted('ROLE_AUDITOR') %}
+                            <td class="audit-log-ip">{{ display.ip }}</td>
+                        {% endif  %}
                     </tr>
                 {% endfor %}
             </tbody>

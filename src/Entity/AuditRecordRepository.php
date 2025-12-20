@@ -12,6 +12,8 @@
 
 namespace App\Entity;
 
+use App\Service\AuditRecordsManager;
+use App\Util\IpAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
@@ -22,27 +24,12 @@ use Symfony\Bridge\Doctrine\Types\UlidType;
  */
 class AuditRecordRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(
+        ManagerRegistry $registry,
+        private readonly AuditRecordsManager $auditRecordsManager,
+    )
     {
         parent::__construct($registry, AuditRecord::class);
-    }
-
-    public function add(AuditRecord $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(AuditRecord $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
     }
 
     /**
@@ -50,6 +37,8 @@ class AuditRecordRepository extends ServiceEntityRepository
      */
     public function insert(AuditRecord $record): void
     {
+        $this->auditRecordsManager->enrichWithClientIP($record);
+
         $this->getEntityManager()->getConnection()->insert('audit_log', [
             'id' => $record->id,
             'datetime' => $record->datetime,
@@ -59,6 +48,7 @@ class AuditRecordRepository extends ServiceEntityRepository
             'vendor' => $record->vendor,
             'packageId' => $record->packageId,
             'userId' => $record->userId,
+            'ip' => IpAddress::stringToBinary($record->ip),
         ], [
             'id' => UlidType::NAME,
             'datetime' => Types::DATETIME_IMMUTABLE,

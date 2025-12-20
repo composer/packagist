@@ -23,8 +23,9 @@ readonly class VersionCreatedDisplay extends AbstractAuditLogDisplay
         public ?string $sourceReference,
         public ?string $distReference,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType

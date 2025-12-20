@@ -21,8 +21,9 @@ readonly class TwoFaDeactivatedDisplay extends AbstractAuditLogDisplay
         public string $username,
         public string $reason,
         ActorDisplay $actor,
+        ?string $ip,
     ) {
-        parent::__construct($datetime, $actor);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType
