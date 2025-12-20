@@ -29,7 +29,8 @@ class UserFilter extends AbstractAdminAwareTextFilter
             $qb->andWhere("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :" . $paramName);
         } else {
             $qb->setParameter($paramName, $pattern);
-            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.user.username') = :" . $paramName);
+            $qb->setParameter($paramName.'Json', json_encode(['username' => $pattern]));
+            $qb->andWhere("(JSON_EXTRACT(a.attributes, '$.user.username') = :" . $paramName." OR JSON_CONTAINS(a.attributes, :". $paramName."Json, '$.current_maintainers') = 1 OR JSON_CONTAINS(a.attributes, :". $paramName."Json, '$.previous_maintainers') = 1)");
         }
 
         return $qb;
