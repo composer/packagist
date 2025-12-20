@@ -88,9 +88,8 @@ class AuditRecord
      */
     public static function packageTransferred(Package $package, ?User $actor, array $previousMaintainers, array $currentMaintainers): self
     {
-        $callback = fn (User $user) => self::getUserData($user);
-        $previous = array_map($callback, $previousMaintainers);
-        $current = array_map($callback, $currentMaintainers);
+        $previous = array_values(array_map(self::getUserData(...), $previousMaintainers));
+        $current = array_values(array_map(self::getUserData(...), $currentMaintainers));
 
         return new self(AuditRecordType::PackageTransferred, ['name' => $package->getName(), 'actor' => self::getUserData($actor, 'admin'), 'previous_maintainers' => $previous, 'current_maintainers' => $current], $actor?->getId(), $package->getVendor(), $package->getId());
     }
