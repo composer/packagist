@@ -12,8 +12,7 @@
 
 namespace App\Tests;
 
-use App\Entity\Package;
-use App\Entity\User;
+use App\Tests\Fixtures\Fixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -23,6 +22,8 @@ use Symfony\Component\DomCrawler\Crawler;
 
 class IntegrationTestCase extends WebTestCase
 {
+    use Fixtures;
+
     protected KernelBrowser $client;
 
     protected function setUp(): void
@@ -74,45 +75,5 @@ class IntegrationTestCase extends WebTestCase
         }
 
         $em->flush();
-    }
-
-    /**
-     * Creates a Package entity without running the slow network-based repository initialization step
-     *
-     * @param array<User> $maintainers
-     */
-    protected static function createPackage(string $name, string $repository, ?string $remoteId = null, array $maintainers = []): Package
-    {
-        $package = new Package();
-
-        $package->setName($name);
-        $package->setRemoteId($remoteId);
-        new \ReflectionProperty($package, 'repository')->setValue($package, $repository);
-        if (\count($maintainers) > 0) {
-            foreach ($maintainers as $user) {
-                $package->addMaintainer($user);
-                $user->addPackage($package);
-            }
-        }
-
-        return $package;
-    }
-
-    /**
-     * @param array<string> $roles
-     */
-    protected static function createUser(string $username = 'test', string $email = 'test@example.org', string $password = 'testtest', string $apiToken = 'api-token', string $safeApiToken = 'safe-api-token', string $githubId = '12345', bool $enabled = true, array $roles = []): User
-    {
-        $user = new User();
-        $user->setEnabled($enabled);
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPassword($password);
-        $user->setApiToken($apiToken);
-        $user->setSafeApiToken($safeApiToken);
-        $user->setGithubId($githubId);
-        $user->setRoles($roles);
-
-        return $user;
     }
 }

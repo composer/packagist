@@ -18,6 +18,7 @@ use App\Entity\Package;
 use App\Entity\RequireLink;
 use App\Entity\Version;
 use App\Event\VersionReferenceChangedEvent;
+use App\Tests\Fixtures\Fixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -26,6 +27,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class VersionAuditRecordTest extends KernelTestCase
 {
+    use Fixtures;
+
     protected function setUp(): void
     {
         self::bootKernel();
@@ -133,9 +136,7 @@ class VersionAuditRecordTest extends KernelTestCase
         $container = static::getContainer();
         $em = $container->get(ManagerRegistry::class)->getManager();
 
-        $package = new Package();
-        $package->setName('composer/composer');
-        $package->setRepository('https://github.com/composer/composer');
+        $package = self::createPackage('composer/composer', 'https://github.com/composer/composer');
 
         $version = new Version();
         $version->setPackage($package);

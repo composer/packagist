@@ -17,6 +17,7 @@ use App\Audit\AuditRecordType;
 use App\Entity\Package;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
+use App\Tests\Fixtures\Fixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -24,6 +25,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class PackageAuditRecordTest extends KernelTestCase
 {
+    use Fixtures;
+
     protected function setUp(): void
     {
         self::bootKernel();
@@ -44,9 +47,7 @@ class PackageAuditRecordTest extends KernelTestCase
         $container = static::getContainer();
         $em = $container->get(ManagerRegistry::class)->getManager();
 
-        $package = new Package();
-        $package->setRepository('https://github.com/composer/composer');
-
+        $package = self::createPackage('composer/composer', 'https://github.com/composer/composer');
         $em->persist($package);
         $em->flush();
 
@@ -54,7 +55,8 @@ class PackageAuditRecordTest extends KernelTestCase
         self::assertCount(1, $logs);
         self::assertSame(AuditRecordType::PackageCreated->value, $logs[0]['type']);
 
-        $package->setRepository('https://github.com/composer/packagist');
+        // Change the repository property through reflection, to avoid the costly network-based initialization
+        new \ReflectionProperty($package, 'repository')->setValue($package, 'https://github.com/composer/packagist');
         $em->persist($package);
         $em->flush();
 
@@ -77,9 +79,7 @@ class PackageAuditRecordTest extends KernelTestCase
         $em = $container->get(ManagerRegistry::class)->getManager();
         $eventDispatcher = $container->get(EventDispatcherInterface::class);
 
-        $package = new Package();
-        $package->setName('test/package');
-        $package->setRepository('https://github.com/test/package');
+        $package = self::createPackage('test/package', 'https://github.com/test/package');
 
         $em->persist($package);
         $em->flush();
@@ -130,9 +130,7 @@ class PackageAuditRecordTest extends KernelTestCase
         $em = $container->get(ManagerRegistry::class)->getManager();
         $eventDispatcher = $container->get(EventDispatcherInterface::class);
 
-        $package = new Package();
-        $package->setName('test/package2');
-        $package->setRepository('https://github.com/test/package2');
+        $package = self::createPackage('test/package2', 'https://github.com/test/package2');
 
         $em->persist($package);
         $em->flush();

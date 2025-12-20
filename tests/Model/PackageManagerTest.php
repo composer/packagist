@@ -37,8 +37,7 @@ class PackageManagerTest extends IntegrationTestCase
 
         $client = self::createClient();
 
-        $package = new Package();
-        $package->setRepository($url);
+        $package = self::createPackage('composer/composer', 'https://github.com/composer/composer');
 
         $user = new User();
         $user->addPackage($package);
