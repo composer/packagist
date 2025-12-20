@@ -129,12 +129,12 @@ class AuditRecord
 
     public static function maintainerAdded(Package $package, User $maintainer, ?User $actor): self
     {
-        return new self(AuditRecordType::MaintainerAdded, ['name' => $package->getName(), 'maintainer' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
+        return new self(AuditRecordType::MaintainerAdded, ['name' => $package->getName(), 'user' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
     }
 
     public static function maintainerRemoved(Package $package, User $maintainer, ?User $actor): self
     {
-        return new self(AuditRecordType::MaintainerRemoved, ['name' => $package->getName(), 'maintainer' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
+        return new self(AuditRecordType::MaintainerRemoved, ['name' => $package->getName(), 'user' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
     }
 
     public static function packageAbandoned(Package $package, ?User $actor, ?string $replacementPackage, ?AbandonmentReason $reason = null): self

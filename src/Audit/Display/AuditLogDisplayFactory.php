@@ -44,14 +44,14 @@ class AuditLogDisplayFactory
             AuditRecordType::MaintainerAdded => new MaintainerAddedDisplay(
                 $record->datetime,
                 $record->attributes['name'],
-                $this->buildActor($record->attributes['maintainer']),
+                $this->buildActor($record->attributes['user']),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
             AuditRecordType::MaintainerRemoved => new MaintainerRemovedDisplay(
                 $record->datetime,
                 $record->attributes['name'],
-                $this->buildActor($record->attributes['maintainer']),
+                $this->buildActor($record->attributes['user']),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
