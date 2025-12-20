@@ -17,7 +17,7 @@ use App\Entity\AuditRecord;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-class AuditLogControllerTest extends IntegrationTestCase
+class TransparencyLogControllerTest extends IntegrationTestCase
 {
     #[DataProvider('filterProvider')]
     public function testViewAuditLogs(array $filters, array $expected): void

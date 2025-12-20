@@ -15,7 +15,11 @@ namespace App\Controller;
 use App\Audit\AuditRecordType;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
+use App\QueryFilter\AuditLog\ActorFilter;
 use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
+use App\QueryFilter\AuditLog\PackageNameFilter;
+use App\QueryFilter\AuditLog\UserFilter;
+use App\QueryFilter\AuditLog\VendorFilter;
 use App\QueryFilter\QueryFilterInterface;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
@@ -24,15 +28,21 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-class AuditLogController extends Controller
+class TransparencyLogController extends Controller
 {
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/transparency-log', name: 'view_audit_logs')]
     public function viewAuditLogs(Request $request, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $displayFactory): Response
     {
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
+
         /** @var QueryFilterInterface[] $filters */
         $filters = [
             AuditRecordTypeFilter::fromQuery($request->query),
+            ActorFilter::fromQuery($request->query, 'actor', $isAdmin),
+            UserFilter::fromQuery($request->query, 'user', $isAdmin),
+            VendorFilter::fromQuery($request->query, 'vendor', $isAdmin),
+            PackageNameFilter::fromQuery($request->query, 'package', $isAdmin),
         ];
 
         $qb = $auditRecordRepository->createQueryBuilder('a')

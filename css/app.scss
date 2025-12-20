@@ -1872,6 +1872,107 @@ body {
     }
 }
 
+.audit-log-filters {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 25px;
+
+    label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .form-control {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        transition: border-color 0.2s ease;
+
+        &:focus {
+            border-color: #66afe9;
+            box-shadow: 0 0 0 2px rgba(102, 175, 233, 0.1);
+        }
+    }
+
+    .audit-log-type-select {
+        height: 110px;
+        padding: 6px 8px;
+        font-size: 13px;
+
+        option {
+            padding: 2px 5px;
+            border-radius: 2px;
+            margin: 2px 0;
+
+            &:hover {
+                background-color: #e9ecef;
+            }
+        }
+    }
+
+    .help-block {
+        color: #777;
+        font-size: 12px;
+        margin-top: 5px;
+        font-style: italic;
+    }
+
+    .audit-log-filter-actions {
+        padding-top: 10px;
+        border-top: 1px solid #e0e0e0;
+
+        .btn {
+            margin-right: 10px;
+            padding: 8px 16px;
+            font-weight: 500;
+
+            .glyphicon {
+                margin-right: 6px;
+            }
+        }
+
+        .btn-primary {
+            background-color: #5bc0de;
+            border-color: #46b8da;
+
+            &:hover {
+                background-color: #31b0d5;
+                border-color: #269abc;
+            }
+        }
+
+        .btn-default {
+            &:hover {
+                background-color: #e6e6e6;
+            }
+        }
+    }
+
+    @media (max-width: 767px) {
+        padding: 15px;
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .audit-log-filter-actions {
+            .btn {
+                display: block;
+                width: 100%;
+                margin-bottom: 10px;
+                margin-right: 0;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+        }
+    }
+}
+
 .audit-log-table {
     table-layout: fixed;
 
