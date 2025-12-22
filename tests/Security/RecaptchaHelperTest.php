@@ -31,9 +31,9 @@ class RecaptchaHelperTest extends TestCase
         $this->helper = new RecaptchaHelper(
             $this->redis = $this->createMock(Client::class),
             true,
-            $this->createMock(RequestStack::class),
-            $this->createMock(TokenStorageInterface::class),
-            $this->createMock(AuthenticationUtils::class),
+            $this->createStub(RequestStack::class),
+            $this->createStub(TokenStorageInterface::class),
+            $this->createStub(AuthenticationUtils::class),
         );
     }
 

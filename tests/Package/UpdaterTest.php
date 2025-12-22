@@ -30,7 +30,9 @@ use Composer\Repository\Vcs\GitDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -38,11 +40,11 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class UpdaterTest extends IntegrationTestCase
 {
-    private IOInterface&MockObject $ioMock;
+    private IOInterface&Stub $ioMock;
     private Config $config;
     private Package $package;
     private Updater $updater;
-    private RepositoryInterface&MockObject $repositoryMock;
+    private RepositoryInterface&Stub $repositoryMock;
     private VcsDriverInterface&MockObject $driverMock;
 
     protected function setUp(): void
@@ -54,25 +56,25 @@ class UpdaterTest extends IntegrationTestCase
         $this->package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
         $this->store($this->package);
 
-        $this->ioMock = $this->createMock(NullIO::class);
-        $this->repositoryMock = $this->createMock(VcsRepository::class);
+        $this->ioMock = $this->createStub(NullIO::class);
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
 
         $registry = static::getContainer()->get(ManagerRegistry::class);
 
-        $providerManagerMock = $this->createMock(ProviderManager::class);
+        $providerManagerMock = $this->createStub(ProviderManager::class);
         $this->driverMock = $this->createMock(GitDriver::class);
 
         $package = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
-        $this->repositoryMock->expects($this->any())->method('getPackages')->willReturn([
+        $this->repositoryMock->method('getPackages')->willReturn([
             $package,
         ]);
-        $this->repositoryMock->expects($this->any())->method('getDriver')->willReturn($this->driverMock);
+        $this->repositoryMock->method('getDriver')->willReturn($this->driverMock);
 
-        $versionIdCache = $this->createMock(VersionIdCache::class);
+        $versionIdCache = $this->createStub(VersionIdCache::class);
 
-        $mailerMock = $this->createMock(MailerInterface::class);
-        $routerMock = $this->createMock(UrlGeneratorInterface::class);
-        $eventDispatcherMock = $this->createMock(EventDispatcher::class);
+        $mailerMock = $this->createStub(MailerInterface::class);
+        $routerMock = $this->createStub(UrlGeneratorInterface::class);
+        $eventDispatcherMock = $this->createStub(EventDispatcher::class);
 
         $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock, $eventDispatcherMock);
     }
@@ -189,6 +191,7 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame('<pre>This is the readme</pre>', $readme->contents);
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testReadmeParsing(): void
     {
         $readme = <<<'SOURCE'

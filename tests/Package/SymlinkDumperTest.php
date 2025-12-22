@@ -22,7 +22,7 @@ class SymlinkDumperTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->mockDumper = $this->createMock(SymlinkDumper::class);
+        $this->mockDumper = $this->createStub(SymlinkDumper::class);
     }
 
     protected function tearDown(): void

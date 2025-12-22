@@ -16,6 +16,7 @@ use App\Security\BruteForceLoginFormAuthenticator;
 use App\Security\RecaptchaHelper;
 use Beelab\Recaptcha2Bundle\Recaptcha\RecaptchaVerifier;
 use Doctrine\Persistence\ManagerRegistry;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -31,23 +32,21 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
 {
     private BruteForceLoginFormAuthenticator $authenticator;
     private HttpUtils&MockObject $httpUtils;
-    private RecaptchaVerifier&MockObject $recaptchaVerifier;
-    private UserProviderInterface&MockObject $userProvider;
     private RecaptchaHelper&MockObject $recaptchaHelper;
-    private ManagerRegistry&MockObject $doctrine;
 
     protected function setUp(): void
     {
+        $recaptchaVerifier = $this->createStub(RecaptchaVerifier::class);
+        $userProvider = $this->createStub(UserProviderInterface::class);
+        $doctrine = $this->createStub(ManagerRegistry::class);
         $this->httpUtils = $this->createMock(HttpUtils::class);
-        $this->recaptchaVerifier = $this->createMock(RecaptchaVerifier::class);
-        $this->userProvider = $this->createMock(UserProviderInterface::class);
         $this->recaptchaHelper = $this->createMock(RecaptchaHelper::class);
-        $this->doctrine = $this->createMock(ManagerRegistry::class);
 
-        $this->authenticator = new BruteForceLoginFormAuthenticator($this->httpUtils, $this->recaptchaVerifier, $this->userProvider, $this->recaptchaHelper, $this->doctrine);
+        $this->authenticator = new BruteForceLoginFormAuthenticator($this->httpUtils, $recaptchaVerifier, $userProvider, $this->recaptchaHelper, $doctrine);
     }
 
     #[DataProvider('supportsProvider')]
+    #[AllowMockObjectsWithoutExpectations]
     public function testSupports(string $method, string $route, bool $expected): void
     {
         $request = new Request();
@@ -69,8 +68,8 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
     public function testOnAuthenticationSuccess(): void
     {
         $request = new Request();
-        $request->setSession($this->createMock(SessionInterface::class));
-        $token = $this->createMock(UsernamePasswordToken::class);
+        $request->setSession($this->createStub(SessionInterface::class));
+        $token = $this->createStub(UsernamePasswordToken::class);
 
         $this->httpUtils
             ->expects($this->once())
@@ -88,7 +87,7 @@ class BruteForceLoginFormAuthenticatorTest extends TestCase
     public function testOnAuthenticationFailureIncreaseCounter(): void
     {
         $request = new Request();
-        $request->setSession($this->createMock(SessionInterface::class));
+        $request->setSession($this->createStub(SessionInterface::class));
         $exception = new AuthenticationException();
 
         $this->recaptchaHelper
