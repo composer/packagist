@@ -1,5 +1,5 @@
 menu:
-    about_packagist: About Packagist
+    about_packagist: About Packagist.org
     rss_feeds: Atom/RSS Feeds
     about_composer: About Composer
     home: Home
@@ -51,7 +51,7 @@ explore:
 
 search:
     claim_html: |
-        Packagist is the main <a href="https://getcomposer.org/">Composer</a> repository. It aggregates public PHP packages installable with Composer.
+        Packagist.org is the main <a href="https://getcomposer.org/">Composer</a> repository. It aggregates public PHP packages installable with Composer.
 
 packages:
     mine: My packages
@@ -126,7 +126,7 @@ statistics:
 
 api_doc:
     title: API documentation
-    intro: 'Packagist has a public API to consume data. See bellow the most important URIs:'
+    intro: 'Packagist.org has a public API to consume data. See bellow the most important URIs:'
     listing_names: Listing package names
     all_packages: All packages
     by_organization: By organization
@@ -156,7 +156,7 @@ user:
     packages: "%username%'s packages"
 
 'Search packages...': 'Search packages...'
-brandname: Packagist
+brandname: Packagist.org
 navclaim: The PHP Package Repository
 Sort: 'Sort'
 Order: 'Order'

@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
 
-        <title>{% block title %}Packagist{% endblock %}</title>
+        <title>{% block title %}Packagist.org{% endblock %}</title>
         <meta name="description" content="{% block description %}The PHP Package Repository{% endblock %}" />
         <meta name="author" content="Jordi Boggiano" />
         {% block head_canonical %}<meta name="canonical" href="{{ app.request.uri|replace({'://root.': '://'}) }}" />{% endblock %}
@@ -16,11 +16,11 @@
         {% block stylesheets %}{% endblock %}
 
         {% block head_feeds %}
-        <link rel="alternate" type="application/rss+xml" title="Newly Submitted Packages - Packagist" href="{{ url('feed_packages', {_format: 'rss'}) }}" />
-        <link rel="alternate" type="application/rss+xml" title="New Releases - Packagist" href="{{ url('feed_releases', {_format: 'rss'}) }}" />
+        <link rel="alternate" type="application/rss+xml" title="Newly Submitted Packages - Packagist.org" href="{{ url('feed_packages', {_format: 'rss'}) }}" />
+        <link rel="alternate" type="application/rss+xml" title="New Releases - Packagist.org" href="{{ url('feed_releases', {_format: 'rss'}) }}" />
         {% endblock %}
 
-        <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist" />
+        <link rel="search" type="application/opensearchdescription+xml" href="{{ asset('search.osd') }}" title="Packagist.org" />
 
         <script nonce="{{ csp_nonce('script') }}">
             var onloadRecaptchaCallback = function() {
