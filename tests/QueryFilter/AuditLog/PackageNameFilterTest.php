@@ -109,14 +109,14 @@ class PackageNameFilterTest extends TestCase
 
     public function testFilterAdminEscapesSpecialCharacters(): void
     {
-        $bag = new InputBag(['package' => 'vendor%/package_']);
+        $bag = new InputBag(['package' => 'vendor%/package_*']);
         $filter = PackageNameFilter::fromQuery($bag, 'package', true);
 
         $qb = new QueryBuilder($this->entityManager);
         $qb->from(AuditRecord::class, 'a');
         $filter->filter($qb);
 
-        $this->assertSame('"vendor\%/package\_"', $qb->getParameter('package')->getValue());
+        $this->assertSame('"vendor\%/package\_%"', $qb->getParameter('package')->getValue());
     }
 
     public function testFilterAdminMultipleWildcards(): void

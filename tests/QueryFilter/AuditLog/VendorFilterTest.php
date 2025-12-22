@@ -109,14 +109,14 @@ class VendorFilterTest extends TestCase
 
     public function testFilterAdminEscapesSpecialCharacters(): void
     {
-        $bag = new InputBag(['vendor' => 'test%_vendor']);
+        $bag = new InputBag(['vendor' => 'test%_vendor*']);
         $filter = VendorFilter::fromQuery($bag, 'vendor', true);
 
         $qb = new QueryBuilder($this->entityManager);
         $qb->from(AuditRecord::class, 'a');
         $filter->filter($qb);
 
-        $this->assertSame('test\%\_vendor', $qb->getParameter('vendor')->getValue());
+        $this->assertSame('test\%\_vendor%', $qb->getParameter('vendor')->getValue());
     }
 
     public function testFilterAdminMultipleWildcards(): void

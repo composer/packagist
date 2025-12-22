@@ -109,14 +109,14 @@ class ActorFilterTest extends TestCase
 
     public function testFilterAdminEscapesSpecialCharacters(): void
     {
-        $bag = new InputBag(['actor' => 'test%_user']);
+        $bag = new InputBag(['actor' => 'test%_user*']);
         $filter = ActorFilter::fromQuery($bag, 'actor', true);
 
         $qb = new QueryBuilder($this->entityManager);
         $qb->from(AuditRecord::class, 'a');
         $filter->filter($qb);
 
-        $this->assertSame('"test\%\_user"', $qb->getParameter('actor')->getValue());
+        $this->assertSame('"test\%\_user%"', $qb->getParameter('actor')->getValue());
     }
 
     public function testFilterAdminMultipleWildcards(): void

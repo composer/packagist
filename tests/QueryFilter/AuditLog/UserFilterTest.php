@@ -109,14 +109,14 @@ class UserFilterTest extends TestCase
 
     public function testFilterAdminEscapesSpecialCharacters(): void
     {
-        $bag = new InputBag(['user' => 'test%_user']);
+        $bag = new InputBag(['user' => 'test%_user*']);
         $filter = UserFilter::fromQuery($bag, 'user', true);
 
         $qb = new QueryBuilder($this->entityManager);
         $qb->from(AuditRecord::class, 'a');
         $result = $filter->filter($qb);
 
-        $this->assertSame('"test\%\_user"', $qb->getParameter('user')->getValue());
+        $this->assertSame('"test\%\_user%"', $qb->getParameter('user')->getValue());
     }
 
     public function testFilterAdminMultipleWildcards(): void
