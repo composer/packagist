@@ -39,9 +39,13 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
         $paramName = $this->getKey();
 
         if ($this->isAdmin) {
-            $escapedValue = addcslashes($this->value, '%_\\');
-            $pattern = str_replace('*', '%', $escapedValue);
-            $useWildcard = str_contains($pattern, '%');
+            $useWildcard = str_contains($this->value, '*');
+            if ($useWildcard) {
+                $escapedValue = addcslashes($this->value, '%_\\');
+                $pattern = str_replace('*', '%', $escapedValue);
+            } else {
+                $pattern = $this->value;
+            }
         } else {
             $pattern = $this->value;
             $useWildcard = false;
