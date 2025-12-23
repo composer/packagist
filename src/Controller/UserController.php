@@ -190,7 +190,7 @@ class UserController extends Controller
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/users/{name}/favorites/{package}', name: 'user_remove_fav', defaults: ['_format' => 'json'], requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], methods: ['DELETE'])]
+    #[Route(path: '/users/{name}/favorites/{package}', name: 'user_remove_fav', defaults: ['_format' => 'json'], requirements: ['package' => Package::PACKAGE_NAME_REGEX], methods: ['DELETE'])]
     public function deleteFavoriteAction(
         #[VarName('name')]
         User $user,

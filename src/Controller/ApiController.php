@@ -183,7 +183,7 @@ class ApiController extends Controller
         return $this->receiveUpdateRequest($request, $url, $urlRegex, $remoteId, $githubWebhookSecret, $statsd);
     }
 
-    #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'json'], methods: ['PUT'])]
+    #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'json'], methods: ['PUT'])]
     public function editPackageAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
     {
         $user = $this->findUser($request);

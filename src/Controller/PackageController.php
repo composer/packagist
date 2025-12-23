@@ -454,7 +454,7 @@ class PackageController extends Controller
     }
 
     #[IsGranted('ROLE_ADMIN')]
-    #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], defaults: ['_format' => 'html'], methods: ['POST'])]
+    #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'html'], methods: ['POST'])]
     public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager): Response
     {
         if (!$this->isCsrfTokenValid('unfreeze', $req->request->getString('token'))) {
@@ -473,7 +473,7 @@ class PackageController extends Controller
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
-    #[Route(path: '/packages/{name}.{_format}', name: 'view_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'], methods: ['GET'])]
+    #[Route(path: '/packages/{name}.{_format}', name: 'view_package', requirements: ['name' => Package::LENIENT_PACKAGE_NAME_REGEX, '_format' => '(json)'], defaults: ['_format' => 'html'], methods: ['GET'])]
     public function viewPackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] ?User $user = null): Response
     {
         if (!Killswitch::isEnabled(Killswitch::PAGES_ENABLED)) {
@@ -717,7 +717,7 @@ class PackageController extends Controller
         return $this->render('package/view_package.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name}/downloads.{_format}', name: 'package_downloads_full', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], methods: ['GET'])]
+    #[Route(path: '/packages/{name}/downloads.{_format}', name: 'package_downloads_full', requirements: ['name' => Package::PACKAGE_NAME_REGEX, '_format' => '(json)'], methods: ['GET'])]
     public function viewPackageDownloadsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
@@ -757,7 +757,7 @@ class PackageController extends Controller
         return $response;
     }
 
-    #[Route(path: '/versions/{versionId}.{_format}', name: 'view_version', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'versionId' => '[0-9]+', '_format' => '(json)'], methods: ['GET'])]
+    #[Route(path: '/versions/{versionId}.{_format}', name: 'view_version', requirements: ['versionId' => '[0-9]+', '_format' => '(json)'], methods: ['GET'])]
     public function viewPackageVersionAction(Request $req, int $versionId): JsonResponse
     {
         if ($req->getSession()->isStarted()) {
@@ -1010,7 +1010,7 @@ class PackageController extends Controller
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
-    #[Route(path: '/packages/{name:package}/edit', name: 'edit_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
+    #[Route(path: '/packages/{name:package}/edit', name: 'edit_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
     public function editAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] ?User $user = null): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::Edit->value, $package);
@@ -1043,7 +1043,7 @@ class PackageController extends Controller
         ]);
     }
 
-    #[Route(path: '/packages/{name:package}/abandon', name: 'abandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
+    #[Route(path: '/packages/{name:package}/abandon', name: 'abandon_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
     public function abandonAction(Request $request, #[MapEntity] Package $package, #[CurrentUser] ?User $user = null): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::Abandon->value, $package);
@@ -1073,7 +1073,7 @@ class PackageController extends Controller
         ]);
     }
 
-    #[Route(path: '/packages/{name:package}/unabandon', name: 'unabandon_package', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'], methods: ['POST'])]
+    #[Route(path: '/packages/{name:package}/unabandon', name: 'unabandon_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['POST'])]
     public function unabandonAction(#[MapEntity] Package $package, #[CurrentUser] ?User $user = null): RedirectResponse
     {
         $this->denyAccessUnlessGranted(PackageActions::Abandon->value, $package);
@@ -1094,7 +1094,7 @@ class PackageController extends Controller
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
-    #[Route(path: '/packages/{name}/stats.{_format}', name: 'view_package_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/stats.{_format}', name: 'view_package_stats', requirements: ['name' => Package::PACKAGE_NAME_REGEX, '_format' => '(json)'], defaults: ['_format' => 'html'])]
     public function statsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
@@ -1150,7 +1150,7 @@ class PackageController extends Controller
         return $this->render('package/stats.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name:package}/php-stats.{_format}', name: 'view_package_php_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name:package}/php-stats.{_format}', name: 'view_package_php_stats', requirements: ['name' => Package::PACKAGE_NAME_REGEX, '_format' => '(json)'], defaults: ['_format' => 'html'])]
     public function phpStatsAction(Request $req, #[MapEntity] Package $package): Response
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
@@ -1222,7 +1222,7 @@ class PackageController extends Controller
         return $this->render('package/php_stats.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name}/php-stats/{type}/{version}.json', name: 'version_php_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'type' => 'platform|effective', 'version' => '.+'])]
+    #[Route(path: '/packages/{name}/php-stats/{type}/{version}.json', name: 'version_php_stats', requirements: ['name' => Package::PACKAGE_NAME_REGEX, 'type' => 'platform|effective', 'version' => '.+'])]
     public function versionPhpStatsAction(Request $req, string $name, string $type, string $version): JsonResponse
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
@@ -1327,7 +1327,7 @@ class PackageController extends Controller
         return $response;
     }
 
-    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => '([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)'], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => '('.Package::PACKAGE_NAME_REGEX.'|ext-[A-Za-z0-9_.-]+)'], defaults: ['_format' => 'html'])]
     public function dependentsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
@@ -1412,7 +1412,7 @@ class PackageController extends Controller
         return $this->render('package/dependents.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => '([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)'], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => '('.Package::PACKAGE_NAME_REGEX.'|ext-[A-Za-z0-9_.-]+)'], defaults: ['_format' => 'html'])]
     public function suggestersAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
@@ -1469,19 +1469,19 @@ class PackageController extends Controller
         return $this->render('package/suggesters.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name:package}/stats/all.json', name: 'package_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?'])]
+    #[Route(path: '/packages/{name:package}/stats/all.json', name: 'package_stats', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
     public function overallStatsAction(Request $req, #[MapEntity] Package $package): JsonResponse
     {
         return $this->computeStats($req, $package);
     }
 
-    #[Route(path: '/packages/{name:package}/stats/major/{majorVersion}.json', name: 'major_version_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'majorVersion' => '(all|[0-9]+?)'])]
+    #[Route(path: '/packages/{name:package}/stats/major/{majorVersion}.json', name: 'major_version_stats', requirements: ['name' => Package::PACKAGE_NAME_REGEX, 'majorVersion' => '(all|[0-9]+?)'])]
     public function majorVersionStatsAction(Request $req, #[MapEntity] Package $package, string $majorVersion): JsonResponse
     {
         return $this->computeStats($req, $package, null, $majorVersion);
     }
 
-    #[Route(path: '/packages/{name:package}/stats/{version}.json', name: 'version_stats', requirements: ['name' => '[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?', 'version' => '.+?'])]
+    #[Route(path: '/packages/{name:package}/stats/{version}.json', name: 'version_stats', requirements: ['name' => Package::PACKAGE_NAME_REGEX, 'version' => '.+?'])]
     public function versionStatsAction(Request $req, #[MapEntity] Package $package, string $version): JsonResponse
     {
         $normalizer = new VersionParser();
@@ -1569,7 +1569,7 @@ class PackageController extends Controller
         return $response;
     }
 
-    #[Route(path: '/packages/{name}/advisories', name: 'view_package_advisories', requirements: ['name' => '([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?|ext-[A-Za-z0-9_.-]+?)'])]
+    #[Route(path: '/packages/{name}/advisories', name: 'view_package_advisories', requirements: ['name' => '('.Package::PACKAGE_NAME_REGEX.'|ext-[A-Za-z0-9_.-]+)'])]
     public function securityAdvisoriesAction(Request $request, string $name): Response
     {
         /** @var SecurityAdvisoryRepository $repo */
