@@ -126,7 +126,7 @@ statistics:
 
 api_doc:
     title: API documentation
-    intro: 'Packagist.org has a public API to consume data. See bellow the most important URIs:'
+    intro: 'Packagist.org has a public API to consume data. See below the most important URIs:'
     listing_names: Listing package names
     all_packages: All packages
     by_organization: By organization
