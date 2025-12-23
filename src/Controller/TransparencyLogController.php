@@ -52,6 +52,13 @@ class TransparencyLogController extends Controller
             $filter->filter($qb);
         }
 
+        // Don't display 2FA events in the result list initially
+        $qb->andWhere('a.type NOT IN (:hidden_types)')
+            ->setParameter('hidden_types', [
+                AuditRecordType::TwoFaAuthenticationActivated->value,
+                AuditRecordType::TwoFaAuthenticationDeactivated->value,
+            ]);
+
         $auditLogs = new Pagerfanta(new QueryAdapter($qb, true));
         $auditLogs->setNormalizeOutOfRangePages(true);
         $auditLogs->setMaxPerPage(20);
@@ -66,6 +73,10 @@ class TransparencyLogController extends Controller
         $categoryOrder = ['ownership', 'package', 'version', 'user'];
         $groupedTypes = [];
         foreach (AuditRecordType::cases() as $type) {
+            // Don't display 2FA events in the type filter initially
+            if ($type === AuditRecordType::TwoFaAuthenticationActivated || $type === AuditRecordType::TwoFaAuthenticationDeactivated) {
+                continue;
+            }
             $groupedTypes[$type->category()][] = $type;
         }
 
