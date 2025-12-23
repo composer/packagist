@@ -1992,6 +1992,10 @@ body {
     .audit-log-datetime {
         width: 200px;
 
+        A {
+            color: #333333;
+        }
+
         @media (max-width: 767px) {
             width: 130px;
         }
