@@ -130,7 +130,7 @@ class FeedController extends Controller
         return $this->buildResponse($req, $feed);
     }
 
-    #[Route(path: '/package.{package}.{_format}', name: 'feed_package', requirements: ['_format' => '(rss|atom)', 'package' => Package::PACKAGE_NAME_REGEX], methods: ['GET'])]
+    #[Route(path: '/package.{package}.{_format}', name: 'feed_package', requirements: ['_format' => '(rss|atom)', 'package' => Package::PACKAGE_NAME_REGEX . "(?=\.rss|\.atom)"], methods: ['GET'])]
     public function packageAction(Request $req, string $package): Response
     {
         $repo = $this->doctrine->getRepository(Version::class);
