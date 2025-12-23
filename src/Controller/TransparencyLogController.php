@@ -17,6 +17,8 @@ use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\QueryFilter\AuditLog\ActorFilter;
 use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
+use App\QueryFilter\AuditLog\DateTimeFromFilter;
+use App\QueryFilter\AuditLog\DateTimeToFilter;
 use App\QueryFilter\AuditLog\PackageNameFilter;
 use App\QueryFilter\AuditLog\UserFilter;
 use App\QueryFilter\AuditLog\VendorFilter;
@@ -36,6 +38,9 @@ class TransparencyLogController extends Controller
     {
         $isAdmin = $this->isGranted('ROLE_ADMIN');
 
+        $dateTimeFromFilter = DateTimeFromFilter::fromQuery($request->query);
+        $dateTimeToFilter = DateTimeToFilter::fromQuery($request->query);
+
         /** @var QueryFilterInterface[] $filters */
         $filters = [
             AuditRecordTypeFilter::fromQuery($request->query),
@@ -43,6 +48,8 @@ class TransparencyLogController extends Controller
             UserFilter::fromQuery($request->query, 'user', $isAdmin),
             VendorFilter::fromQuery($request->query, 'vendor', $isAdmin),
             PackageNameFilter::fromQuery($request->query, 'package', $isAdmin),
+            $dateTimeFromFilter,
+            $dateTimeToFilter,
         ];
 
         $qb = $auditRecordRepository->createQueryBuilder('a')
@@ -82,6 +89,8 @@ class TransparencyLogController extends Controller
             'auditLogPaginator' => $auditLogs,
             'groupedTypes' => $orderedGroupedTypes,
             'selectedFilters' => $selectedFilters,
+            'dateTimeFromFilter' => $dateTimeFromFilter,
+            'dateTimeToFilter' => $dateTimeToFilter,
         ]);
     }
 }
