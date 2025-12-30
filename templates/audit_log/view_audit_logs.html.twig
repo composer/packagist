@@ -13,7 +13,7 @@
                 <div class="col-md-3 col-sm-6">
                     <div class="form-group">
                         <label for="type-filter">Type</label>
-                        <select name="type[]" id="type-filter" class="form-control audit-log-type-select" multiple size="10">
+                        <select name="type[]" id="type-filter" class="form-control audit-log-type-select" multiple style="height: 185px;">
                             {% for category, types in groupedTypes %}
                                 <optgroup label="{{ category|capitalize }}">
                                     {% for type in types %}
@@ -56,6 +56,22 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label for="datetime-from-filter">Date & Time From</label>
+                                <input type="datetime-local" name="datetime_from" id="datetime-from-filter" class="form-control" value="{{ selectedFilters.datetime_from }}" step="1">
+                                <small class="help-block">Filter logs from this time onwards (UTC)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label for="datetime-to-filter">Date & Time To</label>
+                                <input type="datetime-local" name="datetime_to" id="datetime-to-filter" class="form-control" value="{{ selectedFilters.datetime_to }}" step="1">
+                                <small class="help-block">Filter logs up to this time (UTC)</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -73,6 +89,18 @@
         </form>
     </div>
 
+    {% if dateTimeFromFilter.dateTime or dateTimeToFilter.dateTime %}
+        <div class="alert alert-info audit-log-time-range">
+            <strong>Time range:</strong>
+            {% if dateTimeFromFilter.dateTime %}
+                <span>From: {{ dateTimeFromFilter.dateTime|date('Y-m-d H:i:s') }} UTC</span>
+            {% endif %}
+            {% if dateTimeToFilter.dateTime %}
+                <span>{% if dateTimeFromFilter.dateTime %} | {% endif %}To: {{ dateTimeToFilter.dateTime|date('Y-m-d H:i:s') }} UTC</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
     {% if auditLogDisplays|length %}
         <table class="table audit-log-table">
             <thead>
@@ -88,7 +116,13 @@
             <tbody>
                 {% for display in auditLogDisplays %}
                     <tr>
-                        <td class="audit-log-datetime">{{ display.dateTime|date('Y-m-d H:i:s') }} UTC</td>
+                        <td class="audit-log-datetime">
+                            {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
+                            {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
+                            <a href="{{ path('view_audit_logs', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
+                                <span class="glyphicon glyphicon-time"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
+                            </a>
+                        </td>
                         <td class="audit-log-type" data-test="audit-log-type">{{ display.typeTranslationKey|trans }}</td>
                         <td class="audit-log-details">
                             {% include display.templateName with {display} only %}
