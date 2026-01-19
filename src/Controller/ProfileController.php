@@ -17,12 +17,15 @@ use App\Entity\AuditRecord;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Form\Model\AdminUpdateEmailRequest;
+use App\Form\Type\AdminUpdateEmailType;
 use App\Form\Type\ProfileFormType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Security\UserNotifier;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -57,10 +60,60 @@ class ProfileController extends Controller
     }
 
     #[Route(path: '/users/{name}/', name: 'user_profile')]
-    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, #[CurrentUser] ?User $loggedUser = null): Response
+    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, UserNotifier $userNotifier, LoggerInterface $logger, #[CurrentUser] ?User $loggedUser = null): Response
     {
         if ($req->attributes->getString('name') !== $user->getUsername()) {
             return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
+        }
+
+        // Admin email update form
+        $adminEmailForm = null;
+        if ($this->isGranted('ROLE_ADMIN')) {
+            assert($loggedUser !== null);
+            $adminUpdateEmailRequest = new AdminUpdateEmailRequest($user->getEmail());
+            $adminEmailForm = $this->createForm(AdminUpdateEmailType::class, $adminUpdateEmailRequest);
+            $adminEmailForm->handleRequest($req);
+
+            if ($adminEmailForm->isSubmitted() && $adminEmailForm->isValid()) {
+                $newEmail = $adminUpdateEmailRequest->email;
+                $oldEmail = $user->getEmail();
+
+                if ($newEmail === $oldEmail) {
+                    $this->addFlash('warning', 'Email address unchanged.');
+                } else {
+                    // Check if email is already in use
+                    $existingUser = $this->getEM()->getRepository(User::class)->findOneBy(['emailCanonical' => strtolower($newEmail)]);
+                    if ($existingUser && $existingUser->getId() !== $user->getId()) {
+                        $this->addFlash('error', 'Email address is already in use by another account.');
+                    } else {
+                        try {
+                            $user->setEmail($newEmail);
+
+                            // Create audit record
+                            $auditRecord = AuditRecord::emailChanged($user, $loggedUser, $oldEmail);
+                            $this->getEM()->persist($auditRecord);
+                            $this->getEM()->persist($user);
+                            $this->getEM()->flush();
+
+                            // Send notifications
+                            $reason = 'Your email has been changed by an administrator from ' . $oldEmail . ' to ' . $newEmail;
+                            $userNotifier->notifyChange($oldEmail, $reason);
+                            $userNotifier->notifyChange($newEmail, $reason);
+
+                            $this->addFlash('success', 'Email address updated successfully.');
+                            return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
+                        } catch (\Exception $e) {
+                            $logger->error('Failed to update user email', [
+                                'user_id' => $user->getId(),
+                                'old_email' => $oldEmail,
+                                'new_email' => $newEmail,
+                                'error' => $e->getMessage(),
+                            ]);
+                            $this->addFlash('error', 'Failed to update email address. Please try again.');
+                        }
+                    }
+                }
+            }
         }
 
         $packages = $this->getUserPackages($req, $user);
@@ -76,6 +129,9 @@ class ProfileController extends Controller
         }
         if (!\count($packages) && ($this->isGranted('ROLE_ADMIN') || $loggedUser?->getId() === $user->getId())) {
             $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
+        }
+        if ($adminEmailForm !== null) {
+            $data['adminEmailForm'] = $adminEmailForm->createView();
         }
 
         return $this->render(
