@@ -65,4 +65,20 @@
         </div>
     </section>
 </section>
+
+{% if newsItems is defined and newsItems|length > 0 %}
+<section class="row">
+    <section class="col-lg-6">
+        <h2 class="title">Latest News</h2>
+        {% for item in newsItems %}
+            <h3><a href="{{ item.link }}" rel="noopener noreferrer">{{ item.title }}</a> <small class="text-muted">- {{ item.datePublished|date('M d, Y') }}</small></h3>
+            <p>
+                {{ item.description|length > 200 ? item.description[:200] ~ '...' : item.description }}
+                {% if item.datePublished %}
+                {% endif %}
+            </p>
+        {% endfor %}
+    </section>
+</section>
+{% endif %}
 {% endblock %}

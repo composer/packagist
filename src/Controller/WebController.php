@@ -18,6 +18,7 @@ use App\Entity\PhpStat;
 use App\Entity\Version;
 use App\Search\Algolia;
 use App\Search\Query;
+use App\Service\BlogRssFetcher;
 use App\Util\Killswitch;
 use Predis\Client as RedisClient;
 use Predis\Connection\ConnectionException;
@@ -36,13 +37,15 @@ use Symfony\Contracts\Cache\CacheInterface;
 class WebController extends Controller
 {
     #[Route('/', name: 'home')]
-    public function index(Request $req): RedirectResponse|Response
+    public function index(Request $req, BlogRssFetcher $blogRssFetcher): RedirectResponse|Response
     {
         if ($resp = $this->checkForQueryMatch($req)) {
             return $resp;
         }
 
-        return $this->render('web/index.html.twig');
+        return $this->render('web/index.html.twig', [
+            'newsItems' => $blogRssFetcher->getNewsItems(),
+        ]);
     }
 
     #[Route('/sponsor/', name: 'sponsor')]
