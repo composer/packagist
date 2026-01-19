@@ -88,6 +88,7 @@ class ProfileController extends Controller
                     } else {
                         try {
                             $user->setEmail($newEmail);
+                            $user->resetPasswordRequest();
 
                             // Create audit record
                             $auditRecord = AuditRecord::emailChanged($user, $loggedUser, $oldEmail);
