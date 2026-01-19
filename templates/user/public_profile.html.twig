@@ -35,6 +35,38 @@
     </small>
 </h2>
 
+{% if is_granted('ROLE_ADMIN') %}
+    <div class="row" style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+        <div class="col-md-6">
+            <h4>User Metadata</h4>
+            <dl class="dl-horizontal">
+                <dt>Created At:</dt>
+                <dd>{{ user.createdAt|date('Y-m-d H:i:s') }}</dd>
+
+                <dt>Last Login:</dt>
+                <dd>{{ user.lastLogin ? user.lastLogin|date('Y-m-d H:i:s') : 'Never' }}</dd>
+
+                <dt>Pwd Reset Request:</dt>
+                <dd>{{ user.passwordRequestedAt ? user.passwordRequestedAt|date('Y-m-d H:i:s') : 'N/A' }}</dd>
+
+                <dt>GitHub ID:</dt>
+                <dd>{{ user.githubId ? user.githubId : 'Not linked' }}</dd>
+            </dl>
+        </div>
+
+        <div class="col-md-6">
+            <h4>Update Email Address</h4>
+            <p class="help-block">Current email: {{ user.email }}</p>
+            {{ form_start(adminEmailForm) }}
+                <div class="form-group">
+                    {{ form_widget(adminEmailForm.email, {'attr': {'class': 'form-control', 'placeholder': 'New email address'}}) }}
+                </div>
+                <button type="submit" class="btn btn-primary">Update Email</button>
+            {{ form_end(adminEmailForm) }}
+        </div>
+    </div>
+{% endif %}
+
 <section class="row">
     <section class="col-md-12">
         {% embed "web/list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser} %}
