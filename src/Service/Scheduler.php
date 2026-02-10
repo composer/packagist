@@ -14,6 +14,7 @@ namespace App\Service;
 
 use App\Entity\Job;
 use App\Entity\Package;
+use App\FilterList\FilterLists;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client as RedisClient;
 
@@ -74,6 +75,14 @@ class Scheduler
     public function scheduleSecurityAdvisory(string $source, int $packageId, ?\DateTimeImmutable $executeAfter = null): Job
     {
         return $this->createJob('security:advisory', ['source' => $source], $packageId, $executeAfter);
+    }
+
+    /**
+     * @return Job<FilterListJob>
+     */
+    public function scheduleFilterList(FilterLists $list, int $packageId, ?\DateTimeImmutable $executeAfter = null): Job
+    {
+        return $this->createJob('filter:list', ['list' => $list->value], $packageId, $executeAfter);
     }
 
     private function getPendingUpdateJob(int $packageId, bool $updateEqualRefs = false, bool $deleteBefore = false): ?string
