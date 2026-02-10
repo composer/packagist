@@ -15,6 +15,7 @@ namespace App\Entity;
 use App\FilterList\FilterListCategories;
 use App\FilterList\FilterLists;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -68,5 +69,31 @@ class FilterListEntryRepository extends ServiceEntityRepository
             ->setParameter('category', $category)
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * @param array<string> $packageNames
+     * @return array<string, non-empty-list<array{version: string, list: string, category: string}>>
+     */
+    public function getPackageVersionsFlaggedAsMalwareForPackageNames(array $packageNames): array
+    {
+        $entries = $this->createQueryBuilder('fl')
+            ->where('fl.packageName IN (:packageNames)')
+            ->setParameter('packageNames', $packageNames, ArrayParameterType::STRING)
+            ->andWhere('fl.category = :category')
+            ->setParameter('category', FilterListCategories::MALWARE)
+            ->getQuery()
+            ->getResult();
+
+        $malwarePackageVersions = [];
+        foreach ($entries as $entry) {
+            $malwarePackageVersions[$entry->getPackageName()][] = [
+                'version' => $entry->getVersion(),
+                'list' => $entry->getList()->value,
+                'category' => $entry->getCategory()->value,
+            ];
+        }
+
+        return $malwarePackageVersions;
     }
 }
