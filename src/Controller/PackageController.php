@@ -16,6 +16,8 @@ use App\Audit\AbandonmentReason;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
+use App\Entity\FilterListEntry;
+use App\Entity\FilterListEntryRepository;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -29,6 +31,7 @@ use App\Entity\Vendor;
 use App\Entity\Version;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
+use App\FilterList\FilterListCategories;
 use App\Form\Model\MaintainerRequest;
 use App\Form\Model\TransferPackageRequest;
 use App\Form\Type\AbandonedType;
@@ -72,6 +75,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Requirement\EnumRequirement;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
@@ -671,12 +675,27 @@ class PackageController extends Controller
                 }
             }
 
+            $data['listsFlaggingVersionsAsMalware'] = [];
+            $data['hasVersionsFlaggedAsMalware'] = [];
+            $packageVersionsFlaggedAsMalware = $this->getEM()->getRepository(FilterListEntry::class)->getPackageVersionsFlaggedAsMalwareForPackage($package);
+            foreach ($packageVersionsFlaggedAsMalware as $packageVersionFlaggedAsMalware) {
+                $normalizedVersion = $versionParser->normalize($packageVersionFlaggedAsMalware->getVersion());
+                foreach ($versions as $version) {
+                    if ($version->getNormalizedVersion() === $normalizedVersion) {
+                        $data['hasVersionsFlaggedAsMalware'][$version->getId()] = true;
+                        $data['listsFlaggingVersionsAsMalware'][$packageVersionFlaggedAsMalware->getList()->value] = $packageVersionFlaggedAsMalware->getList();
+                    }
+                }
+            }
+
             $data['addMaintainerForm'] = $this->createAddMaintainerForm($package)->createView();
             $data['removeMaintainerForm'] = $this->createRemoveMaintainerForm($package)->createView();
             $data['transferPackageForm'] = $this->createTransferPackageForm($package)->createView();
             $data['deleteForm'] = $this->createDeletePackageForm($package)->createView();
         } else {
             $data['hasVersionSecurityAdvisories'] = [];
+            $data['hasVersionsFlaggedAsMalware'] = [];
+            $data['listsFlaggingVersionsAsMalware'] = [];
         }
 
         if ($this->isGranted(PackageActions::DeleteVersion->value, $package)) {
@@ -1638,6 +1657,48 @@ class PackageController extends Controller
         }
 
         return $this->render('package/security_advisory.html.twig', ['securityAdvisories' => $securityAdvisories, 'id' => $id]);
+    }
+
+    #[Route(path: '/packages/{name}/filter-lists/{category}', name: 'view_package_filter_lists', requirements: ['name' => Package::PACKAGE_NAME_REGEX.'|ext-[A-Za-z0-9_.-]+', 'category' => new EnumRequirement(FilterListCategories::class)])]
+    public function filterListsAction(Request $request, string $name, FilterListCategories $category): Response
+    {
+        /** @var FilterListEntryRepository $repo */
+        $repo = $this->getEM()->getRepository(FilterListEntry::class);
+        $entries = $repo->getPackageEntriesForCategory($name, $category);
+
+        $data = [];
+        $data['name'] = $name;
+
+        if ($versionId = $request->query->getInt('version')) {
+            $version = $this->getEM()->getRepository(Version::class)->findOneBy([
+                'name' => $name,
+                'id' => $versionId,
+            ]);
+            if ($version) {
+                $versionEntries = [];
+                $versionParser = new VersionParser();
+                foreach ($entries as $entry) {
+                    try {
+                        $affectedVersionConstraint = $versionParser->parseConstraints($entry->getVersion());
+                    } catch (\UnexpectedValueException) {
+                        // ignore parsing errors, advisory must be invalid
+                        continue;
+                    }
+                    if ($affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
+                        $versionEntries[] = $entry;
+                    }
+                }
+
+                $data['version'] = $version->getVersion();
+                $entries = $versionEntries;
+            }
+        }
+
+        $data['entries'] = $entries;
+        $data['count'] = \count($entries);
+        $data['category'] = $category;
+
+        return $this->render('package/filter_list_entries.html.twig', $data);
     }
 
     /**
