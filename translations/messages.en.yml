@@ -41,6 +41,7 @@ listing:
     nopackages: No packages found.
     viewall: View All
     no_security_advisories: No security advisories found for this package.
+    no_filter_list_entries: No entries found for this package.
 
 explore:
     title: Packages
@@ -67,6 +68,10 @@ packages:
     from: "Packages from %vendor%"
     security_advisory_title: Security Advisories
     security_advisories: Security Advisories
+    filter_lists_title:
+        malware: Versions flagged as malware
+    filter_lists:
+        malware: Malware Reports
 
 browse:
     packages: Packages

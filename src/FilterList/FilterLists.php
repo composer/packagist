@@ -15,4 +15,25 @@ namespace App\FilterList;
 enum FilterLists: string
 {
     case AIKIDO_MALWARE = 'aikido';
+
+    public function logo(): string
+    {
+        return match ($this) {
+            self::AIKIDO_MALWARE => 'img/aikido-dark.svg',
+        };
+    }
+
+    public function displayName(): string
+    {
+        return match ($this) {
+            self::AIKIDO_MALWARE => 'Aikido',
+        };
+    }
+
+    public function url(): string
+    {
+        return match ($this) {
+            self::AIKIDO_MALWARE => 'https://aikido.dev/',
+        };
+    }
 }

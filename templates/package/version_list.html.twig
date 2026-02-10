@@ -11,8 +11,14 @@
                 </a>
 
                 {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
-                    <a rel="nofollow noindex" class="advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
+                    <a rel="nofollow noindex" class="action-alert advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
                         <i class="glyphicon glyphicon-alert " title="Version has security advisories"></i>
+                    </a>
+                {% endif %}
+
+                {% if hasVersionsFlaggedAsMalware[version.id]|default(false) %}
+                    <a rel="nofollow noindex" class="action-alert malware-alert" href="{{ path('view_package_filter_lists', {name: package.name, version: version.id, category: 'malware'}) }}">
+                        <i class="glyphicon " title="Version was flagged as malware">&#128030;</i>
                     </a>
                 {% endif %}
 

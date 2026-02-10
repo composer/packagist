@@ -1,0 +1,33 @@
+<section class="row">
+    <section class="col-md-12">
+        {% if entries|length %}
+            <ul class="packages list-unstyled">
+                {% for entry in entries %}
+                    <li class="row">
+                        <div class="col-xs-12 package-item">
+                            <div class="row">
+                                <div class="col-sm-7 col-lg-8">
+                                    <p>
+                                        Flagged version: {{ entry.version }}
+
+                                        {% if entry.link %}
+                                            <a href="{{ entry.link }}">View details on {{ entry.list.displayName }}</a>
+                                        {% endif %}
+                                    </p>
+
+                                </div>
+                                <div class="col-sm-5 col-lg-4">
+                                    <p>Reported by: <a href="{{entry.list.url }}"><img alt="{{ entry.list.displayName }}" class="filter-list-log" src="{{ asset(entry.list.logo) }}" /></a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="alert alert-danger">
+                <p>{{ 'listing.no_filter_list_entries'|trans }}</p>
+            </div>
+        {% endif %}
+    </section>
+</section>

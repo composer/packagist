@@ -1228,13 +1228,16 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .package-aside a.advisory-alert {
     margin-left: -20px;
 }
-.package .package-aside a.advisory-alert:hover, .package .package-aside a.advisory-alert:active {
+.package .package-aside a.malware-alert {
+    margin-left: -40px;
+}
+.package .package-aside a.action-alert:hover, .package .package-aside a.action-alert:active {
     text-decoration: none;
 }
-.package .package-aside a.advisory-alert i {
+.package .package-aside a.action-alert i {
     color: #ff4533;
 }
-.package .package-aside a.advisory-alert:hover i {
+.package .package-aside a.action-alert:hover i {
     color: #cd3729;
 }
 
@@ -1674,6 +1677,11 @@ h2.title .php-ext-link {
     margin-left: 5px;
     color: #83C129;
     font-size: 16px;
+}
+
+.packages .package-item .filter-list-log {
+    max-height: 20px;
+    margin-left: 10px;
 }
 
 .alert {

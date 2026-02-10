@@ -48,6 +48,10 @@
                 <div class="col-md-8">
                     <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
 
+                    {% if hasVersionsFlaggedAsMalware %}
+                    <div class="alert alert-danger">Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, category: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
+                    {% endif %}
+
                     {% if not package.isAutoUpdated() and is_granted('update', package) %}
                         {% if "github.com" in package.repository %}
                             <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">GitHub Hook</a> for Packagist so that it gets updated whenever you push!</div>
@@ -372,6 +376,7 @@
                             showUpdated: true,
                             showUpdateButton: not hasActions and app.user and not package.wasUpdatedInTheLast24Hours(),
                             hasVersionSecurityAdvisories: hasVersionSecurityAdvisories,
+                            hasVersionsFlaggedAsMalware: hasVersionsFlaggedAsMalware,
                             lastJobMsg: lastJobMsg|default(null),
                             lastJobDetails: lastJobDetails|default(null),
                         } %}

@@ -41,4 +41,32 @@ class FilterListEntryRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return list<FilterListEntry>
+     */
+    public function getPackageVersionsFlaggedAsMalwareForPackage(Package $package): array
+    {
+        return $this->createQueryBuilder('fl')
+            ->where('fl.packageName = :packageName')
+            ->andWhere('fl.category = :category')
+            ->setParameter('packageName', $package->getName())
+            ->setParameter('category', 'malware')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return list<FilterListEntry>
+     */
+    public function getPackageEntriesForCategory(string $packageName, FilterListCategories $category): array
+    {
+        return $this->createQueryBuilder('fl')
+            ->where('fl.packageName = :packageName')
+            ->andWhere('fl.category = :category')
+            ->setParameter('packageName', $packageName)
+            ->setParameter('category', $category)
+            ->getQuery()
+            ->getResult();
+    }
 }
