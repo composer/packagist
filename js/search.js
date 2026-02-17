@@ -39,7 +39,7 @@ if (decodeURI(location.search).match(/[<>]/)) {
 }
 
 var searchThrottle = null;
-var search = instantsearch({
+var opts = {
     appId: algoliaConfig.app_id,
     apiKey: algoliaConfig.search_key,
     indexName: algoliaConfig.index_name,
@@ -112,7 +112,22 @@ var search = instantsearch({
         }, 300);
     },
     searchParameters: searchParameters
-});
+}
+// If the search does not work (for example if the environment does not have
+// algolia configured), we don't want to break the entire page, so we wrap it in
+// a try/catch.
+var search;
+try {
+    search = instantsearch(opts);
+} catch (e) {
+    console.error('Error initializing search', e);
+    // We create a dummy search object with a no-op addWidget and start function
+    // to avoid errors in the rest of the code.
+    search = {
+        addWidget: function() {},
+        start: function() {}
+    };
+}
 
 var autofocus = false;
 if (location.pathname == "/" || location.pathname == "/explore/") {
