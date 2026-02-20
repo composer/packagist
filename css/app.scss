@@ -100,10 +100,20 @@ body {
   left: -98px;
   top: -43px;
 }
+.logo-composer {
+  position: absolute;
+  width: 82px;
+  right: -85px;
+  top: -43px;
+}
 @media (min-width: 1200px) {
   .logo {
     width: 80px;
     left: -90px;
+  }
+  .logo-composer {
+    width: 66px;
+    right: -80px;
   }
 }
 

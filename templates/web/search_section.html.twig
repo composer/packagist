@@ -13,8 +13,9 @@
         {%- if showSearchDesc == 'show' %}
             <div class="row">
                 <div class="col-sm-9 hidden-xs">
-                    <img src="{{ asset('img/logo-small.png') }}" class="logo">
+                    <img src="{{ asset('img/logo-small.png') }}" class="logo" alt="Packagist logo">
                     <p>{{ 'search.claim_html'|trans|raw }}</p>
+                    <img src="{{ asset('img/logo-composer.png') }}" alt="Composer logo" class="logo-composer hidden-sm hidden-xs">
                 </div>
             </div>
         {%- endif %}
