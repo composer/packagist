@@ -24,6 +24,8 @@ enum AuditRecordType: string
     case CanonicalUrlChanged = 'canonical_url_changed';
     case PackageAbandoned = 'package_abandoned';
     case PackageUnabandoned = 'package_unabandoned';
+    case PackageFrozen = 'package_frozen';
+    case PackageUnfrozen = 'package_unfrozen';
     case PackageDeleted = 'package_deleted';
 
     // version
@@ -51,7 +53,7 @@ enum AuditRecordType: string
             self::MaintainerAdded, self::MaintainerRemoved, self::PackageTransferred
                 => 'ownership',
             self::PackageCreated, self::PackageDeleted, self::CanonicalUrlChanged,
-            self::PackageAbandoned, self::PackageUnabandoned
+            self::PackageAbandoned, self::PackageUnabandoned, self::PackageFrozen, self::PackageUnfrozen
                 => 'package',
             self::VersionCreated, self::VersionDeleted, self::VersionReferenceChanged
                 => 'version',

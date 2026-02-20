@@ -1,0 +1,5 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+Repository: {{ display.repository }}<br>
+Unfrozen by: {{ display.actor.username }}

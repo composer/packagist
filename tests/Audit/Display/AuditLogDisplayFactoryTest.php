@@ -20,7 +20,9 @@ use App\Audit\Display\GitHubLinkedWithUserDisplay;
 use App\Audit\Display\PackageAbandonedDisplay;
 use App\Audit\Display\PackageCreatedDisplay;
 use App\Audit\Display\PackageDeletedDisplay;
+use App\Audit\Display\PackageFrozenDisplay;
 use App\Audit\Display\PackageUnabandonedDisplay;
+use App\Audit\Display\PackageUnfrozenDisplay;
 use App\Audit\Display\TwoFaDeactivatedDisplay;
 use App\Audit\Display\UserVerifiedDisplay;
 use App\Audit\Display\VersionDeletedDisplay;
@@ -341,6 +343,52 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(PackageUnabandonedDisplay::class, $display);
         self::assertSame(777, $display->actor->id);
         self::assertSame('maintainer', $display->actor->username);
+    }
+
+    public function testBuildPackageFrozen(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::PackageFrozen,
+            [
+                'name' => 'vendor/suspicious-package',
+                'repository' => 'https://github.com/vendor/suspicious-package',
+                'reason' => 'spam',
+                'actor' => ['id' => 123, 'username' => 'moderator'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(PackageFrozenDisplay::class, $display);
+        self::assertSame('vendor/suspicious-package', $display->packageName);
+        self::assertSame('https://github.com/vendor/suspicious-package', $display->repository);
+        self::assertSame('spam', $display->reason);
+        self::assertSame(123, $display->actor->id);
+        self::assertSame('moderator', $display->actor->username);
+        self::assertSame(AuditRecordType::PackageFrozen, $display->getType());
+        self::assertSame('audit_log/display/package_frozen.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildPackageUnfrozen(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::PackageUnfrozen,
+            [
+                'name' => 'vendor/restored-package',
+                'repository' => 'https://github.com/vendor/restored-package',
+                'actor' => ['id' => 234, 'username' => 'maintainer'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(PackageUnfrozenDisplay::class, $display);
+        self::assertSame('vendor/restored-package', $display->packageName);
+        self::assertSame('https://github.com/vendor/restored-package', $display->repository);
+        self::assertSame(234, $display->actor->id);
+        self::assertSame('maintainer', $display->actor->username);
+        self::assertSame(AuditRecordType::PackageUnfrozen, $display->getType());
+        self::assertSame('audit_log/display/package_unfrozen.html.twig', $display->getTemplateName());
     }
 
     #[TestWith([false, 999, '**@**.**'])]

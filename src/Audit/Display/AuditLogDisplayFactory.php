@@ -110,6 +110,21 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
+            AuditRecordType::PackageFrozen => new PackageFrozenDisplay(
+                $record->datetime,
+                $record->attributes['name'],
+                $record->attributes['repository'],
+                $record->attributes['reason'],
+                $this->buildActor($record->attributes['actor']),
+                $record->ip,
+            ),
+            AuditRecordType::PackageUnfrozen => new PackageUnfrozenDisplay(
+                $record->datetime,
+                $record->attributes['name'],
+                $record->attributes['repository'],
+                $this->buildActor($record->attributes['actor']),
+                $record->ip,
+            ),
             AuditRecordType::VersionDeleted => new VersionDeletedDisplay(
                 $record->datetime,
                 $record->attributes['name'],
