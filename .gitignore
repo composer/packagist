@@ -1,8 +1,13 @@
+/.phpunit.result.cache
+/.claude
+/deploy.sh
+/hosts.sh
+/salt.sh
 /node_modules/
 web/packages*.json
 web/providers-*.json
-web/p/
-web/p2/
+/web/p
+/web/p2
 web/build/
 /config/parameters.yml
 /.settings
