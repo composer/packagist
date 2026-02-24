@@ -64,6 +64,7 @@ class VersionRepository extends ServiceEntityRepository
         $em->getConnection()->executeQuery('DELETE FROM link_provide WHERE version_id=:id', ['id' => $version->getId()]);
         $em->getConnection()->executeQuery('DELETE FROM link_require_dev WHERE version_id=:id', ['id' => $version->getId()]);
         $em->getConnection()->executeQuery('DELETE FROM link_require WHERE version_id=:id', ['id' => $version->getId()]);
+        $em->getConnection()->executeQuery('DELETE FROM version_dist WHERE version_id=:id', ['id' => $version->getId()]);
         $em->getConnection()->executeQuery('DELETE FROM download WHERE id=:id AND type = :type', ['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
         $em->getConnection()->executeQuery('DELETE FROM php_stat WHERE version=:version AND depth = :depth AND package_id=:packageId', ['version' => $version->getId(), 'depth' => PhpStat::DEPTH_EXACT, 'packageId' => $version->getPackage()->getId()]);
 
