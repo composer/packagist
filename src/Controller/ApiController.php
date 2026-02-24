@@ -265,6 +265,13 @@ class ApiController extends Controller
 
         $payload = $versionIdCache->augmentDownloadPayloadWithIds($contents['downloads']);
 
+        $distsDownloaded = [
+            'tracked' => 0, // installs composer-tracked
+            'downloaded' => 0, // files downloaded
+            'cached' => 0, // files served from cache
+            'bytes' => 0, // total bytes downloaded
+            'untracked' => 0, // installs not-tracked
+        ];
         $jobs = $failed = [];
         foreach ($payload as $package) {
             // support legacy composer v1 normalized default branches
@@ -282,8 +289,26 @@ class ApiController extends Controller
             }
 
             $jobs[$package['id']] = ['id' => $package['id'], 'vid' => $package['vid'], 'minor' => $this->extractMinorVersion($package['version'])];
+            if (isset($package['downloaded'])) {
+                $distsDownloaded['tracked']++;
+                if (\is_int($package['downloaded'])) {
+                    $distsDownloaded['downloaded']++;
+                    $distsDownloaded['bytes'] += $package['downloaded'];
+                    $statsd->histogram('dist_dls.bytes_per_pkg', $package['downloaded']);
+                } elseif (false === $package['downloaded']) {
+                    $distsDownloaded['cached']++;
+                } elseif ('?' === $package['downloaded']) {
+                    $distsDownloaded['downloaded']++;
+                }
+            } else {
+                $distsDownloaded['untracked']++;
+            }
         }
         $jobs = array_values($jobs);
+
+        foreach (array_filter($distsDownloaded) as $stat => $incrBy) {
+            $statsd->increment('dist_dls.'.$stat, (int) $incrBy);
+        }
 
         if ($jobs) {
             if (!$request->headers->get('User-Agent')) {
