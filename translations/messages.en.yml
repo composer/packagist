@@ -199,6 +199,8 @@ audit_log:
         version_created: Version created
         version_deleted: Version deleted
         version_reference_changed: Version reference changed
+        filter_list_entry_added: Entry added
+        filter_list_entry_deleted: Entry deleted
     enums:
         user-registration-method:
             form: 'Registration form'
