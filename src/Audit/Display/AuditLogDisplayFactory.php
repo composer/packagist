@@ -16,6 +16,7 @@ use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
 use App\Entity\User;
+use App\FilterList\FilterLists;
 use Symfony\Bundle\SecurityBundle\Security;
 
 class AuditLogDisplayFactory
@@ -198,6 +199,24 @@ class AuditLogDisplayFactory
                 $record->attributes['user']['username'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
+            ),
+            AuditRecordType::FilterListEntryAdded => new FilterListEntryAddedDisplay(
+                $record->datetime,
+                $record->attributes['entry']['package_name'],
+                $record->attributes['entry']['version'],
+                FilterLists::from($record->attributes['entry']['list']),
+                $record->attributes['entry']['category'],
+                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->ip
+            ),
+            AuditRecordType::FilterListEntryDeleted => new FilterListEntryDeletedDisplay(
+                $record->datetime,
+                $record->attributes['entry']['package_name'],
+                $record->attributes['entry']['version'],
+                FilterLists::from($record->attributes['entry']['list']),
+                $record->attributes['entry']['category'],
+                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->ip
             ),
         };
     }

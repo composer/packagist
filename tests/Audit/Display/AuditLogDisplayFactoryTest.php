@@ -15,6 +15,8 @@ namespace App\Tests\Audit\Display;
 use App\Audit\AuditRecordType;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Audit\Display\CanonicalUrlChangedDisplay;
+use App\Audit\Display\FilterListEntryAddedDisplay;
+use App\Audit\Display\FilterListEntryDeletedDisplay;
 use App\Audit\Display\GenericUserDisplay;
 use App\Audit\Display\GitHubLinkedWithUserDisplay;
 use App\Audit\Display\PackageAbandonedDisplay;
@@ -27,6 +29,7 @@ use App\Audit\Display\VersionDeletedDisplay;
 use App\Audit\Display\VersionReferenceChangedDisplay;
 use App\Entity\AuditRecord;
 use App\Entity\User;
+use App\FilterList\FilterLists;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
@@ -539,6 +542,50 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('testuser', $display->actor->username);
         self::assertSame(AuditRecordType::TwoFaAuthenticationDeactivated, $display->getType());
         self::assertSame('audit_log/display/two_fa_deactivated.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildFilterListEntryAdded(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::FilterListEntryAdded,
+            [
+                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::AIKIDO_MALWARE->value, 'category' => 'malware'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(FilterListEntryAddedDisplay::class, $display);
+        self::assertSame('acme/package', $display->packageName);
+        self::assertSame('<1.0', $display->version);
+        self::assertSame('malware', $display->category);
+        self::assertSame(FilterLists::AIKIDO_MALWARE, $display->list);
+        self::assertNull($display->actor->id);
+        self::assertSame('unknown', $display->actor->username);
+        self::assertSame(AuditRecordType::FilterListEntryAdded, $display->getType());
+        self::assertSame('audit_log/display/filter_list_entry_added.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildFilterListEntryDeleted(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::FilterListEntryDeleted,
+            [
+                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::AIKIDO_MALWARE->value, 'category' => 'malware'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(FilterListEntryDeletedDisplay::class, $display);
+        self::assertSame('acme/package', $display->packageName);
+        self::assertSame('<1.0', $display->version);
+        self::assertSame('malware', $display->category);
+        self::assertSame(FilterLists::AIKIDO_MALWARE, $display->list);
+        self::assertNull($display->actor->id);
+        self::assertSame('unknown', $display->actor->username);
+        self::assertSame(AuditRecordType::FilterListEntryDeleted, $display->getType());
+        self::assertSame('audit_log/display/filter_list_entry_deleted.html.twig', $display->getTemplateName());
     }
 
     /**

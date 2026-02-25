@@ -1,0 +1,4 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+Versions {{ display.version}} were flagged as {{ display.category }} by {{ display.list.displayName }}.

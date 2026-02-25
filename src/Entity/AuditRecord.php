@@ -276,6 +276,28 @@ class AuditRecord
         );
     }
 
+    public static function filterListEntryAdded(FilterListEntry $entry, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::FilterListEntryAdded,
+            [
+                'entry' => self::getFilterListEntryData($entry),
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+        );
+    }
+
+    public static function filterListEntryDeleted(FilterListEntry $entry, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::FilterListEntryDeleted,
+            [
+                'entry' => self::getFilterListEntryData($entry),
+                'actor' => self::getUserData($actor, 'automation')
+            ],
+        );
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */
@@ -286,5 +308,18 @@ class AuditRecord
         }
 
         return ['id' => $user->getId(), 'username' => $user->getUsername()];
+    }
+
+    /**
+     * @return array{package_name: string, version: string, list: string, category: string}
+     */
+    private static function getFilterListEntryData(FilterListEntry $entry): array
+    {
+        return [
+            'package_name' => $entry->getPackageName(),
+            'version' => $entry->getVersion(),
+            'list' => $entry->getList()->value,
+            'category' => $entry->getCategory()->value,
+        ];
     }
 }
