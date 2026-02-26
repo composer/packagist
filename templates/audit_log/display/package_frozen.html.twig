@@ -1,0 +1,15 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+Repository: {{ display.repository }}<br>
+Reason:
+{% if display.reason == 'spam' -%}
+    Spam
+{% elseif display.reason == 'remote_id' -%}
+    Remote ID mismatch
+{% elseif display.reason == 'gone' -%}
+    Repository gone
+{% else -%}
+    {{ display.reason|capitalize }}
+{% endif -%}<br>
+Frozen by: {{ display.actor.username }}
