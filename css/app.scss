@@ -1106,14 +1106,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   white-space: nowrap;
 }
 
-.package .facts {
-    margin-top: 10px;
-}
-@media (max-width: 991px) and (min-width: 768px) {
-    .package .facts {
-        margin-top: 0;
-    }
-}
 .package .facts span {
     display: inline-block;
     width: 100px;
@@ -1205,8 +1197,8 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   border-top: 1px solid #f28d1a;
   border-radius: 0;
 
-  margin: 0;
-  padding: 20px 0 0;
+  margin: 20px 0 0;
+  padding: 0
 }
 .package .package-aside.versions-wrapper {
   margin-left: 15px;
@@ -1324,7 +1316,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
       background: #fff;
       border-radius: 2px;
       border-top: 0;
-      padding: 10px 0;
+      padding: 0 0 10px 0;
       margin-left: -15px;
       margin-right: -15px;
     }
