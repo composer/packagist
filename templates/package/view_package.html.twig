@@ -161,10 +161,13 @@
                         </div>
                     </div>
 
+                    {% set repoUrl = package.browsableRepository %}
+                    {% set isGitHubRepoUrl = repoUrl starts with 'https://github.com/' %}
+                    {% set displayOpenIssues = version and version.support is not null and version.support.issues is defined and isGitHubRepoUrl and version.support.issues starts with repoUrl %}
+
                     <div class="row package-aside">
                         <div class="details col-xs-12 col-sm-6 col-md-12">
                             <h5>Package info</h5>
-                            {% set repoUrl = package.browsableRepository %}
                             <p class="canonical">
                                 <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
                             </p>
@@ -172,14 +175,11 @@
                             {% if version and version.homepage %}
                                 <p><a rel="nofollow noopener external noindex ugc" href="{{ version.homepage }}">Homepage</a></p>
                             {% endif %}
-                            {% if version.support.source is defined %}
+                            {% if version.support.source is defined and not version.support.source starts with repoUrl and isGitHubRepoUrl %}
                                 <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.source }}">Source</a></p>
                             {% endif %}
-                            {% if version and version.support.issues is defined %}
+                            {% if version and version.support.issues is defined and not displayOpenIssues %}
                                 <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.issues }}">Issues</a></p>
-                            {% endif %}
-                            {% if version and version.support.irc is defined %}
-                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.irc }}">IRC</a></p>
                             {% endif %}
                             {% if version and version.support.chat is defined %}
                                 <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.chat }}">Chat</a></p>
@@ -193,9 +193,16 @@
                             {% if version and version.support.docs is defined %}
                                 <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.docs }}">Documentation</a></p>
                             {% endif %}
-                            {% if version and version.support.security is defined %}
-                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.security }}">Security Policy</a></p>
+                            {% if package.language is not empty and package.language != 'PHP' %}
+                                <p><span>Language:</span>{{ package.language }}</p>
                             {% endif %}
+                            {% if package.type is not empty and package.type != 'library' %}
+                                <p><span>Type:</span>{{ package.type }}</p>
+                            {% endif %}
+                            {% if package.isPiePackage() %}
+                                <p><span>Ext name:</span>{{ version.pieName }}</p>
+                            {% endif %}
+                            <p><span title="PURL / Package-URL">pkg:composer/{{ package.name }}</span></p>
                         </div>
                     </div>
 
@@ -246,14 +253,6 @@
                                     {{ suggesters|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if securityAdvisories is defined %}
-                                <p>
-                                    <span>
-                                        <a href="{{ path('view_package_advisories', {name: package.name}) }}" rel="nofollow">Security</a>:
-                                    </span>
-                                    {{ securityAdvisories|number_format(0, '.', '&#8201;')|raw }}
-                                </p>
-                            {% endif %}
                             {% if package.gitHubStars is not null %}
                                 <p>
                                     <span>
@@ -262,22 +261,7 @@
                                     {{ package.gitHubStars|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if 'github.com' in repoUrl and package.gitHubWatches is not null %}
-                                <p>
-                                    <span>
-                                        <a href="{{ repoUrl }}/watchers">Watchers</a>:
-                                    </span> {{ package.gitHubWatches|number_format(0, '.', '&#8201;')|raw }}
-                                </p>
-                            {% endif %}
-                            {% if package.gitHubForks is not null %}
-                                <p>
-                                    <span>
-                                        <a href="{{ package.gitHubForksUrl }}">Forks</a>:
-                                    </span>
-                                    {{ package.gitHubForks|number_format(0, '.', '&#8201;')|raw }}
-                                </p>
-                            {% endif %}
-                            {% if version and version.support is not null and version.support.issues is defined and version.support.issues starts with 'https://github.com/' and version.support.issues starts with repoUrl %}
+                            {% if displayOpenIssues %}
                                 <p>
                                     <span>
                                         <a rel="nofollow noopener external noindex ugc" href="{{ version.support.issues }}">Open Issues</a>:
@@ -285,25 +269,26 @@
                                     {{ package.gitHubOpenIssues|number_format(0, '.', '&#8201;')|raw }}
                                 </p>
                             {% endif %}
-                            {% if package.language is not empty and package.language != 'PHP' %}
-                                <p><span>Language:</span>{{ package.language }}</p>
-                            {% endif %}
-                            {% if package.type is not empty and package.type != 'library' %}
-                                <p><span>Type:</span>{{ package.type }}</p>
-                            {% endif %}
-                            {% if package.isPiePackage() %}
-                                <p><span>Ext name:</span>{{ version.pieName }}</p>
-                            {% endif %}
-                            <p><span title="PURL / Package-URL">pkg:composer/{{ package.name }}</span></p>
                         </div>
                     </div>
 
                     <div class="row package-aside">
                         <div class="facts col-xs-12 col-sm-6 col-md-12">
-                            <h5>Analytics</h5>
+                            <h5>Security</h5>
+                            {% if securityAdvisories is defined %}
+                                <p>
+                                    <span>
+                                        <a href="{{ path('view_package_advisories', {name: package.name}) }}" rel="nofollow">Advisories</a>:
+                                    </span>
+                                    {{ securityAdvisories|number_format(0, '.', '&#8201;')|raw }}
+                                </p>
+                            {% endif %}
+                            {% if version and version.support.security is defined %}
+                                <p><a rel="nofollow noopener external noindex ugc" href="{{ version.support.security }}">Security Policy</a></p>
+                            {% endif %}
                             <p>
                                 <a rel="nofollow noopener external noindex ugc" href="{{ 'https://intel.aikido.dev/packages/packagist/' ~ package.name }}">
-                                    View Aikido package health analysis
+                                    Aikido package health analysis
                                 </a>
                             </p>
                         </div>
