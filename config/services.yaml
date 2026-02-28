@@ -114,6 +114,7 @@ services:
             'package:updates': '@App\Service\UpdaterWorker'
             'githubuser:migrate': '@App\Service\GitHubUserMigrationWorker'
             'security:advisory': '@App\Service\SecurityAdvisoryWorker'
+            'filter:list': '@App\Service\FilterListWorker'
 
     App\Security\TwoFactorAuthManager:
         public: true
@@ -123,6 +124,10 @@ services:
         $sources:
             'FriendsOfPHP/security-advisories': '@App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource'
             'GitHub': '@App\SecurityAdvisory\GitHubSecurityAdvisoriesSource'
+
+    App\Service\FilterListWorker:
+        $filterLists:
+            'aikido': '@App\FilterList\List\AikidoMalwareFilterList'
 
     Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
         arguments: ['@snc_redis.cache', {prefix: 'sess:', ttl: 3600}]

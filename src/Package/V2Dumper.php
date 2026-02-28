@@ -14,10 +14,13 @@ namespace App\Package;
 
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
+use App\Entity\FilterListEntry;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
 use App\Entity\Version;
+use App\FilterList\Dump\DumpableFilterList;
+use App\FilterList\Dump\FilterListDumperProvider;
 use App\Model\ProviderManager;
 use App\Service\CdnClient;
 use App\Service\ReplicaClient;
@@ -63,6 +66,7 @@ class V2Dumper
         private readonly UrlGeneratorInterface $router,
         #[Autowire(service: 'http_client')]
         private readonly HttpClientInterface&ResetInterface $httpClient,
+        private readonly FilterListDumperProvider $filterListDumperProvider,
     ) {
         $webDir = realpath($webDir);
         Assert::string($webDir);
@@ -148,6 +152,7 @@ class V2Dumper
             unset($idBatch);
             $packageNames = array_map(static fn (Package $pkg) => $pkg->getName(), $packages);
             $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
+            $filterLists = $this->filterListDumperProvider->getMalwareDataForDump($packageNames);
 
             if ($verbose) {
                 echo '['.\sprintf('%'.\strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.\PHP_EOL;
@@ -170,7 +175,7 @@ class V2Dumper
                 $versionData = $versionRepo->getVersionData($versionIds);
 
                 // dump v2 format
-                $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? []);
+                $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? [], $filterLists[$package->getName()] ?? null);
 
                 $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
             }
@@ -289,8 +294,9 @@ class V2Dumper
     /**
      * @param mixed[]                                                    $versionData
      * @param array<array{advisoryId: string, affectedVersions: string}> $advisories
+     * @param array<string, list<DumpableFilterList>>|null $filterLists
      */
-    private function dumpPackageToV2File(string $dir, Package $package, array $versionData, array $advisories): void
+    private function dumpPackageToV2File(string $dir, Package $package, array $versionData, array $advisories, null|array $filterLists): void
     {
         $name = strtolower($package->getName());
         $forceDump = $package->getDumpedAtV2() === null;
@@ -308,16 +314,17 @@ class V2Dumper
             }
         }
 
-        $this->dumpVersionsToV2File($package, $name, $dir, $name.'.json', $name, $tags, $versionData, $forceDump, $advisories);
+        $this->dumpVersionsToV2File($package, $name, $dir, $name.'.json', $name, $tags, $versionData, $forceDump, $advisories, $filterLists);
         $this->dumpVersionsToV2File($package, $name, $dir, $name.'~dev.json', $name, $branches, $versionData, $forceDump);
     }
 
     /**
      * @param array<array{advisoryId: string, affectedVersions: string}>|null $advisories
+     * @param array<string, list<DumpableFilterList>>|null                    $fitlerLists
      * @param array<Version>                                                  $versions
      * @param VersionData                                                     $versionData
      */
-    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, ?array $advisories = null): void
+    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, ?array $advisories = null, array|null $fitlerLists = null): void
     {
         $versionArrays = [];
         foreach ($versions as $version) {
@@ -335,6 +342,10 @@ class V2Dumper
 
         if ($advisories !== null) {
             $metadata['security-advisories'] = $advisories;
+        }
+
+        if ($fitlerLists !== null) {
+            $metadata['filter'] = $fitlerLists;
         }
 
         $json = json_encode($metadata, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR);
