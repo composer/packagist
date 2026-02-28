@@ -49,8 +49,17 @@
                 <dt>Pwd Reset Request:</dt>
                 <dd>{{ user.passwordRequestedAt ? user.passwordRequestedAt|date('Y-m-d H:i:s') : 'N/A' }}</dd>
 
-                <dt>GitHub ID:</dt>
-                <dd>{{ user.githubId ? user.githubId : 'Not linked' }}</dd>
+                <dt>GitHub:</dt>
+                <dd>
+                    {% if user.githubId %}
+                        {{ user.githubId }}
+                        {% if githubUsername is defined and githubUsername %}
+                            - <a href="https://github.com/{{ githubUsername }}">{{ githubUsername }}</a>
+                        {% endif %}
+                    {% else %}
+                        Not linked
+                    {% endif %}
+                </dd>
             </dl>
         </div>
 

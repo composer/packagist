@@ -32,6 +32,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ProfileController extends Controller
 {
@@ -60,7 +61,7 @@ class ProfileController extends Controller
     }
 
     #[Route(path: '/users/{name}/', name: 'user_profile')]
-    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, UserNotifier $userNotifier, LoggerInterface $logger, #[CurrentUser] ?User $loggedUser = null): Response
+    public function publicProfile(Request $req, #[VarName('name')] User $user, FavoriteManager $favMgr, DownloadManager $dlMgr, UserNotifier $userNotifier, LoggerInterface $logger, HttpClientInterface $httpClient, #[CurrentUser] ?User $loggedUser = null): Response
     {
         if ($req->attributes->getString('name') !== $user->getUsername()) {
             return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
@@ -133,6 +134,17 @@ class ProfileController extends Controller
         }
         if ($adminEmailForm !== null) {
             $data['adminEmailForm'] = $adminEmailForm->createView();
+        }
+        if ($this->isGranted('ROLE_ADMIN') && $user->getGithubId()) {
+            $githubUsername = null;
+            try {
+                $response = $httpClient->request('GET', 'https://api.github.com/user/' . $user->getGithubId());
+                if ($response->getStatusCode() === 200) {
+                    $githubUsername = $response->toArray()['login'] ?? null;
+                }
+            } catch (\Throwable) {
+            }
+            $data['githubUsername'] = $githubUsername;
         }
 
         return $this->render(
