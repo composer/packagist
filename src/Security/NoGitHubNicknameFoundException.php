@@ -12,13 +12,15 @@
 
 namespace App\Security;
 
-use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 
-class NoGitHubNicknameFoundException extends UserNotFoundException
+class NoGitHubNicknameFoundException extends CustomUserMessageAuthenticationException
 {
-    public function getMessageKey(): string
+    public function __construct()
     {
-        return 'No username/nickname was found on your GitHub account, so we can not automatically log you in. '
-            .'Please register an account manually and then connect your GitHub account from the Profile > Settings page.';
+        parent::__construct(
+            'No username/nickname was found on your GitHub account, so we can not automatically log you in. '
+            .'Please register an account manually and then connect your GitHub account from the Profile > Settings page.'
+        );
     }
 }

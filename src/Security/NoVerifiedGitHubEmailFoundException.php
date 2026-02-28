@@ -12,13 +12,15 @@
 
 namespace App\Security;
 
-use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 
-class NoVerifiedGitHubEmailFoundException extends UserNotFoundException
+class NoVerifiedGitHubEmailFoundException extends CustomUserMessageAuthenticationException
 {
-    public function getMessageKey(): string
+    public function __construct()
     {
-        return 'No verified email address was found on your GitHub account, so we can not automatically log you in. '
-            .'Please register an account manually and then connect your GitHub account from the Profile > Settings page.';
+        parent::__construct(
+            'No verified email address was found on your GitHub account, so we can not automatically log you in. '
+            .'Please register an account manually and then connect your GitHub account from the Profile > Settings page.'
+        );
     }
 }

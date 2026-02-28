@@ -170,10 +170,6 @@ class GitHubAuthenticator extends OAuth2Authenticator
     {
         $message = strtr($exception->getMessageKey(), $exception->getMessageData());
 
-        if ($message === 'Username could not be found.') {
-            $message = 'No Packagist.org account found that is connected to your GitHub account. Please register an account and connect it to GitHub first.';
-        }
-
         $session = $request->getSession();
         \assert($session instanceof FlashBagAwareSessionInterface);
         $session->getFlashBag()->add('warning', $message);

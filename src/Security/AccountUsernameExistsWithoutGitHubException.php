@@ -12,17 +12,15 @@
 
 namespace App\Security;
 
-use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 
-class AccountUsernameExistsWithoutGitHubException extends UserNotFoundException
+class AccountUsernameExistsWithoutGitHubException extends CustomUserMessageAuthenticationException
 {
-    public function __construct(private string $username)
+    public function __construct(string $username)
     {
-    }
-
-    public function getMessageKey(): string
-    {
-        return 'An account with your GitHub username ('.$this->username.') already exists on Packagist.org but it is not linked to your GitHub account. '
-            .'Please log in to it via username/password and then connect your GitHub account from the Profile > Settings page.';
+        parent::__construct(
+            'An account with your GitHub username ('.$username.') already exists on Packagist.org but it is not linked to your GitHub account. '
+            .'Please log in to it via username/password and then connect your GitHub account from the Profile > Settings page.'
+        );
     }
 }
