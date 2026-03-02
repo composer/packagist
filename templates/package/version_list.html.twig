@@ -18,7 +18,7 @@
 
                 {% if hasVersionsFlaggedAsMalware[version.id]|default(false) %}
                     <a rel="nofollow noindex" class="action-alert malware-alert" href="{{ path('view_package_filter_lists', {name: package.name, version: version.id, category: 'malware'}) }}">
-                        <i class="glyphicon " title="Version was flagged as malware">&#128030;</i>
+                        <i class="glyphicon glyphicon-fire" title="Version was flagged as malware"></i>
                     </a>
                 {% endif %}
 
