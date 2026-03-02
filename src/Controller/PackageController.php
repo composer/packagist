@@ -1659,7 +1659,7 @@ class PackageController extends Controller
         return $this->render('package/security_advisory.html.twig', ['securityAdvisories' => $securityAdvisories, 'id' => $id]);
     }
 
-    #[Route(path: '/packages/{name}/filter-lists/{category}', name: 'view_package_filter_lists', requirements: ['name' => Package::PACKAGE_NAME_REGEX.'|ext-[A-Za-z0-9_.-]+', 'category' => new EnumRequirement(FilterListCategories::class)])]
+    #[Route(path: '/packages/{name}/filter-lists/{category}', name: 'view_package_filter_lists', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, 'category' => new EnumRequirement(FilterListCategories::class)])]
     public function filterListsAction(Request $request, string $name, FilterListCategories $category): Response
     {
         /** @var FilterListEntryRepository $repo */
