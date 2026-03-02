@@ -46,7 +46,7 @@ final readonly class FilterListWorker
     {
         $list = FilterLists::from($job->getPayload()['list']);
 
-        $lockAcquired = $this->locker->lockFitlerList(self::FILTER_LIST_WORKER_RUN);
+        $lockAcquired = $this->locker->lockFilterList(self::FILTER_LIST_WORKER_RUN);
         if (!$lockAcquired) {
             return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTimeImmutable('+2 minutes'), 'message' => 'Could not acquire lock'];
         }

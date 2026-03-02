@@ -49,7 +49,7 @@ class UpdateFilterListCommand extends Command
             return self::INVALID;
         }
 
-        $lockAcquired = $this->locker->lockFitlerList($list->value);
+        $lockAcquired = $this->locker->lockFilterList($list->value);
         if (!$lockAcquired) {
             return 0;
         }

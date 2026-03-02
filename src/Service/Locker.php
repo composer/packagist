@@ -54,7 +54,7 @@ class Locker
         $this->getConn()->fetchOne('SELECT RELEASE_LOCK(:id)', ['id' => 'security_advisory_'.$processId]);
     }
 
-    public function lockFitlerList(string $processId, int $timeout = 0): bool
+    public function lockFilterList(string $processId, int $timeout = 0): bool
     {
         $this->ensurePrimaryConnection();
 

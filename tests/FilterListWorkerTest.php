@@ -146,7 +146,7 @@ class FilterListWorkerTest extends TestCase
     {
         $this->locker
             ->expects($this->once())
-            ->method('lockFitlerList')
+            ->method('lockFilterList')
             ->willReturn(false);
 
         $this->filterList
@@ -185,7 +185,7 @@ class FilterListWorkerTest extends TestCase
     {
         $this->locker
             ->expects($this->once())
-            ->method('lockFitlerList')
+            ->method('lockFilterList')
             ->willReturn(true);
 
         $this->locker
