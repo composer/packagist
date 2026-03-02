@@ -114,7 +114,7 @@ services:
             'package:updates': '@App\Service\UpdaterWorker'
             'githubuser:migrate': '@App\Service\GitHubUserMigrationWorker'
             'security:advisory': '@App\Service\SecurityAdvisoryWorker'
-            'filter:list': '@App\Service\FilterListWorker'
+            'filter:update': '@App\Service\FilterListWorker'
 
     App\Security\TwoFactorAuthManager:
         public: true

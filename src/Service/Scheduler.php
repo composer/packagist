@@ -82,7 +82,7 @@ class Scheduler
      */
     public function scheduleFilterList(FilterLists $list, int $packageId, ?\DateTimeImmutable $executeAfter = null): Job
     {
-        return $this->createJob('filter:list', ['list' => $list->value], $packageId, $executeAfter);
+        return $this->createJob('filter:update', ['list' => $list->value], $packageId, $executeAfter);
     }
 
     private function getPendingUpdateJob(int $packageId, bool $updateEqualRefs = false, bool $deleteBefore = false): ?string

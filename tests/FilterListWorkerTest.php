@@ -178,7 +178,7 @@ class FilterListWorkerTest extends TestCase
 
     private function createJob(): Job
     {
-        return new Job('job', 'filter:list', ['list' => FilterLists::AIKIDO_MALWARE->value]);
+        return new Job('job', 'filter:update', ['list' => FilterLists::AIKIDO_MALWARE->value]);
     }
 
     private function expectLock(): void
