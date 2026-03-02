@@ -60,6 +60,11 @@
                         Not linked
                     {% endif %}
                 </dd>
+
+                {% if user.totpAuthenticationEnabled() %}
+                    <dt>2FA:</dt>
+                    <dd>Enabled - <a href="{{ path('user_2fa_configure', {name: user.username}) }}">Manage</a></dd>
+                {% endif %}
             </dl>
         </div>
 
