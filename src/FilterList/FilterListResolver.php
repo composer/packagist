@@ -29,9 +29,10 @@ class FilterListResolver
         }
 
         $new = [];
+        $found = [];
         foreach ($remoteEntries as $remote) {
             if (isset($existingMap[$remote->packageName][$remote->version])) {
-                unset($existingMap[$remote->packageName][$remote->version]);
+                $found[$remote->packageName][$remote->version] = true;
                 continue;
             }
 
@@ -41,7 +42,9 @@ class FilterListResolver
         $unmatched = [];
         foreach ($existingMap as $existingPackageEntries) {
             foreach ($existingPackageEntries as $existingVersionEntry) {
-                $unmatched[] = $existingVersionEntry;
+                if (!isset($found[$existingVersionEntry->getPackageName()][$existingVersionEntry->getVersion()])) {
+                    $unmatched[] = $existingVersionEntry;
+                }
             }
         }
 

@@ -37,6 +37,15 @@ class FilterListResolverTest extends TestCase
         $this->assertSame([], $result[1]);
     }
 
+    public function testExistingEntryWithTwoRemoteEntriesResultsInNoChange(): void
+    {
+        $existing = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
+        $result = $this->resolver->resolve([$existing], [$remote, $remote]);
+
+        $this->assertSame([[], []], $result);
+    }
+
     public function testResolveRemoveOldEntry(): void
     {
         $existing = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
