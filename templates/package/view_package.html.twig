@@ -162,7 +162,7 @@
                     </div>
 
                     {% set repoUrl = package.browsableRepository %}
-                    {% set isGitHubRepoUrl = repoUrl starts with 'https://github.com/' %}
+                    {% set isGitHubRepoUrl = package.isGitHub() %}
                     {% set displayOpenIssues = version and version.support is not null and version.support.issues is defined and isGitHubRepoUrl and version.support.issues starts with repoUrl %}
 
                     <div class="row package-aside">
