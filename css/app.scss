@@ -1099,6 +1099,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     }
 }
 .package .details .canonical,
+.package .details .purl,
 .package .funding p {
   text-overflow: ellipsis;
   overflow: hidden;
