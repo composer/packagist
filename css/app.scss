@@ -1106,14 +1106,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   white-space: nowrap;
 }
 
-.package .facts {
-    margin-top: 10px;
-}
-@media (max-width: 991px) and (min-width: 768px) {
-    .package .facts {
-        margin-top: 0;
-    }
-}
 .package .facts span {
     display: inline-block;
     width: 100px;
@@ -1205,8 +1197,8 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   border-top: 1px solid #f28d1a;
   border-radius: 0;
 
-  margin: 0;
-  padding: 20px 0 0;
+  margin: 20px 0 0;
+  padding: 0
 }
 .package .package-aside.versions-wrapper {
   margin-left: 15px;
@@ -1228,13 +1220,16 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .package-aside a.advisory-alert {
     margin-left: -20px;
 }
-.package .package-aside a.advisory-alert:hover, .package .package-aside a.advisory-alert:active {
+.package .package-aside a.malware-alert {
+    margin-left: -40px;
+}
+.package .package-aside a.action-alert:hover, .package .package-aside a.action-alert:active {
     text-decoration: none;
 }
-.package .package-aside a.advisory-alert i {
+.package .package-aside a.action-alert i {
     color: #ff4533;
 }
-.package .package-aside a.advisory-alert:hover i {
+.package .package-aside a.action-alert:hover i {
     color: #cd3729;
 }
 
@@ -1321,7 +1316,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
       background: #fff;
       border-radius: 2px;
       border-top: 0;
-      padding: 10px 0;
+      padding: 0 0 10px 0;
       margin-left: -15px;
       margin-right: -15px;
     }
@@ -1674,6 +1669,11 @@ h2.title .php-ext-link {
     margin-left: 5px;
     color: #83C129;
     font-size: 16px;
+}
+
+.packages .package-item .filter-list-log {
+    max-height: 20px;
+    margin-left: 10px;
 }
 
 .alert {
