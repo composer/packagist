@@ -83,6 +83,19 @@ class PackageListener
             // buffering things to be inserted in postUpdate once we can confirm it is done
             $this->buffered[] = AuditRecord::canonicalUrlChange($package, $this->getUser(), $event->getOldValue('repository'));
         }
+
+        if ($event->hasChangedField('frozen')) {
+            $oldFrozen = $event->getOldValue('frozen');
+            $newFrozen = $package->getFreezeReason();
+
+            if ($newFrozen !== null) {
+                // Package was frozen (frozen reason is now set)
+                $this->buffered[] = AuditRecord::packageFrozen($package, $this->getUser(), $newFrozen);
+            } elseif ($oldFrozen !== null) {
+                // Package was unfrozen (frozen reason is now null)
+                $this->buffered[] = AuditRecord::packageUnfrozen($package, $this->getUser());
+            }
+        }
     }
 
     /**

@@ -15,6 +15,7 @@ namespace App\Tests\Controller;
 use App\Audit\AbandonmentReason;
 use App\Audit\AuditRecordType;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
 use App\Tests\Fixtures\Fixtures;
@@ -161,5 +162,47 @@ class PackageAuditRecordTest extends KernelTestCase
         self::assertSame(AuditRecordType::PackageUnabandoned->value, $logs[0]['type']);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('test/package2', $attributes['name']);
+    }
+
+    public function testPackageFreezingGetRecorded(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        $package = self::createPackage('test/freeze-package', 'https://github.com/test/freeze-package');
+
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
+        self::assertCount(1, $logs);
+        self::assertSame(AuditRecordType::PackageCreated->value, $logs[0]['type']);
+
+        // Test freezing
+        $package->freeze(PackageFreezeReason::Spam);
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageFrozen->value]);
+        self::assertCount(1, $logs);
+        self::assertSame(AuditRecordType::PackageFrozen->value, $logs[0]['type']);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertSame('test/freeze-package', $attributes['name']);
+        self::assertSame('https://github.com/test/freeze-package', $attributes['repository']);
+        self::assertSame('spam', $attributes['reason']);
+        self::assertSame('automation', $attributes['actor']);
+
+        // Test unfreezing
+        $package->unfreeze();
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageUnfrozen->value]);
+        self::assertCount(1, $logs);
+        self::assertSame(AuditRecordType::PackageUnfrozen->value, $logs[0]['type']);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertSame('test/freeze-package', $attributes['name']);
+        self::assertSame('https://github.com/test/freeze-package', $attributes['repository']);
+        self::assertSame('automation', $attributes['actor']);
     }
 }

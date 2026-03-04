@@ -146,6 +146,16 @@ class AuditRecord
         return new self(AuditRecordType::PackageUnabandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
+    public static function packageFrozen(Package $package, ?User $actor, PackageFreezeReason $reason): self
+    {
+        return new self(AuditRecordType::PackageFrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason->value, 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+    }
+
+    public static function packageUnfrozen(Package $package, ?User $actor): self
+    {
+        return new self(AuditRecordType::PackageUnfrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+    }
+
     public static function userCreated(User $user, UserRegistrationMethod $method): self
     {
         return new self(
