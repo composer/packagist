@@ -172,7 +172,7 @@
                                 <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
                             </p>
 
-                            {% if version and version.homepage %}
+                            {% if version and version.homepage and version.homepage != repoUrl %}
                                 <p><a rel="nofollow noopener external noindex ugc" href="{{ version.homepage }}">Homepage</a></p>
                             {% endif %}
                             {% if version.support.source is defined and not version.support.source starts with repoUrl and isGitHubRepoUrl %}

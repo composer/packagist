@@ -1198,8 +1198,12 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   border-top: 1px solid #f28d1a;
   border-radius: 0;
 
-  margin: 20px 0 0;
-  padding: 0
+  margin: 10px 0 0;
+  padding: 0;
+
+  &:first-child {
+      margin-top: 0;
+  }
 }
 .package .package-aside.versions-wrapper {
   margin-left: 15px;
@@ -1240,7 +1244,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .package .package-aside.versions-wrapper, .package .version-details {
-  margin-top: 20px;
+  margin-top: 10px;
 }
 .package .last-update {
     padding: 15px;
