@@ -45,7 +45,7 @@ final readonly class FilterListDumperProvider
                 foreach ($categories as $category => $versions) {
                     $groupedEntries[$packageName][$list][] = new DumpableFilterList(
                         implode(' || ', $versions),
-                        $this->urlGenerator->generate('filter_list_view', ['list' => $list], UrlGeneratorInterface::ABSOLUTE_URL),
+                        $this->urlGenerator->generate('view_package_filter_lists', ['name' => $packageName, 'category' => $category], UrlGeneratorInterface::ABSOLUTE_URL),
                         $category,
                         null,
                     );
