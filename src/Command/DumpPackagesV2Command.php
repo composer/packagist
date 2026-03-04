@@ -104,12 +104,12 @@ class DumpPackagesV2Command extends Command
                     $ids = $this->getEM()->getConnection()->fetchFirstColumn('SELECT id FROM package WHERE frozen IS NULL ORDER BY id ASC');
                 } else {
                     $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2();
-                    $this->statsd->gauge('packagist.metadata_dump_queue', \count($ids));
                     if (\count($ids) > 2000) {
                         $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids)]);
                         $ids = array_slice($ids, 0, 2000);
                     }
                 }
+                $this->statsd->gauge('packagist.metadata_dump_queue', \count($ids));
 
                 if ($ids || $force) {
                     ini_set('memory_limit', -1);
