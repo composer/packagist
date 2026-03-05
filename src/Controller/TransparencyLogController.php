@@ -66,7 +66,7 @@ class TransparencyLogController extends Controller
                 AuditRecordType::TwoFaAuthenticationDeactivated->value,
             ]);
 
-        $auditLogs = new Pagerfanta(new QueryAdapter($qb, false));
+        $auditLogs = new Pagerfanta(new QueryAdapter($qb, false, false));
         $auditLogs->setNormalizeOutOfRangePages(true);
         $auditLogs->setMaxPerPage(20);
         $auditLogs->setCurrentPage(max(1, $request->query->getInt('page', 1)));
