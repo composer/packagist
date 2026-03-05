@@ -1234,11 +1234,8 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .package-aside a.action-alert i {
     color: #ff4533;
 }
-.package .package-aside a.action-alert:hover i {
-    color: #cd3729;
-}
 
-.package .details-toggler.open, .package .details-toggler.open a, .package .details-toggler.open i {
+.package .details-toggler.open, .package .details-toggler.open a, .package .details-toggler.open i, .package .details-toggler.open a.action-alert i {
   background: #f28d1a;
   color: #fff;
 }
@@ -1305,7 +1302,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   right: 5px;
   top: 7px;
 }
-.package .delete-version .submit:hover {
+.package .delete-version .submit:hover, .package .package-aside a.action-alert:hover i {
   color: #cd3729;
 }
 
