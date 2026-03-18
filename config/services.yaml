@@ -12,7 +12,6 @@ parameters:
     forced_ssl_hosts: []
     aws_metadata: []
     packagist_metadata_dir: '%kernel.cache_dir%/composer-packages-build'
-    packagist_dumper_compress: 0
     trusted_ip_header: ''
     github.webhook_secret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
     fallback_gh_tokens: []
@@ -79,10 +78,6 @@ services:
         resource: '../src/ArgumentResolver/*.php'
         tags:
             - { name: controller.argument_value_resolver, priority: 115 } # Put these above doctrine.orm.entity_value_resolver (110) but below user_value_resolver (120)
-
-    App\Package\SymlinkDumper:
-        $buildDir: '%packagist_metadata_dir%'
-        $compress: '%packagist_dumper_compress%'
 
     App\Package\V2Dumper:
         $buildDir: '%packagist_metadata_dir%'

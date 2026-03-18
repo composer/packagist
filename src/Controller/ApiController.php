@@ -77,9 +77,9 @@ class ApiController extends Controller
             return new BinaryFileResponse($rootJson);
         }
 
-        $this->logger->alert('packages.json is missing and the fallback controller is being hit, you need to use bin/console packagist:dump');
+        $this->logger->alert('packages.json is missing and the fallback controller is being hit, you need to use bin/console packagist:dump-v2');
 
-        return new Response('Horrible misconfiguration or the dumper script messed up, you need to use bin/console packagist:dump', 404);
+        return new Response('Horrible misconfiguration or the dumper script messed up, you need to use bin/console packagist:dump-v2', 404);
     }
 
     #[Route(path: '/api/create-package', name: 'generic_create', defaults: ['_format' => 'json'], methods: ['POST'])]
