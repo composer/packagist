@@ -204,7 +204,6 @@ class V2Dumper
             echo 'Updating package dump times'.\PHP_EOL;
         }
 
-        $maxDumpTime = 0;
         foreach ($dumpTimeUpdates as $dt => $ids) {
             $retries = 5;
             // retry loop in case of a lock timeout
@@ -227,19 +226,6 @@ class V2Dumper
                 }
             }
 
-            if ($dt !== '2100-01-01 00:00:00') {
-                $maxDumpTime = max($maxDumpTime, strtotime($dt));
-            }
-        }
-
-        if ($maxDumpTime !== 0) {
-            $this->redis->set('last_metadata_dump_time', $maxDumpTime + 1);
-
-            // make sure no next dumper has a chance to start and dump things within the same second as $maxDumpTime
-            // as in updatedSince we will return the updates from the next second only (the +1 above) to avoid serving the same updates twice
-            if (time() === $maxDumpTime) {
-                sleep(1);
-            }
         }
     }
 
