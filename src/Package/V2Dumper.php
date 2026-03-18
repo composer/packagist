@@ -152,7 +152,7 @@ class V2Dumper
         $current = 0;
         $step = 50;
         while ($packageIds) {
-            $this->statsd->gauge('packagist.metadata_dump_queue', \count($packageIds), ['worker' => $workerId]);
+            $this->statsd->gauge('packagist.metadata_dump_queue', \count($packageIds), ['worker' => (string) $workerId]);
 
             $dumpTime = new \DateTime();
             $idBatch = array_splice($packageIds, 0, $step);
