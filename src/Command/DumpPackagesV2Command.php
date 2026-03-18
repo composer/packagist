@@ -147,7 +147,7 @@ class DumpPackagesV2Command extends Command
 
                     $ids = array_map('intval', $ids);
 
-                    $this->dumper->dump($ids, $force, $verbose);
+                    $this->dumper->dump($ids, $force, $verbose, $workerId);
 
                     $this->logger->reset();
                 }

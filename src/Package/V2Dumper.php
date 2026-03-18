@@ -115,7 +115,7 @@ class V2Dumper
      *
      * @param list<int> $packageIds
      */
-    public function dump(array $packageIds, bool $force = false, bool $verbose = false): void
+    public function dump(array $packageIds, bool $force = false, bool $verbose = false, int $workerId = 0): void
     {
         // clear written files tracking for this run
         $this->writtenFiles = [];
@@ -152,7 +152,7 @@ class V2Dumper
         $current = 0;
         $step = 50;
         while ($packageIds) {
-            $this->statsd->gauge('packagist.metadata_dump_queue', \count($packageIds));
+            $this->statsd->gauge('packagist.metadata_dump_queue', \count($packageIds), ['worker' => $workerId]);
 
             $dumpTime = new \DateTime();
             $idBatch = array_splice($packageIds, 0, $step);
