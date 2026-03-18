@@ -135,11 +135,11 @@ class DumpPackagesV2Command extends Command
                 } else {
                     $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers);
                     if (\count($ids) > 2000) {
-                        $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids)]);
+                        $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids), 'worker' => $workerId]);
                         $ids = array_slice($ids, 0, 2000);
                     }
                 }
-                $this->statsd->gauge('packagist.metadata_dump_queue', \count($ids));
+                $this->statsd->gauge('packagist.metadata_dump_queue', \count($ids), ['worker' => $workerId]);
 
                 if ($ids || $force) {
                     ini_set('memory_limit', -1);
