@@ -21,6 +21,8 @@ use App\Entity\SecurityAdvisory;
 use App\Entity\Version;
 use App\FilterList\Dump\DumpableFilterList;
 use App\FilterList\Dump\FilterListDumperProvider;
+use App\FilterList\FilterListCategories;
+use App\FilterList\FilterLists;
 use App\Model\ProviderManager;
 use App\Service\CdnClient;
 use App\Service\ReplicaClient;
@@ -95,6 +97,11 @@ class V2Dumper
         $rootFileContents['warning'] = 'Support for Composer 1 has been shutdown on September 1st 2025. You should upgrade to Composer 2. See https://blog.packagist.com/shutting-down-packagist-org-support-for-composer-1-x/';
         $rootFileContents['warning-versions'] = '<1.999';
         $rootFileContents['providers'] = [];
+        $rootFileContents['filter'] = [
+            'metadata' => true,
+            'lists' => array_map(fn (FilterLists $list) => $list->value, FilterLists::cases()),
+            'categories' => array_map(fn (FilterListCategories $category) => $category->value, FilterListCategories::cases()),
+        ];
 
         if ($verbose) {
             echo 'Dumping root'.\PHP_EOL;
