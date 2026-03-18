@@ -50,6 +50,8 @@ class DumpPackagesV2Command extends Command
             ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a dump of all packages'),
                 new InputOption('gc', null, InputOption::VALUE_NONE, 'Runs garbage collection of old files'),
+                new InputOption('worker-id', null, InputOption::VALUE_REQUIRED, 'Worker ID for parallel operation (0-based)', 0),
+                new InputOption('num-workers', null, InputOption::VALUE_REQUIRED, 'Total number of parallel workers', 1),
             ])
             ->setDescription('Dumps the packages into the p2 directory')
         ;
@@ -60,6 +62,19 @@ class DumpPackagesV2Command extends Command
         $force = (bool) $input->getOption('force');
         $gc = (bool) $input->getOption('gc');
         $verbose = (bool) $input->getOption('verbose');
+        $workerId = (int) $input->getOption('worker-id');
+        $numWorkers = (int) $input->getOption('num-workers');
+
+        if ($numWorkers < 1) {
+            $output->writeln('<error>--num-workers must be >= 1</error>');
+
+            return 1;
+        }
+        if ($workerId < 0 || $workerId >= $numWorkers) {
+            $output->writeln('<error>--worker-id must be >= 0 and < --num-workers</error>');
+
+            return 1;
+        }
 
         $deployLock = $this->cacheDir.'/deploy.globallock';
         if (file_exists($deployLock)) {
@@ -71,9 +86,14 @@ class DumpPackagesV2Command extends Command
         }
 
         // another dumper is still active
-        $lockName = $this->getName() ?? __CLASS__;
+        $lockName = ($this->getName() ?? __CLASS__).'-'.$workerId;
         if ($gc) {
-            $lockName .= '-gc';
+            if ($workerId > 0) {
+                $output->writeln('<error>--gc can only be run from worker 0</error>');
+
+                return 1;
+            }
+            $lockName = ($this->getName() ?? __CLASS__).'-gc';
         }
         if (!$this->locker->lockCommand($lockName)) {
             if ($verbose) {
@@ -97,13 +117,23 @@ class DumpPackagesV2Command extends Command
 
         $iterations = $force ? 1 : 120;
         try {
-            $this->dumper->dumpRoot($verbose);
+            if ($workerId === 0) {
+                $this->dumper->dumpRoot($verbose);
+            }
 
             while ($iterations--) {
                 if ($force) {
-                    $ids = $this->getEM()->getConnection()->fetchFirstColumn('SELECT id FROM package WHERE frozen IS NULL ORDER BY id ASC');
+                    $sql = 'SELECT id FROM package WHERE frozen IS NULL';
+                    $params = [];
+                    if ($numWorkers > 1) {
+                        $sql .= ' AND id % :numWorkers = :workerId';
+                        $params['numWorkers'] = $numWorkers;
+                        $params['workerId'] = $workerId;
+                    }
+                    $sql .= ' ORDER BY id ASC';
+                    $ids = $this->getEM()->getConnection()->fetchFirstColumn($sql, $params);
                 } else {
-                    $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2();
+                    $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers);
                     if (\count($ids) > 2000) {
                         $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids)]);
                         $ids = array_slice($ids, 0, 2000);

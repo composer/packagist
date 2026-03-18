@@ -308,11 +308,20 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return list<int>
      */
-    public function getStalePackagesForDumpingV2(): array
+    public function getStalePackagesForDumpingV2(int $workerId = 0, int $numWorkers = 1): array
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchFirstColumn('SELECT p.id FROM package p USE INDEX (dumped2_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND p.frozen IS NULL');
+        $sql = 'SELECT p.id FROM package p USE INDEX (dumped2_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND p.frozen IS NULL';
+        $params = [];
+
+        if ($numWorkers > 1) {
+            $sql .= ' AND p.id % :numWorkers = :workerId';
+            $params['numWorkers'] = $numWorkers;
+            $params['workerId'] = $workerId;
+        }
+
+        return $conn->fetchFirstColumn($sql, $params);
     }
 
     /**
