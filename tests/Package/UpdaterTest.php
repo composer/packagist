@@ -87,8 +87,8 @@ class UpdaterTest extends IntegrationTestCase
 
     public function testUpdatesTheReadme(): void
     {
-        $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
-        $this->driverMock->expects($this->any())->method('getComposerInformation')
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'README.md']);
         $this->driverMock->expects($this->once())->method('getFileContent')->with('README.md', 'master')
                          ->willReturn('This is the readme');
@@ -121,8 +121,8 @@ class UpdaterTest extends IntegrationTestCase
 
             EOR;
 
-        $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
-        $this->driverMock->expects($this->any())->method('getComposerInformation')
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'README.md']);
         $this->driverMock->expects($this->once())->method('getFileContent')->with('README.md', 'master')
                          ->willReturn($readme);
@@ -151,8 +151,8 @@ class UpdaterTest extends IntegrationTestCase
 
             EOR;
 
-        $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
-        $this->driverMock->expects($this->any())->method('getComposerInformation')
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'README.md']);
         $this->driverMock->expects($this->once())->method('getFileContent')->with('README.md', 'master')
                          ->willReturn($readme);
@@ -165,8 +165,8 @@ class UpdaterTest extends IntegrationTestCase
 
     public function testSurroundsTextReadme(): void
     {
-        $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
-        $this->driverMock->expects($this->any())->method('getComposerInformation')
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'README.txt']);
         $this->driverMock->expects($this->once())->method('getFileContent')->with('README.txt', 'master')
                          ->willReturn('This is the readme');
@@ -179,8 +179,8 @@ class UpdaterTest extends IntegrationTestCase
 
     public function testUnderstandsDifferentFileNames(): void
     {
-        $this->driverMock->expects($this->any())->method('getRootIdentifier')->willReturn('master');
-        $this->driverMock->expects($this->any())->method('getComposerInformation')
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'liesmich']);
         $this->driverMock->expects($this->once())->method('getFileContent')->with('liesmich', 'master')
                          ->willReturn('This is the readme');

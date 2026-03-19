@@ -399,16 +399,21 @@ class AuditLogDisplayFactoryTest extends TestCase
     #[TestWith([false, 123, 'john@doe.com'])]
     public function testBuildUserVerified(bool $hasAuditorRole, int $authenticatedUserId, string $expectedEmail): void
     {
-        $this->security
+        // override setUp objects to get a real mock here
+        $security = $this->createMock(Security::class);
+        $security
+            ->expects(self::once())
             ->method('isGranted')
             ->with('ROLE_AUDITOR')
             ->willReturn($hasAuditorRole);
+        $this->factory = new AuditLogDisplayFactory($security);
 
         $user = new User();
         $reflectionProperty = new \ReflectionProperty($user, 'id');
         $reflectionProperty->setValue($user, $authenticatedUserId);
 
-        $this->security
+        $security
+            ->expects(self::atMost(1))
             ->method('getUser')
             ->willReturn($user);
 
