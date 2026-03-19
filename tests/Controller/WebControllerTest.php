@@ -52,7 +52,7 @@ class WebControllerTest extends IntegrationTestCase
     {
         $crawler = $this->client->request('GET', '/search/');
         static::assertResponseIsSuccessful();
-        static::assertEquals('Search by', $crawler->filter('.content')->text());
+        static::assertEquals('Active filters Search by', $crawler->filter('.content')->text());
     }
 
     public function testSearchJsonWithoutQuery(): void
