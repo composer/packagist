@@ -162,7 +162,13 @@
                             <div class="search-list col-md-9"></div>
 
                             <div class="search-facets col-md-3">
-                                <div class="search-facets-active-filters"></div>
+                                <div class="search-facets-active-filters-wrapper" style="display:none">
+                                    <div class="search-facets-active-filters-header">
+                                        <span>Active filters</span>
+                                        <div class="search-facets-clear-all"></div>
+                                    </div>
+                                    <div class="search-facets-active-filters"></div>
+                                </div>
                                 <div class="search-facets-type"></div>
                                 <div class="search-facets-tags"></div>
                             </div>
@@ -234,10 +240,6 @@
 
         <script nonce="{{ csp_nonce('script') }}">
             var algoliaConfig = {{ algolia|json_encode|raw }};
-            {# For Aloglia instantsearch 2.x, can be dropped once we upgrade to 4.x #}
-            window.process = {
-                env: { DEBUG: undefined },
-            };
         </script>
         {% block script_init %}{% endblock %}
 

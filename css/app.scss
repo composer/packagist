@@ -523,48 +523,131 @@ strong {
     margin-top: -20px;
 }
 
-#search-container em {
+#search-container mark {
     font-style: normal;
-    background: rgba(255, 255, 0, 0.16);
-    box-shadow: 0px 0px 2px rgba(210, 210, 91, 0.67);
-    border-radius: 3px;
     font-weight: inherit;
+    padding: 0;
 }
 
 .search-facets {
     border-radius: 2px;
     padding: 0 15px;
-    margin-top: 35px;
+    margin-top: 30px;
 }
 .search-facets > div:not(:last-child) > div {
     margin-bottom: 15px;
 }
-.search-facets .ais-menu--item__active {
+.search-facets-active-filters-wrapper {
+    margin-bottom: 15px;
+}
+.search-facets-active-filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid #f28d1a;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
     font-weight: bold;
 }
-.search-facets .ais-header {
+.search-facets-clear-all .ais-ClearRefinements-button {
+    background: none;
+    border: none;
+    color: #c56024;
+    cursor: pointer;
+    padding: 0;
+    font-size: 13px;
+    font-weight: normal;
+}
+.search-facets-clear-all .ais-ClearRefinements-button:hover {
+    text-decoration: underline;
+}
+.search-facets-clear-all .ais-ClearRefinements-button--disabled {
+    display: none;
+}
+.search-facets-active-filters .active-filter-item {
+    display: block;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #c56024;
+}
+.search-facets-active-filters .active-filter-label {
+    color: #333;
+}
+.search-facets-active-filters .active-filter-remove {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0 3px;
+    font-size: 13px;
+    line-height: 1;
+}
+.search-facets-active-filters .active-filter-remove:hover {
+    color: #cd3729;
+}
+.search-facets .ais-Menu-item--selected {
+    font-weight: bold;
+}
+.search-facets .ais-Panel-header {
     border-bottom: 1px solid #f28d1a;
     padding-bottom: 5px;
     margin-bottom: 10px;
     font-weight: bold;
 }
+.search-facets .ais-Menu-list, .search-facets .ais-RefinementList-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+.search-facets .ais-Menu-item, .search-facets .ais-RefinementList-item {
+    padding: 0;
+    line-height: 1.4;
+    font-size: 13px;
+}
+.search-facets .ais-RefinementList-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+.search-facets .ais-RefinementList-checkbox {
+    margin-right: 6px;
+    margin-top: 0;
+}
+.search-facets .ais-Menu-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+.search-facets .ais-RefinementList-labelText, .search-facets .ais-Menu-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.search-facets .ais-RefinementList-count, .search-facets .ais-Menu-count {
+    margin-left: 8px;
+    font-size: 0.85em;
+    color: #999;
+}
 
-.search-facets .ais-show-more {
+.search-facets .ais-Menu-showMore, .search-facets .ais-RefinementList-showMore {
     cursor: pointer;
     margin-top: 10px;
     display: inline-block;
-}
-.search-facets .ais-show-more:after {
-    content: '...';
-    display: inline-block;
+    background: none;
+    border: none;
+    padding: 0;
+    color: #f28d1a;
+    font-size: inherit;
 }
 
-.sbx-sffv__wrapper {
+.search-facets .ais-RefinementList-searchBox .ais-SearchBox-form {
     display: flex;
     flex: 1;
     flex-direction: row;
 }
-.sbx-sffv__wrapper input {
+.search-facets .ais-RefinementList-searchBox .ais-SearchBox-form input {
     height: 22px;
     border: 1px solid #f28d1a;
     border-radius: 3px;
@@ -572,7 +655,7 @@ strong {
     padding-left: 4px;
     margin-bottom: 5px;
 }
-.sbx-sffv__wrapper button {
+.search-facets .ais-RefinementList-searchBox .ais-SearchBox-form button {
     width: 22px;
     height: 22px;
     display: inline-block;
@@ -581,7 +664,7 @@ strong {
     background: none;
     border: 0;
 }
-.sbx-sffv__wrapper svg {
+.search-facets .ais-RefinementList-searchBox .ais-SearchBox-form svg {
     width: 100% !important;
     height: 100% !important;
 }
@@ -1032,6 +1115,14 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .search-list {
   margin-top: 10px;
 }
+.search-list .ais-Hits-list {
+  list-style: none;
+  padding-left: 0;
+}
+.pagination .ais-Pagination-list {
+  list-style: none;
+  padding-left: 0;
+}
 
 
 .package h2.title {
@@ -1307,8 +1398,8 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 @media (min-width: 992px) {
-    .search-facets .ais-menu--count {
-        float: right;
+    .search-facets .ais-Menu-count, .search-facets .ais-RefinementList-count {
+        margin-left: auto;
     }
 
     .package-aside .details {
@@ -1499,10 +1590,10 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     padding: 0 10px;
     display: inline-block;
 }
-.pagination ul > li > a:hover, .pagination .ais-pagination--item__active {
+.pagination ul > li > a:hover, .pagination .ais-Pagination-item--selected {
     background: #F2F2F2;
 }
-.pagination .ais-pagination--item__active a {
+.pagination .ais-Pagination-item--selected a {
     color: #000 !important;
 }
 
