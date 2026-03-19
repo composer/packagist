@@ -32,7 +32,7 @@ class FilterListDumperProviderTest extends TestCase
         parent::setUp();
 
         $doctrine = $this->createStub(ManagerRegistry::class);
-        $em = $this->createStub(EntityManager::class);
+        $em = $this->createMock(EntityManager::class);
 
         $doctrine
             ->method('getManager')
@@ -40,6 +40,7 @@ class FilterListDumperProviderTest extends TestCase
 
         $this->repo = $this->createMock(FilterListEntryRepository::class);
         $em
+            ->expects(self::once())
             ->method('getRepository')
             ->with(FilterListEntry::class)
             ->willReturn($this->repo);
