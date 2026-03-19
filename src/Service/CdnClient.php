@@ -64,11 +64,21 @@ class CdnClient
             return true;
         }
 
-        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'false']), [
+        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'false', 'exactPath' => 'true']), [
             'headers' => [
                 'AccessKey' => $this->cdnApiKey,
             ],
         ]);
+
+        // delay the response to slow things down when we're hitting the CDN too hard and get rate limited
+        if ($resp->getStatusCode() === 429) {
+            sleep(1);
+
+            $this->logger->warning('CDN rate limit hit while purging '.$path.', slowing down', ['status' => $resp->getStatusCode()]);
+
+            return false;
+        }
+
         // wait for status code at least
         if ($resp->getStatusCode() !== 200) {
             $this->logger->error('Failed purging '.$path.' from metadata CDN', ['response' => $resp->getContent(false), 'status' => $resp->getStatusCode()]);
@@ -76,11 +86,21 @@ class CdnClient
             return false;
         }
 
-        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => 'https://'.$this->packagistHost.'/'.$path, 'async' => 'false']), [
+        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => 'https://'.$this->packagistHost.'/'.$path, 'async' => 'false', 'exactPath' => 'true']), [
             'headers' => [
                 'AccessKey' => $this->cdnApiKey,
             ],
         ]);
+
+        // delay the response to slow things down when we're hitting the CDN too hard and get rate limited
+        if ($resp->getStatusCode() === 429) {
+            sleep(1);
+
+            $this->logger->warning('CDN rate limit hit while purging '.$path.', slowing down', ['status' => $resp->getStatusCode()]);
+
+            return false;
+        }
+
         // wait for status code at least
         if ($resp->getStatusCode() !== 200) {
             $this->logger->error('Failed purging '.$path.' from main host CDN', ['response' => $resp->getContent(false), 'status' => $resp->getStatusCode()]);
@@ -120,7 +140,7 @@ class CdnClient
 
         if ($resp->getStatusCode() === 200) {
             // purge the cache as well if the file was deleted
-            $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'true']), [
+            $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'true', 'exactPath' => 'true']), [
                 'headers' => [
                     'AccessKey' => $this->cdnApiKey,
                 ],
