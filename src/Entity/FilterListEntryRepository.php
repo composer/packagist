@@ -12,7 +12,6 @@
 
 namespace App\Entity;
 
-use App\FilterList\FilterListCategories;
 use App\FilterList\FilterLists;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
@@ -32,13 +31,11 @@ class FilterListEntryRepository extends ServiceEntityRepository
     /**
      * @return list<FilterListEntry>
      */
-    public function getPackageVersionsFlaggedAsMalwareInList(FilterLists $list): array
+    public function getEntriesInList(FilterLists $list): array
     {
         return $this->createQueryBuilder('fl')
             ->where('fl.list = :list')
-            ->andWhere('fl.category = :category')
             ->setParameter('list', $list)
-            ->setParameter('category', FilterListCategories::MALWARE)
             ->getQuery()
             ->getResult();
     }
@@ -50,9 +47,9 @@ class FilterListEntryRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('fl')
             ->where('fl.packageName = :packageName')
-            ->andWhere('fl.category = :category')
+            ->andWhere('fl.list IN (:lists)')
             ->setParameter('packageName', $package->getName())
-            ->setParameter('category', 'malware')
+            ->setParameter('lists', FilterLists::malwareListsValues(), ArrayParameterType::STRING)
             ->getQuery()
             ->getResult();
     }
@@ -60,40 +57,36 @@ class FilterListEntryRepository extends ServiceEntityRepository
     /**
      * @return list<FilterListEntry>
      */
-    public function getPackageEntriesForCategory(string $packageName, FilterListCategories $category): array
+    public function getPackageEntries(string $packageName): array
     {
         return $this->createQueryBuilder('fl')
             ->where('fl.packageName = :packageName')
-            ->andWhere('fl.category = :category')
             ->setParameter('packageName', $packageName)
-            ->setParameter('category', $category)
             ->getQuery()
             ->getResult();
     }
 
     /**
      * @param array<string> $packageNames
-     * @return array<string, non-empty-list<array{version: string, list: string, category: string}>>
+     * @return array<string, non-empty-list<array{version: string, list: string, reason: string|null}>>
      */
-    public function getPackageVersionsFlaggedAsMalwareForPackageNames(array $packageNames): array
+    public function getAllPackageEntriesMap(array $packageNames): array
     {
         $entries = $this->createQueryBuilder('fl')
             ->where('fl.packageName IN (:packageNames)')
             ->setParameter('packageNames', $packageNames, ArrayParameterType::STRING)
-            ->andWhere('fl.category = :category')
-            ->setParameter('category', FilterListCategories::MALWARE)
             ->getQuery()
             ->getResult();
 
-        $malwarePackageVersions = [];
+        $mappedData = [];
         foreach ($entries as $entry) {
-            $malwarePackageVersions[$entry->getPackageName()][] = [
+            $mappedData[$entry->getPackageName()][] = [
                 'version' => $entry->getVersion(),
                 'list' => $entry->getList()->value,
-                'category' => $entry->getCategory()->value,
+                'reason' => $entry->getReason(),
             ];
         }
 
-        return $malwarePackageVersions;
+        return $mappedData;
     }
 }

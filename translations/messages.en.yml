@@ -68,10 +68,8 @@ packages:
     from: "Packages from %vendor%"
     security_advisory_title: Security Advisories
     security_advisories: Security Advisories
-    filter_lists_title:
-        malware: Versions flagged as malware
-    filter_lists:
-        malware: Malware Reports
+    filter_lists_title: Filters
+    filter_lists: Filters
 
 browse:
     packages: Packages

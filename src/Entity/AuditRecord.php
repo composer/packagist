@@ -321,7 +321,7 @@ class AuditRecord
     }
 
     /**
-     * @return array{package_name: string, version: string, list: string, category: string}
+     * @return array{package_name: string, version: string, list: string}
      */
     private static function getFilterListEntryData(FilterListEntry $entry): array
     {
@@ -329,7 +329,6 @@ class AuditRecord
             'package_name' => $entry->getPackageName(),
             'version' => $entry->getVersion(),
             'list' => $entry->getList()->value,
-            'category' => $entry->getCategory()->value,
         ];
     }
 }

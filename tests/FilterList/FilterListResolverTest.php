@@ -13,7 +13,6 @@
 namespace App\Tests\FilterList;
 
 use App\Entity\FilterListEntry;
-use App\FilterList\FilterListCategories;
 use App\FilterList\FilterListResolver;
 use App\FilterList\FilterLists;
 use App\FilterList\RemoteFilterListEntry;
@@ -120,8 +119,8 @@ class FilterListResolverTest extends TestCase
             $packageName,
             $version,
             FilterLists::AIKIDO_MALWARE,
-            FilterListCategories::MALWARE,
             'https://example.com/' . $packageName,
+            'malware',
         );
     }
 
@@ -134,6 +133,5 @@ class FilterListResolverTest extends TestCase
         $this->assertSame($remote->packageName, $new[0]->getPackageName());
         $this->assertSame($remote->version, $new[0]->getVersion());
         $this->assertSame($remote->list, $new[0]->getList());
-        $this->assertSame($remote->category, $new[0]->getCategory());
     }
 }

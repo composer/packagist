@@ -18,7 +18,7 @@ final readonly class RemoteFilterListEntry
         public string $packageName,
         public string $version,
         public FilterLists $list,
-        public FilterListCategories $category,
         public ?string $link,
+        public string $reason,
     ) {}
 }

@@ -55,12 +55,12 @@ class FilterListDumperProviderTest extends TestCase
     {
         $this->repo
             ->expects($this->once())
-            ->method('getPackageVersionsFlaggedAsMalwareForPackageNames')
+            ->method('getAllPackageEntriesMap')
             ->with(['acme/package'])
             ->willReturn([
                 'acme/package' => [
-                    ['version' => '1.0.0', 'category' => 'malware', 'list' => 'test'],
-                    ['version' => '2.0.0', 'category' => 'malware', 'list' => 'test'],
+                    ['version' => '1.0.0', 'reason' => 'malware', 'list' => 'test'],
+                    ['version' => '2.0.0', 'reason' => 'malware', 'list' => 'test'],
                 ],
             ]);
 
@@ -70,17 +70,17 @@ class FilterListDumperProviderTest extends TestCase
                     new DumpableFilterList('1.0.0 || 2.0.0', '', 'malware', null),
                 ],
             ]
-        ], $this->filterListDumperProvider->getMalwareDataForDump(['acme/package']));
+        ], $this->filterListDumperProvider->getEntriesForDump(['acme/package']));
     }
 
     public function testNoEntries(): void
     {
         $this->repo
             ->expects($this->once())
-            ->method('getPackageVersionsFlaggedAsMalwareForPackageNames')
+            ->method('getAllPackageEntriesMap')
             ->with(['acme/package'])
             ->willReturn([]);
 
-        $this->assertSame([], $this->filterListDumperProvider->getMalwareDataForDump(['acme/package']));
+        $this->assertSame([], $this->filterListDumperProvider->getEntriesForDump(['acme/package']));
     }
 }

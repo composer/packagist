@@ -14,7 +14,7 @@ namespace App\FilterList;
 
 enum FilterLists: string
 {
-    case AIKIDO_MALWARE = 'aikido';
+    case AIKIDO_MALWARE = 'aikido-malware';
 
     public function logo(): string
     {
@@ -35,5 +35,21 @@ enum FilterLists: string
         return match ($this) {
             self::AIKIDO_MALWARE => 'https://aikido.dev/',
         };
+    }
+
+    /**
+     * @return list<FilterLists>
+     */
+    public static function malwareLists(): array
+    {
+        return [self::AIKIDO_MALWARE];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function malwareListsValues(): array
+    {
+        return array_map(fn (FilterLists $list) => $list->value, self::malwareLists());
     }
 }
