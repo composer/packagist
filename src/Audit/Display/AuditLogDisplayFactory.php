@@ -219,8 +219,8 @@ class AuditLogDisplayFactory
                 $record->datetime,
                 $record->attributes['entry']['package_name'],
                 $record->attributes['entry']['version'],
-                FilterLists::from($record->attributes['entry']['list']),
-                $record->attributes['entry']['category'],
+                FilterLists::fromWithBackwardsCompatibility($record->attributes['entry']['list']),
+                $record->attributes['entry']['reason'] ?? $record->attributes['entry']['category'],
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
@@ -228,8 +228,8 @@ class AuditLogDisplayFactory
                 $record->datetime,
                 $record->attributes['entry']['package_name'],
                 $record->attributes['entry']['version'],
-                FilterLists::from($record->attributes['entry']['list']),
-                $record->attributes['entry']['category'],
+                FilterLists::fromWithBackwardsCompatibility($record->attributes['entry']['list']),
+                $record->attributes['entry']['reason'] ?? $record->attributes['entry']['category'],
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),

@@ -602,7 +602,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $auditRecord = $this->createAuditRecord(
             AuditRecordType::FilterListEntryAdded,
             [
-                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::AIKIDO_MALWARE->value, 'category' => 'malware'],
+                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::AIKIDO_MALWARE->value, 'reason' => 'malware'],
             ]
         );
 
@@ -611,7 +611,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(FilterListEntryAddedDisplay::class, $display);
         self::assertSame('acme/package', $display->packageName);
         self::assertSame('<1.0', $display->version);
-        self::assertSame('malware', $display->category);
+        self::assertSame('malware', $display->reason);
         self::assertSame(FilterLists::AIKIDO_MALWARE, $display->list);
         self::assertNull($display->actor->id);
         self::assertSame('unknown', $display->actor->username);
@@ -624,7 +624,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $auditRecord = $this->createAuditRecord(
             AuditRecordType::FilterListEntryDeleted,
             [
-                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::AIKIDO_MALWARE->value, 'category' => 'malware'],
+                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::AIKIDO_MALWARE->value, 'reason' => 'malware'],
             ]
         );
 
@@ -633,7 +633,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(FilterListEntryDeletedDisplay::class, $display);
         self::assertSame('acme/package', $display->packageName);
         self::assertSame('<1.0', $display->version);
-        self::assertSame('malware', $display->category);
+        self::assertSame('malware', $display->reason);
         self::assertSame(FilterLists::AIKIDO_MALWARE, $display->list);
         self::assertNull($display->actor->id);
         self::assertSame('unknown', $display->actor->username);

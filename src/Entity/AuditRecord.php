@@ -329,6 +329,7 @@ class AuditRecord
             'package_name' => $entry->getPackageName(),
             'version' => $entry->getVersion(),
             'list' => $entry->getList()->value,
+            'reason' => $entry->getReason(),
         ];
     }
 }

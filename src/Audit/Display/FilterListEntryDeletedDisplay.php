@@ -22,7 +22,7 @@ readonly class FilterListEntryDeletedDisplay extends AbstractAuditLogDisplay
         public string $packageName,
         public string $version,
         public FilterLists $list,
-        public string $category,
+        public string $reason,
         ActorDisplay $actor,
         ?string $ip,
     ) {
