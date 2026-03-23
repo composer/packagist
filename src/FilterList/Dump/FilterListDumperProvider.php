@@ -36,19 +36,13 @@ final readonly class FilterListDumperProvider
 
         $groupedEntries = [];
         foreach ($allPackageEntries as $packageName => $entries) {
-            $packageGroup = [];
             foreach ($entries as $entry) {
-                $packageGroup[$entry['list']][$entry['reason']][] = $entry['version'];
-            }
-
-            foreach ($packageGroup as $list => $reasonGroup) {
-                foreach ($reasonGroup as $reason => $versions) {
-                    $groupedEntries[$packageName][$list][] = new DumpableFilterList(
-                        implode(' || ', $versions),
-                        $this->urlGenerator->generate('view_package_filter_lists', ['name' => $packageName], UrlGeneratorInterface::ABSOLUTE_URL),
-                        $reason,
-                    );
-                }
+                $groupedEntries[$packageName][$entry['list']][] = new DumpableFilterList(
+                    $entry['version'],
+                    $this->urlGenerator->generate('view_package_filter_lists', ['name' => $packageName], UrlGeneratorInterface::ABSOLUTE_URL),
+                    $entry['reason'],
+                    $entry['publicId'],
+                );
             }
         }
 

@@ -18,5 +18,6 @@ final readonly class DumpableFilterList
         public string $constraint,
         public string $url,
         public ?string $reason,
+        public ?string $id,
     ) {}
 }

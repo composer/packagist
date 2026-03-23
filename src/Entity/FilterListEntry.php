@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use App\FilterList\FilterLists;
 use App\FilterList\RemoteFilterListEntry;
+use App\Service\IdGenerator;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FilterListEntryRepository::class)]
@@ -47,8 +48,12 @@ class FilterListEntry
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
+    #[ORM\Column(nullable: true)]
+    private string|null $publicId;
+
     public function __construct(RemoteFilterListEntry $remote)
     {
+        $this->publicId = IdGenerator::generateFilterListEntry();
         $this->packageName = $remote->packageName;
         $this->version = $remote->version;
         $this->link = $remote->link;
@@ -81,5 +86,9 @@ class FilterListEntry
     public function getReason(): ?string
     {
         return $this->reason;
+    }
+    public function getPublicId(): ?string
+    {
+        return $this->publicId;
     }
 }

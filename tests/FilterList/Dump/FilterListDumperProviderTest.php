@@ -59,15 +59,16 @@ class FilterListDumperProviderTest extends TestCase
             ->with(['acme/package'])
             ->willReturn([
                 'acme/package' => [
-                    ['version' => '1.0.0', 'reason' => 'malware', 'list' => 'test'],
-                    ['version' => '2.0.0', 'reason' => 'malware', 'list' => 'test'],
+                    ['version' => '1.0.0', 'reason' => 'malware', 'list' => 'test', 'publicId' => 'PKFE-test1'],
+                    ['version' => '2.0.0', 'reason' => 'malware', 'list' => 'test', 'publicId' => 'PKFE-test2'],
                 ],
             ]);
 
         $this->assertEquals([
             'acme/package' => [
                 'test' => [
-                    new DumpableFilterList('1.0.0 || 2.0.0', '', 'malware', null),
+                    new DumpableFilterList('1.0.0', '', 'malware', 'PKFE-test1'),
+                    new DumpableFilterList('2.0.0', '', 'malware', 'PKFE-test2'),
                 ],
             ]
         ], $this->filterListDumperProvider->getEntriesForDump(['acme/package']));
