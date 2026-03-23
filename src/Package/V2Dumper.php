@@ -99,6 +99,7 @@ class V2Dumper
         $rootFileContents['filter'] = [
             'metadata' => true,
             'lists' => array_map(fn (FilterLists $list) => $list->value, FilterLists::cases()),
+            'default-lists' => array_map(fn (FilterLists $list) => $list->value, FilterLists::defaultLists()),
         ];
 
         if ($verbose) {

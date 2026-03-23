@@ -40,6 +40,14 @@ enum FilterLists: string
     /**
      * @return list<FilterLists>
      */
+    public static function defaultLists(): array
+    {
+        return [self::AIKIDO_MALWARE];
+    }
+
+    /**
+     * @return list<FilterLists>
+     */
     public static function malwareLists(): array
     {
         return [self::AIKIDO_MALWARE];
