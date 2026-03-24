@@ -53,7 +53,7 @@ class FilterListEntry
 
     public function __construct(RemoteFilterListEntry $remote)
     {
-        $this->publicId = IdGenerator::generateFilterListEntry();
+        $this->assignPublicId();
         $this->packageName = $remote->packageName;
         $this->version = $remote->version;
         $this->link = $remote->link;
@@ -90,5 +90,10 @@ class FilterListEntry
     public function getPublicId(): ?string
     {
         return $this->publicId;
+    }
+
+    public function assignPublicId(): void
+    {
+        $this->publicId = IdGenerator::generateFilterListEntry();
     }
 }

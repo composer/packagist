@@ -25,6 +25,10 @@ class FilterListResolver
     {
         $existingMap = [];
         foreach ($existingEntries as $existing) {
+            if (!$existing->getPublicId()) {
+                $existing->assignPublicId();
+            }
+
             $existingMap[$existing->getPackageName()][$existing->getVersion()] = $existing;
         }
 
