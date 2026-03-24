@@ -60,9 +60,4 @@ enum FilterLists: string
     {
         return array_map(fn (FilterLists $list) => $list->value, self::malwareLists());
     }
-
-    public static function fromWithBackwardsCompatibility(string $list): self
-    {
-        return self::from($list === 'aikido' ? self::AIKIDO_MALWARE->value : $list);
-    }
 }

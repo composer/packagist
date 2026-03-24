@@ -43,7 +43,7 @@ class UpdateFilterListCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            $list = FilterLists::fromWithBackwardsCompatibility($input->getArgument('list'));
+            $list = FilterLists::from($input->getArgument('list'));
         } catch (\ValueError) {
             $output->writeln('list must be one of ' . implode(', ', array_map(fn (FilterLists $list) => $list->value, FilterLists::cases())));
 
