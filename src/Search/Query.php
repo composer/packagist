@@ -45,6 +45,10 @@ final class Query
         if ($perPage > 100) {
             throw new \InvalidArgumentException('The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)');
         }
+
+        if ($page > 300) {
+            throw new \InvalidArgumentException('The optional page parameter must be between 1 and 300');
+        }
     }
 
     /**

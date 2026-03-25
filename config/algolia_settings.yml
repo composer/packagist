@@ -30,6 +30,8 @@ advancedSyntax: true
 separatorsToIndex:
     - '/'
 
+paginationLimitedTo: 300
+
 attributesForFaceting:
     - "type"
     - "searchable(tags)"

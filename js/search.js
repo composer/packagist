@@ -296,7 +296,7 @@ search.addWidgets([
 
     pagination({
         container: '.pagination',
-        totalPages: 200,
+        totalPages: 20,
         scrollTo: '#search_query_query',
         showFirst: false,
         showLast: false,
