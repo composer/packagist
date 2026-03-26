@@ -31,7 +31,6 @@ use App\Entity\Vendor;
 use App\Entity\Version;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
-use App\FilterList\FilterListCategories;
 use App\Form\Model\MaintainerRequest;
 use App\Form\Model\TransferPackageRequest;
 use App\Form\Type\AbandonedType;
@@ -1659,12 +1658,12 @@ class PackageController extends Controller
         return $this->render('package/security_advisory.html.twig', ['securityAdvisories' => $securityAdvisories, 'id' => $id]);
     }
 
-    #[Route(path: '/packages/{name}/filter-lists/{category}', name: 'view_package_filter_lists', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, 'category' => new EnumRequirement(FilterListCategories::class)])]
-    public function filterListsAction(Request $request, string $name, FilterListCategories $category): Response
+    #[Route(path: '/packages/{name}/filter-lists/', name: 'view_package_filter_lists', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX])]
+    public function filterListsAction(Request $request, string $name): Response
     {
         /** @var FilterListEntryRepository $repo */
         $repo = $this->getEM()->getRepository(FilterListEntry::class);
-        $entries = $repo->getPackageEntriesForCategory($name, $category);
+        $entries = $repo->getPackageEntries($name);
 
         $data = [];
         $data['name'] = $name;
@@ -1696,7 +1695,6 @@ class PackageController extends Controller
 
         $data['entries'] = $entries;
         $data['count'] = \count($entries);
-        $data['category'] = $category;
 
         return $this->render('package/filter_list_entries.html.twig', $data);
     }

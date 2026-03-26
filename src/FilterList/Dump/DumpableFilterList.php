@@ -17,7 +17,7 @@ final readonly class DumpableFilterList
     public function __construct(
         public string $constraint,
         public string $url,
-        public string $category,
         public ?string $reason,
+        public ?string $id,
     ) {}
 }

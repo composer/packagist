@@ -10,17 +10,29 @@
  * file that was distributed with this source code.
  */
 
-namespace App\SecurityAdvisory;
+namespace App\Service;
 
-class AdvisoryIdGenerator
+class IdGenerator
 {
     // All alphanumeric symbols except vowels and some to avoid misspellings (I, O, l, 0), case insensitive, 34 character alphabet
     private const ALNUM_SAFE_CI = 'bcdfghjkmnpqrstvwxyz123456789';
 
-    public static function generate(): string
+    public static function generateSecurityAdvisoryId(): string
+    {
+        return self::generate('PKSA-');
+
+    }
+
+    public static function generateFilterListEntry(): string
+    {
+        return self::generate('PKFE-');
+
+    }
+
+    private static function generate(string $prefix): string
     {
         $letterPool = self::ALNUM_SAFE_CI;
-        $token = 'PKSA-';
+        $token = $prefix;
         $len = \strlen($letterPool) - 1;
         for ($i = 0; $i < 3; $i++) {
             for ($j = 0; $j < 4; $j++) {

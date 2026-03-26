@@ -52,17 +52,17 @@ final readonly class FilterListWorker
         }
 
         $source = $this->filterLists[$list->value];
-        $remoteMalwareFeed = $source->getListEntries();
-        if (null === $remoteMalwareFeed) {
+        $remoteEntries = $source->getListEntries();
+        if (null === $remoteEntries) {
             $this->logger->info('Filter list update failed, skipping', ['list' => $list]);
             $this->locker->unlockFilterList(self::FILTER_LIST_WORKER_RUN);
 
             return ['status' => Job::STATUS_ERRORED, 'message' => 'Filter list update failed, skipped'];
         }
 
-        /** @var FilterListEntry[] $existingMalwareFeedEntries */
-        $existingMalwareFeedEntries = $this->doctrine->getRepository(FilterListEntry::class)->getPackageVersionsFlaggedAsMalwareInList($list);
-        [$new, $removed] = $this->malwareFeedResolver->resolve($existingMalwareFeedEntries, $remoteMalwareFeed);
+        /** @var FilterListEntry[] $existingEntries */
+        $existingEntries = $this->doctrine->getRepository(FilterListEntry::class)->getEntriesInList($list);
+        [$new, $removed] = $this->malwareFeedResolver->resolve($existingEntries, $remoteEntries);
 
         foreach ($new as $entry) {
             $this->doctrine->getManager()->persist($entry);

@@ -21,7 +21,6 @@ use App\Entity\SecurityAdvisory;
 use App\Entity\Version;
 use App\FilterList\Dump\DumpableFilterList;
 use App\FilterList\Dump\FilterListDumperProvider;
-use App\FilterList\FilterListCategories;
 use App\FilterList\FilterLists;
 use App\Model\ProviderManager;
 use App\Service\CdnClient;
@@ -100,7 +99,7 @@ class V2Dumper
         $rootFileContents['filter'] = [
             'metadata' => true,
             'lists' => array_map(fn (FilterLists $list) => $list->value, FilterLists::cases()),
-            'categories' => array_map(fn (FilterListCategories $category) => $category->value, FilterListCategories::cases()),
+            'default-lists' => array_map(fn (FilterLists $list) => $list->value, FilterLists::defaultLists()),
         ];
 
         if ($verbose) {
@@ -161,7 +160,7 @@ class V2Dumper
             unset($idBatch);
             $packageNames = array_map(static fn (Package $pkg) => $pkg->getName(), $packages);
             $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
-            $filterLists = $this->filterListDumperProvider->getMalwareDataForDump($packageNames);
+            $filterLists = $this->filterListDumperProvider->getEntriesForDump($packageNames);
 
             if ($verbose) {
                 echo '['.\sprintf('%'.\strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.\PHP_EOL;

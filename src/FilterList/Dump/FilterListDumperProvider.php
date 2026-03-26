@@ -30,26 +30,19 @@ final readonly class FilterListDumperProvider
      * @param string[] $packageNames
      * @return array<string, array<string, list<DumpableFilterList>>>
      */
-    public function getMalwareDataForDump(array $packageNames): array
+    public function getEntriesForDump(array $packageNames): array
     {
-        $malwarePackageVersions = $this->getEM()->getRepository(FilterListEntry::class)->getPackageVersionsFlaggedAsMalwareForPackageNames($packageNames);
+        $allPackageEntries = $this->getEM()->getRepository(FilterListEntry::class)->getAllPackageEntriesMap($packageNames);
 
         $groupedEntries = [];
-        foreach ($malwarePackageVersions as $packageName => $entries) {
-            $packageGroup = [];
+        foreach ($allPackageEntries as $packageName => $entries) {
             foreach ($entries as $entry) {
-                $packageGroup[$entry['list']][$entry['category']][] = $entry['version'];
-            }
-
-            foreach ($packageGroup as $list => $categories) {
-                foreach ($categories as $category => $versions) {
-                    $groupedEntries[$packageName][$list][] = new DumpableFilterList(
-                        implode(' || ', $versions),
-                        $this->urlGenerator->generate('view_package_filter_lists', ['name' => $packageName, 'category' => $category], UrlGeneratorInterface::ABSOLUTE_URL),
-                        $category,
-                        null,
-                    );
-                }
+                $groupedEntries[$packageName][$entry['list']][] = new DumpableFilterList(
+                    $entry['version'],
+                    $this->urlGenerator->generate('view_package_filter_lists', ['name' => $packageName], UrlGeneratorInterface::ABSOLUTE_URL),
+                    $entry['reason'],
+                    $entry['publicId'],
+                );
             }
         }
 

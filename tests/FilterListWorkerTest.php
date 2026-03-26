@@ -15,7 +15,6 @@ namespace App\Tests;
 use App\Entity\Job;
 use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
-use App\FilterList\FilterListCategories;
 use App\FilterList\FilterLists;
 use App\FilterList\List\FilterListInterface;
 use App\FilterList\FilterListEntryUpdateListener;
@@ -82,7 +81,7 @@ class FilterListWorkerTest extends TestCase
 
         $this->filterListEntryRepository
             ->expects($this->once())
-            ->method('getPackageVersionsFlaggedAsMalwareInList')
+            ->method('getEntriesInList')
             ->with(FilterLists::AIKIDO_MALWARE)
             ->willReturn([$existingEntry, $existingEntryToBeDeleted]);
 
@@ -111,7 +110,7 @@ class FilterListWorkerTest extends TestCase
 
         $this->filterListEntryRepository
             ->expects($this->once())
-            ->method('getPackageVersionsFlaggedAsMalwareInList')
+            ->method('getEntriesInList')
             ->with(FilterLists::AIKIDO_MALWARE)
             ->willReturn([]);
 
@@ -135,7 +134,7 @@ class FilterListWorkerTest extends TestCase
 
         $this->filterListEntryRepository
             ->expects($this->never())
-            ->method('getPackageVersionsFlaggedAsMalwareInList');
+            ->method('getEntriesInList');
 
         $result = $this->worker->process($this->createJob(), SignalHandler::create());
 
@@ -155,7 +154,7 @@ class FilterListWorkerTest extends TestCase
 
         $this->filterListEntryRepository
             ->expects($this->never())
-            ->method('getPackageVersionsFlaggedAsMalwareInList');
+            ->method('getEntriesInList');
 
         $this->expectNoPersistAndRemove();
 
@@ -171,8 +170,8 @@ class FilterListWorkerTest extends TestCase
             $packageName,
             $version,
             FilterLists::AIKIDO_MALWARE,
-            FilterListCategories::MALWARE,
             'https://example.com/' . $packageName,
+            'malware',
         );
     }
 

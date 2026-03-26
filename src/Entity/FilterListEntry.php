@@ -12,15 +12,14 @@
 
 namespace App\Entity;
 
-use App\FilterList\FilterListCategories;
 use App\FilterList\FilterLists;
 use App\FilterList\RemoteFilterListEntry;
+use App\Service\IdGenerator;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FilterListEntryRepository::class)]
 #[ORM\Table(name: 'filter_list_entry')]
 #[ORM\UniqueConstraint(name: 'list_package_version_idx', columns: ['list', 'packageName', 'version'])]
-#[ORM\Index(name: 'category_list_idx', columns: ['category', 'list'])]
 #[ORM\Index(name: 'updated_at_idx', columns: ['updatedAt'])]
 class FilterListEntry
 {
@@ -35,27 +34,31 @@ class FilterListEntry
     #[ORM\Column]
     private string $version;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private string|null $reason;
+
     #[ORM\Column(nullable: true)]
-    private string|null $link = null;
+    private string|null $link;
 
     #[ORM\Column]
     private FilterLists $list;
-
-    #[ORM\Column]
-    private FilterListCategories $category;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
+    #[ORM\Column(nullable: true)]
+    private string|null $publicId;
+
     public function __construct(RemoteFilterListEntry $remote)
     {
+        $this->assignPublicId();
         $this->packageName = $remote->packageName;
         $this->version = $remote->version;
         $this->link = $remote->link;
         $this->list = $remote->list;
-        $this->category = $remote->category;
+        $this->reason = $remote->reason;
 
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
     }
@@ -80,8 +83,17 @@ class FilterListEntry
         return $this->list;
     }
 
-    public function getCategory(): FilterListCategories
+    public function getReason(): ?string
     {
-        return $this->category;
+        return $this->reason;
+    }
+    public function getPublicId(): ?string
+    {
+        return $this->publicId;
+    }
+
+    public function assignPublicId(): void
+    {
+        $this->publicId = IdGenerator::generateFilterListEntry();
     }
 }
