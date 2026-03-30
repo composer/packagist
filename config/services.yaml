@@ -122,7 +122,7 @@ services:
 
     App\Service\FilterListWorker:
         $filterLists:
-            'aikido': '@App\FilterList\List\AikidoMalwareFilterList'
+            'aikido-malware': '@App\FilterList\List\AikidoMalwareFilterList'
 
     Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
         arguments: ['@snc_redis.cache', {prefix: 'sess:', ttl: 3600}]

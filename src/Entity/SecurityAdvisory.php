@@ -17,6 +17,7 @@ use App\SecurityAdvisory\AdvisoryParser;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;
+use App\Service\IdGenerator;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
@@ -246,7 +247,7 @@ class SecurityAdvisory
 
     private function assignPackagistAdvisoryId(): void
     {
-        $this->packagistAdvisoryId = AdvisoryIdGenerator::generate();
+        $this->packagistAdvisoryId = IdGenerator::generateSecurityAdvisoryId();
     }
 
     public function getSeverity(): ?Severity

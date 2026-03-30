@@ -10,6 +10,8 @@
                                     <p>
                                         Flagged version: {{ entry.version }}
 
+                                        Reason: {{ entry.reason }}
+
                                         {% if entry.link %}
                                             <a href="{{ entry.link }}">View details on {{ entry.list.displayName }}</a>
                                         {% endif %}
