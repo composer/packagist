@@ -19,7 +19,7 @@ class FilterListResolver
     /**
      * @param array<FilterListEntry> $existingEntries
      * @param array<RemoteFilterListEntry> $remoteEntries
-     * @return array{0: list<FilterListEntry>, 1: list<FilterListEntry>, 2: bool}
+     * @return array{list<FilterListEntry>, list<FilterListEntry>, bool}
      */
     public function resolve(array $existingEntries, array $remoteEntries): array
     {
