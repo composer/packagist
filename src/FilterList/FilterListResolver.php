@@ -19,14 +19,16 @@ class FilterListResolver
     /**
      * @param array<FilterListEntry> $existingEntries
      * @param array<RemoteFilterListEntry> $remoteEntries
-     * @return array<list<FilterListEntry>, list<FilterListEntry>>
+     * @return array{list<FilterListEntry>, list<FilterListEntry>, bool}
      */
     public function resolve(array $existingEntries, array $remoteEntries): array
     {
+        $modifiedExisting = false;
         $existingMap = [];
         foreach ($existingEntries as $existing) {
             if (!$existing->getPublicId()) {
                 $existing->assignPublicId();
+                $modifiedExisting = true;
             }
 
             $existingMap[$existing->getPackageName()][$existing->getVersion()] = $existing;
@@ -55,6 +57,7 @@ class FilterListResolver
         return [
             $new,
             $unmatched,
+            $modifiedExisting,
         ];
     }
 }
