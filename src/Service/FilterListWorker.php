@@ -62,7 +62,7 @@ final readonly class FilterListWorker
 
         /** @var FilterListEntry[] $existingEntries */
         $existingEntries = $this->doctrine->getRepository(FilterListEntry::class)->getEntriesInList($list);
-        [$new, $removed] = $this->malwareFeedResolver->resolve($existingEntries, $remoteEntries);
+        [$new, $removed, $modifiedExisting] = $this->malwareFeedResolver->resolve($existingEntries, $remoteEntries);
 
         foreach ($new as $entry) {
             $this->doctrine->getManager()->persist($entry);
@@ -72,7 +72,7 @@ final readonly class FilterListWorker
             $this->doctrine->getManager()->remove($entry);
         }
 
-        if ($new !== [] || $removed !== []) {
+        if ($new !== [] || $removed !== [] || $modifiedExisting) {
             $this->doctrine->getManager()->flush();
         }
 
