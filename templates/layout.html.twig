@@ -239,7 +239,11 @@
         </footer>
 
         <script nonce="{{ csp_nonce('script') }}">
+            {% if 'Chrome/112.0.0.0' in app.request.headers.get('User-Agent') %}
+            var algoliaConfig = {};
+            {% else %}
             var algoliaConfig = {{ algolia|json_encode|raw }};
+            {% endif %}
         </script>
         {% block script_init %}{% endblock %}
 
