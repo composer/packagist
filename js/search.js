@@ -1,5 +1,6 @@
 import algoliasearch from 'algoliasearch/lite';
 import instantsearch from 'instantsearch.js';
+import historyRouter from 'instantsearch.js/es/lib/routers/history';
 import { connectSearchBox, connectCurrentRefinements } from 'instantsearch.js/es/connectors';
 import { hits, pagination, clearRefinements, menu, refinementList, configure, panel } from 'instantsearch.js/es/widgets';
 
@@ -34,6 +35,8 @@ if (decodeURI(location.search).match(/[<>]/)) {
     location.replace(location.origin + location.pathname);
 }
 
+var isSearchPage = location.pathname === '/search/';
+var originalPathname = location.pathname;
 var searchClient = algoliasearch(algoliaConfig.app_id, algoliaConfig.search_key);
 var indexName = algoliaConfig.index_name;
 var searchThrottle = null;
@@ -59,7 +62,12 @@ var customSearchClient = {
 
 // Show search container on initial load if URL has search params
 var urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('query') || urlParams.get('q') || urlParams.get('type') || urlParams.get('tags')) {
+var hasQuery = (urlParams.get('query') || '').trim() !== '' || (urlParams.get('q') || '').trim() !== '';
+var hasFilters = urlParams.get('type') || urlParams.get('tags');
+if (!isSearchPage && !hasQuery && hasFilters) {
+    // Redirect to canonical /search/ URL with the filter params
+    location.replace('/search/' + location.search);
+} else if (hasQuery || (isSearchPage && hasFilters)) {
     document.querySelector('#search-container').classList.remove('hidden');
 }
 
@@ -70,9 +78,10 @@ var opts = {
         var indexState = uiState[indexName] || {};
         var searchResults = document.querySelector('#search-container');
 
-        var hasSearch = (indexState.query && indexState.query !== '')
-            || (indexState.menu && indexState.menu.type)
+        var hasQuery = indexState.query && indexState.query.trim() !== '';
+        var hasFilters = (indexState.menu && indexState.menu.type)
             || (indexState.refinementList && indexState.refinementList.tags && indexState.refinementList.tags.length > 0);
+        var hasSearch = hasQuery || (isSearchPage && hasFilters);
 
         if (!hasSearch) {
             searchResults.classList.add('hidden');
@@ -98,6 +107,17 @@ var opts = {
         setUiState(uiState);
     },
     routing: {
+        router: historyRouter({
+            createURL: function ({ qsModule, routeState, location }) {
+                var queryString = qsModule.stringify(routeState);
+                var protocol = location.protocol;
+                var hostname = location.hostname;
+                var port = location.port ? ':' + location.port : '';
+                // Use /search/ as base path when there are search params, otherwise restore original path
+                var pathname = queryString ? '/search/' : originalPathname;
+                return protocol + '//' + hostname + port + pathname + (queryString ? '?' + queryString : '') + location.hash;
+            },
+        }),
         stateMapping: {
             stateToRoute: function (uiState) {
                 var indexUiState = uiState[indexName] || {};
@@ -113,11 +133,10 @@ var opts = {
                     routeState.query = routeState.q;
                 }
 
-                if (
-                    (!routeState.query || routeState.query === '')
-                    && (!routeState.type || routeState.type === '')
-                    && (!routeState.tags || routeState.tags === '')
-                ) {
+                var hasQuery = routeState.query && routeState.query.trim() !== '';
+                var hasFilters = (routeState.type && routeState.type !== '')
+                    || (routeState.tags && routeState.tags !== '');
+                if (!hasQuery && !(isSearchPage && hasFilters)) {
                     return { [indexName]: {} };
                 }
 
@@ -251,7 +270,7 @@ search.addWidgets([
                 if (hit.abandoned) {
                     var replacementHtml = '';
                     if (hit.replacementPackage) {
-                        replacementHtml = ` See <a href="${hit.replacementPackageUrl}">${hit.replacementPackage}</a>`;
+                        replacementHtml = ` See <a href="${hit.replacementPackageUrl}" rel="nofollow noindex">${hit.replacementPackage}</a>`;
                     }
                     abandonedHtml = `<p class="abandoned"><i class="glyphicon glyphicon-exclamation-sign"></i> Abandoned!${replacementHtml}</p>`;
                 }
@@ -275,7 +294,7 @@ search.addWidgets([
                         <div class="col-sm-9 col-lg-10">
                             <p class="pull-right language">${hit.language || ''}</p>
                             <h4 class="font-bold">
-                                <a href="${hit.url}" tabindex="2">${nameHighlight}</a>${extensionHtml}
+                                <a href="${hit.url}" tabindex="2" rel="nofollow noindex">${nameHighlight}</a>${extensionHtml}
                                 ${virtualHtml}
                             </h4>
                             <p>${descHighlight}</p>
@@ -329,5 +348,13 @@ search.addWidgets([
 if (location.href.match(/\/extensions/)) {
     search.addWidgets([configure({ filters: 'extension = 1' })]);
 }
+
+search.on('render', function () {
+    document.querySelectorAll('#search-container a[href]').forEach(function (link) {
+        if (!link.getAttribute('rel')) {
+            link.setAttribute('rel', 'nofollow noindex');
+        }
+    });
+});
 
 search.start();
