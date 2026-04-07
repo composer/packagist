@@ -1898,6 +1898,175 @@ body {
     speak: none;
 }
 
+// Sponsor page styles
+.sponsor-page {
+    .btn-primary {
+        background-color: #f28d1a;
+        border-color: #d97c10;
+
+        &:hover, &:focus {
+            background-color: #d97c10;
+            border-color: #c06e0a;
+        }
+    }
+}
+
+.sponsor-hero {
+    margin-bottom: 40px;
+
+    .title {
+        border-bottom: none;
+        margin-bottom: 10px;
+    }
+
+    p {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+}
+
+.sponsor-quote {
+    margin-bottom: 40px;
+
+    blockquote {
+        border: none;
+        margin: 0 auto;
+        max-width: 700px;
+        padding: 20px 0;
+
+        p {
+            font-style: italic;
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .sponsor-quote-attribution {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #2d2d32;
+        }
+
+        .sponsor-quote-photo {
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+    }
+}
+
+.sponsor-logos {
+    margin-bottom: 40px;
+
+    .sponsor-logo-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 90px;
+    }
+
+    img {
+        width: 180px;
+        height: 50px;
+        object-fit: contain;
+        object-position: center;
+        transition: opacity 0.2s;
+    }
+
+    a:hover img {
+        opacity: 0.7;
+    }
+
+    img[alt="Aikido"] {
+        height: 40px;
+    }
+}
+
+.sponsor-tiers {
+    margin-bottom: 40px;
+}
+
+.sponsor-tiers-cta {
+    margin-top: 10px;
+}
+
+.sponsor-tier-card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px 15px;
+    margin-bottom: 20px;
+    background: #fff;
+    font-size: 13px;
+
+    h4 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2d2d32;
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+
+    .sponsor-tier-price {
+        font-size: 24px;
+        font-weight: 600;
+        color: #f28d1a;
+        margin-bottom: 12px;
+
+        span {
+            font-size: 13px;
+            font-weight: 400;
+            color: #777;
+        }
+    }
+
+    ul {
+        padding-left: 18px;
+        margin-bottom: 0;
+
+        li {
+            margin-bottom: 4px;
+            line-height: 150%;
+        }
+    }
+
+}
+
+.sponsor-funding,
+.sponsor-individual {
+    margin-bottom: 30px;
+}
+
+.sponsor-faq {
+    margin-bottom: 40px;
+
+    .sponsor-faq-item {
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+
+        &:first-of-type {
+            border-top: 1px solid #eee;
+        }
+
+        h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 0 5px;
+        }
+
+        p {
+            margin: 0;
+        }
+    }
+}
+
+.sponsor-contact {
+    background: #f9f9f9;
+    border-radius: 4px;
+    padding: 30px 20px;
+    margin-bottom: 20px;
+}
+
+// Footer sponsor styles
 .sponsor {
     p {
         margin-bottom: 0;

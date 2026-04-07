@@ -1,22 +1,172 @@
 {% extends "layout.html.twig" %}
 
+{% block title %}Sponsor Packagist.org & Composer{% endblock %}
+
 {% block content %}
-<section class="row">
-    <section class="col-lg-12">
-        <h2 class="title">Sponsoring Packagist.org &amp; Composer</h2>
+{% set sponsors = [
+    {name: 'Private Packagist', logo: 'private-packagist-dark.svg', url: 'https://packagist.com/?utm_source=packagist', tier: 7},
+    {name: 'Aikido', logo: 'aikido-dark.svg', url: 'https://www.aikido.dev/?utm_source=packagist', tier: 6},
+    {name: 'Sovereign Tech Fund', logo: 'sovereign-tech-agency-dark.svg', url: 'https://www.sovereign.tech/?utm_source=packagist', tier: 5},
+    {name: 'AWS', logo: 'aws-dark.svg', url: 'https://aws.amazon.com/?utm_source=packagist', tier: 4},
+    {name: 'Bunny.net', logo: 'bunny-net-dark.svg', url: 'https://bunny.net/?utm_source=packagist', tier: 3},
+    {name: 'Tideways', logo: 'tideways-dark.svg', url: 'https://tideways.com/?utm_source=packagist', tier: 2},
+    {name: 'Datadog', logo: 'datadog-dark.svg', url: 'https://datadog.com/?utm_source=packagist', tier: 1},
+    {name: 'Algolia', logo: 'algolia-dark.svg', url: 'https://www.algolia.com/?utm_source=packagist', tier: 0},
+] %}
+{% set sponsor_form_url = 'GOOGLE_FORM_URL' %}
+
+<div class="sponsor-page">
+    {# Hero Section #}
+    <section class="sponsor-hero">
+        <h2 class="title">Support Packagist.org &amp; Composer</h2>
     </section>
-    <section class="col-lg-6">
-        <div>
-            <p>Packagist.org and Composer serve millions of PHP developers worldwide, handling billions of package installs every year. Keeping this critical infrastructure running, secure, and continuously improved requires sustainable funding.</p>
-            <h3>How We Fund Open Source</h3>
-            <p>We have built a sustainable model: Revenue from <a href="https://packagist.com">Private Packagist</a> subscriptions directly fund the development and operations of Packagist.org and Composer. This approach allows us to maintain our independence and focus our energy on building great tools rather than constant fundraising.</p>
-            <p>Private Packagist offers businesses private package hosting, enhanced security and compliance features, mirroring of other third party repositories, and advanced dependency management tools. When you subscribe, you're not just getting powerful features for your team, you are directly supporting the open source ecosystem you depend on.</p>
-            <h3>Support the Ecosystem</h3>
-            <p><strong>For businesses and teams:</strong> If your company relies on Composer and Packagist.org, subscribing to <a href="https://packagist.com">Private Packagist</a> is the most impactful way to support continued development while gaining valuable features that improve your workflow and security posture.</p>
-            <p><strong>For individuals and smaller contributions:</strong> We also welcome support through <a href="https://github.com/sponsors/composer">GitHub Sponsors</a>, which is perfect for individual developers or one-time contributions.</p>
-            <p><strong>For larger partnerships or custom arrangements:</strong> We're happy to discuss tailored solutions. Reach out to us at <a href="mailto:contact@packagist.org">contact@packagist.org</a>.</p>
-            <p>Every subscription and donation helps us keep Composer and Packagist.org free, fast, and reliable for the entire PHP community. Thank you for your support!</p>
+
+    {# Social Proof #}
+    <section class="sponsor-quote">
+        <blockquote>
+            <p>Composer and Packagist.org are critical shared infrastructure for the entire PHP ecosystem, serving millions of developers and handling billions of installs every year. The burden of operating and improving these tools should not fall on a single company alone. Our sponsors help share that responsibility, ensuring this infrastructure remains reliable, secure, and independent for every PHP developer.</p>
+            <div class="sponsor-quote-attribution">
+                <img src="{{ asset('img/jordi-boggiano.jpg') }}" alt="Jordi Boggiano" class="sponsor-quote-photo" width="48" height="48" />
+                <div>
+                    <strong>Jordi Boggiano</strong><br>Creator of Composer &amp; Packagist
+                </div>
+            </div>
+        </blockquote>
+    </section>
+
+    {# Sponsor Logos Grid #}
+    <section class="sponsor-logos">
+        <h3>Thank you to our sponsors</h3>
+        <p>We are grateful to the following sponsors for supporting the ongoing development and maintenance of Composer and Packagist.org.</p>
+        <div class="row">
+            {% for sponsor in sponsors|sort((a, b) => b.tier <=> a.tier) %}
+            <div class="col-xs-6 col-sm-4 col-md-3 sponsor-logo-item">
+                <a href="{{ sponsor.url }}" target="_blank" rel="noopener sponsored">
+                    <img src="{{ asset('img/' ~ sponsor.logo) }}" alt="{{ sponsor.name }}" width="180" height="60" />
+                </a>
+            </div>
+            {% endfor %}
         </div>
     </section>
-</section>
+
+    {# Sponsorship Tiers #}
+    <section class="sponsor-tiers">
+        <h3>Sponsorship Tiers</h3>
+        <div class="row">
+            <div class="col-xs-12 col-sm-6 col-lg-4">
+                <div class="sponsor-tier-card">
+                    <h4>Bronze</h4>
+                    <div class="sponsor-tier-price">&euro;2,500<span>/mo</span></div>
+                    <ul>
+                        <li>Logo on sponsors page</li>
+                        <li>Social media welcome post (Mastodon, Bluesky, LinkedIn, X)</li>
+                        <li>Included in annual sponsor thank-you blog post</li>
+                        <li>Logo on Composer GitHub README</li>
+                        <li>10% Private Packagist discount</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6 col-lg-4">
+                <div class="sponsor-tier-card">
+                    <h4>Silver</h4>
+                    <div class="sponsor-tier-price">&euro;5,000<span>/mo</span></div>
+                    <ul>
+                        <li>Logo on sponsors page</li>
+                        <li>Social media welcome post (Mastodon, Bluesky, LinkedIn, X)</li>
+                        <li>Included in annual sponsor thank-you blog post</li>
+                        <li>Logo on Composer GitHub README</li>
+                        <li>Shared Slack channel</li>
+                        <li>Priority issue/bug response on GitHub</li>
+                        <li>15% Private Packagist discount</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6 col-lg-4">
+                <div class="sponsor-tier-card">
+                    <h4>Gold</h4>
+                    <div class="sponsor-tier-price">&euro;8,000<span>/mo</span></div>
+                    <ul>
+                        <li>Logo on sponsors page</li>
+                        <li>Social media welcome post (Mastodon, Bluesky, LinkedIn, X)</li>
+                        <li>Included in annual sponsor thank-you blog post</li>
+                        <li>Logo on Composer GitHub README</li>
+                        <li>Shared Slack channel</li>
+                        <li>Priority issue/bug response on GitHub</li>
+                        <li>Logo in Packagist.org footer</li>
+                        <li>20% Private Packagist discount</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <p class="text-center sponsor-tiers-cta">
+            <a href="{{ sponsor_form_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Become a Sponsor</a>
+        </p>
+    </section>
+
+    {# How We Fund Open Source #}
+    <section class="sponsor-funding">
+        <h3>How we fund Composer development and Packagist.org operations</h3>
+        <p>In 2025 maintaining Composer and Packagist.org cost around &euro;720k (US$845k) and we expect it to cost around &euro;880k (US$1.03M) in 2026. This cost is partially covered by infrastructure donations like servers and bandwidth, but a large part of the cost is staff to operate Packagist.org, provide support and incident response, but also to develop new features. Even at this budget we still lack funding for all of the major improvements to PHP supply chain security we would like to make.</p>
+        <p><a href="https://packagist.com">Private Packagist</a> subscriptions (from &euro;59/month) directly fund the development and operations of Packagist.org and Composer. If the major sponsorship tiers above are not the right fit, this is the best way to support us. Best of all, your business gets great additional functionality to work with dependencies in PHP: package mirroring, security monitoring, update review, usage tracking, and of course easy access to code in private packages.</p>
+        <p>Additional sponsors help us go beyond maintenance, enabling new functionality, additional security features, and a better experience for the entire PHP ecosystem.</p>
+    </section>
+
+    {# FAQ #}
+    <section class="sponsor-faq">
+        <h3>Frequently Asked Questions</h3>
+
+        <div class="sponsor-faq-item">
+            <h4>How do I become a sponsor?</h4>
+            <p>Fill out our <a href="{{ sponsor_form_url }}" target="_blank" rel="noopener">sponsorship inquiry form</a> with the tier you're interested in, and we'll get you set up.</p>
+        </div>
+
+        <div class="sponsor-faq-item">
+            <h4>What happens after I sponsor?</h4>
+            <p>We'll add your logo to the sponsors page, publish a welcome post on social media, and arrange a shared Slack channel if your tier includes one.</p>
+        </div>
+
+        <div class="sponsor-faq-item">
+            <h4>What is the shared Slack channel?</h4>
+            <p>Your company will have a dedicated 1:1 Slack channel (via Slack Connect if you use Slack yourself) to connect your engineers directly with the maintainers of Composer and the engineers operating Packagist.org.</p>
+        </div>
+
+        <div class="sponsor-faq-item">
+            <h4>How do contracts and billing work?</h4>
+            <p>Sponsorships are based on an annual commitment. Payment is available by credit card or wire transfer upon invoice.</p>
+        </div>
+
+        <div class="sponsor-faq-item">
+            <h4>Can I cancel or change tiers?</h4>
+            <p>Yes, sponsorships can be adjusted or cancelled with at least 30 days notice before the end of the current term.</p>
+        </div>
+
+        <div class="sponsor-faq-item">
+            <h4>What is your refund policy?</h4>
+            <p>Sponsorships are non-refundable, but you can cancel at any time with at least 30 days notice till end of the respective term.</p>
+        </div>
+
+        <div class="sponsor-faq-item">
+            <h4>Do you offer custom arrangements?</h4>
+            <p>Yes, we're happy to discuss tailored partnerships. Reach out via our <a href="{{ sponsor_form_url }}" target="_blank" rel="noopener">inquiry form</a>.</p>
+        </div>
+
+        <div class="sponsor-faq-item">
+            <h4>What logo format do you need?</h4>
+            <p>SVG is preferred for best quality across devices. We can also work with high-resolution PNG files.</p>
+        </div>
+    </section>
+
+    {# Individual Support #}
+    <section class="sponsor-individual" id="individual-support">
+        <h3>Individual Support</h3>
+        <p>If you're an individual developer who wants to support Composer and Packagist.org, we welcome contributions through <a href="https://github.com/sponsors/composer">GitHub Sponsors</a>.</p>
+    </section>
+
+    {# Contact CTA #}
+    <section class="sponsor-contact text-center">
+        <h3>Interested in sponsoring?</h3>
+        <p>Fill out our inquiry form and we'll find the right fit for your company.</p>
+        <a href="{{ sponsor_form_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Get in Touch</a>
+    </section>
+</div>
 {% endblock %}
