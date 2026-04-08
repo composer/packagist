@@ -379,7 +379,15 @@ class V2Dumper
 
         // fetch the file to ensure the region we hit after has a hot cache so we can verify correctly that the purge worked
         if (file_exists($path)) {
-            $this->fetchCdnFile($relativePath);
+            try {
+                $this->cdnClient->fetchPublicMetadata($relativePath);
+            } catch (\Exception $e) {
+                // ignore 404s as if the file is not there yet it means it's unlikely to be cached in a bad state on some other region
+                if ($e->getCode() !== 404) {
+                    throw $e;
+                }
+                $this->httpClient->reset();
+            }
         }
 
         $this->filesystem->mkdir(\dirname($path));
