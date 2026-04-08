@@ -13,14 +13,20 @@
 namespace App\Service;
 
 use App\Entity\FilterListEntry;
+use App\Entity\Package;
 use App\FilterList\FilterLists;
 use App\FilterList\List\FilterListInterface;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterListResolver;
 use App\Entity\Job;
+use App\Model\DownloadManager;
 use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final readonly class FilterListWorker
 {
@@ -36,6 +42,10 @@ final readonly class FilterListWorker
         private array $filterLists,
         private FilterListResolver $malwareFeedResolver,
         private FilterListEntryUpdateListener $malwarePackageVersionUpdateListener,
+        private MailerInterface $mailer,
+        private DownloadManager $downloadManager,
+        private string $mailFromEmail,
+        private UrlGeneratorInterface $urlGenerator,
     ) {}
 
     /**
@@ -77,6 +87,41 @@ final readonly class FilterListWorker
         }
 
         $this->malwarePackageVersionUpdateListener->flushChangesToPackages();
+
+        /** @var array<string, list<FilterListEntry>> $newEntriesByPackage */
+        $newEntriesByPackage = [];
+        foreach ($new as $entry) {
+            $newEntriesByPackage[$entry->getPackageName()][] = $entry;
+        }
+
+        foreach ($newEntriesByPackage as $packageName => $entries) {
+            $package = $this->doctrine->getRepository(Package::class)->findOneBy(['name' => $packageName]);
+            $downloads = $package ? $this->downloadManager->getTotalDownloads($package->getId()) : 0;
+            $packageUrl = $this->urlGenerator->generate('view_package', ['name' => $packageName], UrlGeneratorInterface::ABSOLUTE_URL);
+
+            if ($downloads >= 10_000) {
+                $subject = '[URGENT] Filter list entry added for high-download package ' . $packageName . ' (' . number_format($downloads) . ' downloads)';
+                $body = 'A new filter list entry has been added for ' . $packageName . ' which has ' . number_format($downloads) . " total downloads. This requires urgent attention.\n\n";
+            } else {
+                $subject = 'Filter list entry added for ' . $packageName;
+                $body = 'A new filter list entry has been added for ' . $packageName . ".\n\n";
+            }
+
+            $body .= 'Package: ' . $packageUrl . "\n"
+                . 'List: ' . $list->value . "\n"
+                . 'Versions: ' . implode(', ', array_map(fn (FilterListEntry $e) => $e->getVersion(), $entries)) . "\n"
+                . 'Reason: ' . ($entries[0]->getReason() ?? 'N/A') . "\n"
+                . 'Link: ' . ($entries[0]->getLink() ?? 'N/A') . "\n";
+
+            $message = (new Email())
+                ->subject($subject)
+                ->from(new Address($this->mailFromEmail))
+                ->to($this->mailFromEmail)
+                ->text($body)
+            ;
+            $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
+            $this->mailer->send($message);
+        }
 
         $this->locker->unlockFilterList(self::FILTER_LIST_WORKER_RUN);
 
