@@ -74,7 +74,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\Requirement\EnumRequirement;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
@@ -986,7 +985,6 @@ class PackageController extends Controller
         ]);
     }
 
-
     #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET', 'POST'])]
     public function transferPackageAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger): RedirectResponse
     {
@@ -1014,7 +1012,7 @@ class PackageController extends Controller
 
             if ($result) {
                 $usernames = array_map(fn (User $user) => $user->getUsername(), $newMaintainers);
-                $this->addFlash('success', sprintf('Package has been transferred to %s', implode(', ', $usernames)));
+                $this->addFlash('success', \sprintf('Package has been transferred to %s', implode(', ', $usernames)));
             } else {
                 $this->addFlash('warning', 'Package maintainers are identical and have not been changed');
             }

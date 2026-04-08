@@ -303,7 +303,7 @@ class AuditRecord
             AuditRecordType::FilterListEntryDeleted,
             [
                 'entry' => self::getFilterListEntryData($entry),
-                'actor' => self::getUserData($actor, 'automation')
+                'actor' => self::getUserData($actor, 'automation'),
             ],
         );
     }

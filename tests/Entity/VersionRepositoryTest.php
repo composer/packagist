@@ -69,6 +69,5 @@ class VersionRepositoryTest extends IntegrationTestCase
         } else {
             $this->assertNull($auditRecord, 'Audit record for version deleted created');
         }
-
     }
 }

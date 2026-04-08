@@ -12,7 +12,6 @@
 
 namespace App\Entity;
 
-use App\SecurityAdvisory\AdvisoryIdGenerator;
 use App\SecurityAdvisory\AdvisoryParser;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;

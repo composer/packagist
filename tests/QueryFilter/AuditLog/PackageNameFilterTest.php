@@ -14,8 +14,8 @@ namespace App\Tests\QueryFilter\AuditLog;
 
 use App\Entity\AuditRecord;
 use App\QueryFilter\AuditLog\PackageNameFilter;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\InputBag;
 

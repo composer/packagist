@@ -47,8 +47,8 @@ class V2DumperTest extends IntegrationTestCase
 
         $this->webDir = sys_get_temp_dir().'/v2dumper_web_'.uniqid('', true);
         $this->buildDir = sys_get_temp_dir().'/v2dumper_build_'.uniqid('', true);
-        mkdir($this->webDir, 0777, true);
-        mkdir($this->buildDir, 0777, true);
+        mkdir($this->webDir, 0o777, true);
+        mkdir($this->buildDir, 0o777, true);
 
         // Return a filemtime that does NOT end with '0000' so the Redis counter branch is skipped
         $cdnClient = $this->createStub(CdnClient::class);
@@ -78,8 +78,8 @@ class V2DumperTest extends IntegrationTestCase
     {
         parent::tearDown();
 
-        (new Filesystem)->remove($this->webDir);
-        (new Filesystem)->remove($this->buildDir);
+        new Filesystem()->remove($this->webDir);
+        new Filesystem()->remove($this->buildDir);
     }
 
     public function testDumpPackageMetadata(): void

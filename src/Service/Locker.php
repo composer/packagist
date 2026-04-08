@@ -12,7 +12,6 @@
 
 namespace App\Service;
 
-use App\FilterList\FilterLists;
 use App\Util\DoctrineTrait;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Connections\PrimaryReadReplicaConnection;

@@ -85,7 +85,7 @@ class RegistrationControllerTest extends IntegrationTestCase
     {
         $token = $this->registerUserAndGetToken('test@example.com', 'test.user');
 
-        $crawler = $this->client->request('GET', '/register/check-email/' . $token);
+        $crawler = $this->client->request('GET', '/register/check-email/'.$token);
         $this->assertResponseStatusCodeSame(200);
 
         $this->assertStringContainsString('test@example.com', $crawler->filter('body')->text());
@@ -97,7 +97,7 @@ class RegistrationControllerTest extends IntegrationTestCase
     {
         $token = $this->registerUserAndGetToken('old@example.com', 'test.user2');
 
-        $crawler = $this->client->request('GET', '/register/check-email/' . $token);
+        $crawler = $this->client->request('GET', '/register/check-email/'.$token);
         $this->assertResponseStatusCodeSame(200);
 
         $form = $crawler->selectButton('Update & Resend Confirmation Email')->form();
@@ -135,7 +135,7 @@ class RegistrationControllerTest extends IntegrationTestCase
     {
         $token = $this->registerUserAndGetToken('old@example.com', 'test.user2');
 
-        $crawler = $this->client->request('GET', '/register/check-email/' . $token);
+        $crawler = $this->client->request('GET', '/register/check-email/'.$token);
         $this->assertResponseStatusCodeSame(200);
 
         $form = $crawler->selectButton('Update & Resend Confirmation Email')->form();
@@ -153,7 +153,7 @@ class RegistrationControllerTest extends IntegrationTestCase
     {
         $token = $this->registerUserAndGetToken('test@example.com', 'test.user3');
 
-        $crawler = $this->client->request('GET', '/register/check-email/' . $token);
+        $crawler = $this->client->request('GET', '/register/check-email/'.$token);
         $form = $crawler->selectButton('Update & Resend Confirmation Email')->form();
         $form->setValues([
             'update_email_form[email]' => 'invalid-email',
@@ -172,9 +172,9 @@ class RegistrationControllerTest extends IntegrationTestCase
 
         $token = $this->registerUserAndGetToken('test@example.com', 'test.user4');
 
-        $mockClock->sleep(11*60);
+        $mockClock->sleep(11 * 60);
 
-        $this->client->request('GET', '/register/check-email/' . $token);
+        $this->client->request('GET', '/register/check-email/'.$token);
         $this->assertResponseStatusCodeSame(302);
         $this->assertResponseRedirects('/register/');
 
@@ -198,7 +198,7 @@ class RegistrationControllerTest extends IntegrationTestCase
         $user->setEnabled(true);
         $em->flush();
 
-        $this->client->request('GET', '/register/check-email/' . $token);
+        $this->client->request('GET', '/register/check-email/'.$token);
         $this->assertResponseStatusCodeSame(302);
         $this->assertResponseRedirects('/register/');
     }
@@ -208,9 +208,9 @@ class RegistrationControllerTest extends IntegrationTestCase
         $token = $this->registerUserAndGetToken('test@example.com', 'test.user6');
 
         // Tamper with the token by changing a character
-        $tamperedToken = substr($token, 0, -5) . 'XXXXX';
+        $tamperedToken = substr($token, 0, -5).'XXXXX';
 
-        $this->client->request('GET', '/register/check-email/' . $tamperedToken);
+        $this->client->request('GET', '/register/check-email/'.$tamperedToken);
         $this->assertResponseStatusCodeSame(302);
         $this->assertResponseRedirects('/register/');
     }
@@ -244,13 +244,13 @@ class RegistrationControllerTest extends IntegrationTestCase
 
         // Get the check-email token
         $redirectUrl = $this->client->getResponse()->headers->get('Location');
-        $token = substr($redirectUrl, strlen('/register/check-email/'));
+        $token = substr($redirectUrl, \strlen('/register/check-email/'));
 
         // Re-enable profiler for next request
         $this->client->enableProfiler();
 
         // Update email to B and resend
-        $crawler = $this->client->request('GET', '/register/check-email/' . $token);
+        $crawler = $this->client->request('GET', '/register/check-email/'.$token);
         $form = $crawler->selectButton('Update & Resend Confirmation Email')->form();
         $form->setValues([
             'update_email_form[email]' => 'emailB@example.com',
@@ -279,7 +279,7 @@ class RegistrationControllerTest extends IntegrationTestCase
 
         // Try to activate with the ORIGINAL link for email A (should fail)
         $urlParts = parse_url($originalVerificationUrl);
-        $verificationPathA = $urlParts['path'] . '?' . $urlParts['query'];
+        $verificationPathA = $urlParts['path'].'?'.$urlParts['query'];
 
         $this->client->request('GET', $verificationPathA);
 
@@ -293,7 +293,7 @@ class RegistrationControllerTest extends IntegrationTestCase
 
         // Now activate with the NEW email B's verification link (should succeed)
         $urlParts = parse_url($newVerificationUrl);
-        $verificationPathB = $urlParts['path'] . '?' . $urlParts['query'];
+        $verificationPathB = $urlParts['path'].'?'.$urlParts['query'];
 
         $this->client->request('GET', $verificationPathB);
         $this->assertResponseStatusCodeSame(302);
@@ -322,6 +322,6 @@ class RegistrationControllerTest extends IntegrationTestCase
         $this->assertStringStartsWith('/register/check-email/', $redirectUrl);
 
         // Extract token from redirect URL
-        return substr($redirectUrl, strlen('/register/check-email/'));
+        return substr($redirectUrl, \strlen('/register/check-email/'));
     }
 }

@@ -20,13 +20,11 @@ class IdGenerator
     public static function generateSecurityAdvisoryId(): string
     {
         return self::generate('PKSA-');
-
     }
 
     public static function generateFilterListEntry(): string
     {
         return self::generate('PKFE-');
-
     }
 
     private static function generate(string $prefix): string

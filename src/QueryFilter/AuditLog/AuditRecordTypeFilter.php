@@ -25,11 +25,12 @@ class AuditRecordTypeFilter implements QueryFilterInterface
     final private function __construct(
         private readonly string $key,
         private readonly array $types = [],
-    ) {}
+    ) {
+    }
 
     public function filter(QueryBuilder $qb): QueryBuilder
     {
-        if (count($this->types) === 0) {
+        if (\count($this->types) === 0) {
             return $qb;
         }
 

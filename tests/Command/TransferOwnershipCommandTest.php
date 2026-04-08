@@ -39,8 +39,8 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $this->store($alice, $bob, $john);
 
         $this->package1 = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$john, $alice]);
-        $this->package2 = self::createPackage('vendor1/package2', 'https://github.com/vendor1/package2',maintainers: [$john, $bob]);
-        $this->package3 = self::createPackage('vendor2/package1', 'https://github.com/vendor2/package1',maintainers: [$john]);
+        $this->package2 = self::createPackage('vendor1/package2', 'https://github.com/vendor1/package2', maintainers: [$john, $bob]);
+        $this->package3 = self::createPackage('vendor2/package1', 'https://github.com/vendor2/package1', maintainers: [$john]);
         $this->store($this->package1, $this->package2, $this->package3);
 
         $command = new TransferOwnershipCommand(self::getContainer()->get(ManagerRegistry::class), self::getContainer()->get(PackageManager::class));
@@ -95,7 +95,6 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $callable = fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['bob', 'john'], array_map($callable, $package2->getMaintainers()->toArray()), 'vendor1 packages should not be changed');
         $this->assertEqualsCanonicalizing(['alice', 'john'], array_map($callable, $package3->getMaintainers()->toArray()));
-
     }
 
     public function testExecuteWithDryRunDoesNothing(): void

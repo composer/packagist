@@ -35,10 +35,10 @@ class FilterListEntry
     private string $version;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    private string|null $reason;
+    private ?string $reason;
 
     #[ORM\Column(nullable: true)]
-    private string|null $link;
+    private ?string $link;
 
     #[ORM\Column]
     private FilterLists $list;
@@ -49,7 +49,7 @@ class FilterListEntry
     private \DateTimeImmutable $updatedAt;
 
     #[ORM\Column(nullable: true)]
-    private string|null $publicId;
+    private ?string $publicId;
 
     public function __construct(RemoteFilterListEntry $remote)
     {
@@ -87,6 +87,7 @@ class FilterListEntry
     {
         return $this->reason;
     }
+
     public function getPublicId(): ?string
     {
         return $this->publicId;

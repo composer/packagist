@@ -14,11 +14,9 @@ namespace App\Tests\Security;
 
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
-use App\Entity\User;
 use App\Security\EmailVerifier;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\HttpFoundation\Request;
-use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
 
 class EmailVerifierTest extends IntegrationTestCase

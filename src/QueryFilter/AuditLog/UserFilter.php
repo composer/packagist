@@ -12,9 +12,7 @@
 
 namespace App\QueryFilter\AuditLog;
 
-use App\Entity\User;
 use Doctrine\ORM\QueryBuilder;
-use Symfony\Component\HttpFoundation\InputBag;
 
 class UserFilter extends AbstractAdminAwareTextFilter
 {
@@ -23,17 +21,16 @@ class UserFilter extends AbstractAdminAwareTextFilter
         // If pattern is numeric search by userId
         if (is_numeric($pattern) && $this->isAdmin) {
             $qb->setParameter($paramName, (int) $pattern);
-            $qb->andWhere('a.userId = :' . $paramName);
+            $qb->andWhere('a.userId = :'.$paramName);
         } elseif ($useWildcard) {
-            $qb->setParameter($paramName, sprintf('"%s"', $pattern));
-            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :" . $paramName);
+            $qb->setParameter($paramName, \sprintf('"%s"', $pattern));
+            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :".$paramName);
         } else {
             $qb->setParameter($paramName, $pattern);
             $qb->setParameter($paramName.'Json', json_encode(['username' => $pattern]));
-            $qb->andWhere("(JSON_EXTRACT(a.attributes, '$.user.username') = :" . $paramName." OR JSON_CONTAINS(a.attributes, :". $paramName."Json, '$.current_maintainers') = 1 OR JSON_CONTAINS(a.attributes, :". $paramName."Json, '$.previous_maintainers') = 1)");
+            $qb->andWhere("(JSON_EXTRACT(a.attributes, '$.user.username') = :".$paramName.' OR JSON_CONTAINS(a.attributes, :'.$paramName."Json, '$.current_maintainers') = 1 OR JSON_CONTAINS(a.attributes, :".$paramName."Json, '$.previous_maintainers') = 1)");
         }
 
         return $qb;
     }
-
 }

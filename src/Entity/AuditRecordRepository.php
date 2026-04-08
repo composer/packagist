@@ -27,8 +27,7 @@ class AuditRecordRepository extends ServiceEntityRepository
     public function __construct(
         ManagerRegistry $registry,
         private readonly AuditRecordsManager $auditRecordsManager,
-    )
-    {
+    ) {
         parent::__construct($registry, AuditRecord::class);
     }
 

@@ -14,7 +14,6 @@ namespace App\Package;
 
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
-use App\Entity\FilterListEntry;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
@@ -196,7 +195,7 @@ class V2Dumper
         // Verify all written files match CDN versions
         if (!empty($this->writtenFiles) && !$force && \count($this->writtenFiles) < 50) {
             if ($verbose) {
-                echo 'Verifying ' . count($this->writtenFiles) . ' written files match CDN versions'.\PHP_EOL;
+                echo 'Verifying '.\count($this->writtenFiles).' written files match CDN versions'.\PHP_EOL;
             }
             $this->verifyCdnFiles();
         }
@@ -231,7 +230,6 @@ class V2Dumper
                     sleep(2);
                 }
             }
-
         }
     }
 
@@ -288,9 +286,9 @@ class V2Dumper
     /**
      * @param mixed[]                                                    $versionData
      * @param array<array{advisoryId: string, affectedVersions: string}> $advisories
-     * @param array<string, list<DumpableFilterList>>|null $filterLists
+     * @param array<string, list<DumpableFilterList>>|null               $filterLists
      */
-    private function dumpPackageToV2File(string $dir, Package $package, array $versionData, array $advisories, null|array $filterLists): void
+    private function dumpPackageToV2File(string $dir, Package $package, array $versionData, array $advisories, ?array $filterLists): void
     {
         $name = strtolower($package->getName());
         $forceDump = $package->getDumpedAtV2() === null;
@@ -318,7 +316,7 @@ class V2Dumper
      * @param array<Version>                                                  $versions
      * @param VersionData                                                     $versionData
      */
-    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, ?array $advisories = null, array|null $fitlerLists = null): void
+    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, ?array $advisories = null, ?array $fitlerLists = null): void
     {
         $versionArrays = [];
         foreach ($versions as $version) {
@@ -495,7 +493,7 @@ class V2Dumper
         $this->logger->debug('Verifying CDN files', ['files' => $this->writtenFiles]);
 
         foreach ($this->writtenFiles as $relativePath) {
-            $localPath = $this->webDir . '/' . $relativePath;
+            $localPath = $this->webDir.'/'.$relativePath;
             if (!file_exists($localPath)) {
                 continue; // Skip if local file doesn't exist
             }

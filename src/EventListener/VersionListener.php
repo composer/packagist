@@ -13,7 +13,6 @@
 namespace App\EventListener;
 
 use App\Entity\AuditRecord;
-use App\Entity\Package;
 use App\Entity\User;
 use App\Entity\Version;
 use App\Event\VersionReferenceChangedEvent;

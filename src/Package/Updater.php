@@ -27,6 +27,7 @@ use App\Entity\Tag;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Event\PackageAbandonedEvent;
+use App\Event\VersionReferenceChangedEvent;
 use App\HtmlSanitizer\ReadmeImageSanitizer;
 use App\HtmlSanitizer\ReadmeLinkSanitizer;
 use App\Model\ProviderManager;
@@ -57,7 +58,6 @@ use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\EventDispatcher\Event;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
-use App\Event\VersionReferenceChangedEvent;
 
 final readonly class VersionUpdatedResult
 {
@@ -67,7 +67,8 @@ final readonly class VersionUpdatedResult
         public Version $entity,
         /** @var list<Event> $events */
         public array $events = [],
-    ) {}
+    ) {
+    }
 }
 
 final readonly class VersionSkippedResult
@@ -75,7 +76,8 @@ final readonly class VersionSkippedResult
     public function __construct(
         public int $id,
         public string $version,
-    ) {}
+    ) {
+    }
 }
 
 /**

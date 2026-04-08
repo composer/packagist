@@ -37,7 +37,6 @@ abstract readonly class AbstractAuditLogDisplay implements AuditLogDisplayInterf
 
     public function getTypeTranslationKey(): string
     {
-        return 'audit_log.type.' . $this->getType()->value;
+        return 'audit_log.type.'.$this->getType()->value;
     }
-
 }

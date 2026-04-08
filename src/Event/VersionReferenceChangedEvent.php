@@ -99,7 +99,7 @@ class VersionReferenceChangedEvent extends Event
      */
     private function arraysAreEqual(array $a, array $b): bool
     {
-        if (count($a) !== count($b)) {
+        if (\count($a) !== \count($b)) {
             return false;
         }
 
@@ -107,18 +107,18 @@ class VersionReferenceChangedEvent extends Event
         ksort($b);
 
         foreach ($a as $key => $value) {
-            if (!array_key_exists($key, $b)) {
+            if (!\array_key_exists($key, $b)) {
                 return false;
             }
 
-            if (is_array($value) && is_array($b[$key])) {
+            if (\is_array($value) && \is_array($b[$key])) {
                 if (!$this->arraysAreEqual($value, $b[$key])) {
                     return false;
                 }
                 continue;
             }
 
-            if (is_array($value) !== is_array($b[$key])) {
+            if (\is_array($value) !== \is_array($b[$key])) {
                 return false;
             }
 

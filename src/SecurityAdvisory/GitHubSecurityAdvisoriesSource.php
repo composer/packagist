@@ -82,6 +82,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                         $this->logger->error('Failed to fetch GitHub advisories, aborting.', [
                             'exception' => $e,
                         ]);
+
                         return null;
                     }
 
@@ -93,7 +94,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                 }
             } while ($retries-- > 0);
 
-            assert(isset($data));
+            \assert(isset($data));
 
             foreach ($data['securityVulnerabilities']['nodes'] as $node) {
                 $remoteId = null;

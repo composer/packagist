@@ -19,8 +19,9 @@ use Symfony\Component\HttpFoundation\InputBag;
 class DateTimeToFilter implements QueryFilterInterface
 {
     private function __construct(
-        private readonly string $value
-    ) {}
+        private readonly string $value,
+    ) {
+    }
 
     public function filter(QueryBuilder $qb): QueryBuilder
     {
@@ -51,7 +52,7 @@ class DateTimeToFilter implements QueryFilterInterface
     {
         $value = $bag->get('datetime_to', '');
 
-        if (!is_string($value) || $value === '') {
+        if (!\is_string($value) || $value === '') {
             return new self('');
         }
 

@@ -24,10 +24,12 @@ final readonly class FilterListDumperProvider
     public function __construct(
         private ManagerRegistry $doctrine,
         private UrlGeneratorInterface $urlGenerator,
-    ) {}
+    ) {
+    }
 
     /**
      * @param string[] $packageNames
+     *
      * @return array<string, array<string, list<DumpableFilterList>>>
      */
     public function getEntriesForDump(array $packageNames): array

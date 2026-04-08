@@ -56,7 +56,7 @@ class UserResolver implements ValueResolverInterface
 
         $user = $this->doctrine->getRepository(User::class)->findOneBy(['usernameCanonical' => $username]);
 
-        if (!$user && $this->security->isGranted('ROLE_ADMIN') && \filter_var($username, \FILTER_VALIDATE_EMAIL)) {
+        if (!$user && $this->security->isGranted('ROLE_ADMIN') && filter_var($username, \FILTER_VALIDATE_EMAIL)) {
             $user = $this->doctrine->getRepository(User::class)->findOneBy(['emailCanonical' => $username]);
         }
 

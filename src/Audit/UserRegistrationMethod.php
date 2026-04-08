@@ -19,6 +19,6 @@ enum UserRegistrationMethod: string
 
     public function translationKey(): string
     {
-        return 'audit_log.enums.user-registration-method.' . $this->value;
+        return 'audit_log.enums.user-registration-method.'.$this->value;
     }
 }

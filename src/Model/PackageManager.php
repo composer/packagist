@@ -248,10 +248,10 @@ class PackageManager
     {
         $oldMaintainers = $package->getMaintainers()->toArray();
         $normalizedOldMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $oldMaintainers));
-        sort($normalizedOldMaintainers, SORT_NUMERIC);
+        sort($normalizedOldMaintainers, \SORT_NUMERIC);
 
         $normalizedMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $newMaintainers));
-        sort($normalizedMaintainers, SORT_NUMERIC);
+        sort($normalizedMaintainers, \SORT_NUMERIC);
 
         if ($normalizedMaintainers === $normalizedOldMaintainers) {
             return false;
@@ -259,7 +259,7 @@ class PackageManager
 
         $package->getMaintainers()->clear();
         foreach ($newMaintainers as $maintainer) {
-            $isNewMaintainer = !in_array($maintainer->getId(), $normalizedOldMaintainers);
+            $isNewMaintainer = !\in_array($maintainer->getId(), $normalizedOldMaintainers);
             $package->addMaintainer($maintainer);
 
             if ($notifyNewMaintainers && $isNewMaintainer) {

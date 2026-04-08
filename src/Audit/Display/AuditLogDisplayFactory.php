@@ -23,10 +23,12 @@ class AuditLogDisplayFactory
 {
     public function __construct(
         private readonly Security $security,
-    ) {}
+    ) {
+    }
 
     /**
      * @param iterable<AuditRecord> $auditRecords
+     *
      * @return array<AuditLogDisplayInterface>
      */
     public function build(iterable $auditRecords): array
@@ -91,7 +93,7 @@ class AuditLogDisplayFactory
                 $record->attributes['name'],
                 $record->attributes['version'],
                 $record->attributes['metadata']['source']['reference'] ?? null,
-                $record->attributes['metadata']['dist']['reference']  ?? null,
+                $record->attributes['metadata']['dist']['reference'] ?? null,
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
@@ -245,7 +247,7 @@ class AuditLogDisplayFactory
             return new ActorDisplay(null, 'unknown');
         }
 
-        if (is_string($actor)) {
+        if (\is_string($actor)) {
             return new ActorDisplay(null, $actor);
         }
 

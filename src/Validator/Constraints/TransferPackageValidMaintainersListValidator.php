@@ -12,8 +12,6 @@
 
 namespace App\Validator\Constraints;
 
-use App\Entity\User;
-use App\Form\Model\InvalidMaintainer;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;

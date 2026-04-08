@@ -45,7 +45,7 @@ class UpdateFilterListCommand extends Command
         try {
             $list = FilterLists::from($input->getArgument('list'));
         } catch (\ValueError) {
-            $output->writeln('list must be one of ' . implode(', ', array_map(fn (FilterLists $list) => $list->value, FilterLists::cases())));
+            $output->writeln('list must be one of '.implode(', ', array_map(fn (FilterLists $list) => $list->value, FilterLists::cases())));
 
             return self::INVALID;
         }

@@ -70,7 +70,7 @@ class ProfileController extends Controller
         // Admin email update form
         $adminEmailForm = null;
         if ($this->isGranted('ROLE_ADMIN')) {
-            assert($loggedUser !== null);
+            \assert($loggedUser !== null);
             $adminUpdateEmailRequest = new AdminUpdateEmailRequest($user->getEmail());
             $adminEmailForm = $this->createForm(AdminUpdateEmailType::class, $adminUpdateEmailRequest);
             $adminEmailForm->handleRequest($req);
@@ -98,11 +98,12 @@ class ProfileController extends Controller
                             $this->getEM()->flush();
 
                             // Send notifications
-                            $reason = 'Your email has been changed by an administrator from ' . $oldEmail . ' to ' . $newEmail;
+                            $reason = 'Your email has been changed by an administrator from '.$oldEmail.' to '.$newEmail;
                             $userNotifier->notifyChange($oldEmail, $reason);
                             $userNotifier->notifyChange($newEmail, $reason);
 
                             $this->addFlash('success', 'Email address updated successfully.');
+
                             return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
                         } catch (\Exception $e) {
                             $logger->error('Failed to update user email', [
@@ -138,7 +139,7 @@ class ProfileController extends Controller
         if ($this->isGranted('ROLE_ADMIN') && $user->getGithubId()) {
             $githubUsername = null;
             try {
-                $response = $httpClient->request('GET', 'https://api.github.com/user/' . $user->getGithubId());
+                $response = $httpClient->request('GET', 'https://api.github.com/user/'.$user->getGithubId());
                 if ($response->getStatusCode() === 200) {
                     $githubUsername = $response->toArray()['login'] ?? null;
                 }

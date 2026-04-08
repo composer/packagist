@@ -17,7 +17,6 @@ use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Mime\Email;
-use Symfony\Component\Mime\RawMessage;
 
 class ProfileControllerTest extends IntegrationTestCase
 {

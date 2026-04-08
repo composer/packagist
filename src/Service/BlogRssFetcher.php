@@ -12,11 +12,7 @@
 
 namespace App\Service;
 
-use Composer\Pcre\Preg;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
-use Symfony\Component\HtmlSanitizer\HtmlSanitizerAction;
-use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -49,6 +45,7 @@ class BlogRssFetcher
             $this->logger->error('Failed to fetch blog RSS feed', [
                 'error' => $e->getMessage(),
             ]);
+
             return [];
         }
     }
@@ -72,7 +69,7 @@ class BlogRssFetcher
             }
 
             // Only include items with composer or packagist.org category
-            if (!in_array('composer', $categories, true) && !in_array('packagist.org', $categories, true)) {
+            if (!\in_array('composer', $categories, true) && !\in_array('packagist.org', $categories, true)) {
                 continue;
             }
 
@@ -87,7 +84,7 @@ class BlogRssFetcher
 
             $desc = $entry->description;
             $desc = str_replace('><', '> <', (string) $desc);
-            $desc = trim(html_entity_decode(strip_tags($desc), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $desc = trim(html_entity_decode(strip_tags($desc), \ENT_QUOTES | \ENT_HTML5, 'UTF-8'));
 
             $items[] = [
                 'title' => (string) $entry->title,
@@ -96,7 +93,7 @@ class BlogRssFetcher
                 'datePublished' => $pubDate,
             ];
 
-            if (count($items) >= self::MAX_ITEMS) {
+            if (\count($items) >= self::MAX_ITEMS) {
                 break;
             }
         }

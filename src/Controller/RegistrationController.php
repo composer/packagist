@@ -90,6 +90,7 @@ class RegistrationController extends Controller
 
         if ($result === null) {
             $this->addFlash('error', 'This link is invalid or has expired. Please register again.');
+
             return $this->redirectToRoute('register');
         }
 
@@ -109,6 +110,7 @@ class RegistrationController extends Controller
 
         if ($result === null) {
             $this->addFlash('error', 'This link is invalid or has expired. Please register again.');
+
             return $this->redirectToRoute('register');
         }
 
@@ -139,7 +141,7 @@ class RegistrationController extends Controller
             // Generate new token with updated email
             $newToken = $this->generateRegistrationToken($user);
 
-            $this->addFlash('success', 'Confirmation email has been sent to ' . $user->getEmail());
+            $this->addFlash('success', 'Confirmation email has been sent to '.$user->getEmail());
 
             return $this->redirectToRoute('register_check_email', ['token' => $newToken]);
         }
@@ -197,10 +199,10 @@ class RegistrationController extends Controller
     private function generateRegistrationToken(User $user): string
     {
         $timestamp = $this->clock->now()->getTimestamp();
-        $data = $user->getId() . '|' . $user->getEmail() . '|' . $timestamp;
+        $data = $user->getId().'|'.$user->getEmail().'|'.$timestamp;
         $signature = hash_hmac('sha256', $data, $this->internalSecret);
 
-        return base64_encode($data . '|' . $signature);
+        return base64_encode($data.'|'.$signature);
     }
 
     /**
@@ -214,7 +216,7 @@ class RegistrationController extends Controller
         }
 
         $parts = explode('|', $decoded);
-        if (count($parts) !== 4) {
+        if (\count($parts) !== 4) {
             return null;
         }
 
@@ -227,7 +229,7 @@ class RegistrationController extends Controller
         }
 
         // Verify signature
-        $data = $userId . '|' . $email . '|' . $timestamp;
+        $data = $userId.'|'.$email.'|'.$timestamp;
         $expectedSignature = hash_hmac('sha256', $data, $this->internalSecret);
         if (!hash_equals($expectedSignature, $providedSignature)) {
             return null;

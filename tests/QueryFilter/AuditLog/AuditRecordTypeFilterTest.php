@@ -14,9 +14,8 @@ namespace App\Tests\QueryFilter\AuditLog;
 
 use App\Audit\AuditRecordType;
 use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\EntityManagerInterface;
-use PHPUnit\Framework\Attributes\DataProvider;
+use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\InputBag;
 

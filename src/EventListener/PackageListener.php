@@ -12,7 +12,6 @@
 
 namespace App\EventListener;
 
-use App\Audit\AbandonmentReason;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\User;
@@ -65,7 +64,6 @@ class PackageListener
         $package = $event->getPackage();
         $this->buffered[] = AuditRecord::packageUnabandoned($package, $this->getUser());
     }
-
 
     /**
      * @param LifecycleEventArgs<EntityManager> $event

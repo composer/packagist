@@ -13,8 +13,6 @@
 namespace App\Tests;
 
 use App\Entity\Job;
-use App\Entity\Package;
-use App\Entity\PackageRepository;
 use App\Entity\SecurityAdvisory;
 use App\Entity\SecurityAdvisoryRepository;
 use App\EventListener\SecurityAdvisoryUpdateListener;

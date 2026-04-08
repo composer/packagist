@@ -45,8 +45,8 @@ class MaintainerType extends AbstractType
                 $username = mb_strtolower($username);
                 $users = $this->em->getRepository(User::class)->findEnabledUsersByUsername([$username]);
 
-                if (!count($users) || !array_key_exists($username, $users)) {
-                    $failure = new TransformationFailedException(sprintf('User "%s" does not exist.', $username));
+                if (!\count($users) || !\array_key_exists($username, $users)) {
+                    $failure = new TransformationFailedException(\sprintf('User "%s" does not exist.', $username));
                     $failure->setInvalidMessage('The given "{{ value }}" value is not a valid username.', [
                         '{{ value }}' => $username,
                     ]);

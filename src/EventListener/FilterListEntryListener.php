@@ -31,7 +31,8 @@ class FilterListEntryListener
     public function __construct(
         private ManagerRegistry $doctrine,
         private Security $security,
-    ) {}
+    ) {
+    }
 
     /**
      * @param LifecycleEventArgs<EntityManager> $event

@@ -17,8 +17,9 @@ use App\Entity\FilterListEntry;
 class FilterListResolver
 {
     /**
-     * @param array<FilterListEntry> $existingEntries
+     * @param array<FilterListEntry>       $existingEntries
      * @param array<RemoteFilterListEntry> $remoteEntries
+     *
      * @return array{list<FilterListEntry>, list<FilterListEntry>, bool}
      */
     public function resolve(array $existingEntries, array $remoteEntries): array

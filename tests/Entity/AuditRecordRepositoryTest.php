@@ -14,10 +14,7 @@ namespace App\Tests\Entity;
 
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
-use App\Entity\AuditRecordRepository;
-use App\Entity\User;
 use App\Tests\IntegrationTestCase;
-use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 

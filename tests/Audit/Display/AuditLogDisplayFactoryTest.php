@@ -649,9 +649,8 @@ class AuditLogDisplayFactoryTest extends TestCase
         array $attributes,
         ?\DateTimeImmutable $datetime = null,
         ?int $userId = null,
-    ): AuditRecord
-    {
-        $datetime = $datetime ?? new \DateTimeImmutable();
+    ): AuditRecord {
+        $datetime ??= new \DateTimeImmutable();
 
         $reflection = new \ReflectionClass(AuditRecord::class);
         $instance = $reflection->newInstanceWithoutConstructor();

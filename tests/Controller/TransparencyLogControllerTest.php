@@ -33,7 +33,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $this->store($auditRecord1, $auditRecord);
 
         $this->client->loginUser($user);
-        $crawler = $this->client->request('GET', '/transparency-log?' . http_build_query($filters));
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query($filters));
         static::assertResponseIsSuccessful();
 
         $rows = $crawler->filter('[data-test=audit-log-type]');
@@ -71,7 +71,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $from = $now->modify('-1 hour')->format('Y-m-d\TH:i:s');
         $to = $now->modify('+1 hour')->format('Y-m-d\TH:i:s');
 
-        $crawler = $this->client->request('GET', '/transparency-log?' . http_build_query([
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
             'datetime_from' => $from,
             'datetime_to' => $to,
         ]));

@@ -738,7 +738,7 @@ class Version
         }
 
         if (isset($this->phpExt['os-families-exclude'])) {
-            return array_values(array_diff(["windows", "bsd", "darwin", "solaris", "linux", "unknown"], $this->phpExt['os-families-exclude']));
+            return array_values(array_diff(['windows', 'bsd', 'darwin', 'solaris', 'linux', 'unknown'], $this->phpExt['os-families-exclude']));
         }
 
         return ['no restrictions'];

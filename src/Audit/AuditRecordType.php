@@ -53,22 +53,17 @@ enum AuditRecordType: string
 
     public function category(): string
     {
-        return match($this) {
-            self::MaintainerAdded, self::MaintainerRemoved, self::PackageTransferred
-                => 'ownership',
+        return match ($this) {
+            self::MaintainerAdded, self::MaintainerRemoved, self::PackageTransferred => 'ownership',
             self::PackageCreated, self::PackageDeleted, self::CanonicalUrlChanged,
-            self::PackageAbandoned, self::PackageUnabandoned, self::PackageFrozen, self::PackageUnfrozen
-                => 'package',
-            self::VersionCreated, self::VersionDeleted, self::VersionReferenceChanged
-                => 'version',
+            self::PackageAbandoned, self::PackageUnabandoned, self::PackageFrozen, self::PackageUnfrozen => 'package',
+            self::VersionCreated, self::VersionDeleted, self::VersionReferenceChanged => 'version',
             self::UserCreated, self::UserVerified, self::UserDeleted,
             self::PasswordResetRequested, self::PasswordReset, self::PasswordChanged,
             self::EmailChanged, self::UsernameChanged, self::GitHubLinkedWithUser,
             self::GitHubDisconnectedFromUser, self::TwoFaAuthenticationActivated,
-            self::TwoFaAuthenticationDeactivated
-                => 'user',
-            self::FilterListEntryAdded, self::FilterListEntryDeleted
-                => 'filterlist',
+            self::TwoFaAuthenticationDeactivated => 'user',
+            self::FilterListEntryAdded, self::FilterListEntryDeleted => 'filterlist',
         };
     }
 }

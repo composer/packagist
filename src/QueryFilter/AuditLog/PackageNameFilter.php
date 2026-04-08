@@ -13,18 +13,17 @@
 namespace App\QueryFilter\AuditLog;
 
 use Doctrine\ORM\QueryBuilder;
-use Symfony\Component\HttpFoundation\InputBag;
 
 class PackageNameFilter extends AbstractAdminAwareTextFilter
 {
     protected function applyFilter(QueryBuilder $qb, string $paramName, string $pattern, bool $useWildcard): QueryBuilder
     {
         if ($useWildcard) {
-            $qb->setParameter($paramName, sprintf('"%s"', $pattern));
-            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.name') LIKE :" . $paramName);
+            $qb->setParameter($paramName, \sprintf('"%s"', $pattern));
+            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.name') LIKE :".$paramName);
         } else {
             $qb->setParameter($paramName, $pattern);
-            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.name') = :" . $paramName);
+            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.name') = :".$paramName);
         }
 
         return $qb;

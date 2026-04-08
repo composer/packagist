@@ -12,8 +12,6 @@
 
 namespace App\Util;
 
-use Composer\Pcre\Preg;
-
 class IpAddress
 {
     public static function stringToBinary(?string $value): ?string
@@ -24,7 +22,7 @@ class IpAddress
 
         $binary = inet_pton($value);
         if ($binary === false) {
-            throw new \InvalidArgumentException('Invalid IP address: ' . $value);
+            throw new \InvalidArgumentException('Invalid IP address: '.$value);
         }
 
         return $binary;

@@ -132,7 +132,7 @@ class FilterListResolverTest extends TestCase
             $packageName,
             $version,
             FilterLists::AIKIDO_MALWARE,
-            'https://example.com/' . $packageName,
+            'https://example.com/'.$packageName,
             'malware',
         );
     }
@@ -150,7 +150,7 @@ class FilterListResolverTest extends TestCase
 
     private function unsetPublicId(FilterListEntry $entry): void
     {
-        $reflectionProperty = new TypedNoDefaultReflectionProperty(get_class($entry), 'publicId');
+        $reflectionProperty = new TypedNoDefaultReflectionProperty($entry::class, 'publicId');
         $reflectionProperty->setValue($entry, null);
     }
 }

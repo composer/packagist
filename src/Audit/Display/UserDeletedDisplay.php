@@ -13,7 +13,6 @@
 namespace App\Audit\Display;
 
 use App\Audit\AuditRecordType;
-use App\Audit\UserRegistrationMethod;
 
 readonly class UserDeletedDisplay extends AbstractAuditLogDisplay
 {

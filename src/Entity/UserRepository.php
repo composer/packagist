@@ -42,8 +42,9 @@ class UserRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param string[] $usernames
+     * @param string[]               $usernames
      * @param ?array<string, string> $orderBy
+     *
      * @return array<string, User>
      */
     public function findEnabledUsersByUsername(array $usernames, ?array $orderBy = null): array

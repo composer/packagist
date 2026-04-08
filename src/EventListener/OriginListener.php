@@ -57,8 +57,8 @@ class OriginListener
         }
 
         // valid as well with HTTP in dev
-        $scheme = parse_url($origin, PHP_URL_SCHEME);
-        $host = parse_url($origin, PHP_URL_HOST);
+        $scheme = parse_url($origin, \PHP_URL_SCHEME);
+        $host = parse_url($origin, \PHP_URL_HOST);
         $knownOrigin = $scheme.'://'.$host;
         if ('dev' === $this->environment && $knownOrigin === 'http://'.$this->packagistHost) {
             return;

@@ -21,8 +21,9 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
     final private function __construct(
         protected readonly string $key,
         protected readonly string $value,
-        protected readonly bool $isAdmin
-    ) {}
+        protected readonly bool $isAdmin,
+    ) {
+    }
 
     /**
      * Apply exact or wildcard matching based on admin status.
@@ -51,7 +52,6 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
             $useWildcard = false;
         }
 
-
         return $this->applyFilter($qb, $paramName, $pattern, $useWildcard);
     }
 
@@ -59,7 +59,7 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
         QueryBuilder $qb,
         string $paramName,
         string $pattern,
-        bool $useWildcard
+        bool $useWildcard,
     ): QueryBuilder;
 
     public function getSelectedValue(): mixed
@@ -74,7 +74,7 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
     {
         $value = $bag->get($key, '');
 
-        if (!is_string($value) || $value === '') {
+        if (!\is_string($value) || $value === '') {
             return new static($key, '', $isAdmin);
         }
 

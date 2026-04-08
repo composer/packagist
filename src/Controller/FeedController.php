@@ -121,8 +121,8 @@ class FeedController extends Controller
 
         $feed = $this->buildFeed(
             $req,
-            "New Extension Releases",
-            "Latest PIE extension releases on Packagist.org.",
+            'New Extension Releases',
+            'Latest PIE extension releases on Packagist.org.',
             $this->generateUrl('browse_extensions', [], UrlGeneratorInterface::ABSOLUTE_URL),
             $packages
         );

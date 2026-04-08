@@ -16,13 +16,13 @@ use App\Entity\Package;
 use App\Package\V2Dumper;
 use App\Service\Locker;
 use Doctrine\Persistence\ManagerRegistry;
+use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
 use Seld\Signal\SignalHandler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Graze\DogStatsD\Client as StatsDClient;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -38,8 +38,7 @@ class DumpPackagesV2Command extends Command
         private string $cacheDir,
         private Logger $logger,
         private StatsDClient $statsd,
-    )
-    {
+    ) {
         parent::__construct();
     }
 
@@ -136,7 +135,7 @@ class DumpPackagesV2Command extends Command
                     $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers);
                     if (\count($ids) > 2000) {
                         $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids), 'worker' => (string) $workerId]);
-                        $ids = array_slice($ids, 0, 2000);
+                        $ids = \array_slice($ids, 0, 2000);
                     }
                 }
                 $this->statsd->gauge('packagist.metadata_dump_queue', \count($ids), ['worker' => (string) $workerId]);

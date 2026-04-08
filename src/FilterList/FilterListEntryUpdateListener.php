@@ -32,7 +32,8 @@ class FilterListEntryUpdateListener
 
     public function __construct(
         private ManagerRegistry $doctrine,
-    ) {}
+    ) {
+    }
 
     /**
      * @param LifecycleEventArgs<EntityManager> $event
@@ -60,7 +61,7 @@ class FilterListEntryUpdateListener
 
     public function flushChangesToPackages(): void
     {
-        if (count($this->packagesToMarkStale) === 0) {
+        if (\count($this->packagesToMarkStale) === 0) {
             return;
         }
 

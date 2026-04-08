@@ -20,5 +20,6 @@ class AdminUpdateEmailRequest
         #[Assert\NotBlank]
         #[Assert\Email]
         public string $email,
-    ) {}
+    ) {
+    }
 }

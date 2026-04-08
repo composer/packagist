@@ -12,20 +12,13 @@
 
 namespace App\Tests\Audit;
 
-use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
-use App\Entity\RequireLink;
-use App\Entity\User;
-use App\Entity\Version;
-use App\Event\VersionReferenceChangedEvent;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class AuditRecordTest extends KernelTestCase
 {

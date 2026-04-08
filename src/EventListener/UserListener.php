@@ -29,7 +29,7 @@ class UserListener
 {
     use DoctrineTrait;
 
-    /** @var list<AuditRecord>  */
+    /** @var list<AuditRecord> */
     private array $buffered = [];
 
     public function __construct(

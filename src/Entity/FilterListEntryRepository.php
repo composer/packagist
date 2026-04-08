@@ -68,6 +68,7 @@ class FilterListEntryRepository extends ServiceEntityRepository
 
     /**
      * @param array<string> $packageNames
+     *
      * @return array<string, non-empty-list<array{version: string, list: string, reason: string|null, publicId: string|null}>>
      */
     public function getAllPackageEntriesMap(array $packageNames): array

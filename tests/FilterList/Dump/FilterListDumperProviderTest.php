@@ -70,7 +70,7 @@ class FilterListDumperProviderTest extends TestCase
                     new DumpableFilterList('1.0.0', '', 'malware', 'PKFE-test1'),
                     new DumpableFilterList('2.0.0', '', 'malware', 'PKFE-test2'),
                 ],
-            ]
+            ],
         ], $this->filterListDumperProvider->getEntriesForDump(['acme/package']));
     }
 

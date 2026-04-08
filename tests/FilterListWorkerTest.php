@@ -12,19 +12,19 @@
 
 namespace App\Tests;
 
-use App\Entity\Job;
 use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
+use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageRepository;
-use App\FilterList\FilterLists;
-use App\FilterList\List\FilterListInterface;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterListResolver;
+use App\FilterList\FilterLists;
+use App\FilterList\List\FilterListInterface;
 use App\FilterList\RemoteFilterListEntry;
 use App\Model\DownloadManager;
-use App\Service\Locker;
 use App\Service\FilterListWorker;
+use App\Service\Locker;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
@@ -192,7 +192,7 @@ class FilterListWorkerTest extends TestCase
             $packageName,
             $version,
             FilterLists::AIKIDO_MALWARE,
-            'https://example.com/' . $packageName,
+            'https://example.com/'.$packageName,
             'malware',
         );
     }

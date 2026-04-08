@@ -13,16 +13,16 @@
 namespace App\Service;
 
 use App\Entity\FilterListEntry;
+use App\Entity\Job;
 use App\Entity\Package;
-use App\FilterList\FilterLists;
-use App\FilterList\List\FilterListInterface;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterListResolver;
-use App\Entity\Job;
+use App\FilterList\FilterLists;
+use App\FilterList\List\FilterListInterface;
 use App\Model\DownloadManager;
+use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler;
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
@@ -46,10 +46,12 @@ final readonly class FilterListWorker
         private DownloadManager $downloadManager,
         private string $mailFromEmail,
         private UrlGeneratorInterface $urlGenerator,
-    ) {}
+    ) {
+    }
 
     /**
      * @param Job<FilterListJob> $job
+     *
      * @return FilterListCompletedResult|FilterListErroredResult|RescheduleResult
      */
     public function process(Job $job, SignalHandler $signal): array
@@ -100,20 +102,20 @@ final readonly class FilterListWorker
             $packageUrl = $this->urlGenerator->generate('view_package', ['name' => $packageName], UrlGeneratorInterface::ABSOLUTE_URL);
 
             if ($downloads >= 10_000) {
-                $subject = '[URGENT] Filter list entry added for high-download package ' . $packageName . ' (' . number_format($downloads) . ' downloads)';
-                $body = 'A new filter list entry has been added for ' . $packageName . ' which has ' . number_format($downloads) . " total downloads. This requires urgent attention.\n\n";
+                $subject = '[URGENT] Filter list entry added for high-download package '.$packageName.' ('.number_format($downloads).' downloads)';
+                $body = 'A new filter list entry has been added for '.$packageName.' which has '.number_format($downloads)." total downloads. This requires urgent attention.\n\n";
             } else {
-                $subject = 'Filter list entry added for ' . $packageName;
-                $body = 'A new filter list entry has been added for ' . $packageName . ".\n\n";
+                $subject = 'Filter list entry added for '.$packageName;
+                $body = 'A new filter list entry has been added for '.$packageName.".\n\n";
             }
 
-            $body .= 'Package: ' . $packageUrl . "\n"
-                . 'List: ' . $list->value . "\n"
-                . 'Versions: ' . implode(', ', array_map(fn (FilterListEntry $e) => $e->getVersion(), $entries)) . "\n"
-                . 'Reason: ' . ($entries[0]->getReason() ?? 'N/A') . "\n"
-                . 'Link: ' . ($entries[0]->getLink() ?? 'N/A') . "\n";
+            $body .= 'Package: '.$packageUrl."\n"
+                .'List: '.$list->value."\n"
+                .'Versions: '.implode(', ', array_map(fn (FilterListEntry $e) => $e->getVersion(), $entries))."\n"
+                .'Reason: '.($entries[0]->getReason() ?? 'N/A')."\n"
+                .'Link: '.($entries[0]->getLink() ?? 'N/A')."\n";
 
-            $message = (new Email())
+            $message = new Email()
                 ->subject($subject)
                 ->from(new Address($this->mailFromEmail))
                 ->to($this->mailFromEmail)

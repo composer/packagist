@@ -372,12 +372,12 @@ class ApiController extends Controller
             return $resp;
         }
 
-        if ($request->headers->get('User-Agent') === 'GuzzleHttp/7' && in_array($request->getClientIp(), [
+        if ($request->headers->get('User-Agent') === 'GuzzleHttp/7' && \in_array($request->getClientIp(), [
             '168.243.26.34', '52.20.173.197', '78.46.106.56', '178.79.183.158', '77.135.173.242', '139.255.192.18', '188.40.28.3', '18.157.117.165', '15.188.186.192', '54.72.75.192',
-                '81.196.171.134', '52.51.253.125', '138.199.6.240', '103.217.209.214', '3.75.82.169', '65.109.33.73', '185.118.121.6', '34.233.255.120', '2a01:4f8:c013:37fb::1', '23.21.44.77',
-                '4.182.131.232', '185.11.255.148', '3.65.203.52', '178.22.124.147', '131.175.200.52', '80.193.72.14', '2a02:4780:d:7d90::1', '34.200.24.102', '52.72.37.76', '116.203.120.12',
-                '80.65.238.52', '146.177.71.160', '18.153.179.13', '3.123.161.63', '54.147.71.92', '44.197.170.214', '51.15.252.215', '2a03:b0c0:2:d0::d4c:4001',
-            ], true)
+            '81.196.171.134', '52.51.253.125', '138.199.6.240', '103.217.209.214', '3.75.82.169', '65.109.33.73', '185.118.121.6', '34.233.255.120', '2a01:4f8:c013:37fb::1', '23.21.44.77',
+            '4.182.131.232', '185.11.255.148', '3.65.203.52', '178.22.124.147', '131.175.200.52', '80.193.72.14', '2a02:4780:d:7d90::1', '34.200.24.102', '52.72.37.76', '116.203.120.12',
+            '80.65.238.52', '146.177.71.160', '18.153.179.13', '3.123.161.63', '54.147.71.92', '44.197.170.214', '51.15.252.215', '2a03:b0c0:2:d0::d4c:4001',
+        ], true)
         ) {
             return new JsonResponse('Please use a proper user agent with contact information to use our API', Response::HTTP_TOO_MANY_REQUESTS, ['Retry-After' => 31536000]);
         }
@@ -491,6 +491,7 @@ class ApiController extends Controller
                     $statsd->increment('update_pkg_api.success', tags: ['mode' => 'github_user_secret']);
                 } else {
                     $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_user_sig']);
+
                     return new JsonResponse(['status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.'], 403);
                 }
             } else {
@@ -520,6 +521,7 @@ class ApiController extends Controller
                     $statsd->increment('update_pkg_api.success', tags: ['mode' => 'github_auto']);
                 } else {
                     $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_gh_sig']);
+
                     return new JsonResponse(['status' => 'error', 'message' => 'Invalid github signature. Delete this webhook and recreate it using the manual account sync trigger from https://packagist.org/about#how-to-update-packages'], 403);
                 }
             }
@@ -528,6 +530,7 @@ class ApiController extends Controller
         if (!$packages) {
             if (!$user) {
                 $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'no_user_found']);
+
                 return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 403);
             }
 
@@ -540,6 +543,7 @@ class ApiController extends Controller
 
         if (!$packages) {
             $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'no_package_found']);
+
             return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)'], 404);
         }
 

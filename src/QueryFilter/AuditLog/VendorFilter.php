@@ -21,9 +21,9 @@ class VendorFilter extends AbstractAdminAwareTextFilter
         $qb->setParameter($paramName, $pattern);
 
         if ($useWildcard) {
-            $qb->andWhere('a.vendor LIKE :' . $paramName);
+            $qb->andWhere('a.vendor LIKE :'.$paramName);
         } else {
-            $qb->andWhere('a.vendor = :' . $paramName);
+            $qb->andWhere('a.vendor = :'.$paramName);
         }
 
         return $qb;

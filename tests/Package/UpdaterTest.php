@@ -12,11 +12,8 @@
 
 namespace App\Tests\Package;
 
-use App\Audit\AuditRecordType;
-use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageReadme;
-use App\Entity\Version;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\Updater;
@@ -36,7 +33,6 @@ use PHPUnit\Framework\MockObject\Stub;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class UpdaterTest extends IntegrationTestCase
 {
