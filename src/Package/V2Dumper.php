@@ -198,7 +198,7 @@ class V2Dumper
             if ($verbose) {
                 echo 'Verifying ' . count($this->writtenFiles) . ' written files match CDN versions'.\PHP_EOL;
             }
-            $this->verifyCdnFiles($verbose);
+            $this->verifyCdnFiles();
         }
 
         if (!file_exists($webDir.'/p2') && !@symlink($buildDirV2, $webDir.'/p2')) {
@@ -377,6 +377,11 @@ class V2Dumper
             return;
         }
 
+        // fetch the file to ensure the region we hit after has a hot cache so we can verify correctly that the purge worked
+        if (file_exists($path)) {
+            $this->fetchCdnFile($relativePath);
+        }
+
         $this->filesystem->mkdir(\dirname($path));
 
         $filemtime = $this->writeCdn($relativePath, $contents);
@@ -473,7 +478,7 @@ class V2Dumper
     /**
      * Verify written files match their CDN counterparts
      */
-    private function verifyCdnFiles(bool $verbose = false): void
+    private function verifyCdnFiles(): void
     {
         if (!$this->cdnClient->isConfigured()) {
             return;
@@ -481,7 +486,6 @@ class V2Dumper
 
         $this->logger->debug('Verifying CDN files', ['files' => $this->writtenFiles]);
 
-        $mismatchedFiles = [];
         foreach ($this->writtenFiles as $relativePath) {
             $localPath = $this->webDir . '/' . $relativePath;
             if (!file_exists($localPath)) {
