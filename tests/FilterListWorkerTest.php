@@ -15,11 +15,14 @@ namespace App\Tests;
 use App\Entity\Job;
 use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
+use App\Entity\Package;
+use App\Entity\PackageRepository;
 use App\FilterList\FilterLists;
 use App\FilterList\List\FilterListInterface;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterListResolver;
 use App\FilterList\RemoteFilterListEntry;
+use App\Model\DownloadManager;
 use App\Service\Locker;
 use App\Service\FilterListWorker;
 use Doctrine\DBAL\Connection;
@@ -29,6 +32,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Seld\Signal\SignalHandler;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class FilterListWorkerTest extends TestCase
 {
@@ -36,14 +41,21 @@ class FilterListWorkerTest extends TestCase
     private FilterListInterface&MockObject $filterList;
     private EntityManager&MockObject $em;
     private FilterListEntryRepository&MockObject $filterListEntryRepository;
+    private PackageRepository $packageRepository;
     private Locker&MockObject $locker;
+    private MailerInterface&MockObject $mailer;
+    private DownloadManager $downloadManager;
+    private UrlGeneratorInterface $urlGenerator;
 
     protected function setUp(): void
     {
         $this->filterList = $this->createMock(FilterListInterface::class);
         $this->locker = $this->createMock(Locker::class);
+        $this->mailer = $this->createMock(MailerInterface::class);
+        $this->downloadManager = $this->createStub(DownloadManager::class);
+        $this->urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $doctrine = $this->createStub(ManagerRegistry::class);
-        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterLists::AIKIDO_MALWARE->value => $this->filterList], new FilterListResolver(), new FilterListEntryUpdateListener($doctrine));
+        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterLists::AIKIDO_MALWARE->value => $this->filterList], new FilterListResolver(), new FilterListEntryUpdateListener($doctrine), $this->mailer, $this->downloadManager, 'test@example.com', $this->urlGenerator);
 
         $this->em = $this->createMock(EntityManager::class);
 
@@ -56,11 +68,13 @@ class FilterListWorkerTest extends TestCase
             ->willReturn($this->createStub(Connection::class));
 
         $this->filterListEntryRepository = $this->createMock(FilterListEntryRepository::class);
+        $this->packageRepository = $this->createStub(PackageRepository::class);
 
         $doctrine
             ->method('getRepository')
             ->willReturnMap([
                 [FilterListEntry::class, null, $this->filterListEntryRepository],
+                [Package::class, null, $this->packageRepository],
             ]);
     }
 
@@ -93,6 +107,14 @@ class FilterListWorkerTest extends TestCase
             ->expects($this->once())
             ->method('remove')
             ->with($this->identicalTo($existingEntryToBeDeleted));
+
+        $this->urlGenerator
+            ->method('generate')
+            ->willReturn('https://packagist.org/packages/vendor/new-malware');
+
+        $this->mailer
+            ->expects($this->once())
+            ->method('send');
 
         $result = $this->worker->process($this->createJob(), SignalHandler::create());
 
@@ -205,5 +227,9 @@ class FilterListWorkerTest extends TestCase
         $this->em
             ->expects($this->never())
             ->method('flush');
+
+        $this->mailer
+            ->expects($this->never())
+            ->method('send');
     }
 }
