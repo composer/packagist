@@ -165,6 +165,76 @@
                     {% set isGitHubRepoUrl = package.isGitHub() %}
                     {% set displayOpenIssues = version and version.support is not null and version.support.issues is defined and isGitHubRepoUrl and version.support.issues starts with repoUrl %}
 
+                    {% if is_granted('remove_maintainer', package) or is_granted('add_maintainer', package) %}
+                        <div>
+                            {% if is_granted('add_maintainer', package) %}
+                                {{ form_start(addMaintainerForm, {
+                                    attr: { id: 'add-maintainer-form', class: (show_add_maintainer_form|default(false) ? '': 'hidden') },
+                                    action: path('add_maintainer', { 'name': package.name })
+                                }) }}
+                                    <div>
+                                        <h4>Add Maintainer</h4>
+                                        <p>
+                                            {{ form_label(addMaintainerForm.user, "Username") }}
+                                            {{ form_errors(addMaintainerForm.user) }}
+                                            {{ form_widget(addMaintainerForm.user) }}
+                                        </p>
+                                        {{ form_rest(addMaintainerForm) }}
+                                        <input class="btn btn-block btn-success btn-lg" type="submit" value="Add Maintainer" />
+                                    </div>
+                                {{ form_end(addMaintainerForm) }}
+                            {% endif %}
+
+                            {% if is_granted('remove_maintainer', package) %}
+                                {{ form_start(removeMaintainerForm, {
+                                    attr: { id: 'remove-maintainer-form', class: (show_remove_maintainer_form|default(false) ? '': 'hidden') },
+                                    action: path('remove_maintainer', { 'name': package.name })
+                                }) }}
+                                    <div>
+                                        <h4>Remove Maintainer</h4>
+                                        <p>
+                                            {{ form_label(removeMaintainerForm.user, "Username") }}
+                                            {{ form_errors(removeMaintainerForm.user) }}
+                                            {{ form_widget(removeMaintainerForm.user) }}
+                                        </p>
+                                        {{ form_rest(removeMaintainerForm) }}
+                                        <input class="btn btn-block btn-danger btn-lg" type="submit" value="Remove Maintainer" />
+                                    </div>
+                                {{ form_end(removeMaintainerForm) }}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    {% if is_granted('transfer_package', package) %}
+                        <div>
+                            {{ form_start(transferPackageForm, {
+                                attr: {
+                                    id: 'transfer-package-form',
+                                    class: (show_transfer_package_form|default(false) ? '': 'hidden'),
+                                },
+                                action: path('transfer_package', { 'name': package.name })
+                            }) }}
+                                <div>
+                                    <h4>Transfer Ownership</h4>
+                                    <div class="maintainers-collection-wrapper">
+                                        {{ form_errors(transferPackageForm.maintainers) }}
+                                        <ul class="maintainers-list" data-prototype="{{ form_widget(transferPackageForm.maintainers.vars.prototype)|e('html_attr') }}">
+                                            {% for maintainerField in transferPackageForm.maintainers %}
+                                                <li>
+                                                    {{ form_errors(maintainerField) }}
+                                                    {{ form_widget(maintainerField) }}
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                        <button type="button" class="btn btn-info btn-sm add-maintainer-item">Add Maintainer</button>
+                                    </div>
+                                    {{ form_rest(transferPackageForm) }}
+                                    <input class="btn btn-block btn-success btn-lg" type="submit" value="Transfer Ownership" />
+                                </div>
+                            {{ form_end(transferPackageForm) }}
+                        </div>
+                    {% endif %}
+
                     <div class="row package-aside">
                         <div class="details col-xs-12 col-sm-6 col-md-12">
                             <h5>Package info</h5>
@@ -295,76 +365,6 @@
                     </div>
                 </div>
             </div>
-
-            {% if is_granted('remove_maintainer', package) or is_granted('add_maintainer', package) %}
-                <div class="row">
-                    {% if is_granted('add_maintainer', package) %}
-                        {{ form_start(addMaintainerForm, {
-                            attr: { id: 'add-maintainer-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_add_maintainer_form|default(false) ? '': 'hidden') },
-                            action: path('add_maintainer', { 'name': package.name })
-                        }) }}
-                            <div>
-                                <h4>Add Maintainer</h4>
-                                <p>
-                                    {{ form_label(addMaintainerForm.user, "Username") }}
-                                    {{ form_errors(addMaintainerForm.user) }}
-                                    {{ form_widget(addMaintainerForm.user) }}
-                                </p>
-                                {{ form_rest(addMaintainerForm) }}
-                                <input class="btn btn-block btn-success btn-lg" type="submit" value="Add Maintainer" />
-                            </div>
-                        {{ form_end(addMaintainerForm) }}
-                    {% endif %}
-
-                    {% if is_granted('remove_maintainer', package) %}
-                        {{ form_start(removeMaintainerForm, {
-                            attr: { id: 'remove-maintainer-form', class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_remove_maintainer_form|default(false) ? '': 'hidden') },
-                            action: path('remove_maintainer', { 'name': package.name })
-                        }) }}
-                            <div>
-                                <h4>Remove Maintainer</h4>
-                                <p>
-                                    {{ form_label(removeMaintainerForm.user, "Username") }}
-                                    {{ form_errors(removeMaintainerForm.user) }}
-                                    {{ form_widget(removeMaintainerForm.user) }}
-                                </p>
-                                {{ form_rest(removeMaintainerForm) }}
-                                <input class="btn btn-block btn-danger btn-lg" type="submit" value="Remove Maintainer" />
-                            </div>
-                        {{ form_end(removeMaintainerForm) }}
-                    {% endif %}
-                </div>
-            {% endif %}
-
-            {% if is_granted('transfer_package', package) %}
-                <div class="row">
-                    {{ form_start(transferPackageForm, {
-                        attr: {
-                            id: 'transfer-package-form',
-                            class: 'col-sm-6 col-md-3 col-md-offset-9 ' ~ (show_transfer_package_form|default(false) ? '': 'hidden'),
-                        },
-                        action: path('transfer_package', { 'name': package.name })
-                    }) }}
-                        <div>
-                            <h4>Transfer Ownership</h4>
-                            <div class="maintainers-collection-wrapper">
-                                {{ form_errors(transferPackageForm.maintainers) }}
-                                <ul class="maintainers-list" data-prototype="{{ form_widget(transferPackageForm.maintainers.vars.prototype)|e('html_attr') }}">
-                                    {% for maintainerField in transferPackageForm.maintainers %}
-                                        <li>
-                                            {{ form_errors(maintainerField) }}
-                                            {{ form_widget(maintainerField) }}
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                                <button type="button" class="btn btn-info btn-sm add-maintainer-item">Add Maintainer</button>
-                            </div>
-                            {{ form_rest(transferPackageForm) }}
-                            <input class="btn btn-block btn-success btn-lg" type="submit" value="Transfer Ownership" />
-                        </div>
-                    {{ form_end(transferPackageForm) }}
-                </div>
-            {% endif %}
 
             {% if versions|length %}
                 <div class="row versions-section">
