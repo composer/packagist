@@ -55,7 +55,7 @@ class FilterListWorkerTest extends TestCase
         $this->downloadManager = $this->createStub(DownloadManager::class);
         $this->urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $doctrine = $this->createStub(ManagerRegistry::class);
-        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterLists::AIKIDO_MALWARE->value => $this->filterList], new FilterListResolver(), new FilterListEntryUpdateListener($doctrine), $this->mailer, $this->downloadManager, 'test@example.com', $this->urlGenerator);
+        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterLists::AIKIDO_MALWARE->value => $this->filterList], new FilterListResolver(), new FilterListEntryUpdateListener($doctrine), $this->mailer, $this->downloadManager, 'test@example.com', $this->urlGenerator, 'packagist.org');
 
         $this->em = $this->createMock(EntityManager::class);
 
