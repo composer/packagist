@@ -58,7 +58,7 @@ parameters:
         PackageUpdateJob: 'array{id: int, update_equal_refs: bool, delete_before: bool, force_dump: bool, source: string}'
         GitHubUserMigrateJob: 'array{id: int, old_scope: string, new_scope: string}'
         SecurityAdvisoryJob: 'array{source: string}'
-        FilterListJob: 'array{list: string}'
+        FilterListJob: 'array{list: string, source: string}'
 
         JobResult: 'array{status: \App\Entity\Job::STATUS_*, message: string, vendor?: string, details?: string, exceptionMsg?: string, exceptionClass?: class-string<\Throwable>, results?: array{hooks_setup: int, hooks_failed: array<int, array{package: string, reason: mixed}>, hooks_ok_unchanged: int}}'
         ErroredResult: 'array{status: \App\Entity\Job::STATUS_ERRORED, message: string, exception: \Throwable}'

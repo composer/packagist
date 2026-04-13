@@ -31,6 +31,7 @@ use App\Entity\Vendor;
 use App\Entity\Version;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
+use App\FilterList\FilterLists;
 use App\Form\Model\MaintainerRequest;
 use App\Form\Model\TransferPackageRequest;
 use App\Form\Type\AbandonedType;
@@ -74,6 +75,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Requirement\EnumRequirement;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
@@ -681,7 +683,7 @@ class PackageController extends Controller
                 foreach ($versions as $version) {
                     if ($version->getNormalizedVersion() === $normalizedVersion) {
                         $data['hasVersionsFlaggedAsMalware'][$version->getId()] = true;
-                        $data['listsFlaggingVersionsAsMalware'][$packageVersionFlaggedAsMalware->getList()->value] = $packageVersionFlaggedAsMalware->getList();
+                        $data['listsFlaggingVersionsAsMalware'][$packageVersionFlaggedAsMalware->getSource()->value] = $packageVersionFlaggedAsMalware->getSource();
                     }
                 }
             }
@@ -1656,12 +1658,12 @@ class PackageController extends Controller
         return $this->render('package/security_advisory.html.twig', ['securityAdvisories' => $securityAdvisories, 'id' => $id]);
     }
 
-    #[Route(path: '/packages/{name}/filter-lists/', name: 'view_package_filter_lists', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX])]
-    public function filterListsAction(Request $request, string $name): Response
+    #[Route(path: '/packages/{name}/filter-lists/{list}/', name: 'view_package_filter_lists', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, 'list' => new EnumRequirement(FilterLists::class)])]
+    public function filterListsAction(Request $request, string $name, FilterLists $list): Response
     {
         /** @var FilterListEntryRepository $repo */
         $repo = $this->getEM()->getRepository(FilterListEntry::class);
-        $entries = $repo->getPackageEntries($name);
+        $entries = $repo->getPackageEntries($name, $list);
 
         $data = [];
         $data['name'] = $name;
@@ -1693,6 +1695,7 @@ class PackageController extends Controller
 
         $data['entries'] = $entries;
         $data['count'] = \count($entries);
+        $data['list'] = $list;
 
         return $this->render('package/filter_list_entries.html.twig', $data);
     }

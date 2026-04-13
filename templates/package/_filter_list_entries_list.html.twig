@@ -13,13 +13,13 @@
                                         Reason: {{ entry.reason }}
 
                                         {% if entry.link %}
-                                            <a href="{{ entry.link }}">View details on {{ entry.list.displayName }}</a>
+                                            <a href="{{ entry.link }}">View details on {{ entry.source.displayName }}</a>
                                         {% endif %}
                                     </p>
 
                                 </div>
                                 <div class="col-sm-5 col-lg-4">
-                                    <p>Reported by: <a href="{{entry.list.url }}"><img alt="{{ entry.list.displayName }}" class="filter-list-log" src="{{ asset(entry.list.logo) }}" /></a></p>
+                                    <p>Reported by: <a href="{{entry.source.url }}"><img alt="{{ entry.source.displayName }}" class="filter-list-log" src="{{ asset(entry.source.logo) }}" /></a></p>
                                 </div>
                             </div>
                         </div>

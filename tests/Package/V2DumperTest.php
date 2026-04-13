@@ -19,6 +19,7 @@ use App\Entity\SecurityAdvisory;
 use App\Entity\Version;
 use App\FilterList\Dump\FilterListDumperProvider;
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
 use App\Model\ProviderManager;
 use App\Package\V2Dumper;
@@ -150,9 +151,10 @@ class V2DumperTest extends IntegrationTestCase
         $remote = new RemoteFilterListEntry(
             'acme/package',
             '1.0.0',
-            FilterLists::AIKIDO_MALWARE,
+            FilterLists::MALWARE,
             null,
             'malware',
+            FilterSources::AIKIDO,
         );
         $filterEntry = new FilterListEntry($remote);
         $this->store($filterEntry);
@@ -164,11 +166,12 @@ class V2DumperTest extends IntegrationTestCase
 
         $data = json_decode((string) file_get_contents($releaseFile), true);
         $this->assertArrayHasKey('filter', $data);
-        $this->assertArrayHasKey('aikido-malware', $data['filter']);
-        $filterList = $data['filter']['aikido-malware'];
+        $this->assertArrayHasKey('malware', $data['filter']);
+        $filterList = $data['filter']['malware'];
         $this->assertNotEmpty($filterList);
         $this->assertSame('1.0.0', $filterList[0]['constraint']);
         $this->assertSame('malware', $filterList[0]['reason']);
+        $this->assertSame(FilterSources::AIKIDO->value, $filterList[0]['source']);
     }
 
     public function testSpamFrozenPackageIsSkipped(): void

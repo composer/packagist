@@ -12,6 +12,8 @@
 
 namespace App\FilterList\Dump;
 
+use App\FilterList\FilterSources;
+
 final readonly class DumpableFilterList
 {
     public function __construct(
@@ -19,6 +21,7 @@ final readonly class DumpableFilterList
         public string $url,
         public ?string $reason,
         public ?string $id,
+        public string $source,
     ) {
     }
 }

@@ -16,6 +16,7 @@ use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
 use App\FilterList\Dump\DumpableFilterList;
 use App\FilterList\Dump\FilterListDumperProvider;
+use App\FilterList\FilterSources;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -59,16 +60,16 @@ class FilterListDumperProviderTest extends TestCase
             ->with(['acme/package'])
             ->willReturn([
                 'acme/package' => [
-                    ['version' => '1.0.0', 'reason' => 'malware', 'list' => 'test', 'publicId' => 'PKFE-test1'],
-                    ['version' => '2.0.0', 'reason' => 'malware', 'list' => 'test', 'publicId' => 'PKFE-test2'],
+                    ['version' => '1.0.0', 'reason' => 'malware', 'list' => 'test', 'publicId' => 'PKFE-test1', 'source' => 'aikido'],
+                    ['version' => '2.0.0', 'reason' => 'malware', 'list' => 'test', 'publicId' => 'PKFE-test2', 'source' => 'aikido'],
                 ],
             ]);
 
         $this->assertEquals([
             'acme/package' => [
                 'test' => [
-                    new DumpableFilterList('1.0.0', '', 'malware', 'PKFE-test1'),
-                    new DumpableFilterList('2.0.0', '', 'malware', 'PKFE-test2'),
+                    new DumpableFilterList('1.0.0', '', 'malware', 'PKFE-test1', 'aikido'),
+                    new DumpableFilterList('2.0.0', '', 'malware', 'PKFE-test2', 'aikido'),
                 ],
             ],
         ], $this->filterListDumperProvider->getEntriesForDump(['acme/package']));

@@ -20,6 +20,7 @@ final readonly class RemoteFilterListEntry
         public FilterLists $list,
         public ?string $link,
         public string $reason,
+        public FilterSources $source,
     ) {
     }
 }

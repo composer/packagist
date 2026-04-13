@@ -15,6 +15,7 @@ namespace App\Tests\FilterList;
 use App\Entity\FilterListEntry;
 use App\FilterList\FilterListResolver;
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
 use Doctrine\Persistence\Reflection\TypedNoDefaultReflectionProperty;
 use PHPUnit\Framework\TestCase;
@@ -119,9 +120,10 @@ class FilterListResolverTest extends TestCase
         return new RemoteFilterListEntry(
             $packageName,
             $version,
-            FilterLists::AIKIDO_MALWARE,
+            FilterLists::MALWARE,
             'https://example.com/'.$packageName,
             'malware',
+            FilterSources::AIKIDO,
         );
     }
 

@@ -1,4 +1,4 @@
 {% import 'audit_log/macros.html.twig' as auditLog %}
 
 <strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
-Versions {{ display.version}} were unflagged by {{ display.list}}.
+Versions {{ display.version }} were unflagged by {{ display.source.displayName }} as {{ display.list.value }}.

@@ -32,6 +32,7 @@ use App\Audit\Display\VersionReferenceChangedDisplay;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
@@ -602,7 +603,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $auditRecord = $this->createAuditRecord(
             AuditRecordType::FilterListEntryAdded,
             [
-                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::AIKIDO_MALWARE->value, 'reason' => 'malware'],
+                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::MALWARE->value, 'reason' => 'malware', 'source' => FilterSources::AIKIDO->value],
             ]
         );
 
@@ -612,9 +613,10 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('acme/package', $display->packageName);
         self::assertSame('<1.0', $display->version);
         self::assertSame('malware', $display->reason);
-        self::assertSame(FilterLists::AIKIDO_MALWARE, $display->list);
+        self::assertSame(FilterLists::MALWARE, $display->list);
         self::assertNull($display->actor->id);
         self::assertSame('unknown', $display->actor->username);
+        self::assertSame(FilterSources::AIKIDO, $display->source);
         self::assertSame(AuditRecordType::FilterListEntryAdded, $display->getType());
         self::assertSame('audit_log/display/filter_list_entry_added.html.twig', $display->getTemplateName());
     }
@@ -624,7 +626,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $auditRecord = $this->createAuditRecord(
             AuditRecordType::FilterListEntryDeleted,
             [
-                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::AIKIDO_MALWARE->value, 'reason' => 'malware'],
+                'entry' => ['package_name' => 'acme/package', 'version' => '<1.0', 'list' => FilterLists::MALWARE->value, 'reason' => 'malware', 'source' => FilterSources::AIKIDO->value],
             ]
         );
 
@@ -634,9 +636,10 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('acme/package', $display->packageName);
         self::assertSame('<1.0', $display->version);
         self::assertSame('malware', $display->reason);
-        self::assertSame(FilterLists::AIKIDO_MALWARE, $display->list);
+        self::assertSame(FilterLists::MALWARE, $display->list);
         self::assertNull($display->actor->id);
         self::assertSame('unknown', $display->actor->username);
+        self::assertSame(FilterSources::AIKIDO, $display->source);
         self::assertSame(AuditRecordType::FilterListEntryDeleted, $display->getType());
         self::assertSame('audit_log/display/filter_list_entry_deleted.html.twig', $display->getTemplateName());
     }
