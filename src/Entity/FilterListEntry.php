@@ -48,8 +48,8 @@ class FilterListEntry
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
-    #[ORM\Column(nullable: true)]
-    private ?string $publicId;
+    #[ORM\Column]
+    private string $publicId;
 
     public function __construct(RemoteFilterListEntry $remote)
     {
@@ -93,7 +93,7 @@ class FilterListEntry
         return $this->publicId;
     }
 
-    public function assignPublicId(): void
+    private function assignPublicId(): void
     {
         $this->publicId = IdGenerator::generateFilterListEntry();
     }
