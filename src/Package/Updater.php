@@ -480,7 +480,7 @@ class Updater
         $version->setSoftDeletedAt(null);
         $version->setReleasedAt($data->getReleaseDate() === null ? null : \DateTimeImmutable::createFromInterface($data->getReleaseDate()));
 
-        if ($data->getSourceType()) { // null or '' here explicitly means no source and will be nulled, do not change this behavior
+        if ($data->getSourceType() && !in_array($data->getSourceType(), ['perforce', 'fossil'], true)) { // null or '' here explicitly means no source and will be nulled, do not change this behavior
             $source['type'] = $data->getSourceType();
             $source['url'] = $data->getSourceUrl();
             // force public URLs even if the package somehow got downgraded to a GitDriver
