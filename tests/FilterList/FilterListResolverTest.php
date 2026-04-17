@@ -15,6 +15,7 @@ namespace App\Tests\FilterList;
 use App\Entity\FilterListEntry;
 use App\FilterList\FilterListResolver;
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
 use Doctrine\Persistence\Reflection\TypedNoDefaultReflectionProperty;
 use PHPUnit\Framework\TestCase;
@@ -43,19 +44,7 @@ class FilterListResolverTest extends TestCase
         $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
         $result = $this->resolver->resolve([$existing], [$remote, $remote]);
 
-        $this->assertSame([[], [], false], $result);
-    }
-
-    public function testExistingWithoutIdAssignsNewPublicId(): void
-    {
-        $existing = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
-        $this->unsetPublicId($existing);
-        $this->assertNull($existing->getPublicId());
-        $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
-        $result = $this->resolver->resolve([$existing], [$remote, $remote]);
-
-        $this->assertSame([[], [], true], $result);
-        $this->assertNotNull($existing->getPublicId());
+        $this->assertSame([[], []], $result);
     }
 
     public function testResolveRemoveOldEntry(): void
@@ -98,7 +87,7 @@ class FilterListResolverTest extends TestCase
     {
         $result = $this->resolver->resolve([], []);
 
-        $this->assertSame([[], [], false], $result);
+        $this->assertSame([[], []], $result);
     }
 
     public function testResolveMultipleVersionsSamePackage(): void
@@ -131,9 +120,10 @@ class FilterListResolverTest extends TestCase
         return new RemoteFilterListEntry(
             $packageName,
             $version,
-            FilterLists::AIKIDO_MALWARE,
+            FilterLists::MALWARE,
             'https://example.com/'.$packageName,
             'malware',
+            FilterSources::AIKIDO,
         );
     }
 

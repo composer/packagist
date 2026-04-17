@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
@@ -31,11 +32,13 @@ class FilterListEntryRepository extends ServiceEntityRepository
     /**
      * @return list<FilterListEntry>
      */
-    public function getEntriesInList(FilterLists $list): array
+    public function getEntriesInList(FilterLists $list, FilterSources $source): array
     {
         return $this->createQueryBuilder('fl')
             ->where('fl.list = :list')
+            ->andWhere('fl.source = :source')
             ->setParameter('list', $list)
+            ->setParameter('source', $source)
             ->getQuery()
             ->getResult();
     }
@@ -47,9 +50,9 @@ class FilterListEntryRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('fl')
             ->where('fl.packageName = :packageName')
-            ->andWhere('fl.list IN (:lists)')
+            ->andWhere('fl.list = :malware')
             ->setParameter('packageName', $package->getName())
-            ->setParameter('lists', FilterLists::malwareListsValues(), ArrayParameterType::STRING)
+            ->setParameter('malware', FilterLists::MALWARE)
             ->getQuery()
             ->getResult();
     }
@@ -57,11 +60,13 @@ class FilterListEntryRepository extends ServiceEntityRepository
     /**
      * @return list<FilterListEntry>
      */
-    public function getPackageEntries(string $packageName): array
+    public function getPackageEntries(string $packageName, FilterLists $list): array
     {
         return $this->createQueryBuilder('fl')
             ->where('fl.packageName = :packageName')
+            ->andWhere('fl.list = :list')
             ->setParameter('packageName', $packageName)
+            ->setParameter('list', $list)
             ->getQuery()
             ->getResult();
     }
@@ -69,7 +74,7 @@ class FilterListEntryRepository extends ServiceEntityRepository
     /**
      * @param array<string> $packageNames
      *
-     * @return array<string, non-empty-list<array{version: string, list: string, reason: string|null, publicId: string|null}>>
+     * @return array<string, non-empty-list<array{version: string, list: string, reason: string|null, publicId: string|null, source: string}>>
      */
     public function getAllPackageEntriesMap(array $packageNames): array
     {
@@ -86,6 +91,7 @@ class FilterListEntryRepository extends ServiceEntityRepository
                 'list' => $entry->getList()->value,
                 'reason' => $entry->getReason(),
                 'publicId' => $entry->getPublicId(),
+                'source' => $entry->getSource()->value,
             ];
         }
 

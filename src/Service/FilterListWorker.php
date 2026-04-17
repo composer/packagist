@@ -18,6 +18,7 @@ use App\Entity\Package;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterListResolver;
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use App\FilterList\List\FilterListInterface;
 use App\Model\DownloadManager;
 use Doctrine\Persistence\ManagerRegistry;
@@ -58,24 +59,28 @@ final readonly class FilterListWorker
     public function process(Job $job, SignalHandler $signal): array
     {
         $list = FilterLists::from($job->getPayload()['list']);
+        $source = FilterSources::from($job->getPayload()['source']);
 
         $lockAcquired = $this->locker->lockFilterList(self::FILTER_LIST_WORKER_RUN);
         if (!$lockAcquired) {
             return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTimeImmutable('+2 minutes'), 'message' => 'Could not acquire lock'];
         }
 
-        $source = $this->filterLists[$list->value];
-        $remoteEntries = $source->getListEntries();
+        $filterList = $this->filterLists[$source->value . '-' . $list->value];
+        $remoteEntries = $filterList->getListEntries();
         if (null === $remoteEntries) {
-            $this->logger->info('Filter list update failed, skipping', ['list' => $list]);
+            $this->logger->info('Filter list update failed, skipping', [
+                'list' => $list,
+                'source' => $source,
+            ]);
             $this->locker->unlockFilterList(self::FILTER_LIST_WORKER_RUN);
 
             return ['status' => Job::STATUS_ERRORED, 'message' => 'Filter list update failed, skipped'];
         }
 
         /** @var FilterListEntry[] $existingEntries */
-        $existingEntries = $this->doctrine->getRepository(FilterListEntry::class)->getEntriesInList($list);
-        [$new, $removed, $modifiedExisting] = $this->malwareFeedResolver->resolve($existingEntries, $remoteEntries);
+        $existingEntries = $this->doctrine->getRepository(FilterListEntry::class)->getEntriesInList($list, $source);
+        [$new, $removed] = $this->malwareFeedResolver->resolve($existingEntries, $remoteEntries);
 
         foreach ($new as $entry) {
             $this->doctrine->getManager()->persist($entry);
@@ -85,7 +90,7 @@ final readonly class FilterListWorker
             $this->doctrine->getManager()->remove($entry);
         }
 
-        if ($new !== [] || $removed !== [] || $modifiedExisting) {
+        if ($new !== [] || $removed !== []) {
             $this->doctrine->getManager()->flush();
         }
 

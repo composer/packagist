@@ -20,6 +20,7 @@ use App\Entity\PackageRepository;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterListResolver;
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use App\FilterList\List\FilterListInterface;
 use App\FilterList\RemoteFilterListEntry;
 use App\Model\DownloadManager;
@@ -55,7 +56,7 @@ class FilterListWorkerTest extends TestCase
         $this->downloadManager = $this->createStub(DownloadManager::class);
         $this->urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $doctrine = $this->createStub(ManagerRegistry::class);
-        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterLists::AIKIDO_MALWARE->value => $this->filterList], new FilterListResolver(), new FilterListEntryUpdateListener($doctrine), $this->mailer, $this->downloadManager, 'test@example.com', $this->urlGenerator, 'packagist.org');
+        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterSources::AIKIDO->value . '-' . FilterLists::MALWARE->value => $this->filterList], new FilterListResolver(), new FilterListEntryUpdateListener($doctrine), $this->mailer, $this->downloadManager, 'test@example.com', $this->urlGenerator, 'packagist.org');
 
         $this->em = $this->createMock(EntityManager::class);
 
@@ -96,7 +97,7 @@ class FilterListWorkerTest extends TestCase
         $this->filterListEntryRepository
             ->expects($this->once())
             ->method('getEntriesInList')
-            ->with(FilterLists::AIKIDO_MALWARE)
+            ->with(FilterLists::MALWARE)
             ->willReturn([$existingEntry, $existingEntryToBeDeleted]);
 
         $this->em
@@ -133,7 +134,7 @@ class FilterListWorkerTest extends TestCase
         $this->filterListEntryRepository
             ->expects($this->once())
             ->method('getEntriesInList')
-            ->with(FilterLists::AIKIDO_MALWARE)
+            ->with(FilterLists::MALWARE)
             ->willReturn([]);
 
         $this->expectNoPersistAndRemove();
@@ -191,15 +192,16 @@ class FilterListWorkerTest extends TestCase
         return new RemoteFilterListEntry(
             $packageName,
             $version,
-            FilterLists::AIKIDO_MALWARE,
+            FilterLists::MALWARE,
             'https://example.com/'.$packageName,
             'malware',
+            FilterSources::AIKIDO,
         );
     }
 
     private function createJob(): Job
     {
-        return new Job('job', 'filter:update', ['list' => FilterLists::AIKIDO_MALWARE->value]);
+        return new Job('job', 'filter:update', ['list' => FilterLists::MALWARE->value, 'source' => FilterSources::AIKIDO->value]);
     }
 
     private function expectLock(): void

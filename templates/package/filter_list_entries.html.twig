@@ -4,7 +4,7 @@
 
 {% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
-{% block title %}{{ 'packages.filter_lists'|trans }} - {{ name }} - {{ parent() }}{% endblock %}
+{% block title %}{{ ('packages.filter_lists.' ~ list.value)|trans }} - {{ name }} - {{ parent() }}{% endblock %}
 
 {% block content %}
     <div class="row">
@@ -12,6 +12,7 @@
             <div class="package-header">
                 <h2 class="title">
                     <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a>
+                    {{ ('packages.filter_lists.' ~ list.value)|trans }}
                     {% if version is defined %}
                         for {{ version }}
                     {% endif %}

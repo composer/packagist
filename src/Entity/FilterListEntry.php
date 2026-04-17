@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
 use App\Service\IdGenerator;
 use Doctrine\ORM\Mapping as ORM;
@@ -48,8 +49,11 @@ class FilterListEntry
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
-    #[ORM\Column(nullable: true)]
-    private ?string $publicId;
+    #[ORM\Column]
+    private string $publicId;
+
+    #[ORM\Column]
+    private FilterSources $source;
 
     public function __construct(RemoteFilterListEntry $remote)
     {
@@ -59,6 +63,7 @@ class FilterListEntry
         $this->link = $remote->link;
         $this->list = $remote->list;
         $this->reason = $remote->reason;
+        $this->source = $remote->source;
 
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
     }
@@ -93,7 +98,12 @@ class FilterListEntry
         return $this->publicId;
     }
 
-    public function assignPublicId(): void
+    public function getSource(): FilterSources
+    {
+        return $this->source;
+    }
+
+    private function assignPublicId(): void
     {
         $this->publicId = IdGenerator::generateFilterListEntry();
     }

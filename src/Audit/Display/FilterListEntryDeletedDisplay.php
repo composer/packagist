@@ -14,6 +14,7 @@ namespace App\Audit\Display;
 
 use App\Audit\AuditRecordType;
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 
 readonly class FilterListEntryDeletedDisplay extends AbstractAuditLogDisplay
 {
@@ -22,6 +23,7 @@ readonly class FilterListEntryDeletedDisplay extends AbstractAuditLogDisplay
         public string $packageName,
         public string $version,
         public FilterLists $list,
+        public FilterSources $source,
         public string $reason,
         ActorDisplay $actor,
         ?string $ip,

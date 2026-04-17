@@ -49,7 +49,7 @@
                     <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
 
                     {% if hasVersionsFlaggedAsMalware %}
-                    <div class="alert alert-danger"><i class="glyphicon glyphicon-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, category: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
+                    <div class="alert alert-danger"><i class="glyphicon glyphicon-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
                     {% endif %}
 
                     {% if not package.isAutoUpdated() and is_granted('update', package) %}
