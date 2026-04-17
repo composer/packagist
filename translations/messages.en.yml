@@ -185,6 +185,8 @@ audit_log:
         package_deleted: Package deleted
         package_transferred: Package transferred
         package_unabandoned: Package unabandoned
+        package_frozen: Package frozen
+        package_unfrozen: Package unfrozen
         password_changed: Password changed
         password_reset: Password reset
         password_reset_requested: Password reset requested
