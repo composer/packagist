@@ -1,22 +1,29 @@
 # See the Conductor setup guide at https://packagist.com/docs/conductor/getting-started
 
+name: Private Packagist Conductor
+
 on:
   repository_dispatch:
     types:
       - dependency_update
 
-name: Private Packagist Conductor
+concurrency:
+    group: ${{ github.workflow }}
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   conductor:
     name: Private Packagist Conductor
     runs-on: ubuntu-24.04-arm
 
+    permissions:
+        contents: write # Allow Conductor to push commits with composer.json/.lock changes
+
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: true
 
       - uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # 2.37.0
         with:

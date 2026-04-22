@@ -4,9 +4,16 @@ on:
   - push
   - pull_request
 
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
 env:
   APP_ENV: test
   DATABASE_URL: "mysql://root:root@127.0.0.1:3306/packagist?serverVersion=8.0"
+
+permissions:
+    contents: read
 
 jobs:
   tests:
@@ -16,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # 2.37.0
         with:
