@@ -27,7 +27,7 @@
                                 {% endif %}
                             </h4>
                             {% if package.description is defined and package.description %}
-                                <p>{{ package.description }}</p>
+                                <p>{{ package.description|u.truncate(300) }}</p>
                             {% endif %}
                             {% if package.abandoned|default(false) %}
                                 <p class="abandoned">
