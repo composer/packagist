@@ -330,6 +330,7 @@ class AuditRecord
             'version' => $entry->getVersion(),
             'list' => $entry->getList()->value,
             'reason' => $entry->getReason(),
+            'source' => $entry->getSource()->value,
         ];
     }
 }
