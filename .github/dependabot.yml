@@ -5,3 +5,5 @@ updates:
     schedule:
       interval: "weekly"
     labels: []
+    cooldown:
+      default-days: 7
