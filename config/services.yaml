@@ -124,6 +124,9 @@ services:
         $filterLists:
             'aikido-malware': '@App\FilterList\List\AikidoMalwareFilterList'
 
+    App\FilterList\Dump\FilterListSummaryDumper:
+        $storage: '@filter_list_summary.storage'
+
     Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
         arguments: ['@snc_redis.cache', {prefix: 'sess:', ttl: 3600}]
 
@@ -140,3 +143,33 @@ services:
     App\Service\ReplicaClient:
         arguments:
             $replicaIps: '%replica_ips%'
+
+when@prod:
+    services:
+        AsyncAws\S3\S3Client:
+            arguments:
+                $configuration:
+                    region: '%env(default::FILTER_LIST_SUMMARY_S3_REGION)%'
+
+        filter_list_summary.adapter:
+            class: League\Flysystem\AsyncAwsS3\AsyncAwsS3Adapter
+            arguments:
+                - '@AsyncAws\S3\S3Client'
+                - '%env(FILTER_LIST_SUMMARY_S3_BUCKET)%'
+
+        filter_list_summary.storage:
+            class: League\Flysystem\Filesystem
+            arguments:
+                - '@filter_list_summary.adapter'
+
+when@dev:
+    services:
+        filter_list_summary.adapter:
+            class: League\Flysystem\Local\LocalFilesystemAdapter
+            arguments:
+                - '%kernel.project_dir%/var/filter_list_summary'
+
+        filter_list_summary.storage:
+            class: League\Flysystem\Filesystem
+            arguments:
+                - '@filter_list_summary.adapter'

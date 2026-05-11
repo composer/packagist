@@ -199,6 +199,19 @@ class V2DumperTest extends IntegrationTestCase
         $this->assertFileDoesNotExist($releaseFile);
     }
 
+    public function testDumpRootAdvertisesFilterSummaryUrl(): void
+    {
+        $this->dumper->dumpRoot();
+
+        $rootFile = $this->webDir.'/packages.json';
+        $this->assertFileExists($rootFile);
+
+        $data = json_decode((string) file_get_contents($rootFile), true);
+        $this->assertArrayHasKey('filter', $data);
+        $this->assertArrayHasKey('summary-url', $data['filter']);
+        $this->assertStringEndsWith('/lists/all/summary.json', $data['filter']['summary-url']);
+    }
+
     private function createVersion(Package $package, string $version): Version
     {
         $versionParser = new VersionParser();

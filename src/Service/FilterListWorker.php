@@ -15,6 +15,7 @@ namespace App\Service;
 use App\Entity\FilterListEntry;
 use App\Entity\Job;
 use App\Entity\Package;
+use App\FilterList\Dump\FilterListSummaryDumper;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterListResolver;
 use App\FilterList\FilterLists;
@@ -48,6 +49,7 @@ final readonly class FilterListWorker
         private string $mailFromEmail,
         private UrlGeneratorInterface $urlGenerator,
         private string $packagistHost,
+        private FilterListSummaryDumper $summaryDumper,
     ) {
     }
 
@@ -90,11 +92,14 @@ final readonly class FilterListWorker
             $this->doctrine->getManager()->remove($entry);
         }
 
-        if ($new !== [] || $removed !== []) {
+        $hasChanges = $new !== [] || $removed !== [];
+        if ($hasChanges) {
             $this->doctrine->getManager()->flush();
         }
 
         $this->malwarePackageVersionUpdateListener->flushChangesToPackages();
+
+        $this->summaryDumper->dumpIfStale($hasChanges);
 
         if ($this->packagistHost === 'packagist.org') {
             /** @var array<string, list<FilterListEntry>> $newEntriesByPackage */

@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\FilterList\Dump\FilterListSummaryEntry;
 use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -96,5 +97,33 @@ class FilterListEntryRepository extends ServiceEntityRepository
         }
 
         return $mappedData;
+    }
+
+    /**
+     * @return list<FilterListSummaryEntry>
+     */
+    public function getAllSummaryEntries(): array
+    {
+        return $this->createQueryBuilder('fl')
+            ->select(sprintf(
+                'NEW %s(fl.packageName, fl.list, fl.version)',
+                FilterListSummaryEntry::class,
+            ))
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getNewestEntryCreatedAt(): ?\DateTimeImmutable
+    {
+        $result = $this->createQueryBuilder('fl')
+            ->select('MAX(fl.createdAt)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        if ($result === null) {
+            return null;
+        }
+
+        return new \DateTimeImmutable((string) $result);
     }
 }

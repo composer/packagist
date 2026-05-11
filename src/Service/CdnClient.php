@@ -12,6 +12,7 @@
 
 namespace App\Service;
 
+use App\FilterList\Dump\FilterListSummaryDumper;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -60,51 +61,11 @@ class CdnClient
 
     public function purgeMetadataCache(string $path): bool
     {
-        if (!$this->isConfigured()) {
-            return true;
-        }
-
-        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'false', 'exactPath' => 'true']), [
-            'headers' => [
-                'AccessKey' => $this->cdnApiKey,
-            ],
-        ]);
-
-        // delay the response to slow things down when we're hitting the CDN too hard and get rate limited
-        if ($resp->getStatusCode() === 429) {
-            sleep(1);
-
-            $this->logger->warning('CDN rate limit hit while purging '.$path.', slowing down', ['status' => $resp->getStatusCode()]);
-
+        if (!$this->purgeUrl($this->metadataPublicEndpoint.$path)) {
             return false;
         }
 
-        // wait for status code at least
-        if ($resp->getStatusCode() !== 200) {
-            $this->logger->error('Failed purging '.$path.' from metadata CDN', ['response' => $resp->getContent(false), 'status' => $resp->getStatusCode()]);
-
-            return false;
-        }
-
-        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => 'https://'.$this->packagistHost.'/'.$path, 'async' => 'false', 'exactPath' => 'true']), [
-            'headers' => [
-                'AccessKey' => $this->cdnApiKey,
-            ],
-        ]);
-
-        // delay the response to slow things down when we're hitting the CDN too hard and get rate limited
-        if ($resp->getStatusCode() === 429) {
-            sleep(1);
-
-            $this->logger->warning('CDN rate limit hit while purging '.$path.', slowing down', ['status' => $resp->getStatusCode()]);
-
-            return false;
-        }
-
-        // wait for status code at least
-        if ($resp->getStatusCode() !== 200) {
-            $this->logger->error('Failed purging '.$path.' from main host CDN', ['response' => $resp->getContent(false), 'status' => $resp->getStatusCode()]);
-
+        if (!$this->purgeUrl('https://'.$this->packagistHost.'/'.$path)) {
             return false;
         }
 
@@ -188,5 +149,52 @@ class CdnClient
         }
 
         return $resp->getContent();
+    }
+
+    public function purgeSummaryUrl(): bool
+    {
+        return $this->purgeUrl($this->metadataPublicEndpoint . FilterListSummaryDumper::SUMMARY_PATH);
+    }
+
+    public function wasPublicRepoFileModifiedSince(string $path, \DateTimeImmutable $since): bool
+    {
+        $resp = $this->httpClient->request('HEAD', $this->metadataPublicEndpoint . $path, [
+            'headers' => [
+                'If-Modified-Since' => $since->format(\DateTimeInterface::RFC7231),
+            ],
+        ]);
+
+        return $resp->getStatusCode() === 200;
+    }
+
+    public function purgeUrl(string $url): bool
+    {
+        if (!$this->isConfigured()) {
+            return true;
+        }
+
+        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $url, 'async' => 'false', 'exactPath' => 'true']), [
+            'headers' => [
+                'AccessKey' => $this->cdnApiKey,
+            ],
+        ]);
+
+        // delay the response to slow things down when we're hitting the CDN too hard and get rate limited
+        if ($resp->getStatusCode() === 429) {
+            sleep(1);
+
+            $this->logger->warning('CDN rate limit hit while purging '.$url.', slowing down', ['status' => $resp->getStatusCode()]);
+
+            return false;
+        }
+
+        // wait for status code at least
+        if ($resp->getStatusCode() !== 200) {
+            $this->logger->error('Failed purging '.$url.' from metadata CDN', ['response' => $resp->getContent(false), 'status' => $resp->getStatusCode()]);
+
+            return false;
+        }
+
+        return true;
     }
 }

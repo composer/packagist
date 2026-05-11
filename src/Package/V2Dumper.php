@@ -20,6 +20,7 @@ use App\Entity\SecurityAdvisory;
 use App\Entity\Version;
 use App\FilterList\Dump\DumpableFilterList;
 use App\FilterList\Dump\FilterListDumperProvider;
+use App\FilterList\Dump\FilterListSummaryDumper;
 use App\FilterList\FilterLists;
 use App\Model\ProviderManager;
 use App\Service\CdnClient;
@@ -98,6 +99,7 @@ class V2Dumper
         $rootFileContents['filter'] = [
             'metadata' => true,
             'lists' => FilterLists::packagesJsonListConfig(),
+            'summary-url' => str_replace('https://', 'https://repo.', $this->router->generate('home', [], UrlGeneratorInterface::ABSOLUTE_URL)) . FilterListSummaryDumper::SUMMARY_PATH,
         ];
 
         if ($verbose) {

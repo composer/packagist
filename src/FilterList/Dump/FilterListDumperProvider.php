@@ -51,4 +51,26 @@ final readonly class FilterListDumperProvider
 
         return $groupedEntries;
     }
+
+    public function getSummary(): FilterListSummary
+    {
+        $grouped = [];
+        foreach ($this->getEM()->getRepository(FilterListEntry::class)->getAllSummaryEntries() as $entry) {
+            $grouped[$entry->list->value][$entry->packageName][] = $entry->version;
+        }
+
+        $byList = [];
+        foreach ($grouped as $listValue => $packages) {
+            ksort($packages);
+            foreach ($packages as $packageName => $versions) {
+                $unique = array_values(array_unique($versions));
+                sort($unique);
+                $byList[$listValue][$packageName] = implode('|', $unique);
+            }
+        }
+
+        ksort($byList);
+
+        return new FilterListSummary($byList);
+    }
 }

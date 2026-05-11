@@ -16,7 +16,8 @@ use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
 use App\FilterList\Dump\DumpableFilterList;
 use App\FilterList\Dump\FilterListDumperProvider;
-use App\FilterList\FilterSources;
+use App\FilterList\Dump\FilterListSummaryEntry;
+use App\FilterList\FilterLists;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -84,5 +85,51 @@ class FilterListDumperProviderTest extends TestCase
             ->willReturn([]);
 
         $this->assertSame([], $this->filterListDumperProvider->getEntriesForDump(['acme/package']));
+    }
+
+    public function testGetSummaryEmpty(): void
+    {
+        $this->repo
+            ->expects($this->once())
+            ->method('getAllSummaryEntries')
+            ->willReturn([]);
+
+        $summary = $this->filterListDumperProvider->getSummary();
+
+        $this->assertSame([], $summary->byList);
+        $this->assertSame(['filter' => []], $summary->toJsonPayload());
+    }
+
+    public function testGetSummaryAggregatesVersionsByListAndPackage(): void
+    {
+        $this->repo
+            ->expects($this->once())
+            ->method('getAllSummaryEntries')
+            ->willReturn([
+                new FilterListSummaryEntry('acme/package', FilterLists::MALWARE, '2.0'),
+                new FilterListSummaryEntry('acme/package', FilterLists::MALWARE, '1.0'),
+                new FilterListSummaryEntry('acme/package', FilterLists::MALWARE, '3.0'),
+                new FilterListSummaryEntry('zeta/lib', FilterLists::MALWARE, '0.1'),
+                // Duplicate to assert deduplication
+                new FilterListSummaryEntry('acme/package', FilterLists::MALWARE, '1.0'),
+            ]);
+
+        $summary = $this->filterListDumperProvider->getSummary();
+
+        $this->assertSame([
+            'malware' => [
+                'acme/package' => '1.0|2.0|3.0',
+                'zeta/lib' => '0.1',
+            ],
+        ], $summary->byList);
+
+        $this->assertSame([
+            'filter' => [
+                'malware' => [
+                    'acme/package' => '1.0|2.0|3.0',
+                    'zeta/lib' => '0.1',
+                ],
+            ],
+        ], $summary->toJsonPayload());
     }
 }

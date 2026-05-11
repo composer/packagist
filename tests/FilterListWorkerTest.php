@@ -17,6 +17,7 @@ use App\Entity\FilterListEntryRepository;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageRepository;
+use App\FilterList\Dump\FilterListSummaryDumper;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterListResolver;
 use App\FilterList\FilterLists;
@@ -47,6 +48,7 @@ class FilterListWorkerTest extends TestCase
     private MailerInterface&MockObject $mailer;
     private DownloadManager $downloadManager;
     private UrlGeneratorInterface $urlGenerator;
+    private FilterListSummaryDumper&MockObject $summaryDumper;
 
     protected function setUp(): void
     {
@@ -56,7 +58,8 @@ class FilterListWorkerTest extends TestCase
         $this->downloadManager = $this->createStub(DownloadManager::class);
         $this->urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $doctrine = $this->createStub(ManagerRegistry::class);
-        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterSources::AIKIDO->value . '-' . FilterLists::MALWARE->value => $this->filterList], new FilterListResolver(), new FilterListEntryUpdateListener($doctrine), $this->mailer, $this->downloadManager, 'test@example.com', $this->urlGenerator, 'packagist.org');
+        $this->summaryDumper = $this->createMock(FilterListSummaryDumper::class);
+        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterSources::AIKIDO->value . '-' . FilterLists::MALWARE->value => $this->filterList], new FilterListResolver(), new FilterListEntryUpdateListener($doctrine), $this->mailer, $this->downloadManager, 'test@example.com', $this->urlGenerator, 'packagist.org', $this->summaryDumper);
 
         $this->em = $this->createMock(EntityManager::class);
 
@@ -117,6 +120,11 @@ class FilterListWorkerTest extends TestCase
             ->expects($this->once())
             ->method('send');
 
+        $this->summaryDumper
+            ->expects($this->once())
+            ->method('dumpIfStale')
+            ->with(true);
+
         $result = $this->worker->process($this->createJob(), SignalHandler::create());
 
         $this->assertSame(Job::STATUS_COMPLETED, $result['status']);
@@ -139,6 +147,11 @@ class FilterListWorkerTest extends TestCase
 
         $this->expectNoPersistAndRemove();
 
+        $this->summaryDumper
+            ->expects($this->once())
+            ->method('dumpIfStale')
+            ->with(false);
+
         $result = $this->worker->process($this->createJob(), SignalHandler::create());
 
         $this->assertSame(Job::STATUS_COMPLETED, $result['status']);
@@ -158,6 +171,10 @@ class FilterListWorkerTest extends TestCase
         $this->filterListEntryRepository
             ->expects($this->never())
             ->method('getEntriesInList');
+
+        $this->summaryDumper
+            ->expects($this->never())
+            ->method('dumpIfStale');
 
         $result = $this->worker->process($this->createJob(), SignalHandler::create());
 
@@ -180,6 +197,10 @@ class FilterListWorkerTest extends TestCase
             ->method('getEntriesInList');
 
         $this->expectNoPersistAndRemove();
+
+        $this->summaryDumper
+            ->expects($this->never())
+            ->method('dumpIfStale');
 
         $result = $this->worker->process($this->createJob(), SignalHandler::create());
 
