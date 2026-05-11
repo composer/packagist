@@ -132,6 +132,7 @@ class UpdaterWorker
         $config = Factory::createConfig();
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
         $io->loadConfiguration($config);
+        $io->enableTimestamps();
 
         // sandbox into a unique cache dir per package id to avoid potential cache reuse issues
         if (trim($this->updaterWorkerCacheDir) !== '' && is_dir($this->updaterWorkerCacheDir)) {
