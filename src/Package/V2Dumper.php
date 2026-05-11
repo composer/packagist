@@ -97,7 +97,7 @@ class V2Dumper
         $rootFileContents['providers'] = [];
         $rootFileContents['filter'] = [
             'metadata' => true,
-            'lists' => array_map(fn (FilterLists $list) => $list->value, FilterLists::cases()),
+            'lists' => FilterLists::packagesJsonListConfig(),
         ];
 
         if ($verbose) {
