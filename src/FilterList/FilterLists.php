@@ -15,4 +15,17 @@ namespace App\FilterList;
 enum FilterLists: string
 {
     case MALWARE = 'malware';
+
+    /**
+     * @return array<string, bool>
+     */
+    public static function packagesJsonListConfig(): array
+    {
+        $lists = [];
+        foreach (self::cases() as $list) {
+            $lists[$list->value] = true;
+        }
+
+        return $lists;
+    }
 }

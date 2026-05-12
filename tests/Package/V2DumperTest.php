@@ -83,6 +83,17 @@ class V2DumperTest extends IntegrationTestCase
         new Filesystem()->remove($this->buildDir);
     }
 
+    public function testDumpRoot(): void
+    {
+        $this->dumper->dumpRoot();
+
+        $packagesJson = $this->webDir.'/packages.json';
+        $this->assertFileExists($packagesJson);
+
+        $data = json_decode((string) file_get_contents($packagesJson), true);
+        $this->assertTrue($data['filter']['metadata']);
+    }
+
     public function testDumpPackageMetadata(): void
     {
         $package = self::createPackage('acme/package', 'https://example.com/acme/package');
