@@ -17,13 +17,13 @@ enum FilterLists: string
     case MALWARE = 'malware';
 
     /**
-     * @return array<string, bool>
+     * @return array<string, array{enabled: bool}>
      */
     public static function packagesJsonListConfig(): array
     {
         $lists = [];
         foreach (self::cases() as $list) {
-            $lists[$list->value] = true;
+            $lists[$list->value] = ['enabled' => true];
         }
 
         return $lists;
