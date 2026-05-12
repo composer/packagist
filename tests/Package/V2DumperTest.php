@@ -92,6 +92,7 @@ class V2DumperTest extends IntegrationTestCase
 
         $data = json_decode((string) file_get_contents($packagesJson), true);
         $this->assertTrue($data['filter']['metadata']);
+        $this->assertSame(['enabled' => true], $data['filter']['lists']['malware']);
     }
 
     public function testDumpPackageMetadata(): void
