@@ -424,16 +424,16 @@
         },
         {
             "name": "composer/class-map-generator",
-            "version": "1.7.2",
+            "version": "1.7.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/class-map-generator.git",
-                "reference": "6a9c2f0970022ab00dc58c07d0685dd712f2231b"
+                "reference": "86d8208fc3c649a3a999daf1a63c25201be2990f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/class-map-generator/zipball/6a9c2f0970022ab00dc58c07d0685dd712f2231b",
-                "reference": "6a9c2f0970022ab00dc58c07d0685dd712f2231b",
+                "url": "https://api.github.com/repos/composer/class-map-generator/zipball/86d8208fc3c649a3a999daf1a63c25201be2990f",
+                "reference": "86d8208fc3c649a3a999daf1a63c25201be2990f",
                 "shasum": ""
             },
             "require": {
@@ -477,7 +477,7 @@
             ],
             "support": {
                 "issues": "https://github.com/composer/class-map-generator/issues",
-                "source": "https://github.com/composer/class-map-generator/tree/1.7.2"
+                "source": "https://github.com/composer/class-map-generator/tree/1.7.3"
             },
             "funding": [
                 {
@@ -489,7 +489,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-03-30T15:36:56+00:00"
+            "time": "2026-05-05T09:17:07+00:00"
         },
         {
             "name": "composer/composer",
@@ -497,12 +497,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "36c9073c95afe2206fc9773b88d54e4a0be2ed18"
+                "reference": "d264a5ac7e2a191ae2a1925e763f2d79f5c1e5fd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/36c9073c95afe2206fc9773b88d54e4a0be2ed18",
-                "reference": "36c9073c95afe2206fc9773b88d54e4a0be2ed18",
+                "url": "https://api.github.com/repos/composer/composer/zipball/d264a5ac7e2a191ae2a1925e763f2d79f5c1e5fd",
+                "reference": "d264a5ac7e2a191ae2a1925e763f2d79f5c1e5fd",
                 "shasum": ""
             },
             "require": {
@@ -603,7 +603,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-05-11T09:29:54+00:00"
+            "time": "2026-05-13T07:22:59+00:00"
         },
         {
             "name": "composer/metadata-minifier",
