@@ -208,6 +208,53 @@ class FilterListWorkerTest extends TestCase
         $this->assertArrayHasKey('after', $result);
     }
 
+    public function testProcessLeavesOverwrittenEntriesUntouched(): void
+    {
+        // An admin overwrote the version constraint of an aikido entry.
+        // Aikido still reports the original version, so the entry must remain
+        // intact and no fresh aikido entry must be created.
+        $editedEntry = new FilterListEntry($this->createRemoteFilterListEntry('vendor/edited', '1.0.0'));
+        $editedEntry->updateAttributes('>=1.0,<2.0');
+
+        $this->expectLock();
+
+        $this->filterList
+            ->expects($this->once())
+            ->method('getListEntries')
+            ->willReturn([$this->createRemoteFilterListEntry('vendor/edited', '1.0.0')]);
+
+        $this->filterListEntryRepository
+            ->expects($this->once())
+            ->method('getEntriesInList')
+            ->willReturn([$editedEntry]);
+
+        // Nothing to persist or remove since the existing entry already covers
+        // the upstream identity.
+        $this->em
+            ->expects($this->never())
+            ->method('remove');
+
+        $this->em
+            ->expects($this->never())
+            ->method('persist');
+
+        $this->em
+            ->expects($this->never())
+            ->method('flush');
+
+        $this->mailer
+            ->expects($this->never())
+            ->method('send');
+
+        $this->summaryDumper
+            ->expects($this->once())
+            ->method('dumpIfStale');
+
+        $result = $this->worker->process($this->createJob(), SignalHandler::create());
+
+        $this->assertSame(Job::STATUS_COMPLETED, $result['status']);
+    }
+
     private function createRemoteFilterListEntry(string $packageName, string $version): RemoteFilterListEntry
     {
         return new RemoteFilterListEntry(

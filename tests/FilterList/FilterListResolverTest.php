@@ -127,6 +127,51 @@ class FilterListResolverTest extends TestCase
         $this->assertSame([], $result[1]);
     }
 
+    public function testResolveDoesNotRecreateOverwrittenUpstreamEntry(): void
+    {
+        // Admin overwrote the version constraint of an Aikido-sourced entry.
+        // The next sync must NOT create a fresh entry for the originally reported version.
+        $existing = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing->updateAttributes('>=1.0,<2.0');
+
+        $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
+
+        $result = $this->resolver->resolve([$existing], [$remote]);
+
+        $this->assertSame([], $result[0]);
+        $this->assertSame([], $result[1]);
+        $this->assertSame('>=1.0,<2.0', $existing->getVersion(), 'Effective version remains the admin overwrite.');
+        $this->assertSame('1.0.0', $existing->getRemoteVersion(), 'Upstream identity is preserved.');
+    }
+
+    public function testResolveDoesNotRemoveOverwrittenUpstreamEntryWhileUpstreamStillReportsIt(): void
+    {
+        // The overwritten entry's effective version (2.0.0) doesn't match upstream's report (1.0.0)
+        // but its upstream-side identity does, so the resolver must keep it intact.
+        $existing = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing->updateAttributes('2.0.0');
+
+        $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
+
+        $result = $this->resolver->resolve([$existing], [$remote]);
+
+        $this->assertSame([], $result[0]);
+        $this->assertSame([], $result[1]);
+    }
+
+    public function testResolveRemovesOverwrittenEntryWhenUpstreamDropsIt(): void
+    {
+        // Admin overwrote the entry, but upstream has now dropped it entirely.
+        // The entry should be removed despite the admin override.
+        $existing = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing->updateAttributes('2.0.0');
+
+        $result = $this->resolver->resolve([$existing], []);
+
+        $this->assertSame([], $result[0]);
+        $this->assertSame([$existing], $result[1]);
+    }
+
     private function createRemoteFilterListEntry(string $packageName, string $version): RemoteFilterListEntry
     {
         return new RemoteFilterListEntry(
