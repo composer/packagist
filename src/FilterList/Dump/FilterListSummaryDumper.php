@@ -14,8 +14,6 @@ namespace App\FilterList\Dump;
 
 use App\Entity\FilterListEntryRepository;
 use App\Service\CdnClient;
-use League\Flysystem\FilesystemException;
-use League\Flysystem\FilesystemOperator;
 use Psr\Log\LoggerInterface;
 
 readonly class FilterListSummaryDumper
@@ -25,7 +23,6 @@ readonly class FilterListSummaryDumper
     public function __construct(
         private FilterListDumperProvider $provider,
         private FilterListEntryRepository $repository,
-        private FilesystemOperator $storage,
         private CdnClient $cdn,
         private LoggerInterface $logger,
     ) {
@@ -64,8 +61,8 @@ readonly class FilterListSummaryDumper
         );
 
         try {
-            $this->storage->write(self::SUMMARY_PATH, $json);
-        } catch (FilesystemException $e) {
+            $this->cdn->uploadMetadata(self::SUMMARY_PATH, $json);
+        } catch (\Throwable $e) {
             $this->logger->error('Failed to upload filter list summary', ['exception' => $e]);
             throw $e;
         }

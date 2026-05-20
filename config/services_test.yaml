@@ -7,14 +7,6 @@ services:
             # services
             $redis: '@snc_redis.default'
 
-    filter_list_summary.adapter:
-        class: League\Flysystem\InMemory\InMemoryFilesystemAdapter
-
-    filter_list_summary.storage:
-        class: League\Flysystem\Filesystem
-        arguments:
-            - '@filter_list_summary.adapter'
-
     App\Service\Scheduler:
         public: true
 

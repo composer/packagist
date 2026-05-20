@@ -12,7 +12,6 @@
 
 namespace App\Tests\FilterList\Dump;
 
-use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
 use App\FilterList\Dump\FilterListDumperProvider;
 use App\FilterList\Dump\FilterListSummaryDumper;
@@ -21,8 +20,6 @@ use App\FilterList\FilterLists;
 use App\Service\CdnClient;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
-use League\Flysystem\Filesystem;
-use League\Flysystem\InMemory\InMemoryFilesystemAdapter;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -31,7 +28,6 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 class FilterListSummaryDumperTest extends TestCase
 {
     private FilterListEntryRepository&MockObject $repository;
-    private Filesystem $storage;
     private CdnClient&MockObject $cdn;
     private FilterListSummaryDumper $dumper;
 
@@ -46,13 +42,11 @@ class FilterListSummaryDumperTest extends TestCase
 
         $provider = new FilterListDumperProvider($doctrine, $this->createStub(UrlGeneratorInterface::class));
 
-        $this->storage = new Filesystem(new InMemoryFilesystemAdapter());
         $this->cdn = $this->createMock(CdnClient::class);
 
         $this->dumper = new FilterListSummaryDumper(
             $provider,
             $this->repository,
-            $this->storage,
             $this->cdn,
             new NullLogger(),
         );
@@ -75,15 +69,16 @@ class FilterListSummaryDumperTest extends TestCase
 
         $this->cdn
             ->expects($this->once())
+            ->method('uploadMetadata')
+            ->with(FilterListSummaryDumper::SUMMARY_PATH, '{"filter":{"malware":{"acme/package":"1.0.0"}}}')
+            ->willReturn(0);
+
+        $this->cdn
+            ->expects($this->once())
             ->method('purgeSummaryUrl')
             ->willReturn(true);
 
         $this->dumper->dumpIfStale(forceDump: true);
-
-        $this->assertSame(
-            '{"filter":{"malware":{"acme/package":"1.0.0"}}}',
-            $this->storage->read(FilterListSummaryDumper::SUMMARY_PATH),
-        );
     }
 
     public function testNonForceDumpsWhenPublicRepoFileWasNotYetModified(): void
@@ -108,15 +103,16 @@ class FilterListSummaryDumperTest extends TestCase
 
         $this->cdn
             ->expects($this->once())
+            ->method('uploadMetadata')
+            ->with(FilterListSummaryDumper::SUMMARY_PATH, '{"filter":{"malware":{"acme/package":"1.0.0"}}}')
+            ->willReturn(0);
+
+        $this->cdn
+            ->expects($this->once())
             ->method('purgeSummaryUrl')
             ->willReturn(true);
 
         $this->dumper->dumpIfStale(forceDump: false);
-
-        $this->assertSame(
-            '{"filter":{"malware":{"acme/package":"1.0.0"}}}',
-            $this->storage->read(FilterListSummaryDumper::SUMMARY_PATH),
-        );
     }
 
     public function testNonForceSkipsWhenPublicRepoFileHasBeenModifiedSince(): void
@@ -140,11 +136,13 @@ class FilterListSummaryDumperTest extends TestCase
 
         $this->cdn
             ->expects($this->never())
+            ->method('uploadMetadata');
+
+        $this->cdn
+            ->expects($this->never())
             ->method('purgeSummaryUrl');
 
         $this->dumper->dumpIfStale(forceDump: false);
-
-        $this->assertFalse($this->storage->fileExists(FilterListSummaryDumper::SUMMARY_PATH));
     }
 
     public function testNonForceSkipsEntirelyWhenNoEntriesExist(): void
@@ -164,10 +162,12 @@ class FilterListSummaryDumperTest extends TestCase
 
         $this->cdn
             ->expects($this->never())
+            ->method('uploadMetadata');
+
+        $this->cdn
+            ->expects($this->never())
             ->method('purgeSummaryUrl');
 
         $this->dumper->dumpIfStale(forceDump: false);
-
-        $this->assertFalse($this->storage->fileExists(FilterListSummaryDumper::SUMMARY_PATH));
     }
 }
