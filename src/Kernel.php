@@ -26,11 +26,11 @@ class Kernel extends BaseKernel
         configureContainer as parentConfigureContainer;
     }
 
-    protected function configureContainer(ContainerConfigurator $container, LoaderInterface $loader, ContainerBuilder $builder): void
+    protected function configureContainer(ContainerConfigurator $container): void
     {
         $configDir = $this->getConfigDir();
 
-        $this->parentConfigureContainer($container, $loader, $builder);
+        $this->parentConfigureContainer($container);
 
         $container->import($configDir.'/{parameters}.yaml');
     }
