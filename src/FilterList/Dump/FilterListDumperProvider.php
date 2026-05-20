@@ -64,7 +64,7 @@ final readonly class FilterListDumperProvider
             ksort($packages);
             foreach ($packages as $packageName => $versions) {
                 $unique = array_values(array_unique($versions));
-                sort($unique);
+                natsort($unique);
                 $byList[$listValue][$packageName] = implode('|', $unique);
             }
         }
