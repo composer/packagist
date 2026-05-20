@@ -52,6 +52,9 @@ enum AuditRecordType: string
     // filterlist
     case FilterListEntryAdded = 'filter_list_entry_added';
     case FilterListEntryDeleted = 'filter_list_entry_deleted';
+    case FilterListEntryDisabled = 'filter_list_entry_disabled';
+    case FilterListEntryEnabled = 'filter_list_entry_enabled';
+    case FilterListEntryEdited = 'filter_list_entry_edited';
 
     // organization
     case OrganizationCreated = 'organization_created';
@@ -69,7 +72,9 @@ enum AuditRecordType: string
             self::EmailChanged, self::UsernameChanged, self::GitHubLinkedWithUser,
             self::GitHubDisconnectedFromUser, self::TwoFaAuthenticationActivated,
             self::TwoFaAuthenticationDeactivated => 'user',
-            self::FilterListEntryAdded, self::FilterListEntryDeleted => 'filterlist',
+            self::FilterListEntryAdded, self::FilterListEntryDeleted,
+            self::FilterListEntryDisabled, self::FilterListEntryEnabled,
+            self::FilterListEntryEdited => 'filterlist',
             self::OrganizationCreated => 'organization',
         };
     }

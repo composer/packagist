@@ -1,0 +1,9 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+{{ display.list.value | capitalize }} entry reported by {{ display.source.displayName }} was edited by {{ display.actor.username }}.
+<ul>
+    {% if display.version != display.previousVersion %}
+        <li>Versions: {{ display.previousVersion }} &rarr; {{ display.version }}</li>
+    {% endif %}
+</ul>
