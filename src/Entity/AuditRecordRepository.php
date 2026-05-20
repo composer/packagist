@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Audit\AuditRecordType;
 use App\Service\AuditRecordsManager;
 use App\Util\IpAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -29,6 +30,27 @@ class AuditRecordRepository extends ServiceEntityRepository
         private readonly AuditRecordsManager $auditRecordsManager,
     ) {
         parent::__construct($registry, AuditRecord::class);
+    }
+
+    /**
+     * @return list<AuditRecord>
+     */
+    public function findForFilterListEntry(string $publicId): array
+    {
+        return $this->createQueryBuilder('a')
+            ->where('a.type IN (:types)')
+            ->andWhere("JSON_EXTRACT(a.attributes, '$.entry.public_id') = :publicId")
+            ->setParameter('types', [
+                AuditRecordType::FilterListEntryAdded->value,
+                AuditRecordType::FilterListEntryDeleted->value,
+                AuditRecordType::FilterListEntryDisabled->value,
+                AuditRecordType::FilterListEntryEnabled->value,
+                AuditRecordType::FilterListEntryEdited->value,
+            ])
+            ->setParameter('publicId', $publicId)
+            ->orderBy('a.datetime', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 
     /**
