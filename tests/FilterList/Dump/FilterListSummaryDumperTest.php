@@ -56,7 +56,7 @@ class FilterListSummaryDumperTest extends TestCase
     {
         $this->repository
             ->expects($this->never())
-            ->method('getNewestEntryCreatedAt');
+            ->method('getNewestEntryUpdatedAt');
 
         $this->cdn
             ->expects($this->never())
@@ -87,7 +87,7 @@ class FilterListSummaryDumperTest extends TestCase
 
         $this->repository
             ->expects($this->once())
-            ->method('getNewestEntryCreatedAt')
+            ->method('getNewestEntryUpdatedAt')
             ->willReturn($newestCreatedAt);
 
         $this->cdn
@@ -121,7 +121,7 @@ class FilterListSummaryDumperTest extends TestCase
 
         $this->repository
             ->expects($this->once())
-            ->method('getNewestEntryCreatedAt')
+            ->method('getNewestEntryUpdatedAt')
             ->willReturn($newestCreatedAt);
 
         $this->cdn
@@ -149,7 +149,7 @@ class FilterListSummaryDumperTest extends TestCase
     {
         $this->repository
             ->expects($this->once())
-            ->method('getNewestEntryCreatedAt')
+            ->method('getNewestEntryUpdatedAt')
             ->willReturn(null);
 
         $this->cdn
