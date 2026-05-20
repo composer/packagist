@@ -1,0 +1,45 @@
+{% set linkSurroundingLogs = linkSurroundingLogs ?? false %}
+{% set emptyMessage = emptyMessage ?? 'No audit logs found.' %}
+
+{% if displays|length %}
+    <table class="table audit-log-table">
+        <thead>
+            <tr>
+                <th class="audit-log-datetime">Date & Time</th>
+                <th class="audit-log-type">Type</th>
+                <th class="audit-log-details">Details</th>
+                {% if is_granted('ROLE_AUDITOR') %}
+                    <th class="audit-log-ip">IP</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for display in displays %}
+                <tr>
+                    <td class="audit-log-datetime">
+                        {% if linkSurroundingLogs %}
+                            {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
+                            {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
+                            <a href="{{ path('view_audit_logs', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
+                                <span class="glyphicon glyphicon-time"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
+                            </a>
+                        {% else %}
+                            <span class="glyphicon glyphicon-time"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
+                        {% endif %}
+                    </td>
+                    <td class="audit-log-type" data-test="audit-log-type">{{ display.typeTranslationKey|trans }}</td>
+                    <td class="audit-log-details">
+                        {% include display.templateName with {display} only %}
+                    </td>
+                    {% if is_granted('ROLE_AUDITOR') %}
+                        <td class="audit-log-ip">{{ display.ip }}</td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="alert alert-info">
+        <p>{{ emptyMessage }}</p>
+    </div>
+{% endif %}
