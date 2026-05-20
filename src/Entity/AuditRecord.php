@@ -345,6 +345,43 @@ class AuditRecord
         );
     }
 
+    public static function filterListEntryDisabled(FilterListEntry $entry, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::FilterListEntryDisabled,
+            [
+                'entry' => self::getFilterListEntryData($entry),
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            actorId: $actor?->getId(),
+        );
+    }
+
+    public static function filterListEntryEnabled(FilterListEntry $entry, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::FilterListEntryEnabled,
+            [
+                'entry' => self::getFilterListEntryData($entry),
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            actorId: $actor?->getId(),
+        );
+    }
+
+    public static function filterListEntryEdited(FilterListEntry $entry, string $previousVersion, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::FilterListEntryEdited,
+            [
+                'entry' => self::getFilterListEntryData($entry),
+                'previous' => ['version' => $previousVersion],
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            actorId: $actor?->getId(),
+        );
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */
@@ -358,7 +395,7 @@ class AuditRecord
     }
 
     /**
-     * @return array{package_name: string, version: string, list: string}
+     * @return array{package_name: string, version: string, list: string, reason: string|null, source: string, link: string|null, disabled: bool, remote_version: string, overwrite_version: string|null, public_id: string|null}
      */
     private static function getFilterListEntryData(FilterListEntry $entry): array
     {
@@ -368,6 +405,11 @@ class AuditRecord
             'list' => $entry->getList()->value,
             'reason' => $entry->getReason(),
             'source' => $entry->getSource()->value,
+            'link' => $entry->getLink(),
+            'disabled' => $entry->isDisabled(),
+            'remote_version' => $entry->getRemoteVersion(),
+            'overwrite_version' => $entry->getOverwriteVersion(),
+            'public_id' => $entry->getPublicId(),
         ];
     }
 }

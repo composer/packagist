@@ -264,6 +264,36 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
+            AuditRecordType::FilterListEntryDisabled => new FilterListEntryDisabledDisplay(
+                $record->datetime,
+                $record->attributes['entry']['package_name'],
+                $record->attributes['entry']['version'],
+                FilterLists::from($record->attributes['entry']['list']),
+                FilterSources::from($record->attributes['entry']['source']),
+                $record->attributes['entry']['reason'] ?? null,
+                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->ip
+            ),
+            AuditRecordType::FilterListEntryEnabled => new FilterListEntryEnabledDisplay(
+                $record->datetime,
+                $record->attributes['entry']['package_name'],
+                $record->attributes['entry']['version'],
+                FilterLists::from($record->attributes['entry']['list']),
+                FilterSources::from($record->attributes['entry']['source']),
+                $record->attributes['entry']['reason'] ?? null,
+                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->ip
+            ),
+            AuditRecordType::FilterListEntryEdited => new FilterListEntryEditedDisplay(
+                $record->datetime,
+                $record->attributes['entry']['package_name'],
+                $record->attributes['entry']['version'],
+                $record->attributes['previous']['version'] ?? $record->attributes['entry']['version'],
+                FilterLists::from($record->attributes['entry']['list']),
+                FilterSources::from($record->attributes['entry']['source']),
+                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->ip
+            ),
         };
     }
 
