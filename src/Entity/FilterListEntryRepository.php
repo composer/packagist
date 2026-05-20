@@ -112,14 +112,15 @@ class FilterListEntryRepository extends ServiceEntityRepository
                 'NEW %s(fl.packageName, fl.list, COALESCE(fl.overwriteVersion, fl.version))',
                 FilterListSummaryEntry::class,
             ))
+            ->where('fl.disabled = false')
             ->getQuery()
             ->getResult();
     }
 
-    public function getNewestEntryCreatedAt(): ?\DateTimeImmutable
+    public function getNewestEntryUpdatedAt(): ?\DateTimeImmutable
     {
         $result = $this->createQueryBuilder('fl')
-            ->select('MAX(fl.createdAt)')
+            ->select('MAX(fl.updatedAt)')
             ->getQuery()
             ->getSingleScalarResult();
 
