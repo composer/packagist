@@ -13,9 +13,16 @@
 namespace App\FilterList;
 
 use App\Entity\FilterListEntry;
+use Composer\Semver\VersionParser;
+use Psr\Log\LoggerInterface;
 
 class FilterListResolver
 {
+    public function __construct(
+        private readonly LoggerInterface $logger,
+    ) {
+    }
+
     /**
      * @param array<FilterListEntry>       $existingEntries
      * @param array<RemoteFilterListEntry> $remoteEntries
@@ -29,9 +36,20 @@ class FilterListResolver
             $existingMap[$existing->getPackageName()][$existing->getVersion()] = $existing;
         }
 
+        $versionParser = new VersionParser();
         $new = [];
         $found = [];
         foreach ($remoteEntries as $remote) {
+            try {
+                $versionParser->parseConstraints($remote->version);
+            } catch (\UnexpectedValueException $e) {
+                $this->logger->warning('Skipping filter list entry with invalid version constraint', [
+                    'entry' => $remote,
+                    'exception' => $e,
+                ]);
+                continue;
+            }
+
             if (isset($existingMap[$remote->packageName][$remote->version])) {
                 $found[$remote->packageName][$remote->version] = true;
                 continue;

@@ -59,7 +59,7 @@ class FilterListWorkerTest extends TestCase
         $this->urlGenerator = $this->createStub(UrlGeneratorInterface::class);
         $doctrine = $this->createStub(ManagerRegistry::class);
         $this->summaryDumper = $this->createMock(FilterListSummaryDumper::class);
-        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterSources::AIKIDO->value . '-' . FilterLists::MALWARE->value => $this->filterList], new FilterListResolver(), new FilterListEntryUpdateListener($doctrine), $this->mailer, $this->downloadManager, 'test@example.com', $this->urlGenerator, 'packagist.org', $this->summaryDumper);
+        $this->worker = new FilterListWorker($this->locker, new NullLogger(), $doctrine, [FilterSources::AIKIDO->value . '-' . FilterLists::MALWARE->value => $this->filterList], new FilterListResolver(new NullLogger()), new FilterListEntryUpdateListener($doctrine), $this->mailer, $this->downloadManager, 'test@example.com', $this->urlGenerator, 'packagist.org', $this->summaryDumper);
 
         $this->em = $this->createMock(EntityManager::class);
 
