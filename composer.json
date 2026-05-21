@@ -22,9 +22,9 @@
     },
     "require": {
         "php": "^8.4",
+        "ext-apcu": "*",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "ext-apcu": "*",
         "algolia/algoliasearch-client-php": "^3.4",
         "babdev/pagerfanta-bundle": "^4.2",
         "beelab/recaptcha2-bundle": "^2.3",
