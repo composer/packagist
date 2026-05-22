@@ -36,7 +36,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testIndexShowsEntries(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/listed', '1.0.0'));
         $this->store($admin, $entry);
 
@@ -49,7 +49,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testIndexFiltersByPackageName(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $match = new FilterListEntry($this->createRemoteEntry('vendor/wanted', '1.0.0'));
         $other = new FilterListEntry($this->createRemoteEntry('vendor/other', '1.0.0'));
         $this->store($admin, $match, $other);
@@ -64,7 +64,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testIndexFiltersByState(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $active = new FilterListEntry($this->createRemoteEntry('vendor/active', '1.0.0'));
         $disabled = new FilterListEntry($this->createRemoteEntry('vendor/disabled', '1.0.0'));
         $disabled->disable();
@@ -82,7 +82,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     #[TestWith(['source=bogus'])]
     public function testIndexRejectsUnknownValues(string $query): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $this->store($admin);
 
         $this->client->loginUser($admin);
@@ -93,7 +93,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testDisableUpstreamEntryRecordsAuditAndHidesFromConsumers(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/false-positive', '1.0.0'));
 
         $this->store($admin, $entry);
@@ -126,7 +126,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEnableEntryRecordsAuditAndRestoresVisibility(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/restored', '1.0.0'));
         $entry->disable();
 
@@ -156,7 +156,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEditUpstreamEntryStoresOverwriteVersionAndRecordsAudit(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/edit-me', '1.0.0'));
 
         $this->store($admin, $entry);
@@ -190,7 +190,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEditPageShowsAuditLogEntriesForThisFilterListEntry(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN', 'ROLE_AUDITOR']);
         $subject = new FilterListEntry($this->createRemoteEntry('vendor/audited', '1.0.0'));
         $unrelated = new FilterListEntry($this->createRemoteEntry('vendor/unrelated', '1.0.0'));
 
@@ -217,7 +217,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEditClearsOverwriteWhenAdminRevertsToUpstreamVersion(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/revert', '1.0.0'));
         $entry->updateAttributes('2.0.0');
         $this->store($admin, $entry);
@@ -242,7 +242,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEditReturns404ForUnknownEntry(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $this->store($admin);
 
         $this->client->loginUser($admin);
@@ -253,7 +253,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEditRejectsInvalidVersionConstraint(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/bad-edit', '1.0.0'));
         $this->store($admin, $entry);
 
@@ -275,7 +275,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testDisableRequiresCsrfToken(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/csrf', '1.0.0'));
         $this->store($admin, $entry);
 
@@ -289,7 +289,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEnableRequiresCsrfToken(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/csrf-enable', '1.0.0'));
         $entry->disable();
         $this->store($admin, $entry);
@@ -304,7 +304,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testDisableAlreadyDisabledIsIdempotent(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/already-disabled', '1.0.0'));
         $entry->disable();
         $this->store($admin, $entry);
@@ -326,7 +326,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEnableAlreadyEnabledIsIdempotent(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/already-enabled', '1.0.0'));
         $this->store($admin, $entry);
 
@@ -347,7 +347,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testDisableMarksPackageStaleForRedump(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $package = self::createPackage('vendor/stale', 'https://example.com/vendor/stale');
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/stale', '1.0.0'));
         $this->store($admin, $package, $entry);
@@ -372,7 +372,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEditMarksPackageStaleForRedump(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $package = self::createPackage('vendor/stale-edit', 'https://example.com/vendor/stale-edit');
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/stale-edit', '1.0.0'));
         $this->store($admin, $package, $entry);
@@ -395,7 +395,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
 
     public function testEnableMarksPackageStaleForRedump(): void
     {
-        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $package = self::createPackage('vendor/stale-enable', 'https://example.com/vendor/stale-enable');
         $entry = new FilterListEntry($this->createRemoteEntry('vendor/stale-enable', '1.0.0'));
         $entry->disable();
