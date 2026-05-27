@@ -306,7 +306,7 @@ class Updater
         $processedVersions = [];
         $idsToMarkUpdated = [];
 
-        /** @var int|false|null $dependentSuggesterSource Version id to use as dependent/suggester source */
+        /** @var int|null $dependentSuggesterSource Version id to use as dependent/suggester source */
         $dependentSuggesterSource = null;
         foreach ($versions as $version) {
             if ($version instanceof AliasPackage) {
@@ -328,7 +328,7 @@ class Updater
                 continue;
             }
 
-            $versionId = false;
+            $versionId = null;
             $versionSoftDeleted = false;
             if ($result instanceof VersionUpdatedResult) {
                 foreach ($result->events as $event) {
@@ -345,6 +345,14 @@ class Updater
             } else {
                 $idsToMarkUpdated[] = $result->id;
                 $versionSoftDeleted = $result->softDeleted;
+                // Skipped non-soft-deleted rows (immutable stable, ref-unchanged, ...) still need to
+                // be a valid dependent/suggester source — they ARE the canonical existing row for
+                // this version. Carrying $result->id here avoids pinning $dependentSuggesterSource
+                // to a falsy value on the very first stable iteration and silently disabling the
+                // Dependent::updateDependentSuggesters() call below.
+                if (!$versionSoftDeleted) {
+                    $versionId = $result->id;
+                }
             }
 
             // pick the default branch when present, otherwise the first non-soft-deleted version
@@ -358,7 +366,7 @@ class Updater
             unset($existingVersions[$result->version]);
         }
 
-        if ($dependentSuggesterSource) {
+        if ($dependentSuggesterSource !== null) {
             $this->doctrine->getRepository(Dependent::class)->updateDependentSuggesters($package->getId(), $dependentSuggesterSource);
         }
 

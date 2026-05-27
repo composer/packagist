@@ -15,8 +15,10 @@ namespace App\Tests\Package;
 use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
+use App\Entity\Dependent;
 use App\Entity\Package;
 use App\Entity\PackageReadme;
+use App\Entity\RequireLink;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Model\PackageManager;
@@ -535,6 +537,35 @@ class UpdaterTest extends IntegrationTestCase
         self::assertNull($dev, 'dev row must be hard-deleted by DELETE_BEFORE');
 
         self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
+    }
+
+    public function testDependentSuggesterSourceUpdatedForUnchangedStableVersion(): void
+    {
+        // Regression guard: a non-soft-deleted stable row that survives the immutability gate
+        // unchanged must still seed the dependent/suggester tables for the package — even though
+        // updateInformation returns VersionSkippedResult (no entity is loaded for the skipped row).
+        // Previously $versionId defaulted to false on the skip path, so the first such version
+        // pinned $dependentSuggesterSource to false and updateDependentSuggesters() never ran.
+        $em = self::getEM();
+        $version = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $link = new RequireLink();
+        $link->setVersion($version);
+        $link->setPackageName('composer/semver');
+        $link->setPackageVersion('^3.2.0');
+        $em->persist($link);
+        $em->flush();
+
+        $upstream = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $dependents = $em->getRepository(Dependent::class)->findBy(['package' => $this->package->getId()]);
+        self::assertCount(1, $dependents, 'dependent row must be (re)inserted from the unchanged stable version');
+        self::assertSame('composer/semver', $dependents[0]->getPackageName());
     }
 
     public function testUpdateSourceDistUrlRewritesUrlsViaEntityAndKeepsRefsAndShasumIntact(): void
