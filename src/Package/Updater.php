@@ -62,6 +62,7 @@ use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\EventDispatcher\Event;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Webmozart\Assert\Assert;
 
 final readonly class VersionUpdatedResult
 {
@@ -458,7 +459,7 @@ class Updater
      *
      * @param array{id: int, version: string, normalizedVersion: string, development: int, source: array{type: string|null, url: string|null, reference: string|null}|null, dist: array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null, softDeletedAt: string|null, deletionReason: string|null, lastBlockedReference: string|null, defaultBranch: int} $existingVersion
      */
-    private function applyStableImmutabilityGate(IOInterface $io, \Doctrine\ORM\EntityManagerInterface $em, Package $package, array $existingVersion, CompletePackageInterface $data, int $flags, VcsDriverInterface $driver, ?string $newEffectiveRef): VersionSkippedResult
+    private function applyStableImmutabilityGate(IOInterface $io, \Doctrine\ORM\EntityManagerInterface $em, VersionRepository $versionRepo, Package $package, array $existingVersion, CompletePackageInterface $data, int $flags, VcsDriverInterface $driver, ?string $newEffectiveRef): VersionSkippedResult
     {
         $normVersion = $data->getVersion();
         $prettyVersion = $data->getPrettyVersion();
@@ -484,7 +485,7 @@ class Updater
             }
 
             if ($flags & self::UPDATE_SOURCE_DIST_URL) {
-                $this->applySourceDistUrlRewrite($io, $em, $existingVersion, $data, $driver);
+                $this->applySourceDistUrlRewrite($io, $versionRepo, $existingVersion, $data, $driver);
             }
 
             return new VersionSkippedResult(id: $existingVersion['id'], version: strtolower($normVersion));
@@ -516,7 +517,7 @@ class Updater
      *
      * @param array{id: int, source: array{type: string|null, url: string|null, reference: string|null}|null, dist: array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null} $existingVersion
      */
-    private function applySourceDistUrlRewrite(IOInterface $io, \Doctrine\ORM\EntityManagerInterface $em, array $existingVersion, CompletePackageInterface $data, VcsDriverInterface $driver): void
+    private function applySourceDistUrlRewrite(IOInterface $io, VersionRepository $versionRepo, array $existingVersion, CompletePackageInterface $data, VcsDriverInterface $driver): void
     {
         $prettyVersion = $data->getPrettyVersion();
         $skip = function (string $reason) use ($io, $prettyVersion, $data, $existingVersion): void {
@@ -573,19 +574,36 @@ class Updater
             return;
         }
 
-        $newSource = ($oldSource ?? []) + [];
+        $version = $versionRepo->find($existingVersion['id']);
+        if (null === $version) {
+            $skip('version not found by id');
+
+            return;
+        }
+
+        Assert::notNull($oldSource);
+        Assert::notNull($oldDist);
+        $oldSourceUrl = $oldSource['url'] ?? null;
+        $oldDistUrlStored = $oldDist['url'] ?? null;
+
+        $newSource = $oldSource;
         $newSource['url'] = $newSourceUrl;
-        $newDist = ($oldDist ?? []) + [];
+        $newDist = $oldDist;
         $newDist['url'] = $newDistUrl;
 
-        $em->getConnection()->executeStatement(
-            'UPDATE package_version SET source = :source, dist = :dist WHERE id = :id',
-            [
-                'source' => json_encode($newSource, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE),
-                'dist' => json_encode($newDist, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE),
-                'id' => $existingVersion['id'],
-            ]
-        );
+        $version->setSource($newSource);
+        $version->setDist($newDist);
+
+        $this->logger->info('Rewrote source/dist URL for stable version', [
+            'package' => $data->getName(),
+            'version' => $prettyVersion,
+            'version_id' => $existingVersion['id'],
+            'source_url_from' => $oldSourceUrl,
+            'source_url_to' => $newSourceUrl,
+            'dist_url_from' => $oldDistUrlStored,
+            'dist_url_to' => $newDistUrl,
+            'reference' => $newSourceRef,
+        ]);
     }
 
     /**
@@ -625,7 +643,7 @@ class Updater
 
             // Stable-version immutability gate: any existing stable version is frozen.
             if (!$data->isDev()) {
-                return $this->applyStableImmutabilityGate($io, $em, $package, $existingVersion, $data, $flags, $driver, $newEffectiveRef);
+                return $this->applyStableImmutabilityGate($io, $em, $versionRepo, $package, $existingVersion, $data, $flags, $driver, $newEffectiveRef);
             }
         } elseif ($newEffectiveRef === null) {
             // Brand-new version with no usable identity: refuse to create.

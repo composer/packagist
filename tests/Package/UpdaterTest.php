@@ -537,6 +537,98 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
     }
 
+    public function testUpdateSourceDistUrlRewritesUrlsViaEntityAndKeepsRefsAndShasumIntact(): void
+    {
+        $em = self::getEM();
+        $ref = str_repeat('a', 40);
+        $shasum = str_repeat('b', 64);
+
+        $version = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', $ref);
+        $version->setSource(['type' => 'git', 'url' => 'https://old.example.com/test/pkg.git', 'reference' => $ref]);
+        $version->setDist(['type' => 'zip', 'url' => 'https://old.example.com/dist/'.$ref, 'reference' => $ref, 'shasum' => $shasum]);
+        $em->persist($version);
+        $em->flush();
+        $versionId = $version->getId();
+
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://new.example.com/test/pkg.git');
+        $upstream->setSourceReference($ref);
+        $upstream->setDistType('zip');
+        $upstream->setDistUrl('https://new.example.com/dist/'.$ref);
+        $upstream->setDistReference($ref);
+        // upstream shasum intentionally differs to prove the rewrite does NOT touch shasum
+        $upstream->setDistSha1Checksum(str_repeat('c', 64));
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+
+        $driver = $this->createStub(GitDriver::class);
+        $driver->method('getRootIdentifier')->willReturn('master');
+        $driver->method('getComposerInformation')->willReturn([]);
+        $driver->method('getDist')->willReturn(['type' => 'zip', 'url' => 'https://new.example.com/dist/'.$ref, 'reference' => $ref, 'shasum' => $shasum]);
+        $this->repositoryMock->method('getDriver')->willReturn($driver);
+
+        $packageManagerMock = $this->createMock(PackageManager::class);
+        $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
+        $this->rebuildUpdater($packageManagerMock);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::UPDATE_SOURCE_DIST_URL);
+
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->find($versionId);
+        self::assertNotNull($reloaded);
+        self::assertSame('https://new.example.com/test/pkg.git', $reloaded->getSource()['url'] ?? null);
+        self::assertSame($ref, $reloaded->getSource()['reference'] ?? null, 'source.reference must not change');
+        self::assertSame('git', $reloaded->getSource()['type'] ?? null);
+        self::assertSame('https://new.example.com/dist/'.$ref, $reloaded->getDist()['url'] ?? null);
+        self::assertSame($ref, $reloaded->getDist()['reference'] ?? null, 'dist.reference must not change');
+        self::assertSame($shasum, $reloaded->getDist()['shasum'] ?? null, 'dist.shasum must not be overwritten');
+
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChanged));
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
+    }
+
+    public function testUpdateSourceDistUrlSkipsWhenDriverDistUrlDoesNotMatch(): void
+    {
+        $em = self::getEM();
+        $ref = str_repeat('a', 40);
+        $shasum = str_repeat('b', 64);
+
+        $version = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', $ref);
+        $version->setSource(['type' => 'git', 'url' => 'https://old.example.com/test/pkg.git', 'reference' => $ref]);
+        $version->setDist(['type' => 'zip', 'url' => 'https://old.example.com/dist/'.$ref, 'reference' => $ref, 'shasum' => $shasum]);
+        $em->persist($version);
+        $em->flush();
+        $versionId = $version->getId();
+
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://attacker.example.com/test/pkg.git');
+        $upstream->setSourceReference($ref);
+        $upstream->setDistType('zip');
+        $upstream->setDistUrl('https://attacker.example.com/dist/'.$ref);
+        $upstream->setDistReference($ref);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+
+        $driver = $this->createStub(GitDriver::class);
+        $driver->method('getRootIdentifier')->willReturn('master');
+        $driver->method('getComposerInformation')->willReturn([]);
+        // driver-confirmed dist URL points elsewhere — the incoming claim must be rejected
+        $driver->method('getDist')->willReturn(['type' => 'zip', 'url' => 'https://different.example.com/dist/'.$ref, 'reference' => $ref, 'shasum' => $shasum]);
+        $this->repositoryMock->method('getDriver')->willReturn($driver);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::UPDATE_SOURCE_DIST_URL);
+
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->find($versionId);
+        self::assertNotNull($reloaded);
+        self::assertSame('https://old.example.com/test/pkg.git', $reloaded->getSource()['url'] ?? null, 'URL must not be rewritten when driver disagrees');
+        self::assertSame('https://old.example.com/dist/'.$ref, $reloaded->getDist()['url'] ?? null);
+    }
+
     public function testAutoSoftDeletedDevVersionIsRecoveredWhenBranchReappearsWithUnchangedRef(): void
     {
         $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'sameref1234567890');
