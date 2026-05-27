@@ -294,7 +294,12 @@ class V2Dumper
         $name = strtolower($package->getName());
         $forceDump = $package->getDumpedAtV2() === null;
 
-        $versions = $package->getVersions()->toArray();
+        // Soft-deleted versions stay in the DB so the UI can list them grayed out, but they must not
+        // appear in metadata — Composer should not be able to resolve a pulled version.
+        $versions = array_filter(
+            $package->getVersions()->toArray(),
+            static fn (Version $v): bool => !$v->isSoftDeleted()
+        );
         usort($versions, Package::sortVersions(...));
 
         $tags = [];

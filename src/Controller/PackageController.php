@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Audit\AbandonmentReason;
+use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
@@ -459,7 +460,7 @@ class PackageController extends Controller
 
     #[IsGranted('ROLE_ADMIN')]
     #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'html'], methods: ['POST'])]
-    public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager): Response
+    public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] User $user): Response
     {
         if (!$this->isCsrfTokenValid('unfreeze', $req->request->getString('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
@@ -470,8 +471,14 @@ class PackageController extends Controller
             return $package;
         }
 
+        $wasSpam = $package->getFreezeReason() === PackageFreezeReason::Spam;
         $package->unfreeze();
         $this->getEM()->persist($package);
+
+        if ($wasSpam) {
+            $this->getEM()->getRepository(Version::class)->recoverHiddenVersionsForPackage($package, $user);
+        }
+
         $this->getEM()->flush();
 
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
@@ -584,6 +591,10 @@ class PackageController extends Controller
         $expandedVersion = null;
         /** @var Version[] $versions */
         $versions = $package->getVersions()->toArray();
+
+        if (!$this->isGranted(PackageActions::DeleteVersion->value, $package)) {
+            $versions = array_values(array_filter($versions, static fn (Version $v): bool => $v->getDeletionReason()?->isVisibleToPublic() ?? true));
+        }
 
         usort($versions, Package::class.'::sortVersions');
 
@@ -698,8 +709,18 @@ class PackageController extends Controller
             $data['listsFlaggingVersionsAsMalware'] = [];
         }
 
-        if ($this->isGranted(PackageActions::DeleteVersion->value, $package)) {
-            $data['deleteVersionCsrfToken'] = $csrfTokenManager->getToken('delete_version');
+        // A single CSRF token covers every version-mutation action on this package. The actions
+        // (delete, recover, admin-delete, hide) are gated independently by voter grants on the
+        // template side; collapsing the token to one value avoids generating and shipping four
+        // separate tokens to the page.
+        $data['canDeleteVersion'] = $this->isGranted(PackageActions::DeleteVersion->value, $package);
+        // The admin-delete reason prompt is only meaningful when the actor is not a maintainer of
+        // this package — for admin-maintainers, the basic delete flow already attributes the action
+        // to them as a maintainer.
+        $data['canAdminDeleteVersion'] = !$package->isMaintainer($user) && $this->isGranted(PackageActions::AdminDeleteVersion->value, $package);
+        $data['canHideVersion'] = $this->isGranted(PackageActions::HideVersion->value, $package);
+        if ($data['canDeleteVersion'] || $data['canAdminDeleteVersion'] || $data['canHideVersion']) {
+            $data['manageVersionsCsrfToken'] = $csrfTokenManager->getToken('manage_versions');
         }
         if ($this->isGranted(PackageActions::Update->value, $package)) {
             $lastJob = $this->getEM()->getRepository(Job::class)->findLatestExecutedJob($package->getId(), 'package:updates');
@@ -804,7 +825,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/versions/{versionId}', name: 'delete_version', requirements: ['versionId' => '[0-9]+'], methods: ['DELETE'])]
-    public function deletePackageVersionAction(Request $req, int $versionId): Response
+    public function deletePackageVersionAction(Request $req, int $versionId, #[CurrentUser] User $user): Response
     {
         $repo = $this->getEM()->getRepository(Version::class);
 
@@ -817,11 +838,123 @@ class PackageController extends Controller
 
         $this->denyAccessUnlessGranted(PackageActions::DeleteVersion->value, $package, 'No permission to delete versions');
 
-        if (!$this->isCsrfTokenValid('delete_version', $req->request->getString('_token'))) {
+        if (!$this->isCsrfTokenValid('manage_versions', $req->request->getString('_token'))) {
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
-        $repo->remove($version);
+        // Dev branches track a moving target; allow permanent deletion.
+        // Stable versions are immutable snapshots and are only soft-deleted here, so they can be
+        // recovered later by the maintainer or surfaced to administrators if needed.
+        $softDeleted = !$version->isDevelopment();
+        $deletionTitle = null;
+        if ($softDeleted) {
+            // An admin who also maintains the package is acting on their own package — record it as
+            // a maintainer deletion. The dedicated admin-delete route is the explicit signal for
+            // "use admin powers here."
+            $reason = !$package->isMaintainer($user) && $this->isGranted(PackageActions::AdminDeleteVersion->value, $package)
+                ? VersionDeletionReason::DeletedByAdmin
+                : VersionDeletionReason::DeletedByMaintainer;
+            $repo->softDelete($version, $reason, null, $user);
+            $deletionTitle = $reason === VersionDeletionReason::DeletedByAdmin
+                ? 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
+                : 'Deleted by maintainer on '.gmdate('Y-m-d H:i:s').' UTC';
+        } else {
+            $repo->remove($version);
+        }
+
+        $this->getEM()->flush();
+        $this->getEM()->clear();
+
+        return new JsonResponse(['softDeleted' => $softDeleted, 'deletionTitle' => $deletionTitle]);
+    }
+
+    #[Route(path: '/versions/{versionId}/admin-delete', name: 'admin_delete_version', requirements: ['versionId' => '[0-9]+'], methods: ['POST'])]
+    public function adminSoftDeleteVersionAction(Request $req, int $versionId, #[CurrentUser] User $user): Response
+    {
+        $repo = $this->getEM()->getRepository(Version::class);
+        try {
+            $version = $repo->getFullVersion($versionId);
+        } catch (NoResultException) {
+            return new Response('Version '.$versionId.' not found', 404);
+        }
+
+        $this->denyAccessUnlessGranted(PackageActions::AdminDeleteVersion->value, $version->getPackage(), 'No permission to admin-delete versions');
+
+        if (!$this->isCsrfTokenValid('manage_versions', $req->request->getString('_token'))) {
+            throw new AccessDeniedException('Invalid CSRF token');
+        }
+
+        $reasonText = trim($req->request->getString('reason'));
+        if ($reasonText === '') {
+            $reasonText = null;
+        }
+
+        $repo->softDelete($version, VersionDeletionReason::DeletedByAdmin, $reasonText, $user);
+        $this->getEM()->flush();
+        $this->getEM()->clear();
+
+        $deletionTitle = 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
+            .($reasonText !== null ? ': '.$reasonText : '');
+
+        return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle]);
+    }
+
+    #[Route(path: '/versions/{versionId}/admin-hide', name: 'admin_hide_version', requirements: ['versionId' => '[0-9]+'], methods: ['POST'])]
+    public function adminHideVersionAction(Request $req, int $versionId, #[CurrentUser] User $user): Response
+    {
+        $repo = $this->getEM()->getRepository(Version::class);
+        try {
+            $version = $repo->getFullVersion($versionId);
+        } catch (NoResultException) {
+            return new Response('Version '.$versionId.' not found', 404);
+        }
+
+        $this->denyAccessUnlessGranted(PackageActions::HideVersion->value, $version->getPackage(), 'No permission to hide versions');
+
+        if (!$this->isCsrfTokenValid('manage_versions', $req->request->getString('_token'))) {
+            throw new AccessDeniedException('Invalid CSRF token');
+        }
+
+        $reasonText = trim($req->request->getString('reason'));
+        if ($reasonText === '') {
+            $reasonText = null;
+        }
+
+        $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $user);
+        $this->getEM()->flush();
+        $this->getEM()->clear();
+
+        $deletionTitle = 'Hidden by admin on '.gmdate('Y-m-d H:i:s').' UTC'
+            .($reasonText !== null ? ': '.$reasonText : '');
+
+        return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'glyphicon-eye-close']);
+    }
+
+    #[Route(path: '/versions/{versionId}/recover', name: 'recover_version', requirements: ['versionId' => '[0-9]+'], methods: ['POST'])]
+    public function recoverPackageVersionAction(Request $req, int $versionId, #[CurrentUser] User $user): Response
+    {
+        $repo = $this->getEM()->getRepository(Version::class);
+        try {
+            $version = $repo->getFullVersion($versionId);
+        } catch (NoResultException) {
+            return new Response('Version '.$versionId.' not found', 404);
+        }
+        $package = $version->getPackage();
+
+        $this->denyAccessUnlessGranted(PackageActions::RecoverVersion->value, $package, 'No permission to recover versions');
+
+        if (!$this->isCsrfTokenValid('manage_versions', $req->request->getString('_token'))) {
+            throw new AccessDeniedException('Invalid CSRF token');
+        }
+
+        // Per-reason recovery: admins can recover anything; maintainers can only recover what they
+        // (or the auto-missing flow) created. AdminDeleted rows stay locked unless an admin acts.
+        $reason = $version->getDeletionReason();
+        if ($reason !== null && !$reason->isRecoverableByMaintainer() && !$this->isGranted(PackageActions::AdminDeleteVersion->value, $package)) {
+            throw new AccessDeniedException('This version was removed by an administrator and cannot be recovered here.');
+        }
+
+        $repo->recover($version, $user);
         $this->getEM()->flush();
         $this->getEM()->clear();
 
@@ -845,7 +978,7 @@ class PackageController extends Controller
 
         $update = $req->request->getBoolean('update', $req->query->getBoolean('update'));
         $autoUpdated = $req->request->get('autoUpdated', $req->query->get('autoUpdated'));
-        $updateEqualRefs = $req->request->getBoolean('updateAll', $req->query->getBoolean('updateAll'));
+        $updateSourceDistUrl = $req->request->getBoolean('updateAll', $req->query->getBoolean('updateAll'));
         $manualUpdate = $req->request->getBoolean('manualUpdate', $req->query->getBoolean('manualUpdate'));
 
         // check that a user is logged in to trigger an update on a package they don't own at least to avoid abuse
@@ -859,7 +992,7 @@ class PackageController extends Controller
             // do not let non-maintainers execute update with those flags
             if (!$canUpdatePackage) {
                 $autoUpdated = null;
-                $updateEqualRefs = false;
+                $updateSourceDistUrl = false;
                 $manualUpdate = false;
             }
 
@@ -869,7 +1002,7 @@ class PackageController extends Controller
             }
 
             if ($update) {
-                $job = $this->scheduler->scheduleUpdate($package, 'button/api', $updateEqualRefs, false, null, $manualUpdate);
+                $job = $this->scheduler->scheduleUpdate($package, 'button/api', $updateSourceDistUrl, false, null, $manualUpdate);
 
                 return new JsonResponse(['status' => 'success', 'job' => $job->getId()], 202);
             }

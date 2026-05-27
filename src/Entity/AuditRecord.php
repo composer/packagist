@@ -15,6 +15,7 @@ namespace App\Entity;
 use App\Audit\AbandonmentReason;
 use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
+use App\Audit\VersionDeletionReason;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
@@ -109,6 +110,42 @@ class AuditRecord
         $package = $version->getPackage();
 
         return new self(AuditRecordType::VersionDeleted, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+    }
+
+    public static function versionSoftDeleted(Version $version, VersionDeletionReason $reason, ?string $reasonText, ?User $actor): self
+    {
+        $package = $version->getPackage();
+
+        return new self(
+            AuditRecordType::VersionSoftDeleted,
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'reason' => $reason->value, 'reasonText' => $reasonText, 'actor' => self::getUserData($actor, 'automation')],
+            $actor?->getId(),
+            $package->getVendor(),
+            $package->getId()
+        );
+    }
+
+    public static function versionRecovered(Version $version, VersionDeletionReason $previousReason, ?User $actor): self
+    {
+        $package = $version->getPackage();
+
+        return new self(
+            AuditRecordType::VersionRecovered,
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'previousReason' => $previousReason->value, 'actor' => self::getUserData($actor, 'automation')],
+            $actor?->getId(),
+            $package->getVendor(),
+            $package->getId()
+        );
+    }
+
+    public static function versionReferenceChangeBlocked(Package $package, string $prettyVersion, ?string $oldRef, string $newRef): self
+    {
+        return new self(
+            AuditRecordType::VersionReferenceChangeBlocked,
+            ['name' => $package->getName(), 'version' => $prettyVersion, 'ref_from' => $oldRef, 'ref_to' => $newRef],
+            vendor: $package->getVendor(),
+            packageId: $package->getId()
+        );
     }
 
     /**

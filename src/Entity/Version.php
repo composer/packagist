@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Audit\VersionDeletionReason;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -59,6 +60,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\UniqueConstraint(name: 'pkg_ver_idx', columns: ['package_id', 'normalizedVersion'])]
 #[ORM\Index(name: 'release_idx', columns: ['releasedAt'])]
 #[ORM\Index(name: 'is_devel_idx', columns: ['development'])]
+#[ORM\Index(name: 'softdel_reason_idx', columns: ['softDeletedAt', 'deletionReason'])]
 class Version
 {
     #[ORM\Id]
@@ -218,6 +220,15 @@ class Version
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $softDeletedAt = null;
+
+    #[ORM\Column(length: 32, nullable: true, enumType: VersionDeletionReason::class)]
+    private ?VersionDeletionReason $deletionReason = null;
+
+    #[ORM\Column(type: 'text', length: 65535, nullable: true)]
+    private ?string $deletionReasonText = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $lastBlockedReference = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $updatedAt;
@@ -676,6 +687,59 @@ class Version
     public function getSoftDeletedAt(): ?\DateTimeImmutable
     {
         return $this->softDeletedAt;
+    }
+
+    public function isSoftDeleted(): bool
+    {
+        return $this->softDeletedAt !== null;
+    }
+
+    public function setDeletionReason(?VersionDeletionReason $reason): void
+    {
+        $this->deletionReason = $reason;
+    }
+
+    public function getDeletionReason(): ?VersionDeletionReason
+    {
+        return $this->deletionReason;
+    }
+
+    public function setDeletionReasonText(?string $text): void
+    {
+        $this->deletionReasonText = $text;
+    }
+
+    public function getDeletionReasonText(): ?string
+    {
+        return $this->deletionReasonText;
+    }
+
+    public function setLastBlockedReference(?string $ref): void
+    {
+        $this->lastBlockedReference = $ref;
+    }
+
+    public function getLastBlockedReference(): ?string
+    {
+        return $this->lastBlockedReference;
+    }
+
+    /**
+     * Effective reference used for immutability identity: source.reference if present,
+     * else dist.reference, else null (no usable identity).
+     */
+    public function getEffectiveReference(): ?string
+    {
+        $sourceRef = $this->source['reference'] ?? null;
+        if (\is_string($sourceRef) && $sourceRef !== '') {
+            return $sourceRef;
+        }
+        $distRef = $this->dist['reference'] ?? null;
+        if (\is_string($distRef) && $distRef !== '') {
+            return $distRef;
+        }
+
+        return null;
     }
 
     /**

@@ -1314,9 +1314,12 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   margin-right: 4px;
 }
 .package .package-aside a.advisory-alert {
-    margin-left: -20px;
+    margin-left: -40px;
 }
 .package .package-aside a.malware-alert {
+    margin-left: -40px;
+}
+.package .package-aside a.retag-blocked-alert {
     margin-left: -40px;
 }
 .package .package-aside a.action-alert:hover, .package .package-aside a.action-alert:active {
@@ -1385,16 +1388,53 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   display: block;
   height: 26px;
 }
-.package .delete-version {
+.package .delete-version, .package .hide-version {
   display: inline-block;
 }
-.package .delete-version .submit {
+.package .delete-version .submit, .package .hide-version .submit {
   position: absolute;
-  right: 5px;
   top: 7px;
+  cursor: pointer;
 }
+.package .delete-version .submit { right: 5px; }
+.package .hide-version .submit { right: 25px; color: #999; }
 .package .delete-version .submit:hover, .package .package-aside a.action-alert:hover i {
   color: #cd3729;
+}
+.package .hide-version .submit:hover {
+  color: #b87800;
+}
+
+.package .versions .version.version-soft-deleted .version-number {
+  color: #999;
+  text-decoration: line-through;
+  text-decoration-color: rgba(153, 153, 153, 0.5);
+}
+.package .package-aside .deletion-alert {
+  position: absolute;
+  right: 28px;
+  top: 2px;
+  cursor: help;
+}
+.package .package-aside .deletion-alert i {
+  color: #999;
+  font-size: 12px;
+}
+.package .package-aside a.retag-blocked-alert i {
+  color: #b87800;
+}
+.package .recover-version {
+  display: inline-block;
+}
+.package .recover-version .submit {
+  position: absolute;
+  right: 5px;
+  top: 6px;
+  cursor: pointer;
+  color: #999;
+}
+.package .recover-version .submit:hover {
+  color: #3c763d;
 }
 
 @media (min-width: 992px) {
@@ -1427,6 +1467,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     .package .delete-version .submit {
       right: 15px;
     }
+    .package .hide-version .submit { right: 35px; }
 }
 @media (max-width: 767px) {
   .package-aside .facts {

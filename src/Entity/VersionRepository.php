@@ -12,7 +12,9 @@
 
 namespace App\Entity;
 
+use App\Audit\VersionDeletionReason;
 use App\Model\VersionIdCache;
+use App\Service\Scheduler;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
@@ -36,6 +38,7 @@ class VersionRepository extends ServiceEntityRepository
         private Client $redisCache,
         private VersionIdCache $versionIdCache,
         private readonly Security $security,
+        private readonly Scheduler $scheduler,
     ) {
         parent::__construct($registry, Version::class);
     }
@@ -75,6 +78,74 @@ class VersionRepository extends ServiceEntityRepository
             $record = AuditRecord::versionDeleted($version, $user instanceof User ? $user : null);
             $em->persist($record);
         }
+    }
+
+    /**
+     * Soft-delete a version with a reason. Schedules a fresh Updater run so dependents/suggesters
+     * and the V2 dump get recomputed without the version.
+     */
+    public function softDelete(Version $version, VersionDeletionReason $reason, ?string $reasonText, ?User $actor): void
+    {
+        $em = $this->getEntityManager();
+        $version->setSoftDeletedAt(new \DateTimeImmutable());
+        $version->setDeletionReason($reason);
+        $version->setDeletionReasonText($reasonText);
+        $em->persist($version);
+
+        $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $actor));
+
+        $this->scheduler->scheduleUpdate($version->getPackage(), 'version_soft_delete');
+    }
+
+    /**
+     * Bulk-recover every Hidden version of the given package. Used by the unfreeze flow so an
+     * admin reversing a spam decision restores all the hidden versions in one go without N
+     * scheduler dispatches. Emits one audit row per recovered version.
+     */
+    public function recoverHiddenVersionsForPackage(Package $package, ?User $actor): int
+    {
+        $em = $this->getEntityManager();
+        /** @var Version[] $hidden */
+        $hidden = $this->createQueryBuilder('v')
+            ->where('v.package = :package')
+            ->andWhere('v.deletionReason = :reason')
+            ->setParameter('package', $package)
+            ->setParameter('reason', VersionDeletionReason::Hidden)
+            ->getQuery()->getResult();
+
+        if (\count($hidden) === 0) {
+            return 0;
+        }
+
+        foreach ($hidden as $version) {
+            $version->setSoftDeletedAt(null);
+            $version->setDeletionReason(null);
+            $version->setDeletionReasonText(null);
+            $em->persist($version);
+            $em->persist(AuditRecord::versionRecovered($version, VersionDeletionReason::Hidden, $actor));
+        }
+
+        $this->scheduler->scheduleUpdate($package, 'unfreeze_recover_hidden');
+
+        return \count($hidden);
+    }
+
+    /**
+     * Clear a soft-delete marking. Schedules a fresh Updater run for the same reasons as softDelete().
+     */
+    public function recover(Version $version, ?User $actor): void
+    {
+        $previousReason = $version->getDeletionReason() ?? VersionDeletionReason::AutoDeletedMissing;
+
+        $em = $this->getEntityManager();
+        $version->setSoftDeletedAt(null);
+        $version->setDeletionReason(null);
+        $version->setDeletionReasonText(null);
+        $em->persist($version);
+
+        $em->persist(AuditRecord::versionRecovered($version, $previousReason, $actor));
+
+        $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover');
     }
 
     /**
@@ -181,7 +252,7 @@ class VersionRepository extends ServiceEntityRepository
     public function getVersionMetadataForUpdate(Package $package): array
     {
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT id, version, normalizedVersion, source, softDeletedAt, defaultBranch FROM package_version v WHERE v.package_id = :id',
+            'SELECT id, version, normalizedVersion, development, source, dist, softDeletedAt, deletionReason, lastBlockedReference, defaultBranch FROM package_version v WHERE v.package_id = :id',
             ['id' => $package->getId()]
         );
 
@@ -189,6 +260,9 @@ class VersionRepository extends ServiceEntityRepository
         foreach ($rows as $row) {
             if ($row['source']) {
                 $row['source'] = json_decode($row['source'], true);
+            }
+            if ($row['dist']) {
+                $row['dist'] = json_decode($row['dist'], true);
             }
             $versions[strtolower($row['normalizedVersion'])] = $row;
         }

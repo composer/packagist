@@ -16,6 +16,12 @@ about:
     defaults:
         template: 'about/about.html.twig'
 
+about_version_immutability:
+    path: '/about/version-immutability'
+    controller: 'Symfony\Bundle\FrameworkBundle\Controller\TemplateController'
+    defaults:
+        template: 'about/version_immutability.html.twig'
+
 about_composer:
     path: '/about-composer'
     controller: 'Symfony\Bundle\FrameworkBundle\Controller\RedirectController::urlRedirectAction'

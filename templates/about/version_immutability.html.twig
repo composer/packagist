@@ -1,0 +1,37 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+    <h2 class="title">Version immutability</h2>
+
+    <p>Once a stable (non-dev) version of a package is published on Packagist, its <code>source</code> and <code>dist</code>
+        reference are locked. The Packagist crawler will not update them, even if the upstream tag is moved or rewritten in the
+        git repository. Dev branches (versions matching <code>dev-*</code> or <code>*-dev</code>) continue to track their branches
+        as they always have &mdash; this rule applies only to stable releases.</p>
+
+    <h3 id="why">Why?</h3>
+    <p>A stable release is a contract: every downstream user who installed <code>vendor/pkg:1.2.3</code> expects to receive the
+        exact same code as everyone else, today and a year from now. Allowing the source reference of a published version to
+        change opens the door to supply-chain attacks (e.g. taking over a tag after release) and to maintainer footguns
+        (e.g. a silent re-tag introducing a regression that nobody can audit). Making stable versions immutable closes both.</p>
+
+    <h3 id="what-happens">What you'll see if a re-tag is detected</h3>
+    <ul>
+        <li>A warning is shown in the update log on the package page.</li>
+        <li>An email is sent to the package maintainers explaining the previous and attempted reference.</li>
+        <li>An audit record is written.</li>
+        <li>The version page displays a badge noting that the upstream re-tag was blocked and that Packagist's stored
+            snapshot may no longer match what is currently in git.</li>
+    </ul>
+    <p>The audit/email/badge fires at most once per attempted reference &mdash; subsequent crawls that observe the same
+        diverged reference do not re-send.</p>
+
+    <h3 id="how-to-publish-changes">How to publish the change you want to make</h3>
+    <p>Tag a new version with the fix. For example, if <code>1.2.3</code> had a regression, publish <code>1.2.4</code> (or even <code>1.2.3.1</code>).
+        The new version will be crawled and made available as normal.</p>
+
+    <h3 id="takedowns">Takedowns and recovery</h3>
+    <p>Maintainers can soft-delete a version they own from the package page. Such versions are hidden from Composer
+        metadata but still listed on the page (grayed out), and can be recovered by the maintainer at any time. Administrator
+        takedowns (for malware, abuse, or legal reasons) cannot be recovered by maintainers &mdash; if you believe a
+        takedown was applied in error, please contact Packagist support.</p>
+{% endblock %}

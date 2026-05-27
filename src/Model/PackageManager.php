@@ -22,6 +22,7 @@ use App\Entity\Package;
 use App\Entity\PhpStat;
 use App\Entity\User;
 use App\Entity\Version;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use App\Service\CdnClient;
 use App\Service\GitHubUserMigrationWorker;
 use Composer\Pcre\Preg;
@@ -56,6 +57,7 @@ class PackageManager
         private Client $redis,
         private VersionIdCache $versionIdCache,
         private readonly CdnClient $cdnClient,
+        private readonly UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
@@ -211,6 +213,52 @@ class PackageManager
             $package->setCrawledAt(new \DateTimeImmutable());
         }
         $this->doctrine->getManager()->flush();
+
+        return true;
+    }
+
+    /**
+     * Notify maintainers that an upstream re-tag was blocked because the affected stable version is immutable.
+     * Emits one message per (version, attempted reference); the Updater dedupes via Version::$lastBlockedReference.
+     */
+    public function notifyVersionReferenceChangeBlocked(Package $package, string $prettyVersion, ?string $oldRef, string $newRef): bool
+    {
+        $recipients = [];
+        foreach ($package->getMaintainers() as $maintainer) {
+            $mail = $maintainer->getEmail();
+            if ($mail && $maintainer->isNotifiableForFailures()) {
+                $recipients[$mail] = new Address($mail, $maintainer->getUsername());
+            }
+        }
+
+        if (!$recipients) {
+            return false;
+        }
+
+        $body = $this->twig->render('email/version_reference_change_blocked.txt.twig', [
+            'package' => $package,
+            'version' => $prettyVersion,
+            'oldRef' => $oldRef,
+            'newRef' => $newRef,
+            'packageUrl' => $this->urlGenerator->generate('view_package', ['name' => $package->getName()], UrlGeneratorInterface::ABSOLUTE_URL),
+            'docUrl' => $this->urlGenerator->generate('about_version_immutability', [], UrlGeneratorInterface::ABSOLUTE_URL),
+        ]);
+
+        $message = new Email()
+            ->subject($package->getName().': re-tag of '.$prettyVersion.' blocked')
+            ->from(new Address($this->options['from'], $this->options['fromName']))
+            ->to(...array_values($recipients))
+            ->text($body)
+        ;
+        $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
+
+        try {
+            $this->mailer->send($message);
+        } catch (\Symfony\Component\Mailer\Exception\TransportExceptionInterface $e) {
+            $this->logger->error('['.$e::class.'] '.$e->getMessage());
+
+            return false;
+        }
 
         return true;
     }

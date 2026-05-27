@@ -1,0 +1,6 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
+Re-tag blocked &mdash; upstream attempted to change the source/dist reference of a stable version.<br>
+From: <code>{{ display.refFrom ?: '<none>' }}</code><br>
+To: <code>{{ display.refTo }}</code>

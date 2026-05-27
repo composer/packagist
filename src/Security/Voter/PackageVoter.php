@@ -52,12 +52,24 @@ class PackageVoter extends Voter
         return match (PackageActions::from($attribute)) {
             PackageActions::Abandon => $this->canEdit($package, $user),
             PackageActions::Delete => $this->canDelete($package, $user),
-            PackageActions::DeleteVersion => $this->canDeleteVersion($package, $user),
+            PackageActions::DeleteVersion, PackageActions::RecoverVersion => $this->canDeleteVersion($package, $user),
+            PackageActions::AdminDeleteVersion,
+            PackageActions::HideVersion => $this->canAdministerVersion(),
             PackageActions::Edit => $this->canEdit($package, $user),
             PackageActions::AddMaintainer, PackageActions::TransferPackage => $this->canAddMaintainers($package, $user),
             PackageActions::RemoveMaintainer => $this->canRemoveMaintainers($package, $user),
             PackageActions::Update => $package->isMaintainer($user) || $this->security->isGranted('ROLE_UPDATE_PACKAGES'),
         };
+    }
+
+    /**
+     * Privileged version-management actions reserved for administrators: deleting with a public
+     * reason and hiding from non-maintainers. The role check is the current implementation detail;
+     * call sites should depend on this voter, not on the role directly.
+     */
+    private function canAdministerVersion(): bool
+    {
+        return $this->security->isGranted('ROLE_DELETE_PACKAGES');
     }
 
     private function canDelete(Package $package, User $user): bool

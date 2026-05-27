@@ -47,7 +47,7 @@ class UpdatePackagesCommand extends Command
             ->setName('packagist:update')
             ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages, or if a package name is given forces an update of all versions'),
-                new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all versions before an update'),
+                new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all dev versions before an update, stable versions remain'),
                 new InputOption('update-equal-refs', null, InputOption::VALUE_NONE, 'Force update of all versions even when they already exist'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
             ])
@@ -62,7 +62,7 @@ class UpdatePackagesCommand extends Command
         $package = $input->getArgument('package');
 
         $deleteBefore = false;
-        $updateEqualRefs = false;
+        $updateSourceDistUrl = false;
         $randomTimes = true;
 
         if (!$this->locker->lockCommand(__CLASS__)) {
@@ -82,12 +82,12 @@ class UpdatePackagesCommand extends Command
             }
             $packages = [['id' => $packageEntity->getId()]];
             if ($force) {
-                $updateEqualRefs = true;
+                $updateSourceDistUrl = true;
             }
             $randomTimes = false;
         } elseif ($force) {
             $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
-            $updateEqualRefs = true;
+            $updateSourceDistUrl = true;
         } else {
             $packages = $this->getEM()->getRepository(Package::class)->getStalePackages();
         }
@@ -101,14 +101,14 @@ class UpdatePackagesCommand extends Command
             $deleteBefore = true;
         }
         if ($input->getOption('update-equal-refs')) {
-            $updateEqualRefs = true;
+            $updateSourceDistUrl = true;
         }
 
         while ($ids) {
             $idsGroup = array_splice($ids, 0, 100);
 
             foreach ($idsGroup as $id) {
-                $job = $this->scheduler->scheduleUpdate($id, 'update cmd', $updateEqualRefs, $deleteBefore, $randomTimes ? new \DateTimeImmutable('+'.random_int(1, 600).'seconds') : null);
+                $job = $this->scheduler->scheduleUpdate($id, 'update cmd', $updateSourceDistUrl, $deleteBefore, $randomTimes ? new \DateTimeImmutable('+'.random_int(1, 600).'seconds') : null);
                 if ($verbose) {
                     $output->writeln('Scheduled update job '.$job->getId().' for package '.$id);
                 }

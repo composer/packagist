@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Attribute\VarName;
+use App\Audit\VersionDeletionReason;
 use App\Entity\Package;
 use App\Entity\TemporaryTwoFactorUser;
 use App\Entity\User;
@@ -89,7 +90,7 @@ class UserController extends Controller
     }
 
     #[Route(path: '/spammers/{name}/', name: 'mark_spammer', methods: ['POST'])]
-    public function markSpammerAction(Request $req, #[VarName('name')] User $user): RedirectResponse
+    public function markSpammerAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $adminUser): RedirectResponse
     {
         if (!$this->isGranted('ROLE_ANTISPAM')) {
             throw $this->createAccessDeniedException('This user can not mark others as spammers');
@@ -123,7 +124,10 @@ class UserController extends Controller
 
             foreach ($packages as $package) {
                 foreach ($package->getVersions() as $version) {
-                    $versionRepo->remove($version);
+                    if ($version->isSoftDeleted()) {
+                        continue;
+                    }
+                    $versionRepo->softDelete($version, VersionDeletionReason::Hidden, 'spam', $adminUser);
                 }
 
                 $this->providerManager->deletePackage($package);

@@ -1,0 +1,26 @@
+{% autoescape false -%}
+The {{ package.name }} package of which you are a maintainer had an attempted
+update to version {{ version }} blocked, because a published stable version's
+source/dist reference changed in your git repository.
+
+  Previously published reference: {{ oldRef ?: '<none>' }}
+  Newly observed reference:       {{ newRef }}
+
+Stable versions on Packagist are immutable: once published, their source and dist
+references cannot change. This protects downstream users from a published version
+silently swapping its contents (e.g. via a re-tag or force-push).
+
+If the change in your repository was intentional and you want the new code to be
+available to users, please tag a new version with the fix and push it.
+
+Ideally you should also restore the tag to the previous commit reference to
+bring the repository back in line with what Packagist.org shows and avoid
+confusing people.
+
+Package page:     {{ packageUrl }}
+More information: {{ docUrl }}
+
+--
+If you do not wish to receive such emails in the future you can disable
+notifications on your profile page: https://packagist.org/profile/edit
+{%- endautoescape %}

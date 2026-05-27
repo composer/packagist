@@ -32,13 +32,13 @@ class Scheduler
     /**
      * @return Job<PackageUpdateJob>
      */
-    public function scheduleUpdate(Package|int $packageOrId, string $source, bool $updateEqualRefs = false, bool $deleteBefore = false, ?\DateTimeImmutable $executeAfter = null, bool $forceDump = false): Job
+    public function scheduleUpdate(Package|int $packageOrId, string $source, bool $updateSourceDistUrl = false, bool $deleteBefore = false, ?\DateTimeImmutable $executeAfter = null, bool $forceDump = false): Job
     {
         if ($packageOrId instanceof Package) {
             $packageOrId = $packageOrId->getId();
         }
 
-        $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateEqualRefs, $deleteBefore);
+        $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateSourceDistUrl, $deleteBefore);
         if ($pendingJobId && ($pendingJob = $this->getEM()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId])) !== null) {
             // pending job will execute before the one we are trying to schedule so skip scheduling
             if (
@@ -59,7 +59,7 @@ class Scheduler
             $this->getEM()->flush();
         }
 
-        return $this->createJob('package:updates', ['id' => $packageOrId, 'update_equal_refs' => $updateEqualRefs, 'delete_before' => $deleteBefore, 'force_dump' => $forceDump, 'source' => $source], $packageOrId, $executeAfter);
+        return $this->createJob('package:updates', ['id' => $packageOrId, 'update_source_dist_url' => $updateSourceDistUrl, 'delete_before' => $deleteBefore, 'force_dump' => $forceDump, 'source' => $source], $packageOrId, $executeAfter);
     }
 
     /**
@@ -86,7 +86,7 @@ class Scheduler
         return $this->createJob('filter:update', ['list' => $list->value, 'source' => $source->value], $packageId, $executeAfter);
     }
 
-    private function getPendingUpdateJob(int $packageId, bool $updateEqualRefs = false, bool $deleteBefore = false): ?string
+    private function getPendingUpdateJob(int $packageId, bool $updateSourceDistUrl = false, bool $deleteBefore = false): ?string
     {
         $result = $this->getEM()->getConnection()->fetchAssociative(
             'SELECT id, payload FROM job WHERE packageId = :package AND status = :status AND type = :type LIMIT 1',
@@ -99,7 +99,7 @@ class Scheduler
 
         if ($result) {
             $payload = json_decode($result['payload'], true);
-            if ($payload['update_equal_refs'] === $updateEqualRefs && $payload['delete_before'] === $deleteBefore) {
+            if (($payload['update_source_dist_url'] ?? false) === $updateSourceDistUrl && $payload['delete_before'] === $deleteBefore) {
                 return $result['id'];
             }
         }

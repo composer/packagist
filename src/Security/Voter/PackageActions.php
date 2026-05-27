@@ -21,5 +21,8 @@ enum PackageActions: string
     case Abandon = 'abandon';
     case Delete = 'delete';
     case DeleteVersion = 'delete_version';
+    case RecoverVersion = 'recover_version';
+    case AdminDeleteVersion = 'admin_delete_version';
+    case HideVersion = 'hide_version';
     case Update = 'update';
 }
