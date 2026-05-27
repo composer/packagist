@@ -281,10 +281,17 @@ class Updater
             // hard-deleted. DELETE_BEFORE wipes the dev-branch trackers and lets the normal update
             // path reconcile stable rows via the immutability gate (matching refs are skipped,
             // diverging refs are blocked + audited).
-            foreach ($package->getVersions() as $version) {
-                if ($version->isDevelopment()) {
-                    $versionRepository->remove($version);
-                }
+            // Source the rows from the DB rather than $package->getVersions() — the in-memory
+            // collection state depends on how the caller loaded the package, and we must not
+            // silently skip removals just because the collection isn't lazy-loaded yet.
+            /** @var list<Version> $devVersions */
+            $devVersions = $versionRepository->createQueryBuilder('v')
+                ->where('v.package = :package')
+                ->andWhere('v.development = true')
+                ->setParameter('package', $package)
+                ->getQuery()->getResult();
+            foreach ($devVersions as $version) {
+                $versionRepository->remove($version);
             }
 
             $em->flush();

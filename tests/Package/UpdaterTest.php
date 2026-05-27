@@ -491,6 +491,52 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame('newref9999999999', $reloaded->getSource()['reference'] ?? null);
     }
 
+    public function testDeleteBeforeWipesDevRowsButPreservesStableAndSoftDeletedStable(): void
+    {
+        // Seed three rows: an active stable, a maintainer-soft-deleted stable, and a dev branch.
+        // DELETE_BEFORE must wipe only the dev row, leave both stable rows untouched, and the
+        // post-loop prune must not crash on the survivors after $em->refresh($package).
+        $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $softDeleted = $this->seedStableVersion($this->package, '1.1.0', '1.1.0.0', '1234567890abcdef');
+        $softDeleted->setSoftDeletedAt(new \DateTimeImmutable('-2 hours'));
+        $softDeleted->setDeletionReason(VersionDeletionReason::DeletedByMaintainer);
+        $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        self::getEM()->persist($softDeleted);
+        self::getEM()->flush();
+
+        // Upstream only returns the active stable version — dev-main has disappeared from upstream
+        // and 1.1.0 is also missing (consistent with the maintainer pull).
+        $upstream = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $packageManagerMock = $this->createMock(PackageManager::class);
+        $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
+        $this->rebuildUpdater($packageManagerMock);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::DELETE_BEFORE);
+
+        $em = self::getEM();
+        $em->clear();
+        $versionRepo = $em->getRepository(Version::class);
+
+        $active = $versionRepo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($active, 'active stable row must survive DELETE_BEFORE');
+        self::assertNull($active->getSoftDeletedAt());
+        self::assertSame('abcdef1234567890', $active->getSource()['reference'] ?? null);
+
+        $reloadedSoftDeleted = $versionRepo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.1.0.0']);
+        self::assertNotNull($reloadedSoftDeleted, 'maintainer-soft-deleted stable row must survive DELETE_BEFORE');
+        self::assertNotNull($reloadedSoftDeleted->getSoftDeletedAt(), 'soft-delete marker must stay');
+        self::assertSame(VersionDeletionReason::DeletedByMaintainer, $reloadedSoftDeleted->getDeletionReason());
+
+        $dev = $versionRepo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-main']);
+        self::assertNull($dev, 'dev row must be hard-deleted by DELETE_BEFORE');
+
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
+    }
+
     public function testAutoSoftDeletedDevVersionIsRecoveredWhenBranchReappearsWithUnchangedRef(): void
     {
         $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'sameref1234567890');
