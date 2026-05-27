@@ -255,7 +255,12 @@ class Package
             $versions = $versionRepo;
         } else {
             $versions = [];
-            $partialVersions = $this->getVersions()->toArray();
+            // Soft-deleted versions are kept in the DB for the UI to show grayed out but must not
+            // leak via the public JSON endpoint — the V2 dumper applies the same filter.
+            $partialVersions = array_values(array_filter(
+                $this->getVersions()->toArray(),
+                static fn (Version $v): bool => !$v->isSoftDeleted()
+            ));
             while ($partialVersions) {
                 $versionRepo->getEntityManager()->clear();
 
