@@ -19,6 +19,7 @@ use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
 use Doctrine\Persistence\Reflection\TypedNoDefaultReflectionProperty;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 
 class FilterListResolverTest extends TestCase
 {
@@ -26,7 +27,7 @@ class FilterListResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->resolver = new FilterListResolver();
+        $this->resolver = new FilterListResolver(new NullLogger());
     }
 
     public function testResolveAddNewEntry(): void
@@ -113,6 +114,17 @@ class FilterListResolverTest extends TestCase
 
         $this->assertSame([], $result[0]);
         $this->assertSame([$existing2], $result[1]);
+    }
+
+    public function testResolveSkipsRemoteEntriesWithInvalidVersionConstraint(): void
+    {
+        $valid = $this->createRemoteFilterListEntry('vendor/good', '1.0.0');
+        $invalid = $this->createRemoteFilterListEntry('vendor/bad', 'not-a-valid-constraint!@#');
+
+        $result = $this->resolver->resolve([], [$valid, $invalid]);
+
+        $this->assertEntry($valid, $result[0]);
+        $this->assertSame([], $result[1]);
     }
 
     private function createRemoteFilterListEntry(string $packageName, string $version): RemoteFilterListEntry
