@@ -144,7 +144,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
                     // cache as false means the name does not have any advisories
                     if ($advisoryCache[$index] !== 'false') {
-                        $advisories[$name] = json_decode($advisoryCache[$index], true, \JSON_THROW_ON_ERROR);
+                        $advisories[$name] = json_decode($advisoryCache[$index], true, flags: \JSON_THROW_ON_ERROR);
                     }
                 }
             }

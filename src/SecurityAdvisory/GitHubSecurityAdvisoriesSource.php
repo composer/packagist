@@ -74,7 +74,7 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                         'headers' => $headers,
                         'json' => ['query' => $this->getQuery($after)],
                     ]);
-                    $data = json_decode($response->getContent(), true, \JSON_THROW_ON_ERROR);
+                    $data = json_decode($response->getContent(), true, flags: \JSON_THROW_ON_ERROR);
                     $data = $data['data'];
                     break;
                 } catch (\RuntimeException $e) {

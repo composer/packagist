@@ -19,6 +19,8 @@ parameters:
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true
 
+    reportUnsafeArrayStringKeyCasting: null # TODO use 'detect' or 'prevent' here
+
     paths:
         - src/
 
