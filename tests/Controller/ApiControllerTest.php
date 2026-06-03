@@ -19,6 +19,8 @@ use App\SecurityAdvisory\Severity;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 
 class ApiControllerTest extends IntegrationTestCase
 {
@@ -281,5 +283,37 @@ class ApiControllerTest extends IntegrationTestCase
         );
 
         $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
+
+    public function testComposerVersionsProxiesUpstream(): void
+    {
+        $body = '{"stable":[{"path":"/download/2.7.1/composer.phar","version":"2.7.1"}]}';
+        $mockClient = new MockHttpClient(function (string $method, string $url) use ($body) {
+            $this->assertSame('GET', $method);
+            $this->assertSame('https://getcomposer.org/versions', $url);
+
+            return new MockResponse($body, ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json']]);
+        });
+        self::getContainer()->set('http_client', $mockClient);
+
+        $this->client->request('GET', '/api/composer-versions');
+        $response = $this->client->getResponse();
+
+        $this->assertSame(200, $response->getStatusCode(), (string) $response->getContent());
+        $this->assertSame($body, $response->getContent());
+        $this->assertStringContainsString('application/json', (string) $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('s-maxage=900', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function testComposerVersionsReturns502OnUpstreamFailure(): void
+    {
+        $mockClient = new MockHttpClient(new MockResponse('nope', ['http_code' => 500]));
+        self::getContainer()->set('http_client', $mockClient);
+
+        $this->client->request('GET', '/api/composer-versions');
+        $response = $this->client->getResponse();
+
+        $this->assertSame(502, $response->getStatusCode());
+        $this->assertJsonStringEqualsJsonString('{"status":"error","message":"Failed to fetch upstream version data, please try again later."}', (string) $response->getContent());
     }
 }

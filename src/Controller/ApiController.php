@@ -31,6 +31,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -49,6 +50,8 @@ enum ApiType
  */
 class ApiController extends Controller
 {
+    private const COMPOSER_VERSIONS_URL = 'https://getcomposer.org/versions';
+
     private const REGEXES = [
         'gitlab' => '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>[\w.-]+(?:/[\w.-]+?)+)(?:\.git|/)?$}i',
         'any' => '{^(?:ssh://git@|https?://|git://|git@)?(?P<host>[a-z0-9.-]+)(?::[0-9]+/|[:/])(?P<path>[\w.-]+(?:/[\w.-]+?)*)(?:\.git|/)?$}i',
@@ -80,6 +83,34 @@ class ApiController extends Controller
         $this->logger->alert('packages.json is missing and the fallback controller is being hit, you need to use bin/console packagist:dump-v2');
 
         return new Response('Horrible misconfiguration or the dumper script messed up, you need to use bin/console packagist:dump-v2', 404);
+    }
+
+    /**
+     * Proxies https://getcomposer.org/versions so that systems which can only reach
+     * packagist.org are still able to read Composer's version metadata.
+     *
+     * The response is cached at the CDN edge via s-maxage as this data changes rarely.
+     */
+    #[Route(path: '/api/composer-versions', name: 'composer_versions', defaults: ['_format' => 'json'], methods: ['GET'])]
+    public function composerVersionsAction(): Response
+    {
+        try {
+            $upstream = $this->httpClient->request('GET', self::COMPOSER_VERSIONS_URL);
+            if ($upstream->getStatusCode() !== 200) {
+                throw new \RuntimeException('Unexpected status code '.$upstream->getStatusCode());
+            }
+            $contents = $upstream->getContent();
+        } catch (\Throwable $e) {
+            $this->logger->error('Failed to proxy '.self::COMPOSER_VERSIONS_URL, ['exception' => $e]);
+
+            return new JsonResponse(['status' => 'error', 'message' => 'Failed to fetch upstream version data, please try again later.'], 502);
+        }
+
+        $response = new Response($contents, 200, ['Content-Type' => 'application/json']);
+        $response->setSharedMaxAge(900);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+        return $response;
     }
 
     #[Route(path: '/api/create-package', name: 'generic_create', defaults: ['_format' => 'json'], methods: ['POST'])]
