@@ -1,7 +1,7 @@
 -- Version immutability + soft-delete reasons
 --
 -- Adds:
---   deletionReason         enum-string column (auto_missing | maintainer | admin)
+--   deletionReason         enum-string column (auto_missing | maintainer | admin | hidden)
 --   deletionReasonText     optional human-readable reason for admin takedowns
 --   lastBlockedReference   last attempted source/dist ref that was refused on a stable version
 --   index over (softDeletedAt, deletionReason) to keep the purge sweep fast
