@@ -393,14 +393,13 @@ class Updater
                 continue;
             }
 
-            // Dev rows are branch trackers and may be hard-purged after a 1-day grace period
-            // (or immediately if they're legacy v1-normalized dev-master/trunk/default rows that
-            // got re-created under a non-normalized name). Stable rows are immutable historical
-            // entries and stay soft-deleted forever — see VersionDeletionReason.
             if (
                 $isDev
                 && (
+                    // Dev versions track branches and may be hard-purged after a 1-day grace period
                     (null !== $version['softDeletedAt'] && new \DateTime($version['softDeletedAt']) < $deleteDate)
+                    // ... or immediately if they're legacy v1-normalized dev-master/trunk/default rows that
+                    // got re-created under a non-normalized name
                     || ($version['normalizedVersion'] === '9999999-dev')
                 )
             ) {
