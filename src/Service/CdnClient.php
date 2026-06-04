@@ -99,20 +99,10 @@ class CdnClient
             ],
         ]);
 
-        if ($resp->getStatusCode() === 200) {
-            // purge the cache as well if the file was deleted
-            $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $this->metadataPublicEndpoint.$path, 'async' => 'true', 'exactPath' => 'true']), [
-                'headers' => [
-                    'AccessKey' => $this->cdnApiKey,
-                ],
-            ]);
-            // wait for status code at least
-            $resp->getStatusCode();
+        // purge the cache as well
+        $this->purgeMetadataCache($path);
 
-            return;
-        }
-
-        if ($resp->getStatusCode() === 404) {
+        if (in_array($resp->getStatusCode(), [200, 404], true)) {
             return;
         }
 

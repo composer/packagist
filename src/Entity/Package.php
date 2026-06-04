@@ -774,6 +774,9 @@ class Package
         return $this->suspect;
     }
 
+    /**
+     * Freezing a package means it will not be updated anymore nor will its metadata be dumped
+     */
     public function freeze(PackageFreezeReason $reason): void
     {
         $this->frozen = $reason;

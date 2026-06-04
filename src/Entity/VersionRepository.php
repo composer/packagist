@@ -82,7 +82,7 @@ class VersionRepository extends ServiceEntityRepository
 
     /**
      * Soft-delete a version with a reason. Schedules a fresh Updater run so dependents/suggesters
-     * and the V2 dump get recomputed without the version.
+     * and the V2 dump get recomputed without the version (frozen packages only get marked for dump).
      */
     public function softDelete(Version $version, VersionDeletionReason $reason, ?string $reasonText, ?User $actor): void
     {
@@ -94,7 +94,12 @@ class VersionRepository extends ServiceEntityRepository
 
         $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $actor));
 
-        $this->scheduler->scheduleUpdate($version->getPackage(), 'version_soft_delete');
+        if (!$version->getPackage()->isFrozen()) {
+            $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover');
+        } else {
+            $version->getPackage()->setCrawledAt(new \DateTimeImmutable());
+            $this->getEntityManager()->persist($version->getPackage());
+        }
     }
 
     /**
