@@ -197,11 +197,11 @@ class UpdaterWorker
             $flags = 0;
             $useVersionCache = true;
             if (($job->getPayload()['update_source_dist_url'] ?? false) === true) {
-                $flags = Updater::UPDATE_SOURCE_DIST_URL;
+                $flags |= Updater::UPDATE_SOURCE_DIST_URL;
                 $useVersionCache = false;
             }
             if ($job->getPayload()['delete_before'] === true) {
-                $flags = Updater::DELETE_BEFORE;
+                $flags |= Updater::DELETE_BEFORE;
                 $useVersionCache = false;
             }
             if ($job->getPayload()['force_dump'] === true) {

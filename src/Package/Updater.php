@@ -98,9 +98,18 @@ class Updater
     use \App\Util\DoctrineTrait;
 
     /**
-     * Roll out new source/dist URLs across existing versions without changing references.
-     * Stable versions only accept the rewrite when every check in applySourceDistUrlRewrite() passes
-     * (matching commit-hash refs, driver-confirmed dist URL, etc.); otherwise that version is skipped.
+     * Propagate a source/dist URL change across every version of a package.
+     *
+     * Stable versions: narrow rewrite via applySourceDistUrlRewrite() — only source.url and
+     * dist.url are touched, references/shasum/etc. are left frozen, and the row is skipped
+     * (with a warning) if any safety check fails. See applySourceDistUrlRewrite() for details.
+     *
+     * Dev versions: forces a full row rebuild even when the source.reference is unchanged,
+     * so the new URLs (and any other metadata) land on the next crawl. This is the
+     * "$flags & UPDATE_SOURCE_DIST_URL" branch in updateInformation().
+     *
+     * Used after a repo rename/move (CLI --update-source-dist-url, the "Update All" UI button,
+     * or the post-rename detection path in ApiController::findGitHubPackagesByRepository()).
      */
     public const UPDATE_SOURCE_DIST_URL = 1;
     public const DELETE_BEFORE = 2;
