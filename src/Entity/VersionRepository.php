@@ -49,8 +49,21 @@ class VersionRepository extends ServiceEntityRepository
         return parent::getEntityManager();
     }
 
-    public function remove(Version $version, bool $createAuditRecord = true): void
+    public function remove(Version $version, bool $createAuditRecord = true, bool $allowStable = false): void
     {
+        // Stable versions are immutable & permanent: their (package, version) slot must never be
+        // freed, or a later crawl could recreate it with different content and break the immutability
+        // guarantee that Composer lock-pinning, mirrors and scanners rely on. Pull a stable release
+        // with softDelete() instead. allowStable is only for whole-package deletion, where the entire
+        // package (and all its slots) is being removed.
+        if (!$allowStable && !$version->isDevelopment()) {
+            throw new \LogicException(sprintf(
+                'Refusing to hard-delete stable version %s %s: stable releases are immutable; use softDelete().',
+                $version->getName(),
+                $version->getVersion()
+            ));
+        }
+
         $em = $this->getEntityManager();
         $package = $version->getPackage();
         $package->getVersions()->removeElement($version);

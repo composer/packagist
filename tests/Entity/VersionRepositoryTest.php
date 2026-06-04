@@ -42,9 +42,11 @@ class VersionRepositoryTest extends IntegrationTestCase
         $version = new Version();
         $version->setPackage($package);
         $version->setName($package->getName());
-        $version->setVersion('1.0.0');
-        $version->setNormalizedVersion('1.0.0.0');
-        $version->setDevelopment(false);
+        // Dev versions are the ones legitimately hard-deleted (prune housekeeping, ClearVersions);
+        // stable versions are immutable and remove() refuses them (see testRemoveRefusesStableVersion).
+        $version->setVersion('dev-main');
+        $version->setNormalizedVersion('dev-main');
+        $version->setDevelopment(true);
         $version->setLicense([]);
         $version->setAutoload([]);
         $package->getVersions()->add($version);
@@ -157,6 +159,37 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertArrayHasKey('deletionReason', $meta['2.0.0.0']);
         self::assertArrayHasKey('lastBlockedReference', $meta['2.0.0.0']);
         self::assertSame('aabbccdd', $meta['2.0.0.0']['lastBlockedReference']);
+    }
+
+    public function testRemoveRefusesStableVersion(): void
+    {
+        $version = $this->seedStableVersion('vendor/immutable', '2.0.0', '2.0.0.0');
+        $versionId = $version->getId();
+
+        try {
+            $this->versionRepository->remove($version);
+            self::fail('Expected a LogicException when hard-deleting a stable version');
+        } catch (\LogicException $e) {
+            self::assertStringContainsString('immutable', $e->getMessage());
+        }
+
+        self::getEM()->flush();
+        self::getEM()->clear();
+        self::assertNotNull($this->versionRepository->find($versionId), 'stable version must survive a refused hard-delete');
+    }
+
+    public function testRemoveAllowsStableVersionWithOptOut(): void
+    {
+        $version = $this->seedStableVersion('vendor/wholepkg', '2.0.0', '2.0.0.0');
+        $versionId = $version->getId();
+
+        // allowStable is the whole-package-deletion escape hatch (PackageManager::deletePackage,
+        // CleanSpamPackagesCommand) where the entire package and all its slots are removed.
+        $this->versionRepository->remove($version, allowStable: true);
+        self::getEM()->flush();
+        self::getEM()->clear();
+
+        self::assertNull($this->versionRepository->find($versionId), 'allowStable must permit hard-deleting a stable version');
     }
 
     private function seedStableVersion(string $packageName, string $version, string $normalized): Version

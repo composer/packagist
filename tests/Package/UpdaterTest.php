@@ -684,6 +684,48 @@ class UpdaterTest extends IntegrationTestCase
         self::assertNull($reloaded->getDeletionReason());
     }
 
+    public function testStableVersionMissingUpstreamIsSoftDeletedNotRemovedThenRecovers(): void
+    {
+        $em = self::getEM();
+        // Two active stable versions. Upstream will drop 1.0.0 but keep 1.1.0 around so the version
+        // list is never empty (and the recover SQL always has a non-empty id set to work with).
+        $gone = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $kept = $this->seedStableVersion($this->package, '1.1.0', '1.1.0.0', 'fedcba0987654321');
+        $goneId = $gone->getId();
+        $keptId = $kept->getId();
+
+        // Crawl 1: 1.0.0 has disappeared upstream. As an immutable stable version it must be
+        // soft-deleted (auto_missing), never hard-deleted — its (package, version) slot must persist.
+        $upstreamKept = $this->buildCompletePackage('test/pkg', '1.1.0', '1.1.0.0', 'fedcba0987654321');
+        $repo1 = $this->createStub(VcsRepository::class);
+        $repo1->method('getPackages')->willReturn([$upstreamKept]);
+        $repo1->method('getDriver')->willReturn($this->stableDriver());
+        $this->updater->update($this->ioMock, $this->config, $this->package, $repo1);
+
+        $em->clear();
+        $afterPrune = $em->getRepository(Version::class)->find($goneId);
+        self::assertNotNull($afterPrune, 'immutable stable version must never be hard-deleted when its tag disappears');
+        self::assertNotNull($afterPrune->getSoftDeletedAt(), 'missing stable version must be soft-deleted');
+        self::assertSame(VersionDeletionReason::AutoDeletedMissing, $afterPrune->getDeletionReason());
+        self::assertNull($em->getRepository(Version::class)->find($keptId)?->getSoftDeletedAt(), 'still-present stable version stays active');
+
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+
+        // Crawl 2: the tag reappears at the same ref → the version auto-recovers.
+        $upstreamGone = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $repo2 = $this->createStub(VcsRepository::class);
+        $repo2->method('getPackages')->willReturn([$upstreamGone, $upstreamKept]);
+        $repo2->method('getDriver')->willReturn($this->stableDriver());
+        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+
+        $em->clear();
+        $recovered = $em->getRepository(Version::class)->find($goneId);
+        self::assertNotNull($recovered);
+        self::assertNull($recovered->getSoftDeletedAt(), 'stable version must auto-recover when its tag reappears');
+        self::assertNull($recovered->getDeletionReason());
+    }
+
     private function stableDriver(): VcsDriverInterface&Stub
     {
         $driver = $this->createStub(GitDriver::class);

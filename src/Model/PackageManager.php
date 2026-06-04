@@ -65,7 +65,7 @@ class PackageManager
     {
         $versionRepo = $this->doctrine->getRepository(Version::class);
         foreach ($package->getVersions() as $version) {
-            $versionRepo->remove($version, false);
+            $versionRepo->remove($version, false, allowStable: true);
         }
 
         if ($package->getAutoUpdated() === Package::AUTO_GITHUB_HOOK) {

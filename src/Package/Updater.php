@@ -602,6 +602,10 @@ class Updater
         $oldSourceUrl = $oldSource['url'] ?? null;
         $oldDistUrlStored = $oldDist['url'] ?? null;
 
+        // dist.url was cross-checked against the driver above; source.url is taken from the incoming
+        // data without an equivalent driver check. That asymmetry is acceptable here: this path is
+        // operator-gated (UPDATE_SOURCE_DIST_URL only) and the reference hashes are pinned to the
+        // frozen snapshot, so only the URL can move, never the ref.
         $newSource = $oldSource;
         $newSource['url'] = $newSourceUrl;
         $newDist = $oldDist;

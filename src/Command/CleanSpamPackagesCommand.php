@@ -66,7 +66,7 @@ class CleanSpamPackagesCommand extends Command
             }
             $output->write('.');
             foreach ($package->getVersions() as $version) {
-                $versionRepo->remove($version, false);
+                $versionRepo->remove($version, false, allowStable: true);
             }
 
             $this->providerManager->deletePackage($package);
