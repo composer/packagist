@@ -77,13 +77,4 @@ enum VersionDeletionReason: string
             self::DeletedByAdmin, self::Hidden => false,
         };
     }
-
-    /**
-     * Whether the soft-deleted version should still appear on the package page for the general
-     * public. Maintainers and admins see all soft-deleted versions regardless.
-     */
-    public function isVisibleToPublic(): bool
-    {
-        return $this !== self::Hidden;
-    }
 }

@@ -592,8 +592,8 @@ class PackageController extends Controller
         /** @var Version[] $versions */
         $versions = $package->getVersions()->toArray();
 
-        if (!$this->isGranted(PackageActions::DeleteVersion->value, $package)) {
-            $versions = array_values(array_filter($versions, static fn (Version $v): bool => $v->getDeletionReason()?->isVisibleToPublic() ?? true));
+        if (!$this->isGranted(PackageActions::ViewHiddenVersion->value, $package)) {
+            $versions = array_values(array_filter($versions, static fn (Version $v): bool => $v->getDeletionReason() !== VersionDeletionReason::Hidden));
         }
 
         usort($versions, Package::class.'::sortVersions');
@@ -807,16 +807,24 @@ class PackageController extends Controller
         $repo = $this->getEM()->getRepository(Version::class);
 
         try {
-            $html = $this->renderView(
-                'package/version_details.html.twig',
-                ['version' => $version = $repo->getFullVersion($versionId)]
-            );
-        } catch (NoResultException $e) {
+            $version = $repo->getFullVersion($versionId);
+        } catch (NoResultException) {
             return new JsonResponse(['status' => 'error', 'message' => 'The version could not be found, it may have been deleted in the meantime? Try reloading the page.'], 404);
         }
 
-        $resp = new JsonResponse(['content' => $html]);
-        if (!$version->isDevelopment()) {
+        if ($version->getDeletionReason() === VersionDeletionReason::Hidden && !$this->isGranted(PackageActions::ViewHiddenVersion->value, $version->getPackage())) {
+            return new JsonResponse(['status' => 'error', 'message' => 'The version could not be found, it may have been deleted in the meantime? Try reloading the page.'], 404);
+        }
+
+        $resp = new JsonResponse([
+            'content' => $this->renderView(
+                'package/version_details.html.twig',
+                ['version' => $version]
+            )
+        ]);
+        // Hidden versions are only served to authorized viewers; shared-cache them and a CDN would
+        // hand the response to anyone hitting the same URL, bypassing the voter guard above.
+        if (!$version->isDevelopment() && $version->getDeletionReason() !== VersionDeletionReason::Hidden) {
             $resp->setSharedMaxAge(24 * 3600);
             $resp->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
         }

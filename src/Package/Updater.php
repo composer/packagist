@@ -99,7 +99,7 @@ class Updater
 
     /**
      * Roll out new source/dist URLs across existing versions without changing references.
-     * Stable versions only accept the rewrite when every check in updateSourceDistUrl() passes
+     * Stable versions only accept the rewrite when every check in applySourceDistUrlRewrite() passes
      * (matching commit-hash refs, driver-confirmed dist URL, etc.); otherwise that version is skipped.
      */
     public const UPDATE_SOURCE_DIST_URL = 1;

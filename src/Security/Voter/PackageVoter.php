@@ -52,7 +52,7 @@ class PackageVoter extends Voter
         return match (PackageActions::from($attribute)) {
             PackageActions::Abandon => $this->canEdit($package, $user),
             PackageActions::Delete => $this->canDelete($package, $user),
-            PackageActions::DeleteVersion, PackageActions::RecoverVersion => $this->canDeleteVersion($package, $user),
+            PackageActions::ViewHiddenVersion, PackageActions::DeleteVersion, PackageActions::RecoverVersion => $this->canDeleteVersion($package, $user),
             PackageActions::AdminDeleteVersion,
             PackageActions::HideVersion => $this->canAdministerVersion(),
             PackageActions::Edit => $this->canEdit($package, $user),
