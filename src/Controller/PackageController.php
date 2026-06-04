@@ -613,11 +613,22 @@ class PackageController extends Controller
             Assert::notNull($version);
 
             $expandedVersion = $version;
+            $softDeletedFallback = null;
             foreach ($versions as $candidate) {
-                if (!$candidate->isDevelopment()) {
+                if ($candidate->isDevelopment()) {
+                    continue;
+                }
+                if ($candidate->getDeletionReason() === null) {
                     $expandedVersion = $candidate;
+                    $softDeletedFallback = null;
                     break;
                 }
+                if ($softDeletedFallback === null) {
+                    $softDeletedFallback = $candidate;
+                }
+            }
+            if ($softDeletedFallback !== null && $expandedVersion === $version) {
+                $expandedVersion = $softDeletedFallback;
             }
 
             // load the expanded version fully to be able to display all info including tags
