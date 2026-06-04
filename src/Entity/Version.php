@@ -725,24 +725,6 @@ class Version
     }
 
     /**
-     * Effective reference used for immutability identity: source.reference if present,
-     * else dist.reference, else null (no usable identity).
-     */
-    public function getEffectiveReference(): ?string
-    {
-        $sourceRef = $this->source['reference'] ?? null;
-        if (\is_string($sourceRef) && $sourceRef !== '') {
-            return $sourceRef;
-        }
-        $distRef = $this->dist['reference'] ?? null;
-        if (\is_string($distRef) && $distRef !== '') {
-            return $distRef;
-        }
-
-        return null;
-    }
-
-    /**
      * @return array<array{name?: string, homepage?: string, email?: string, role?: string}>
      */
     public function getAuthors(): array
