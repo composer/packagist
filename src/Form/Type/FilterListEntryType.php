@@ -54,6 +54,11 @@ class FilterListEntryType extends AbstractType
                 'required' => false,
                 'disabled' => true,
             ])
+            ->add('internalNote', TextareaType::class, [
+                'label' => 'Internal note',
+                'help' => 'Only recorded internally. Changes are written to the audit log and visible to filter list admins only.',
+                'required' => false,
+            ])
         ;
     }
 

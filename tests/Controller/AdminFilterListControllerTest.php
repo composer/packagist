@@ -215,6 +215,61 @@ class AdminFilterListControllerTest extends IntegrationTestCase
         static::assertStringNotContainsString('vendor/unrelated', $auditSection, 'Audit log section must not leak entries from a different filter list entry.');
     }
 
+    public function testEditStoresInternalNoteAndRecordsPreviousValueInAudit(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $entry = new FilterListEntry($this->createRemoteEntry('vendor/note-me', '1.0.0'));
+        $entry->updateAttributes('1.0.0', 'initial note');
+
+        $this->store($admin, $entry);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/'.$entry->getPublicId().'/edit');
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('visible to filter list admins only', $crawler->html(), 'The internal note help text must be rendered.');
+
+        $form = $crawler->selectButton('Save')->form();
+        static::assertSame('initial note', $form['filter_list_entry[internalNote]']->getValue(), 'Existing internal note must pre-fill the form.');
+        $form['filter_list_entry[internalNote]'] = 'updated note';
+        $this->client->submit($form);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+        $refreshed = $em->getRepository(FilterListEntry::class)->findOneBy(['publicId' => $entry->getPublicId()]);
+        static::assertNotNull($refreshed);
+        static::assertSame('updated note', $refreshed->getInternalNote());
+
+        $audit = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::FilterListEntryEdited]);
+        static::assertNotNull($audit);
+        static::assertSame('updated note', $audit->attributes['entry']['internal_note']);
+        static::assertSame('initial note', $audit->attributes['previous']['internal_note']);
+    }
+
+    public function testEditClearsInternalNoteWhenLeftEmpty(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $entry = new FilterListEntry($this->createRemoteEntry('vendor/clear-note', '1.0.0'));
+        $entry->updateAttributes('1.0.0', 'some note');
+
+        $this->store($admin, $entry);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/'.$entry->getPublicId().'/edit');
+
+        $form = $crawler->selectButton('Save')->form();
+        $form['filter_list_entry[internalNote]'] = '';
+        $this->client->submit($form);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+        $refreshed = $em->getRepository(FilterListEntry::class)->findOneBy(['publicId' => $entry->getPublicId()]);
+        static::assertNull($refreshed?->getInternalNote(), 'Empty submission must clear the internal note rather than store an empty string.');
+    }
+
     public function testEditClearsOverwriteWhenAdminRevertsToUpstreamVersion(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);

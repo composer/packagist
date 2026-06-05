@@ -287,6 +287,8 @@ class AuditLogDisplayFactory
                 $record->attributes['entry']['package_name'],
                 $record->attributes['entry']['version'],
                 $record->attributes['previous']['version'] ?? $record->attributes['entry']['version'],
+                $record->attributes['entry']['internal_note'] ?? null,
+                $record->attributes['previous']['internal_note'] ?? null,
                 FilterLists::from($record->attributes['entry']['list']),
                 FilterSources::from($record->attributes['entry']['source']),
                 $this->buildActor($record->attributes['actor'] ?? null),

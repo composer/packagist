@@ -112,11 +112,12 @@ class AdminFilterListController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             $previousVersion = $entry->getVersion();
+            $previousInternalNote = $entry->getInternalNote();
 
-            $entry->updateAttributes($data->version);
+            $entry->updateAttributes($data->version, $data->internalNote);
 
             $em = $this->getEM();
-            $em->persist(AuditRecord::filterListEntryEdited($entry, $previousVersion, $this->getActor()));
+            $em->persist(AuditRecord::filterListEntryEdited($entry, $previousVersion, $previousInternalNote, $this->getActor()));
             $em->flush();
 
             $this->filterListEntryUpdateListener->flushChangesToPackages();
