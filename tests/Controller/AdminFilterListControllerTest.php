@@ -652,6 +652,176 @@ class AdminFilterListControllerTest extends IntegrationTestCase
         static::assertNull($dumpedAt, 'Package must be marked for re-dump when its filter list entry is re-enabled.');
     }
 
+    public function testBulkDisableDisablesSelectedEntriesAndRecordsAudit(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $first = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-a', '1.0.0'));
+        $second = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-b', '1.0.0'));
+        $untouched = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-c', '1.0.0'));
+        $this->store($admin, $first, $second, $untouched);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/');
+        $token = $crawler->filter('input[name="token"]')->first()->attr('value');
+
+        $this->client->request('POST', '/admin/filter-lists/bulk', [
+            'token' => $token,
+            'action' => 'disable',
+            'publicIds' => [$first->getPublicId(), $second->getPublicId()],
+        ]);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+        $repo = $em->getRepository(FilterListEntry::class);
+        static::assertTrue($repo->findOneBy(['publicId' => $first->getPublicId()])?->isDisabled());
+        static::assertTrue($repo->findOneBy(['publicId' => $second->getPublicId()])?->isDisabled());
+        static::assertFalse($repo->findOneBy(['publicId' => $untouched->getPublicId()])?->isDisabled(), 'Unselected entries must remain unchanged.');
+
+        $audits = $em->getRepository(AuditRecord::class)->findBy(['type' => AuditRecordType::FilterListEntryDisabled]);
+        static::assertCount(2, $audits, 'One audit record must be written per disabled entry.');
+    }
+
+    public function testBulkEnableEnablesSelectedEntriesAndRecordsAudit(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $first = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-on-a', '1.0.0'));
+        $second = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-on-b', '1.0.0'));
+        $first->disable();
+        $second->disable();
+        $this->store($admin, $first, $second);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/?state=disabled');
+        $token = $crawler->filter('input[name="token"]')->first()->attr('value');
+
+        $this->client->request('POST', '/admin/filter-lists/bulk', [
+            'token' => $token,
+            'action' => 'enable',
+            'publicIds' => [$first->getPublicId(), $second->getPublicId()],
+        ]);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+        $repo = $em->getRepository(FilterListEntry::class);
+        static::assertFalse($repo->findOneBy(['publicId' => $first->getPublicId()])?->isDisabled());
+        static::assertFalse($repo->findOneBy(['publicId' => $second->getPublicId()])?->isDisabled());
+
+        $audits = $em->getRepository(AuditRecord::class)->findBy(['type' => AuditRecordType::FilterListEntryEnabled]);
+        static::assertCount(2, $audits);
+    }
+
+    public function testBulkDisableSkipsAlreadyDisabledEntries(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $active = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-mixed-active', '1.0.0'));
+        $alreadyDisabled = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-mixed-disabled', '1.0.0'));
+        $alreadyDisabled->disable();
+        $this->store($admin, $active, $alreadyDisabled);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/');
+        $token = $crawler->filter('input[name="token"]')->first()->attr('value');
+
+        $this->client->request('POST', '/admin/filter-lists/bulk', [
+            'token' => $token,
+            'action' => 'disable',
+            'publicIds' => [$active->getPublicId(), $alreadyDisabled->getPublicId()],
+        ]);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $audits = $em->getRepository(AuditRecord::class)->findBy(['type' => AuditRecordType::FilterListEntryDisabled]);
+        static::assertCount(1, $audits, 'Only the entry that actually changed state must be audited.');
+    }
+
+    public function testBulkMarksAffectedPackagesStaleForRedump(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $package = self::createPackage('vendor/bulk-stale', 'https://example.com/vendor/bulk-stale');
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-stale', '1.0.0'));
+        $this->store($admin, $package, $entry);
+
+        $em = self::getEM();
+        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = NOW() WHERE name = :name', ['name' => 'vendor/bulk-stale']);
+        $em->clear();
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/');
+        $token = $crawler->filter('input[name="token"]')->first()->attr('value');
+
+        $this->client->request('POST', '/admin/filter-lists/bulk', [
+            'token' => $token,
+            'action' => 'disable',
+            'publicIds' => [$entry->getPublicId()],
+        ]);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $dumpedAt = $em->getConnection()->fetchOne('SELECT dumpedAtV2 FROM package WHERE name = :name', ['name' => 'vendor/bulk-stale']);
+        static::assertNull($dumpedAt, 'Bulk changes must mark affected packages for re-dump.');
+    }
+
+    public function testBulkRequiresCsrfToken(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-csrf', '1.0.0'));
+        $this->store($admin, $entry);
+
+        $this->client->loginUser($admin);
+        $this->client->request('POST', '/admin/filter-lists/bulk', [
+            'token' => 'bogus',
+            'action' => 'disable',
+            'publicIds' => [$entry->getPublicId()],
+        ]);
+
+        static::assertSame(400, $this->client->getResponse()->getStatusCode());
+    }
+
+    public function testBulkRejectsUnknownAction(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $this->store($admin);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/');
+        $token = $crawler->filter('input[name="token"]')->first()->attr('value');
+
+        $this->client->request('POST', '/admin/filter-lists/bulk', [
+            'token' => $token,
+            'action' => 'destroy',
+            'publicIds' => ['PKFE-AAAA-BBBB-CCCC'],
+        ]);
+
+        static::assertSame(400, $this->client->getResponse()->getStatusCode());
+    }
+
+    public function testBulkWithoutSelectionDoesNothing(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bulk-none', '1.0.0'));
+        $this->store($admin, $entry);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/');
+        $token = $crawler->filter('input[name="token"]')->first()->attr('value');
+
+        $this->client->request('POST', '/admin/filter-lists/bulk', [
+            'token' => $token,
+            'action' => 'disable',
+        ]);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $audits = $em->getRepository(AuditRecord::class)->findBy(['type' => AuditRecordType::FilterListEntryDisabled]);
+        static::assertCount(0, $audits);
+    }
+
     private function createRemoteEntry(string $packageName, string $version): RemoteFilterListEntry
     {
         return new RemoteFilterListEntry(

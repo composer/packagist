@@ -62,65 +62,72 @@
 
     <hr>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Package</th>
-                <th>List</th>
-                <th>Version</th>
-                <th>Reason</th>
-                <th>Internal note</th>
-                <th>Source</th>
-                <th>State</th>
-                <th>Updated</th>
-                <th class="text-right">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for entry in paginator %}
-                <tr class="{{ entry.disabled ? 'text-muted' : '' }}">
-                    <td><a href="{{ path('view_package', {name: entry.packageName}) }}">{{ entry.packageName }}</a></td>
-                    <td>{{ entry.list.value }}</td>
-                    <td>
-                        <code>{{ entry.version }}</code>
-                        {% if entry.overwritten %}
-                            <br><small class="text-muted">upstream: <code>{{ entry.remoteVersion }}</code></small>
-                        {% endif %}
-                    </td>
-                    <td>{{ entry.reason }}</td>
-                    <td>{{ entry.internalNote }}</td>
-                    <td>{{ entry.source.displayName }}</td>
-                    <td>
-                        {% if entry.disabled %}
-                            <span class="label label-warning">Disabled</span>
-                        {% else %}
-                            <span class="label label-success">Active</span>
-                        {% endif %}
-                        {% if entry.overwritten %}
-                            <span class="label label-info">Overwritten</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ entry.updatedAt|date('Y-m-d H:i') }}</td>
-                    <td class="text-right">
-                        <a class="btn btn-default btn-xs" href="{{ path('admin_filter_list_edit', {publicId: entry.publicId}) }}">Edit</a>
-                        {% if entry.disabled %}
-                            <form method="post" action="{{ path('admin_filter_list_enable', {publicId: entry.publicId}) }}" style="display:inline">
-                                <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
-                                <button type="submit" class="btn btn-success btn-xs">Re-enable</button>
-                            </form>
-                        {% else %}
-                            <form method="post" action="{{ path('admin_filter_list_disable', {publicId: entry.publicId}) }}" style="display:inline">
-                                <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
-                                <button type="submit" class="btn btn-warning btn-xs">Disable</button>
-                            </form>
-                        {% endif %}
-                    </td>
+    <form method="post" action="{{ path('admin_filter_list_bulk') }}" id="filter-list-bulk-form">
+        <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+
+        <div class="btn-toolbar" style="margin-bottom: 10px">
+            <div class="btn-group">
+                <button type="submit" name="action" value="disable" class="btn btn-warning btn-sm">Disable selected</button>
+                <button type="submit" name="action" value="enable" class="btn btn-success btn-sm">Re-enable selected</button>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" data-bulk-select-all title="Select all entries on this page" /></th>
+                    <th>Package</th>
+                    <th>List</th>
+                    <th>Version</th>
+                    <th>Reason</th>
+                    <th>Internal note</th>
+                    <th>Source</th>
+                    <th>State</th>
+                    <th>Updated</th>
+                    <th class="text-right">Actions</th>
                 </tr>
-            {% else %}
-                <tr><td colspan="9" class="text-center text-muted">No entries match the current filter.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for entry in paginator %}
+                    <tr class="{{ entry.disabled ? 'text-muted' : '' }}">
+                        <td><input type="checkbox" name="publicIds[]" value="{{ entry.publicId }}" data-bulk-select /></td>
+                        <td><a href="{{ path('view_package', {name: entry.packageName}) }}">{{ entry.packageName }}</a></td>
+                        <td>{{ entry.list.value }}</td>
+                        <td>
+                            <code>{{ entry.version }}</code>
+                            {% if entry.overwritten %}
+                                <br><small class="text-muted">upstream: <code>{{ entry.remoteVersion }}</code></small>
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.reason }}</td>
+                        <td>{{ entry.internalNote }}</td>
+                        <td>{{ entry.source.displayName }}</td>
+                        <td>
+                            {% if entry.disabled %}
+                                <span class="label label-warning">Disabled</span>
+                            {% else %}
+                                <span class="label label-success">Active</span>
+                            {% endif %}
+                            {% if entry.overwritten %}
+                                <span class="label label-info">Overwritten</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.updatedAt|date('Y-m-d H:i') }}</td>
+                        <td class="text-right">
+                            <a class="btn btn-default btn-xs" href="{{ path('admin_filter_list_edit', {publicId: entry.publicId}) }}">Edit</a>
+                            {% if entry.disabled %}
+                                <button type="submit" formaction="{{ path('admin_filter_list_enable', {publicId: entry.publicId}) }}" class="btn btn-success btn-xs">Re-enable</button>
+                            {% else %}
+                                <button type="submit" formaction="{{ path('admin_filter_list_disable', {publicId: entry.publicId}) }}" class="btn btn-warning btn-xs">Disable</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="10" class="text-center text-muted">No entries match the current filter.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
 
     {% if paginator.haveToPaginate %}
         <div class="text-center">

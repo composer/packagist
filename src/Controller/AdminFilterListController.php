@@ -213,6 +213,64 @@ class AdminFilterListController extends Controller
         return $this->redirectToRoute('admin_filter_lists');
     }
 
+    #[Route(path: '/admin/filter-lists/bulk', name: 'admin_filter_list_bulk', methods: ['POST'])]
+    public function bulk(Request $request): RedirectResponse
+    {
+        $this->assertCsrf($request);
+
+        $action = $request->request->getString('action');
+        if (!\in_array($action, ['enable', 'disable'], true)) {
+            throw new BadRequestHttpException('Unknown bulk action');
+        }
+
+        $publicIds = array_values(array_filter(
+            $request->request->all('publicIds'),
+            static fn (mixed $id): bool => \is_string($id) && $id !== '',
+        ));
+        if ($publicIds === []) {
+            $this->addFlash('warning', 'No entries selected.');
+
+            return $this->redirectToRoute('admin_filter_lists');
+        }
+
+        $em = $this->getEM();
+        $entries = $em->getRepository(FilterListEntry::class)->findBy(['publicId' => $publicIds]);
+        $actor = $this->getActor();
+
+        $changed = 0;
+        foreach ($entries as $entry) {
+            if ($action === 'disable') {
+                if ($entry->isDisabled()) {
+                    continue;
+                }
+                $entry->disable();
+                $em->persist(AuditRecord::filterListEntryDisabled($entry, $actor));
+                $changed++;
+            } else {
+                if (!$entry->isDisabled()) {
+                    continue;
+                }
+                $entry->enable();
+                $em->persist(AuditRecord::filterListEntryEnabled($entry, $actor));
+                $changed++;
+            }
+        }
+
+        if ($changed > 0) {
+            $em->flush();
+            $this->filterListEntryUpdateListener->flushChangesToPackages();
+        }
+
+        $this->addFlash('success', sprintf(
+            '%d %s %s.',
+            $changed,
+            $changed === 1 ? 'entry' : 'entries',
+            $action === 'disable' ? 'disabled' : 're-enabled',
+        ));
+
+        return $this->redirectToRoute('admin_filter_lists');
+    }
+
     private function findEntry(string $publicId): FilterListEntry
     {
         $entry = $this->getEM()->getRepository(FilterListEntry::class)->findOneByPublicId($publicId);
