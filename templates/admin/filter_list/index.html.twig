@@ -17,7 +17,8 @@
                 <p>
                     Manage filter list entries received from external providers (e.g. malware reports).
                     Entries can be disabled to suppress them from public output, or edited to
-                    correct an upstream version constraint.
+                    correct an upstream version constraint. Manual entries can be added directly
+                    and have all of their properties editable.
                 </p>
             </div>
         </div>
@@ -55,6 +56,8 @@
         </div>
 
         <button type="submit" class="btn btn-default">Filter</button>
+
+        <a class="btn btn-success pull-right" href="{{ path('admin_filter_list_new') }}">Add entry</a>
     </form>
 
     <hr>
@@ -66,6 +69,7 @@
                 <th>List</th>
                 <th>Version</th>
                 <th>Reason</th>
+                <th>Internal note</th>
                 <th>Source</th>
                 <th>State</th>
                 <th>Updated</th>
@@ -84,6 +88,7 @@
                         {% endif %}
                     </td>
                     <td>{{ entry.reason }}</td>
+                    <td>{{ entry.internalNote }}</td>
                     <td>{{ entry.source.displayName }}</td>
                     <td>
                         {% if entry.disabled %}
@@ -112,7 +117,7 @@
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="8" class="text-center text-muted">No entries match the current filter.</td></tr>
+                <tr><td colspan="9" class="text-center text-muted">No entries match the current filter.</td></tr>
             {% endfor %}
         </tbody>
     </table>

@@ -23,7 +23,11 @@
                                         {% if is_granted('ROLE_FILTER_LIST_ADMIN') %}
                                             <a class="pull-right" href="{{ path('admin_filter_list_edit', {publicId: entry.publicId}) }}" title="Edit entry"><span class="glyphicon glyphicon-pencil"></span></a>
                                         {% endif %}
-                                        Reported by: <a href="{{entry.source.url }}"><img alt="{{ entry.source.displayName }}" class="filter-list-log" src="{{ asset(entry.source.logo) }}" /></a>
+                                        {% if entry.source.url and entry.source.logo %}
+                                            Reported by: <a href="{{ entry.source.url }}"><img alt="{{ entry.source.displayName }}" class="filter-list-log" src="{{ asset(entry.source.logo) }}" /></a>
+                                        {% else %}
+                                            Reported by: {{ entry.source.displayName }}
+                                        {% endif %}
                                     </p>
                                 </div>
                             </div>

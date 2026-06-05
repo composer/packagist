@@ -1,0 +1,41 @@
+{% extends "layout.html.twig" %}
+
+{% set showSearchDesc = 'hide' %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block title %}Add filter list entry - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-xs-12 package">
+            <div class="package-header">
+                <h2 class="title">Add filter list entry</h2>
+                <p>
+                    Manually add a filter list entry. Manual entries are not managed by an
+                    external provider and will not be removed by the next provider sync.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            {{ form_start(form) }}
+            {{ form_errors(form) }}
+
+            {{ form_row(form.list) }}
+            {{ form_row(form.source) }}
+            {{ form_row(form.packageName) }}
+            {{ form_row(form.version) }}
+            {{ form_row(form.reason) }}
+            {{ form_row(form.link) }}
+            {{ form_row(form.internalNote) }}
+
+            <button type="submit" class="btn btn-success">Create</button>
+            <a class="btn btn-default" href="{{ path('admin_filter_lists') }}">Cancel</a>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

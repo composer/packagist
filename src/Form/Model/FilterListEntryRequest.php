@@ -14,12 +14,22 @@ namespace App\Form\Model;
 
 use App\Entity\FilterListEntry;
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use Composer\Semver\VersionParser;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
+#[UniqueEntity(
+    fields: ['list', 'packageName', 'version', 'source'],
+    entityClass: FilterListEntry::class,
+    identifierFieldNames: ['id'],
+    message: 'A filter list entry for this list, package, version and source already exists.',
+)]
 class FilterListEntryRequest
 {
+    public ?int $id = null;
+
     #[Assert\NotNull]
     public ?FilterLists $list = null;
 
@@ -40,15 +50,19 @@ class FilterListEntryRequest
 
     public ?string $internalNote = null;
 
+    public FilterSources $source = FilterSources::PACKAGIST;
+
     public static function createFromEntry(FilterListEntry $entry): self
     {
         $request = new self();
+        $request->id = $entry->getId();
         $request->list = $entry->getList();
         $request->packageName = $entry->getPackageName();
         $request->version = $entry->getVersion();
         $request->reason = $entry->getReason();
         $request->link = $entry->getLink();
         $request->internalNote = $entry->getInternalNote();
+        $request->source = $entry->getSource();
 
         return $request;
     }

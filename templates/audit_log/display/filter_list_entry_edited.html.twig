@@ -3,8 +3,17 @@
 <strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
 {{ display.list.value | capitalize }} entry reported by {{ display.source.displayName }} was edited by {{ display.actor.username }}.
 <ul>
+    {% if display.list != display.previousList %}
+        <li>List: {{ display.previousList.value | capitalize }} &rarr; {{ display.list.value | capitalize }}</li>
+    {% endif %}
     {% if display.version != display.previousVersion %}
         <li>Versions: {{ display.previousVersion }} &rarr; {{ display.version }}</li>
+    {% endif %}
+    {% if display.reason != display.previousReason %}
+        <li>Reason: {{ display.previousReason ?: '(none)' }} &rarr; {{ display.reason ?: '(none)' }}</li>
+    {% endif %}
+    {% if display.link != display.previousLink %}
+        <li>Link: {{ display.previousLink ?: '(none)' }} &rarr; {{ display.link ?: '(none)' }}</li>
     {% endif %}
     {% if is_granted('ROLE_FILTER_LIST_ADMIN') and display.internalNote != display.previousInternalNote %}
         <li>Internal note: {{ display.previousInternalNote ?: '(none)' }} &rarr; {{ display.internalNote ?: '(none)' }}</li>

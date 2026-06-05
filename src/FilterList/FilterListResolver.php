@@ -55,7 +55,7 @@ class FilterListResolver
                 continue;
             }
 
-            $new[] = new FilterListEntry($remote);
+            $new[] = FilterListEntry::fromRemote($remote);
         }
 
         $unmatched = [];

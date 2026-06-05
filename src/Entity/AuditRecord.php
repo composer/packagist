@@ -467,9 +467,11 @@ class AuditRecord
         return new self(
             AuditRecordType::FilterListEntryDisabled,
             [
+                'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
                 'actor' => self::getUserData($actor, 'automation'),
             ],
+            vendor: self::getVendorFromPackage($entry->getPackageName()),
             actorId: $actor?->getId(),
         );
     }
@@ -479,24 +481,50 @@ class AuditRecord
         return new self(
             AuditRecordType::FilterListEntryEnabled,
             [
+                'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
                 'actor' => self::getUserData($actor, 'automation'),
             ],
+            vendor: self::getVendorFromPackage($entry->getPackageName()),
             actorId: $actor?->getId(),
         );
     }
 
-    public static function filterListEntryEdited(FilterListEntry $entry, string $previousVersion, ?string $previousInternalNote, ?User $actor): self
+    /**
+     * @param array{list: string, version: string, reason: string|null, link: string|null, internal_note: string|null} $previous
+     *        Snapshot of the editable fields taken before the edit, see {@see self::filterListEntryEditableState()}.
+     */
+    public static function filterListEntryEdited(FilterListEntry $entry, array $previous, ?User $actor): self
     {
         return new self(
             AuditRecordType::FilterListEntryEdited,
             [
+                'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
-                'previous' => ['version' => $previousVersion, 'internal_note' => $previousInternalNote],
+                'previous' => $previous,
                 'actor' => self::getUserData($actor, 'automation'),
             ],
+            vendor: self::getVendorFromPackage($entry->getPackageName()),
             actorId: $actor?->getId(),
         );
+    }
+
+    /**
+     * Captures the values an admin can change on edit, so the resulting
+     * {@see self::filterListEntryEdited()} record can diff every property.
+     * Must be called before the entry is mutated.
+     *
+     * @return array{list: string, version: string, reason: string|null, link: string|null, internal_note: string|null}
+     */
+    public static function filterListEntryEditableState(FilterListEntry $entry): array
+    {
+        return [
+            'list' => $entry->getList()->value,
+            'version' => $entry->getVersion(),
+            'reason' => $entry->getReason(),
+            'link' => $entry->getLink(),
+            'internal_note' => $entry->getInternalNote(),
+        ];
     }
 
     /**
