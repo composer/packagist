@@ -46,9 +46,9 @@ class UpdatePackagesCommand extends Command
         $this
             ->setName('packagist:update')
             ->setDefinition([
-                new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl of all packages, or if a package name is given forces an update of all versions'),
-                new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all versions before an update'),
-                new InputOption('update-equal-refs', null, InputOption::VALUE_NONE, 'Force update of all versions even when they already exist'),
+                new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl now and roll out source/dist URL changes across all versions (dev: full rebuild; stable: URL rewrite via the immutability gate, references stay frozen)'),
+                new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all dev versions before an update, stable versions remain'),
+                new InputOption('update-source-dist-url', null, InputOption::VALUE_NONE, 'Roll out new source/dist URLs across versions (stable rows: narrow URL rewrite via the strict gate; dev rows: full rebuild). Use after a repo URL change.'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
             ])
             ->setDescription('Updates packages')
@@ -62,7 +62,7 @@ class UpdatePackagesCommand extends Command
         $package = $input->getArgument('package');
 
         $deleteBefore = false;
-        $updateEqualRefs = false;
+        $updateSourceDistUrl = false;
         $randomTimes = true;
 
         if (!$this->locker->lockCommand(__CLASS__)) {
@@ -82,12 +82,12 @@ class UpdatePackagesCommand extends Command
             }
             $packages = [['id' => $packageEntity->getId()]];
             if ($force) {
-                $updateEqualRefs = true;
+                $updateSourceDistUrl = true;
             }
             $randomTimes = false;
         } elseif ($force) {
             $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
-            $updateEqualRefs = true;
+            $updateSourceDistUrl = true;
         } else {
             $packages = $this->getEM()->getRepository(Package::class)->getStalePackages();
         }
@@ -100,15 +100,15 @@ class UpdatePackagesCommand extends Command
         if ($input->getOption('delete-before')) {
             $deleteBefore = true;
         }
-        if ($input->getOption('update-equal-refs')) {
-            $updateEqualRefs = true;
+        if ($input->getOption('update-source-dist-url')) {
+            $updateSourceDistUrl = true;
         }
 
         while ($ids) {
             $idsGroup = array_splice($ids, 0, 100);
 
             foreach ($idsGroup as $id) {
-                $job = $this->scheduler->scheduleUpdate($id, 'update cmd', $updateEqualRefs, $deleteBefore, $randomTimes ? new \DateTimeImmutable('+'.random_int(1, 600).'seconds') : null);
+                $job = $this->scheduler->scheduleUpdate($id, 'update cmd', $updateSourceDistUrl, $deleteBefore, $randomTimes ? new \DateTimeImmutable('+'.random_int(1, 600).'seconds') : null);
                 if ($verbose) {
                     $output->writeln('Scheduled update job '.$job->getId().' for package '.$id);
                 }

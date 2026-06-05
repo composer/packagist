@@ -13,6 +13,8 @@
 namespace App\Package;
 
 use App\Audit\AbandonmentReason;
+use App\Audit\VersionDeletionReason;
+use App\Entity\AuditRecord;
 use App\Entity\ConflictLink;
 use App\Entity\Dependent;
 use App\Entity\DevRequireLink;
@@ -30,6 +32,7 @@ use App\Event\PackageAbandonedEvent;
 use App\Event\VersionReferenceChangedEvent;
 use App\HtmlSanitizer\ReadmeImageSanitizer;
 use App\HtmlSanitizer\ReadmeLinkSanitizer;
+use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Service\VersionCache;
@@ -49,6 +52,7 @@ use Composer\Util\ErrorHandler;
 use Composer\Util\HttpDownloader;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerAction;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
@@ -58,6 +62,7 @@ use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\EventDispatcher\Event;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Webmozart\Assert\Assert;
 
 final readonly class VersionUpdatedResult
 {
@@ -76,6 +81,11 @@ final readonly class VersionSkippedResult
     public function __construct(
         public int $id,
         public string $version,
+        /**
+         * True when the skip is because the row is intentionally soft-deleted (admin or maintainer).
+         * The dependent/suggester source selection skips these so a pulled version doesn't poison metadata.
+         */
+        public bool $softDeleted = false,
     ) {
     }
 }
@@ -87,7 +97,21 @@ class Updater
 {
     use \App\Util\DoctrineTrait;
 
-    public const UPDATE_EQUAL_REFS = 1;
+    /**
+     * Propagate a source/dist URL change across every version of a package.
+     *
+     * Stable versions: narrow rewrite via applySourceDistUrlRewrite() — only source.url and
+     * dist.url are touched, references/shasum/etc. are left frozen, and the row is skipped
+     * (with a warning) if any safety check fails. See applySourceDistUrlRewrite() for details.
+     *
+     * Dev versions: forces a full row rebuild even when the source.reference is unchanged,
+     * so the new URLs (and any other metadata) land on the next crawl. This is the
+     * "$flags & UPDATE_SOURCE_DIST_URL" branch in updateInformation().
+     *
+     * Used after a repo rename/move (CLI --update-source-dist-url, the "Update All" UI button,
+     * or the post-rename detection path in ApiController::findGitHubPackagesByRepository()).
+     */
+    public const UPDATE_SOURCE_DIST_URL = 1;
     public const DELETE_BEFORE = 2;
     public const FORCE_DUMP = 4;
 
@@ -132,8 +156,26 @@ class Updater
         private string $mailFromEmail,
         private UrlGeneratorInterface $urlGenerator,
         private EventDispatcherInterface $eventDispatcher,
+        private PackageManager $packageManager,
+        private LoggerInterface $logger,
     ) {
         ErrorHandler::register();
+    }
+
+    /**
+     * Identity used for immutability comparisons: source.reference if present and non-empty,
+     * else dist.reference, else null. A version with no effective reference cannot be imported.
+     */
+    public static function computeEffectiveReference(?string $sourceRef, ?string $distRef): ?string
+    {
+        if (\is_string($sourceRef) && $sourceRef !== '') {
+            return $sourceRef;
+        }
+        if (\is_string($distRef) && $distRef !== '') {
+            return $distRef;
+        }
+
+        return null;
     }
 
     public function __destruct()
@@ -245,7 +287,20 @@ class Updater
         $versionRepository = $this->doctrine->getRepository(Version::class);
 
         if ($flags & self::DELETE_BEFORE) {
-            foreach ($package->getVersions() as $version) {
+            // Stable, published versions are immutable historical records and must never be
+            // hard-deleted. DELETE_BEFORE wipes the dev-branch trackers and lets the normal update
+            // path reconcile stable rows via the immutability gate (matching refs are skipped,
+            // diverging refs are blocked + audited).
+            // Source the rows from the DB rather than $package->getVersions() — the in-memory
+            // collection state depends on how the caller loaded the package, and we must not
+            // silently skip removals just because the collection isn't lazy-loaded yet.
+            /** @var list<Version> $devVersions */
+            $devVersions = $versionRepository->createQueryBuilder('v')
+                ->where('v.package = :package')
+                ->andWhere('v.development = true')
+                ->setParameter('package', $package)
+                ->getQuery()->getResult();
+            foreach ($devVersions as $version) {
                 $versionRepository->remove($version);
             }
 
@@ -260,7 +315,7 @@ class Updater
         $processedVersions = [];
         $idsToMarkUpdated = [];
 
-        /** @var int|false|null $dependentSuggesterSource Version id to use as dependent/suggester source */
+        /** @var int|null $dependentSuggesterSource Version id to use as dependent/suggester source */
         $dependentSuggesterSource = null;
         foreach ($versions as $version) {
             if ($version instanceof AliasPackage) {
@@ -277,7 +332,13 @@ class Updater
             $processedVersions[strtolower($version->getVersion())] = $version;
 
             $result = $this->updateInformation($io, $versionRepository, $package, $existingVersions, $version, $flags, $rootIdentifier, $driver);
-            $versionId = false;
+            if ($result === null) {
+                // version was rejected outright (no usable reference and not in DB)
+                continue;
+            }
+
+            $versionId = null;
+            $versionSoftDeleted = false;
             if ($result instanceof VersionUpdatedResult) {
                 foreach ($result->events as $event) {
                     $this->eventDispatcher->dispatch($event);
@@ -292,14 +353,21 @@ class Updater
                 $versionId = $result->entity->getId();
             } else {
                 $idsToMarkUpdated[] = $result->id;
+                $versionSoftDeleted = $result->softDeleted;
+                // Skipped non-soft-deleted rows (immutable stable, ref-unchanged, ...) still need to
+                // be a valid dependent/suggester source — they ARE the canonical existing row for
+                // this version. Carrying $result->id here avoids pinning $dependentSuggesterSource
+                // to a falsy value on the very first stable iteration and silently disabling the
+                // Dependent::updateDependentSuggesters() call below.
+                if (!$versionSoftDeleted) {
+                    $versionId = $result->id;
+                }
             }
 
-            // use the first version which should be the highest stable version by default
-            if (null === $dependentSuggesterSource) {
+            // pick the default branch when present, otherwise the first non-soft-deleted version
+            if ($version->isDefaultBranch() && !$versionSoftDeleted) {
                 $dependentSuggesterSource = $versionId;
-            }
-            // if default branch is present however we prefer that as the canonical source of dependent/suggester
-            if ($version->isDefaultBranch()) {
+            } elseif (null === $dependentSuggesterSource && !$versionSoftDeleted) {
                 $dependentSuggesterSource = $versionId;
             }
 
@@ -307,24 +375,42 @@ class Updater
             unset($existingVersions[$result->version]);
         }
 
-        if ($dependentSuggesterSource) {
+        if ($dependentSuggesterSource !== null) {
             $this->doctrine->getRepository(Dependent::class)->updateDependentSuggesters($package->getId(), $dependentSuggesterSource);
         }
 
-        // make sure versions that are still present but did not update are not pruned
+        // auto-recover versions still present upstream that had been auto-soft-deleted as missing.
+        // Admin/maintainer-pulled rows (deletionReason in (admin, maintainer)) stay soft-deleted.
         $em->getConnection()->executeStatement(
-            'UPDATE package_version SET updatedAt = :now, softDeletedAt = NULL WHERE id IN (:ids) AND softDeletedAt IS NOT NULL',
-            ['now' => date('Y-m-d H:i:s'), 'ids' => $idsToMarkUpdated],
+            'UPDATE package_version
+                SET updatedAt = :now, softDeletedAt = NULL, deletionReason = NULL, deletionReasonText = NULL
+                WHERE id IN (:ids)
+                  AND softDeletedAt IS NOT NULL
+                  AND (deletionReason IS NULL OR deletionReason = :autoReason)',
+            ['now' => date('Y-m-d H:i:s'), 'autoReason' => VersionDeletionReason::AutoDeletedMissing->value, 'ids' => $idsToMarkUpdated],
             ['ids' => ArrayParameterType::INTEGER]
         );
 
-        // remove outdated versions
+        // remove or soft-mark versions that disappeared from upstream
         foreach ($existingVersions as $version) {
+            $existingReason = $version['deletionReason'] ?? null;
+            $isAutoOrEmpty = $existingReason === null || $existingReason === VersionDeletionReason::AutoDeletedMissing->value;
+            $isDev = (bool) $version['development'];
+
+            // Intentionally-pulled versions (admin/maintainer/hidden): leave them as they are.
+            if (!$isAutoOrEmpty) {
+                continue;
+            }
+
             if (
-                // soft-deleted versions are really purged after a day
-                (null !== $version['softDeletedAt'] && new \DateTime($version['softDeletedAt']) < $deleteDate)
-                // remove v1 normalized versions of dev-master/trunk/default immediately as they have been recreated as dev-master/trunk/default in a non-normalized way
-                || ($version['normalizedVersion'] === '9999999-dev')
+                $isDev
+                && (
+                    // Dev versions track branches and may be hard-purged after a 1-day grace period
+                    (null !== $version['softDeletedAt'] && new \DateTime($version['softDeletedAt']) < $deleteDate)
+                    // ... or immediately if they're legacy v1-normalized dev-master/trunk/default rows that
+                    // got re-created under a non-normalized name
+                    || ($version['normalizedVersion'] === '9999999-dev')
+                )
             ) {
                 $versionEntity = $versionRepository->find($version['id']);
                 if (null !== $versionEntity) {
@@ -333,12 +419,14 @@ class Updater
                 continue;
             }
 
-            // set it to be soft-deleted so next update that occurs after deleteDate (1day) if the
-            // version is still missing it will be really removed
-            $em->getConnection()->executeStatement(
-                'UPDATE package_version SET softDeletedAt = :now WHERE id = :id',
-                ['now' => date('Y-m-d H:i:s'), 'id' => $version['id']]
-            );
+            // First-time soft-mark only. Re-stamping softDeletedAt on every crawl would reset the
+            // 1-day grace window for dev rows and is meaningless noise for stable rows.
+            if (null === $version['softDeletedAt']) {
+                $em->getConnection()->executeStatement(
+                    'UPDATE package_version SET softDeletedAt = :now, deletionReason = :reason WHERE id = :id',
+                    ['now' => date('Y-m-d H:i:s'), 'reason' => VersionDeletionReason::AutoDeletedMissing->value, 'id' => $version['id']]
+                );
+            }
         }
 
         if (null !== ($match = $package->getGitHubComponents())) {
@@ -381,16 +469,174 @@ class Updater
     }
 
     /**
-     * Keys info:
+     * Apply the immutability rule to an existing stable version. Returns the skip result; never mutates
+     * the version's source/dist/metadata. The only DB writes performed here are to lastBlockedReference
+     * (set or clear) and the audit/email side-effects when a new attempted ref is detected.
      *
-     *  - updated (whether the version was updated or needs to be marked as updated)
-     *  - id (version id, can be null for newly created versions)
-     *  - version (normalized version from the composer package)
-     *  - object (Version instance if it was updated)
+     * @param array{id: int, version: string, normalizedVersion: string, development: int, source: array{type: string|null, url: string|null, reference: string|null}|null, dist: array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null, softDeletedAt: string|null, deletionReason: string|null, lastBlockedReference: string|null, defaultBranch: int} $existingVersion
+     */
+    private function applyStableImmutabilityGate(IOInterface $io, \Doctrine\ORM\EntityManagerInterface $em, VersionRepository $versionRepo, Package $package, array $existingVersion, CompletePackageInterface $data, int $flags, VcsDriverInterface $driver, ?string $newEffectiveRef): VersionSkippedResult
+    {
+        $normVersion = $data->getVersion();
+        $prettyVersion = $data->getPrettyVersion();
+        $oldEffectiveRef = self::computeEffectiveReference($existingVersion['source']['reference'] ?? null, $existingVersion['dist']['reference'] ?? null);
+        $lastBlocked = $existingVersion['lastBlockedReference'];
+
+        // Incoming data with no usable reference: refuse to mutate. Don't treat as a block event
+        // (broken driver output, not an upstream re-tag).
+        if ($newEffectiveRef === null) {
+            $io->writeError('<warning>Skipping update of '.$prettyVersion.': incoming data has no usable source/dist reference.</warning>');
+
+            return new VersionSkippedResult(id: $existingVersion['id'], version: strtolower($normVersion));
+        }
+
+        if ($oldEffectiveRef === $newEffectiveRef) {
+            // Divergence resolved: clear lastBlockedReference so the UI badge disappears and a future
+            // re-divergence to this same ref correctly re-fires the audit/email path.
+            if ($lastBlocked !== null) {
+                $em->getConnection()->executeStatement(
+                    'UPDATE package_version SET lastBlockedReference = NULL WHERE id = :id',
+                    ['id' => $existingVersion['id']]
+                );
+            }
+
+            if ($flags & self::UPDATE_SOURCE_DIST_URL) {
+                $this->applySourceDistUrlRewrite($io, $versionRepo, $existingVersion, $data, $driver);
+            }
+
+            return new VersionSkippedResult(id: $existingVersion['id'], version: strtolower($normVersion));
+        }
+
+        // Reference differs: this is an immutability violation. Dedupe by the attempted ref so the
+        // maintainer log and audit table don't accumulate duplicate entries on every crawl.
+        if ($lastBlocked === $newEffectiveRef) {
+            return new VersionSkippedResult(id: $existingVersion['id'], version: strtolower($normVersion));
+        }
+
+        $io->writeError('<warning>Refusing to update stable version '.$prettyVersion.': reference changed (was '.($oldEffectiveRef ?? '<none>').', now '.$newEffectiveRef.'). Stable versions are immutable; tag a new version to publish changes.</warning>');
+
+        // Audit + email + remember the attempted ref.
+        $em->persist(AuditRecord::versionReferenceChangeBlocked($package, $prettyVersion, $oldEffectiveRef, $newEffectiveRef));
+        $em->getConnection()->executeStatement(
+            'UPDATE package_version SET lastBlockedReference = :ref WHERE id = :id',
+            ['ref' => $newEffectiveRef, 'id' => $existingVersion['id']]
+        );
+        $this->packageManager->notifyVersionReferenceChangeBlocked($package, $prettyVersion, $oldEffectiveRef, $newEffectiveRef);
+
+        return new VersionSkippedResult(id: $existingVersion['id'], version: strtolower($normVersion));
+    }
+
+    /**
+     * Strict source/dist URL rewrite for stable versions under UPDATE_SOURCE_DIST_URL.
+     * Rewrites only source.url and dist.url; leaves references, shasum, and every other field alone.
+     * Skips the row (with a specific warning) if any of the safety checks fail.
+     *
+     * @param array{id: int, source: array{type: string|null, url: string|null, reference: string|null}|null, dist: array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null} $existingVersion
+     */
+    private function applySourceDistUrlRewrite(IOInterface $io, VersionRepository $versionRepo, array $existingVersion, CompletePackageInterface $data, VcsDriverInterface $driver): void
+    {
+        $prettyVersion = $data->getPrettyVersion();
+        $skip = function (string $reason) use ($io, $prettyVersion, $data, $existingVersion): void {
+            $this->logger->error('Skipped URL update for '.$data->getName(), ['reason' => $reason, 'prettyVersion' => $prettyVersion, 'old' => $existingVersion, 'new' => $data]);
+            $io->writeError('<warning>Skipping URL update on '.$prettyVersion.': '.$reason.'.</warning>');
+        };
+
+        $oldSource = $existingVersion['source'] ?? null;
+        $oldDist = $existingVersion['dist'] ?? null;
+        $oldSourceRef = $oldSource['reference'] ?? null;
+        $oldDistRef = $oldDist['reference'] ?? null;
+        $newSourceRef = $data->getSourceReference();
+        $newDistRef = $data->getDistReference();
+        $newSourceUrl = $data->getSourceUrl();
+        $newDistUrl = $data->getDistUrl();
+
+        if (!\is_string($oldSourceRef) || $oldSourceRef === '' || !\is_string($oldDistRef) || $oldDistRef === '') {
+            $skip('existing source/dist reference is missing');
+
+            return;
+        }
+        if (!\is_string($newSourceRef) || $newSourceRef === '' || !\is_string($newDistRef) || $newDistRef === '') {
+            $skip('new source/dist reference is missing');
+
+            return;
+        }
+        if (!Preg::isMatch('{^[a-f0-9]{40,}$}', $oldSourceRef) || !Preg::isMatch('{^[a-f0-9]{40,}$}', $oldDistRef)) {
+            $skip('reference is not a 40+ char commit hash');
+
+            return;
+        }
+        if ($oldSourceRef !== $newSourceRef || $oldDistRef !== $newDistRef) {
+            $skip('source/dist reference hashes differ between stored and new data');
+
+            return;
+        }
+        if (!\is_string($newSourceUrl) || $newSourceUrl === '' || !\is_string($newDistUrl) || $newDistUrl === '') {
+            $skip('new source/dist URL is missing');
+
+            return;
+        }
+
+        // Authoritative check: ask the VCS driver what dist URL belongs to this reference.
+        try {
+            $driverDist = $driver->getDist($newDistRef);
+        } catch (\Throwable $e) {
+            $skip('driver getDist() threw: '.$e->getMessage());
+
+            return;
+        }
+        if (!is_array($driverDist) || ($driverDist['url'] ?? null) !== $newDistUrl) {
+            $skip('driver-confirmed dist URL does not match incoming dist URL');
+
+            return;
+        }
+
+        $version = $versionRepo->find($existingVersion['id']);
+        if (null === $version) {
+            $skip('version not found by id');
+
+            return;
+        }
+
+        Assert::notNull($oldSource);
+        Assert::notNull($oldDist);
+        $oldSourceUrl = $oldSource['url'] ?? null;
+        $oldDistUrlStored = $oldDist['url'] ?? null;
+
+        // dist.url was cross-checked against the driver above; source.url is taken from the incoming
+        // data without an equivalent driver check. That asymmetry is acceptable here: this path is
+        // operator-gated (UPDATE_SOURCE_DIST_URL only) and the reference hashes are pinned to the
+        // frozen snapshot, so only the URL can move, never the ref.
+        $newSource = $oldSource;
+        $newSource['url'] = $newSourceUrl;
+        $newDist = $oldDist;
+        $newDist['url'] = $newDistUrl;
+
+        $version->setSource($newSource);
+        $version->setDist($newDist);
+
+        $this->logger->info('Rewrote source/dist URL for stable version', [
+            'package' => $data->getName(),
+            'version' => $prettyVersion,
+            'version_id' => $existingVersion['id'],
+            'source_url_from' => $oldSourceUrl,
+            'source_url_to' => $newSourceUrl,
+            'dist_url_from' => $oldDistUrlStored,
+            'dist_url_to' => $newDistUrl,
+            'reference' => $newSourceRef,
+        ]);
+    }
+
+    /**
+     * Decide what to do with one upstream version vs the DB state, and apply the change.
+     *
+     * Returns:
+     *  - null when the version is rejected outright (e.g. brand-new but no usable reference)
+     *  - VersionSkippedResult when the existing row is left alone (immutable stable, soft-deleted, etc.)
+     *  - VersionUpdatedResult when the row is created or mutated
      *
      * @param ExistingVersionsForUpdate $existingVersions
      */
-    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier, VcsDriverInterface $driver): VersionSkippedResult|VersionUpdatedResult
+    private function updateInformation(IOInterface $io, VersionRepository $versionRepo, Package $package, array $existingVersions, CompletePackageInterface $data, int $flags, string $rootIdentifier, VcsDriverInterface $driver): VersionSkippedResult|VersionUpdatedResult|null
     {
         $em = $this->getEM();
         $version = new Version();
@@ -398,18 +644,39 @@ class Updater
         $postUpdateEvents = [];
 
         $normVersion = $data->getVersion();
+        $newSourceRef = $data->getSourceReference();
+        $newDistRef = $data->getDistReference();
+        $newEffectiveRef = self::computeEffectiveReference($newSourceRef, $newDistRef);
 
         $existingVersion = $existingVersions[strtolower($normVersion)] ?? null;
+
         if ($existingVersion) {
-            $source = $existingVersion['source'];
+            // Intentionally-pulled versions are never recreated or modified by the Updater
+            $existingReason = isset($existingVersion['deletionReason']) ? VersionDeletionReason::tryFrom((string) $existingVersion['deletionReason']) : null;
+            if ($existingReason !== null && $existingReason !== VersionDeletionReason::AutoDeletedMissing) {
+                return new VersionSkippedResult(
+                    id: $existingVersion['id'],
+                    version: strtolower($normVersion),
+                    softDeleted: true,
+                );
+            }
+
+            // Stable-version immutability gate: any existing stable version is frozen.
+            if (!$data->isDev()) {
+                return $this->applyStableImmutabilityGate($io, $em, $versionRepo, $package, $existingVersion, $data, $flags, $driver, $newEffectiveRef);
+            }
+        } elseif ($newEffectiveRef === null) {
+            // Brand-new version with no usable identity: refuse to create.
+            $io->writeError('<warning>Skipping '.$data->getPrettyVersion().': no usable source/dist reference.</warning>');
+
+            return null;
+        }
+
+        if ($existingVersion) {
+            // Dev-version flow (existing version). Update on reference change, or abandoned flags & default-branch status changes.
             if (
-                // update if the source reference has changed (re-tag or new commit on branch)
-                ($source['reference'] ?? null) !== $data->getSourceReference()
-                // or the source has some corrupted github private url
-                || (isset($source['url']) && \is_string($source['url']) && Preg::isMatch('{^git@github.com:.*?\.git$}', $source['url']))
-                // or if the right flag is set
-                || ($flags & self::UPDATE_EQUAL_REFS)
-                // or if the package must be marked abandoned from composer.json
+                ($existingVersion['source']['reference'] ?? null) !== $newSourceRef
+                || ($flags & self::UPDATE_SOURCE_DIST_URL)
                 || ($data->isAbandoned() && !$package->isAbandoned())
                 || ($data->isAbandoned() && $data->getReplacementPackage() !== $package->getReplacementPackage())
             ) {
@@ -418,10 +685,8 @@ class Updater
                     throw new \LogicException('At this point a version should always be found');
                 }
                 $versionId = $version->getId();
-            } elseif (
+            } elseif ($data->isDefaultBranch() !== (bool) $existingVersion['defaultBranch']) {
                 // if the version default branch state has changed we update just that
-                $data->isDefaultBranch() !== (bool) $existingVersion['defaultBranch']
-            ) {
                 $version = $versionRepo->find($existingVersion['id']);
                 if (null === $version) {
                     throw new \LogicException('At this point a version should always be found');
@@ -478,6 +743,8 @@ class Updater
         $version->setPackage($package);
         $version->setUpdatedAt(new \DateTimeImmutable());
         $version->setSoftDeletedAt(null);
+        $version->setDeletionReason(null);
+        $version->setDeletionReasonText(null);
         $version->setReleasedAt($data->getReleaseDate() === null ? null : \DateTimeImmutable::createFromInterface($data->getReleaseDate()));
 
         if ($data->getSourceType() && !in_array($data->getSourceType(), ['perforce', 'fossil'], true)) { // null or '' here explicitly means no source and will be nulled, do not change this behavior

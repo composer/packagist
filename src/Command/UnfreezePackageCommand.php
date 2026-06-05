@@ -13,6 +13,9 @@
 namespace App\Command;
 
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
+use App\Entity\Version;
+use App\Entity\VersionRepository;
 use App\Model\ProviderManager;
 use App\Service\Scheduler;
 use Doctrine\Persistence\ManagerRegistry;
@@ -62,7 +65,14 @@ class UnfreezePackageCommand extends Command
         $this->providerManager->insertPackage($package);
         $package->setCrawledAt(null);
         $package->setUpdatedAt(new \DateTimeImmutable());
+        $wasSpam = $package->getFreezeReason() === PackageFreezeReason::Spam;
         $package->unfreeze();
+
+        if ($wasSpam) {
+            /** @var VersionRepository $versionRepo */
+            $versionRepo = $this->getEM()->getRepository(Version::class);
+            $versionRepo->recoverHiddenVersionsForPackage($package, null);
+        }
 
         $this->getEM()->flush();
 

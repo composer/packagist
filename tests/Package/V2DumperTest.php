@@ -199,6 +199,28 @@ class V2DumperTest extends IntegrationTestCase
         $this->assertFileDoesNotExist($releaseFile);
     }
 
+    public function testSoftDeletedVersionIsExcludedFromMetadata(): void
+    {
+        $package = self::createPackage('acme/pkg-sd', 'https://example.com/acme/pkg-sd');
+        $kept = $this->createVersion($package, '1.0.0');
+        $deleted = $this->createVersion($package, '1.1.0');
+        $deleted->setSoftDeletedAt(new \DateTimeImmutable());
+        $deleted->setDeletionReason(\App\Audit\VersionDeletionReason::DeletedByMaintainer);
+        $this->store($package, $kept, $deleted);
+
+        $this->dumper->dump([$package->getId()], force: true);
+
+        $releaseFile = $this->buildDir.'/p2/acme/pkg-sd.json';
+        $this->assertFileExists($releaseFile);
+
+        $data = json_decode((string) file_get_contents($releaseFile), true);
+        $entries = $data['packages']['acme/pkg-sd'];
+        $versionsInDump = array_map(static fn (array $row): string => $row['version'] ?? '', $entries);
+
+        $this->assertContains('1.0.0', $versionsInDump);
+        $this->assertNotContains('1.1.0', $versionsInDump, 'soft-deleted version must not appear in metadata dump');
+    }
+
     public function testDumpRootAdvertisesFilterSummaryUrl(): void
     {
         $this->dumper->dumpRoot();

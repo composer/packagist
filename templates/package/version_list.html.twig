@@ -2,7 +2,9 @@
     <ul class="versions">
         {% for version in versions %}
             {% set expanded = version.id == expandedId|default(false) %}
-            <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
+            {% set softDeleted = version.softDeletedAt is not null %}
+            {% set reason = version.deletionReason %}
+            <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}{% if softDeleted %} version-soft-deleted{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
                 <a rel="nofollow noindex" href="#{{ version.version }}" class="version-number">
                     {{- version.version -}}
                     {% if version.hasVersionAlias() %}
@@ -22,11 +24,59 @@
                     </a>
                 {% endif %}
 
-                {% if deleteVersionCsrfToken is defined and deleteVersionCsrfToken is not empty %}
-                <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="DELETE">
-                    <input type="hidden" name="_token" value="{{ deleteVersionCsrfToken }}" />
-                    <i class="submit glyphicon glyphicon-remove"></i>
-                </form>
+                {% if version.lastBlockedReference is not null and not softDeleted %}
+                    <a rel="nofollow noindex" class="action-alert retag-blocked-alert" href="{{ path('about_version_immutability') }}" title="Upstream re-tag blocked — Packagist may no longer match the VCS repo for this version">
+                        <i class="glyphicon glyphicon-warning-sign"></i>
+                    </a>
+                {% endif %}
+
+                {% if softDeleted %}
+                    {% set deletionTitle = 'Deleted' %}
+                    {% set deletionIcon = 'glyphicon-trash' %}
+                    {% if reason == enum('App\\Audit\\VersionDeletionReason').DeletedByMaintainer %}
+                        {% set deletionTitle = 'Deleted by maintainer on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' %}
+                    {% elseif reason == enum('App\\Audit\\VersionDeletionReason').DeletedByAdmin %}
+                        {% set deletionTitle = 'Removed by admin on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' ~ (version.deletionReasonText ? ': ' ~ version.deletionReasonText : '') %}
+                    {% elseif reason == enum('App\\Audit\\VersionDeletionReason').AutoDeletedMissing %}
+                        {% set deletionTitle = 'No longer found in upstream repository' %}
+                    {% elseif reason == enum('App\\Audit\\VersionDeletionReason').Hidden %}
+                        {% set deletionTitle = 'Hidden by admin on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' ~ (version.deletionReasonText ? ': ' ~ version.deletionReasonText : '') %}
+                        {% set deletionIcon = 'glyphicon-eye-close' %}
+                    {% endif %}
+                    <span class="action-alert deletion-alert" title="{{ deletionTitle }}">
+                        <i class="glyphicon {{ deletionIcon }}"></i>
+                    </span>
+                {% endif %}
+
+                {% if not softDeleted and canDeleteVersion|default(false) %}
+                    {% if canHideVersion|default(false) %}
+                        <form class="hide-version" action="{{ path("admin_hide_version", {"versionId": version.id}) }}" method="POST">
+                            <input type="hidden" name="_token" value="{{ manageVersionsCsrfToken }}" />
+                            <i class="submit glyphicon glyphicon-eye-close" title="Hide version from public"></i>
+                        </form>
+                    {% endif %}
+                    <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="DELETE"
+                          {% if canAdminDeleteVersion|default(false) %}
+                              data-admin="1"
+                              data-admin-url="{{ path("admin_delete_version", {"versionId": version.id}) }}"
+                          {% endif %}
+                          >
+                        <input type="hidden" name="_token" value="{{ manageVersionsCsrfToken }}" />
+                        <i class="submit glyphicon glyphicon-remove" title="{% if version.isDevelopment() %}Hard-delete dev version permanently{% else %}Soft-delete stable version{% endif %}{% if canAdminDeleteVersion|default(false) %} (or remove with reason){% endif %}"></i>
+                    </form>
+                {% endif %}
+
+                {% set canRecover = false %}
+                {% if softDeleted and canDeleteVersion|default(false) %}
+                    {% if reason is null or reason.isRecoverableByMaintainer() or is_granted(enum('App\\Security\\Voter\\PackageActions').AdminDeleteVersion.value, package) %}
+                        {% set canRecover = true %}
+                    {% endif %}
+                {% endif %}
+                {% if canRecover %}
+                    <form class="recover-version" action="{{ path("recover_version", {"versionId": version.id}) }}" method="POST">
+                        <input type="hidden" name="_token" value="{{ manageVersionsCsrfToken }}" />
+                        <i class="submit glyphicon glyphicon-repeat" title="Recover version"></i>
+                    </form>
                 {% endif %}
             </li>
         {% endfor %}

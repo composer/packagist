@@ -50,14 +50,14 @@ parameters:
         VersionData: 'array<int, array{require: VersionDataLinks, devRequire: VersionDataLinks, suggest: VersionDataLinks, conflict: VersionDataLinks, provide: VersionDataLinks, replace: VersionDataLinks, tags: list<string>}>'
         VersionDataLinks: 'array<array{version_id: int, name: string, version: string}>'
 
-        ExistingVersionsForUpdate: 'array<string, array{id: int, version: string, normalizedVersion: string, source: PackageSource, softDeletedAt: string|null, defaultBranch: int}>'
+        ExistingVersionsForUpdate: 'array<string, array{id: int, version: string, normalizedVersion: string, development: int, source: PackageSource, dist: PackageDist, softDeletedAt: string|null, deletionReason: string|null, lastBlockedReference: string|null, defaultBranch: int}>'
 
         PackageAutoloadRules: 'array{psr-0?: array<string, string|string[]>, psr-4?: array<string, string|string[]>, classmap?: list<string>, files?: list<string>, exclude-from-classmap?: list<string>}'
         PackageDist: 'array{url: string|null, type: string|null, reference: string|null, shasum: string|null}|null'
         PackageSource: 'array{url: string|null, type: string|null, reference: string|null}|null'
 
         AnyJob: 'array<string, bool|int|string>'
-        PackageUpdateJob: 'array{id: int, update_equal_refs: bool, delete_before: bool, force_dump: bool, source: string}'
+        PackageUpdateJob: 'array{id: int, update_source_dist_url: bool, delete_before: bool, force_dump: bool, source: string}'
         GitHubUserMigrateJob: 'array{id: int, old_scope: string, new_scope: string}'
         SecurityAdvisoryJob: 'array{source: string}'
         FilterListJob: 'array{list: string, source: string}'

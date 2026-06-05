@@ -12,8 +12,16 @@
 
 namespace App\Tests\Package;
 
+use App\Audit\AuditRecordType;
+use App\Audit\VersionDeletionReason;
+use App\Entity\AuditRecord;
+use App\Entity\Dependent;
 use App\Entity\Package;
 use App\Entity\PackageReadme;
+use App\Entity\RequireLink;
+use App\Entity\Version;
+use App\Entity\VersionRepository;
+use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\Updater;
@@ -27,9 +35,9 @@ use Composer\Repository\Vcs\GitDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
+use Psr\Log\NullLogger;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -58,21 +66,26 @@ class UpdaterTest extends IntegrationTestCase
         $registry = static::getContainer()->get(ManagerRegistry::class);
 
         $providerManagerMock = $this->createStub(ProviderManager::class);
-        $this->driverMock = $this->createMock(GitDriver::class);
 
         $package = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
         $this->repositoryMock->method('getPackages')->willReturn([
             $package,
         ]);
-        $this->repositoryMock->method('getDriver')->willReturn($this->driverMock);
 
         $versionIdCache = $this->createStub(VersionIdCache::class);
 
         $mailerMock = $this->createStub(MailerInterface::class);
         $routerMock = $this->createStub(UrlGeneratorInterface::class);
         $eventDispatcherMock = $this->createStub(EventDispatcher::class);
+        $packageManagerMock = $this->createStub(PackageManager::class);
 
-        $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock, $eventDispatcherMock);
+        $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock, $eventDispatcherMock, $packageManagerMock, new NullLogger());
+    }
+
+    private function bindReadmeDriver(): void
+    {
+        $this->driverMock = $this->createMock(GitDriver::class);
+        $this->repositoryMock->method('getDriver')->willReturn($this->driverMock);
     }
 
     protected function tearDown(): void
@@ -83,6 +96,7 @@ class UpdaterTest extends IntegrationTestCase
 
     public function testUpdatesTheReadme(): void
     {
+        $this->bindReadmeDriver();
         $this->driverMock->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'README.md']);
@@ -117,6 +131,7 @@ class UpdaterTest extends IntegrationTestCase
 
             EOR;
 
+        $this->bindReadmeDriver();
         $this->driverMock->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'README.md']);
@@ -147,6 +162,7 @@ class UpdaterTest extends IntegrationTestCase
 
             EOR;
 
+        $this->bindReadmeDriver();
         $this->driverMock->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'README.md']);
@@ -161,6 +177,7 @@ class UpdaterTest extends IntegrationTestCase
 
     public function testSurroundsTextReadme(): void
     {
+        $this->bindReadmeDriver();
         $this->driverMock->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'README.txt']);
@@ -175,6 +192,7 @@ class UpdaterTest extends IntegrationTestCase
 
     public function testUnderstandsDifferentFileNames(): void
     {
+        $this->bindReadmeDriver();
         $this->driverMock->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->method('getComposerInformation')
                          ->willReturn(['readme' => 'liesmich']);
@@ -187,7 +205,6 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame('<pre>This is the readme</pre>', $readme->contents);
     }
 
-    #[AllowMockObjectsWithoutExpectations]
     public function testReadmeParsing(): void
     {
         $readme = <<<'SOURCE'
@@ -312,5 +329,469 @@ class UpdaterTest extends IntegrationTestCase
 
 
             EXPECTED, $readme);
+    }
+
+    public function testStableVersionWithUnchangedRefStaysSkipped(): void
+    {
+        $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+
+        $upstream = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $packageManagerMock = $this->createMock(PackageManager::class);
+        $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
+        $this->rebuildUpdater($packageManagerMock);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $blocked = $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked);
+        self::assertSame(0, $blocked);
+    }
+
+    public function testStableVersionWithChangedRefIsBlockedAndAudited(): void
+    {
+        $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+
+        $upstream = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', '9999999999999999');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $packageManagerMock = $this->createMock(PackageManager::class);
+        $packageManagerMock->expects($this->once())->method('notifyVersionReferenceChangeBlocked')
+            ->with($this->package, '1.0.0', 'abcdef1234567890', '9999999999999999');
+        $this->rebuildUpdater($packageManagerMock);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($reloaded);
+        self::assertSame('abcdef1234567890', $reloaded->getSource()['reference'] ?? null, 'stored source ref must not change on block');
+        self::assertSame('9999999999999999', $reloaded->getLastBlockedReference());
+
+        $audit = $em->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditRecordType::VersionReferenceChangeBlocked->value,
+            'packageId' => $this->package->getId(),
+        ]);
+        self::assertNotNull($audit);
+        self::assertSame('abcdef1234567890', $audit->attributes['ref_from']);
+        self::assertSame('9999999999999999', $audit->attributes['ref_to']);
+    }
+
+    public function testStableBlockedTwiceWithSameRefDoesNotDuplicateAudit(): void
+    {
+        $version = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $version->setLastBlockedReference('9999999999999999');
+        self::getEM()->persist($version);
+        self::getEM()->flush();
+
+        $upstream = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', '9999999999999999');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $packageManagerMock = $this->createMock(PackageManager::class);
+        $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
+        $this->rebuildUpdater($packageManagerMock);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
+    }
+
+    public function testStableRevertClearsLastBlockedReference(): void
+    {
+        $version = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $version->setLastBlockedReference('9999999999999999');
+        self::getEM()->persist($version);
+        self::getEM()->flush();
+
+        // upstream goes back to the original ref
+        $upstream = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $packageManagerMock = $this->createMock(PackageManager::class);
+        $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
+        $this->rebuildUpdater($packageManagerMock);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->findOneBy(['name' => 'test/pkg']);
+        self::assertNotNull($reloaded);
+        self::assertNull($reloaded->getLastBlockedReference(), 'lastBlockedReference must be cleared when upstream reverts');
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
+    }
+
+    public function testIntentionallySoftDeletedStableIsNotRecreated(): void
+    {
+        $version = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $version->setSoftDeletedAt(new \DateTimeImmutable('-2 hours'));
+        $version->setDeletionReason(VersionDeletionReason::DeletedByMaintainer);
+        self::getEM()->persist($version);
+        self::getEM()->flush();
+
+        $upstream = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->findOneBy(['name' => 'test/pkg']);
+        self::assertNotNull($reloaded);
+        self::assertNotNull($reloaded->getSoftDeletedAt(), 'maintainer-soft-deleted row must stay soft-deleted across an update run');
+        self::assertSame(VersionDeletionReason::DeletedByMaintainer, $reloaded->getDeletionReason());
+    }
+
+    public function testBrandNewVersionWithoutEffectiveRefIsRejected(): void
+    {
+        // construct an upstream version with neither source nor dist reference
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em = self::getEM();
+        $em->clear();
+        $row = $em->getRepository(Version::class)->findOneBy(['name' => 'test/pkg']);
+        self::assertNull($row, 'a version with no usable reference must not be created');
+    }
+
+    public function testAutoSoftDeletedDevVersionIsRecoveredWhenBranchReappearsWithNewRef(): void
+    {
+        $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'oldref1234567890');
+        $existing->setSoftDeletedAt(new \DateTimeImmutable('-2 hours'));
+        $existing->setDeletionReason(VersionDeletionReason::AutoDeletedMissing);
+        self::getEM()->persist($existing);
+        self::getEM()->flush();
+
+        $upstream = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'newref9999999999');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-main']);
+        self::assertNotNull($reloaded);
+        self::assertNull($reloaded->getSoftDeletedAt(), 'dev version must be recovered when branch reappears');
+        self::assertNull($reloaded->getDeletionReason());
+        self::assertSame('newref9999999999', $reloaded->getSource()['reference'] ?? null);
+    }
+
+    public function testDeleteBeforeWipesDevRowsButPreservesStableAndSoftDeletedStable(): void
+    {
+        // Seed three rows: an active stable, a maintainer-soft-deleted stable, and a dev branch.
+        // DELETE_BEFORE must wipe only the dev row, leave both stable rows untouched, and the
+        // post-loop prune must not crash on the survivors after $em->refresh($package).
+        $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $softDeleted = $this->seedStableVersion($this->package, '1.1.0', '1.1.0.0', '1234567890abcdef');
+        $softDeleted->setSoftDeletedAt(new \DateTimeImmutable('-2 hours'));
+        $softDeleted->setDeletionReason(VersionDeletionReason::DeletedByMaintainer);
+        $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        self::getEM()->persist($softDeleted);
+        self::getEM()->flush();
+
+        // Upstream only returns the active stable version — dev-main has disappeared from upstream
+        // and 1.1.0 is also missing (consistent with the maintainer pull).
+        $upstream = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $packageManagerMock = $this->createMock(PackageManager::class);
+        $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
+        $this->rebuildUpdater($packageManagerMock);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::DELETE_BEFORE);
+
+        $em = self::getEM();
+        $em->clear();
+        $versionRepo = $em->getRepository(Version::class);
+
+        $active = $versionRepo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($active, 'active stable row must survive DELETE_BEFORE');
+        self::assertNull($active->getSoftDeletedAt());
+        self::assertSame('abcdef1234567890', $active->getSource()['reference'] ?? null);
+
+        $reloadedSoftDeleted = $versionRepo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.1.0.0']);
+        self::assertNotNull($reloadedSoftDeleted, 'maintainer-soft-deleted stable row must survive DELETE_BEFORE');
+        self::assertNotNull($reloadedSoftDeleted->getSoftDeletedAt(), 'soft-delete marker must stay');
+        self::assertSame(VersionDeletionReason::DeletedByMaintainer, $reloadedSoftDeleted->getDeletionReason());
+
+        $dev = $versionRepo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-main']);
+        self::assertNull($dev, 'dev row must be hard-deleted by DELETE_BEFORE');
+
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
+    }
+
+    public function testDependentSuggesterSourceUpdatedForUnchangedStableVersion(): void
+    {
+        // Regression guard: a non-soft-deleted stable row that survives the immutability gate
+        // unchanged must still seed the dependent/suggester tables for the package — even though
+        // updateInformation returns VersionSkippedResult (no entity is loaded for the skipped row).
+        // Previously $versionId defaulted to false on the skip path, so the first such version
+        // pinned $dependentSuggesterSource to false and updateDependentSuggesters() never ran.
+        $em = self::getEM();
+        $version = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $link = new RequireLink();
+        $link->setVersion($version);
+        $link->setPackageName('composer/semver');
+        $link->setPackageVersion('^3.2.0');
+        $em->persist($link);
+        $em->flush();
+
+        $upstream = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $dependents = $em->getRepository(Dependent::class)->findBy(['package' => $this->package->getId()]);
+        self::assertCount(1, $dependents, 'dependent row must be (re)inserted from the unchanged stable version');
+        self::assertSame('composer/semver', $dependents[0]->getPackageName());
+    }
+
+    public function testUpdateSourceDistUrlRewritesUrlsViaEntityAndKeepsRefsAndShasumIntact(): void
+    {
+        $em = self::getEM();
+        $ref = str_repeat('a', 40);
+        $shasum = str_repeat('b', 64);
+
+        $version = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', $ref);
+        $version->setSource(['type' => 'git', 'url' => 'https://old.example.com/test/pkg.git', 'reference' => $ref]);
+        $version->setDist(['type' => 'zip', 'url' => 'https://old.example.com/dist/'.$ref, 'reference' => $ref, 'shasum' => $shasum]);
+        $em->persist($version);
+        $em->flush();
+        $versionId = $version->getId();
+
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://new.example.com/test/pkg.git');
+        $upstream->setSourceReference($ref);
+        $upstream->setDistType('zip');
+        $upstream->setDistUrl('https://new.example.com/dist/'.$ref);
+        $upstream->setDistReference($ref);
+        // upstream shasum intentionally differs to prove the rewrite does NOT touch shasum
+        $upstream->setDistSha1Checksum(str_repeat('c', 64));
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+
+        $driver = $this->createStub(GitDriver::class);
+        $driver->method('getRootIdentifier')->willReturn('master');
+        $driver->method('getComposerInformation')->willReturn([]);
+        $driver->method('getDist')->willReturn(['type' => 'zip', 'url' => 'https://new.example.com/dist/'.$ref, 'reference' => $ref, 'shasum' => $shasum]);
+        $this->repositoryMock->method('getDriver')->willReturn($driver);
+
+        $packageManagerMock = $this->createMock(PackageManager::class);
+        $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
+        $this->rebuildUpdater($packageManagerMock);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::UPDATE_SOURCE_DIST_URL);
+
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->find($versionId);
+        self::assertNotNull($reloaded);
+        self::assertSame('https://new.example.com/test/pkg.git', $reloaded->getSource()['url'] ?? null);
+        self::assertSame($ref, $reloaded->getSource()['reference'] ?? null, 'source.reference must not change');
+        self::assertSame('git', $reloaded->getSource()['type'] ?? null);
+        self::assertSame('https://new.example.com/dist/'.$ref, $reloaded->getDist()['url'] ?? null);
+        self::assertSame($ref, $reloaded->getDist()['reference'] ?? null, 'dist.reference must not change');
+        self::assertSame($shasum, $reloaded->getDist()['shasum'] ?? null, 'dist.shasum must not be overwritten');
+
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChanged));
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
+    }
+
+    public function testUpdateSourceDistUrlSkipsWhenDriverDistUrlDoesNotMatch(): void
+    {
+        $em = self::getEM();
+        $ref = str_repeat('a', 40);
+        $shasum = str_repeat('b', 64);
+
+        $version = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', $ref);
+        $version->setSource(['type' => 'git', 'url' => 'https://old.example.com/test/pkg.git', 'reference' => $ref]);
+        $version->setDist(['type' => 'zip', 'url' => 'https://old.example.com/dist/'.$ref, 'reference' => $ref, 'shasum' => $shasum]);
+        $em->persist($version);
+        $em->flush();
+        $versionId = $version->getId();
+
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://attacker.example.com/test/pkg.git');
+        $upstream->setSourceReference($ref);
+        $upstream->setDistType('zip');
+        $upstream->setDistUrl('https://attacker.example.com/dist/'.$ref);
+        $upstream->setDistReference($ref);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+
+        $driver = $this->createStub(GitDriver::class);
+        $driver->method('getRootIdentifier')->willReturn('master');
+        $driver->method('getComposerInformation')->willReturn([]);
+        // driver-confirmed dist URL points elsewhere — the incoming claim must be rejected
+        $driver->method('getDist')->willReturn(['type' => 'zip', 'url' => 'https://different.example.com/dist/'.$ref, 'reference' => $ref, 'shasum' => $shasum]);
+        $this->repositoryMock->method('getDriver')->willReturn($driver);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::UPDATE_SOURCE_DIST_URL);
+
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->find($versionId);
+        self::assertNotNull($reloaded);
+        self::assertSame('https://old.example.com/test/pkg.git', $reloaded->getSource()['url'] ?? null, 'URL must not be rewritten when driver disagrees');
+        self::assertSame('https://old.example.com/dist/'.$ref, $reloaded->getDist()['url'] ?? null);
+    }
+
+    public function testAutoSoftDeletedDevVersionIsRecoveredWhenBranchReappearsWithUnchangedRef(): void
+    {
+        $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'sameref1234567890');
+        $existing->setSoftDeletedAt(new \DateTimeImmutable('-2 hours'));
+        $existing->setDeletionReason(VersionDeletionReason::AutoDeletedMissing);
+        self::getEM()->persist($existing);
+        self::getEM()->flush();
+
+        // upstream re-appears with the *same* ref the row had before being auto-soft-deleted
+        $upstream = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'sameref1234567890');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-main']);
+        self::assertNotNull($reloaded);
+        self::assertNull($reloaded->getSoftDeletedAt(), 'auto-soft-deleted dev rows must be recovered even when the ref is unchanged');
+        self::assertNull($reloaded->getDeletionReason());
+    }
+
+    public function testStableVersionMissingUpstreamIsSoftDeletedNotRemovedThenRecovers(): void
+    {
+        $em = self::getEM();
+        // Two active stable versions. Upstream will drop 1.0.0 but keep 1.1.0 around so the version
+        // list is never empty (and the recover SQL always has a non-empty id set to work with).
+        $gone = $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $kept = $this->seedStableVersion($this->package, '1.1.0', '1.1.0.0', 'fedcba0987654321');
+        $goneId = $gone->getId();
+        $keptId = $kept->getId();
+
+        // Crawl 1: 1.0.0 has disappeared upstream. As an immutable stable version it must be
+        // soft-deleted (auto_missing), never hard-deleted — its (package, version) slot must persist.
+        $upstreamKept = $this->buildCompletePackage('test/pkg', '1.1.0', '1.1.0.0', 'fedcba0987654321');
+        $repo1 = $this->createStub(VcsRepository::class);
+        $repo1->method('getPackages')->willReturn([$upstreamKept]);
+        $repo1->method('getDriver')->willReturn($this->stableDriver());
+        $this->updater->update($this->ioMock, $this->config, $this->package, $repo1);
+
+        $em->clear();
+        $afterPrune = $em->getRepository(Version::class)->find($goneId);
+        self::assertNotNull($afterPrune, 'immutable stable version must never be hard-deleted when its tag disappears');
+        self::assertNotNull($afterPrune->getSoftDeletedAt(), 'missing stable version must be soft-deleted');
+        self::assertSame(VersionDeletionReason::AutoDeletedMissing, $afterPrune->getDeletionReason());
+        self::assertNull($em->getRepository(Version::class)->find($keptId)?->getSoftDeletedAt(), 'still-present stable version stays active');
+
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+
+        // Crawl 2: the tag reappears at the same ref → the version auto-recovers.
+        $upstreamGone = $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $repo2 = $this->createStub(VcsRepository::class);
+        $repo2->method('getPackages')->willReturn([$upstreamGone, $upstreamKept]);
+        $repo2->method('getDriver')->willReturn($this->stableDriver());
+        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+
+        $em->clear();
+        $recovered = $em->getRepository(Version::class)->find($goneId);
+        self::assertNotNull($recovered);
+        self::assertNull($recovered->getSoftDeletedAt(), 'stable version must auto-recover when its tag reappears');
+        self::assertNull($recovered->getDeletionReason());
+    }
+
+    private function stableDriver(): VcsDriverInterface&Stub
+    {
+        $driver = $this->createStub(GitDriver::class);
+        $driver->method('getRootIdentifier')->willReturn('master');
+        $driver->method('getComposerInformation')->willReturn([]);
+
+        return $driver;
+    }
+
+    private function seedStableVersion(Package $package, string $prettyVersion, string $normalizedVersion, ?string $sourceRef): Version
+    {
+        return $this->seedVersion($package, $prettyVersion, $normalizedVersion, $sourceRef, false);
+    }
+
+    private function seedDevVersion(Package $package, string $prettyVersion, string $normalizedVersion, ?string $sourceRef): Version
+    {
+        return $this->seedVersion($package, $prettyVersion, $normalizedVersion, $sourceRef, true);
+    }
+
+    private function seedVersion(Package $package, string $prettyVersion, string $normalizedVersion, ?string $sourceRef, bool $isDev): Version
+    {
+        $em = self::getEM();
+        $v = new Version();
+        $v->setPackage($package);
+        $v->setName($package->getName());
+        $v->setVersion($prettyVersion);
+        $v->setNormalizedVersion($normalizedVersion);
+        $v->setDevelopment($isDev);
+        $v->setLicense([]);
+        $v->setAutoload([]);
+        if ($sourceRef !== null) {
+            $v->setSource(['type' => 'git', 'url' => 'https://example.com/test/pkg', 'reference' => $sourceRef]);
+        }
+        $em->persist($v);
+        $em->flush();
+
+        return $v;
+    }
+
+    private function buildCompletePackage(string $name, string $prettyVersion, string $normalizedVersion, string $sourceRef): CompletePackage
+    {
+        $p = new CompletePackage($name, $normalizedVersion, $prettyVersion);
+        $p->setSourceType('git');
+        $p->setSourceUrl('https://example.com/'.$name);
+        $p->setSourceReference($sourceRef);
+
+        return $p;
+    }
+
+    private function rebuildUpdater(PackageManager $packageManager): void
+    {
+        $registry = static::getContainer()->get(ManagerRegistry::class);
+        $providerManagerMock = $this->createStub(ProviderManager::class);
+        $versionIdCache = $this->createStub(VersionIdCache::class);
+        $mailerMock = $this->createStub(MailerInterface::class);
+        $routerMock = $this->createStub(UrlGeneratorInterface::class);
+        $eventDispatcherMock = $this->createStub(EventDispatcher::class);
+
+        $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock, $eventDispatcherMock, $packageManager, new NullLogger());
+    }
+
+    private function countAudits(AuditRecordType $type): int
+    {
+        return \count(self::getEM()->getRepository(AuditRecord::class)->findBy([
+            'type' => $type->value,
+            'packageId' => $this->package->getId(),
+        ]));
     }
 }

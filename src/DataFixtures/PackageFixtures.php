@@ -109,7 +109,7 @@ class PackageFixtures extends Fixture implements DependentFixtureInterface, Fixt
     {
         $job = new Job('FAKE_ID', 'FAKE_TYPE', [
             'id'                => $id,
-            'update_equal_refs' => false,
+            'update_source_dist_url' => false,
             'delete_before'     => false,
             'force_dump'        => false,
             'source'            => 'fixtures',

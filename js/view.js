@@ -191,23 +191,118 @@ const init = function ($) {
         const details = e.target.dataset.details;
         notifier.log(message, {}, details);
     });
-    $('.package .delete-version .submit').on('click', function (e) {
+    $('.package .delete-version .submit, .package .recover-version .submit, .package .hide-version .submit').on('click', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
         $(e.target).closest('form').submit();
+    });
+
+    function getVersionLabel(form) {
+        return $(form).closest('.version').find('.version-number').text().trim();
+    }
+
+    function applyVersionDeleteResponse(form, data, deletedToast) {
+        var row = $(form).closest('.version');
+        if (data && data.softDeleted) {
+            notifier.log('Version soft-deleted. Reload the page to access the recovery action.', {timeout: 4000});
+            row.addClass('version-soft-deleted');
+            if (!row.find('.deletion-alert').length) {
+                var icon = data.deletionIcon || 'glyphicon-trash';
+                var alert = $('<span class="action-alert deletion-alert"><i class="glyphicon"></i></span>');
+                alert.find('i').addClass(icon);
+                alert.attr('title', data.deletionTitle || 'Deleted');
+                alert.insertBefore(row.find('form').first());
+            }
+            row.find('.delete-version, .hide-version').remove();
+        } else {
+            notifier.log(deletedToast, {timeout: 3000});
+            row.remove();
+        }
+    }
+
+    // Submit a version-action form via ajax, guarding against duplicate submits.
+    // `overrides` may carry {url, type, data} to override the form's defaults (used by the
+    // admin-reason fallthrough in .delete-version which retargets to admin_delete_version).
+    // Returns the jqXHR, or null if the request-sent guard tripped.
+    function dispatchVersionAction(form, onSuccess, overrides) {
+        if ($(form).is('.request-sent')) {
+            return null;
+        }
+        overrides = overrides || {};
+        $(form).addClass('request-sent');
+        return $.ajax({
+            url: overrides.url || $(form).attr('action'),
+            type: overrides.type || $(form).attr('method'),
+            cache: false,
+            dataType: 'json',
+            data: overrides.data || $(form).serializeArray(),
+            success: onSuccess,
+            complete: function () { $(form).removeClass('request-sent'); }
+        });
+    }
+
+    $('.package .recover-version').on('submit', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var form = this;
+        dispatchVersionAction(form, function () {
+            notifier.log('Version recovered. Reload the page to see the active version.', {timeout: 3000});
+            var row = $(form).closest('.version');
+            row.removeClass('version-soft-deleted');
+            row.find('.deletion-alert').remove();
+            $(form).remove();
+        });
     });
 
     $('.package .delete-version').on('submit', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
         var form = this;
-        if (window.confirm('Are you sure you want to delete ' + $(form).prev().text() + '?')) {
-            dispatchAjaxForm(this, function () {
-                notifier.log('Version successfully deleted', {timeout: 3000});
-                $(form).closest('.version').remove();
-            }, 'request-sent');
+        var label = getVersionLabel(form);
+        var overrides = {};
+
+        if ($(form).data('admin')) {
+            var reason = window.prompt('Reason text for admin removal of ' + label + ' (leave blank to record without a reason, cancel to abort):', '');
+            if (reason === null) {
+                return;
+            }
+            reason = reason.trim();
+            if (reason !== '') {
+                overrides.url = $(form).data('admin-url');
+                overrides.type = 'POST';
+                overrides.data = [
+                    {name: '_token', value: $(form).find('input[name="_token"]').val()},
+                    {name: 'reason', value: reason}
+                ];
+            }
+        } else if (!window.confirm('Are you sure you want to delete ' + label + '?')) {
+            return;
         }
+
+        dispatchVersionAction(form, function (data) {
+            applyVersionDeleteResponse(form, data, 'Version successfully deleted');
+        }, overrides);
     });
+
+    $('.package .hide-version').on('submit', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var form = this;
+        var label = getVersionLabel(form);
+        var reason = window.prompt('Reason text for hiding ' + label + ' from public (leave blank to record without a reason, cancel to abort):', '');
+        if (reason === null) {
+            return;
+        }
+        reason = reason.trim();
+        var data = $(form).serializeArray();
+        if (reason !== '') {
+            data.push({name: 'reason', value: reason});
+        }
+        dispatchVersionAction(form, function (resp) {
+            applyVersionDeleteResponse(form, resp, 'Version hidden');
+        }, {data: data});
+    });
+
     $('.package').on('click', '.requireme input', function () {
         this.select();
     });

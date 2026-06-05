@@ -68,6 +68,10 @@ class ClearVersionsCommand extends Command
 
                 foreach ($versions as $version) {
                     $name = $version->getName().' '.$version->getVersion();
+                    if (!$version->isDevelopment()) {
+                        $output->writeln('<comment>Skipping stable version '.$name.' (stable releases are immutable and cannot be hard-deleted)</comment>');
+                        continue;
+                    }
                     $output->writeln('Clearing '.$name);
                     if ($force) {
                         $packageNames[] = $version->getName();
@@ -95,6 +99,10 @@ class ClearVersionsCommand extends Command
 
                 foreach ($versions as $version) {
                     $name = $version->getName().' '.$version->getVersion();
+                    if (!$version->isDevelopment()) {
+                        $output->writeln('<comment>Skipping stable version '.$name.' (stable releases are immutable and cannot be hard-deleted)</comment>');
+                        continue;
+                    }
                     $output->writeln('Clearing '.$name);
                     if ($force) {
                         $packageNames[] = $version->getName();

@@ -13,9 +13,12 @@
 namespace App\Tests\Controller;
 
 use App\Audit\AuditRecordType;
+use App\Audit\VersionDeletionReason;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Entity\Version;
 use App\Tests\IntegrationTestCase;
+use Composer\Package\Version\VersionParser;
 use PHPUnit\Framework\Attributes\TestWith;
 
 class PackageControllerTest extends IntegrationTestCase
@@ -229,5 +232,87 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertCount(1, $elements);
         $text = $elements->text();
         $this->assertStringContainsStringIgnoringCase($message, $text);
+    }
+
+    #[TestWith([null, null, 200])]
+    #[TestWith([null, 'auto_missing', 200])]
+    #[TestWith([null, 'maintainer', 200])]
+    #[TestWith([null, 'admin', 200])]
+    #[TestWith([null, 'hidden', 404])]
+    #[TestWith(['maintainer', 'hidden', 200])]
+    #[TestWith(['admin', 'hidden', 200])]
+    public function testViewPackageVersionRespectsHiddenVisibility(?string $actor, ?string $reason, int $expectedStatus): void
+    {
+        $maintainer = self::createUser('owner', 'owner@example.org');
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$maintainer]);
+        $version = $this->createStableVersion($package, '1.0.0');
+        if ($reason !== null) {
+            $version->setSoftDeletedAt(new \DateTimeImmutable());
+            $version->setDeletionReason(VersionDeletionReason::from($reason));
+        }
+        $this->store($maintainer, $admin, $package, $version);
+
+        match ($actor) {
+            'maintainer' => $this->client->loginUser($maintainer),
+            'admin' => $this->client->loginUser($admin),
+            null => null,
+        };
+
+        $this->client->request('GET', '/versions/'.$version->getId().'.json');
+        self::assertResponseStatusCodeSame($expectedStatus);
+
+        if ($expectedStatus === 404) {
+            $payload = json_decode((string) $this->client->getResponse()->getContent(), true);
+            self::assertSame('error', $payload['status'] ?? null);
+        }
+    }
+
+    public function testViewPackageVersionHiddenResponseIsNotSharedCached(): void
+    {
+        $maintainer = self::createUser('owner', 'owner@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$maintainer]);
+
+        $hidden = $this->createStableVersion($package, '1.0.0');
+        $hidden->setSoftDeletedAt(new \DateTimeImmutable());
+        $hidden->setDeletionReason(VersionDeletionReason::Hidden);
+
+        $maintainerSoftDeleted = $this->createStableVersion($package, '1.1.0');
+        $maintainerSoftDeleted->setSoftDeletedAt(new \DateTimeImmutable());
+        $maintainerSoftDeleted->setDeletionReason(VersionDeletionReason::DeletedByMaintainer);
+
+        $this->store($maintainer, $package, $hidden, $maintainerSoftDeleted);
+
+        // Hidden, served to authorized maintainer -> must NOT be shared-cacheable.
+        $this->client->loginUser($maintainer);
+        $this->client->request('GET', '/versions/'.$hidden->getId().'.json');
+        self::assertResponseStatusCodeSame(200);
+        $cacheControl = $this->client->getResponse()->headers->get('Cache-Control', '');
+        self::assertStringNotContainsString('s-maxage', $cacheControl, 'Hidden version JSON must not advertise a shared-cache TTL');
+
+        // Non-Hidden soft-delete reason, served to anonymous -> keeps shared cache. Confirms the
+        // exemption above is Hidden-specific, not a blanket disable.
+        $this->client->restart();
+        $this->client->request('GET', '/versions/'.$maintainerSoftDeleted->getId().'.json');
+        self::assertResponseStatusCodeSame(200);
+        $cacheControl = $this->client->getResponse()->headers->get('Cache-Control', '');
+        self::assertStringContainsString('s-maxage=86400', $cacheControl);
+    }
+
+    private function createStableVersion(Package $package, string $version): Version
+    {
+        $v = new Version();
+        $v->setName($package->getName());
+        $v->setVersion($version);
+        $v->setNormalizedVersion(new VersionParser()->normalize($version));
+        $v->setLicense(['MIT']);
+        $v->setAutoload([]);
+        $v->setDevelopment(false);
+        $v->setPackage($package);
+        $package->getVersions()->add($v);
+        $v->setReleasedAt(new \DateTimeImmutable());
+        $v->setUpdatedAt(new \DateTimeImmutable());
+
+        return $v;
     }
 }

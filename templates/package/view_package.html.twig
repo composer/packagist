@@ -377,7 +377,10 @@
                         {% include 'package/version_list.html.twig' with {
                             versions: versions,
                             expandedId: expandedVersion.id,
-                            deleteVersionCsrfToken: deleteVersionCsrfToken|default(null),
+                            manageVersionsCsrfToken: manageVersionsCsrfToken|default(null),
+                            canDeleteVersion: canDeleteVersion|default(false),
+                            canAdminDeleteVersion: canAdminDeleteVersion|default(false),
+                            canHideVersion: canHideVersion|default(false),
                             package: package,
                             showUpdated: true,
                             showUpdateButton: not hasActions and app.user and not package.wasUpdatedInTheLast24Hours(),

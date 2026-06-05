@@ -196,12 +196,12 @@ class UpdaterWorker
         try {
             $flags = 0;
             $useVersionCache = true;
-            if ($job->getPayload()['update_equal_refs'] === true) {
-                $flags = Updater::UPDATE_EQUAL_REFS;
+            if (($job->getPayload()['update_source_dist_url'] ?? false) === true) {
+                $flags |= Updater::UPDATE_SOURCE_DIST_URL;
                 $useVersionCache = false;
             }
             if ($job->getPayload()['delete_before'] === true) {
-                $flags = Updater::DELETE_BEFORE;
+                $flags |= Updater::DELETE_BEFORE;
                 $useVersionCache = false;
             }
             if ($job->getPayload()['force_dump'] === true) {
