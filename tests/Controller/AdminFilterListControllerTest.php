@@ -18,6 +18,7 @@ use App\Entity\FilterListEntry;
 use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
+use App\Form\Model\FilterListEntryRequest;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\TestWith;
 
@@ -37,7 +38,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testIndexShowsEntries(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/listed', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/listed', '1.0.0'));
         $this->store($admin, $entry);
 
         $this->client->loginUser($admin);
@@ -50,8 +51,8 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testIndexFiltersByPackageName(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $match = new FilterListEntry($this->createRemoteEntry('vendor/wanted', '1.0.0'));
-        $other = new FilterListEntry($this->createRemoteEntry('vendor/other', '1.0.0'));
+        $match = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/wanted', '1.0.0'));
+        $other = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/other', '1.0.0'));
         $this->store($admin, $match, $other);
 
         $this->client->loginUser($admin);
@@ -65,8 +66,8 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testIndexFiltersByState(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $active = new FilterListEntry($this->createRemoteEntry('vendor/active', '1.0.0'));
-        $disabled = new FilterListEntry($this->createRemoteEntry('vendor/disabled', '1.0.0'));
+        $active = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/active', '1.0.0'));
+        $disabled = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/disabled', '1.0.0'));
         $disabled->disable();
         $this->store($admin, $active, $disabled);
 
@@ -94,7 +95,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testDisableUpstreamEntryRecordsAuditAndHidesFromConsumers(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/false-positive', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/false-positive', '1.0.0'));
 
         $this->store($admin, $entry);
 
@@ -127,7 +128,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testEnableEntryRecordsAuditAndRestoresVisibility(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/restored', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/restored', '1.0.0'));
         $entry->disable();
 
         $this->store($admin, $entry);
@@ -157,7 +158,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testEditUpstreamEntryStoresOverwriteVersionAndRecordsAudit(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/edit-me', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/edit-me', '1.0.0'));
 
         $this->store($admin, $entry);
 
@@ -191,8 +192,8 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testEditPageShowsAuditLogEntriesForThisFilterListEntry(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN', 'ROLE_AUDITOR']);
-        $subject = new FilterListEntry($this->createRemoteEntry('vendor/audited', '1.0.0'));
-        $unrelated = new FilterListEntry($this->createRemoteEntry('vendor/unrelated', '1.0.0'));
+        $subject = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/audited', '1.0.0'));
+        $unrelated = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/unrelated', '1.0.0'));
 
         $this->store($admin, $subject, $unrelated);
 
@@ -218,7 +219,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testEditStoresInternalNoteAndRecordsPreviousValueInAudit(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/note-me', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/note-me', '1.0.0'));
         $entry->updateAttributes('1.0.0', 'initial note');
 
         $this->store($admin, $entry);
@@ -250,7 +251,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testEditClearsInternalNoteWhenLeftEmpty(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/clear-note', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/clear-note', '1.0.0'));
         $entry->updateAttributes('1.0.0', 'some note');
 
         $this->store($admin, $entry);
@@ -273,7 +274,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testEditClearsOverwriteWhenAdminRevertsToUpstreamVersion(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/revert', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/revert', '1.0.0'));
         $entry->updateAttributes('2.0.0');
         $this->store($admin, $entry);
 
@@ -295,6 +296,183 @@ class AdminFilterListControllerTest extends IntegrationTestCase
         static::assertSame('1.0.0', $refreshed->getVersion());
     }
 
+    public function testNewCreatesManualEntryAndRecordsAddedAudit(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $package = self::createPackage('vendor/manual-new', 'https://example.com/vendor/manual-new');
+        $this->store($admin, $package);
+
+        $em = self::getEM();
+        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = NOW() WHERE name = :name', ['name' => 'vendor/manual-new']);
+        $em->clear();
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+        static::assertResponseIsSuccessful();
+
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry[packageName]'] = 'vendor/manual-new';
+        $form['filter_list_entry[list]'] = FilterLists::MALWARE->value;
+        $form['filter_list_entry[version]'] = '1.2.3';
+        $form['filter_list_entry[reason]'] = 'Reported internally';
+        $form['filter_list_entry[link]'] = 'https://example.com/report';
+        $form['filter_list_entry[internalNote]'] = 'Flagged by the abuse team';
+        $this->client->submit($form);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+        $created = $em->getRepository(FilterListEntry::class)->findOneBy(['packageName' => 'vendor/manual-new']);
+        static::assertNotNull($created);
+        static::assertTrue($created->isManual());
+        static::assertSame(FilterSources::PACKAGIST, $created->getSource());
+        static::assertSame('1.2.3', $created->getVersion());
+        static::assertSame('1.2.3', $created->getRemoteVersion(), 'Manual entries store the version directly, not as an overwrite.');
+        static::assertNull($created->getOverwriteVersion());
+        static::assertFalse($created->isOverwritten());
+        static::assertSame('Reported internally', $created->getReason());
+        static::assertSame('Flagged by the abuse team', $created->getInternalNote());
+
+        $audit = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::FilterListEntryAdded]);
+        static::assertNotNull($audit);
+        static::assertSame('vendor/manual-new', $audit->attributes['entry']['package_name']);
+        static::assertSame('packagist', $audit->attributes['entry']['source']);
+        static::assertSame('filter-admin', $audit->attributes['actor']['username'], 'The admin who added the manual entry must be recorded as the author.');
+        static::assertSame($admin->getId(), $audit->actorId, 'The added audit record must carry the actor id like the other filter-list events.');
+
+        $dumpedAt = $em->getConnection()->fetchOne('SELECT dumpedAtV2 FROM package WHERE name = :name', ['name' => 'vendor/manual-new']);
+        static::assertNull($dumpedAt, 'Package must be marked for re-dump when a manual entry is created.');
+    }
+
+    public function testNewRejectsDuplicateSlot(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        // A manual entry has the same source (Packagist) the create form uses, so
+        // the new submission lands on the exact same unique slot.
+        $existing = $this->createManualEntry(FilterLists::MALWARE, 'vendor/dup', '1.0.0', 'reason', null);
+        $this->store($admin, $existing);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry[packageName]'] = 'vendor/dup';
+        $form['filter_list_entry[list]'] = FilterLists::MALWARE->value;
+        $form['filter_list_entry[version]'] = '1.0.0';
+        $crawler = $this->client->submit($form);
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('already exists', $crawler->html());
+
+        $em = self::getEM();
+        $count = $em->getRepository(FilterListEntry::class)->count(['packageName' => 'vendor/dup']);
+        static::assertSame(1, $count, 'No second entry must be created for a duplicate slot.');
+    }
+
+    public function testNewAllowsSameSlotFromDifferentSource(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        // An upstream (Aikido) entry occupies the slot for one source; a manual
+        // (Packagist) entry for the same list/package/version is a different slot.
+        $existing = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/multi-source', '1.0.0'));
+        $this->store($admin, $existing);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry[packageName]'] = 'vendor/multi-source';
+        $form['filter_list_entry[list]'] = FilterLists::MALWARE->value;
+        $form['filter_list_entry[version]'] = '1.0.0';
+        $this->client->submit($form);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+        $entries = $em->getRepository(FilterListEntry::class)->findBy(['packageName' => 'vendor/multi-source']);
+        static::assertCount(2, $entries, 'The same slot must be allowed once per source.');
+
+        $sources = array_map(static fn (FilterListEntry $entry) => $entry->getSource(), $entries);
+        static::assertContains(FilterSources::AIKIDO, $sources);
+        static::assertContains(FilterSources::PACKAGIST, $sources);
+    }
+
+    public function testEditManualEntryUpdatesAllPropertiesInPlace(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $entry = $this->createManualEntry(FilterLists::MALWARE, 'vendor/manual-edit', '1.0.0', 'old reason', 'https://example.com/old');
+        $this->store($admin, $entry);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/'.$entry->getPublicId().'/edit');
+        static::assertResponseIsSuccessful();
+
+        // Most fields locked for synced entries must be editable for manual ones,
+        // but the package name is never editable once the entry exists.
+        static::assertNotNull($crawler->filter('#filter_list_entry_packageName')->attr('disabled'), 'Package name must not be editable on edit, even for manual entries.');
+        static::assertNull($crawler->filter('#filter_list_entry_reason')->attr('disabled'), 'Reason must be editable for manual entries.');
+
+        $form = $crawler->selectButton('Save')->form();
+        $form['filter_list_entry[version]'] = '>=2.0,<3.0';
+        $form['filter_list_entry[reason]'] = 'new reason';
+        $form['filter_list_entry[link]'] = 'https://example.com/new';
+        $this->client->submit($form);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+        $refreshed = $em->getRepository(FilterListEntry::class)->findOneBy(['publicId' => $entry->getPublicId()]);
+        static::assertNotNull($refreshed);
+        static::assertSame('vendor/manual-edit', $refreshed->getPackageName());
+        static::assertSame('>=2.0,<3.0', $refreshed->getVersion());
+        static::assertSame('>=2.0,<3.0', $refreshed->getRemoteVersion(), 'Manual edits change the version directly, not via overwrite.');
+        static::assertNull($refreshed->getOverwriteVersion());
+        static::assertSame('new reason', $refreshed->getReason());
+        static::assertSame('https://example.com/new', $refreshed->getLink());
+
+        $audit = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::FilterListEntryEdited]);
+        static::assertNotNull($audit);
+        // The audit log must capture the prior value of every edited property.
+        static::assertSame('1.0.0', $audit->attributes['previous']['version']);
+        static::assertSame('old reason', $audit->attributes['previous']['reason']);
+        static::assertSame('https://example.com/old', $audit->attributes['previous']['link']);
+        static::assertSame(FilterLists::MALWARE->value, $audit->attributes['previous']['list']);
+    }
+
+    public function testEditManualEntryCannotRenamePackage(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $entry = $this->createManualEntry(FilterLists::MALWARE, 'vendor/manual-locked-name', '1.0.0', 'reason', null);
+        $this->store($admin, $entry);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/'.$entry->getPublicId().'/edit');
+        static::assertResponseIsSuccessful();
+
+        // The package name field is disabled, so it cannot be submitted at all.
+        static::assertNotNull($crawler->filter('#filter_list_entry_packageName')->attr('disabled'), 'The package name must not be editable for manual entries.');
+
+        // Editing other properties keeps the name and never spawns a replacement.
+        $form = $crawler->selectButton('Save')->form();
+        $form['filter_list_entry[version]'] = '2.0.0';
+        $this->client->submit($form);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+
+        $refreshed = $em->getRepository(FilterListEntry::class)->findOneBy(['publicId' => $entry->getPublicId()]);
+        static::assertNotNull($refreshed);
+        static::assertSame('vendor/manual-locked-name', $refreshed->getPackageName());
+        static::assertSame('2.0.0', $refreshed->getVersion());
+        static::assertFalse($refreshed->isDisabled(), 'Editing a manual entry must not disable it.');
+        static::assertCount(1, $em->getRepository(FilterListEntry::class)->findBy(['list' => FilterLists::MALWARE]), 'Editing must not create a second entry.');
+    }
+
     public function testEditReturns404ForUnknownEntry(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
@@ -309,7 +487,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testEditRejectsInvalidVersionConstraint(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/bad-edit', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/bad-edit', '1.0.0'));
         $this->store($admin, $entry);
 
         $this->client->loginUser($admin);
@@ -331,7 +509,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testDisableRequiresCsrfToken(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/csrf', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/csrf', '1.0.0'));
         $this->store($admin, $entry);
 
         $this->client->loginUser($admin);
@@ -345,7 +523,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testEnableRequiresCsrfToken(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/csrf-enable', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/csrf-enable', '1.0.0'));
         $entry->disable();
         $this->store($admin, $entry);
 
@@ -360,7 +538,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testDisableAlreadyDisabledIsIdempotent(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/already-disabled', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/already-disabled', '1.0.0'));
         $entry->disable();
         $this->store($admin, $entry);
 
@@ -382,7 +560,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     public function testEnableAlreadyEnabledIsIdempotent(): void
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/already-enabled', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/already-enabled', '1.0.0'));
         $this->store($admin, $entry);
 
         $this->client->loginUser($admin);
@@ -404,7 +582,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $package = self::createPackage('vendor/stale', 'https://example.com/vendor/stale');
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/stale', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/stale', '1.0.0'));
         $this->store($admin, $package, $entry);
 
         $em = self::getEM();
@@ -429,7 +607,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $package = self::createPackage('vendor/stale-edit', 'https://example.com/vendor/stale-edit');
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/stale-edit', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/stale-edit', '1.0.0'));
         $this->store($admin, $package, $entry);
 
         $em = self::getEM();
@@ -452,7 +630,7 @@ class AdminFilterListControllerTest extends IntegrationTestCase
     {
         $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
         $package = self::createPackage('vendor/stale-enable', 'https://example.com/vendor/stale-enable');
-        $entry = new FilterListEntry($this->createRemoteEntry('vendor/stale-enable', '1.0.0'));
+        $entry = FilterListEntry::fromRemote($this->createRemoteEntry('vendor/stale-enable', '1.0.0'));
         $entry->disable();
         $this->store($admin, $package, $entry);
 
@@ -484,5 +662,17 @@ class AdminFilterListControllerTest extends IntegrationTestCase
             'malware',
             FilterSources::AIKIDO,
         );
+    }
+
+    private function createManualEntry(FilterLists $list, string $packageName, string $version, ?string $reason, ?string $link): FilterListEntry
+    {
+        $request = new FilterListEntryRequest();
+        $request->list = $list;
+        $request->packageName = $packageName;
+        $request->version = $version;
+        $request->reason = $reason;
+        $request->link = $link;
+
+        return FilterListEntry::createManual($request);
     }
 }

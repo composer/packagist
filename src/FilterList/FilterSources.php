@@ -15,11 +15,17 @@ namespace App\FilterList;
 enum FilterSources: string
 {
     case AIKIDO = 'aikido';
+    case PACKAGIST = 'packagist';
 
-    public function logo(): string
+    /**
+     * Path to the reporting source's logo, or null when the entry was created
+     * manually and has no external reporter.
+     */
+    public function logo(): ?string
     {
         return match ($this) {
             self::AIKIDO => 'img/aikido-dark.svg',
+            self::PACKAGIST => null,
         };
     }
 
@@ -27,13 +33,19 @@ enum FilterSources: string
     {
         return match ($this) {
             self::AIKIDO => 'Aikido',
+            self::PACKAGIST => 'Packagist',
         };
     }
 
-    public function url(): string
+    /**
+     * URL of the reporting source, or null when the entry was created manually
+     * and has no external reference.
+     */
+    public function url(): ?string
     {
         return match ($this) {
             self::AIKIDO => 'https://aikido.dev/',
+            self::PACKAGIST => null,
         };
     }
 }

@@ -13,6 +13,7 @@
 namespace App\Form\Type;
 
 use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use App\Form\Model\FilterListEntryRequest;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
@@ -29,15 +30,29 @@ class FilterListEntryType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        // Synced entries are owned by the upstream provider, so only the admin
+        // version overwrite is editable. Manual entries are fully editable.
+        $upstreamLocked = $options['manual'] === false;
+
         $builder
             ->add('packageName', TextType::class, [
                 'label' => 'Package name',
-                'disabled' => true,
+                // The package name identifies the entry's slot, so it can only be
+                // set when creating; editing it is never allowed.
+                'disabled' => !$options['creating'],
+                'help' => $options['creating'] ? null : 'The package name cannot be changed after creation.',
             ])
             ->add('list', EnumType::class, [
                 'class' => FilterLists::class,
                 'choice_label' => fn (FilterLists $list) => $list->value,
                 'label' => 'List',
+                'disabled' => $upstreamLocked,
+            ])
+            ->add('source', EnumType::class, [
+                'class' => FilterSources::class,
+                'choice_label' => fn (FilterSources $source) => $source->displayName(),
+                'label' => 'Source',
+                // The source identifies provenance and is never editable.
                 'disabled' => true,
             ])
             ->add('version', TextType::class, [
@@ -47,12 +62,12 @@ class FilterListEntryType extends AbstractType
             ->add('reason', TextareaType::class, [
                 'label' => 'Reason',
                 'required' => false,
-                'disabled' => true,
+                'disabled' => $upstreamLocked,
             ])
             ->add('link', UrlType::class, [
                 'label' => 'External reference URL',
                 'required' => false,
-                'disabled' => true,
+                'disabled' => $upstreamLocked,
             ])
             ->add('internalNote', TextareaType::class, [
                 'label' => 'Internal note',
@@ -66,7 +81,11 @@ class FilterListEntryType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => FilterListEntryRequest::class,
+            'manual' => false,
+            'creating' => false,
         ]);
+        $resolver->setAllowedTypes('manual', 'bool');
+        $resolver->setAllowedTypes('creating', 'bool');
     }
 
     public function getBlockPrefix(): string

@@ -15,12 +15,13 @@ namespace App\Entity;
 use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
+use App\Form\Model\FilterListEntryRequest;
 use App\Service\IdGenerator;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FilterListEntryRepository::class)]
 #[ORM\Table(name: 'filter_list_entry')]
-#[ORM\UniqueConstraint(name: 'list_package_version_idx', columns: ['list', 'packageName', 'version'])]
+#[ORM\UniqueConstraint(name: 'list_package_version_source_idx', columns: ['list', 'packageName', 'version', 'source'])]
 #[ORM\Index(name: 'updated_at_idx', columns: ['updatedAt'])]
 class FilterListEntry
 {
@@ -41,7 +42,7 @@ class FilterListEntry
     #[ORM\Column(nullable: true)]
     private ?string $link;
 
-    #[ORM\Column]
+    #[ORM\Column(length: 32)]
     private FilterLists $list;
 
     #[ORM\Column]
@@ -52,7 +53,7 @@ class FilterListEntry
     #[ORM\Column]
     private string $publicId;
 
-    #[ORM\Column]
+    #[ORM\Column(length: 32)]
     private FilterSources $source;
 
     #[ORM\Column(options: ['default' => false])]
@@ -70,18 +71,60 @@ class FilterListEntry
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $internalNote = null;
 
-    public function __construct(RemoteFilterListEntry $remote)
-    {
+    private function __construct(
+        FilterLists $list,
+        string $packageName,
+        string $version,
+        ?string $reason,
+        ?string $link,
+        FilterSources $source,
+    ) {
         $this->assignPublicId();
-        $this->packageName = $remote->packageName;
-        $this->version = $remote->version;
-        $this->link = $remote->link;
-        $this->list = $remote->list;
-        $this->reason = $remote->reason;
-        $this->source = $remote->source;
+        $this->list = $list;
+        $this->packageName = $packageName;
+        $this->version = $version;
+        $this->reason = $reason;
+        $this->link = $link;
+        $this->source = $source;
         $this->disabled = false;
 
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /**
+     * Creates an entry from an upstream-reported {@see RemoteFilterListEntry}
+     * during a provider sync.
+     */
+    public static function fromRemote(RemoteFilterListEntry $remote): self
+    {
+        return new self(
+            $remote->list,
+            $remote->packageName,
+            $remote->version,
+            $remote->reason,
+            $remote->link,
+            $remote->source,
+        );
+    }
+
+    /**
+     * Creates an entry that was added manually by an admin. Manual entries have
+     * no upstream identity, so {@see FilterSources::PACKAGIST} is recorded as the
+     * source and the version is stored directly rather than as an overwrite.
+     */
+    public static function createManual(FilterListEntryRequest $request): self
+    {
+        $entry = new self(
+            $request->list ?? throw new \InvalidArgumentException('A filter list is required to create a manual entry.'),
+            $request->packageName,
+            $request->version,
+            $request->reason,
+            $request->link,
+            FilterSources::PACKAGIST,
+        );
+        $entry->internalNote = $request->internalNote === '' ? null : $request->internalNote;
+
+        return $entry;
     }
 
     public function updateAttributes(string $version, ?string $internalNote = null): void
@@ -89,6 +132,26 @@ class FilterListEntry
         $this->overwriteVersion = $version === $this->version ? null : $version;
         $this->internalNote = $internalNote === '' ? null : $internalNote;
         $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /**
+     * Updates the editable attributes of a manually created entry. The package
+     * name is intentionally excluded: changing it disables this entry and
+     * creates a fresh one instead (see the admin controller).
+     */
+    public function updateManualEntry(FilterLists $list, string $version, ?string $reason, ?string $link, ?string $internalNote = null): void
+    {
+        $this->list = $list;
+        $this->version = $version;
+        $this->reason = $reason;
+        $this->link = $link;
+        $this->internalNote = $internalNote === '' ? null : $internalNote;
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function isManual(): bool
+    {
+        return $this->source === FilterSources::PACKAGIST;
     }
 
     public function disable(): void
@@ -167,6 +230,11 @@ class FilterListEntry
     public function getInternalNote(): ?string
     {
         return $this->internalNote;
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id ?? null;
     }
 
     public function getPublicId(): ?string

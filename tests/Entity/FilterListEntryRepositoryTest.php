@@ -33,8 +33,8 @@ class FilterListEntryRepositoryTest extends IntegrationTestCase
 
     public function testGetAllSummaryEntries(): void
     {
-        $entry1 = new FilterListEntry($this->createRemote('vendor/malware-a', '1.0.0'));
-        $entry2 = new FilterListEntry($this->createRemote('vendor/malware-b', '2.3.4'));
+        $entry1 = FilterListEntry::fromRemote($this->createRemote('vendor/malware-a', '1.0.0'));
+        $entry2 = FilterListEntry::fromRemote($this->createRemote('vendor/malware-b', '2.3.4'));
         $this->store($entry1, $entry2);
 
         $summaries = $this->repository->getAllSummaryEntries();
@@ -63,8 +63,8 @@ class FilterListEntryRepositoryTest extends IntegrationTestCase
 
     public function testGetAllSummaryEntriesUsesAdminOverwriteVersionWhenPresent(): void
     {
-        $upstreamOnly = new FilterListEntry($this->createRemote('vendor/upstream', '1.0.0'));
-        $overwritten = new FilterListEntry($this->createRemote('vendor/overwritten', '1.0.0'));
+        $upstreamOnly = FilterListEntry::fromRemote($this->createRemote('vendor/upstream', '1.0.0'));
+        $overwritten = FilterListEntry::fromRemote($this->createRemote('vendor/overwritten', '1.0.0'));
         $overwritten->updateAttributes('>=1.0,<2.0');
         $this->store($upstreamOnly, $overwritten);
 
@@ -81,8 +81,8 @@ class FilterListEntryRepositoryTest extends IntegrationTestCase
 
     public function testGetNewestEntryUpdatedAtReturnsLatestUpdatedAt(): void
     {
-        $older = new FilterListEntry($this->createRemote('vendor/older', '1.0.0'));
-        $newer = new FilterListEntry($this->createRemote('vendor/newer', '1.0.0'));
+        $older = FilterListEntry::fromRemote($this->createRemote('vendor/older', '1.0.0'));
+        $newer = FilterListEntry::fromRemote($this->createRemote('vendor/newer', '1.0.0'));
 
         $olderDate = new \DateTimeImmutable('2024-01-01 10:00:00');
         $newerDate = new \DateTimeImmutable('2025-06-15 18:30:00');

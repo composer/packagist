@@ -14,15 +14,22 @@
                     Edit filter list entry
                     <small>{{ entry.publicId }}</small>
                 </h2>
-                <p>
-                    Editing the version constraint stores it as an admin overwrite; the
-                    upstream-reported version is preserved separately so the next sync
-                    from the provider will not recreate the original entry.
-                </p>
-                {% if entry.overwritten %}
-                    <div class="alert alert-info">
-                        Upstream version: <code>{{ entry.remoteVersion }}</code>
-                    </div>
+                {% if entry.manual %}
+                    <p>
+                        This entry was added manually. Its properties can be edited,
+                        except the package name which is fixed once the entry is created.
+                    </p>
+                {% else %}
+                    <p>
+                        Editing the version constraint stores it as an admin overwrite; the
+                        upstream-reported version is preserved separately so the next sync
+                        from the provider will not recreate the original entry.
+                    </p>
+                    {% if entry.overwritten %}
+                        <div class="alert alert-info">
+                            Upstream version: <code>{{ entry.remoteVersion }}</code>
+                        </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -34,6 +41,7 @@
             {{ form_errors(form) }}
 
             {{ form_row(form.list) }}
+            {{ form_row(form.source) }}
             {{ form_row(form.packageName) }}
             {{ form_row(form.version) }}
             {{ form_row(form.reason) }}

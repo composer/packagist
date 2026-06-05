@@ -16,7 +16,6 @@ use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\FilterListEntry;
-use App\Entity\FilterListEntryRepository;
 use App\Entity\User;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterLists;
@@ -100,24 +99,55 @@ class AdminFilterListController extends Controller
         ]);
     }
 
+    #[Route(path: '/admin/filter-lists/new', name: 'admin_filter_list_new', methods: ['GET', 'POST'])]
+    public function new(Request $request): Response
+    {
+        $data = new FilterListEntryRequest();
+
+        $form = $this->createForm(FilterListEntryType::class, $data, ['manual' => true, 'creating' => true]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entry = FilterListEntry::createManual($data);
+
+            $em = $this->getEM();
+            $em->persist($entry);
+            $em->flush();
+
+            $this->filterListEntryUpdateListener->flushChangesToPackages();
+            $this->addFlash('success', 'Filter list entry created.');
+
+            return $this->redirectToRoute('admin_filter_lists');
+        }
+
+        return $this->render('admin/filter_list/new.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
+
     #[Route(path: '/admin/filter-lists/{publicId}/edit', name: 'admin_filter_list_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, string $publicId, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $auditLogDisplayFactory): Response
     {
         $entry = $this->findEntry($publicId);
+        $isManual = $entry->isManual();
 
         $data = FilterListEntryRequest::createFromEntry($entry);
 
-        $form = $this->createForm(FilterListEntryType::class, $data);
+        $form = $this->createForm(FilterListEntryType::class, $data, ['manual' => $isManual]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $previousVersion = $entry->getVersion();
-            $previousInternalNote = $entry->getInternalNote();
-
-            $entry->updateAttributes($data->version, $data->internalNote);
-
             $em = $this->getEM();
-            $em->persist(AuditRecord::filterListEntryEdited($entry, $previousVersion, $previousInternalNote, $this->getActor()));
+            $previous = AuditRecord::filterListEntryEditableState($entry);
+
+            if ($isManual) {
+                $list = $data->list ?? throw new BadRequestHttpException('List is required');
+                $entry->updateManualEntry($list, $data->version, $data->reason, $data->link, $data->internalNote);
+            } else {
+                $entry->updateAttributes($data->version, $data->internalNote);
+            }
+
+            $em->persist(AuditRecord::filterListEntryEdited($entry, $previous, $this->getActor()));
             $em->flush();
 
             $this->filterListEntryUpdateListener->flushChangesToPackages();
