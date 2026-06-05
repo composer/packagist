@@ -23,6 +23,8 @@ readonly class FilterListEntryEditedDisplay extends AbstractAuditLogDisplay
         public string $packageName,
         public string $version,
         public string $previousVersion,
+        public ?string $internalNote,
+        public ?string $previousInternalNote,
         public FilterLists $list,
         public FilterSources $source,
         ActorDisplay $actor,

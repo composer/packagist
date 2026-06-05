@@ -38,6 +38,8 @@ class FilterListEntryRequest
 
     public ?string $link = null;
 
+    public ?string $internalNote = null;
+
     public static function createFromEntry(FilterListEntry $entry): self
     {
         $request = new self();
@@ -46,6 +48,7 @@ class FilterListEntryRequest
         $request->version = $entry->getVersion();
         $request->reason = $entry->getReason();
         $request->link = $entry->getLink();
+        $request->internalNote = $entry->getInternalNote();
 
         return $request;
     }

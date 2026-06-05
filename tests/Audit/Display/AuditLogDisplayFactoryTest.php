@@ -712,6 +712,30 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame(FilterSources::AIKIDO, $display->source);
     }
 
+    public function testBuildFilterListEntryEditedCarriesInternalNote(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::FilterListEntryEdited,
+            [
+                'entry' => [
+                    'package_name' => 'acme/package',
+                    'version' => '>=1.0,<2.0',
+                    'list' => FilterLists::MALWARE->value,
+                    'source' => FilterSources::AIKIDO->value,
+                    'internal_note' => 'confirmed malware after manual review',
+                ],
+                'previous' => ['version' => '1.0.0', 'internal_note' => 'older note'],
+                'actor' => ['id' => 5, 'username' => 'admin'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(FilterListEntryEditedDisplay::class, $display);
+        self::assertSame('confirmed malware after manual review', $display->internalNote);
+        self::assertSame('older note', $display->previousInternalNote);
+    }
+
     /**
      * @param array<string, mixed> $attributes
      */

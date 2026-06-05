@@ -369,13 +369,13 @@ class AuditRecord
         );
     }
 
-    public static function filterListEntryEdited(FilterListEntry $entry, string $previousVersion, ?User $actor): self
+    public static function filterListEntryEdited(FilterListEntry $entry, string $previousVersion, ?string $previousInternalNote, ?User $actor): self
     {
         return new self(
             AuditRecordType::FilterListEntryEdited,
             [
                 'entry' => self::getFilterListEntryData($entry),
-                'previous' => ['version' => $previousVersion],
+                'previous' => ['version' => $previousVersion, 'internal_note' => $previousInternalNote],
                 'actor' => self::getUserData($actor, 'automation'),
             ],
             actorId: $actor?->getId(),
@@ -395,7 +395,7 @@ class AuditRecord
     }
 
     /**
-     * @return array{package_name: string, version: string, list: string, reason: string|null, source: string, link: string|null, disabled: bool, remote_version: string, overwrite_version: string|null, public_id: string|null}
+     * @return array{package_name: string, version: string, list: string, reason: string|null, source: string, link: string|null, disabled: bool, remote_version: string, overwrite_version: string|null, internal_note: string|null, public_id: string|null}
      */
     private static function getFilterListEntryData(FilterListEntry $entry): array
     {
@@ -409,6 +409,7 @@ class AuditRecord
             'disabled' => $entry->isDisabled(),
             'remote_version' => $entry->getRemoteVersion(),
             'overwrite_version' => $entry->getOverwriteVersion(),
+            'internal_note' => $entry->getInternalNote(),
             'public_id' => $entry->getPublicId(),
         ];
     }

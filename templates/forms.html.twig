@@ -17,6 +17,7 @@
     <div class="form-group{% if (not compound or force_error|default(false)) and not valid %} has-error{% endif %}">
         {{- form_label(form) }} {# -#}
         {{ form_widget(form) }} {# -#}
+        {{ form_help(form) }} {# -#}
         {%- for error in errors -%}
             <span class="help-block form-error">
                 {{-
@@ -28,6 +29,12 @@
         {%- endfor -%}
     </div>
 {%- endblock form_row %}
+
+{% block form_help -%}
+    {%- if help is not empty -%}
+        <span class="help-block">{{ help|trans({}, translation_domain) }}</span>
+    {%- endif -%}
+{%- endblock form_help %}
 
 {% block form_errors -%}
     {% if errors|length > 0 -%}

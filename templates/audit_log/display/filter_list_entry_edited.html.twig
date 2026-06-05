@@ -6,4 +6,7 @@
     {% if display.version != display.previousVersion %}
         <li>Versions: {{ display.previousVersion }} &rarr; {{ display.version }}</li>
     {% endif %}
+    {% if is_granted('ROLE_FILTER_LIST_ADMIN') and display.internalNote != display.previousInternalNote %}
+        <li>Internal note: {{ display.previousInternalNote ?: '(none)' }} &rarr; {{ display.internalNote ?: '(none)' }}</li>
+    {% endif %}
 </ul>

@@ -67,6 +67,9 @@ class FilterListEntry
     #[ORM\Column(nullable: true)]
     private ?string $overwriteVersion = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $internalNote = null;
+
     public function __construct(RemoteFilterListEntry $remote)
     {
         $this->assignPublicId();
@@ -81,9 +84,10 @@ class FilterListEntry
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public function updateAttributes(string $version): void
+    public function updateAttributes(string $version, ?string $internalNote = null): void
     {
         $this->overwriteVersion = $version === $this->version ? null : $version;
+        $this->internalNote = $internalNote === '' ? null : $internalNote;
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -158,6 +162,11 @@ class FilterListEntry
     public function getReason(): ?string
     {
         return $this->reason;
+    }
+
+    public function getInternalNote(): ?string
+    {
+        return $this->internalNote;
     }
 
     public function getPublicId(): ?string
