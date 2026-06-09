@@ -69,8 +69,8 @@ class GitHubUserMigrationWorker
             $results = ['hooks_setup' => 0, 'hooks_failed' => [], 'hooks_ok_unchanged' => 0];
             foreach ($packageRepository->getGitHubPackagesByMaintainer($id) as $package) {
                 $result = $this->setupWebHook($user->getGithubToken(), $package);
-                if (\is_string($result)) {
-                    $results['hooks_failed'][] = ['package' => $package->getName(), 'reason' => $result];
+                if (\is_array($result)) {
+                    $results['hooks_failed'][] = ['package' => $package->getName(), 'reason' => $result['message'], 'reasonIsHtml' => $result['html']];
                 } elseif ($result === true) {
                     $results['hooks_setup']++;
                 } elseif ($result === false) {
@@ -93,7 +93,10 @@ class GitHubUserMigrationWorker
         ];
     }
 
-    public function setupWebHook(string $token, Package $package): bool|string|null
+    /**
+     * @return bool|array{message: string, html: bool}|null
+     */
+    public function setupWebHook(string $token, Package $package): bool|array|null
     {
         if (!Preg::isMatch('#^(?:(?:https?|git)://([^/]+)/|git@([^:]+):)(?P<owner>[^/]+)/(?P<repo>.+?)(?:\.git|/)?$#', $package->getRepository(), $match)) {
             return null;
@@ -179,10 +182,10 @@ class GitHubUserMigrationWorker
                 }
             }
         } catch (HttpExceptionInterface $e) {
-            if ($msg = $this->isAcceptableException($e)) {
-                $this->logger->debug($msg);
+            if ($failure = $this->isAcceptableException($e)) {
+                $this->logger->debug($failure['message']);
 
-                return $msg;
+                return $failure;
             }
 
             $this->logger->error('Rejected GitHub hook request', ['response' => (string) $e->getResponse()->getContent(false)]);
@@ -213,8 +216,8 @@ class GitHubUserMigrationWorker
                 }
             }
         } catch (HttpExceptionInterface $e) {
-            if ($msg = $this->isAcceptableException($e)) {
-                $this->logger->debug($msg);
+            if ($failure = $this->isAcceptableException($e)) {
+                $this->logger->debug($failure['message']);
 
                 return false;
             }
@@ -306,25 +309,28 @@ class GitHubUserMigrationWorker
         ];
     }
 
-    private function isAcceptableException(HttpExceptionInterface $e): string|false
+    /**
+     * @return array{message: string, html: bool}|false
+     */
+    private function isAcceptableException(HttpExceptionInterface $e): array|false
     {
         $message = $e->getResponse()->toArray(false)['message'];
 
         // repo not found probably means the user does not have admin access to it on github
         if ($e->getCode() === 404) {
-            return 'GitHub user has no admin access to the repository, or Packagist was not granted access to the organization (<a href="https://github.com/settings/connections/applications/a059f127e1c09c04aa5a">check here</a>)';
+            return ['message' => 'GitHub user has no admin access to the repository, or Packagist was not granted access to the organization (<a href="https://github.com/settings/connections/applications/a059f127e1c09c04aa5a">check here</a>)', 'html' => true];
         }
 
         if ($e->getCode() === 403 && str_contains($message, 'Repository was archived so is read-only')) {
-            return 'The repository is archived and read-only';
+            return ['message' => 'The repository is archived and read-only', 'html' => false];
         }
 
         if ($e->getCode() === 403) {
-            return $message;
+            return ['message' => (string) $message, 'html' => false];
         }
 
         if ($e->getCode() === 401 && str_contains($message, 'Bad credentials')) {
-            return 'Invalid credentials to access this repository';
+            return ['message' => 'Invalid credentials to access this repository', 'html' => false];
         }
 
         return false;
