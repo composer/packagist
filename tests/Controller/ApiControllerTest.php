@@ -68,6 +68,20 @@ class ApiControllerTest extends IntegrationTestCase
         ];
     }
 
+    public function testGithubHookRejectsMalformedSignature(): void
+    {
+        $payload = json_encode(['repository' => ['url' => 'https://github.com/composer/composer']]);
+        $this->client->request(
+            'POST',
+            '/api/github',
+            [],
+            [],
+            ['HTTP_X-Hub-Signature-256' => 'not-an-algo=deadbeef', 'CONTENT_TYPE' => 'application/json'],
+            $payload
+        );
+        $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
+
     public function testUnsafeApiRejectsSafeApiToken(): void
     {
         $user = self::createUser();

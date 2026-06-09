@@ -512,10 +512,10 @@ class ApiController extends Controller
             $sig = $request->headers->get('X-Hub-Signature-256');
             $user = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => $username]);
             if ($sig && $user && $user->isEnabled()) {
-                [$algo, $sig] = explode('=', $sig);
-                $expected = hash_hmac($algo, $request->getContent(), $user->getApiToken());
+                $sig = Preg::isMatch('{^sha256=(?P<hex>[0-9a-f]{64})$}i', $sig, $sigMatch) ? strtolower($sigMatch['hex']) : '';
+                $expected = hash_hmac('sha256', $request->getContent(), $user->getApiToken());
                 $source = 'manual_github_hook';
-                if (hash_equals($expected, $sig) || hash_equals(hash_hmac($algo, $request->getContent(), $user->getSafeApiToken()), $sig)) {
+                if (hash_equals($expected, $sig) || hash_equals(hash_hmac('sha256', $request->getContent(), $user->getSafeApiToken()), $sig)) {
                     $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $source, $user);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
@@ -541,8 +541,8 @@ class ApiController extends Controller
         if (!$user && $match['host'] === 'github.com' && $request->getContent()) {
             $sig = $request->headers->get('X-Hub-Signature-256');
             if ($sig) {
-                [$algo, $sig] = explode('=', $sig);
-                $expected = hash_hmac($algo, $request->getContent(), $githubWebhookSecret);
+                $sig = Preg::isMatch('{^sha256=(?P<hex>[0-9a-f]{64})$}i', $sig, $sigMatch) ? strtolower($sigMatch['hex']) : '';
+                $expected = hash_hmac('sha256', $request->getContent(), $githubWebhookSecret);
                 $source = 'github_official_hook';
 
                 if (hash_equals($expected, $sig)) {
