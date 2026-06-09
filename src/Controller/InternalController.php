@@ -41,13 +41,13 @@ class InternalController extends Controller
         $filemtime = $req->request->getInt('filemtime');
         $sig = (string) $req->headers->get('Internal-Signature');
 
-        $expectedSig = hash_hmac('sha256', $path.$contents.$filemtime, $this->internalSecret);
+        $expectedSig = hash_hmac('sha256', \strlen($path).':'.$path.':'.\strlen($contents).':'.$contents.':'.$filemtime, $this->internalSecret);
         if (!hash_equals($expectedSig, $sig)) {
             $this->logger->error('Invalid signature', ['contents' => $contents, 'path' => $path, 'filemtime' => $filemtime, 'sig' => $sig]);
             throw $this->createAccessDeniedException();
         }
 
-        if (!Preg::isMatch('{^(packages\.json|p2/.*\.json)$}', $path)) {
+        if (str_contains($path, '..') || !Preg::isMatch('{^(packages\.json|p2/[^/]+/[^/]+\.json)$}', $path)) {
             $this->logger->error('Invalid path received for metadata write: '.$path);
             throw $this->createAccessDeniedException();
         }

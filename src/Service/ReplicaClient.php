@@ -30,7 +30,7 @@ class ReplicaClient
 
     public function uploadMetadata(string $path, string $contents, int $filemtime): void
     {
-        $sig = hash_hmac('sha256', $path.$contents.$filemtime, $this->internalSecret);
+        $sig = hash_hmac('sha256', \strlen($path).':'.$path.':'.\strlen($contents).':'.$contents.':'.$filemtime, $this->internalSecret);
 
         $resps = [];
         foreach ($this->replicaIps as $ip) {
