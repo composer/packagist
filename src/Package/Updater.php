@@ -737,7 +737,7 @@ class Updater
             }
         }
 
-        $version->setHomepage($data->getHomepage());
+        $version->setHomepage($this->filterUrl($data->getHomepage()));
         $version->setLicense($data->getLicense() ?: []);
 
         $version->setPackage($package);
@@ -783,8 +783,8 @@ class Updater
         $version->setExtra($data->getExtra());
         $version->setBinaries($data->getBinaries());
         $version->setIncludePaths($data->getIncludePaths());
-        $version->setSupport($data->getSupport());
-        $version->setFunding($data->getFunding());
+        $version->setSupport($this->filterSupportUrls($data->getSupport()));
+        $version->setFunding($this->filterFundingUrls($data->getFunding()));
 
         if ($data->getKeywords()) {
             $keywords = [];
@@ -825,6 +825,9 @@ class Updater
                 foreach (['email', 'name', 'homepage', 'role'] as $field) {
                     if (isset($authorData[$field])) {
                         $author[$field] = trim($authorData[$field]);
+                        if ('homepage' === $field) {
+                            $author[$field] = (string) $this->filterUrl($author[$field]);
+                        }
                         if ('' === $author[$field]) {
                             unset($author[$field]);
                         }
@@ -1162,6 +1165,61 @@ class Updater
         $str = Preg::replace("{\x1B(?:\[.)?}u", '', $str);
 
         return Preg::replace("{[\x01-\x1A]}u", '', $str);
+    }
+
+    /**
+     * Package metadata link fields are rendered into href attributes, so only web
+     * schemes are allowed, mirroring the readme link sanitizer (allowLinkSchemes).
+     */
+    private function filterUrl(?string $url): ?string
+    {
+        if (null === $url || '' === $url) {
+            return $url;
+        }
+
+        $scheme = strtolower((string) parse_url($url, \PHP_URL_SCHEME));
+
+        return \in_array($scheme, ['http', 'https'], true) ? $url : null;
+    }
+
+    /**
+     * @param array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string, security?: string}|null $support
+     *
+     * @return array<string, string>|null
+     */
+    private function filterSupportUrls(?array $support): ?array
+    {
+        if (null === $support) {
+            return null;
+        }
+
+        foreach (['issues', 'forum', 'wiki', 'source', 'docs', 'rss', 'chat', 'security'] as $key) {
+            if (isset($support[$key]) && null === $this->filterUrl($support[$key])) {
+                unset($support[$key]);
+            }
+        }
+
+        return $support;
+    }
+
+    /**
+     * @param array<array{type?: string, url?: string}>|null $funding
+     *
+     * @return array<array{type?: string, url?: string}>|null
+     */
+    private function filterFundingUrls(?array $funding): ?array
+    {
+        if (null === $funding) {
+            return null;
+        }
+
+        foreach ($funding as $i => $entry) {
+            if (isset($entry['url']) && null === $this->filterUrl($entry['url'])) {
+                unset($funding[$i]['url']);
+            }
+        }
+
+        return $funding;
     }
 
     private function detectAbandonmentReason(VcsDriverInterface $driver, string $rootIdentifier): AbandonmentReason
