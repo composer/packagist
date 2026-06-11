@@ -4,43 +4,51 @@
             {% set expanded = version.id == expandedId|default(false) %}
             {% set softDeleted = version.softDeletedAt is not null %}
             {% set reason = version.deletionReason %}
+
+            {% if softDeleted %}
+                {% set deletionTitle = 'Deleted' %}
+                {% if reason == enum('App\\Audit\\VersionDeletionReason').DeletedByMaintainer %}
+                    {% set deletionTitle = 'Deleted by maintainer on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' %}
+                {% elseif reason == enum('App\\Audit\\VersionDeletionReason').DeletedByAdmin %}
+                    {% set deletionTitle = 'Removed by admin on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' ~ (version.deletionReasonText ? ': ' ~ version.deletionReasonText : '') %}
+                {% elseif reason == enum('App\\Audit\\VersionDeletionReason').AutoDeletedMissing %}
+                    {% set deletionTitle = 'No longer found in upstream repository' %}
+                {% elseif reason == enum('App\\Audit\\VersionDeletionReason').Hidden %}
+                    {% set deletionTitle = 'Hidden by admin on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' ~ (version.deletionReasonText ? ': ' ~ version.deletionReasonText : '') %}
+                {% endif %}
+            {% endif %}
+
             <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}{% if softDeleted %} version-soft-deleted{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
-                <a rel="nofollow noindex" href="#{{ version.version }}" class="version-number">
-                    {{- version.version -}}
-                    {% if version.hasVersionAlias() %}
-                        / {{ version.versionAlias }}
-                    {% endif -%}
-                </a>
+                <div class="version-number">
+                    <a rel="nofollow noindex" href="#{{ version.version }}" {% if softDeleted %}data-toggle="tooltip" data-placement="top" title="{{ deletionTitle }}" data-container="body"{% endif %}>
+                        {{- version.version -}}
+                        {% if version.hasVersionAlias() %}
+                            / {{ version.versionAlias }}
+                        {% endif -%}
+                    </a>
+                </div>
 
                 {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
                     <a rel="nofollow noindex" class="action-alert advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
-                        <i class="glyphicon glyphicon-alert " title="Version has security advisories"></i>
+                        <i class="glyphicon glyphicon-alert" data-toggle="tooltip" data-placement="top" title="Version has security advisories"></i>
                     </a>
                 {% endif %}
 
                 {% if hasVersionsFlaggedAsMalware[version.id]|default(false) %}
                     <a rel="nofollow noindex" class="action-alert malware-alert" href="{{ path('view_package_filter_lists', {name: package.name, version: version.id, list: 'malware'}) }}">
-                        <i class="glyphicon glyphicon-fire" title="Version was flagged as malware"></i>
+                        <i class="glyphicon glyphicon-fire" data-toggle="tooltip" data-placement="top" title="Version was flagged as malware"></i>
                     </a>
                 {% endif %}
 
                 {% if version.lastBlockedReference is not null and not softDeleted %}
-                    <a rel="nofollow noindex" class="action-alert retag-blocked-alert" href="{{ path('about_version_immutability') }}" title="Upstream re-tag blocked — Packagist may no longer match the VCS repo for this version">
+                    <a rel="nofollow noindex" class="action-alert retag-blocked-alert" href="{{ path('about_version_immutability') }}" data-toggle="tooltip" data-placement="top" title="Upstream re-tag blocked — Packagist may no longer match the VCS repo for this version">
                         <i class="glyphicon glyphicon-warning-sign"></i>
                     </a>
                 {% endif %}
 
                 {% if softDeleted %}
-                    {% set deletionTitle = 'Deleted' %}
                     {% set deletionIcon = 'glyphicon-trash' %}
-                    {% if reason == enum('App\\Audit\\VersionDeletionReason').DeletedByMaintainer %}
-                        {% set deletionTitle = 'Deleted by maintainer on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' %}
-                    {% elseif reason == enum('App\\Audit\\VersionDeletionReason').DeletedByAdmin %}
-                        {% set deletionTitle = 'Removed by admin on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' ~ (version.deletionReasonText ? ': ' ~ version.deletionReasonText : '') %}
-                    {% elseif reason == enum('App\\Audit\\VersionDeletionReason').AutoDeletedMissing %}
-                        {% set deletionTitle = 'No longer found in upstream repository' %}
-                    {% elseif reason == enum('App\\Audit\\VersionDeletionReason').Hidden %}
-                        {% set deletionTitle = 'Hidden by admin on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' ~ (version.deletionReasonText ? ': ' ~ version.deletionReasonText : '') %}
+                    {% if reason == enum('App\\Audit\\VersionDeletionReason').Hidden %}
                         {% set deletionIcon = 'glyphicon-eye-close' %}
                     {% endif %}
                     <span class="action-alert deletion-alert" title="{{ deletionTitle }}">
