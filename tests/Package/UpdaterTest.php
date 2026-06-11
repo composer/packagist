@@ -121,6 +121,7 @@ class UpdaterTest extends IntegrationTestCase
             'source' => 'https://github.com/test/pkg',
             'email' => 'security@example.com',
             'chat' => 'irc://irc.libera.chat/composer',
+            'irc' => 'javascript:alert(4)',
         ]);
         $upstream->setFunding([
             ['type' => 'custom', 'url' => 'javascript:alert(2)'],
@@ -145,6 +146,7 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame('https://github.com/test/pkg', $support['source']);
         self::assertSame('security@example.com', $support['email']);
         self::assertSame('irc://irc.libera.chat/composer', $support['chat']);
+        self::assertArrayNotHasKey('irc', $support);
 
         $funding = $version->getFunding();
         self::assertArrayNotHasKey('url', $funding[0]);

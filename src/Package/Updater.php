@@ -1201,9 +1201,11 @@ class Updater
             }
         }
 
-        // chat may point at an IRC channel, so allow the irc/ircs schemes there too
-        if (isset($support['chat']) && null === $this->filterUrl($support['chat'], ['http', 'https', 'irc', 'ircs'])) {
-            unset($support['chat']);
+        // chat and irc may point at an IRC channel, so allow the irc/ircs schemes there too
+        foreach (['chat', 'irc'] as $key) {
+            if (isset($support[$key]) && null === $this->filterUrl($support[$key], ['http', 'https', 'irc', 'ircs'])) {
+                unset($support[$key]);
+            }
         }
 
         return $support;
