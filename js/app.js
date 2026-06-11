@@ -77,6 +77,8 @@ import 'bootstrap';
             }
         } catch (e) {}
     }
+
+    $('[data-toggle="tooltip"]').tooltip();
 })(jQuery);
 
 if (
