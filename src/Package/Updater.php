@@ -1170,8 +1170,10 @@ class Updater
     /**
      * Package metadata link fields are rendered into href attributes, so only web
      * schemes are allowed, mirroring the readme link sanitizer (allowLinkSchemes).
+     *
+     * @param list<string> $allowedSchemes
      */
-    private function filterUrl(?string $url): ?string
+    private function filterUrl(?string $url, array $allowedSchemes = ['http', 'https']): ?string
     {
         if (null === $url || '' === $url) {
             return $url;
@@ -1179,7 +1181,7 @@ class Updater
 
         $scheme = strtolower((string) parse_url($url, \PHP_URL_SCHEME));
 
-        return \in_array($scheme, ['http', 'https'], true) ? $url : null;
+        return \in_array($scheme, $allowedSchemes, true) ? $url : null;
     }
 
     /**
@@ -1193,10 +1195,15 @@ class Updater
             return null;
         }
 
-        foreach (['issues', 'forum', 'wiki', 'source', 'docs', 'rss', 'chat', 'security'] as $key) {
+        foreach (['issues', 'forum', 'wiki', 'source', 'docs', 'rss', 'security'] as $key) {
             if (isset($support[$key]) && null === $this->filterUrl($support[$key])) {
                 unset($support[$key]);
             }
+        }
+
+        // chat may point at an IRC channel, so allow the irc/ircs schemes there too
+        if (isset($support['chat']) && null === $this->filterUrl($support['chat'], ['http', 'https', 'irc', 'ircs'])) {
+            unset($support['chat']);
         }
 
         return $support;
