@@ -109,6 +109,54 @@ class UpdaterTest extends IntegrationTestCase
         $this->assertStringContainsString('This is the readme', $readme->contents);
     }
 
+    public function testFiltersDangerousUrlSchemesFromMetadata(): void
+    {
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://example.com/test/pkg');
+        $upstream->setSourceReference('abcdef1234567890');
+        $upstream->setHomepage('javascript:alert(document.domain)');
+        $upstream->setSupport([
+            'issues' => 'javascript:alert(1)',
+            'source' => 'https://github.com/test/pkg',
+            'email' => 'security@example.com',
+            'chat' => 'irc://irc.libera.chat/composer',
+            'irc' => 'javascript:alert(4)',
+        ]);
+        $upstream->setFunding([
+            ['type' => 'custom', 'url' => 'javascript:alert(2)'],
+            ['type' => 'github', 'url' => 'https://github.com/sponsors/test'],
+        ]);
+        $upstream->setAuthors([
+            ['name' => 'Bob', 'homepage' => 'javascript:alert(3)'],
+        ]);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($version);
+        self::assertNull($version->getHomepage());
+
+        $support = $version->getSupport();
+        self::assertArrayNotHasKey('issues', $support);
+        self::assertSame('https://github.com/test/pkg', $support['source']);
+        self::assertSame('security@example.com', $support['email']);
+        self::assertSame('irc://irc.libera.chat/composer', $support['chat']);
+        self::assertArrayNotHasKey('irc', $support);
+
+        $funding = $version->getFunding();
+        self::assertArrayNotHasKey('url', $funding[0]);
+        self::assertSame('https://github.com/sponsors/test', $funding[1]['url']);
+
+        $authors = $version->getAuthors();
+        self::assertArrayNotHasKey('homepage', $authors[0]);
+        self::assertSame('Bob', $authors[0]['name']);
+    }
+
     public function testConvertsMarkdownForReadme(): void
     {
         $readme = <<<EOR
