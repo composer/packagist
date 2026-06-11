@@ -30,18 +30,18 @@
 
                 {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
                     <a rel="nofollow noindex" class="action-alert advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
-                        <i class="glyphicon glyphicon-alert" data-toggle="tooltip" data-placement="top" title="Version has security advisories"></i>
+                        <i class="glyphicon glyphicon-alert" data-toggle="tooltip" data-placement="top" title="Version has security advisories" data-container="body"></i>
                     </a>
                 {% endif %}
 
                 {% if hasVersionsFlaggedAsMalware[version.id]|default(false) %}
                     <a rel="nofollow noindex" class="action-alert malware-alert" href="{{ path('view_package_filter_lists', {name: package.name, version: version.id, list: 'malware'}) }}">
-                        <i class="glyphicon glyphicon-fire" data-toggle="tooltip" data-placement="top" title="Version was flagged as malware"></i>
+                        <i class="glyphicon glyphicon-fire" data-toggle="tooltip" data-placement="top" title="Version was flagged as malware" data-container="body"></i>
                     </a>
                 {% endif %}
 
                 {% if version.lastBlockedReference is not null and not softDeleted %}
-                    <a rel="nofollow noindex" class="action-alert retag-blocked-alert" href="{{ path('about_version_immutability') }}" data-toggle="tooltip" data-placement="top" title="Upstream re-tag blocked — Packagist may no longer match the VCS repo for this version">
+                    <a rel="nofollow noindex" class="action-alert retag-blocked-alert" href="{{ path('about_version_immutability') }}" data-toggle="tooltip" data-placement="top" title="Upstream re-tag blocked — Packagist may no longer match the VCS repo for this version" data-container="body">
                         <i class="glyphicon glyphicon-warning-sign"></i>
                     </a>
                 {% endif %}
@@ -51,7 +51,7 @@
                     {% if reason == enum('App\\Audit\\VersionDeletionReason').Hidden %}
                         {% set deletionIcon = 'glyphicon-eye-close' %}
                     {% endif %}
-                    <span class="action-alert deletion-alert" title="{{ deletionTitle }}">
+                    <span class="action-alert deletion-alert" data-toggle="tooltip" data-placement="top" title="{{ deletionTitle }}" data-container="body">
                         <i class="glyphicon {{ deletionIcon }}"></i>
                     </span>
                 {% endif %}
@@ -60,7 +60,7 @@
                     {% if canHideVersion|default(false) %}
                         <form class="hide-version" action="{{ path("admin_hide_version", {"versionId": version.id}) }}" method="POST">
                             <input type="hidden" name="_token" value="{{ manageVersionsCsrfToken }}" />
-                            <i class="submit glyphicon glyphicon-eye-close" title="Hide version from public"></i>
+                            <i class="submit glyphicon glyphicon-eye-close" data-toggle="tooltip" data-placement="top" title="Hide version from public" data-container="body"></i>
                         </form>
                     {% endif %}
                     <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="DELETE"
@@ -70,7 +70,7 @@
                           {% endif %}
                           >
                         <input type="hidden" name="_token" value="{{ manageVersionsCsrfToken }}" />
-                        <i class="submit glyphicon glyphicon-remove" title="{% if version.isDevelopment() %}Hard-delete dev version permanently{% else %}Soft-delete stable version{% endif %}{% if canAdminDeleteVersion|default(false) %} (or remove with reason){% endif %}"></i>
+                        <i class="submit glyphicon glyphicon-remove" data-toggle="tooltip" data-placement="top" title="{% if version.isDevelopment() %}Hard-delete dev version permanently{% else %}Soft-delete stable version{% endif %}{% if canAdminDeleteVersion|default(false) %} (or remove with reason){% endif %}" data-container="body"></i>
                     </form>
                 {% endif %}
 
@@ -83,7 +83,7 @@
                 {% if canRecover %}
                     <form class="recover-version" action="{{ path("recover_version", {"versionId": version.id}) }}" method="POST">
                         <input type="hidden" name="_token" value="{{ manageVersionsCsrfToken }}" />
-                        <i class="submit glyphicon glyphicon-repeat" title="Recover version"></i>
+                        <i class="submit glyphicon glyphicon-repeat" data-toggle="tooltip" data-placement="top" title="Recover version" data-container="body"></i>
                     </form>
                 {% endif %}
             </li>
