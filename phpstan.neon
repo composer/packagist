@@ -62,7 +62,7 @@ parameters:
         SecurityAdvisoryJob: 'array{source: string}'
         FilterListJob: 'array{list: string, source: string}'
 
-        JobResult: 'array{status: \App\Entity\Job::STATUS_*, message: string, vendor?: string, details?: string, exceptionMsg?: string, exceptionClass?: class-string<\Throwable>, results?: array{hooks_setup: int, hooks_failed: array<int, array{package: string, reason: mixed}>, hooks_ok_unchanged: int}}'
+        JobResult: 'array{status: \App\Entity\Job::STATUS_*, message: string, vendor?: string, details?: string, exceptionMsg?: string, exceptionClass?: class-string<\Throwable>, results?: array{hooks_setup: int, hooks_failed: array<int, array{package: string, reason: string, reasonIsHtml: bool}>, hooks_ok_unchanged: int}}'
         ErroredResult: 'array{status: \App\Entity\Job::STATUS_ERRORED, message: string, exception: \Throwable}'
         GenericCompletedResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string}'
         RescheduleResult: 'array{status: \App\Entity\Job::STATUS_RESCHEDULE, after: \DateTimeImmutable, message: string, vendor?: string}'
@@ -72,7 +72,7 @@ parameters:
         PackageDeletedResult: 'array{status: \App\Entity\Job::STATUS_PACKAGE_DELETED, message: string, vendor: string, exception: \Throwable, details: string}'
         AdvisoriesCompletedResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string, details: string}'
         AdvisoriesErroredResult: 'array{status: \App\Entity\Job::STATUS_ERRORED, message: string}'
-        GitHubMigrationResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string, results: array{hooks_setup: int, hooks_failed: array<int, array{package: string, reason: mixed}>, hooks_ok_unchanged: int}}'
+        GitHubMigrationResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string, results: array{hooks_setup: int, hooks_failed: array<int, array{package: string, reason: string, reasonIsHtml: bool}>, hooks_ok_unchanged: int}}'
         GitHubMigrationFailedResult: 'array{status: \App\Entity\Job::STATUS_FAILED, message: string}'
         FilterListCompletedResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string}'
         FilterListErroredResult: 'array{status: \App\Entity\Job::STATUS_ERRORED, message: string}'
