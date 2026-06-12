@@ -339,6 +339,10 @@ class Updater
 
             $versionId = null;
             $versionSoftDeleted = false;
+            // A row was created or mutated. This also covers the stable source/dist URL rewrite from
+            // applyStableImmutabilityGate() under UPDATE_SOURCE_DIST_URL — that path mutates the managed
+            // entity and returns a VersionUpdatedResult so it is flushed + detached here rather than
+            // leaning on the catch-all flush at the end of update(). Such rewrites carry no events.
             if ($result instanceof VersionUpdatedResult) {
                 foreach ($result->events as $event) {
                     $this->eventDispatcher->dispatch($event);
@@ -352,6 +356,12 @@ class Updater
                 $this->versionIdCache->insertVersion($package, $result->entity);
                 $versionId = $result->entity->getId();
             } else {
+                // idsToMarkUpdated feeds the recovery query below, which un-soft-deletes any of these ids
+                // that had been auto-soft-deleted-as-missing and have now reappeared upstream. A row taking
+                // the rewrite branch above is an active version present upstream, so for it that recovery
+                // would be a no-op — which is why not adding rewritten ids here is safe. (The lone gap: a
+                // stable row that was auto-soft-deleted and reappears under UPDATE_SOURCE_DIST_URL gets its
+                // URL rewritten but stays soft-deleted; the next normal crawl recovers it via this path.)
                 $idsToMarkUpdated[] = $result->id;
                 $versionSoftDeleted = $result->softDeleted;
                 // Skipped non-soft-deleted rows (immutable stable, ref-unchanged, ...) still need to
@@ -469,13 +479,19 @@ class Updater
     }
 
     /**
-     * Apply the immutability rule to an existing stable version. Returns the skip result; never mutates
-     * the version's source/dist/metadata. The only DB writes performed here are to lastBlockedReference
-     * (set or clear) and the audit/email side-effects when a new attempted ref is detected.
+     * Apply the immutability rule to an existing stable version. Usually returns a VersionSkippedResult:
+     * the reference is frozen, so an upstream re-tag is refused (and audited/emailed once per attempted
+     * ref). The reference is never changed here.
+     *
+     * The one exception is the operator-gated UPDATE_SOURCE_DIST_URL flag: when the ref is unchanged it
+     * may rewrite source.url/dist.url in place (references and shasum stay put). In that case the row was
+     * actually mutated, so it returns a VersionUpdatedResult carrying the entity, signalling the caller to
+     * store it. Other DB writes performed here are to lastBlockedReference (set or clear) and the
+     * audit/email side-effects when a new attempted ref is detected.
      *
      * @param array{id: int, version: string, normalizedVersion: string, development: int, source: array{type: string|null, url: string|null, reference: string|null}|null, dist: array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null, softDeletedAt: string|null, deletionReason: string|null, lastBlockedReference: string|null, defaultBranch: int} $existingVersion
      */
-    private function applyStableImmutabilityGate(IOInterface $io, \Doctrine\ORM\EntityManagerInterface $em, VersionRepository $versionRepo, Package $package, array $existingVersion, CompletePackageInterface $data, int $flags, VcsDriverInterface $driver, ?string $newEffectiveRef): VersionSkippedResult
+    private function applyStableImmutabilityGate(IOInterface $io, \Doctrine\ORM\EntityManagerInterface $em, VersionRepository $versionRepo, Package $package, array $existingVersion, CompletePackageInterface $data, int $flags, VcsDriverInterface $driver, ?string $newEffectiveRef): VersionSkippedResult|VersionUpdatedResult
     {
         $normVersion = $data->getVersion();
         $prettyVersion = $data->getPrettyVersion();
@@ -501,7 +517,14 @@ class Updater
             }
 
             if ($flags & self::UPDATE_SOURCE_DIST_URL) {
-                $this->applySourceDistUrlRewrite($io, $versionRepo, $existingVersion, $data, $driver);
+                $rewritten = $this->applySourceDistUrlRewrite($io, $versionRepo, $existingVersion, $data, $driver);
+                if (null !== $rewritten) {
+                    // The row's source/dist URL was actually rewritten (the reference is unchanged, so
+                    // immutability still holds). Surface it as an update, not a skip, so the caller stores
+                    // it through the VersionUpdatedResult branch (explicit flush + detach) instead of
+                    // relying on the catch-all flush at the end of update().
+                    return new VersionUpdatedResult(id: $existingVersion['id'], version: strtolower($normVersion), entity: $rewritten);
+                }
             }
 
             return new VersionSkippedResult(id: $existingVersion['id'], version: strtolower($normVersion));
@@ -531,9 +554,12 @@ class Updater
      * Rewrites only source.url and dist.url; leaves references, shasum, and every other field alone.
      * Skips the row (with a specific warning) if any of the safety checks fail.
      *
+     * Returns the mutated (still managed) Version when a rewrite was applied, or null when a safety
+     * check caused the row to be skipped. The caller decides how to surface that (updated vs skipped).
+     *
      * @param array{id: int, source: array{type: string|null, url: string|null, reference: string|null}|null, dist: array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null} $existingVersion
      */
-    private function applySourceDistUrlRewrite(IOInterface $io, VersionRepository $versionRepo, array $existingVersion, CompletePackageInterface $data, VcsDriverInterface $driver): void
+    private function applySourceDistUrlRewrite(IOInterface $io, VersionRepository $versionRepo, array $existingVersion, CompletePackageInterface $data, VcsDriverInterface $driver): ?Version
     {
         $prettyVersion = $data->getPrettyVersion();
         $skip = function (string $reason) use ($io, $prettyVersion, $data, $existingVersion): void {
@@ -553,27 +579,27 @@ class Updater
         if (!\is_string($oldSourceRef) || $oldSourceRef === '' || !\is_string($oldDistRef) || $oldDistRef === '') {
             $skip('existing source/dist reference is missing');
 
-            return;
+            return null;
         }
         if (!\is_string($newSourceRef) || $newSourceRef === '' || !\is_string($newDistRef) || $newDistRef === '') {
             $skip('new source/dist reference is missing');
 
-            return;
+            return null;
         }
         if (!Preg::isMatch('{^[a-f0-9]{40,}$}', $oldSourceRef) || !Preg::isMatch('{^[a-f0-9]{40,}$}', $oldDistRef)) {
             $skip('reference is not a 40+ char commit hash');
 
-            return;
+            return null;
         }
         if ($oldSourceRef !== $newSourceRef || $oldDistRef !== $newDistRef) {
             $skip('source/dist reference hashes differ between stored and new data');
 
-            return;
+            return null;
         }
         if (!\is_string($newSourceUrl) || $newSourceUrl === '' || !\is_string($newDistUrl) || $newDistUrl === '') {
             $skip('new source/dist URL is missing');
 
-            return;
+            return null;
         }
 
         // Authoritative check: ask the VCS driver what dist URL belongs to this reference.
@@ -582,19 +608,19 @@ class Updater
         } catch (\Throwable $e) {
             $skip('driver getDist() threw: '.$e->getMessage());
 
-            return;
+            return null;
         }
         if (!is_array($driverDist) || ($driverDist['url'] ?? null) !== $newDistUrl) {
             $skip('driver-confirmed dist URL does not match incoming dist URL');
 
-            return;
+            return null;
         }
 
         $version = $versionRepo->find($existingVersion['id']);
         if (null === $version) {
             $skip('version not found by id');
 
-            return;
+            return null;
         }
 
         Assert::notNull($oldSource);
@@ -624,6 +650,8 @@ class Updater
             'dist_url_to' => $newDistUrl,
             'reference' => $newSourceRef,
         ]);
+
+        return $version;
     }
 
     /**
