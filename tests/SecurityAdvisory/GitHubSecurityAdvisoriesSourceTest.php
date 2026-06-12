@@ -178,6 +178,111 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         $this->assertSame(Severity::MEDIUM, $advisories[0]->severity);
     }
 
+    public function testWithdrawnAdvisoryIsExcludedButRecorded(): void
+    {
+        $responseFactory = fn (string $method, string $url, array $options) => new MockResponse(json_encode([
+            'data' => [
+                'securityVulnerabilities' => [
+                    'nodes' => [
+                        $this->graphQlPackageNode('GHSA-live-aaaa-aaaa', 'vendor/package', '= 4.10.0', 'CVE-2021-35210', 'Live advisory', '2021-07-01T17:00:04Z'),
+                        $this->graphQlPackageNode('GHSA-gone-bbbb-bbbb', 'vendor/package', '= 4.10.0', 'CVE-2020-25768', 'Withdrawn advisory', '2020-09-24T16:23:54Z', '2021-01-01T00:00:00Z'),
+                    ],
+                    'pageInfo' => ['hasNextPage' => false, 'endCursor' => 'cursor'],
+                ],
+            ],
+        ]), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+
+        $source = new GitHubSecurityAdvisoriesSource(new MockHttpClient($responseFactory), new NullLogger(), $this->providerManager, [], $this->doctrine);
+        $advisoryCollection = $source->getAdvisories(new BufferIO());
+
+        $this->assertNotNull($advisoryCollection);
+
+        $advisories = $advisoryCollection->getAdvisoriesForPackageName('vendor/package');
+        $this->assertCount(1, $advisories);
+        $this->assertSame('GHSA-live-aaaa-aaaa', $advisories[0]->id);
+
+        $this->assertTrue($advisoryCollection->isWithdrawn('vendor/package', 'GHSA-gone-bbbb-bbbb'));
+        $this->assertFalse($advisoryCollection->isWithdrawn('vendor/package', 'GHSA-live-aaaa-aaaa'));
+    }
+
+    public function testWithdrawnAdvisoryDoesNotSuppressLiveAdvisoryForSameCve(): void
+    {
+        // The withdrawn node is listed before the live node for the same CVE.
+        $responseFactory = fn (string $method, string $url, array $options) => new MockResponse(json_encode([
+            'data' => [
+                'securityVulnerabilities' => [
+                    'nodes' => [
+                        $this->graphQlPackageNode('GHSA-gone-bbbb-bbbb', 'vendor/package', '= 4.10.0', 'CVE-2020-25768', 'Withdrawn advisory', '2020-09-24T16:23:54Z', '2021-01-01T00:00:00Z'),
+                        $this->graphQlPackageNode('GHSA-live-cccc-cccc', 'vendor/package', '= 4.10.0', 'CVE-2020-25768', 'Live advisory', '2021-07-01T17:00:04Z'),
+                    ],
+                    'pageInfo' => ['hasNextPage' => false, 'endCursor' => 'cursor'],
+                ],
+            ],
+        ]), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+
+        $source = new GitHubSecurityAdvisoriesSource(new MockHttpClient($responseFactory), new NullLogger(), $this->providerManager, [], $this->doctrine);
+        $advisoryCollection = $source->getAdvisories(new BufferIO());
+
+        $this->assertNotNull($advisoryCollection);
+
+        $advisories = $advisoryCollection->getAdvisoriesForPackageName('vendor/package');
+        $this->assertCount(1, $advisories);
+        $this->assertSame('GHSA-live-cccc-cccc', $advisories[0]->id);
+        $this->assertSame('CVE-2020-25768', $advisories[0]->cve);
+
+        $this->assertTrue($advisoryCollection->isWithdrawn('vendor/package', 'GHSA-gone-bbbb-bbbb'));
+    }
+
+    public function testSameRemoteIdWithdrawnAndLiveIsTreatedAsLive(): void
+    {
+        // Same package + GHSA id appears both withdrawn and live; live wins, no removal flagged.
+        $responseFactory = fn (string $method, string $url, array $options) => new MockResponse(json_encode([
+            'data' => [
+                'securityVulnerabilities' => [
+                    'nodes' => [
+                        $this->graphQlPackageNode('GHSA-dup-dddd-dddd', 'vendor/package', '< 4.9.0', 'CVE-2021-35210', 'Advisory', '2021-07-01T17:00:04Z', '2021-01-01T00:00:00Z'),
+                        $this->graphQlPackageNode('GHSA-dup-dddd-dddd', 'vendor/package', '= 4.10.0', 'CVE-2021-35210', 'Advisory', '2021-07-01T17:00:04Z'),
+                    ],
+                    'pageInfo' => ['hasNextPage' => false, 'endCursor' => 'cursor'],
+                ],
+            ],
+        ]), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+
+        $source = new GitHubSecurityAdvisoriesSource(new MockHttpClient($responseFactory), new NullLogger(), $this->providerManager, [], $this->doctrine);
+        $advisoryCollection = $source->getAdvisories(new BufferIO());
+
+        $this->assertNotNull($advisoryCollection);
+
+        $advisories = $advisoryCollection->getAdvisoriesForPackageName('vendor/package');
+        $this->assertCount(1, $advisories);
+        $this->assertSame('GHSA-dup-dddd-dddd', $advisories[0]->id);
+
+        $this->assertFalse($advisoryCollection->isWithdrawn('vendor/package', 'GHSA-dup-dddd-dddd'));
+    }
+
+    public function testWithdrawnAdvisoryWithoutGhsaIdIsIgnored(): void
+    {
+        $node = $this->graphQlPackageNode('GHSA-ignored', 'vendor/package', '= 4.10.0', 'CVE-2020-25768', 'Withdrawn advisory', '2020-09-24T16:23:54Z', '2021-01-01T00:00:00Z');
+        // Drop the GHSA identifier, leaving only the CVE one.
+        $node['advisory']['identifiers'] = [['type' => 'CVE', 'value' => 'CVE-2020-25768']];
+
+        $responseFactory = fn (string $method, string $url, array $options) => new MockResponse(json_encode([
+            'data' => [
+                'securityVulnerabilities' => [
+                    'nodes' => [$node],
+                    'pageInfo' => ['hasNextPage' => false, 'endCursor' => 'cursor'],
+                ],
+            ],
+        ]), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+
+        $source = new GitHubSecurityAdvisoriesSource(new MockHttpClient($responseFactory), new NullLogger(), $this->providerManager, [], $this->doctrine);
+        $advisoryCollection = $source->getAdvisories(new BufferIO());
+
+        $this->assertNotNull($advisoryCollection);
+        $this->assertSame([], $advisoryCollection->getAdvisoriesForPackageName('vendor/package'));
+        $this->assertSame([], $advisoryCollection->getPackageNames());
+    }
+
     private function getPackage(): Package
     {
         $package = new Package();
@@ -241,14 +346,14 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         ];
     }
 
-    private function graphQlPackageNode(string $advisoryId, string $packageName, string $range, string $cve, string $summary, string $publishedAt): array
+    private function graphQlPackageNode(string $advisoryId, string $packageName, string $range, string $cve, string $summary, string $publishedAt, ?string $withdrawnAt = null): array
     {
         return [
             'advisory' => [
                 'summary' => $summary,
                 'permalink' => 'https://github.com/advisories/'.$advisoryId,
                 'publishedAt' => $publishedAt,
-                'withdrawnAt' => null,
+                'withdrawnAt' => $withdrawnAt,
                 'severity' => 'MODERATE',
                 'identifiers' => [
                     ['type' => 'GHSA', 'value' => $advisoryId],
