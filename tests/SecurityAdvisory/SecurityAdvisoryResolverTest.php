@@ -118,6 +118,63 @@ class SecurityAdvisoryResolverTest extends TestCase
         $this->assertSame([], $removed);
     }
 
+    public function testRemoveWithdrawnDeletesSingleSourceAdvisory(): void
+    {
+        $advisory = new SecurityAdvisory($this->createRemoteAdvisory('test'), 'test');
+        $remoteId = $advisory->getSourceRemoteId('test');
+        $this->assertNotNull($remoteId);
+        $collection = new RemoteSecurityAdvisoryCollection([], ['acme/package' => [$remoteId => true]]);
+
+        [$remaining, $toRemove] = $this->resolver->removeWithdrawn([$advisory], $collection, 'test');
+
+        $this->assertSame([], $remaining);
+        $this->assertSame([$advisory], $toRemove);
+        // The source is left attached so the caller can delete the whole entity graph at once.
+        $this->assertTrue($advisory->hasSources());
+    }
+
+    public function testRemoveWithdrawnKeepsAdvisoryWithRemainingSource(): void
+    {
+        $advisory = new SecurityAdvisory($this->createRemoteAdvisory('test'), 'test');
+        $advisory->addSource('other-id', 'other', null);
+        $remoteId = $advisory->getSourceRemoteId('test');
+        $this->assertNotNull($remoteId);
+        $collection = new RemoteSecurityAdvisoryCollection([], ['acme/package' => [$remoteId => true]]);
+
+        [$remaining, $toRemove] = $this->resolver->removeWithdrawn([$advisory], $collection, 'test');
+
+        $this->assertSame([$advisory], $remaining);
+        $this->assertSame([], $toRemove);
+        $this->assertNull($advisory->getSourceRemoteId('test'));
+        $this->assertNotNull($advisory->getSourceRemoteId('other'));
+    }
+
+    public function testRemoveWithdrawnIgnoresUnknownRemoteId(): void
+    {
+        $advisory = new SecurityAdvisory($this->createRemoteAdvisory('test'), 'test');
+        $collection = new RemoteSecurityAdvisoryCollection([], ['acme/package' => ['unknown-id' => true]]);
+
+        [$remaining, $toRemove] = $this->resolver->removeWithdrawn([$advisory], $collection, 'test');
+
+        $this->assertSame([$advisory], $remaining);
+        $this->assertSame([], $toRemove);
+        $this->assertTrue($advisory->hasSources());
+    }
+
+    public function testRemoveWithdrawnIgnoresOtherSource(): void
+    {
+        $advisory = new SecurityAdvisory($this->createRemoteAdvisory('other'), 'other');
+        $remoteId = $advisory->getSourceRemoteId('other');
+        $this->assertNotNull($remoteId);
+        $collection = new RemoteSecurityAdvisoryCollection([], ['acme/package' => [$remoteId => true]]);
+
+        [$remaining, $toRemove] = $this->resolver->removeWithdrawn([$advisory], $collection, 'test');
+
+        $this->assertSame([$advisory], $remaining);
+        $this->assertSame([], $toRemove);
+        $this->assertTrue($advisory->hasSources());
+    }
+
     private function createRemoteAdvisory(string $source, string $packageName = 'acme/package', ?string $cve = null): RemoteSecurityAdvisory
     {
         return new RemoteSecurityAdvisory(

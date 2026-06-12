@@ -66,8 +66,31 @@ class SecurityAdvisoryWorker
             return ['status' => Job::STATUS_ERRORED, 'message' => 'Security advisory update failed, skipped'];
         }
 
+        // Include packages that only have withdrawn advisories this run so their stale DB entries
+        // are still loaded (getPackageAdvisoriesWithSources returns nothing for an empty list).
+        $packageNames = array_values(array_unique([...$remoteAdvisories->getPackageNames(), ...$remoteAdvisories->getWithdrawnPackageNames()]));
+
         /** @var SecurityAdvisory[] $existingAdvisories */
-        $existingAdvisories = $this->doctrine->getRepository(SecurityAdvisory::class)->getPackageAdvisoriesWithSources($remoteAdvisories->getPackageNames(), $sourceName);
+        $existingAdvisories = $this->doctrine->getRepository(SecurityAdvisory::class)->getPackageAdvisoriesWithSources($packageNames, $sourceName);
+
+        // Remove advisories withdrawn at the source first and flush them on their own, before
+        // resolve() mutates any remaining advisory. Doctrine commits inserts/updates before deletes
+        // within a single flush, so deleting here frees any (packageName, cve) unique key that a
+        // replacement advisory may reuse in the same run, avoiding a constraint violation.
+        [$existingAdvisories, $withdrawn] = $this->securityAdvisoryResolver->removeWithdrawn($existingAdvisories, $remoteAdvisories, $sourceName);
+        if (\count($withdrawn) > 0) {
+            $manager = $this->doctrine->getManager();
+            foreach ($withdrawn as $advisory) {
+                // Remove the loaded source rows explicitly: the association only cascades persist, so
+                // otherwise they would dangle in the UnitOfWork and trip the later flush once their
+                // advisory is gone.
+                foreach ($advisory->getSources() as $source) {
+                    $manager->remove($source);
+                }
+                $manager->remove($advisory);
+            }
+            $manager->flush();
+        }
 
         [$new, $removed] = $this->securityAdvisoryResolver->resolve($existingAdvisories, $remoteAdvisories, $sourceName);
 

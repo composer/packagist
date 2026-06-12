@@ -19,9 +19,12 @@ class RemoteSecurityAdvisoryCollection
 
     /**
      * @param list<RemoteSecurityAdvisory> $advisories
+     * @param array<string, array<string, true>> $withdrawnAdvisories packageName => (remoteId => true) for advisories withdrawn at the source
      */
-    public function __construct(array $advisories)
-    {
+    public function __construct(
+        array $advisories,
+        private readonly array $withdrawnAdvisories = [],
+    ) {
         foreach ($advisories as $advisory) {
             $this->groupedSecurityAdvisories[$advisory->packageName][] = $advisory;
         }
@@ -41,5 +44,21 @@ class RemoteSecurityAdvisoryCollection
     public function getPackageNames(): array
     {
         return array_keys($this->groupedSecurityAdvisories);
+    }
+
+    /**
+     * Whether the advisory with the given remote id was withdrawn at the source for the given package.
+     */
+    public function isWithdrawn(string $packageName, string $remoteId): bool
+    {
+        return isset($this->withdrawnAdvisories[$packageName][$remoteId]);
+    }
+
+    /**
+     * @return list<string> package names that have at least one advisory withdrawn at the source
+     */
+    public function getWithdrawnPackageNames(): array
+    {
+        return array_keys($this->withdrawnAdvisories);
     }
 }

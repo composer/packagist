@@ -55,6 +55,8 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
         $advisoryMap = [];
         /** @var array<string, array<string, true>> $foundPackageCves */
         $foundPackageCves = [];
+        /** @var array<string, array<string, true>> $withdrawnAdvisories */
+        $withdrawnAdvisories = [];
         $hasNextPage = true;
         $after = '';
 
@@ -100,10 +102,6 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                 $remoteId = null;
                 $cve = null;
 
-                if (isset($node['advisory']['withdrawnAt'])) {
-                    continue;
-                }
-
                 foreach ($node['advisory']['identifiers'] as $identifier) {
                     if ('GHSA' === $identifier['type']) {
                         $remoteId = $identifier['value'];
@@ -122,6 +120,14 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
                 }
 
                 $packageName = strtolower($node['package']['name']);
+
+                // Record advisories withdrawn at the source so existing DB entries can be removed.
+                // These are kept out of $advisoryMap and $foundPackageCves so a live advisory for
+                // the same CVE is not suppressed by a withdrawn one.
+                if (isset($node['advisory']['withdrawnAt'])) {
+                    $withdrawnAdvisories[$packageName][$remoteId] = true;
+                    continue;
+                }
 
                 // GitHub adds spaces everywhere e.g. > 1.0, adjust to be able to match other advisories
                 $versionRange = Preg::replace('#\s#', '', $node['vulnerableVersionRange']);
@@ -177,7 +183,20 @@ class GitHubSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
             }
         }
 
-        return new RemoteSecurityAdvisoryCollection($advisories);
+        // A remote id that is both withdrawn and live in the same run (e.g. withdrawn on one node
+        // but present on another) must be treated as live, so do not flag it for removal.
+        foreach ($withdrawnAdvisories as $packageName => $remoteIds) {
+            foreach (array_keys($remoteIds) as $remoteId) {
+                if (isset($advisoryMap[$packageName][$remoteId])) {
+                    unset($withdrawnAdvisories[$packageName][$remoteId]);
+                }
+            }
+            if (\count($withdrawnAdvisories[$packageName]) === 0) {
+                unset($withdrawnAdvisories[$packageName]);
+            }
+        }
+
+        return new RemoteSecurityAdvisoryCollection($advisories, $withdrawnAdvisories);
     }
 
     private function getQuery(string $after = ''): string

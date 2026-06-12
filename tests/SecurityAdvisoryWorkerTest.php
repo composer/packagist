@@ -108,6 +108,50 @@ class SecurityAdvisoryWorkerTest extends TestCase
         $this->worker->process($job, SignalHandler::create());
     }
 
+    public function testProcessRemovesWithdrawnAdvisoryBeforeResolve(): void
+    {
+        $newRemote = $this->createRemoteAdvisory('package/new', 'new-id');
+        $withdrawnExisting = new SecurityAdvisory($this->createRemoteAdvisory('package/withdrawn', 'withdrawn-id'), 'test');
+
+        $collection = new RemoteSecurityAdvisoryCollection([$newRemote], ['package/withdrawn' => ['withdrawn-id' => true]]);
+
+        $this->source
+            ->expects($this->once())
+            ->method('getAdvisories')
+            ->willReturn($collection);
+
+        $this->securityAdvisoryRepository
+            ->expects($this->once())
+            ->method('getPackageAdvisoriesWithSources')
+            ->willReturn([$withdrawnExisting->getPackagistAdvisoryId() => $withdrawnExisting]);
+
+        $calls = [];
+        $this->em
+            ->method('remove')
+            ->willReturnCallback(function (object $entity) use (&$calls): void {
+                $calls[] = $entity instanceof SecurityAdvisory ? 'remove:advisory' : 'remove:source';
+            });
+        $this->em
+            ->method('persist')
+            ->willReturnCallback(function () use (&$calls): void {
+                $calls[] = 'persist';
+            });
+        $this->em
+            ->expects($this->exactly(2))
+            ->method('flush')
+            ->willReturnCallback(function () use (&$calls): void {
+                $calls[] = 'flush';
+            });
+
+        $job = new Job('job', 'security:advisory', ['source' => 'test']);
+        $job->setPackageId(42);
+        $this->worker->process($job, SignalHandler::create());
+
+        // The withdrawn advisory (and its source row) is removed and flushed on its own before the
+        // new advisory is persisted, freeing any (packageName, cve) unique key for reuse.
+        $this->assertSame(['remove:source', 'remove:advisory', 'flush', 'persist', 'flush'], $calls);
+    }
+
     public function testProcessNoAdvisories(): void
     {
         $this->source
