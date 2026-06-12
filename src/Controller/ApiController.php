@@ -352,35 +352,6 @@ class ApiController extends Controller
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
             if ($uaParser->getComposerVersion() && $uaParser->getPhpMinorVersion() && $uaParser->getComposerMajorVersion()) {
                 $downloadManager->addDownloads($jobs, $ip ?? '', $uaParser->getPhpMinorVersion(), $uaParser->getPhpMinorPlatformVersion() ?: $uaParser->getPhpMinorVersion());
-
-                $statsd->increment('installs', 1, 1, [
-                    'composer_major' => $uaParser->getComposerMajorVersion(),
-                    'php_minor' => $uaParser->getPhpMinorVersion(),
-                    'platform_php_minor' => $uaParser->getPhpMinorPlatformVersion() ?: 'unknown',
-                    'ci' => $uaParser->getCI() ? 'true' : 'false',
-                ]);
-                $statsd->increment('installs.composer', 1, 1, [
-                    'composer' => $uaParser->getComposerVersion(),
-                ]);
-                $statsd->increment('installs.http', 1, 1, [
-                    'http' => $uaParser->getHttpVersion() ?: 'unknown',
-                ]);
-                $statsd->increment('installs.php_patch', 1, 1, [
-                    'php_patch' => $uaParser->getPhpVersion() ?: 'unknown',
-                ]);
-                $statsd->increment('installs.os', 1, 1, [
-                    'os' => $uaParser->getOs() ?: 'unknown',
-                    'php_minor' => $uaParser->getPhpMinorVersion(),
-                    'ci' => $uaParser->getCI() ? 'true' : 'false',
-                ]);
-            } elseif (
-                // log only if user-agent header is well-formed (it sometimes contains the header name itself in the value)
-                !str_starts_with($request->headers->get('User-Agent'), 'User-Agent:')
-                // and only if composer version or php minor are missing, if only composer major is invalid it's irrelevant
-                || !$uaParser->getComposerVersion() || !$uaParser->getPhpMinorVersion()
-            ) {
-                $this->logger->warning('Could not parse UA: '.$request->headers->get('User-Agent').' with '.$request->getContent().' from '.$request->getClientIp());
-                $statsd->increment('installs.invalid-ua');
             }
         }
 
