@@ -58,6 +58,26 @@ class VersionReferenceChangedEventTest extends TestCase
         $this->assertFalse($event->hasMetadataChanged());
     }
 
+    public function testHasMetadataChangedIgnoresPublishedTimeForDevVersions(): void
+    {
+        // A new commit on a dev branch bumps updatedAt (and thus published-time) and the refs,
+        // but nothing else. This must NOT count as a metadata change, otherwise every dev crawl
+        // would create a spurious audit record.
+        $version = $this->createPackageAndVersion('old-ref', 'old-ref');
+        $version->setDevelopment(true);
+        $version->setUpdatedAt(new \DateTimeImmutable('2024-01-01 12:00:00'));
+        $originalMetadata = $version->toV2Array([]);
+
+        $version->setSource(array_merge($version->getSource(), ['reference' => 'new-ref']));
+        $version->setDist(array_merge($version->getDist(), ['reference' => 'new-ref']));
+        $version->setUpdatedAt(new \DateTimeImmutable('2024-06-01 12:00:00'));
+
+        $event = new VersionReferenceChangedEvent($version, $originalMetadata);
+
+        $this->assertTrue($event->hasReferenceChanged());
+        $this->assertFalse($event->hasMetadataChanged());
+    }
+
     /**
      * @param string|array<string, mixed>|null $newValue
      */

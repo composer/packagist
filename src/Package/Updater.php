@@ -613,6 +613,7 @@ class Updater
 
         $version->setSource($newSource);
         $version->setDist($newDist);
+        $version->setUpdatedAt(new \DateTimeImmutable());
 
         $this->logger->info('Rewrote source/dist URL for stable version', [
             'package' => $data->getName(),

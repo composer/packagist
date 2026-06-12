@@ -64,6 +64,7 @@ class VersionAuditRecordTest extends KernelTestCase
         self::assertSame('dist-ref', $attributes['metadata']['dist']['reference']);
         self::assertSame('source-ref', $attributes['metadata']['source']['reference']);
         self::assertSame('^1.5.0', $attributes['metadata']['require']['composer/ca-bundle']);
+        self::assertArrayHasKey('published-time', $attributes['metadata']);
     }
 
     public function testVersionChangesGetRecorded(): void

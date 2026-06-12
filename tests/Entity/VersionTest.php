@@ -65,4 +65,26 @@ final class VersionTest extends TestCase
             'three' => [['currency', 'database', 'clock']],
         ];
     }
+
+    public function testGetPublishedAtUsesCreatedAtForStableVersions(): void
+    {
+        $version = new Version();
+        $version->setDevelopment(false);
+        $created = new \DateTimeImmutable('2024-01-01 12:00:00');
+        $version->setCreatedAt($created);
+        $version->setUpdatedAt(new \DateTimeImmutable('2024-06-01 12:00:00'));
+
+        self::assertSame($created, $version->getPublishedAt());
+    }
+
+    public function testGetPublishedAtUsesUpdatedAtForDevVersions(): void
+    {
+        $version = new Version();
+        $version->setDevelopment(true);
+        $version->setCreatedAt(new \DateTimeImmutable('2024-01-01 12:00:00'));
+        $updated = new \DateTimeImmutable('2024-06-01 12:00:00');
+        $version->setUpdatedAt($updated);
+
+        self::assertSame($updated, $version->getPublishedAt());
+    }
 }

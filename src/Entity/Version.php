@@ -39,6 +39,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *     support?: array<mixed>,
  *     funding?: array<mixed>,
  *     time?: string,
+ *     published-time: string,
  *     autoload?: array<mixed>,
  *     extra?: array<mixed>,
  *     target-dir?: string,
@@ -299,6 +300,7 @@ class Version
         if ($this->getReleasedAt()) {
             $data['time'] = $this->getReleasedAt()->format('Y-m-d\TH:i:sP');
         }
+        $data['published-time'] = $this->getPublishedAt()->format('Y-m-d\TH:i:sP');
         if ($this->getAutoload()) {
             $data['autoload'] = $this->getAutoload();
         }
@@ -634,6 +636,18 @@ class Version
     public function getReleasedAt(): ?\DateTimeImmutable
     {
         return $this->releasedAt;
+    }
+
+    /**
+     * Timestamp used as the release cooldown / minimum-release-age reference.
+     *
+     * Stable releases are immutable so their creation date is stable (a later source-URL
+     * rewrite bumps updatedAt but not createdAt). Dev versions use the last-updated date so
+     * every new commit restarts the cooldown.
+     */
+    public function getPublishedAt(): \DateTimeImmutable
+    {
+        return $this->isDevelopment() ? $this->updatedAt : $this->createdAt;
     }
 
     public function setPackage(Package $package): void
