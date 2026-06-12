@@ -7,7 +7,13 @@
         {%- endif -%}
     </span>
 
-    <span class="release-date">{{ version.releasedAt|date("Y-m-d H:i") }} UTC</span>
+    <span class="release-date" title="Published on Packagist: {{ version.publishedAt|date("Y-m-d H:i") }} UTC">
+        {%- if version.releasedAt -%}
+            {{ version.releasedAt|date("Y-m-d H:i") }} UTC
+        {%- else -%}
+            {{ version.publishedAt|date("Y-m-d H:i") }} UTC
+        {%- endif -%}
+    </span>
 </div>
 
 <div class="clearfix package-links">

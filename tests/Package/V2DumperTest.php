@@ -113,11 +113,23 @@ class V2DumperTest extends IntegrationTestCase
         $this->assertSame([], $data['security-advisories']);
         $this->assertArrayNotHasKey('filter', $data);
 
+        // stable releases use createdAt as the published-time (cooldown reference)
+        $this->assertSame(
+            $version->getCreatedAt()->format('Y-m-d\TH:i:sP'),
+            $data['packages']['acme/package'][0]['published-time'],
+        );
+
         $devFile = $this->buildDir.'/p2/acme/package~dev.json';
         $this->assertFileExists($devFile);
 
         $devData = json_decode((string) file_get_contents($devFile), true);
         $this->assertArrayNotHasKey('security-advisories', $devData);
+
+        // dev versions use updatedAt as the published-time so each commit restarts the cooldown
+        $this->assertSame(
+            $devVersion->getUpdatedAt()->format('Y-m-d\TH:i:sP'),
+            $devData['packages']['acme/package'][0]['published-time'],
+        );
     }
 
     public function testDumpSecurityAdvisories(): void
@@ -248,7 +260,9 @@ class V2DumperTest extends IntegrationTestCase
         $v->setPackage($package);
         $package->getVersions()->add($v);
         $v->setReleasedAt(new \DateTimeImmutable());
-        $v->setUpdatedAt(new \DateTimeImmutable());
+        // distinct createdAt/updatedAt so published-time can prove stable uses createdAt, dev uses updatedAt
+        $v->setCreatedAt(new \DateTimeImmutable('2024-01-01 12:00:00'));
+        $v->setUpdatedAt(new \DateTimeImmutable('2024-02-02 12:00:00'));
 
         return $v;
     }

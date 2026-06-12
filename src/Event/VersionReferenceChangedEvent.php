@@ -87,8 +87,10 @@ class VersionReferenceChangedEvent extends Event
         unset($original['dist'], $original['source']);
         unset($new['dist'], $new['source']);
 
-        // Ignore the time key, since this is always different
+        // Ignore the time and published-time keys, since these are always different
+        // (published-time tracks updatedAt for dev versions, which changes on every crawl)
         unset($original['time'], $new['time']);
+        unset($original['published-time'], $new['published-time']);
 
         return !$this->arraysAreEqual($original, $new);
     }
