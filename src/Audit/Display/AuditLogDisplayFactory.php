@@ -267,6 +267,13 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
+            AuditRecordType::OrganizationCreated => new OrganizationCreatedDisplay(
+                $record->datetime,
+                $record->attributes['slug'],
+                $record->attributes['display_name'],
+                $this->buildActor($record->attributes['actor']),
+                $record->ip,
+            ),
         };
     }
 

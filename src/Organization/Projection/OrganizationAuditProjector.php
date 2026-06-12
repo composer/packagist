@@ -1,0 +1,44 @@
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Organization\Projection;
+
+use App\Entity\AuditRecord;
+use App\Entity\AuditRecordRepository;
+use App\Entity\UserRepository;
+use App\Organization\Domain\Event\OrganizationCreated;
+use App\Organization\EventStore\RecordedEvent;
+
+/**
+ * Projects organization events into the public transparency log (`audit_log`).
+ */
+final class OrganizationAuditProjector implements Projector
+{
+    public function __construct(
+        private readonly AuditRecordRepository $auditRecords,
+        private readonly UserRepository $users,
+    ) {
+    }
+
+    public function project(RecordedEvent $recorded): void
+    {
+        $event = $recorded->event;
+
+        if ($event instanceof OrganizationCreated) {
+            $actor = $recorded->actor->userId !== null ? $this->users->find($recorded->actor->userId) : null;
+
+            $this->auditRecords->insert(
+                AuditRecord::organizationCreated($event->organizationId, $event->slug, $event->displayName, $actor),
+            );
+        }
+    }
+}

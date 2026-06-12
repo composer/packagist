@@ -1,0 +1,28 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}{{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <h2 class="title">
+        {% if organization.avatarUrl %}
+            <img src="{{ organization.avatarUrl }}" alt="" width="48" height="48" class="organization-avatar">
+        {% endif %}
+        {{ organization.displayName }}
+    </h2>
+
+    <p class="metadata">
+        <code>/organizations/{{ organization.slug }}</code>
+    </p>
+
+    {# Groundwork for org deletion (not yet implemented). #}
+    {% if organization.deleted %}
+        <p class="alert alert-warning">This organization has been deleted.</p>
+    {% endif %}
+
+    <dl class="dl-horizontal">
+        <dt>Slug</dt>
+        <dd>{{ organization.slug }}</dd>
+        <dt>Created</dt>
+        <dd>{{ organization.createdAt|date('Y-m-d') }}</dd>
+    </dl>
+{% endblock %}

@@ -23,6 +23,7 @@ menu:
     change_password: Change password
     configure_2fa: Two-factor auth
     my_packages: My packages
+    my_organizations: My organizations
     my_favorites: My favorites
 
 signinbox:
@@ -204,6 +205,7 @@ audit_log:
         version_reference_change_blocked: Version reference change blocked
         filter_list_entry_added: Entry added
         filter_list_entry_deleted: Entry deleted
+        organization_created: Organization created
     enums:
         user-registration-method:
             form: 'Registration form'

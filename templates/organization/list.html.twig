@@ -1,0 +1,43 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}{{ 'menu.my_organizations'|trans }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    {% if is_granted('ROLE_ADMIN') %}
+        <a href="{{ path('organization_create') }}" class="btn btn-success pull-right">Create organization</a>
+    {% endif %}
+
+    <h2 class="title">{{ 'menu.my_organizations'|trans }}</h2>
+
+    {% if organizations is empty %}
+        <p>You do not belong to any organizations yet.</p>
+    {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Slug</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for organization in organizations %}
+                    <tr>
+                        <td>
+                            {% if organization.avatarUrl %}
+                                <img src="{{ organization.avatarUrl }}" alt="" width="24" height="24" class="organization-avatar">
+                            {% endif %}
+                            <a href="{{ path('organization_show', { slug: organization.slug }) }}">{{ organization.displayName }}</a>
+                            {# Groundwork for org deletion (not yet implemented). #}
+                            {% if organization.deleted %}
+                                <span class="label label-warning">deleted</span>
+                            {% endif %}
+                        </td>
+                        <td><code>{{ organization.slug }}</code></td>
+                        <td>{{ organization.createdAt|date('Y-m-d') }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

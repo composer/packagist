@@ -1,0 +1,3 @@
+<strong><a href="{{ path('organization_show', { 'slug': display.slug }) }}">{{ display.slug }}</a></strong>
+{%- if display.displayName != display.slug %} ({{ display.displayName }}){% endif %}<br>
+Created by: {{ display.actor.username }}

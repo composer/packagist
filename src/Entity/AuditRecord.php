@@ -154,6 +154,20 @@ class AuditRecord
         );
     }
 
+    public static function organizationCreated(Ulid $organizationId, string $slug, string $displayName, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::OrganizationCreated,
+            [
+                'organization_id' => (string) $organizationId,
+                'slug' => $slug,
+                'display_name' => $displayName,
+                'actor' => self::getUserData($actor),
+            ],
+            $actor?->getId(),
+        );
+    }
+
     public static function canonicalUrlChange(Package $package, ?User $actor, string $oldRepository): self
     {
         return new self(

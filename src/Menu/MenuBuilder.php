@@ -89,6 +89,11 @@ class MenuBuilder
             'routeParameters' => ['name' => $this->username],
             'extras' => ['safe_label' => true, 'translation_domain' => false],
         ]);
+        $menu->addChild($this->translator->trans('menu.my_organizations'), [
+            'label' => '<span class="icon-users"></span>'.$this->translator->trans('menu.my_organizations'),
+            'route' => 'organization_list',
+            'extras' => ['safe_label' => true, 'translation_domain' => false],
+        ]);
         $menu->addChild($this->translator->trans('menu.my_favorites'), [
             'label' => '<span class="icon-leaf"></span>'.$this->translator->trans('menu.my_favorites'),
             'route' => 'user_favorites',

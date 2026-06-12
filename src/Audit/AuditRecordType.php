@@ -54,6 +54,9 @@ enum AuditRecordType: string
     case FilterListEntryAdded = 'filter_list_entry_added';
     case FilterListEntryDeleted = 'filter_list_entry_deleted';
 
+    // organization
+    case OrganizationCreated = 'organization_created';
+
     public function category(): string
     {
         return match ($this) {
@@ -68,6 +71,7 @@ enum AuditRecordType: string
             self::GitHubDisconnectedFromUser, self::TwoFaAuthenticationActivated,
             self::TwoFaAuthenticationDeactivated => 'user',
             self::FilterListEntryAdded, self::FilterListEntryDeleted => 'filterlist',
+            self::OrganizationCreated => 'organization',
         };
     }
 }
