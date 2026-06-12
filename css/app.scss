@@ -1313,15 +1313,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   color: #2d2d32;
   margin-right: 4px;
 }
-.package .package-aside a.advisory-alert {
-    margin-left: -40px;
-}
-.package .package-aside a.malware-alert {
-    margin-left: -40px;
-}
-.package .package-aside a.retag-blocked-alert {
-    margin-left: -40px;
-}
 .package .package-aside a.action-alert:hover, .package .package-aside a.action-alert:active {
     text-decoration: none;
 }
@@ -1369,12 +1360,16 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   line-height: 25px;
 }
 .package .versions .version {
-  padding: 2px 0 2px 5px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 2px 5px 2px 5px;
 }
 .package .versions .version-number {
-  display: block;
-  float: left;
-  width: 91%;
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -1383,21 +1378,14 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   cursor: pointer;
 }
 
-.package .versions .version {
-  position: relative;
-  display: block;
-  height: 26px;
-}
 .package .delete-version, .package .hide-version {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
 }
 .package .delete-version .submit, .package .hide-version .submit {
-  position: absolute;
-  top: 7px;
   cursor: pointer;
 }
-.package .delete-version .submit { right: 5px; }
-.package .hide-version .submit { right: 25px; color: #999; }
+.package .hide-version .submit { color: #999; }
 .package .delete-version .submit:hover, .package .package-aside a.action-alert:hover i {
   color: #cd3729;
 }
@@ -1405,15 +1393,12 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   color: #b87800;
 }
 
-.package .versions .version.version-soft-deleted .version-number {
+.package .versions .version.version-soft-deleted .version-number a {
   color: #999;
   text-decoration: line-through;
   text-decoration-color: rgba(153, 153, 153, 0.5);
 }
 .package .package-aside .deletion-alert {
-  position: absolute;
-  right: 28px;
-  top: 2px;
   cursor: help;
 }
 .package .package-aside .deletion-alert i {
@@ -1424,12 +1409,10 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   color: #b87800;
 }
 .package .recover-version {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
 }
 .package .recover-version .submit {
-  position: absolute;
-  right: 5px;
-  top: 6px;
   cursor: pointer;
   color: #999;
 }
@@ -1464,10 +1447,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     .package .versions .version {
       padding: 2px 15px 2px 15px;
     }
-    .package .delete-version .submit {
-      right: 15px;
-    }
-    .package .hide-version .submit { right: 35px; }
 }
 @media (max-width: 767px) {
   .package-aside .facts {
