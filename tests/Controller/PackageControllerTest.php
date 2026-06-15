@@ -31,6 +31,25 @@ class PackageControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/packages/test/pkg');
         self::assertResponseIsSuccessful();
         self::assertSame('composer require test/pkg', $crawler->filter('.requireme input')->attr('value'));
+
+        $auditLink = $crawler->filter('a[href*="transparency-log"]');
+        self::assertCount(1, $auditLink);
+        self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
+        self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+    }
+
+    public function testViewVendor(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $this->store($package);
+
+        $crawler = $this->client->request('GET', '/packages/test/');
+        self::assertResponseIsSuccessful();
+
+        $auditLink = $crawler->filter('a[href*="transparency-log"]');
+        self::assertCount(1, $auditLink);
+        self::assertStringContainsString('vendor=test', (string) $auditLink->attr('href'));
+        self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
     }
 
     public function testEdit(): void
