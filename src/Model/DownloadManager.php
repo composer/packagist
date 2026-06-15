@@ -274,7 +274,6 @@ class DownloadManager
             if (!Preg::isMatch('{:(\d+)$}', $key, $match)) {
                 throw new \LogicException('Malformed key does not end with a date stamp in form YYYYMMDD');
             }
-            /** @var numeric-string $date */
             $date = $match[1];
             if ($val > 0) {
                 $record->setDataPoint($date, $val);

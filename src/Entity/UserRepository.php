@@ -43,7 +43,7 @@ class UserRepository extends ServiceEntityRepository
 
     /**
      * @param string[]               $usernames
-     * @param ?array<string, string> $orderBy
+     * @param ?array<string, 'ASC'|'asc'|'DESC'|'desc'> $orderBy
      *
      * @return array<string, User>
      */
