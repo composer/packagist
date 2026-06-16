@@ -329,6 +329,7 @@ class AuditRecord
         return new self(
             AuditRecordType::FilterListEntryAdded,
             [
+                'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
                 'actor' => self::getUserData($actor, 'automation'),
             ],
@@ -342,6 +343,7 @@ class AuditRecord
         return new self(
             AuditRecordType::FilterListEntryDeleted,
             [
+                'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
                 'actor' => self::getUserData($actor, 'automation'),
             ],
