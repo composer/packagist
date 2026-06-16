@@ -33,7 +33,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class TransparencyLogController extends Controller
 {
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/transparency-log', name: 'view_audit_logs')]
+    #[Route(path: '/transparency-log', name: 'view_transparency_log')]
     public function viewAuditLogs(Request $request, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $displayFactory): Response
     {
         $isAdmin = $this->isGranted('ROLE_ADMIN');
@@ -95,7 +95,7 @@ class TransparencyLogController extends Controller
             }
         }
 
-        return $this->render('audit_log/view_audit_logs.html.twig', [
+        return $this->render('audit_log/view_transparency_log.html.twig', [
             'auditLogDisplays' => $displayFactory->build($auditLogs),
             'auditLogPaginator' => $auditLogs,
             'groupedTypes' => $orderedGroupedTypes,

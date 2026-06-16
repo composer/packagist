@@ -8,7 +8,7 @@
     <h2 class="title">Transparency Log</h2>
 
     <div class="audit-log-filters">
-        <form method="get" action="{{ path('view_audit_logs') }}" name="filters">
+        <form method="get" action="{{ path('view_transparency_log') }}" name="filters">
             <div class="row">
                 <div class="col-md-3 col-sm-6">
                     <div class="form-group">
@@ -80,7 +80,7 @@
                         <button type="submit" class="btn btn-primary">
                             <span class="glyphicon glyphicon-filter"></span> Apply Filters
                         </button>
-                        <a href="{{ url('view_audit_logs') }}" class="btn btn-default">
+                        <a href="{{ url('view_transparency_log') }}" class="btn btn-default">
                             <span class="glyphicon glyphicon-remove-circle"></span> Clear All Filters
                         </a>
                     </div>
@@ -119,7 +119,7 @@
                         <td class="audit-log-datetime">
                             {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
                             {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
-                            <a href="{{ path('view_audit_logs', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
+                            <a href="{{ path('view_transparency_log', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
                                 <span class="glyphicon glyphicon-time"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
                             </a>
                         </td>
@@ -140,7 +140,7 @@
         {% endif %}
     {% else %}
         <div class="alert alert-info">
-            <p>No audit logs found.</p>
+            <p>No transparency log entries found.</p>
         </div>
     {% endif %}
 {% endblock %}

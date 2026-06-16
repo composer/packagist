@@ -32,7 +32,7 @@ class NotReservedWordValidator extends ConstraintValidator
             'composer',
             'packagist',
             'php',
-            'automation', // used to describe background workers doing things automatically in audit log
+            'automation', // used to describe background workers doing things automatically in transparency log
         ];
 
         foreach ($reservedWords as $reservedWord) {
