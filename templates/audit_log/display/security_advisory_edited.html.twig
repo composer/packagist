@@ -1,0 +1,26 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+{% set labels = {
+    'remoteId': 'Remote ID',
+    'packageName': 'Package',
+    'title': 'Title',
+    'link': 'Link',
+    'cve': 'CVE',
+    'affectedVersions': 'Affected versions',
+    'composerRepository': 'Composer repository',
+    'reportedAt': 'Reported at',
+    'severity': 'Severity',
+    'source': 'Source',
+} %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+{{ display.title }}{% if display.cve %} ({{ display.cve }}){% endif %}<br>
+Source: {{ display.source }}
+{% if display.changes %}
+<br>Changes:
+<ul>
+{% for field, change in display.changes %}
+    <li>{{ labels[field] ?? field }}: <del>{{ change.from is null ? '(none)' : change.from }}</del> &rarr; {{ change.to is null ? '(none)' : change.to }}</li>
+{% endfor %}
+</ul>
+{% endif %}

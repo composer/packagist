@@ -56,6 +56,11 @@ enum AuditRecordType: string
     case FilterListEntryEnabled = 'filter_list_entry_enabled';
     case FilterListEntryEdited = 'filter_list_entry_edited';
 
+    // security advisory
+    case SecurityAdvisoryCreated = 'security_advisory_created';
+    case SecurityAdvisoryEdited = 'security_advisory_edited';
+    case SecurityAdvisoryWithdrawn = 'security_advisory_withdrawn';
+
     // organization
     case OrganizationCreated = 'organization_created';
 
@@ -75,6 +80,8 @@ enum AuditRecordType: string
             self::FilterListEntryAdded, self::FilterListEntryDeleted,
             self::FilterListEntryDisabled, self::FilterListEntryEnabled,
             self::FilterListEntryEdited => 'filterlist',
+            self::SecurityAdvisoryCreated, self::SecurityAdvisoryEdited,
+            self::SecurityAdvisoryWithdrawn => 'advisory',
             self::OrganizationCreated => 'organization',
         };
     }

@@ -21,6 +21,7 @@ use App\Audit\VersionDeletionReason;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\PersistentCollection;
 use Symfony\Component\Uid\Ulid;
 
 /**
@@ -514,6 +515,39 @@ class AuditRecord
         );
     }
 
+    public static function securityAdvisoryCreated(SecurityAdvisory $advisory, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::SecurityAdvisoryCreated,
+            self::getSecurityAdvisoryData($advisory, $actor),
+            vendor: self::vendorFromPackageName($advisory->getPackageName()),
+            actorId: $actor?->getId(),
+        );
+    }
+
+    /**
+     * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, mixed>> $changeSet the Doctrine entity change set (field => [old, new])
+     */
+    public static function securityAdvisoryEdited(SecurityAdvisory $advisory, ?User $actor, array $changeSet): self
+    {
+        return new self(
+            AuditRecordType::SecurityAdvisoryEdited,
+            [...self::getSecurityAdvisoryData($advisory, $actor), 'changes' => self::getSecurityAdvisoryChanges($changeSet)],
+            vendor: self::vendorFromPackageName($advisory->getPackageName()),
+            actorId: $actor?->getId(),
+        );
+    }
+
+    public static function securityAdvisoryWithdrawn(SecurityAdvisory $advisory, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::SecurityAdvisoryWithdrawn,
+            self::getSecurityAdvisoryData($advisory, $actor),
+            vendor: self::vendorFromPackageName($advisory->getPackageName()),
+            actorId: $actor?->getId(),
+        );
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */
@@ -524,6 +558,70 @@ class AuditRecord
         }
 
         return ['id' => $user->getId(), 'username' => $user->getUsername()];
+    }
+
+    /**
+     * @return array{name: string, advisoryId: string, packageName: string, source: string, remoteId: string, cve: string|null, title: string, actor: array{id: int, username: string}|string}
+     */
+    private static function getSecurityAdvisoryData(SecurityAdvisory $advisory, ?User $actor): array
+    {
+        return [
+            'name' => $advisory->getPackageName(),
+            'advisoryId' => $advisory->getPackagistAdvisoryId(),
+            'packageName' => $advisory->getPackageName(),
+            'source' => $advisory->getSource(),
+            'remoteId' => $advisory->getRemoteId(),
+            'cve' => $advisory->getCve(),
+            'title' => $advisory->getTitle(),
+            'actor' => self::getUserData($actor, 'automation'),
+        ];
+    }
+
+    /**
+     * Normalises a Doctrine change set into a JSON-friendly list of field diffs.
+     *
+     * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, mixed>> $changeSet
+     * @return array<string, array{from: scalar|null, to: scalar|null}>
+     */
+    private static function getSecurityAdvisoryChanges(array $changeSet): array
+    {
+        $changes = [];
+        foreach ($changeSet as $field => $change) {
+            // Skip the timestamp and any collection-valued changes; we only record scalar field diffs.
+            if ($field === 'updatedAt' || !\is_array($change)) {
+                continue;
+            }
+
+            [$from, $to] = $change;
+            $changes[$field] = [
+                'from' => self::normalizeAuditValue($from),
+                'to' => self::normalizeAuditValue($to),
+            ];
+        }
+
+        return $changes;
+    }
+
+    private static function normalizeAuditValue(mixed $value): string|int|float|bool|null
+    {
+        if ($value === null || \is_scalar($value)) {
+            return $value;
+        }
+
+        if ($value instanceof \BackedEnum) {
+            return $value->value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format(\DATE_ATOM);
+        }
+
+        return (string) json_encode($value);
+    }
+
+    private static function vendorFromPackageName(string $packageName): string
+    {
+        return explode('/', $packageName, 2)[0];
     }
 
     /**
