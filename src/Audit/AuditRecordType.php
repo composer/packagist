@@ -54,6 +54,11 @@ enum AuditRecordType: string
     case FilterListEntryAdded = 'filter_list_entry_added';
     case FilterListEntryDeleted = 'filter_list_entry_deleted';
 
+    // security advisory
+    case SecurityAdvisoryCreated = 'security_advisory_created';
+    case SecurityAdvisoryEdited = 'security_advisory_edited';
+    case SecurityAdvisoryWithdrawn = 'security_advisory_withdrawn';
+
     public function category(): string
     {
         return match ($this) {
@@ -68,6 +73,8 @@ enum AuditRecordType: string
             self::GitHubDisconnectedFromUser, self::TwoFaAuthenticationActivated,
             self::TwoFaAuthenticationDeactivated => 'user',
             self::FilterListEntryAdded, self::FilterListEntryDeleted => 'filterlist',
+            self::SecurityAdvisoryCreated, self::SecurityAdvisoryEdited,
+            self::SecurityAdvisoryWithdrawn => 'advisory',
         };
     }
 }
