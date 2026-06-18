@@ -39,6 +39,7 @@ use App\Service\VersionCache;
 use App\Util\HttpDownloaderOptionsFactory;
 use cebe\markdown\GithubMarkdown;
 use Composer\Config;
+use Composer\IO\ConsoleIO;
 use Composer\IO\IOInterface;
 use Composer\Package\AliasPackage;
 use Composer\Package\CompletePackageInterface;
@@ -672,7 +673,7 @@ class Updater
         $versionId = null;
         $postUpdateEvents = [];
 
-        $normVersion = $data->getVersion();
+        $normVersion = ConsoleIO::sanitize($data->getVersion(), false);
         $newSourceRef = $data->getSourceReference();
         $newDistRef = $data->getDistReference();
         $newEffectiveRef = self::computeEffectiveReference($newSourceRef, $newDistRef);
@@ -741,10 +742,14 @@ class Updater
         $originalMetadata = $versionId !== null ? $version->toV2Array([]) : null;
 
         $version->setName($package->getName());
-        $version->setVersion($data->getPrettyVersion());
+        $version->setVersion(ConsoleIO::sanitize($data->getPrettyVersion(), false));
         $version->setNormalizedVersion($normVersion);
         $version->setDevelopment($data->isDev());
-        $version->setPhpExt($data->getPhpExt());
+        $phpExt = $data->getPhpExt();
+        if (null !== $phpExt) {
+            array_walk_recursive($phpExt, $this->sanitizeStringLeaf(...));
+        }
+        $version->setPhpExt($phpExt);
 
         $em->persist($version);
 
@@ -761,13 +766,13 @@ class Updater
                 $package->setAbandoned(true);
                 $postUpdateEvents[] = new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier));
                 if ($data->getReplacementPackage()) {
-                    $package->setReplacementPackage($data->getReplacementPackage());
+                    $package->setReplacementPackage($this->sanitize($data->getReplacementPackage()));
                 }
             }
         }
 
         $version->setHomepage($this->filterUrl($data->getHomepage()));
-        $version->setLicense($data->getLicense() ?: []);
+        $version->setLicense(array_map($this->sanitize(...), $data->getLicense() ?: []));
 
         $version->setPackage($package);
         $version->setUpdatedAt(new \DateTimeImmutable());
@@ -777,8 +782,8 @@ class Updater
         $version->setReleasedAt($data->getReleaseDate() === null ? null : \DateTimeImmutable::createFromInterface($data->getReleaseDate()));
 
         if ($data->getSourceType() && !in_array($data->getSourceType(), ['perforce', 'fossil'], true)) { // null or '' here explicitly means no source and will be nulled, do not change this behavior
-            $source['type'] = $data->getSourceType();
-            $source['url'] = $data->getSourceUrl();
+            $source['type'] = $this->sanitize($data->getSourceType());
+            $source['url'] = $this->sanitize($data->getSourceUrl());
             // force public URLs even if the package somehow got downgraded to a GitDriver
             if (\is_string($source['url']) && Preg::isMatch('{^git@github.com:(?P<repo>.*?)\.git$}', $source['url'], $match)) {
                 $source['url'] = 'https://github.com/'.$match['repo'];
@@ -790,8 +795,8 @@ class Updater
         }
 
         if ($data->getDistType()) {
-            $dist['type'] = $data->getDistType();
-            $dist['url'] = $data->getDistUrl();
+            $dist['type'] = $this->sanitize($data->getDistType());
+            $dist['url'] = $this->sanitize($data->getDistUrl());
             $dist['reference'] = $data->getDistReference();
             $dist['shasum'] = $data->getDistSha1Checksum();
             $version->setDist($dist);
@@ -807,17 +812,25 @@ class Updater
             }
         }
 
-        $version->setTargetDir($data->getTargetDir());
-        $version->setAutoload($data->getAutoload());
-        $version->setExtra($data->getExtra());
-        $version->setBinaries($data->getBinaries());
-        $version->setIncludePaths($data->getIncludePaths());
+        $version->setTargetDir($this->sanitize($data->getTargetDir()));
+        $autoload = $data->getAutoload();
+        array_walk_recursive($autoload, $this->sanitizeStringLeaf(...));
+        $version->setAutoload($autoload);
+        $extra = $data->getExtra();
+        array_walk_recursive($extra, $this->sanitizeStringLeaf(...));
+        $version->setExtra($extra);
+        $version->setBinaries(array_map($this->sanitize(...), $data->getBinaries()));
+        $version->setIncludePaths(array_map($this->sanitize(...), $data->getIncludePaths()));
         $version->setSupport($this->filterSupportUrls($data->getSupport()));
         $version->setFunding($this->filterFundingUrls($data->getFunding()));
 
         if ($data->getKeywords()) {
             $keywords = [];
             foreach ($data->getKeywords() as $keyword) {
+                $keyword = $this->sanitize($keyword);
+                if ('' === $keyword) {
+                    continue;
+                }
                 $keywords[mb_strtolower($keyword, 'UTF-8')] = $keyword;
             }
 
@@ -853,7 +866,7 @@ class Updater
 
                 foreach (['email', 'name', 'homepage', 'role'] as $field) {
                     if (isset($authorData[$field])) {
-                        $author[$field] = trim($authorData[$field]);
+                        $author[$field] = trim($this->sanitize($authorData[$field]));
                         if ('homepage' === $field) {
                             $author[$field] = (string) $this->filterUrl($author[$field]);
                         }
@@ -888,7 +901,7 @@ class Updater
                     }, $constraint);
                 }
 
-                $links[$link->getTarget()] = $constraint;
+                $links[$this->sanitize($link->getTarget())] = $this->sanitize($constraint);
             }
 
             foreach ($version->{$opts['getter']}() as $link) {
@@ -915,6 +928,12 @@ class Updater
 
         // handle suggests
         if ($suggests = $data->getSuggests()) {
+            $sanitizedSuggests = [];
+            foreach ($suggests as $suggestName => $suggestReason) {
+                $sanitizedSuggests[$this->sanitize($suggestName)] = $this->sanitize($suggestReason);
+            }
+            $suggests = $sanitizedSuggests;
+
             foreach ($version->getSuggest() as $link) {
                 // clear links that have changed/disappeared (for updates)
                 if (!isset($suggests[$link->getPackageName()]) || $suggests[$link->getPackageName()] !== $link->getPackageVersion()) {
@@ -1190,10 +1209,20 @@ class Updater
             return null;
         }
 
-        // remove escape chars
-        $str = Preg::replace("{\x1B(?:\[.)?}u", '', $str);
+        return ConsoleIO::sanitize($str, false);
+    }
 
-        return Preg::replace("{[\x01-\x1A]}u", '', $str);
+    /**
+     * array_walk_recursive callback to strip control/escape chars from every string leaf of a
+     * nested structure (e.g. composer "extra"/"autoload"/php-ext config) without altering the
+     * array shape — non-string values and keys are left untouched, so the caller's declared type
+     * is preserved.
+     */
+    private function sanitizeStringLeaf(mixed &$value): void
+    {
+        if (\is_string($value)) {
+            $value = ConsoleIO::sanitize($value, false);
+        }
     }
 
     /**
@@ -1205,6 +1234,11 @@ class Updater
     private function filterUrl(?string $url, array $allowedSchemes = ['http', 'https']): ?string
     {
         if (null === $url || '' === $url) {
+            return $url;
+        }
+
+        $url = $this->sanitize($url);
+        if ('' === $url) {
             return $url;
         }
 
@@ -1223,6 +1257,9 @@ class Updater
         if (null === $support) {
             return null;
         }
+
+        // strip control/escape chars from every value, including non-URL ones like email
+        $support = array_map($this->sanitize(...), $support);
 
         foreach (['issues', 'forum', 'wiki', 'source', 'docs', 'rss', 'security'] as $key) {
             if (isset($support[$key]) && null === $this->filterUrl($support[$key])) {
@@ -1252,8 +1289,16 @@ class Updater
         }
 
         foreach ($funding as $i => $entry) {
-            if (isset($entry['url']) && null === $this->filterUrl($entry['url'])) {
-                unset($funding[$i]['url']);
+            if (isset($entry['type'])) {
+                $funding[$i]['type'] = $this->sanitize($entry['type']);
+            }
+            if (isset($entry['url'])) {
+                $url = $this->filterUrl($entry['url']);
+                if (null === $url) {
+                    unset($funding[$i]['url']);
+                } else {
+                    $funding[$i]['url'] = $url;
+                }
             }
         }
 
