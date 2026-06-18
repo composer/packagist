@@ -79,7 +79,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         $em = self::getEM();
         $version = $this->seedStableVersion('vendor/sd', '2.0.0', '2.0.0.0');
 
-        $this->versionRepository->softDelete($version, VersionDeletionReason::DeletedByMaintainer, null, null);
+        $this->versionRepository->softDelete($version, VersionDeletionReason::DeletedByMaintainer, null, null, null);
         $em->flush();
         $em->clear();
 
@@ -88,6 +88,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertNotNull($reloaded->getSoftDeletedAt());
         self::assertSame(VersionDeletionReason::DeletedByMaintainer, $reloaded->getDeletionReason());
         self::assertNull($reloaded->getDeletionReasonText());
+        self::assertNull($reloaded->getInternalDeletionReasonText());
 
         $audit = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditRecordType::VersionSoftDeleted->value,
@@ -102,7 +103,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         $em = self::getEM();
         $version = $this->seedStableVersion('vendor/sd-admin', '2.0.0', '2.0.0.0');
 
-        $this->versionRepository->softDelete($version, VersionDeletionReason::DeletedByAdmin, 'legal takedown', null);
+        $this->versionRepository->softDelete($version, VersionDeletionReason::DeletedByAdmin, 'legal takedown', 'reporter john@example.com, ticket #42', null);
         $em->flush();
         $em->clear();
 
@@ -110,6 +111,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertNotNull($reloaded);
         self::assertSame(VersionDeletionReason::DeletedByAdmin, $reloaded->getDeletionReason());
         self::assertSame('legal takedown', $reloaded->getDeletionReasonText());
+        self::assertSame('reporter john@example.com, ticket #42', $reloaded->getInternalDeletionReasonText());
 
         $audit = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditRecordType::VersionSoftDeleted->value,
@@ -117,6 +119,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         ]);
         self::assertNotNull($audit);
         self::assertSame('legal takedown', $audit->attributes['reasonText']);
+        self::assertSame('reporter john@example.com, ticket #42', $audit->attributes['internalReasonText']);
     }
 
     public function testRecoverClearsAllSoftDeleteState(): void
@@ -124,7 +127,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         $em = self::getEM();
         $version = $this->seedStableVersion('vendor/recover', '2.0.0', '2.0.0.0');
 
-        $this->versionRepository->softDelete($version, VersionDeletionReason::DeletedByMaintainer, null, null);
+        $this->versionRepository->softDelete($version, VersionDeletionReason::DeletedByAdmin, 'public', 'internal note', null);
         $em->flush();
 
         $this->versionRepository->recover($version, null);
@@ -136,13 +139,14 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertNull($reloaded->getSoftDeletedAt());
         self::assertNull($reloaded->getDeletionReason());
         self::assertNull($reloaded->getDeletionReasonText());
+        self::assertNull($reloaded->getInternalDeletionReasonText());
 
         $audit = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditRecordType::VersionRecovered->value,
             'packageId' => $reloaded->getPackage()->getId(),
         ]);
         self::assertNotNull($audit, 'recover() should write a VersionRecovered audit row');
-        self::assertSame(VersionDeletionReason::DeletedByMaintainer->value, $audit->attributes['previousReason']);
+        self::assertSame(VersionDeletionReason::DeletedByAdmin->value, $audit->attributes['previousReason']);
     }
 
     public function testGetVersionMetadataForUpdateIncludesNewProjection(): void

@@ -217,12 +217,44 @@ class Package
      */
     private ?array $cachedVersions = null;
 
+    /**
+     * Transient (not persisted): optional reasons carried into PackageListener::preRemove so the
+     * PackageDeleted audit record can document why a package was deleted.
+     */
+    private ?string $auditDeletionReason = null;
+
+    /**
+     * Transient (not persisted): admin-only deletion reason. Never shown publicly (audit log view
+     * restricted to ROLE_AUDITOR), may contain private notes/PII.
+     */
+    private ?string $auditDeletionInternalReason = null;
+
     public function __construct()
     {
         $this->versions = new ArrayCollection();
         $this->maintainers = new ArrayCollection();
         $this->downloads = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function setAuditDeletionReason(?string $reason): void
+    {
+        $this->auditDeletionReason = $reason;
+    }
+
+    public function getAuditDeletionReason(): ?string
+    {
+        return $this->auditDeletionReason;
+    }
+
+    public function setAuditDeletionInternalReason(?string $reason): void
+    {
+        $this->auditDeletionInternalReason = $reason;
+    }
+
+    public function getAuditDeletionInternalReason(): ?string
+    {
+        return $this->auditDeletionInternalReason;
     }
 
     /**

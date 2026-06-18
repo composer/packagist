@@ -873,7 +873,7 @@ class PackageController extends Controller
             $reason = !$package->isMaintainer($user) && $this->isGranted(PackageActions::AdminDeleteVersion->value, $package)
                 ? VersionDeletionReason::DeletedByAdmin
                 : VersionDeletionReason::DeletedByMaintainer;
-            $repo->softDelete($version, $reason, null, $user);
+            $repo->softDelete($version, $reason, null, null, $user);
             $deletionTitle = $reason === VersionDeletionReason::DeletedByAdmin
                 ? 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
                 : 'Deleted by maintainer on '.gmdate('Y-m-d H:i:s').' UTC';
@@ -903,15 +903,14 @@ class PackageController extends Controller
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
-        $reasonText = trim($req->request->getString('reason'));
-        if ($reasonText === '') {
-            $reasonText = null;
-        }
+        $reasonText = trim($req->request->getString('reason')) ?: null;
+        $internalReasonText = trim($req->request->getString('internalReason')) ?: null;
 
-        $repo->softDelete($version, VersionDeletionReason::DeletedByAdmin, $reasonText, $user);
+        $repo->softDelete($version, VersionDeletionReason::DeletedByAdmin, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
         $this->getEM()->clear();
 
+        // deletionTitle becomes a public tooltip, so it only carries the public reason.
         $deletionTitle = 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
             .($reasonText !== null ? ': '.$reasonText : '');
 
@@ -934,12 +933,10 @@ class PackageController extends Controller
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
-        $reasonText = trim($req->request->getString('reason'));
-        if ($reasonText === '') {
-            $reasonText = null;
-        }
+        $reasonText = trim($req->request->getString('reason')) ?: null;
+        $internalReasonText = trim($req->request->getString('internalReason')) ?: null;
 
-        $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $user);
+        $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
         $this->getEM()->clear();
 
@@ -1042,6 +1039,13 @@ class PackageController extends Controller
 
         $this->denyAccessUnlessGranted(PackageActions::Delete->value, $package);
 
+        // Optional deletion reasons, only recorded for admins
+        $reason = $internalReason = null;
+        if ($this->isGranted('ROLE_DELETE_PACKAGES')) {
+            $reason = trim($req->request->getString('reason')) ?: null;
+            $internalReason = trim($req->request->getString('internalReason')) ?: null;
+        }
+
         $form = $this->createDeletePackageForm($package);
         $form->submit($req->request->all('form'));
         if ($form->isSubmitted() && $form->isValid()) {
@@ -1049,7 +1053,7 @@ class PackageController extends Controller
                 $req->getSession()->save();
             }
 
-            $this->packageManager->deletePackage($package);
+            $this->packageManager->deletePackage($package, $reason, $internalReason);
 
             return new Response('', 204);
         }

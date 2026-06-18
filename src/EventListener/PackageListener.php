@@ -70,7 +70,7 @@ class PackageListener
      */
     public function preRemove(Package $package, LifecycleEventArgs $event): void
     {
-        $record = AuditRecord::packageDeleted($package, $this->getUser());
+        $record = AuditRecord::packageDeleted($package, $this->getUser(), $package->getAuditDeletionReason(), $package->getAuditDeletionInternalReason());
         $this->getEM()->persist($record);
         // let the record be flushed together with the entity
     }

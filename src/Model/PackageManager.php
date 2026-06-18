@@ -61,8 +61,12 @@ class PackageManager
     ) {
     }
 
-    public function deletePackage(Package $package): void
+    public function deletePackage(Package $package, ?string $reason = null, ?string $internalReason = null): void
     {
+        // Carried into PackageListener::preRemove so the PackageDeleted audit record documents the reason.
+        $package->setAuditDeletionReason($reason);
+        $package->setAuditDeletionInternalReason($internalReason);
+
         $versionRepo = $this->doctrine->getRepository(Version::class);
         foreach ($package->getVersions() as $version) {
             $versionRepo->remove($version, false, allowStable: true);

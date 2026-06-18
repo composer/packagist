@@ -393,7 +393,7 @@ class Updater
         // Admin/maintainer-pulled rows (deletionReason in (admin, maintainer)) stay soft-deleted.
         $em->getConnection()->executeStatement(
             'UPDATE package_version
-                SET updatedAt = :now, softDeletedAt = NULL, deletionReason = NULL, deletionReasonText = NULL
+                SET updatedAt = :now, softDeletedAt = NULL, deletionReason = NULL, deletionReasonText = NULL, internalDeletionReasonText = NULL
                 WHERE id IN (:ids)
                   AND softDeletedAt IS NOT NULL
                   AND (deletionReason IS NULL OR deletionReason = :autoReason)',
@@ -774,6 +774,7 @@ class Updater
         $version->setSoftDeletedAt(null);
         $version->setDeletionReason(null);
         $version->setDeletionReasonText(null);
+        $version->setInternalDeletionReasonText(null);
         $version->setReleasedAt($data->getReleaseDate() === null ? null : \DateTimeImmutable::createFromInterface($data->getReleaseDate()));
 
         if ($data->getSourceType() && !in_array($data->getSourceType(), ['perforce', 'fossil'], true)) { // null or '' here explicitly means no source and will be nulled, do not change this behavior

@@ -72,6 +72,33 @@ class PackageAuditRecordTest extends KernelTestCase
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(3, $logs);
         self::assertSame(AuditRecordType::PackageDeleted->value, $logs[0]['type']);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertArrayHasKey('reason', $attributes);
+        self::assertNull($attributes['reason']);
+        self::assertNull($attributes['internalReason']);
+    }
+
+    public function testPackageDeletionReasonsGetRecorded(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        $package = self::createPackage('vendor/reasons', 'https://github.com/vendor/reasons');
+        $em->persist($package);
+        $em->flush();
+
+        // Transient carriers, set by PackageManager::deletePackage() before removal, are read by
+        // PackageListener::preRemove() to document the deletion in the audit log.
+        $package->setAuditDeletionReason('public takedown notice');
+        $package->setAuditDeletionInternalReason('internal: reporter john@example.com, ticket #42');
+        $em->remove($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageDeleted->value]);
+        self::assertCount(1, $logs);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertSame('public takedown notice', $attributes['reason']);
+        self::assertSame('internal: reporter john@example.com, ticket #42', $attributes['internalReason']);
     }
 
     public function testPackageAbandonmentGetRecorded(): void

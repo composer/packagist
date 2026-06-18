@@ -127,7 +127,7 @@ class UserController extends Controller
                     if ($version->isSoftDeleted()) {
                         continue;
                     }
-                    $versionRepo->softDelete($version, VersionDeletionReason::Hidden, 'spam', $adminUser);
+                    $versionRepo->softDelete($version, VersionDeletionReason::Hidden, 'spam', null, $adminUser);
                 }
 
                 $this->providerManager->deletePackage($package);

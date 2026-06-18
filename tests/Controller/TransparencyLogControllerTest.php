@@ -53,6 +53,35 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         ];
     }
 
+    public function testPackageDeletionReasonsAreRoleGated(): void
+    {
+        $maintainer = self::createUser('maintainer', 'maintainer@example.com', roles: ['ROLE_USER']);
+        $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$maintainer]);
+
+        $this->store($maintainer, $package);
+
+        $auditRecord = AuditRecord::packageDeleted($package, $maintainer, 'PUBLIC-REASON-XYZ', 'INTERNAL-REASON-ABC');
+        $this->store($auditRecord);
+
+        // A plain user sees the public reason but never the admin-only internal reason.
+        $this->client->loginUser($maintainer);
+        $this->client->request('GET', '/transparency-log');
+        static::assertResponseIsSuccessful();
+        $body = (string) $this->client->getResponse()->getContent();
+        static::assertStringContainsString('PUBLIC-REASON-XYZ', $body);
+        static::assertStringNotContainsString('INTERNAL-REASON-ABC', $body);
+
+        // An admin (implies ROLE_AUDITOR) sees both.
+        $admin = self::createUser('adminuser', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $this->store($admin);
+        $this->client->loginUser($admin);
+        $this->client->request('GET', '/transparency-log');
+        static::assertResponseIsSuccessful();
+        $body = (string) $this->client->getResponse()->getContent();
+        static::assertStringContainsString('PUBLIC-REASON-XYZ', $body);
+        static::assertStringContainsString('INTERNAL-REASON-ABC', $body);
+    }
+
     public function testViewAuditLogsWithDateTimeFilter(): void
     {
         $user = self::createUser('testuser', 'test@example.com', roles: ['ROLE_USER']);

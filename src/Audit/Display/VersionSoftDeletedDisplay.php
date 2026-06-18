@@ -22,6 +22,7 @@ readonly class VersionSoftDeletedDisplay extends AbstractAuditLogDisplay
         public string $version,
         public string $reason,
         public ?string $reasonText,
+        public ?string $internalReasonText,
         ActorDisplay $actor,
         ?string $ip,
     ) {
