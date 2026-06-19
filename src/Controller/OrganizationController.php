@@ -65,17 +65,17 @@ class OrganizationController extends Controller
             return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
-        $model = new CreateOrganizationRequest();
-        $form = $this->createForm(CreateOrganizationType::class, $model);
+        $createRequest = new CreateOrganizationRequest();
+        $form = $this->createForm(CreateOrganizationType::class, $createRequest);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $organization = $this->organizationManager->create(
                     $user,
-                    $model->slug,
-                    $model->displayName,
-                    $model->avatarUrl,
+                    $createRequest->slug,
+                    $createRequest->displayName,
+                    $createRequest->avatarUrl,
                     $request->getClientIp(),
                 );
 
