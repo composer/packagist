@@ -25,7 +25,6 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Entity(repositoryClass: OrganizationEventRepository::class)]
 #[ORM\Table(name: 'organization_event')]
 #[ORM\UniqueConstraint(name: 'org_event_seq_idx', columns: ['aggregateId', 'sequence'])]
-#[ORM\Index(name: 'org_event_aggregate_idx', columns: ['aggregateId'])]
 #[ORM\Index(name: 'org_event_actor_idx', columns: ['actorUserId', 'createdAt'])]
 class OrganizationEvent
 {

@@ -31,7 +31,6 @@ CREATE TABLE organization_event (
     ip VARBINARY(16) DEFAULT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY org_event_seq_idx (aggregateId, sequence),
-    KEY org_event_aggregate_idx (aggregateId),
     KEY org_event_actor_idx (actorUserId, createdAt)
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
 
