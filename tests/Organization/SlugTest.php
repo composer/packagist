@@ -12,7 +12,7 @@
 
 namespace App\Tests\Organization;
 
-use App\Organization\Domain\Exception\InvalidSlug;
+use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Slug;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -27,7 +27,7 @@ class SlugTest extends TestCase
     #[DataProvider('invalidSlugs')]
     public function testConstructRejectsInvalidValue(string $slug): void
     {
-        $this->expectException(InvalidSlug::class);
+        $this->expectException(InvalidSlugException::class);
 
         new Slug($slug);
     }
@@ -54,7 +54,7 @@ class SlugTest extends TestCase
     public function testFromUserInputStillRejectsStructurallyInvalidInput(): void
     {
         // Lower-casing and trimming cannot rescue characters the format forbids.
-        $this->expectException(InvalidSlug::class);
+        $this->expectException(InvalidSlugException::class);
 
         Slug::fromUserInput('ac_me');
     }

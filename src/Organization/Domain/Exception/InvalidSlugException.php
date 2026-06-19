@@ -13,8 +13,9 @@
 namespace App\Organization\Domain\Exception;
 
 /**
- * The actor exceeded an abuse-prevention rate limit (e.g. organization creation).
+ * The slug is malformed or reserved (regex, deny-list or vendor-prefix collision).
+ * Nothing is appended to the event stream.
  */
-final class RateLimited extends OrganizationException
+final class InvalidSlugException extends OrganizationException
 {
 }

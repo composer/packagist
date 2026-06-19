@@ -16,8 +16,8 @@ use App\Entity\OrganizationRepository;
 use App\Entity\PackageRepository;
 use App\Entity\SlugReservationRepository;
 use App\Entity\User;
-use App\Organization\Domain\Exception\InvalidSlug;
-use App\Organization\Domain\Exception\SlugTaken;
+use App\Organization\Domain\Exception\InvalidSlugException;
+use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Slug;
 
 /**
@@ -45,23 +45,23 @@ final class OrganizationSlugChecker
     }
 
     /**
-     * @throws InvalidSlug if the slug is reserved (deny-list) or collides with a vendor prefix the user cannot access
-     * @throws SlugTaken   if a live organization or active reservation already holds the slug
+     * @throws InvalidSlugException if the slug is reserved (deny-list) or collides with a vendor prefix the user cannot access
+     * @throws SlugTakenException   if a live organization or active reservation already holds the slug
      */
     public function assertClaimable(Slug $slug, User $user): void
     {
         if (\in_array($slug->value, self::RESERVED_WORDS, true)) {
-            throw new InvalidSlug(sprintf('"%s" is a reserved name and cannot be used.', $slug->value));
+            throw new InvalidSlugException(sprintf('"%s" is a reserved name and cannot be used.', $slug->value));
         }
 
         // A slug that matches an existing vendor prefix may only be claimed by someone
         // who has access to that prefix (i.e. maintains a package under it).
         if ($this->packages->isVendorTaken($slug->value, $user)) {
-            throw new InvalidSlug(sprintf('"%s" matches a vendor prefix you do not have access to.', $slug->value));
+            throw new InvalidSlugException(sprintf('"%s" matches a vendor prefix you do not have access to.', $slug->value));
         }
 
         if ($this->organizations->slugExists($slug->value) || $this->reservations->isReserved($slug->value)) {
-            throw new SlugTaken(sprintf('The organization slug "%s" is already taken.', $slug->value));
+            throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $slug->value));
         }
     }
 }

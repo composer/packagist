@@ -13,11 +13,11 @@
 namespace App\Organization;
 
 use App\Entity\User;
-use App\Organization\Domain\Exception\InvalidDisplayName;
-use App\Organization\Domain\Exception\InvalidSlug;
-use App\Organization\Domain\Exception\RateLimited;
-use App\Organization\Domain\Exception\TwoFactorRequired;
-use App\Organization\Domain\Exception\SlugTaken;
+use App\Organization\Domain\Exception\InvalidDisplayNameException;
+use App\Organization\Domain\Exception\InvalidSlugException;
+use App\Organization\Domain\Exception\RateLimitReachedException;
+use App\Organization\Domain\Exception\TwoFactorRequiredException;
+use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
 use App\Organization\EventStore\Actor;
@@ -37,17 +37,17 @@ final class OrganizationManager
     /**
      * @return Organization the created aggregate
      *
-     * @throws TwoFactorRequired
-     * @throws RateLimited
-     * @throws InvalidSlug
-     * @throws InvalidDisplayName
-     * @throws SlugTaken
+     * @throws TwoFactorRequiredException
+     * @throws RateLimitReachedException
+     * @throws InvalidSlugException
+     * @throws InvalidDisplayNameException
+     * @throws SlugTakenException
      */
     public function create(User $owner, string $slug, string $displayName, ?string $ip): Organization
     {
         // 2FA is required to create an organization / become an owner.
         if (!$owner->isTotpAuthenticationEnabled()) {
-            throw new TwoFactorRequired('You must enable two-factor authentication before creating an organization.');
+            throw new TwoFactorRequiredException('You must enable two-factor authentication before creating an organization.');
         }
 
         $this->rateLimiter->assertWithinLimit($owner);
@@ -61,7 +61,7 @@ final class OrganizationManager
         try {
             $this->eventStore->append($organization, Actor::owner($owner), $ip);
         } catch (UniqueConstraintViolationException $e) {
-            throw new SlugTaken(sprintf('The organization slug "%s" is already taken.', $slug->value), 0, $e);
+            throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $slug->value), 0, $e);
         }
 
         return $organization;

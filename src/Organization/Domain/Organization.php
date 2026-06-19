@@ -13,7 +13,7 @@
 namespace App\Organization\Domain;
 
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Exception\InvalidDisplayName;
+use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\EventStore\AbstractAggregate;
 use App\Organization\EventStore\DomainEvent;
 use Composer\Pcre\Preg;
@@ -40,7 +40,7 @@ final class Organization extends AbstractAggregate
     private bool $deleted = false;
 
     /**
-     * @throws InvalidDisplayName
+     * @throws InvalidDisplayNameException
      */
     public static function create(Ulid $id, Slug $slug, string $displayName): self
     {
@@ -114,11 +114,11 @@ final class Organization extends AbstractAggregate
         $displayName = trim($displayName);
 
         if ($displayName === '' || mb_strlen($displayName) > self::DISPLAY_NAME_MAX_LENGTH) {
-            throw new InvalidDisplayName(sprintf('The display name must be between 1 and %d characters.', self::DISPLAY_NAME_MAX_LENGTH));
+            throw new InvalidDisplayNameException(sprintf('The display name must be between 1 and %d characters.', self::DISPLAY_NAME_MAX_LENGTH));
         }
 
         if (!Preg::isMatch(self::DISPLAY_NAME_PATTERN, $displayName)) {
-            throw new InvalidDisplayName('The display name may only contain letters, numbers, spaces and hyphens.');
+            throw new InvalidDisplayNameException('The display name may only contain letters, numbers, spaces and hyphens.');
         }
 
         return $displayName;

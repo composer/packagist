@@ -15,7 +15,7 @@ namespace App\Organization;
 use App\Entity\OrganizationEventRepository;
 use App\Entity\User;
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Exception\RateLimited;
+use App\Organization\Domain\Exception\RateLimitReachedException;
 
 /**
  * Limits how many organizations a user may create per rolling window. Counts
@@ -32,7 +32,7 @@ final class OrganizationCreationRateLimiter
     }
 
     /**
-     * @throws RateLimited if the user has reached the creation limit for the current window
+     * @throws RateLimitReachedException if the user has reached the creation limit for the current window
      */
     public function assertWithinLimit(User $user): void
     {
@@ -40,7 +40,7 @@ final class OrganizationCreationRateLimiter
         $created = $this->events->countByActorSince($user->getId(), OrganizationCreated::TYPE, $since);
 
         if ($created >= $this->maxPerWindow) {
-            throw new RateLimited(sprintf('You can create at most %d organizations per %d hours. Please try again later.', $this->maxPerWindow, $this->windowHours));
+            throw new RateLimitReachedException(sprintf('You can create at most %d organizations per %d hours. Please try again later.', $this->maxPerWindow, $this->windowHours));
         }
     }
 }

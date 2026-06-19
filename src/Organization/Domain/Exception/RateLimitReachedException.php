@@ -12,6 +12,9 @@
 
 namespace App\Organization\Domain\Exception;
 
-final class InvalidDisplayName extends OrganizationException
+/**
+ * The actor exceeded an abuse-prevention rate limit (e.g. organization creation).
+ */
+final class RateLimitReachedException extends OrganizationException
 {
 }

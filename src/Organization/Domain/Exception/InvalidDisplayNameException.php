@@ -12,9 +12,6 @@
 
 namespace App\Organization\Domain\Exception;
 
-/**
- * The slug is already in use by a live organization or held by an active reservation.
- */
-final class SlugTaken extends OrganizationException
+final class InvalidDisplayNameException extends OrganizationException
 {
 }

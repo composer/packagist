@@ -14,9 +14,9 @@ namespace App\Tests\Organization;
 
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
-use App\Organization\Domain\Exception\InvalidSlug;
-use App\Organization\Domain\Exception\SlugTaken;
-use App\Organization\Domain\Exception\TwoFactorRequired;
+use App\Organization\Domain\Exception\InvalidSlugException;
+use App\Organization\Domain\Exception\SlugTakenException;
+use App\Organization\Domain\Exception\TwoFactorRequiredException;
 use App\Organization\OrganizationManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -81,7 +81,7 @@ class OrganizationCreationTest extends KernelTestCase
     {
         $owner = $this->persistOwner('no2fa', twoFactor: false);
 
-        $this->expectException(TwoFactorRequired::class);
+        $this->expectException(TwoFactorRequiredException::class);
 
         static::getContainer()->get(OrganizationManager::class)
             ->create($owner, 'acme', 'ACME Corp', null);
@@ -91,7 +91,7 @@ class OrganizationCreationTest extends KernelTestCase
     {
         $owner = $this->persistOwner('reserved', twoFactor: true);
 
-        $this->expectException(InvalidSlug::class);
+        $this->expectException(InvalidSlugException::class);
 
         static::getContainer()->get(OrganizationManager::class)
             ->create($owner, 'composer', 'Composer', null);
@@ -105,7 +105,7 @@ class OrganizationCreationTest extends KernelTestCase
         $manager = static::getContainer()->get(OrganizationManager::class);
         $manager->create($first, 'acme', 'ACME Corp', null);
 
-        $this->expectException(SlugTaken::class);
+        $this->expectException(SlugTakenException::class);
         $manager->create($second, 'acme', 'ACME Two', null);
     }
 

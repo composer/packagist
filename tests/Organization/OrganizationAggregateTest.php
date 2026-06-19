@@ -13,7 +13,7 @@
 namespace App\Tests\Organization;
 
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Exception\InvalidDisplayName;
+use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
 use PHPUnit\Framework\TestCase;
@@ -48,14 +48,14 @@ class OrganizationAggregateTest extends TestCase
 
     public function testCreateRejectsInvalidDisplayName(): void
     {
-        $this->expectException(InvalidDisplayName::class);
+        $this->expectException(InvalidDisplayNameException::class);
 
         Organization::create(new Ulid(), new Slug('acme'), 'ACME, Inc.');
     }
 
     public function testCreateRejectsTooLongDisplayName(): void
     {
-        $this->expectException(InvalidDisplayName::class);
+        $this->expectException(InvalidDisplayNameException::class);
 
         Organization::create(new Ulid(), new Slug('acme'), str_repeat('a', 61));
     }

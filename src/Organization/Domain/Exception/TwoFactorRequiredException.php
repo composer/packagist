@@ -13,9 +13,8 @@
 namespace App\Organization\Domain\Exception;
 
 /**
- * The slug is malformed or reserved (regex, deny-list or vendor-prefix collision).
- * Nothing is appended to the event stream.
+ * Two-factor authentication is required to create an organization / become an owner.
  */
-final class InvalidSlug extends OrganizationException
+final class TwoFactorRequiredException extends OrganizationException
 {
 }

@@ -13,8 +13,8 @@
 namespace App\Organization\Domain\Exception;
 
 /**
- * Two-factor authentication is required to create an organization / become an owner.
+ * The slug is already in use by a live organization or held by an active reservation.
  */
-final class TwoFactorRequired extends OrganizationException
+final class SlugTakenException extends OrganizationException
 {
 }
