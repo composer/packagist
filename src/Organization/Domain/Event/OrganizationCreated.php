@@ -26,7 +26,6 @@ final readonly class OrganizationCreated implements DomainEvent
         public Ulid $organizationId,
         public string $slug,
         public string $displayName,
-        public ?string $avatarUrl,
     ) {
     }
 
@@ -45,7 +44,6 @@ final readonly class OrganizationCreated implements DomainEvent
         return [
             'slug' => $this->slug,
             'displayName' => $this->displayName,
-            'avatarUrl' => $this->avatarUrl,
         ];
     }
 
@@ -58,7 +56,6 @@ final readonly class OrganizationCreated implements DomainEvent
             $organizationId,
             (string) $payload['slug'],
             (string) $payload['displayName'],
-            isset($payload['avatarUrl']) ? (string) $payload['avatarUrl'] : null,
         );
     }
 }

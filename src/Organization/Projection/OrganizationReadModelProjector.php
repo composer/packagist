@@ -41,7 +41,6 @@ final class OrganizationReadModelProjector implements Projector
                 $event->organizationId,
                 $event->slug,
                 $event->displayName,
-                $event->avatarUrl,
                 'active',
                 $recorded->occurredAt,
                 $recorded->actor->userId,

@@ -75,7 +75,6 @@ class OrganizationController extends Controller
                     $user,
                     $createRequest->slug,
                     $createRequest->displayName,
-                    $createRequest->avatarUrl,
                     $request->getClientIp(),
                 );
 

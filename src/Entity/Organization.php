@@ -37,9 +37,6 @@ class Organization
         #[ORM\Column(length: 60)]
         public readonly string $displayName,
 
-        #[ORM\Column(length: 255, nullable: true)]
-        public readonly ?string $avatarUrl,
-
         #[ORM\Column(length: 16)]
         public readonly string $status,
 

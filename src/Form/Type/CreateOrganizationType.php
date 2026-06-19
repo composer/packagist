@@ -15,7 +15,6 @@ namespace App\Form\Type;
 use App\Form\Model\CreateOrganizationRequest;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -36,11 +35,6 @@ class CreateOrganizationType extends AbstractType
                 'label' => 'Slug',
                 'attr' => ['maxlength' => 20],
                 'help' => 'Used in the URL (/organizations/your-slug). Lowercase letters, numbers and hyphens, up to 20 characters.',
-            ])
-            ->add('avatarUrl', UrlType::class, [
-                'label' => 'Avatar URL',
-                'required' => false,
-                'help' => 'Optional Gravatar URL (https://gravatar.com/avatar/...).',
             ]);
     }
 

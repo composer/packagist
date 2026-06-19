@@ -191,7 +191,6 @@ class OrganizationControllerTest extends IntegrationTestCase
             new Ulid(),
             $slug,
             $displayName,
-            null,
             $deletedAt !== null ? 'deleted' : 'active',
             new \DateTimeImmutable(),
             $owner?->getId(),

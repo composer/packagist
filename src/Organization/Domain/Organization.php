@@ -13,7 +13,6 @@
 namespace App\Organization\Domain;
 
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Exception\InvalidAvatar;
 use App\Organization\Domain\Exception\InvalidDisplayName;
 use App\Organization\EventStore\AbstractAggregate;
 use App\Organization\EventStore\DomainEvent;
@@ -37,22 +36,18 @@ final class Organization extends AbstractAggregate
 
     private string $displayName;
 
-    private ?string $avatarUrl = null;
-
     // Groundwork for org deletion (not yet implemented).
     private bool $deleted = false;
 
     /**
      * @throws InvalidDisplayName
-     * @throws InvalidAvatar
      */
-    public static function create(Ulid $id, Slug $slug, string $displayName, ?string $avatarUrl): self
+    public static function create(Ulid $id, Slug $slug, string $displayName): self
     {
         $displayName = self::normalizeDisplayName($displayName);
-        $avatarUrl = self::normalizeAvatar($avatarUrl);
 
         $organization = new self($id);
-        $organization->record(new OrganizationCreated($id, $slug->value, $displayName, $avatarUrl));
+        $organization->record(new OrganizationCreated($id, $slug->value, $displayName));
 
         return $organization;
     }
@@ -83,11 +78,6 @@ final class Organization extends AbstractAggregate
         return $this->displayName;
     }
 
-    public function avatarUrl(): ?string
-    {
-        return $this->avatarUrl;
-    }
-
     public function isDeleted(): bool
     {
         return $this->deleted;
@@ -105,7 +95,6 @@ final class Organization extends AbstractAggregate
     {
         $this->slug = $event->slug;
         $this->displayName = $event->displayName;
-        $this->avatarUrl = $event->avatarUrl;
         $this->deleted = false;
     }
 
@@ -133,20 +122,5 @@ final class Organization extends AbstractAggregate
         }
 
         return $displayName;
-    }
-
-    private static function normalizeAvatar(?string $avatarUrl): ?string
-    {
-        if ($avatarUrl === null || trim($avatarUrl) === '') {
-            return null;
-        }
-
-        $avatarUrl = trim($avatarUrl);
-
-        if (!Preg::isMatch('{^https://(?:www\.|secure\.)?gravatar\.com/avatar/[a-f0-9]{32,64}(?:\?.*)?$}i', $avatarUrl)) {
-            throw new InvalidAvatar('The avatar must be a Gravatar URL (https://gravatar.com/avatar/...).');
-        }
-
-        return $avatarUrl;
     }
 }

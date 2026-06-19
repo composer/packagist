@@ -35,7 +35,4 @@ class CreateOrganizationRequest
         message: 'The display name may only contain letters, numbers, spaces and hyphens.',
     )]
     public string $displayName = '';
-
-    #[Assert\Url]
-    public ?string $avatarUrl = null;
 }

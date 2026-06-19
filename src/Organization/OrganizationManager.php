@@ -13,7 +13,6 @@
 namespace App\Organization;
 
 use App\Entity\User;
-use App\Organization\Domain\Exception\InvalidAvatar;
 use App\Organization\Domain\Exception\InvalidDisplayName;
 use App\Organization\Domain\Exception\InvalidSlug;
 use App\Organization\Domain\Exception\RateLimited;
@@ -42,10 +41,9 @@ final class OrganizationManager
      * @throws RateLimited
      * @throws InvalidSlug
      * @throws InvalidDisplayName
-     * @throws InvalidAvatar
      * @throws SlugTaken
      */
-    public function create(User $owner, string $slug, string $displayName, ?string $avatarUrl, ?string $ip): Organization
+    public function create(User $owner, string $slug, string $displayName, ?string $ip): Organization
     {
         // 2FA is required to create an organization / become an owner.
         if (!$owner->isTotpAuthenticationEnabled()) {
@@ -58,7 +56,7 @@ final class OrganizationManager
 
         $this->slugChecker->assertClaimable($slug, $owner);
 
-        $organization = Organization::create(new Ulid(), $slug, $displayName, $avatarUrl);
+        $organization = Organization::create(new Ulid(), $slug, $displayName);
 
         try {
             $this->eventStore->append($organization, Actor::owner($owner), $ip);

@@ -13,7 +13,6 @@
 namespace App\Tests\Organization;
 
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Exception\InvalidAvatar;
 use App\Organization\Domain\Exception\InvalidDisplayName;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
@@ -25,7 +24,7 @@ class OrganizationAggregateTest extends TestCase
     public function testCreateRecordsOrganizationCreatedEvent(): void
     {
         $id = new Ulid();
-        $organization = Organization::create($id, new Slug('acme'), 'ACME Corp', null);
+        $organization = Organization::create($id, new Slug('acme'), 'ACME Corp');
 
         $events = $organization->pullPendingEvents();
 
@@ -35,53 +34,36 @@ class OrganizationAggregateTest extends TestCase
         self::assertTrue($id->equals($event->organizationId));
         self::assertSame('acme', $event->slug);
         self::assertSame('ACME Corp', $event->displayName);
-        self::assertNull($event->avatarUrl);
         self::assertSame('organization-created', $event->eventType());
     }
 
-    public function testCreateTrimsDisplayNameAndNormalisesEmptyAvatarToNull(): void
+    public function testCreateTrimsDisplayName(): void
     {
-        $organization = Organization::create(new Ulid(), new Slug('acme'), '  ACME Corp  ', '');
+        $organization = Organization::create(new Ulid(), new Slug('acme'), '  ACME Corp  ');
 
         self::assertSame('ACME Corp', $organization->displayName());
-        self::assertNull($organization->avatarUrl());
         self::assertSame('acme', $organization->slug());
         self::assertFalse($organization->isDeleted());
-    }
-
-    public function testCreateAcceptsGravatarAvatar(): void
-    {
-        $avatar = 'https://gravatar.com/avatar/'.str_repeat('a', 32);
-        $organization = Organization::create(new Ulid(), new Slug('acme'), 'ACME', $avatar);
-
-        self::assertSame($avatar, $organization->avatarUrl());
     }
 
     public function testCreateRejectsInvalidDisplayName(): void
     {
         $this->expectException(InvalidDisplayName::class);
 
-        Organization::create(new Ulid(), new Slug('acme'), 'ACME, Inc.', null);
+        Organization::create(new Ulid(), new Slug('acme'), 'ACME, Inc.');
     }
 
     public function testCreateRejectsTooLongDisplayName(): void
     {
         $this->expectException(InvalidDisplayName::class);
 
-        Organization::create(new Ulid(), new Slug('acme'), str_repeat('a', 61), null);
-    }
-
-    public function testCreateRejectsNonGravatarAvatar(): void
-    {
-        $this->expectException(InvalidAvatar::class);
-
-        Organization::create(new Ulid(), new Slug('acme'), 'ACME', 'https://example.com/logo.png');
+        Organization::create(new Ulid(), new Slug('acme'), str_repeat('a', 61));
     }
 
     public function testReconstituteRebuildsStateFromHistory(): void
     {
         $id = new Ulid();
-        $created = Organization::create($id, new Slug('acme'), 'ACME Corp', null);
+        $created = Organization::create($id, new Slug('acme'), 'ACME Corp');
         $event = $created->pullPendingEvents()[0];
         self::assertInstanceOf(OrganizationCreated::class, $event);
 

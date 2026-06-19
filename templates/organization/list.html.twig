@@ -24,9 +24,6 @@
                 {% for organization in organizations %}
                     <tr>
                         <td>
-                            {% if organization.avatarUrl %}
-                                <img src="{{ organization.avatarUrl }}" alt="" width="24" height="24" class="organization-avatar">
-                            {% endif %}
                             <a href="{{ path('organization_show', { slug: organization.slug }) }}">{{ organization.displayName }}</a>
                             {# Groundwork for org deletion (not yet implemented). #}
                             {% if organization.deleted %}

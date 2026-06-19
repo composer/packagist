@@ -47,7 +47,7 @@ class OrganizationCreationTest extends KernelTestCase
         $owner = $this->persistOwner('orgowner', twoFactor: true);
 
         $manager = static::getContainer()->get(OrganizationManager::class);
-        $organization = $manager->create($owner, 'acme', 'ACME Corp', null, '203.0.113.5');
+        $organization = $manager->create($owner, 'acme', 'ACME Corp', '203.0.113.5');
 
         self::assertSame('acme', $organization->slug());
 
@@ -84,7 +84,7 @@ class OrganizationCreationTest extends KernelTestCase
         $this->expectException(TwoFactorRequired::class);
 
         static::getContainer()->get(OrganizationManager::class)
-            ->create($owner, 'acme', 'ACME Corp', null, null);
+            ->create($owner, 'acme', 'ACME Corp', null);
     }
 
     public function testCreateRejectsReservedSlug(): void
@@ -94,7 +94,7 @@ class OrganizationCreationTest extends KernelTestCase
         $this->expectException(InvalidSlug::class);
 
         static::getContainer()->get(OrganizationManager::class)
-            ->create($owner, 'composer', 'Composer', null, null);
+            ->create($owner, 'composer', 'Composer', null);
     }
 
     public function testCreateRejectsAlreadyTakenSlug(): void
@@ -103,10 +103,10 @@ class OrganizationCreationTest extends KernelTestCase
         $second = $this->persistOwner('second', twoFactor: true);
 
         $manager = static::getContainer()->get(OrganizationManager::class);
-        $manager->create($first, 'acme', 'ACME Corp', null, null);
+        $manager->create($first, 'acme', 'ACME Corp', null);
 
         $this->expectException(SlugTaken::class);
-        $manager->create($second, 'acme', 'ACME Two', null, null);
+        $manager->create($second, 'acme', 'ACME Two', null);
     }
 
     private function persistOwner(string $username, bool $twoFactor): User

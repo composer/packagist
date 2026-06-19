@@ -4,9 +4,6 @@
 
 {% block content %}
     <h2 class="title">
-        {% if organization.avatarUrl %}
-            <img src="{{ organization.avatarUrl }}" alt="" width="48" height="48" class="organization-avatar">
-        {% endif %}
         {{ organization.displayName }}
     </h2>
 

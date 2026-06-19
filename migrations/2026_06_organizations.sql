@@ -7,7 +7,6 @@ CREATE TABLE organization (
     id BINARY(16) NOT NULL,
     slug VARCHAR(20) NOT NULL,
     displayName VARCHAR(60) NOT NULL,
-    avatarUrl VARCHAR(255) DEFAULT NULL,
     status VARCHAR(16) NOT NULL,
     createdAt DATETIME NOT NULL,
     createdBy INT DEFAULT NULL,
