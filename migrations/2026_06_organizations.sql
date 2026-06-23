@@ -42,7 +42,9 @@ CREATE TABLE slug_reservation (
     reservedAt DATETIME NOT NULL,
     releasedAt DATETIME DEFAULT NULL,
     releasedBy INT DEFAULT NULL,
+    activeSlug VARCHAR(20) GENERATED ALWAYS AS (IF(releasedAt IS NULL, slug, NULL)) STORED,
     PRIMARY KEY (id),
     KEY slug_reservation_slug_idx (slug),
-    KEY slug_reservation_org_idx (orgId)
+    KEY slug_reservation_org_idx (orgId),
+    UNIQUE KEY slug_reservation_active_slug_uniq (activeSlug)
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
