@@ -15,6 +15,7 @@ namespace App\Tests\ArgumentResolver;
 use App\ArgumentResolver\OrganizationResolver;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
+use App\Entity\OrganizationStatus;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
@@ -100,7 +101,7 @@ class OrganizationResolverTest extends TestCase
             new Ulid(),
             $slug,
             'ACME Corp',
-            $deleted ? 'deleted' : 'active',
+            $deleted ? OrganizationStatus::Deleted : OrganizationStatus::Active,
             new \DateTimeImmutable(),
             null,
             $deleted ? new \DateTimeImmutable() : null,

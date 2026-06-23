@@ -13,6 +13,7 @@
 namespace App\Organization\Projection;
 
 use App\Entity\Organization;
+use App\Entity\OrganizationStatus;
 use App\Organization\Domain\Event\OrganizationCreated;
 use App\Organization\EventStore\RecordedEvent;
 use App\Util\DoctrineTrait;
@@ -41,7 +42,7 @@ final class OrganizationReadModelProjector implements Projector
                 $event->organizationId,
                 $event->slug,
                 $event->displayName,
-                'active',
+                OrganizationStatus::Active,
                 $recorded->occurredAt,
                 $recorded->actor->userId,
             ));

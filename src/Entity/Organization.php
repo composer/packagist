@@ -15,6 +15,13 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
+enum OrganizationStatus: string
+{
+    case Active = 'active';
+    // Groundwork for org deletion (not yet implemented).
+    case Deleted = 'deleted';
+}
+
 /**
  * Read-model projection of the Organization aggregate.
  *
@@ -28,7 +35,7 @@ class Organization
 {
     public function __construct(
         #[ORM\Id]
-        #[ORM\Column(type: 'ulid')]
+        #[ORM\Column()]
         public readonly Ulid $id,
 
         #[ORM\Column(length: 20)]
@@ -38,7 +45,7 @@ class Organization
         public readonly string $displayName,
 
         #[ORM\Column(length: 16)]
-        public readonly string $status,
+        public readonly OrganizationStatus $status,
 
         #[ORM\Column(type: 'datetime_immutable')]
         public readonly \DateTimeImmutable $createdAt,
@@ -48,7 +55,7 @@ class Organization
         public readonly ?int $createdBy,
 
         // Groundwork for org deletion (not yet implemented)
-        #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+        #[ORM\Column(nullable: true)]
         public readonly ?\DateTimeImmutable $deletedAt = null,
 
         /** `owner` | `packagist-admin` — who triggered the soft-delete. */

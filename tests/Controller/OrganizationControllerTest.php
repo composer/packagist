@@ -14,6 +14,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
+use App\Entity\OrganizationStatus;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Uid\Ulid;
@@ -192,7 +193,7 @@ class OrganizationControllerTest extends IntegrationTestCase
             new Ulid(),
             $slug,
             $displayName,
-            $deletedAt !== null ? 'deleted' : 'active',
+            $deletedAt !== null ? OrganizationStatus::Deleted : OrganizationStatus::Active,
             new \DateTimeImmutable(),
             $owner?->getId(),
             $deletedAt,
