@@ -13,6 +13,7 @@
 namespace App\Organization\Domain\Event;
 
 use App\Organization\EventStore\DomainEvent;
+use App\Organization\EventStore\OrganizationEventType;
 use Symfony\Component\Uid\Ulid;
 
 /**
@@ -20,7 +21,7 @@ use Symfony\Component\Uid\Ulid;
  */
 final readonly class OrganizationCreated implements DomainEvent
 {
-    public const string TYPE = 'organization-created';
+    public const OrganizationEventType TYPE = OrganizationEventType::OrganizationCreated;
 
     public function __construct(
         public Ulid $organizationId,
@@ -34,7 +35,7 @@ final readonly class OrganizationCreated implements DomainEvent
         return $this->organizationId;
     }
 
-    public function eventType(): string
+    public function eventType(): OrganizationEventType
     {
         return self::TYPE;
     }

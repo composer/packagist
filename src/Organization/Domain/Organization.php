@@ -16,6 +16,7 @@ use App\Organization\Domain\Event\OrganizationCreated;
 use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\EventStore\AbstractAggregate;
 use App\Organization\EventStore\DomainEvent;
+use App\Organization\EventStore\OrganizationEventType;
 use Composer\Pcre\Preg;
 use Symfony\Component\Uid\Ulid;
 
@@ -55,7 +56,7 @@ final class Organization extends AbstractAggregate
     /**
      * Rebuild from the persisted event history.
      *
-     * @param list<array{type: string, payload: array<string, mixed>}> $history
+     * @param list<array{type: OrganizationEventType, payload: array<string, mixed>}> $history
      */
     public static function reconstitute(Ulid $id, array $history): self
     {
@@ -87,7 +88,7 @@ final class Organization extends AbstractAggregate
     {
         match (true) {
             $event instanceof OrganizationCreated => $this->applyCreated($event),
-            default => throw new \LogicException('Unhandled organization event: '.$event->eventType()),
+            default => throw new \LogicException('Unhandled organization event: '.$event->eventType()->value),
         };
     }
 
@@ -101,11 +102,10 @@ final class Organization extends AbstractAggregate
     /**
      * @param array<string, mixed> $payload
      */
-    private static function denormalize(Ulid $id, string $type, array $payload): DomainEvent
+    private static function denormalize(Ulid $id, OrganizationEventType $type, array $payload): DomainEvent
     {
         return match ($type) {
-            OrganizationCreated::TYPE => OrganizationCreated::fromPayload($id, $payload),
-            default => throw new \LogicException('Unknown organization event type: '.$type),
+            OrganizationEventType::OrganizationCreated => OrganizationCreated::fromPayload($id, $payload),
         };
     }
 

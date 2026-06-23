@@ -16,6 +16,7 @@ use App\Organization\Domain\Event\OrganizationCreated;
 use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
+use App\Organization\EventStore\OrganizationEventType;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Ulid;
 
@@ -34,7 +35,7 @@ class OrganizationAggregateTest extends TestCase
         self::assertTrue($id->equals($event->organizationId));
         self::assertSame('acme', $event->slug);
         self::assertSame('ACME Corp', $event->displayName);
-        self::assertSame('organization-created', $event->eventType());
+        self::assertSame(OrganizationEventType::OrganizationCreated, $event->eventType());
     }
 
     public function testCreateTrimsDisplayName(): void

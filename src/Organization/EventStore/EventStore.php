@@ -102,7 +102,7 @@ final class EventStore
     /**
      * Load the persisted events for an aggregate, oldest first.
      *
-     * @return list<array{type: string, payload: array<string, mixed>}>
+     * @return list<array{type: OrganizationEventType, payload: array<string, mixed>}>
      */
     public function loadHistory(Ulid $aggregateId): array
     {

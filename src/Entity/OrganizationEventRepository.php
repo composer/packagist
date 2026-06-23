@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Organization\EventStore\OrganizationEventType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -29,7 +30,7 @@ class OrganizationEventRepository extends ServiceEntityRepository
      * Count events of a given type triggered by a user since a point in time.
      * Backs rate limiting (the event stream records actor and timestamp).
      */
-    public function countByActorSince(int $actorUserId, string $type, \DateTimeImmutable $since): int
+    public function countByActorSince(int $actorUserId, OrganizationEventType $type, \DateTimeImmutable $since): int
     {
         return (int) $this->createQueryBuilder('e')
             ->select('COUNT(e.id)')
@@ -37,7 +38,7 @@ class OrganizationEventRepository extends ServiceEntityRepository
             ->andWhere('e.type = :type')
             ->andWhere('e.createdAt >= :since')
             ->setParameter('actor', $actorUserId)
-            ->setParameter('type', $type)
+            ->setParameter('type', $type->value)
             ->setParameter('since', $since)
             ->getQuery()
             ->getSingleScalarResult();

@@ -12,16 +12,11 @@
 
 namespace App\Organization\EventStore;
 
-use Symfony\Component\Uid\Ulid;
-
-interface DomainEvent
+/**
+ * Canonical event type identifiers for the organization event stream. The
+ * backing string is what gets persisted in `organization_event.type`.
+ */
+enum OrganizationEventType: string
 {
-    public function aggregateId(): Ulid;
-
-    public function eventType(): OrganizationEventType;
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toPayload(): array;
+    case OrganizationCreated = 'organization-created';
 }

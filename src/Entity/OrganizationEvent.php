@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Organization\EventStore\OrganizationEventType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
@@ -42,8 +43,8 @@ class OrganizationEvent
         #[ORM\Column(options: ['unsigned' => true])]
         public readonly int $sequence,
 
-        #[ORM\Column(length: 64)]
-        public readonly string $type,
+        #[ORM\Column(length: 64, enumType: OrganizationEventType::class)]
+        public readonly OrganizationEventType $type,
 
         #[ORM\Column(type: Types::JSON)]
         public readonly array $payload,
