@@ -13,6 +13,7 @@
 namespace App\Form\Type;
 
 use App\Form\Model\CreateOrganizationRequest;
+use App\Organization\Domain\Slug;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -33,8 +34,8 @@ class CreateOrganizationType extends AbstractType
             ])
             ->add('slug', TextType::class, [
                 'label' => 'Slug',
-                'attr' => ['maxlength' => 20],
-                'help' => 'Used in the URL (/organizations/your-slug). Lowercase letters, numbers and hyphens, up to 20 characters.',
+                'attr' => ['maxlength' => Slug::MAX_LENGTH],
+                'help' => sprintf('Used in the URL (/organizations/your-slug). Lowercase letters, numbers and hyphens, up to %s characters.', Slug::MAX_LENGTH),
             ]);
     }
 
