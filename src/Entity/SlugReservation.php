@@ -15,6 +15,15 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
+enum SlugReservationKind: string
+{
+    /** Slug freed by a rename; the old slug redirects to the new one. */
+    case RenamedFrom = 'renamed_from';
+
+    /** Slug freed by a soft-delete; the old slug shows a gone page. */
+    case Deleted = 'deleted';
+}
+
 /**
  * Blocks a slug freed by a rename or soft-delete. Slugs stay blocked indefinitely and
  * are released only by a packagist-admin (no auto-expiry / sweep). A reservation is
@@ -31,23 +40,22 @@ class SlugReservation
 {
     public function __construct(
         #[ORM\Id]
-        #[ORM\Column(type: 'ulid')]
+        #[ORM\Column]
         public readonly Ulid $id,
 
         #[ORM\Column(length: 20)]
         public readonly string $slug,
 
-        #[ORM\Column(type: 'ulid')]
+        #[ORM\Column]
         public readonly Ulid $orgId,
 
-        /** `renamed_from` (redirect) | `deleted` (gone page). */
         #[ORM\Column(length: 16)]
-        public readonly string $kind,
+        public readonly SlugReservationKind $kind,
 
-        #[ORM\Column(type: 'datetime_immutable')]
+        #[ORM\Column]
         public readonly \DateTimeImmutable $reservedAt,
 
-        #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+        #[ORM\Column(nullable: true)]
         public readonly ?\DateTimeImmutable $releasedAt = null,
 
         /** Packagist-admin who released the slug. References fos_user.id. */
