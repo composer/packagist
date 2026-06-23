@@ -12,7 +12,6 @@
 
 namespace App\Controller;
 
-use App\Attribute\VarName;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
@@ -20,11 +19,9 @@ use App\Form\Model\CreateOrganizationRequest;
 use App\Form\Type\CreateOrganizationType;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\OrganizationManager;
-use App\Security\Voter\OrganizationActions;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\GoneHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -88,7 +85,7 @@ class OrganizationController extends Controller
         ]);
     }
 
-    #[Route(path: '/organizations/{organization}', name: 'organization_show', methods: ['GET'], requirements: ['slug' => '[a-z0-9-]+'])]
+    #[Route(path: '/organizations/{organization}', name: 'organization_show', methods: ['GET'], requirements: ['organization' => '[a-z0-9-]+'])]
     public function show(Organization $organization): Response
     {
         return $this->render('organization/show.html.twig', [
