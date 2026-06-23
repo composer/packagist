@@ -37,8 +37,15 @@ enum SlugReservationKind: string
 #[ORM\Table(name: 'slug_reservation')]
 #[ORM\Index(name: 'slug_reservation_slug_idx', columns: ['slug'])]
 #[ORM\Index(name: 'slug_reservation_org_idx', columns: ['orgId'])]
+#[ORM\UniqueConstraint(name: 'slug_reservation_active_slug_uniq', columns: ['activeSlug'])]
 class SlugReservation
 {
+    /**
+     * Ensure that we only ever allow only one slug reservation with releasedAt set to NULL
+     */
+    #[ORM\Column(insertable: false, updatable: false, nullable: true, columnDefinition: 'VARCHAR(' . Slug::MAX_LENGTH . ') GENERATED ALWAYS AS (IF(releasedAt IS NULL, slug, NULL)) STORED')]
+    public ?string $activeSlug = null;
+
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: 'ulid')]
