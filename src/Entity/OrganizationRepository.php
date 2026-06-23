@@ -38,9 +38,9 @@ class OrganizationRepository extends ServiceEntityRepository
     public function findByOwner(User $user): array
     {
         return $this->createQueryBuilder('o')
-            ->where('o.createdBy = :userId')
+            ->where('o.createdBy = :owner')
             ->andWhere('o.deletedAt IS NULL')
-            ->setParameter('userId', $user->getId())
+            ->setParameter('owner', $user)
             ->orderBy('o.createdAt', 'DESC')
             ->getQuery()
             ->getResult();

@@ -14,7 +14,8 @@ CREATE TABLE organization (
     deletedReason VARCHAR(32) DEFAULT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY org_slug_idx (slug),
-    KEY org_created_by_idx (createdBy)
+    KEY org_created_by_idx (createdBy),
+    CONSTRAINT FK_organization_created_by FOREIGN KEY (createdBy) REFERENCES fos_user (id) ON DELETE SET NULL
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
 
 CREATE TABLE organization_event (

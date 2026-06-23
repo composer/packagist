@@ -156,7 +156,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $organization = $this->organizations()->findOneBySlug('acme');
         self::assertNotNull($organization);
         self::assertSame('ACME Corp', $organization->displayName);
-        self::assertSame($admin->getId(), $organization->createdBy);
+        self::assertSame($admin->getId(), $organization->createdBy?->getId());
     }
 
     public function testCreateRendersFormErrorForReservedSlug(): void
@@ -195,7 +195,7 @@ class OrganizationControllerTest extends IntegrationTestCase
             $displayName,
             $deletedAt !== null ? OrganizationStatus::Deleted : OrganizationStatus::Active,
             new \DateTimeImmutable(),
-            $owner?->getId(),
+            $owner,
             $deletedAt,
             $deletedAt !== null ? 'owner' : null,
         );

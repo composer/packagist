@@ -36,7 +36,7 @@ class Organization
 {
     public function __construct(
         #[ORM\Id]
-        #[ORM\Column()]
+        #[ORM\Column(type: 'ulid')]
         public readonly Ulid $id,
 
         #[ORM\Column(length: Slug::MAX_LENGTH)]
@@ -51,9 +51,10 @@ class Organization
         #[ORM\Column(type: 'datetime_immutable')]
         public readonly \DateTimeImmutable $createdAt,
 
-        /** Owner by virtue of creation until the membership stage ships. References fos_user.id. */
-        #[ORM\Column(nullable: true)]
-        public readonly ?int $createdBy,
+        /** Owner by virtue of creation until the membership stage ships. Null once the creating user is deleted, or for system/automation-created orgs. */
+        #[ORM\ManyToOne(targetEntity: User::class)]
+        #[ORM\JoinColumn(name: 'createdBy', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+        public readonly ?User $createdBy,
 
         // Groundwork for org deletion (not yet implemented)
         #[ORM\Column(nullable: true)]

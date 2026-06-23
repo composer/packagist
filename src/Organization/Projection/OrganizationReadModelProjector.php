@@ -14,6 +14,7 @@ namespace App\Organization\Projection;
 
 use App\Entity\Organization;
 use App\Entity\OrganizationStatus;
+use App\Entity\UserRepository;
 use App\Organization\Domain\Event\OrganizationCreated;
 use App\Organization\EventStore\RecordedEvent;
 use App\Util\DoctrineTrait;
@@ -30,6 +31,7 @@ final class OrganizationReadModelProjector implements Projector
 
     public function __construct(
         private readonly ManagerRegistry $doctrine,
+        private readonly UserRepository $users,
     ) {
     }
 
@@ -38,13 +40,17 @@ final class OrganizationReadModelProjector implements Projector
         $event = $recorded->event;
 
         if ($event instanceof OrganizationCreated) {
+            $createdBy = $recorded->actor->userId !== null
+                ? $this->users->find($recorded->actor->userId)
+                : null;
+
             $this->getEM()->persist(new Organization(
                 $event->organizationId,
                 $event->slug,
                 $event->displayName,
                 OrganizationStatus::Active,
                 $recorded->occurredAt,
-                $recorded->actor->userId,
+                $createdBy,
             ));
             $this->getEM()->flush();
         }

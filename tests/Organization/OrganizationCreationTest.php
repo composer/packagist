@@ -55,7 +55,7 @@ class OrganizationCreationTest extends KernelTestCase
         $readModel = static::getContainer()->get(OrganizationRepository::class)->findOneBySlug('acme');
         self::assertNotNull($readModel);
         self::assertSame('ACME Corp', $readModel->displayName);
-        self::assertSame($owner->getId(), $readModel->createdBy);
+        self::assertSame($owner->getId(), $readModel->createdBy?->getId());
         self::assertFalse($readModel->isDeleted());
 
         // Canonical event stream.

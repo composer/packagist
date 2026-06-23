@@ -41,13 +41,13 @@ class SlugReservation
 {
     public function __construct(
         #[ORM\Id]
-        #[ORM\Column]
+        #[ORM\Column(type: 'ulid')]
         public readonly Ulid $id,
 
         #[ORM\Column(length: Slug::MAX_LENGTH)]
         public readonly string $slug,
 
-        #[ORM\Column]
+        #[ORM\Column(type: 'ulid')]
         public readonly Ulid $orgId,
 
         #[ORM\Column(length: 16)]
