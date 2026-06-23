@@ -1,3 +1,5 @@
-<strong><a href="{{ path('organization_show', { 'slug': display.slug }) }}">{{ display.slug }}</a></strong>
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.organizationLink(display.slug) }}</strong>
 {%- if display.displayName != display.slug %} ({{ display.displayName }}){% endif %}<br>
 Created by: {{ display.actor.username }}

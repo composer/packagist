@@ -60,17 +60,19 @@ class OrganizationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Whether a live organization already uses this slug, regardless of deleted state.
+     * Whether a live organization already uses this slug.
      */
-    public function slugExists(string $slug): bool
+    public function slugExists(string $slug, bool $includeDeleted = true): bool
     {
-        $count = (int) $this->createQueryBuilder('o')
+        $qb = $this->createQueryBuilder('o')
             ->select('COUNT(o.id)')
             ->where('o.slug = :slug')
-            ->setParameter('slug', $slug)
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->setParameter('slug', $slug);
 
-        return $count > 0;
+        if (!$includeDeleted) {
+            $qb->andWhere('o.deletedAt IS NULL');
+        }
+
+        return (bool) $qb->getQuery()->getSingleScalarResult();
     }
 }

@@ -12,6 +12,7 @@
 
 namespace App\Twig;
 
+use App\Entity\OrganizationRepository;
 use App\Entity\PackageLink;
 use App\Entity\Version;
 use App\Model\ProviderManager;
@@ -30,18 +31,21 @@ class PackagistExtension extends AbstractExtension
     private ProviderManager $providerManager;
     private RecaptchaHelper $recaptchaHelper;
     private Security $security;
+    private OrganizationRepository $organizations;
 
-    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, Security $security)
+    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, OrganizationRepository $organizations, Security $security)
     {
         $this->providerManager = $providerManager;
         $this->recaptchaHelper = $recaptchaHelper;
         $this->security = $security;
+        $this->organizations = $organizations;
     }
 
     public function getTests(): array
     {
         return [
             new TwigTest('existing_package', [$this, 'packageExistsTest']),
+            new TwigTest('existing_organization', [$this, 'organizationExistsTest']),
             new TwigTest('existing_provider', [$this, 'providerExistsTest']),
             new TwigTest('numeric', [$this, 'numericTest']),
         ];
@@ -95,6 +99,19 @@ class PackagistExtension extends AbstractExtension
         }
 
         return $this->providerManager->packageExists($package);
+    }
+
+    public function organizationExistsTest(mixed $slug): bool
+    {
+        if (!\is_string($slug)) {
+            return false;
+        }
+
+        if (!Preg::isMatch('/^[a-z0-9-]+$/', $slug)) {
+            return false;
+        }
+
+        return $this->organizations->slugExists($slug, false);
     }
 
     public function providerExistsTest(mixed $package): bool
