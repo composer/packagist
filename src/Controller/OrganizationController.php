@@ -26,6 +26,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('ROLE_ORGANIZATIONS')]
 class OrganizationController extends Controller
 {
     public function __construct(
@@ -35,7 +36,6 @@ class OrganizationController extends Controller
     }
 
     #[Route(path: '/organizations', name: 'organization_list', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
     public function list(#[CurrentUser] User $user): Response
     {
         if ($this->isGranted('ROLE_ADMIN')) {
@@ -50,7 +50,6 @@ class OrganizationController extends Controller
     }
 
     #[Route(path: '/organizations/create', name: 'organization_create', methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_ADMIN')]
     public function create(Request $request, #[CurrentUser] User $user): Response
     {
         // 2FA is required to create an organization / become an owner.
