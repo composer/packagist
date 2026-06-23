@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Organization\Domain\Slug;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
@@ -43,7 +44,7 @@ class SlugReservation
         #[ORM\Column]
         public readonly Ulid $id,
 
-        #[ORM\Column(length: 20)]
+        #[ORM\Column(length: Slug::MAX_LENGTH)]
         public readonly string $slug,
 
         #[ORM\Column]
