@@ -24,7 +24,7 @@
                 {% for organization in organizations %}
                     <tr>
                         <td>
-                            <a href="{{ path('organization_show', { slug: organization.slug }) }}">{{ organization.displayName }}</a>
+                            <a href="{{ path('organization_show', { organization: organization.slug }) }}">{{ organization.displayName }}</a>
                             {# Groundwork for org deletion (not yet implemented). #}
                             {% if organization.deleted %}
                                 <span class="label label-warning">deleted</span>

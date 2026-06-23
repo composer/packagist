@@ -12,12 +12,15 @@
 
 namespace App\Controller;
 
+use App\Attribute\VarName;
+use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
 use App\Form\Model\CreateOrganizationRequest;
 use App\Form\Type\CreateOrganizationType;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\OrganizationManager;
+use App\Security\Voter\OrganizationActions;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -74,7 +77,7 @@ class OrganizationController extends Controller
 
                 $this->addFlash('success', sprintf('Organization "%s" created.', $organization->slug()));
 
-                return $this->redirectToRoute('organization_show', ['slug' => $organization->slug()]);
+                return $this->redirectToRoute('organization_show', ['organization' => $organization->slug()]);
             } catch (OrganizationException $e) {
                 $form->addError(new FormError($e->getMessage()));
             }
@@ -85,21 +88,9 @@ class OrganizationController extends Controller
         ]);
     }
 
-    #[Route(path: '/organizations/{slug}', name: 'organization_show', methods: ['GET'], requirements: ['slug' => '[a-z0-9-]+'])]
-    public function show(string $slug): Response
+    #[Route(path: '/organizations/{organization}', name: 'organization_show', methods: ['GET'], requirements: ['slug' => '[a-z0-9-]+'])]
+    public function show(Organization $organization): Response
     {
-        $organization = $this->organizations->findOneBySlug($slug);
-
-        if ($organization === null) {
-            throw $this->createNotFoundException('Organization not found.');
-        }
-
-        // A soft-deleted org is invisible to everyone except Packagist admins (return 410).
-        // Groundwork for org deletion (not yet implemented)
-        if ($organization->isDeleted() && !$this->isGranted('ROLE_ADMIN')) {
-            throw new GoneHttpException('This organization was deleted.');
-        }
-
         return $this->render('organization/show.html.twig', [
             'organization' => $organization,
         ]);

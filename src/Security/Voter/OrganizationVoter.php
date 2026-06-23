@@ -55,6 +55,7 @@ class OrganizationVoter extends Voter
         return match ($action) {
             // Owners have no visibility into a hidden org, so restore is packagist-admin only.
             OrganizationActions::Restore => false,
+            OrganizationActions::View,
             OrganizationActions::EditDisplayInfo,
             OrganizationActions::EditSlug,
             OrganizationActions::SoftDelete => $this->isOwner($organization, $user) && !$organization->isDeleted(),
@@ -65,5 +66,10 @@ class OrganizationVoter extends Voter
     {
         // Until the membership management is done, the owner is the creating user.
         return $organization->createdBy === $user->getId();
+    }
+
+    private function isMember(Organization $organization, User $user): bool
+    {
+        return $this->isOwner($organization, $user);
     }
 }

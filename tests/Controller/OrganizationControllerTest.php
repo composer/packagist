@@ -22,8 +22,10 @@ class OrganizationControllerTest extends IntegrationTestCase
 {
     public function testShowRendersActiveOrganization(): void
     {
-        $this->persistOrganization('acme', 'ACME Corp');
+        $user = $this->persistUser();
+        $this->persistOrganization('acme', 'ACME Corp', owner: $user);
 
+        $this->client->loginUser($user);
         $crawler = $this->client->request('GET', '/organizations/acme');
 
         self::assertResponseIsSuccessful();
@@ -49,8 +51,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testAdminCanViewDeletedOrganization(): void
     {
-        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
-        $this->store($admin);
+        $admin = self::persistUser('ROLE_ADMIN');
         $this->persistOrganization('acme', 'ACME Corp', deletedAt: new \DateTimeImmutable());
 
         $this->client->loginUser($admin);
@@ -68,9 +69,9 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testListShowsOnlyOrganizationsOwnedByUser(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org');
+        $owner = self::persistUser();
         $other = self::createUser('other', 'other@example.org');
-        $this->store($owner, $other);
+        $this->store($other);
 
         $this->persistOrganization('mine', 'Mine Org', owner: $owner);
         $this->persistOrganization('theirs', 'Their Org', owner: $other);
@@ -201,6 +202,14 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->store($organization);
 
         return $organization;
+    }
+
+    private function persistUser(string $role = 'ROLE_ORGANIZATIONS'): User
+    {
+        $user = self::createUser('admin', 'admin@example.org', roles: [$role]);
+        $this->store($user);
+
+        return $user;
     }
 
     private function organizations(): OrganizationRepository

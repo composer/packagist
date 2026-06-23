@@ -17,6 +17,7 @@ namespace App\Security\Voter;
  */
 enum OrganizationActions: string
 {
+    case View = 'view';
     case EditDisplayInfo = 'edit-display-info';
     case EditSlug = 'edit-slug';
     // Groundwork for org deletion (not yet implemented).
