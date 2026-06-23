@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\GoneHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class OrganizationController extends Controller
@@ -35,11 +36,8 @@ class OrganizationController extends Controller
 
     #[Route(path: '/organizations', name: 'organization_list', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function list(): Response
+    public function list(#[CurrentUser] User $user): Response
     {
-        $user = $this->getUser();
-        \assert($user instanceof User);
-
         if ($this->isGranted('ROLE_ADMIN')) {
             $organizations = $this->organizations->findAllOrdered();
         } else {
@@ -53,11 +51,8 @@ class OrganizationController extends Controller
 
     #[Route(path: '/organizations/create', name: 'organization_create', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function create(Request $request): Response
+    public function create(Request $request, #[CurrentUser] User $user): Response
     {
-        $user = $this->getUser();
-        \assert($user instanceof User);
-
         // 2FA is required to create an organization / become an owner.
         if (!$user->isTotpAuthenticationEnabled()) {
             $this->addFlash('error', 'You must enable two-factor authentication before creating an organization.');
