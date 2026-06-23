@@ -15,6 +15,7 @@ namespace App\Menu;
 use App\Entity\User;
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -23,7 +24,7 @@ class MenuBuilder
 {
     private string $username;
 
-    public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator, private LogoutUrlGenerator $logoutUrlGenerator)
+    public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator, private LogoutUrlGenerator $logoutUrlGenerator, private Security $security)
     {
         if ($tokenStorage->getToken() && $tokenStorage->getToken()->getUser() instanceof User) {
             $this->username = $tokenStorage->getToken()->getUser()->getUsername();
@@ -89,11 +90,13 @@ class MenuBuilder
             'routeParameters' => ['name' => $this->username],
             'extras' => ['safe_label' => true, 'translation_domain' => false],
         ]);
-        $menu->addChild($this->translator->trans('menu.my_organizations'), [
-            'label' => '<span class="icon-users"></span>'.$this->translator->trans('menu.my_organizations'),
-            'route' => 'organization_list',
-            'extras' => ['safe_label' => true, 'translation_domain' => false],
-        ]);
+        if ($this->security->isGranted('ROLE_ORGANIZATIONS')) {
+            $menu->addChild($this->translator->trans('menu.my_organizations'), [
+                'label' => '<span class="icon-users"></span>'.$this->translator->trans('menu.my_organizations'),
+                'route' => 'organization_list',
+                'extras' => ['safe_label' => true, 'translation_domain' => false],
+            ]);
+        }
         $menu->addChild($this->translator->trans('menu.my_favorites'), [
             'label' => '<span class="icon-leaf"></span>'.$this->translator->trans('menu.my_favorites'),
             'route' => 'user_favorites',
