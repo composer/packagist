@@ -14,10 +14,8 @@ namespace App\Tests\Controller;
 
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
-use App\Entity\OrganizationStatus;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
-use Symfony\Component\Uid\Ulid;
 
 class OrganizationControllerTest extends IntegrationTestCase
 {
@@ -189,16 +187,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     private function persistOrganization(string $slug, string $displayName, ?User $owner = null, ?\DateTimeImmutable $deletedAt = null): Organization
     {
-        $organization = new Organization(
-            new Ulid(),
-            $slug,
-            $displayName,
-            $deletedAt !== null ? OrganizationStatus::Deleted : OrganizationStatus::Active,
-            new \DateTimeImmutable(),
-            $owner,
-            $deletedAt,
-            $deletedAt !== null ? 'owner' : null,
-        );
+        $organization = self::createOrganization($slug, $displayName, $owner, $deletedAt);
 
         $this->store($organization);
 

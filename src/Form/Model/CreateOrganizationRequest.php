@@ -22,7 +22,7 @@ class CreateOrganizationRequest
     #[Assert\NotBlank]
     #[Assert\Length(max: Slug::MAX_LENGTH)]
     #[Assert\Regex(
-        pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+        pattern: '/^' . Slug::PATTERN . '$/',
         message: 'The slug may only contain lowercase letters, numbers and hyphens, with no leading or trailing hyphen.',
     )]
     #[NotReservedWord]

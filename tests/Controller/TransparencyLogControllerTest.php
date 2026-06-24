@@ -16,16 +16,16 @@ use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Symfony\Component\Uid\Ulid;
 
 class TransparencyLogControllerTest extends IntegrationTestCase
 {
     public function testViewOrganizationCreatedAuditLog(): void
     {
         $user = self::createUser('orgcreator', 'orgcreator@example.com', roles: ['ROLE_USER']);
-        $this->store($user);
+        $organization = self::createOrganization('acme', 'ACME Corp', owner: $user);
+        $this->store($user, $organization);
 
-        $this->store(AuditRecord::organizationCreated(new Ulid(), 'acme', 'ACME Corp', $user));
+        $this->store(AuditRecord::organizationCreated($organization->id, $organization->slug, $organization->displayName, $user));
 
         $this->client->loginUser($user);
         $crawler = $this->client->request('GET', '/transparency-log');

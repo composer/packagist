@@ -15,7 +15,6 @@ namespace App\Organization;
 use App\Entity\User;
 use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Exception\InvalidSlugException;
-use App\Organization\Domain\Exception\RateLimitReachedException;
 use App\Organization\Domain\Exception\TwoFactorRequiredException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Organization;
@@ -30,7 +29,6 @@ final class OrganizationManager
     public function __construct(
         private readonly EventStore $eventStore,
         private readonly OrganizationSlugChecker $slugChecker,
-        private readonly OrganizationCreationRateLimiter $rateLimiter,
     ) {
     }
 
@@ -38,7 +36,6 @@ final class OrganizationManager
      * @return Organization the created aggregate
      *
      * @throws TwoFactorRequiredException
-     * @throws RateLimitReachedException
      * @throws InvalidSlugException
      * @throws InvalidDisplayNameException
      * @throws SlugTakenException
@@ -49,8 +46,6 @@ final class OrganizationManager
         if (!$owner->isTotpAuthenticationEnabled()) {
             throw new TwoFactorRequiredException('You must enable two-factor authentication before creating an organization.');
         }
-
-        $this->rateLimiter->assertWithinLimit($owner);
 
         $slug = Slug::fromUserInput($slug);
 

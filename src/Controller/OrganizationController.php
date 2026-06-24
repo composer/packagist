@@ -18,6 +18,7 @@ use App\Entity\User;
 use App\Form\Model\CreateOrganizationRequest;
 use App\Form\Type\CreateOrganizationType;
 use App\Organization\Domain\Exception\OrganizationException;
+use App\Organization\Domain\Slug;
 use App\Organization\OrganizationManager;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
@@ -85,7 +86,7 @@ class OrganizationController extends Controller
         ]);
     }
 
-    #[Route(path: '/organizations/{organization}', name: 'organization_show', methods: ['GET'], requirements: ['organization' => '[a-z0-9-]+'])]
+    #[Route(path: '/organizations/{organization}', name: 'organization_show', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
     public function show(Organization $organization): Response
     {
         return $this->render('organization/show.html.twig', [

@@ -24,7 +24,7 @@ final readonly class Slug
 {
     public const int MAX_LENGTH = 20;
 
-    private const string PATTERN = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
+    public const string PATTERN = '[a-z0-9]+(?:-[a-z0-9]+)*';
 
     public string $value;
 
@@ -42,7 +42,7 @@ final readonly class Slug
             throw new InvalidSlugException(sprintf('The slug must be between 1 and %d characters.', self::MAX_LENGTH));
         }
 
-        if (!Preg::isMatch(self::PATTERN, $value)) {
+        if (!Preg::isMatch('/^' . self::PATTERN . '$/', $value)) {
             throw new InvalidSlugException('The slug may only contain lowercase letters, numbers and hyphens, with no leading or trailing hyphen.');
         }
 

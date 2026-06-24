@@ -2,11 +2,28 @@
 
 namespace App\Tests\Fixtures;
 
+use App\Entity\Organization;
+use App\Entity\OrganizationStatus;
 use App\Entity\Package;
 use App\Entity\User;
+use Symfony\Component\Uid\Ulid;
 
 trait Fixtures
 {
+    protected static function createOrganization(string $slug, string $displayName, ?User $owner = null, ?\DateTimeImmutable $deletedAt = null): Organization
+    {
+        return new Organization(
+            new Ulid(),
+            $slug,
+            $displayName,
+            $deletedAt !== null ? OrganizationStatus::Deleted : OrganizationStatus::Active,
+            new \DateTimeImmutable(),
+            $owner,
+            $deletedAt,
+            $deletedAt !== null ? 'owner' : null,
+        );
+    }
+
     /**
      * Creates a Package entity without running the slow network-based repository initialization step
      *

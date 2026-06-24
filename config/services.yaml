@@ -150,9 +150,3 @@ services:
     App\Organization\EventStore\EventStore:
         arguments:
             $projectors: !tagged_iterator app.organization.projector
-
-    # Organization creation rate limit. Values are still TBD (see .task/open-questions.md).
-    App\Organization\OrganizationCreationRateLimiter:
-        arguments:
-            $maxPerWindow: 5
-            $windowHours: 24
