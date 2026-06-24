@@ -52,6 +52,7 @@ class UserRepository extends ServiceEntityRepository
         $matches = $this->findBy([
             'usernameCanonical' => $usernames,
             'enabled' => true,
+            'frozen' => null,
         ], $orderBy);
 
         $users = [];
