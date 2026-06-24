@@ -297,6 +297,37 @@ class AuditRecord
         );
     }
 
+    public static function userFrozen(User $user, ?User $actor, UserFreezeReason $reason, ?string $reasonText = null, ?string $internalReason = null): self
+    {
+        return new self(
+            AuditRecordType::UserFrozen,
+            [
+                'user' => self::getUserData($user),
+                'reason' => $reason->value,
+                'reasonText' => $reasonText,
+                'internalReason' => $internalReason,
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            actorId: $actor?->getId(),
+            userId: $user->getId(),
+        );
+    }
+
+    public static function userUnfrozen(User $user, ?User $actor, ?string $reasonText = null, ?string $internalReason = null): self
+    {
+        return new self(
+            AuditRecordType::UserUnfrozen,
+            [
+                'user' => self::getUserData($user),
+                'reasonText' => $reasonText,
+                'internalReason' => $internalReason,
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            actorId: $actor?->getId(),
+            userId: $user->getId(),
+        );
+    }
+
     public static function userVerified(User $user, User $actor, string $email): self
     {
         return new self(AuditRecordType::UserVerified, ['user' => self::getUserdata($user), 'email' => $email, 'actor' => self::getUserData($actor)], userId: $user->getId(), actorId: $actor->getId());

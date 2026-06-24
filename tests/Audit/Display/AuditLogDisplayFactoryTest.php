@@ -26,6 +26,7 @@ use App\Audit\Display\PackageFrozenDisplay;
 use App\Audit\Display\PackageUnabandonedDisplay;
 use App\Audit\Display\PackageUnfrozenDisplay;
 use App\Audit\Display\TwoFaDeactivatedDisplay;
+use App\Audit\Display\UserFreezeDisplay;
 use App\Audit\Display\UserVerifiedDisplay;
 use App\Audit\Display\VersionDeletedDisplay;
 use App\Audit\Display\VersionReferenceChangedDisplay;
@@ -642,6 +643,85 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame(FilterSources::AIKIDO, $display->source);
         self::assertSame(AuditRecordType::FilterListEntryDeleted, $display->getType());
         self::assertSame('audit_log/display/filter_list_entry_deleted.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildUserFrozenHidesInternalReasonForNonAuditor(): void
+    {
+        // setUp's stub returns false for isGranted('ROLE_AUDITOR') by default.
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::UserFrozen,
+            [
+                'user' => ['id' => 123, 'username' => 'baduser'],
+                'reason' => 'spam',
+                'reasonText' => 'spamming packages',
+                'internalReason' => 'linked to ticket #42',
+                'actor' => ['id' => 456, 'username' => 'admin'],
+            ],
+            userId: 123,
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(UserFreezeDisplay::class, $display);
+        self::assertSame('baduser', $display->username);
+        self::assertSame('spam', $display->reason);
+        self::assertSame('spamming packages', $display->reasonText);
+        self::assertNull($display->internalReason);
+        self::assertSame(456, $display->actor->id);
+        self::assertSame('admin', $display->actor->username);
+        self::assertSame(AuditRecordType::UserFrozen, $display->getType());
+        self::assertSame('audit_log/display/user_freeze.html.twig', $display->getTemplateName());
+        self::assertSame('audit_log.type.user_frozen', $display->getTypeTranslationKey());
+    }
+
+    public function testBuildUserFrozenShowsInternalReasonForAuditor(): void
+    {
+        $security = $this->createStub(Security::class);
+        $security->method('isGranted')->willReturn(true);
+        $this->factory = new AuditLogDisplayFactory($security);
+
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::UserFrozen,
+            [
+                'user' => ['id' => 123, 'username' => 'baduser'],
+                'reason' => 'bad_actor',
+                'reasonText' => null,
+                'internalReason' => 'linked to ticket #42',
+                'actor' => ['id' => 456, 'username' => 'admin'],
+            ],
+            userId: 123,
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(UserFreezeDisplay::class, $display);
+        self::assertSame('bad_actor', $display->reason);
+        self::assertNull($display->reasonText);
+        self::assertSame('linked to ticket #42', $display->internalReason);
+    }
+
+    public function testBuildUserUnfrozen(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::UserUnfrozen,
+            [
+                'user' => ['id' => 123, 'username' => 'reformed'],
+                'reasonText' => 'appeal accepted',
+                'internalReason' => null,
+                'actor' => ['id' => 456, 'username' => 'admin'],
+            ],
+            userId: 123,
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(UserFreezeDisplay::class, $display);
+        self::assertSame('reformed', $display->username);
+        self::assertNull($display->reason);
+        self::assertSame('appeal accepted', $display->reasonText);
+        self::assertSame(456, $display->actor->id);
+        self::assertSame(AuditRecordType::UserUnfrozen, $display->getType());
+        self::assertSame('audit_log/display/user_freeze.html.twig', $display->getTemplateName());
     }
 
     /**

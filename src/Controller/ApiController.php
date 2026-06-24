@@ -482,7 +482,7 @@ class ApiController extends Controller
             $username = $request->query->getString('username');
             $sig = $request->headers->get('X-Hub-Signature-256');
             $user = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => $username]);
-            if ($sig && $user && $user->isEnabled()) {
+            if ($sig && $user && $user->isAccountActive()) {
                 $sig = Preg::isMatch('{^sha256=(?P<hex>[0-9a-f]{64})$}i', $sig, $sigMatch) ? strtolower($sigMatch['hex']) : '';
                 $expected = hash_hmac('sha256', $request->getContent(), $user->getApiToken());
                 $source = 'manual_github_hook';
@@ -605,7 +605,7 @@ class ApiController extends Controller
             ->getQuery()
             ->getOneOrNullResult();
 
-        if ($user && !$user->isEnabled()) {
+        if ($user && !$user->isAccountActive()) {
             return null;
         }
 

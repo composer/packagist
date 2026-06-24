@@ -130,6 +130,9 @@ class ProfileController extends Controller
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['spammerForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
+        if ($this->isGranted('ROLE_DISABLE_USERS')) {
+            $data['userStatusForm'] = $this->createFormBuilder([])->getForm()->createView();
+        }
         if (!\count($packages) && ($this->isGranted('ROLE_ADMIN') || $loggedUser?->getId() === $user->getId())) {
             $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
         }
