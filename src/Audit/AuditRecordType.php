@@ -39,6 +39,8 @@ enum AuditRecordType: string
     case UserCreated = 'user_created';
     case UserVerified = 'user_verified';
     case UserDeleted = 'user_deleted';
+    case UserFrozen = 'user_frozen';
+    case UserUnfrozen = 'user_unfrozen';
     case PasswordResetRequested = 'password_reset_requested';
     case PasswordReset = 'password_reset';
     case PasswordChanged = 'password_changed';
@@ -90,6 +92,7 @@ enum AuditRecordType: string
             self::VersionCreated, self::VersionDeleted,
             self::VersionReferenceChangeBlocked, self::VersionSoftDeleted, self::VersionRecovered => 'version',
             self::UserCreated, self::UserVerified, self::UserDeleted,
+            self::UserFrozen, self::UserUnfrozen,
             self::PasswordResetRequested, self::PasswordReset, self::PasswordChanged,
             self::EmailChanged, self::UsernameChanged, self::GitHubLinkedWithUser,
             self::GitHubDisconnectedFromUser, self::TwoFaAuthenticationActivated,

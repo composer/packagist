@@ -14,9 +14,11 @@ namespace App\Controller;
 
 use App\Attribute\VarName;
 use App\Audit\VersionDeletionReason;
+use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\TemporaryTwoFactorUser;
 use App\Entity\User;
+use App\Entity\UserFreezeReason;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Form\Model\EnableTwoFactorRequest;
@@ -100,10 +102,10 @@ class UserController extends Controller
 
         $form->submit($req->request->all('form'));
         if ($form->isSubmitted() && $form->isValid()) {
-            $user->addRole('ROLE_SPAMMER');
-            $user->setEnabled(false);
+            $user->freeze(UserFreezeReason::Spam);
 
             $em = $this->getEM();
+            $em->persist(AuditRecord::userFrozen($user, $adminUser, UserFreezeReason::Spam, 'spam'));
 
             $em->getConnection()->executeStatement(
                 'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id
@@ -144,6 +146,73 @@ class UserController extends Controller
         return $this->redirect(
             $this->generateUrl('user_profile', ['name' => $user->getUsername()])
         );
+    }
+
+    #[IsGranted('ROLE_DISABLE_USERS')]
+    #[Route(path: '/users/{name}/freeze', name: 'freeze_user', methods: ['POST'])]
+    public function freezeUserAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $adminUser): RedirectResponse
+    {
+        if ($user->getId() === $adminUser->getId()) {
+            $this->addFlash('error', 'You cannot freeze your own account.');
+
+            return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
+        }
+
+        $form = $this->createFormBuilder([])->getForm();
+        $form->submit($req->request->all('form'));
+        if ($form->isSubmitted() && $form->isValid()) {
+            $reason = UserFreezeReason::tryFrom($req->request->getString('reason'));
+            if ($reason === null) {
+                $this->addFlash('error', 'Invalid freeze reason.');
+
+                return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
+            }
+
+            $reasonText = trim($req->request->getString('reasonText')) ?: null;
+            // Admin-only, never shown publicly (audit log restricted to ROLE_AUDITOR); may contain PII.
+            $internalReason = trim($req->request->getString('internalReason')) ?: null;
+
+            $user->freeze($reason);
+
+            $em = $this->getEM();
+            $em->persist(AuditRecord::userFrozen($user, $adminUser, $reason, $reasonText, $internalReason));
+            $em->persist($user);
+            $em->flush();
+
+            $this->addFlash('success', $user->getUsername().' has been frozen.');
+        }
+
+        return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
+    }
+
+    #[IsGranted('ROLE_DISABLE_USERS')]
+    #[Route(path: '/users/{name}/unfreeze', name: 'unfreeze_user', methods: ['POST'])]
+    public function unfreezeUserAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $adminUser): RedirectResponse
+    {
+        $form = $this->createFormBuilder([])->getForm();
+        $form->submit($req->request->all('form'));
+        if ($form->isSubmitted() && $form->isValid()) {
+            if (!$user->isFrozen()) {
+                $this->addFlash('warning', 'This account is not frozen.');
+
+                return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
+            }
+
+            $reasonText = trim($req->request->getString('reasonText')) ?: null;
+            // Admin-only, never shown publicly (audit log restricted to ROLE_AUDITOR); may contain PII.
+            $internalReason = trim($req->request->getString('internalReason')) ?: null;
+
+            $user->unfreeze();
+
+            $em = $this->getEM();
+            $em->persist(AuditRecord::userUnfrozen($user, $adminUser, $reasonText, $internalReason));
+            $em->persist($user);
+            $em->flush();
+
+            $this->addFlash('success', $user->getUsername().' has been unfrozen.');
+        }
+
+        return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
     }
 
     #[Route(path: '/users/{name}/favorites/', name: 'user_favorites', methods: ['GET'])]

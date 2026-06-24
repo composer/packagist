@@ -26,7 +26,11 @@ class UserChecker implements UserCheckerInterface
             return;
         }
 
-        if (!$user->isEnabled() || $user->hasRole('ROLE_SPAMMER')) {
+        if ($user->isFrozen()) {
+            throw new CustomUserMessageAccountStatusException('Your account has been disabled. Please contact support if you believe this is a mistake.');
+        }
+
+        if (!$user->isEnabled()) {
             throw new CustomUserMessageAccountStatusException('Your user account is not yet enabled. Please make sure you confirm your email address or trigger a password reset to receive another email.');
         }
     }

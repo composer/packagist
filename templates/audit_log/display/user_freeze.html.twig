@@ -1,0 +1,2 @@
+<strong>Username: {{ display.username }}</strong>{% if display.reason %} ({{ ('user_freeze_reasons.' ~ display.reason)|trans }}){% endif %}{% if display.reasonText %}<br>Reason: {{ display.reasonText }}{% endif %}{% if display.internalReason %}<br>Internal reason: {{ display.internalReason }}{% endif %}<br>
+By: {{ display.actor.username }}

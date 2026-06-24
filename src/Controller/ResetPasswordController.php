@@ -91,6 +91,14 @@ class ResetPasswordController extends Controller
             return $this->redirectToRoute('request_pwd_reset');
         }
 
+        // A frozen account cannot reset its password, otherwise an admin-disabled user could
+        // regain access. The new email-confirmation flag remains untouched either way.
+        if ($user->isFrozen()) {
+            $this->addFlash('reset_password_error', 'This account has been disabled.');
+
+            return $this->redirectToRoute('request_pwd_reset');
+        }
+
         // The token is valid; allow the user to change their password.
         $form = $this->createForm(ResetPasswordFormType::class, $user);
         $form->handleRequest($request);
@@ -134,8 +142,9 @@ class ResetPasswordController extends Controller
     {
         $user = $this->getEM()->getRepository(User::class)->findOneByUsernameOrEmail($userEmail);
 
-        // Do not reveal whether a user account was found or not.
-        if (!$user) {
+        // Do not reveal whether a user account was found or not. Frozen accounts are treated the
+        // same as "not found" so an admin-disabled user can't trigger a reset email.
+        if (!$user || $user->isFrozen()) {
             return $this->redirectToRoute('request_pwd_check_email');
         }
 
