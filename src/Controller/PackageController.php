@@ -21,7 +21,6 @@ use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
 use App\Entity\Job;
 use App\Entity\Package;
-use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
 use App\Entity\PhpStat;
@@ -458,7 +457,7 @@ class PackageController extends Controller
         return $this->redirectToRoute('view_spam');
     }
 
-    #[IsGranted('ROLE_ADMIN')]
+    #[IsGranted('ROLE_DISABLE_PACKAGES')]
     #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'html'], methods: ['POST'])]
     public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] User $user): Response
     {
@@ -471,11 +470,11 @@ class PackageController extends Controller
             return $package;
         }
 
-        $wasSpam = $package->getFreezeReason() === PackageFreezeReason::Spam;
+        $wasSuppressed = $package->getFreezeReason()?->suppressesPackage() ?? false;
         $package->unfreeze();
         $this->getEM()->persist($package);
 
-        if ($wasSpam) {
+        if ($wasSuppressed) {
             $this->getEM()->getRepository(Version::class)->recoverHiddenVersionsForPackage($package, $user);
         }
 
@@ -512,8 +511,8 @@ class PackageController extends Controller
             return $package;
         }
 
-        if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam && !$this->isGranted('ROLE_ANTISPAM')) {
-            throw new NotFoundHttpException('This is a spam package');
+        if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage() && !$this->isGranted('ROLE_ANTISPAM') && !$this->isGranted('ROLE_DISABLE_PACKAGES')) {
+            throw new NotFoundHttpException('This package has been frozen');
         }
 
         $repo = $this->getEM()->getRepository(Package::class);
@@ -759,7 +758,7 @@ class PackageController extends Controller
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
         }
-        if ($this->isGranted('ROLE_ADMIN')) {
+        if ($this->isGranted('ROLE_DISABLE_PACKAGES')) {
             $data['unfreezeCsrfToken'] = $csrfTokenManager->getToken('unfreeze');
         }
 
@@ -988,8 +987,8 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
         }
 
-        if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam) {
-            throw new NotFoundHttpException('This is a spam package');
+        if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage()) {
+            throw new NotFoundHttpException('This package has been frozen');
         }
 
         $update = $req->request->getBoolean('update', $req->query->getBoolean('update'));

@@ -36,8 +36,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 enum PackageFreezeReason: string
 {
     case Spam = 'spam';
+    case Malware = 'malware';
     case RemoteIdMismatch = 'remote_id';
     case Gone = 'gone';
+    case Temporary = 'temporary';
 
     public function translationKey(): string
     {
@@ -57,6 +59,16 @@ enum PackageFreezeReason: string
     public function isRemoteIdMismatch(): bool
     {
         return $this === self::RemoteIdMismatch;
+    }
+
+    /**
+     * Whether the package should be hidden from the public entirely: skipped by the dumper, removed
+     * from the search index, and 404'd on the package page/API. Gentle freezes (a moving/gone
+     * canonical repo, or a temporary hold) keep their metadata served — they are just not updated.
+     */
+    public function suppressesPackage(): bool
+    {
+        return $this === self::Spam || $this === self::Malware;
     }
 }
 
@@ -812,8 +824,8 @@ class Package
     public function freeze(PackageFreezeReason $reason): void
     {
         $this->frozen = $reason;
-        // force re-indexing for spam packages to ensure they get deleted from the search index
-        if ($reason === PackageFreezeReason::Spam) {
+        // force re-indexing for suppressed packages to ensure they get deleted from the search index
+        if ($reason->suppressesPackage()) {
             $this->setIndexedAt(null);
         }
     }

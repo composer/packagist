@@ -169,8 +169,10 @@ desc: 'desc'
 
 freezing_reasons:
     spam: This package was marked as spam and has been frozen as a result.
+    malware: This package was found to contain malware and has been frozen as a result.
     remote_id: This package's canonical repository id has changed and the package has been frozen as a result. Email us for help if needed.
     gone: This package's canonical repository appears to be gone and the package has been frozen as a result. Email us for help if needed.
+    temporary: This package has been temporarily frozen. Email us for help if needed.
 
 user_freeze_reasons:
     spam: Spam

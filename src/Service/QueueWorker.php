@@ -31,7 +31,7 @@ class QueueWorker
         private Redis $redis,
         private ManagerRegistry $doctrine,
         private Logger $logger,
-        /** @var array<string, UpdaterWorker|GitHubUserMigrationWorker|SecurityAdvisoryWorker> */
+        /** @var array<string, UpdaterWorker|GitHubUserMigrationWorker|SecurityAdvisoryWorker|FilterListWorker|PackagePurgeWorker> */
         private array $jobWorkers,
         private StatsDClient $statsd,
         private readonly LogIdProcessor $logIdProcessor,

@@ -110,6 +110,7 @@ services:
             'githubuser:migrate': '@App\Service\GitHubUserMigrationWorker'
             'security:advisory': '@App\Service\SecurityAdvisoryWorker'
             'filter:update': '@App\Service\FilterListWorker'
+            'package:purge': '@App\Service\PackagePurgeWorker'
 
     App\Security\TwoFactorAuthManager:
         public: true
