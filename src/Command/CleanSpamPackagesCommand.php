@@ -16,8 +16,8 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
-use App\Model\PackageManager;
 use App\Model\ProviderManager;
+use App\Service\Scheduler;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -33,7 +33,7 @@ class CleanSpamPackagesCommand extends Command
     public function __construct(
         private ManagerRegistry $doctrine,
         private ProviderManager $providerManager,
-        private PackageManager $packageManager,
+        private Scheduler $scheduler,
     ) {
         parent::__construct();
     }
@@ -69,10 +69,8 @@ class CleanSpamPackagesCommand extends Command
                 $versionRepo->remove($version, false, allowStable: true);
             }
 
-            $this->providerManager->deletePackage($package);
-            $this->packageManager->deletePackageMetadata($package->getName());
-            $this->packageManager->deletePackageCdnMetadata($package->getName());
-            $this->packageManager->deletePackageSearchIndex($package->getName());
+            // Purge published artifacts (provider record, metadata, CDN, search index) out of band.
+            $this->scheduler->schedulePackagePurge($package, $package->getName());
         }
 
         $em->flush();

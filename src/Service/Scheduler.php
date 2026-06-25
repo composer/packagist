@@ -86,6 +86,25 @@ class Scheduler
         return $this->createJob('filter:update', ['list' => $list->value, 'source' => $source->value], $packageId, $executeAfter);
     }
 
+    /**
+     * Schedules the out-of-band cleanup of a package — freeze, version soft-deletes, and purge of
+     * its published artifacts. Keyed by name so it stays correct even if the row is later removed;
+     * $actorId, when given, is recorded as the actor of the version soft-deletes.
+     *
+     * @return Job<PackagePurgeJob>
+     */
+    public function schedulePackagePurge(Package|int $packageOrId, string $packageName, ?int $actorId = null): Job
+    {
+        $packageId = $packageOrId instanceof Package ? $packageOrId->getId() : $packageOrId;
+
+        $payload = ['name' => $packageName];
+        if ($actorId !== null) {
+            $payload['actorId'] = $actorId;
+        }
+
+        return $this->createJob('package:purge', $payload, $packageId);
+    }
+
     private function getPendingUpdateJob(int $packageId, bool $updateSourceDistUrl = false, bool $deleteBefore = false): ?string
     {
         $result = $this->getEM()->getConnection()->fetchAssociative(
