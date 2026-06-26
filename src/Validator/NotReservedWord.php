@@ -22,7 +22,7 @@ class NotReservedWord extends Constraint
      *
      * @var list<string>
      */
-    public const array WORDS = [
+    public const array RESERVED_WORDS = [
         'composer',
         'packagist',
         'php',

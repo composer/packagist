@@ -26,5 +26,6 @@ class CreateOrganizationRequest
 
     #[Assert\NotBlank]
     #[ValidDisplayName]
+    #[NotReservedWord]
     public string $displayName = '';
 }

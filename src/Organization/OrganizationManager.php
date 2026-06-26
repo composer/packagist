@@ -22,6 +22,7 @@ use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
 use App\Organization\EventStore\Actor;
 use App\Organization\EventStore\EventStore;
+use App\Validator\NotReservedWord;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\Uid\Ulid;
 
@@ -52,6 +53,10 @@ final class OrganizationManager
         $displayName = DisplayName::fromUserInput($displayName);
 
         $this->slugChecker->assertClaimable($slug, $owner);
+
+        if (\in_array(mb_strtolower($displayName->value), NotReservedWord::RESERVED_WORDS, true)) {
+            throw new InvalidDisplayNameException(sprintf('"%s" is a reserved name and cannot be used.', $displayName->value));
+        }
 
         $organization = Organization::create(new Ulid(), $slug, $displayName);
 

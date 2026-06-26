@@ -28,7 +28,7 @@ class NotReservedWordValidator extends ConstraintValidator
             return;
         }
 
-        if (\in_array(mb_strtolower($value), NotReservedWord::WORDS, true)) {
+        if (\in_array(mb_strtolower($value), NotReservedWord::RESERVED_WORDS, true)) {
             $this->context
                 ->buildViolation($constraint->message)
                 ->addViolation();

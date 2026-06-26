@@ -14,6 +14,7 @@ namespace App\Tests\Organization;
 
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
+use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Exception\TwoFactorRequiredException;
@@ -95,6 +96,17 @@ class OrganizationCreationTest extends KernelTestCase
 
         static::getContainer()->get(OrganizationManager::class)
             ->create($owner, 'composer', 'Composer', null);
+    }
+
+    public function testCreateRejectsReservedDisplayName(): void
+    {
+        $owner = $this->persistOwner('user', twoFactor: true);
+
+        $this->expectException(InvalidDisplayNameException::class);
+
+        // Valid, claimable slug so the display-name deny-list is what trips (case-insensitive).
+        static::getContainer()->get(OrganizationManager::class)
+            ->create($owner, 'acme', 'PHP', null);
     }
 
     public function testCreateRejectsAlreadyTakenSlug(): void
