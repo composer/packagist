@@ -14,23 +14,12 @@ namespace App\Validator;
 
 use Symfony\Component\Validator\Constraint;
 
+/**
+ * Delegates format validation to {@see \App\Organization\Domain\Slug}
+ */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class NotReservedWord extends Constraint
+class ValidSlug extends Constraint
 {
-    /**
-     * Names reserved across Packagist (usernames, organization slugs).
-     *
-     * @var list<string>
-     */
-    public const array WORDS = [
-        'composer',
-        'packagist',
-        'php',
-        'automation',
-    ];
-
-    public string $message = 'This is a reserved word.';
-
     public function getTargets(): string
     {
         return self::PROPERTY_CONSTRAINT;

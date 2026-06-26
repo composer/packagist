@@ -12,27 +12,19 @@
 
 namespace App\Form\Model;
 
-use App\Organization\Domain\Organization;
-use App\Organization\Domain\Slug;
 use App\Validator\NotReservedWord;
+use App\Validator\ValidDisplayName;
+use App\Validator\ValidSlug;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class CreateOrganizationRequest
 {
     #[Assert\NotBlank]
-    #[Assert\Length(max: Slug::MAX_LENGTH)]
-    #[Assert\Regex(
-        pattern: '/^' . Slug::PATTERN . '$/',
-        message: 'The slug may only contain lowercase letters, numbers and hyphens, with no leading or trailing hyphen.',
-    )]
+    #[ValidSlug]
     #[NotReservedWord]
     public string $slug = '';
 
     #[Assert\NotBlank]
-    #[Assert\Length(max: Organization::DISPLAY_NAME_MAX_LENGTH)]
-    #[Assert\Regex(
-        pattern: '/^[\p{L}\p{N}\- ]+$/u',
-        message: 'The display name may only contain letters, numbers, spaces and hyphens.',
-    )]
+    #[ValidDisplayName]
     public string $displayName = '';
 }

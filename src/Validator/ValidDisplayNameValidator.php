@@ -12,26 +12,29 @@
 
 namespace App\Validator;
 
+use App\Organization\Domain\DisplayName;
+use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
-class NotReservedWordValidator extends ConstraintValidator
+class ValidDisplayNameValidator extends ConstraintValidator
 {
     public function validate(mixed $value, Constraint $constraint): void
     {
-        if (!$constraint instanceof NotReservedWord) {
-            throw new UnexpectedTypeException($constraint, NotReservedWord::class);
+        if (!$constraint instanceof ValidDisplayName) {
+            throw new UnexpectedTypeException($constraint, ValidDisplayName::class);
         }
 
-        if (!\is_string($value)) {
+        // Empty values are handled by NotBlank constraint.
+        if (!\is_string($value) || $value === '') {
             return;
         }
 
-        if (\in_array(mb_strtolower($value), NotReservedWord::WORDS, true)) {
-            $this->context
-                ->buildViolation($constraint->message)
-                ->addViolation();
+        try {
+            new DisplayName($value);
+        } catch (InvalidDisplayNameException $e) {
+            $this->context->buildViolation($e->getMessage())->addViolation();
         }
     }
 }

@@ -12,8 +12,8 @@
 
 namespace App\Tests\Organization;
 
+use App\Organization\Domain\DisplayName;
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
 use App\Organization\EventStore\OrganizationEventType;
@@ -25,7 +25,7 @@ class OrganizationAggregateTest extends TestCase
     public function testCreateRecordsOrganizationCreatedEvent(): void
     {
         $id = new Ulid();
-        $organization = Organization::create($id, new Slug('acme'), 'ACME Corp');
+        $organization = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'));
 
         $events = $organization->pullPendingEvents();
 
@@ -38,33 +38,10 @@ class OrganizationAggregateTest extends TestCase
         self::assertSame(OrganizationEventType::OrganizationCreated, $event->eventType());
     }
 
-    public function testCreateTrimsDisplayName(): void
-    {
-        $organization = Organization::create(new Ulid(), new Slug('acme'), '  ACME Corp  ');
-
-        self::assertSame('ACME Corp', $organization->displayName());
-        self::assertSame('acme', $organization->slug());
-        self::assertFalse($organization->isDeleted());
-    }
-
-    public function testCreateRejectsInvalidDisplayName(): void
-    {
-        $this->expectException(InvalidDisplayNameException::class);
-
-        Organization::create(new Ulid(), new Slug('acme'), 'ACME, Inc.');
-    }
-
-    public function testCreateRejectsTooLongDisplayName(): void
-    {
-        $this->expectException(InvalidDisplayNameException::class);
-
-        Organization::create(new Ulid(), new Slug('acme'), str_repeat('a', 61));
-    }
-
     public function testReconstituteRebuildsStateFromHistory(): void
     {
         $id = new Ulid();
-        $created = Organization::create($id, new Slug('acme'), 'ACME Corp');
+        $created = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'));
         $event = $created->pullPendingEvents()[0];
         self::assertInstanceOf(OrganizationCreated::class, $event);
 

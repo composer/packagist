@@ -13,11 +13,9 @@
 namespace App\Organization\Domain;
 
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\EventStore\AbstractAggregate;
 use App\Organization\EventStore\DomainEvent;
 use App\Organization\EventStore\OrganizationEventType;
-use Composer\Pcre\Preg;
 use Symfony\Component\Uid\Ulid;
 
 /**
@@ -28,11 +26,6 @@ use Symfony\Component\Uid\Ulid;
  */
 final class Organization extends AbstractAggregate
 {
-    public const int DISPLAY_NAME_MAX_LENGTH = 60;
-
-    /** Letters, numbers, spaces and hyphens. */
-    private const string DISPLAY_NAME_PATTERN = '/^[\p{L}\p{N}\- ]+$/u';
-
     private string $slug;
 
     private string $displayName;
@@ -40,15 +33,10 @@ final class Organization extends AbstractAggregate
     // Groundwork for org deletion (not yet implemented).
     private bool $deleted = false;
 
-    /**
-     * @throws InvalidDisplayNameException
-     */
-    public static function create(Ulid $id, Slug $slug, string $displayName): self
+    public static function create(Ulid $id, Slug $slug, DisplayName $displayName): self
     {
-        $displayName = self::normalizeDisplayName($displayName);
-
         $organization = new self($id);
-        $organization->record(new OrganizationCreated($id, $slug->value, $displayName));
+        $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value));
 
         return $organization;
     }
@@ -107,20 +95,5 @@ final class Organization extends AbstractAggregate
         return match ($type) {
             OrganizationEventType::OrganizationCreated => OrganizationCreated::fromPayload($id, $payload),
         };
-    }
-
-    private static function normalizeDisplayName(string $displayName): string
-    {
-        $displayName = trim($displayName);
-
-        if ($displayName === '' || mb_strlen($displayName) > self::DISPLAY_NAME_MAX_LENGTH) {
-            throw new InvalidDisplayNameException(sprintf('The display name must be between 1 and %d characters.', self::DISPLAY_NAME_MAX_LENGTH));
-        }
-
-        if (!Preg::isMatch(self::DISPLAY_NAME_PATTERN, $displayName)) {
-            throw new InvalidDisplayNameException('The display name may only contain letters, numbers, spaces and hyphens.');
-        }
-
-        return $displayName;
     }
 }

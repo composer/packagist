@@ -13,6 +13,7 @@
 namespace App\Organization;
 
 use App\Entity\User;
+use App\Organization\Domain\DisplayName;
 use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\TwoFactorRequiredException;
@@ -28,7 +29,7 @@ final class OrganizationManager
 {
     public function __construct(
         private readonly EventStore $eventStore,
-        private readonly OrganizationSlugChecker $slugChecker,
+        private readonly OrganizationSlugClaimGuard $slugChecker,
     ) {
     }
 
@@ -48,6 +49,7 @@ final class OrganizationManager
         }
 
         $slug = Slug::fromUserInput($slug);
+        $displayName = DisplayName::fromUserInput($displayName);
 
         $this->slugChecker->assertClaimable($slug, $owner);
 

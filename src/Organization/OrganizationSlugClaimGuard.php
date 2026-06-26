@@ -19,24 +19,13 @@ use App\Entity\User;
 use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Slug;
+use App\Validator\NotReservedWord;
 
 /**
  * TODO a Levenshtein-similarity check against a protected-names should be added later
  */
-final class OrganizationSlugChecker
+final class OrganizationSlugClaimGuard
 {
-    /**
-     * Reserved words that no organization may claim. Mirrors {@see \App\Validator\NotReservedWordValidator}.
-     *
-     * @var list<string>
-     */
-    private const array RESERVED_WORDS = [
-        'composer',
-        'packagist',
-        'php',
-        'automation',
-    ];
-
     public function __construct(
         private readonly OrganizationRepository $organizations,
         private readonly SlugReservationRepository $reservations,
@@ -50,7 +39,7 @@ final class OrganizationSlugChecker
      */
     public function assertClaimable(Slug $slug, User $user): void
     {
-        if (\in_array($slug->value, self::RESERVED_WORDS, true)) {
+        if (\in_array($slug->value, NotReservedWord::WORDS, true)) {
             throw new InvalidSlugException(sprintf('"%s" is a reserved name and cannot be used.', $slug->value));
         }
 

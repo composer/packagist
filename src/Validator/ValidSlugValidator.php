@@ -12,26 +12,29 @@
 
 namespace App\Validator;
 
+use App\Organization\Domain\Exception\InvalidSlugException;
+use App\Organization\Domain\Slug;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
-class NotReservedWordValidator extends ConstraintValidator
+class ValidSlugValidator extends ConstraintValidator
 {
     public function validate(mixed $value, Constraint $constraint): void
     {
-        if (!$constraint instanceof NotReservedWord) {
-            throw new UnexpectedTypeException($constraint, NotReservedWord::class);
+        if (!$constraint instanceof ValidSlug) {
+            throw new UnexpectedTypeException($constraint, ValidSlug::class);
         }
 
-        if (!\is_string($value)) {
+        // Empty values are handled by NotBlank constraint.
+        if (!\is_string($value) || $value === '') {
             return;
         }
 
-        if (\in_array(mb_strtolower($value), NotReservedWord::WORDS, true)) {
-            $this->context
-                ->buildViolation($constraint->message)
-                ->addViolation();
+        try {
+            Slug::fromUserInput($value);
+        } catch (InvalidSlugException $e) {
+            $this->context->buildViolation($e->getMessage())->addViolation();
         }
     }
 }
