@@ -18,6 +18,7 @@
                     <th>Name</th>
                     <th>Slug</th>
                     <th>Created</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -32,6 +33,11 @@
                         </td>
                         <td><code>{{ organization.slug }}</code></td>
                         <td>{{ organization.createdAt|date('Y-m-d') }}</td>
+                        <td class="text-right">
+                            {% if is_granted(enum('App\\Security\\Voter\\OrganizationActions').EditDisplayInfo.value, organization) %}
+                                <a href="{{ path('organization_settings', { organization: organization.slug }) }}" class="btn btn-default btn-sm">Settings</a>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

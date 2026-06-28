@@ -13,6 +13,8 @@
 namespace App\Organization\Domain;
 
 use App\Organization\Domain\Event\OrganizationCreated;
+use App\Organization\Domain\Event\OrganizationRenamed;
+use App\Organization\Domain\Event\OrganizationSlugChanged;
 use App\Organization\EventStore\AbstractAggregate;
 use App\Organization\EventStore\DomainEvent;
 use App\Organization\EventStore\OrganizationEventType;
@@ -42,8 +44,27 @@ final class Organization extends AbstractAggregate
     }
 
     /**
-     * Rebuild from the persisted event history.
-     *
+     * Change the display name. No-op when the name is unchanged.
+     */
+    public function rename(DisplayName $displayName): void
+    {
+        if ($this->displayName === $displayName->value) {
+            return;
+        }
+
+        $this->record(new OrganizationRenamed($this->id, $displayName->value, $this->displayName));
+    }
+
+    public function changeSlug(Slug $slug): void
+    {
+        if ($this->slug === $slug->value) {
+            return;
+        }
+
+        $this->record(new OrganizationSlugChanged($this->id, $slug->value, $this->slug));
+    }
+
+    /**
      * @param list<array{type: OrganizationEventType, payload: array<string, mixed>}> $history
      */
     public static function reconstitute(Ulid $id, array $history): self
@@ -76,6 +97,8 @@ final class Organization extends AbstractAggregate
     {
         match (true) {
             $event instanceof OrganizationCreated => $this->applyCreated($event),
+            $event instanceof OrganizationRenamed => $this->displayName = $event->displayName,
+            $event instanceof OrganizationSlugChanged => $this->slug = $event->slug,
             default => throw new \LogicException('Unhandled organization event: '.$event->eventType()->value),
         };
     }
@@ -94,6 +117,8 @@ final class Organization extends AbstractAggregate
     {
         return match ($type) {
             OrganizationEventType::OrganizationCreated => OrganizationCreated::fromPayload($id, $payload),
+            OrganizationEventType::OrganizationRenamed => OrganizationRenamed::fromPayload($id, $payload),
+            OrganizationEventType::OrganizationSlugChanged => OrganizationSlugChanged::fromPayload($id, $payload),
         };
     }
 }

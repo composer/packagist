@@ -16,6 +16,8 @@ use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\UserRepository;
 use App\Organization\Domain\Event\OrganizationCreated;
+use App\Organization\Domain\Event\OrganizationRenamed;
+use App\Organization\Domain\Event\OrganizationSlugChanged;
 use App\Organization\EventStore\RecordedEvent;
 
 /**
@@ -32,12 +34,27 @@ final readonly class OrganizationAuditProjector implements Projector
     public function project(RecordedEvent $recorded): void
     {
         $event = $recorded->event;
+        $actor = $recorded->actor->userId !== null ? $this->users->find($recorded->actor->userId) : null;
 
         if ($event instanceof OrganizationCreated) {
-            $actor = $recorded->actor->userId !== null ? $this->users->find($recorded->actor->userId) : null;
-
             $this->auditRecords->insert(
                 AuditRecord::organizationCreated($event->organizationId, $event->slug, $event->displayName, $actor),
+            );
+
+            return;
+        }
+
+        if ($event instanceof OrganizationRenamed) {
+            $this->auditRecords->insert(
+                AuditRecord::organizationRenamed($event->organizationId, $event->displayName, $event->previousDisplayName, $actor),
+            );
+
+            return;
+        }
+
+        if ($event instanceof OrganizationSlugChanged) {
+            $this->auditRecords->insert(
+                AuditRecord::organizationSlugChanged($event->organizationId, $event->slug, $event->previousSlug, $actor),
             );
         }
     }

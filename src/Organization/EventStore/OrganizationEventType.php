@@ -14,9 +14,11 @@ namespace App\Organization\EventStore;
 
 /**
  * Canonical event type identifiers for the organization event stream. The
- * backing string is what gets persisted in `organization_event.type`.
+ * backing string gets persisted in `organization_event.type`.
  */
 enum OrganizationEventType: string
 {
     case OrganizationCreated = 'organization-created';
+    case OrganizationRenamed = 'organization-renamed';
+    case OrganizationSlugChanged = 'organization-slug-changed';
 }

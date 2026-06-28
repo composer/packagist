@@ -54,4 +54,29 @@ class OrganizationAuditRecordTest extends TestCase
     {
         self::assertSame('organization', AuditRecordType::OrganizationCreated->category());
     }
+
+    public function testOrganizationRenamedCapturesBeforeAndAfter(): void
+    {
+        $organizationId = new Ulid();
+        $record = AuditRecord::organizationRenamed($organizationId, 'ACME Inc', 'ACME Corp', null);
+
+        self::assertSame(AuditRecordType::OrganizationRenamed, $record->type);
+        self::assertSame((string) $organizationId, $record->attributes['organization_id']);
+        self::assertSame('ACME Corp', $record->attributes['display_name_from']);
+        self::assertSame('ACME Inc', $record->attributes['display_name_to']);
+        self::assertSame('unknown', $record->attributes['actor']);
+        self::assertSame('organization', AuditRecordType::OrganizationRenamed->category());
+    }
+
+    public function testOrganizationSlugChangedCapturesBeforeAndAfter(): void
+    {
+        $organizationId = new Ulid();
+        $record = AuditRecord::organizationSlugChanged($organizationId, 'acme-inc', 'acme', null);
+
+        self::assertSame(AuditRecordType::OrganizationSlugChanged, $record->type);
+        self::assertSame((string) $organizationId, $record->attributes['organization_id']);
+        self::assertSame('acme', $record->attributes['slug_from']);
+        self::assertSame('acme-inc', $record->attributes['slug_to']);
+        self::assertSame('organization', AuditRecordType::OrganizationSlugChanged->category());
+    }
 }

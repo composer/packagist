@@ -1,15 +1,9 @@
-{% extends "layout.html.twig" %}
+{% extends 'organization/layout.html.twig' %}
 
-{% block title %}{{ organization.displayName }} - {{ parent() }}{% endblock %}
-
-{% block content %}
-    <h2 class="title">
-        {{ organization.displayName }}
-    </h2>
-
-    <p class="metadata">
-        <code>/organizations/{{ organization.slug }}</code>
-    </p>
+{% block org_content %}
+    {% if is_granted(enum('App\\Security\\Voter\\OrganizationActions').EditDisplayInfo.value, organization) %}
+        <a href="{{ path('organization_settings', { organization: organization.slug }) }}" class="btn btn-default pull-right">Edit settings</a>
+    {% endif %}
 
     {# Groundwork for org deletion (not yet implemented). #}
     {% if organization.deleted %}
@@ -18,7 +12,7 @@
 
     <dl class="dl-horizontal">
         <dt>Slug</dt>
-        <dd>{{ organization.slug }}</dd>
+        <dd><code>/organizations/{{ organization.slug }}</code></dd>
         <dt>Created</dt>
         <dd>{{ organization.createdAt|date('Y-m-d') }}</dd>
     </dl>

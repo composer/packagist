@@ -15,6 +15,7 @@ namespace App\Tests\Controller;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
+use App\Organization\OrganizationManager;
 use App\Tests\IntegrationTestCase;
 
 class OrganizationControllerTest extends IntegrationTestCase
@@ -175,10 +176,77 @@ class OrganizationControllerTest extends IntegrationTestCase
         ]);
         $crawler = $this->client->submit($form);
 
-        // The OrganizationException is caught and surfaced as a form error, not a 500.
+        // A reserved slug is rejected by form validation and surfaced as a form error, not a 500.
         self::assertResponseIsSuccessful();
         $this->assertFormError('"composer" is a reserved name and cannot be used.', 'create_organization', $crawler);
         self::assertNull($this->organizations()->findOneBySlug('composer'));
+    }
+
+    public function testSettingsForbiddenForNonOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner, $intruder);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($intruder);
+        $this->client->request('GET', '/organizations/acme/settings');
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testSettingsRedirectsOwnerWithoutTwoFactor(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/organizations/acme/settings');
+
+        // 2FA is required to manage an organization.
+        self::assertResponseRedirects();
+    }
+
+    public function testSettingsRendersPrefilledFormForOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/settings');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->selectButton('Save changes'));
+        self::assertSame('ACME Corp', $crawler->filter('#edit_organization_displayName')->attr('value'));
+        self::assertSame('acme', $crawler->filter('#edit_organization_slug')->attr('value'));
+    }
+
+    public function testOwnerRenamesViaSettings(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        // Create through the event store so the aggregate has a history to update.
+        static::getContainer()->get(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/settings');
+
+        $form = $crawler->selectButton('Save changes')->form([
+            'edit_organization[displayName]' => 'ACME Inc',
+            'edit_organization[slug]' => 'acme',
+        ]);
+        $this->client->submit($form);
+
+        self::assertResponseRedirects('/organizations/acme/settings');
+
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+        self::assertSame('ACME Inc', $organization->displayName);
     }
 
     private function createAdminWithTwoFactor(): User

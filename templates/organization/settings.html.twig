@@ -1,0 +1,27 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block title %}Settings - {{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block org_content %}
+    <h3 class="title">Settings</h3>
+
+    {{ form_start(form, { 'attr': { 'class': 'edit_organization' } }) }}
+        {{ form_errors(form) }}
+
+        <div class="form-group clearfix">
+            {{ form_label(form.displayName) }}
+            {{ form_errors(form.displayName) }}
+            {{ form_widget(form.displayName) }}
+            {{ form_help(form.displayName) }}
+        </div>
+
+        <div class="form-group clearfix">
+            {{ form_label(form.slug) }}
+            {{ form_errors(form.slug) }}
+            {{ form_widget(form.slug) }}
+            {{ form_help(form.slug) }}
+        </div>
+
+        <input class="btn btn-success btn-lg" type="submit" value="Save changes" />
+    {{ form_end(form) }}
+{% endblock %}

@@ -17,6 +17,7 @@ use App\Entity\User;
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -25,7 +26,7 @@ class MenuBuilder
 {
     private string $username;
 
-    public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator, private LogoutUrlGenerator $logoutUrlGenerator, private Security $security)
+    public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator, private LogoutUrlGenerator $logoutUrlGenerator, private Security $security, private RequestStack $requestStack)
     {
         if ($tokenStorage->getToken() && $tokenStorage->getToken()->getUser() instanceof User) {
             $this->username = $tokenStorage->getToken()->getUser()->getUsername();
@@ -91,6 +92,32 @@ class MenuBuilder
         $menu->addChild('Transparency log', [
             'label' => '<span class="icon-back-in-time"></span>Transparency log',
             'route' => 'view_transparency_log',
+            'extras' => ['safe_label' => true, 'translation_domain' => false],
+        ]);
+
+        return $menu;
+    }
+
+    public function createOrganizationMenu(): ItemInterface
+    {
+        $menu = $this->factory->createItem('root');
+        $menu->setChildrenAttribute('class', 'nav nav-tabs nav-stacked');
+
+        $slug = $this->requestStack->getCurrentRequest()?->attributes->get('organization');
+        if (!\is_string($slug)) {
+            return $menu;
+        }
+
+        $menu->addChild($this->translator->trans('menu.organization_overview'), [
+            'label' => '<span class="icon-dashboard"></span>'.$this->translator->trans('menu.organization_overview'),
+            'route' => 'organization_show',
+            'routeParameters' => ['organization' => $slug],
+            'extras' => ['safe_label' => true, 'translation_domain' => false],
+        ]);
+        $menu->addChild($this->translator->trans('menu.organization_settings'), [
+            'label' => '<span class="icon-tools"></span>'.$this->translator->trans('menu.organization_settings'),
+            'route' => 'organization_settings',
+            'routeParameters' => ['organization' => $slug],
             'extras' => ['safe_label' => true, 'translation_domain' => false],
         ]);
 
