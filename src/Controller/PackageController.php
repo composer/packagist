@@ -1408,12 +1408,20 @@ class PackageController extends Controller
         }
 
         if ($from = $req->query->get('from')) {
-            $from = new \DateTimeImmutable($from);
+            try {
+                $from = new \DateTimeImmutable($from);
+            } catch (\Exception) {
+                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$from], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
+            }
         } else {
             $from = $this->guessPhpStatsStartDate($package);
         }
         if ($to = $req->query->get('to')) {
-            $to = new \DateTimeImmutable($to);
+            try {
+                $to = new \DateTimeImmutable($to);
+            } catch (\Exception) {
+                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$to], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
+            }
         } else {
             $to = new \DateTimeImmutable('today 00:00:00');
         }
@@ -1679,7 +1687,7 @@ class PackageController extends Controller
             try {
                 $from = new \DateTimeImmutable($from);
             } catch (\Exception) {
-                return new JsonResponse(['error' => 'Invalid date format: '.$from], Response::HTTP_BAD_REQUEST);
+                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$from], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
             }
         } else {
             $from = $this->guessStatsStartDate($version ?: $package);
@@ -1688,7 +1696,7 @@ class PackageController extends Controller
             try {
                 $to = new \DateTimeImmutable($to);
             } catch (\Exception) {
-                return new JsonResponse(['error' => 'Invalid date format: '.$to], Response::HTTP_BAD_REQUEST);
+                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$to], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
             }
         } else {
             $to = new \DateTimeImmutable('-2days 00:00:00');
