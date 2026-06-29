@@ -155,6 +155,7 @@ class V2Dumper
 
         if (\count($packageIds) > 150) {
             $this->bypassIndividualPurges = true;
+            $this->logger->warning('Bypassing CDN cache purges due to elevated queue size', ['queue' => \count($packageIds)]);
         }
 
         while ($packageIds) {
@@ -213,6 +214,7 @@ class V2Dumper
         if ($this->bypassIndividualPurges) {
             $this->bypassIndividualPurges = false;
             if ($this->cdnClient->isConfigured()) {
+                $this->logger->warning('Purging complete CDN metadata cache after dump is complete');
                 $this->cdnClient->purgeMetadataCache('p2/*');
             }
         }
