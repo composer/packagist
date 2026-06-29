@@ -1676,12 +1676,20 @@ class PackageController extends Controller
     private function computeStats(Request $req, Package $package, ?Version $version = null, ?string $majorVersion = null): JsonResponse
     {
         if ($from = $req->query->get('from')) {
-            $from = new \DateTimeImmutable($from);
+            try {
+                $from = new \DateTimeImmutable($from);
+            } catch (\Exception) {
+                return new JsonResponse(['error' => 'Invalid date format: '.$from], Response::HTTP_BAD_REQUEST);
+            }
         } else {
             $from = $this->guessStatsStartDate($version ?: $package);
         }
         if ($to = $req->query->get('to')) {
-            $to = new \DateTimeImmutable($to);
+            try {
+                $to = new \DateTimeImmutable($to);
+            } catch (\Exception) {
+                return new JsonResponse(['error' => 'Invalid date format: '.$to], Response::HTTP_BAD_REQUEST);
+            }
         } else {
             $to = new \DateTimeImmutable('-2days 00:00:00');
         }
