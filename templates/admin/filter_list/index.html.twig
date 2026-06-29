@@ -1,0 +1,137 @@
+{% extends "layout.html.twig" %}
+
+{% set showSearchDesc = 'hide' %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block title %}Filter list admin - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-xs-12 package">
+            <div class="package-header">
+                <h2 class="title">
+                    Filter list admin
+                    <small>({{ paginator.nbResults }})</small>
+                </h2>
+                <p>
+                    Manage filter list entries received from external providers (e.g. malware reports).
+                    Entries can be disabled to suppress them from public output, or edited to
+                    correct an upstream version constraint. Manual entries can be added directly
+                    and have all of their properties editable.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" class="form-inline" action="{{ path('admin_filter_lists') }}">
+        <div class="form-group">
+            <input type="search" name="q" class="form-control" placeholder="package name" value="{{ filters.q }}" />
+        </div>
+
+        <div class="form-group">
+            <select name="list" class="form-control">
+                <option value="">All lists</option>
+                {% for list in lists %}
+                    <option value="{{ list.value }}" {{ filters.list == list.value ? 'selected' : '' }}>{{ list.value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select name="source" class="form-control">
+                <option value="">All sources</option>
+                {% for source in sources %}
+                    <option value="{{ source.value }}" {{ filters.source == source.value ? 'selected' : '' }}>{{ source.displayName }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <select name="state" class="form-control">
+                <option value="" {{ filters.state == '' ? 'selected' : '' }}>Any state</option>
+                <option value="enabled" {{ filters.state == 'enabled' ? 'selected' : '' }}>Active</option>
+                <option value="disabled" {{ filters.state == 'disabled' ? 'selected' : '' }}>Disabled</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-default">Filter</button>
+
+        <a class="btn btn-success pull-right" href="{{ path('admin_filter_list_new') }}">Add entry</a>
+    </form>
+
+    <hr>
+
+    <form method="post" action="{{ path('admin_filter_list_bulk') }}" id="filter-list-bulk-form">
+        <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+
+        <div class="btn-toolbar" style="margin-bottom: 10px">
+            <div class="btn-group">
+                <button type="submit" name="action" value="disable" class="btn btn-warning btn-sm">Disable selected</button>
+                <button type="submit" name="action" value="enable" class="btn btn-success btn-sm">Re-enable selected</button>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" data-bulk-select-all title="Select all entries on this page" /></th>
+                    <th>Package</th>
+                    <th>List</th>
+                    <th>Version</th>
+                    <th>Reason</th>
+                    <th>Internal note</th>
+                    <th>Source</th>
+                    <th>State</th>
+                    <th>Updated</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in paginator %}
+                    <tr class="{{ entry.disabled ? 'text-muted' : '' }}">
+                        <td><input type="checkbox" name="publicIds[]" value="{{ entry.publicId }}" data-bulk-select /></td>
+                        <td><a href="{{ path('view_package', {name: entry.packageName}) }}">{{ entry.packageName }}</a></td>
+                        <td>{{ entry.list.value }}</td>
+                        <td>
+                            <code>{{ entry.version }}</code>
+                            {% if entry.overwritten %}
+                                <br><small class="text-muted">upstream: <code>{{ entry.remoteVersion }}</code></small>
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.reason }}</td>
+                        <td>{{ entry.internalNote }}</td>
+                        <td>{{ entry.source.displayName }}</td>
+                        <td>
+                            {% if entry.disabled %}
+                                <span class="label label-warning">Disabled</span>
+                            {% else %}
+                                <span class="label label-success">Active</span>
+                            {% endif %}
+                            {% if entry.overwritten %}
+                                <span class="label label-info">Overwritten</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.updatedAt|date('Y-m-d H:i') }}</td>
+                        <td class="text-right">
+                            <a class="btn btn-default btn-xs" href="{{ path('admin_filter_list_edit', {publicId: entry.publicId}) }}">Edit</a>
+                            {% if entry.disabled %}
+                                <button type="submit" formaction="{{ path('admin_filter_list_enable', {publicId: entry.publicId}) }}" class="btn btn-success btn-xs">Re-enable</button>
+                            {% else %}
+                                <button type="submit" formaction="{{ path('admin_filter_list_disable', {publicId: entry.publicId}) }}" class="btn btn-warning btn-xs">Disable</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="10" class="text-center text-muted">No entries match the current filter.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+
+    {% if paginator.haveToPaginate %}
+        <div class="text-center">
+            {{ pagerfanta(paginator, 'twitter_bootstrap', {'proximity': 2}) }}
+        </div>
+    {% endif %}
+{% endblock %}

@@ -52,6 +52,7 @@ class FilterListEntryRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('fl')
             ->where('fl.packageName = :packageName')
             ->andWhere('fl.list = :malware')
+            ->andWhere('fl.disabled = false')
             ->setParameter('packageName', $package->getName())
             ->setParameter('malware', FilterLists::MALWARE)
             ->getQuery()
@@ -66,6 +67,7 @@ class FilterListEntryRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('fl')
             ->where('fl.packageName = :packageName')
             ->andWhere('fl.list = :list')
+            ->andWhere('fl.disabled = false')
             ->setParameter('packageName', $packageName)
             ->setParameter('list', $list)
             ->getQuery()
@@ -81,6 +83,7 @@ class FilterListEntryRepository extends ServiceEntityRepository
     {
         $entries = $this->createQueryBuilder('fl')
             ->where('fl.packageName IN (:packageNames)')
+            ->andWhere('fl.disabled = false')
             ->setParameter('packageNames', $packageNames, ArrayParameterType::STRING)
             ->getQuery()
             ->getResult();
@@ -106,17 +109,18 @@ class FilterListEntryRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('fl')
             ->select(sprintf(
-                'NEW %s(fl.packageName, fl.list, fl.version)',
+                'NEW %s(fl.packageName, fl.list, COALESCE(fl.overwriteVersion, fl.version))',
                 FilterListSummaryEntry::class,
             ))
+            ->where('fl.disabled = false')
             ->getQuery()
             ->getResult();
     }
 
-    public function getNewestEntryCreatedAt(): ?\DateTimeImmutable
+    public function getNewestEntryUpdatedAt(): ?\DateTimeImmutable
     {
         $result = $this->createQueryBuilder('fl')
-            ->select('MAX(fl.createdAt)')
+            ->select('MAX(fl.updatedAt)')
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -125,5 +129,10 @@ class FilterListEntryRepository extends ServiceEntityRepository
         }
 
         return new \DateTimeImmutable((string) $result);
+    }
+
+    public function findOneByPublicId(string $publicId): ?FilterListEntry
+    {
+        return $this->findOneBy(['publicId' => $publicId]);
     }
 }

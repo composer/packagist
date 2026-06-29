@@ -264,6 +264,43 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
+            AuditRecordType::FilterListEntryDisabled => new FilterListEntryDisabledDisplay(
+                $record->datetime,
+                $record->attributes['entry']['package_name'],
+                $record->attributes['entry']['version'],
+                FilterLists::from($record->attributes['entry']['list']),
+                FilterSources::from($record->attributes['entry']['source']),
+                $record->attributes['entry']['reason'] ?? null,
+                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->ip
+            ),
+            AuditRecordType::FilterListEntryEnabled => new FilterListEntryEnabledDisplay(
+                $record->datetime,
+                $record->attributes['entry']['package_name'],
+                $record->attributes['entry']['version'],
+                FilterLists::from($record->attributes['entry']['list']),
+                FilterSources::from($record->attributes['entry']['source']),
+                $record->attributes['entry']['reason'] ?? null,
+                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->ip
+            ),
+            AuditRecordType::FilterListEntryEdited => new FilterListEntryEditedDisplay(
+                $record->datetime,
+                $record->attributes['entry']['package_name'],
+                $record->attributes['entry']['version'],
+                $record->attributes['previous']['version'] ?? $record->attributes['entry']['version'],
+                $record->attributes['entry']['reason'] ?? null,
+                $record->attributes['previous']['reason'] ?? $record->attributes['entry']['reason'] ?? null,
+                $record->attributes['entry']['link'] ?? null,
+                $record->attributes['previous']['link'] ?? $record->attributes['entry']['link'] ?? null,
+                $record->attributes['entry']['internal_note'] ?? null,
+                $record->attributes['previous']['internal_note'] ?? null,
+                FilterLists::from($record->attributes['entry']['list']),
+                FilterLists::from($record->attributes['previous']['list'] ?? $record->attributes['entry']['list']),
+                FilterSources::from($record->attributes['entry']['source']),
+                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->ip
+            ),
         };
     }
 

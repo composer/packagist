@@ -44,7 +44,7 @@ readonly class FilterListSummaryDumper
 
     private function isStale(): bool
     {
-        $newestCreatedAt = $this->repository->getNewestEntryCreatedAt();
+        $newestCreatedAt = $this->repository->getNewestEntryUpdatedAt();
         if ($newestCreatedAt === null) {
             return false;
         }

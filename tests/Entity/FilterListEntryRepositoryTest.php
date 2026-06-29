@@ -33,8 +33,8 @@ class FilterListEntryRepositoryTest extends IntegrationTestCase
 
     public function testGetAllSummaryEntries(): void
     {
-        $entry1 = new FilterListEntry($this->createRemote('vendor/malware-a', '1.0.0'));
-        $entry2 = new FilterListEntry($this->createRemote('vendor/malware-b', '2.3.4'));
+        $entry1 = FilterListEntry::fromRemote($this->createRemote('vendor/malware-a', '1.0.0'));
+        $entry2 = FilterListEntry::fromRemote($this->createRemote('vendor/malware-b', '2.3.4'));
         $this->store($entry1, $entry2);
 
         $summaries = $this->repository->getAllSummaryEntries();
@@ -61,27 +61,45 @@ class FilterListEntryRepositoryTest extends IntegrationTestCase
         $this->assertSame([], $this->repository->getAllSummaryEntries());
     }
 
-    public function testGetNewestEntryCreatedAtReturnsLatestCreatedAt(): void
+    public function testGetAllSummaryEntriesUsesAdminOverwriteVersionWhenPresent(): void
     {
-        $older = new FilterListEntry($this->createRemote('vendor/older', '1.0.0'));
-        $newer = new FilterListEntry($this->createRemote('vendor/newer', '1.0.0'));
+        $upstreamOnly = FilterListEntry::fromRemote($this->createRemote('vendor/upstream', '1.0.0'));
+        $overwritten = FilterListEntry::fromRemote($this->createRemote('vendor/overwritten', '1.0.0'));
+        $overwritten->updateAttributes('>=1.0,<2.0');
+        $this->store($upstreamOnly, $overwritten);
+
+        $summaries = $this->repository->getAllSummaryEntries();
+
+        $byPackage = [];
+        foreach ($summaries as $summary) {
+            $byPackage[$summary->packageName] = $summary;
+        }
+
+        $this->assertSame('1.0.0', $byPackage['vendor/upstream']->version, 'Falls back to upstream version when no admin overwrite is set.');
+        $this->assertSame('>=1.0,<2.0', $byPackage['vendor/overwritten']->version, 'Admin overwrite is preferred over upstream version.');
+    }
+
+    public function testGetNewestEntryUpdatedAtReturnsLatestUpdatedAt(): void
+    {
+        $older = FilterListEntry::fromRemote($this->createRemote('vendor/older', '1.0.0'));
+        $newer = FilterListEntry::fromRemote($this->createRemote('vendor/newer', '1.0.0'));
 
         $olderDate = new \DateTimeImmutable('2024-01-01 10:00:00');
         $newerDate = new \DateTimeImmutable('2025-06-15 18:30:00');
-        $this->setCreatedAt($older, $olderDate);
-        $this->setCreatedAt($newer, $newerDate);
+        $this->setUpdatedAt($older, $olderDate);
+        $this->setUpdatedAt($newer, $newerDate);
 
         $this->store($older, $newer);
 
-        $newest = $this->repository->getNewestEntryCreatedAt();
+        $newest = $this->repository->getNewestEntryUpdatedAt();
 
         $this->assertNotNull($newest);
         $this->assertSame($newerDate->format('Y-m-d H:i:s'), $newest->format('Y-m-d H:i:s'));
     }
 
-    public function testGetNewestEntryCreatedAtReturnsNullWhenNoEntriesExist(): void
+    public function testGetNewestEntryUpdatedAtReturnsNullWhenNoEntriesExist(): void
     {
-        $this->assertNull($this->repository->getNewestEntryCreatedAt());
+        $this->assertNull($this->repository->getNewestEntryUpdatedAt());
     }
 
     private function createRemote(string $packageName, string $version): RemoteFilterListEntry
@@ -96,8 +114,8 @@ class FilterListEntryRepositoryTest extends IntegrationTestCase
         );
     }
 
-    private function setCreatedAt(FilterListEntry $entry, \DateTimeImmutable $createdAt): void
+    private function setUpdatedAt(FilterListEntry $entry, \DateTimeImmutable $updatedAt): void
     {
-        new \ReflectionProperty($entry, 'createdAt')->setValue($entry, $createdAt);
+        new \ReflectionProperty($entry, 'updatedAt')->setValue($entry, $updatedAt);
     }
 }
