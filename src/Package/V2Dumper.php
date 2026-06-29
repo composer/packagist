@@ -53,6 +53,8 @@ class V2Dumper
     /** @var list<string> */
     private array $writtenFiles = [];
 
+    private bool $bypassIndividualPurges = false;
+
     public function __construct(
         private ManagerRegistry $doctrine,
         private Filesystem $filesystem,
@@ -150,6 +152,11 @@ class V2Dumper
         $total = \count($packageIds);
         $current = 0;
         $step = 50;
+
+        if (\count($packageIds) > 150) {
+            $this->bypassIndividualPurges = true;
+        }
+
         while ($packageIds) {
             $this->statsd->gauge('packagist.metadata_dump_queue', \count($packageIds), ['worker' => (string) $workerId]);
 
@@ -194,11 +201,20 @@ class V2Dumper
         }
 
         // Verify all written files match CDN versions
-        if (!empty($this->writtenFiles) && !$force && \count($this->writtenFiles) < 50) {
+        if (!$this->bypassIndividualPurges && !empty($this->writtenFiles) && !$force && \count($this->writtenFiles) < 50) {
             if ($verbose) {
                 echo 'Verifying '.\count($this->writtenFiles).' written files match CDN versions'.\PHP_EOL;
             }
             $this->verifyCdnFiles();
+        }
+
+        // purge complete cache at once if we have a backed up queue, otherwise the CDN purges tend to slow down clearing the queue
+        // due to CDN purges rate limiting
+        if ($this->bypassIndividualPurges) {
+            $this->bypassIndividualPurges = false;
+            if ($this->cdnClient->isConfigured()) {
+                $this->cdnClient->purgeMetadataCache('p2/*');
+            }
         }
 
         if (!file_exists($webDir.'/p2') && !@symlink($buildDirV2, $webDir.'/p2')) {
@@ -421,7 +437,9 @@ class V2Dumper
 
         $this->writeToReplica($relativePath, $contents, $timeUnix);
 
-        $this->purgeCdn($relativePath);
+        if (!$this->bypassIndividualPurges) {
+            $this->purgeCdn($relativePath);
+        }
 
         $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
         $this->statsd->increment('packagist.metadata_dump_v2');

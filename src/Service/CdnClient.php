@@ -163,11 +163,19 @@ class CdnClient
             return true;
         }
 
-        $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $url, 'async' => 'false', 'exactPath' => 'true']), [
-            'headers' => [
-                'AccessKey' => $this->cdnApiKey,
-            ],
-        ]);
+        if (str_ends_with($url, '*')) {
+            $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $url, 'async' => 'true']), [
+                'headers' => [
+                    'AccessKey' => $this->cdnApiKey,
+                ],
+            ]);
+        } else {
+            $resp = $this->httpClient->request('POST', 'https://api.bunny.net/purge?'.http_build_query(['url' => $url, 'async' => 'false', 'exactPath' => 'true']), [
+                'headers' => [
+                    'AccessKey' => $this->cdnApiKey,
+                ],
+            ]);
+        }
 
         // delay the response to slow things down when we're hitting the CDN too hard and get rate limited
         if ($resp->getStatusCode() === 429) {
