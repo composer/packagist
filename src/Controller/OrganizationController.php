@@ -15,7 +15,7 @@ namespace App\Controller;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
-use App\Form\Model\CreateOrganizationRequest;
+use App\Form\Model\SaveOrganizationDetailsRequest;
 use App\Form\Type\CreateOrganizationType;
 use App\Form\Type\EditOrganizationType;
 use App\Organization\Domain\Exception\OrganizationException;
@@ -58,7 +58,7 @@ class OrganizationController extends Controller
             return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
-        $createRequest = new CreateOrganizationRequest();
+        $createRequest = new SaveOrganizationDetailsRequest();
         $form = $this->createForm(CreateOrganizationType::class, $createRequest);
         $form->handleRequest($request);
 
@@ -104,7 +104,7 @@ class OrganizationController extends Controller
             return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
-        $editRequest = new CreateOrganizationRequest();
+        $editRequest = new SaveOrganizationDetailsRequest();
         $editRequest->slug = $organization->slug;
         $editRequest->displayName = $organization->displayName;
 

@@ -12,7 +12,7 @@
 
 namespace App\Form\Type;
 
-use App\Form\Model\CreateOrganizationRequest;
+use App\Form\Model\SaveOrganizationDetailsRequest;
 use App\Organization\Domain\DisplayName;
 use App\Organization\Domain\Slug;
 use Symfony\Component\Form\AbstractType;
@@ -21,7 +21,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * @extends AbstractType<CreateOrganizationRequest>
+ * @extends AbstractType<SaveOrganizationDetailsRequest>
  */
 class EditOrganizationType extends AbstractType
 {
@@ -43,7 +43,7 @@ class EditOrganizationType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => CreateOrganizationRequest::class,
+            'data_class' => SaveOrganizationDetailsRequest::class,
         ]);
     }
 
