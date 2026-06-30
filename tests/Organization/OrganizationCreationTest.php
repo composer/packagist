@@ -78,16 +78,6 @@ class OrganizationCreationTest extends KernelTestCase
         self::assertSame(1, (int) $auditCount);
     }
 
-    public function testCreateRequiresTwoFactor(): void
-    {
-        $owner = $this->persistOwner('no2fa', twoFactor: false);
-
-        $this->expectException(TwoFactorRequiredException::class);
-
-        static::getContainer()->get(OrganizationManager::class)
-            ->create($owner, 'acme', 'ACME Corp', null);
-    }
-
     public function testCreateRejectsReservedSlug(): void
     {
         $owner = $this->persistOwner('reserved', twoFactor: true);

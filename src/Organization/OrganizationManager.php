@@ -16,7 +16,6 @@ use App\Entity\User;
 use App\Organization\Domain\DisplayName;
 use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Exception\InvalidSlugException;
-use App\Organization\Domain\Exception\TwoFactorRequiredException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
@@ -37,18 +36,12 @@ final class OrganizationManager
     /**
      * @return Organization the created aggregate
      *
-     * @throws TwoFactorRequiredException
      * @throws InvalidSlugException
      * @throws InvalidDisplayNameException
      * @throws SlugTakenException
      */
     public function create(User $owner, string $slug, string $displayName, ?string $ip): Organization
     {
-        // 2FA is required to create an organization / become an owner.
-        if (!$owner->isTotpAuthenticationEnabled()) {
-            throw new TwoFactorRequiredException('You must enable two-factor authentication before creating an organization.');
-        }
-
         $slug = Slug::fromUserInput($slug);
         $displayName = DisplayName::fromUserInput($displayName);
 
