@@ -43,7 +43,7 @@ class OrganizationEvent
         #[ORM\Column(options: ['unsigned' => true])]
         public readonly int $sequence,
 
-        #[ORM\Column(length: 64, enumType: OrganizationEventType::class)]
+        #[ORM\Column(length: 64)]
         public readonly OrganizationEventType $type,
 
         #[ORM\Column(type: Types::JSON)]
