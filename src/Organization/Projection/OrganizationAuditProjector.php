@@ -36,26 +36,13 @@ final readonly class OrganizationAuditProjector implements Projector
         $event = $recorded->event;
         $actor = $recorded->actor->userId !== null ? $this->users->find($recorded->actor->userId) : null;
 
-        if ($event instanceof OrganizationCreated) {
-            $this->auditRecords->insert(
-                AuditRecord::organizationCreated($event->organizationId, $event->slug, $event->displayName, $actor),
-            );
-
-            return;
-        }
-
-        if ($event instanceof OrganizationNameChanged) {
-            $this->auditRecords->insert(
-                AuditRecord::organizationRenamed($event->organizationId, $event->displayName, $event->previousDisplayName, $actor),
-            );
-
-            return;
-        }
-
-        if ($event instanceof OrganizationSlugChanged) {
-            $this->auditRecords->insert(
-                AuditRecord::organizationSlugChanged($event->organizationId, $event->slug, $event->previousSlug, $actor),
-            );
-        }
+        $this->auditRecords->insert(
+            match (true) {
+                $event instanceof OrganizationCreated => AuditRecord::organizationCreated($event->organizationId, $event->slug, $event->displayName, $actor),
+                $event instanceof OrganizationNameChanged => AuditRecord::organizationRenamed($event->organizationId, $event->displayName, $event->previousDisplayName, $actor),
+                $event instanceof OrganizationSlugChanged => AuditRecord::organizationSlugChanged($event->organizationId, $event->slug, $event->previousSlug, $actor),
+                default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
+            }
+        );
     }
 }
