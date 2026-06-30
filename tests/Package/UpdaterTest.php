@@ -30,10 +30,12 @@ use Composer\Config;
 use Composer\IO\IOInterface;
 use Composer\IO\NullIO;
 use Composer\Package\CompletePackage;
+use Composer\Package\Link;
 use Composer\Repository\RepositoryInterface;
 use Composer\Repository\Vcs\GitDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
+use Composer\Semver\Constraint\MatchAllConstraint;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
@@ -155,6 +157,115 @@ class UpdaterTest extends IntegrationTestCase
         $authors = $version->getAuthors();
         self::assertArrayNotHasKey('homepage', $authors[0]);
         self::assertSame('Bob', $authors[0]['name']);
+    }
+
+    public function testStripsControlCharactersFromMetadata(): void
+    {
+        $esc = "\x1B[31m"; // ANSI CSI color sequence
+        $ctrl = "\x07\x01"; // BEL + SOH control chars
+
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        // default branch so the package-level description/type/replacement paths are exercised too
+        $upstream->setIsDefaultBranch(true);
+        $upstream->setDescription('Clean desc'.$esc.$ctrl);
+        $upstream->setType('library'.$esc);
+        $upstream->setKeywords(['key'.$esc.'word', 'two'.$ctrl]);
+        $upstream->setLicense(['MIT'.$esc]);
+        $upstream->setHomepage('https://example.com/home'.$esc);
+        $upstream->setAuthors([
+            ['name' => 'Bob'.$esc, 'email' => 'bob'.$ctrl.'@example.com', 'role' => 'Dev'.$esc],
+        ]);
+        $upstream->setSupport([
+            'issues' => 'https://example.com/issues'.$esc,
+            'email' => 'sec'.$ctrl.'@example.com',
+        ]);
+        $upstream->setFunding([
+            ['type' => 'custom'.$esc, 'url' => 'https://example.com/fund'.$esc],
+        ]);
+        $upstream->setTargetDir('sub/dir'.$esc);
+        $upstream->setBinaries(['bin/foo'.$esc]);
+        $upstream->setIncludePaths(['lib/'.$ctrl]);
+        // nested config: only string leaf values are sanitized, keys/non-strings are left intact
+        $upstream->setExtra(['branch-alias' => ['dev-main' => '1.x-dev'.$esc], 'nested' => 'val'.$ctrl, 'num' => 5]);
+        $upstream->setAutoload(['psr-4' => ['App\\' => 'src/'.$esc]]);
+        $upstream->setPhpExt(['priority' => 80, 'configure-options' => [['name' => 'with-foo'.$esc, 'description' => 'Enable'.$ctrl]]]);
+        $upstream->setSuggests(['some/pkg'.$ctrl => 'because'.$esc]);
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://example.com/test/pkg'.$esc);
+        $upstream->setSourceReference('aabbccddeeff00112233445566778899aabbccdd');
+        $upstream->setDistType('zip'.$ctrl);
+        $upstream->setDistUrl('https://example.com/dist.zip'.$esc);
+        $upstream->setDistReference('00112233445566778899aabbccddeeff00112233');
+        $require = new Link('test/pkg', 'some/dep'.$ctrl, new MatchAllConstraint(), Link::TYPE_REQUIRE, '^1.0'.$esc);
+        $upstream->setRequires(['some/dep' => $require]);
+        $upstream->setAbandoned('replacement/pkg'.$esc);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($version);
+
+        self::assertSame('Clean desc', $version->getDescription());
+        self::assertSame('library', $version->getType());
+        self::assertSame(['MIT'], $version->getLicense());
+        self::assertSame('https://example.com/home', $version->getHomepage());
+
+        $tagNames = array_map(static fn ($t) => $t->getName(), $version->getTags()->toArray());
+        sort($tagNames);
+        self::assertSame(['keyword', 'two'], $tagNames);
+
+        $authors = $version->getAuthors();
+        self::assertSame('Bob', $authors[0]['name']);
+        self::assertSame('bob@example.com', $authors[0]['email']);
+        self::assertSame('Dev', $authors[0]['role']);
+
+        $support = $version->getSupport();
+        self::assertSame('https://example.com/issues', $support['issues']);
+        self::assertSame('sec@example.com', $support['email']);
+
+        $funding = $version->getFunding();
+        self::assertSame('custom', $funding[0]['type']);
+        self::assertSame('https://example.com/fund', $funding[0]['url']);
+
+        self::assertSame('sub/dir', $version->getTargetDir());
+        self::assertSame(['bin/foo'], $version->getBinaries());
+        self::assertSame(['lib/'], $version->getIncludePaths());
+
+        // assertEquals (not assertSame): extra key order is not preserved through storage and is not meaningful
+        self::assertEquals(['branch-alias' => ['dev-main' => '1.x-dev'], 'nested' => 'val', 'num' => 5], $version->getExtra());
+        self::assertSame(['psr-4' => ['App\\' => 'src/']], $version->getAutoload());
+        self::assertSame(['priority' => 80, 'configure-options' => [['name' => 'with-foo', 'description' => 'Enable']]], $version->getPhpExt());
+
+        $source = $version->getSource();
+        self::assertSame('https://example.com/test/pkg', $source['url']);
+        self::assertSame('git', $source['type']);
+        // reference is intentionally left untouched (out of sanitization scope)
+        self::assertSame('aabbccddeeff00112233445566778899aabbccdd', $source['reference']);
+
+        $dist = $version->getDist();
+        self::assertSame('https://example.com/dist.zip', $dist['url']);
+        self::assertSame('zip', $dist['type']);
+        self::assertSame('00112233445566778899aabbccddeeff00112233', $dist['reference']);
+
+        $requires = $version->getRequire();
+        self::assertCount(1, $requires);
+        $reqLink = $requires->first();
+        self::assertSame('some/dep', $reqLink->getPackageName());
+        self::assertSame('^1.0', $reqLink->getPackageVersion());
+
+        $suggests = $version->getSuggest();
+        self::assertCount(1, $suggests);
+        $sugLink = $suggests->first();
+        self::assertSame('some/pkg', $sugLink->getPackageName());
+        self::assertSame('because', $sugLink->getPackageVersion());
+
+        $this->getEM()->refresh($this->package);
+        self::assertTrue($this->package->isAbandoned());
+        self::assertSame('replacement/pkg', $this->package->getReplacementPackage());
     }
 
     public function testConvertsMarkdownForReadme(): void
