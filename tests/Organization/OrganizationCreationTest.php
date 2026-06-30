@@ -14,6 +14,7 @@ namespace App\Tests\Organization;
 
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
+use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\OrganizationManager;
 use App\Tests\IntegrationTestCase;
@@ -54,6 +55,16 @@ class OrganizationCreationTest extends IntegrationTestCase
             ['actor' => $owner->getId()],
         );
         self::assertSame(1, (int) $auditCount);
+    }
+
+    public function testCreateRejectsReservedSlug(): void
+    {
+        $owner = $this->persistOwner('reserved', twoFactor: true);
+
+        $this->expectException(InvalidSlugException::class);
+
+        static::getService(OrganizationManager::class)
+            ->create($owner, 'composer', 'Composer', null);
     }
 
     public function testCreateRejectsAlreadyTakenSlug(): void

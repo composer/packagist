@@ -15,7 +15,6 @@ namespace App\Organization;
 use App\Entity\Organization as OrganizationReadModel;
 use App\Entity\User;
 use App\Organization\Domain\DisplayName;
-use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Exception\TwoFactorRequiredException;
@@ -37,6 +36,7 @@ final class OrganizationManager
     /**
      * @return Organization the created aggregate
      *
+     * @throws InvalidSlugException
      * @throws SlugTakenException
      */
     public function create(User $owner, string $slug, string $displayName, ?string $ip): Organization
@@ -45,7 +45,6 @@ final class OrganizationManager
         $displayName = new DisplayName($displayName);
 
         $this->slugChecker->assertClaimable($slug, $owner);
-        $this->assertDisplayNameNotReserved($displayName);
 
         $organization = Organization::create(new Ulid(), $slug, $displayName);
 
@@ -62,7 +61,6 @@ final class OrganizationManager
      * Only fields that actually change are recorded as events; an unchanged submission is a no-op.
      *
      * @throws InvalidSlugException
-     * @throws InvalidDisplayNameException
      * @throws SlugTakenException
      */
     public function edit(OrganizationReadModel $organization, User $actor, string $slug, string $displayName, ?string $ip): void
@@ -79,10 +77,6 @@ final class OrganizationManager
 
         if ($slugChanged) {
             $this->slugChecker->assertClaimable($newSlug, $actor);
-        }
-
-        if ($displayNameChanged) {
-            $this->assertDisplayNameNotReserved($newDisplayName);
         }
 
         $aggregate = Organization::reconstitute(
@@ -102,16 +96,6 @@ final class OrganizationManager
             $this->eventStore->append($aggregate, $this->actorFor($actor, $organization), $ip);
         } catch (UniqueConstraintViolationException $e) {
             throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $newSlug->value), 0, $e);
-        }
-    }
-
-    /**
-     * @throws InvalidDisplayNameException
-     */
-    private function assertDisplayNameNotReserved(DisplayName $displayName): void
-    {
-        if (\in_array(mb_strtolower($displayName->value), NotReservedWord::RESERVED_WORDS, true)) {
-            throw new InvalidDisplayNameException(sprintf('"%s" is a reserved name and cannot be used.', $displayName->value));
         }
     }
 

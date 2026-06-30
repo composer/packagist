@@ -15,13 +15,11 @@ namespace App\Tests\Organization;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
-use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\OrganizationManager;
 use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
 
 class OrganizationEditTest extends IntegrationTestCase
 {
@@ -121,16 +119,6 @@ class OrganizationEditTest extends IntegrationTestCase
 
         $this->expectException(InvalidSlugException::class);
         $manager->edit($this->readModel('acme'), $owner, 'composer', 'ACME Corp', null);
-    }
-
-    public function testEditRejectsReservedDisplayName(): void
-    {
-        $owner = $this->persistOwner('reservedname', twoFactor: true);
-        $manager = static::getService(OrganizationManager::class);
-        $manager->create($owner, 'acme', 'ACME Corp', null);
-
-        $this->expectException(InvalidDisplayNameException::class);
-        $manager->edit($this->readModel('acme'), $owner, 'acme', 'PHP', null);
     }
 
     public function testEditRejectsSlugTakenByAnotherOrg(): void
