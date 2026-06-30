@@ -65,7 +65,7 @@ final class OrganizationManager
      * @throws InvalidDisplayNameException
      * @throws SlugTakenException
      */
-    public function update(OrganizationReadModel $organization, User $actor, string $slug, string $displayName, ?string $ip): void
+    public function edit(OrganizationReadModel $organization, User $actor, string $slug, string $displayName, ?string $ip): void
     {
         $newSlug = Slug::fromUserInput($slug);
         $newDisplayName = DisplayName::fromUserInput($displayName);

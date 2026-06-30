@@ -23,7 +23,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
-class OrganizationUpdateTest extends KernelTestCase
+class OrganizationEditTest extends KernelTestCase
 {
     private Connection $connection;
 
@@ -49,7 +49,7 @@ class OrganizationUpdateTest extends KernelTestCase
         $manager = static::getContainer()->get(OrganizationManager::class);
         $organization = $manager->create($owner, 'acme', 'ACME Corp', null);
 
-        $manager->update($this->readModel('acme'), $owner, 'acme', 'ACME Inc', '203.0.113.5');
+        $manager->edit($this->readModel('acme'), $owner, 'acme', 'ACME Inc', '203.0.113.5');
 
         self::assertSame('ACME Inc', $this->readModel('acme')->displayName);
 
@@ -71,7 +71,7 @@ class OrganizationUpdateTest extends KernelTestCase
         $manager = static::getContainer()->get(OrganizationManager::class);
         $organization = $manager->create($owner, 'acme', 'ACME Corp', null);
 
-        $manager->update($this->readModel('acme'), $owner, 'acme-inc', 'ACME Corp', null);
+        $manager->edit($this->readModel('acme'), $owner, 'acme-inc', 'ACME Corp', null);
 
         // Read model now lives at the new slug.
         self::assertNull($this->readModel('acme'));
@@ -98,7 +98,7 @@ class OrganizationUpdateTest extends KernelTestCase
         $manager = static::getContainer()->get(OrganizationManager::class);
         $organization = $manager->create($owner, 'acme', 'ACME Corp', null);
 
-        $manager->update($this->readModel('acme'), $owner, 'acme-inc', 'ACME Inc', null);
+        $manager->edit($this->readModel('acme'), $owner, 'acme-inc', 'ACME Inc', null);
 
         $types = $this->connection->fetchFirstColumn(
             'SELECT type FROM organization_event WHERE aggregateId = :id ORDER BY sequence',
@@ -113,7 +113,7 @@ class OrganizationUpdateTest extends KernelTestCase
         $manager = static::getContainer()->get(OrganizationManager::class);
         $organization = $manager->create($owner, 'acme', 'ACME Corp', null);
 
-        $manager->update($this->readModel('acme'), $owner, 'acme', 'ACME Corp', null);
+        $manager->edit($this->readModel('acme'), $owner, 'acme', 'ACME Corp', null);
 
         $count = $this->connection->fetchOne(
             'SELECT COUNT(*) FROM organization_event WHERE aggregateId = :id',
@@ -122,27 +122,27 @@ class OrganizationUpdateTest extends KernelTestCase
         self::assertSame(1, (int) $count);
     }
 
-    public function testUpdateRejectsReservedSlug(): void
+    public function testEditRejectsReservedSlug(): void
     {
         $owner = $this->persistOwner('reserved', twoFactor: true);
         $manager = static::getContainer()->get(OrganizationManager::class);
         $manager->create($owner, 'acme', 'ACME Corp', null);
 
         $this->expectException(InvalidSlugException::class);
-        $manager->update($this->readModel('acme'), $owner, 'composer', 'ACME Corp', null);
+        $manager->edit($this->readModel('acme'), $owner, 'composer', 'ACME Corp', null);
     }
 
-    public function testUpdateRejectsReservedDisplayName(): void
+    public function testEditRejectsReservedDisplayName(): void
     {
         $owner = $this->persistOwner('reservedname', twoFactor: true);
         $manager = static::getContainer()->get(OrganizationManager::class);
         $manager->create($owner, 'acme', 'ACME Corp', null);
 
         $this->expectException(InvalidDisplayNameException::class);
-        $manager->update($this->readModel('acme'), $owner, 'acme', 'PHP', null);
+        $manager->edit($this->readModel('acme'), $owner, 'acme', 'PHP', null);
     }
 
-    public function testUpdateRejectsSlugTakenByAnotherOrg(): void
+    public function testEditRejectsSlugTakenByAnotherOrg(): void
     {
         $owner = $this->persistOwner('taker', twoFactor: true);
         $manager = static::getContainer()->get(OrganizationManager::class);
@@ -150,7 +150,7 @@ class OrganizationUpdateTest extends KernelTestCase
         $manager->create($owner, 'globex', 'Globex', null);
 
         $this->expectException(SlugTakenException::class);
-        $manager->update($this->readModel('acme'), $owner, 'globex', 'ACME Corp', null);
+        $manager->edit($this->readModel('acme'), $owner, 'globex', 'ACME Corp', null);
     }
 
     private function readModel(string $slug): ?Organization
