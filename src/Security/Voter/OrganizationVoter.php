@@ -66,9 +66,4 @@ class OrganizationVoter extends Voter
         // Until the membership management is done, the owner is the creating user.
         return $organization->createdBy?->getId() === $user->getId();
     }
-
-    private function isMember(Organization $organization, User $user): bool
-    {
-        return $this->isOwner($organization, $user);
-    }
 }
