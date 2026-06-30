@@ -17,6 +17,7 @@ use App\Entity\OrganizationEventRepository;
 use App\Organization\Projection\Projector;
 use App\Util\DoctrineTrait;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Ulid;
 
@@ -24,7 +25,7 @@ use Symfony\Component\Uid\Ulid;
  * Append → project → commit all happen in one DB transaction. Optimistic concurrency is
  * enforced by the unique (aggregateId, sequence) constraint.
  */
-final class EventStore
+final readonly class EventStore
 {
     use DoctrineTrait;
 
@@ -32,9 +33,9 @@ final class EventStore
      * @param iterable<Projector> $projectors
      */
     public function __construct(
-        private readonly ManagerRegistry $doctrine,
-        private readonly OrganizationEventRepository $events,
-        private readonly iterable $projectors,
+        private ManagerRegistry $doctrine,
+        private OrganizationEventRepository $events,
+        private iterable $projectors,
     ) {
     }
 
@@ -54,12 +55,10 @@ final class EventStore
         $expectedVersion = $aggregate->version();
         $now = new \DateTimeImmutable();
 
-        $em = $this->getEM();
-
         try {
             // Open the transaction on the connection rather than via EntityManager::wrapInTransaction():
             // a connection-level rollback is independent of whether the failing flush closed the EM.
-            $em->getConnection()->transactional(function () use ($em, $events, $expectedVersion, $aggregate, $actor, $ip, $now): void {
+            $this->getEM()->wrapInTransaction(function (EntityManagerInterface $em) use ($events, $expectedVersion, $aggregate, $actor, $ip, $now): void {
                 $sequence = $expectedVersion;
                 foreach ($events as $event) {
                     ++$sequence;

@@ -24,14 +24,13 @@ use Symfony\Component\HttpKernel\Exception\GoneHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Loads an {@see Organization} from its slug route attribute (defaults to the argument
- * name, override with {@see VarName}) so controllers can type-hint the entity directly.
+ * Loads an {@see Organization} from its slug route attribute.
  */
 final readonly class OrganizationResolver implements ValueResolverInterface
 {
     public function __construct(
-        private readonly OrganizationRepository $organizations,
-        private readonly Security $security,
+        private OrganizationRepository $organizations,
+        private Security $security,
     ) {
     }
 

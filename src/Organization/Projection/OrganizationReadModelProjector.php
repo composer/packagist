@@ -25,13 +25,13 @@ use Doctrine\Persistence\ManagerRegistry;
  * The slug unique constraint turns a concurrent duplicate into a transaction
  * rollback, which the application service maps to SlugTaken.
  */
-final class OrganizationReadModelProjector implements Projector
+final readonly class OrganizationReadModelProjector implements Projector
 {
     use DoctrineTrait;
 
     public function __construct(
-        private readonly ManagerRegistry $doctrine,
-        private readonly UserRepository $users,
+        private ManagerRegistry $doctrine,
+        private UserRepository $users,
     ) {
     }
 

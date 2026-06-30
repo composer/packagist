@@ -21,11 +21,11 @@ use App\Organization\EventStore\RecordedEvent;
 /**
  * Projects organization events into the public transparency log (`audit_log`).
  */
-final class OrganizationAuditProjector implements Projector
+final readonly class OrganizationAuditProjector implements Projector
 {
     public function __construct(
-        private readonly AuditRecordRepository $auditRecords,
-        private readonly UserRepository $users,
+        private AuditRecordRepository $auditRecords,
+        private UserRepository $users,
     ) {
     }
 
