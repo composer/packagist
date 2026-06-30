@@ -166,7 +166,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/create');
 
         $form = $crawler->selectButton('Create organization')->form([
-            'create_organization[displayName]' => 'Composer',
+            'create_organization[displayName]' => 'Acme Corp',
             'create_organization[slug]' => 'composer',
         ]);
         $crawler = $this->client->submit($form);
