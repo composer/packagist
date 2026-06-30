@@ -46,44 +46,49 @@ final readonly class OrganizationReadModelProjector implements Projector
     {
         $event = $recorded->event;
 
-        if ($event instanceof OrganizationCreated) {
-            $createdBy = $recorded->actor->userId !== null
-                ? $this->users->find($recorded->actor->userId)
-                : null;
+        match (true) {
+            $event instanceof OrganizationCreated => $this->organizationCreated($recorded, $event),
+            $event instanceof OrganizationNameChanged => $this->organizationNameChanged($event),
+            $event instanceof OrganizationSlugChanged => $this->organizationSlugChanged($recorded, $event),
+            default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
+        };
 
-            $this->getEM()->persist(new Organization(
-                $event->organizationId,
-                $event->slug,
-                $event->displayName,
-                OrganizationStatus::Active,
-                $recorded->occurredAt,
-                $createdBy,
-            ));
-            $this->getEM()->flush();
+        $this->getEM()->flush();
+    }
 
-            return;
-        }
+    private function organizationCreated(RecordedEvent $recorded, OrganizationCreated $event): void
+    {
+        $createdBy = $recorded->actor->userId !== null
+            ? $this->users->find($recorded->actor->userId)
+            : null;
 
-        if ($event instanceof OrganizationNameChanged) {
-            $this->organization($event->organizationId)->changeName($event->displayName);
-            $this->getEM()->flush();
+        $this->getEM()->persist(new Organization(
+            $event->organizationId,
+            $event->slug,
+            $event->displayName,
+            OrganizationStatus::Active,
+            $recorded->occurredAt,
+            $createdBy,
+        ));
+    }
 
-            return;
-        }
+    private function organizationNameChanged(OrganizationNameChanged $event): void
+    {
+        $this->organization($event->organizationId)->changeName($event->displayName);
+    }
 
-        if ($event instanceof OrganizationSlugChanged) {
-            $this->organization($event->organizationId)->changeSlug($event->slug);
+    private function organizationSlugChanged(RecordedEvent $recorded, OrganizationSlugChanged $event): void
+    {
+        $this->organization($event->organizationId)->changeSlug($event->slug);
 
-            // Reserve the freed slug.
-            $this->getEM()->persist(new SlugReservation(
-                new Ulid(),
-                $event->previousSlug,
-                $event->organizationId,
-                SlugReservationKind::RenamedFrom,
-                $recorded->occurredAt,
-            ));
-            $this->getEM()->flush();
-        }
+        // Reserve the freed slug.
+        $this->getEM()->persist(new SlugReservation(
+            new Ulid(),
+            $event->previousSlug,
+            $event->organizationId,
+            SlugReservationKind::RenamedFrom,
+            $recorded->occurredAt,
+        ));
     }
 
     private function organization(Ulid $id): Organization
