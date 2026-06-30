@@ -61,18 +61,12 @@ final class OrganizationManager
     /**
      * Only fields that actually change are recorded as events; an unchanged submission is a no-op.
      *
-     * @throws TwoFactorRequiredException
      * @throws InvalidSlugException
      * @throws InvalidDisplayNameException
      * @throws SlugTakenException
      */
     public function update(OrganizationReadModel $organization, User $actor, string $slug, string $displayName, ?string $ip): void
     {
-        // 2FA is required to manage an organization, mirroring creation.
-        if (!$actor->isTotpAuthenticationEnabled()) {
-            throw new TwoFactorRequiredException('You must enable two-factor authentication to manage an organization.');
-        }
-
         $newSlug = Slug::fromUserInput($slug);
         $newDisplayName = DisplayName::fromUserInput($displayName);
 

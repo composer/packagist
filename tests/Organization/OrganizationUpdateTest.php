@@ -18,7 +18,6 @@ use App\Entity\User;
 use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
-use App\Organization\Domain\Exception\TwoFactorRequiredException;
 use App\Organization\OrganizationManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -121,20 +120,6 @@ class OrganizationUpdateTest extends KernelTestCase
             ['id' => $organization->id->toBinary()],
         );
         self::assertSame(1, (int) $count);
-    }
-
-    public function testUpdateRequiresTwoFactor(): void
-    {
-        $owner = $this->persistOwner('owner2fa', twoFactor: true);
-        $manager = static::getContainer()->get(OrganizationManager::class);
-        $manager->create($owner, 'acme', 'ACME Corp', null);
-
-        // Drop 2FA after creation.
-        $owner->setTotpSecret(null);
-        static::getContainer()->get(ManagerRegistry::class)->getManager()->flush();
-
-        $this->expectException(TwoFactorRequiredException::class);
-        $manager->update($this->readModel('acme'), $owner, 'acme', 'ACME Inc', null);
     }
 
     public function testUpdateRejectsReservedSlug(): void
