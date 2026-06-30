@@ -14,7 +14,7 @@ namespace App\Tests\Organization;
 
 use App\Organization\Domain\DisplayName;
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Event\OrganizationRenamed;
+use App\Organization\Domain\Event\OrganizationNameChanged;
 use App\Organization\Domain\Event\OrganizationSlugChanged;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
@@ -67,7 +67,7 @@ class OrganizationAggregateTest extends TestCase
 
         $events = $organization->pullPendingEvents();
         self::assertCount(1, $events);
-        self::assertInstanceOf(OrganizationRenamed::class, $events[0]);
+        self::assertInstanceOf(OrganizationNameChanged::class, $events[0]);
         self::assertSame('ACME Inc', $events[0]->displayName);
         self::assertSame('ACME Corp', $events[0]->previousDisplayName);
         self::assertSame('ACME Inc', $organization->displayName());

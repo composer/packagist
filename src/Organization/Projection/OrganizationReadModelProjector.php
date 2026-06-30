@@ -19,7 +19,7 @@ use App\Entity\SlugReservation;
 use App\Entity\SlugReservationKind;
 use App\Entity\UserRepository;
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Event\OrganizationRenamed;
+use App\Organization\Domain\Event\OrganizationNameChanged;
 use App\Organization\Domain\Event\OrganizationSlugChanged;
 use App\Organization\EventStore\RecordedEvent;
 use App\Util\DoctrineTrait;
@@ -64,7 +64,7 @@ final readonly class OrganizationReadModelProjector implements Projector
             return;
         }
 
-        if ($event instanceof OrganizationRenamed) {
+        if ($event instanceof OrganizationNameChanged) {
             $this->organization($event->organizationId)->rename($event->displayName);
             $this->getEM()->flush();
 

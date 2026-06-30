@@ -16,7 +16,7 @@ use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\UserRepository;
 use App\Organization\Domain\Event\OrganizationCreated;
-use App\Organization\Domain\Event\OrganizationRenamed;
+use App\Organization\Domain\Event\OrganizationNameChanged;
 use App\Organization\Domain\Event\OrganizationSlugChanged;
 use App\Organization\EventStore\RecordedEvent;
 
@@ -44,7 +44,7 @@ final readonly class OrganizationAuditProjector implements Projector
             return;
         }
 
-        if ($event instanceof OrganizationRenamed) {
+        if ($event instanceof OrganizationNameChanged) {
             $this->auditRecords->insert(
                 AuditRecord::organizationRenamed($event->organizationId, $event->displayName, $event->previousDisplayName, $actor),
             );

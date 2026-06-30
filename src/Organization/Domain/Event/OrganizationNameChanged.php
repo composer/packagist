@@ -16,7 +16,7 @@ use App\Organization\EventStore\DomainEvent;
 use App\Organization\EventStore\OrganizationEventType;
 use Symfony\Component\Uid\Ulid;
 
-final readonly class OrganizationRenamed implements DomainEvent
+final readonly class OrganizationNameChanged implements DomainEvent
 {
     public const OrganizationEventType TYPE = OrganizationEventType::OrganizationRenamed;
 
