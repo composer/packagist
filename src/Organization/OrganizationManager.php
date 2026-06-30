@@ -85,7 +85,7 @@ final class OrganizationManager
         );
 
         if ($displayNameChanged) {
-            $aggregate->rename($newDisplayName);
+            $aggregate->changeName($newDisplayName);
         }
 
         if ($slugChanged) {

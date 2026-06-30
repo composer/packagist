@@ -19,6 +19,6 @@ namespace App\Organization\EventStore;
 enum OrganizationEventType: string
 {
     case OrganizationCreated = 'organization-created';
-    case OrganizationRenamed = 'organization-renamed';
+    case OrganizationNameChanged = 'organization-name-changed';
     case OrganizationSlugChanged = 'organization-slug-changed';
 }

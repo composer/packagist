@@ -32,7 +32,7 @@ class OrganizationEditTest extends IntegrationTestCase
         $this->connection = self::getService(Connection::class);
     }
 
-    public function testRenameUpdatesProjectionEventStreamAndTransparencyLog(): void
+    public function testChangeNameUpdatesProjectionEventStreamAndTransparencyLog(): void
     {
         $owner = $this->persistOwner('renamer', twoFactor: true);
         $manager = static::getService(OrganizationManager::class);
@@ -46,10 +46,10 @@ class OrganizationEditTest extends IntegrationTestCase
             'SELECT type FROM organization_event WHERE aggregateId = :id AND sequence = 2',
             ['id' => $organization->id->toBinary()],
         );
-        self::assertSame('organization-renamed', $type);
+        self::assertSame('organization-name-changed', $type);
 
         $auditCount = $this->connection->fetchOne(
-            "SELECT COUNT(*) FROM audit_log WHERE type = 'organization_renamed'",
+            "SELECT COUNT(*) FROM audit_log WHERE type = 'organization_name_changed'",
         );
         self::assertSame(1, (int) $auditCount);
     }
@@ -81,7 +81,7 @@ class OrganizationEditTest extends IntegrationTestCase
         self::assertSame(1, (int) $auditCount);
     }
 
-    public function testRenameAndSlugChangeTogetherRecordTwoEvents(): void
+    public function testNameAndSlugChangeTogetherRecordTwoEvents(): void
     {
         $owner = $this->persistOwner('both', twoFactor: true);
         $manager = static::getService(OrganizationManager::class);
@@ -93,7 +93,7 @@ class OrganizationEditTest extends IntegrationTestCase
             'SELECT type FROM organization_event WHERE aggregateId = :id ORDER BY sequence',
             ['id' => $organization->id->toBinary()],
         );
-        self::assertSame(['organization-created', 'organization-renamed', 'organization-slug-changed'], $types);
+        self::assertSame(['organization-created', 'organization-name-changed', 'organization-slug-changed'], $types);
     }
 
     public function testUnchangedSubmissionIsNoop(): void

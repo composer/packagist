@@ -58,12 +58,12 @@ class OrganizationAggregateTest extends TestCase
         self::assertCount(0, $reloaded->pullPendingEvents());
     }
 
-    public function testRenameRecordsEventWithPreviousName(): void
+    public function testChangeNameRecordsEventWithPreviousName(): void
     {
         $id = new Ulid();
         $organization = $this->reconstituted($id, 'acme', 'ACME Corp');
 
-        $organization->rename(new DisplayName('ACME Inc'));
+        $organization->changeName(new DisplayName('ACME Inc'));
 
         $events = $organization->pullPendingEvents();
         self::assertCount(1, $events);
@@ -88,11 +88,11 @@ class OrganizationAggregateTest extends TestCase
         self::assertSame('acme-inc', $organization->slug());
     }
 
-    public function testRenameToSameNameIsNoop(): void
+    public function testChangeNameToSameNameIsNoop(): void
     {
         $organization = $this->reconstituted(new Ulid(), 'acme', 'ACME Corp');
 
-        $organization->rename(new DisplayName('ACME Corp'));
+        $organization->changeName(new DisplayName('ACME Corp'));
 
         self::assertCount(0, $organization->pullPendingEvents());
     }
@@ -106,13 +106,13 @@ class OrganizationAggregateTest extends TestCase
         self::assertCount(0, $organization->pullPendingEvents());
     }
 
-    public function testReconstituteReplaysRenameAndSlugChange(): void
+    public function testReconstituteReplaysNameAndSlugChange(): void
     {
         $id = new Ulid();
 
         $reloaded = Organization::reconstitute($id, [
             ['type' => OrganizationEventType::OrganizationCreated, 'payload' => ['slug' => 'acme', 'displayName' => 'ACME Corp']],
-            ['type' => OrganizationEventType::OrganizationRenamed, 'payload' => ['displayName' => 'ACME Inc', 'previousDisplayName' => 'ACME Corp']],
+            ['type' => OrganizationEventType::OrganizationNameChanged, 'payload' => ['displayName' => 'ACME Inc', 'previousDisplayName' => 'ACME Corp']],
             ['type' => OrganizationEventType::OrganizationSlugChanged, 'payload' => ['slug' => 'acme-inc', 'previousSlug' => 'acme']],
         ]);
 

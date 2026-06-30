@@ -63,7 +63,7 @@ enum AuditRecordType: string
 
     // organization
     case OrganizationCreated = 'organization_created';
-    case OrganizationRenamed = 'organization_renamed';
+    case OrganizationNameChanged = 'organization_name_changed';
     case OrganizationSlugChanged = 'organization_slug_changed';
 
     public function category(): string
@@ -84,7 +84,7 @@ enum AuditRecordType: string
             self::FilterListEntryEdited => 'filterlist',
             self::SecurityAdvisoryCreated, self::SecurityAdvisoryEdited,
             self::SecurityAdvisoryWithdrawn => 'advisory',
-            self::OrganizationCreated, self::OrganizationRenamed, self::OrganizationSlugChanged => 'organization',
+            self::OrganizationCreated, self::OrganizationNameChanged, self::OrganizationSlugChanged => 'organization',
         };
     }
 }

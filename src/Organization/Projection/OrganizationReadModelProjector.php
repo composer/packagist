@@ -65,7 +65,7 @@ final readonly class OrganizationReadModelProjector implements Projector
         }
 
         if ($event instanceof OrganizationNameChanged) {
-            $this->organization($event->organizationId)->rename($event->displayName);
+            $this->organization($event->organizationId)->changeName($event->displayName);
             $this->getEM()->flush();
 
             return;

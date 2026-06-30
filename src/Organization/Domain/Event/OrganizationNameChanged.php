@@ -18,7 +18,7 @@ use Symfony\Component\Uid\Ulid;
 
 final readonly class OrganizationNameChanged implements DomainEvent
 {
-    public const OrganizationEventType TYPE = OrganizationEventType::OrganizationRenamed;
+    public const OrganizationEventType TYPE = OrganizationEventType::OrganizationNameChanged;
 
     public function __construct(
         public Ulid $organizationId,

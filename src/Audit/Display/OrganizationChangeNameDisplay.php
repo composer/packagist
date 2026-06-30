@@ -14,7 +14,7 @@ namespace App\Audit\Display;
 
 use App\Audit\AuditRecordType;
 
-readonly class OrganizationRenamedDisplay extends AbstractAuditLogDisplay
+readonly class OrganizationChangeNameDisplay extends AbstractAuditLogDisplay
 {
     public function __construct(
         \DateTimeImmutable $datetime,
@@ -28,11 +28,11 @@ readonly class OrganizationRenamedDisplay extends AbstractAuditLogDisplay
 
     public function getType(): AuditRecordType
     {
-        return AuditRecordType::OrganizationRenamed;
+        return AuditRecordType::OrganizationNameChanged;
     }
 
     public function getTemplateName(): string
     {
-        return 'audit_log/display/organization_renamed.html.twig';
+        return 'audit_log/display/organization_name_changed.html.twig';
     }
 }

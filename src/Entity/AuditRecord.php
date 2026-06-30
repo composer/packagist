@@ -182,10 +182,10 @@ class AuditRecord
         );
     }
 
-    public static function organizationRenamed(Ulid $organizationId, string $displayName, string $previousDisplayName, ?User $actor): self
+    public static function organizationNameChanged(Ulid $organizationId, string $displayName, string $previousDisplayName, ?User $actor): self
     {
         return new self(
-            AuditRecordType::OrganizationRenamed,
+            AuditRecordType::OrganizationNameChanged,
             [
                 'organization_id' => (string) $organizationId,
                 'display_name_from' => $previousDisplayName,

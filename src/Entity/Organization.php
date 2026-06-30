@@ -71,7 +71,7 @@ class Organization
         return $this->deletedAt !== null;
     }
 
-    public function rename(string $displayName): void
+    public function changeName(string $displayName): void
     {
         $this->displayName = $displayName;
     }

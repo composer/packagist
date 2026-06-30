@@ -46,7 +46,7 @@ final class Organization extends AbstractAggregate
     /**
      * Change the display name. No-op when the name is unchanged.
      */
-    public function rename(DisplayName $displayName): void
+    public function changeName(DisplayName $displayName): void
     {
         if ($this->displayName === $displayName->value) {
             return;
@@ -117,7 +117,7 @@ final class Organization extends AbstractAggregate
     {
         return match ($type) {
             OrganizationEventType::OrganizationCreated => OrganizationCreated::fromPayload($id, $payload),
-            OrganizationEventType::OrganizationRenamed => OrganizationNameChanged::fromPayload($id, $payload),
+            OrganizationEventType::OrganizationNameChanged => OrganizationNameChanged::fromPayload($id, $payload),
             OrganizationEventType::OrganizationSlugChanged => OrganizationSlugChanged::fromPayload($id, $payload),
         };
     }
