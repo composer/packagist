@@ -17,6 +17,7 @@ use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationStatus;
 use App\Entity\SlugReservation;
 use App\Entity\SlugReservationKind;
+use App\Entity\SlugReservationRepository;
 use App\Entity\UserRepository;
 use App\Organization\Domain\Event\OrganizationCreated;
 use App\Organization\Domain\Event\OrganizationNameChanged;
@@ -39,6 +40,7 @@ final readonly class OrganizationReadModelProjector implements Projector
         private ManagerRegistry $doctrine,
         private UserRepository $users,
         private OrganizationRepository $organizations,
+        private SlugReservationRepository $reservations,
     ) {
     }
 
@@ -80,6 +82,12 @@ final readonly class OrganizationReadModelProjector implements Projector
     private function organizationSlugChanged(RecordedEvent $recorded, OrganizationSlugChanged $event): void
     {
         $this->organization($event->organizationId)->changeSlug($event->slug);
+
+        // Reclaiming a slug the org previously freed (e.g. acme -> acme-inc -> acme):
+        // release the now-stale reservation (kept for the audit trail) so the slug is live
+        // again and the active-slug unique constraint stays free for a future rename away.
+        $reclaimed = $this->reservations->findActiveForOrg($event->slug, $event->organizationId);
+        $reclaimed?->release($recorded->occurredAt);
 
         // Reserve the freed slug.
         $this->getEM()->persist(new SlugReservation(

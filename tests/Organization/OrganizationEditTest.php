@@ -111,6 +111,51 @@ class OrganizationEditTest extends IntegrationTestCase
         self::assertSame(1, (int) $count);
     }
 
+    public function testOrgCanReclaimItsOwnPreviousSlug(): void
+    {
+        $owner = $this->persistOwner('reclaimer', twoFactor: true);
+        $manager = static::getService(OrganizationManager::class);
+        $organization = $manager->create($owner, 'acme', 'ACME Corp', null);
+
+        // acme -> acme-inc reserves "acme" for this org.
+        $manager->edit($this->readModel('acme'), $owner, 'acme-inc', 'ACME Corp', null);
+
+        // acme-inc -> acme must succeed: the org reclaims the slug it freed.
+        $manager->edit($this->readModel('acme-inc'), $owner, 'acme', 'ACME Corp', null);
+
+        self::assertNull($this->readModel('acme-inc'));
+        self::assertNotNull($this->readModel('acme'));
+
+        // Only "acme-inc" is now actively reserved; the reclaimed "acme" reservation is released.
+        $active = $this->connection->fetchAllAssociative(
+            'SELECT slug FROM slug_reservation WHERE orgId = :id AND releasedAt IS NULL ORDER BY slug',
+            ['id' => $organization->id->toBinary()],
+        );
+        self::assertSame([['slug' => 'acme-inc']], $active);
+
+        // The "acme" reservation row is preserved for the audit trail, just released.
+        $released = $this->connection->fetchAllAssociative(
+            'SELECT slug FROM slug_reservation WHERE orgId = :id AND releasedAt IS NOT NULL ORDER BY slug',
+            ['id' => $organization->id->toBinary()],
+        );
+        self::assertSame([['slug' => 'acme']], $released);
+    }
+
+    public function testEditRejectsSlugReservedByAnotherOrg(): void
+    {
+        $owner = $this->persistOwner('rivals', twoFactor: true);
+        $manager = static::getService(OrganizationManager::class);
+        $manager->create($owner, 'acme', 'ACME Corp', null);
+        $manager->create($owner, 'globex', 'Globex', null);
+
+        // globex renames away, freeing and reserving "globex" against itself.
+        $manager->edit($this->readModel('globex'), $owner, 'globex-corp', 'Globex', null);
+
+        // acme cannot claim "globex" while another org holds the active reservation.
+        $this->expectException(SlugTakenException::class);
+        $manager->edit($this->readModel('acme'), $owner, 'globex', 'ACME Corp', null);
+    }
+
     public function testEditRejectsReservedSlug(): void
     {
         $owner = $this->persistOwner('reserved', twoFactor: true);

@@ -64,16 +64,27 @@ class SlugReservation
         public readonly \DateTimeImmutable $reservedAt,
 
         #[ORM\Column(nullable: true)]
-        public readonly ?\DateTimeImmutable $releasedAt = null,
+        public ?\DateTimeImmutable $releasedAt = null,
 
-        /** Packagist-admin who released the slug. References fos_user.id. */
+        /** Packagist-admin who released the slug, or null when the owning org reclaimed it. References fos_user.id. */
         #[ORM\Column(nullable: true)]
-        public readonly ?int $releasedBy = null,
+        public ?int $releasedBy = null,
     ) {
     }
 
     public function isActive(): bool
     {
         return $this->releasedAt === null;
+    }
+
+    /**
+     * Marks the reservation as no longer active. The row is kept for the audit trail;
+     * clearing the active state frees the `activeSlug` unique constraint so the slug
+     * can be held again. $releasedBy is null when the owning org reclaimed the slug.
+     */
+    public function release(\DateTimeImmutable $releasedAt, ?int $releasedBy = null): void
+    {
+        $this->releasedAt = $releasedAt;
+        $this->releasedBy = $releasedBy;
     }
 }

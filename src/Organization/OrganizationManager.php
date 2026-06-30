@@ -76,7 +76,7 @@ final class OrganizationManager
         }
 
         if ($slugChanged) {
-            $this->slugChecker->assertClaimable($newSlug, $actor);
+            $this->slugChecker->assertClaimable($newSlug, $actor, $organization);
         }
 
         $aggregate = Organization::reconstitute(
