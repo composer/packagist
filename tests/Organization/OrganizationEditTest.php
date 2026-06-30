@@ -19,34 +19,25 @@ use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\OrganizationManager;
+use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
-class OrganizationEditTest extends KernelTestCase
+class OrganizationEditTest extends IntegrationTestCase
 {
     private Connection $connection;
 
     protected function setUp(): void
     {
-        self::bootKernel();
-        $this->connection = static::getContainer()->get(Connection::class);
-        $this->connection->beginTransaction();
-
         parent::setUp();
-    }
 
-    protected function tearDown(): void
-    {
-        $this->connection->rollBack();
-
-        parent::tearDown();
+        $this->connection = self::getService(Connection::class);
     }
 
     public function testRenameUpdatesProjectionEventStreamAndTransparencyLog(): void
     {
         $owner = $this->persistOwner('renamer', twoFactor: true);
-        $manager = static::getContainer()->get(OrganizationManager::class);
+        $manager = static::getService(OrganizationManager::class);
         $organization = $manager->create($owner, 'acme', 'ACME Corp', null);
 
         $manager->edit($this->readModel('acme'), $owner, 'acme', 'ACME Inc', '203.0.113.5');
@@ -68,7 +59,7 @@ class OrganizationEditTest extends KernelTestCase
     public function testSlugChangeReservesOldSlugAndUpdatesProjection(): void
     {
         $owner = $this->persistOwner('reslugger', twoFactor: true);
-        $manager = static::getContainer()->get(OrganizationManager::class);
+        $manager = static::getService(OrganizationManager::class);
         $organization = $manager->create($owner, 'acme', 'ACME Corp', null);
 
         $manager->edit($this->readModel('acme'), $owner, 'acme-inc', 'ACME Corp', null);
@@ -95,7 +86,7 @@ class OrganizationEditTest extends KernelTestCase
     public function testRenameAndSlugChangeTogetherRecordTwoEvents(): void
     {
         $owner = $this->persistOwner('both', twoFactor: true);
-        $manager = static::getContainer()->get(OrganizationManager::class);
+        $manager = static::getService(OrganizationManager::class);
         $organization = $manager->create($owner, 'acme', 'ACME Corp', null);
 
         $manager->edit($this->readModel('acme'), $owner, 'acme-inc', 'ACME Inc', null);
@@ -110,7 +101,7 @@ class OrganizationEditTest extends KernelTestCase
     public function testUnchangedSubmissionIsNoop(): void
     {
         $owner = $this->persistOwner('noop', twoFactor: true);
-        $manager = static::getContainer()->get(OrganizationManager::class);
+        $manager = static::getService(OrganizationManager::class);
         $organization = $manager->create($owner, 'acme', 'ACME Corp', null);
 
         $manager->edit($this->readModel('acme'), $owner, 'acme', 'ACME Corp', null);
@@ -125,7 +116,7 @@ class OrganizationEditTest extends KernelTestCase
     public function testEditRejectsReservedSlug(): void
     {
         $owner = $this->persistOwner('reserved', twoFactor: true);
-        $manager = static::getContainer()->get(OrganizationManager::class);
+        $manager = static::getService(OrganizationManager::class);
         $manager->create($owner, 'acme', 'ACME Corp', null);
 
         $this->expectException(InvalidSlugException::class);
@@ -135,7 +126,7 @@ class OrganizationEditTest extends KernelTestCase
     public function testEditRejectsReservedDisplayName(): void
     {
         $owner = $this->persistOwner('reservedname', twoFactor: true);
-        $manager = static::getContainer()->get(OrganizationManager::class);
+        $manager = static::getService(OrganizationManager::class);
         $manager->create($owner, 'acme', 'ACME Corp', null);
 
         $this->expectException(InvalidDisplayNameException::class);
@@ -145,7 +136,7 @@ class OrganizationEditTest extends KernelTestCase
     public function testEditRejectsSlugTakenByAnotherOrg(): void
     {
         $owner = $this->persistOwner('taker', twoFactor: true);
-        $manager = static::getContainer()->get(OrganizationManager::class);
+        $manager = static::getService(OrganizationManager::class);
         $manager->create($owner, 'acme', 'ACME Corp', null);
         $manager->create($owner, 'globex', 'Globex', null);
 
@@ -155,7 +146,7 @@ class OrganizationEditTest extends KernelTestCase
 
     private function readModel(string $slug): ?Organization
     {
-        return static::getContainer()->get(OrganizationRepository::class)->findOneBySlug($slug);
+        return static::getService(OrganizationRepository::class)->findOneBySlug($slug);
     }
 
     private function persistOwner(string $username, bool $twoFactor): User
@@ -171,7 +162,7 @@ class OrganizationEditTest extends KernelTestCase
             $user->setTotpSecret('totp-secret');
         }
 
-        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+        $em = static::getEM();
         $em->persist($user);
         $em->flush();
 
