@@ -1,7 +1,7 @@
 {% extends 'organization/layout.html.twig' %}
 
 {% block org_content %}
-    {% if is_granted(enum('App\\Security\\Voter\\OrganizationActions').EditDisplayInfo.value, organization) %}
+    {% if is_granted(enum('App\\Security\\Voter\\OrganizationActions').Edit.value, organization) %}
         <a href="{{ path('organization_settings', { organization: organization.slug }) }}" class="btn btn-default pull-right">Edit settings</a>
     {% endif %}
 

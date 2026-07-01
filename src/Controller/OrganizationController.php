@@ -94,7 +94,7 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/settings', name: 'organization_settings', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
     public function settings(Request $request, Organization $organization, #[CurrentUser] User $user): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::EditDisplayInfo->value, $organization);
+        $this->denyAccessUnlessGranted(OrganizationActions::Edit->value, $organization);
 
         // 2FA is required to manage organization settings
         if (!$user->isTotpAuthenticationEnabled()) {
