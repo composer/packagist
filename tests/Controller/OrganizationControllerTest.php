@@ -231,7 +231,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->store($owner);
 
         // Create through the event store so the aggregate has a history to update.
-        static::getContainer()->get(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
 
         $this->client->loginUser($owner);
         $crawler = $this->client->request('GET', '/organizations/acme/settings');
@@ -247,6 +247,49 @@ class OrganizationControllerTest extends IntegrationTestCase
         $organization = $this->organizations()->findOneBySlug('acme');
         self::assertNotNull($organization);
         self::assertSame('ACME Inc', $organization->displayName);
+    }
+
+    public function testShowRedirectsOldSlugToCurrentSlug(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner);
+
+        $this->renameOrganization($owner, 'acme', 'acme-inc');
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/organizations/acme');
+
+        // The old slug redirects (temporarily) to the current slug while the reservation is active.
+        self::assertResponseRedirects('/organizations/acme-inc', 302);
+    }
+
+    public function testRedirectPreservesTheRouteForOldSlug(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        $this->renameOrganization($owner, 'acme', 'acme-inc');
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/organizations/acme/settings');
+
+        self::assertResponseRedirects('/organizations/acme-inc/settings', 302);
+    }
+
+    /**
+     * Creates an organization and renames its slug through the event store, leaving an active
+     * `RenamedFrom` reservation for the old slug.
+     */
+    private function renameOrganization(User $owner, string $from, string $to): void
+    {
+        $manager = static::getService(OrganizationManager::class);
+        $manager->create($owner, $from, 'ACME Corp', null);
+
+        $organization = $this->organizations()->findOneBySlug($from);
+        self::assertNotNull($organization);
+
+        $manager->edit($organization, $owner, $to, 'ACME Corp', null);
     }
 
     private function createAdminWithTwoFactor(): User
@@ -276,6 +319,6 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     private function organizations(): OrganizationRepository
     {
-        return static::getContainer()->get(OrganizationRepository::class);
+        return static::getService(OrganizationRepository::class);
     }
 }

@@ -49,6 +49,24 @@ class SlugReservationRepository extends ServiceEntityRepository
     }
 
     /**
+     * The active (not yet released) reservation left behind by a rename, if any.
+     *
+     * Only `RenamedFrom` reservations are returned: they point at an organization that still
+     * exists under a new slug, so the old slug can redirect to it. `Deleted` reservations are
+     * excluded on purpose, they keep showing the gone page rather than redirecting.
+     */
+    public function findActiveRename(string $slug): ?SlugReservation
+    {
+        return $this->createQueryBuilder('r')
+            ->where('r.activeSlug = :slug')
+            ->andWhere('r.kind = :kind')
+            ->setParameter('slug', $slug)
+            ->setParameter('kind', SlugReservationKind::RenamedFrom)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
      * The active (not yet released) reservation an organization holds for this slug, if any.
      */
     public function findActiveForOrg(string $slug, Ulid $orgId): ?SlugReservation
