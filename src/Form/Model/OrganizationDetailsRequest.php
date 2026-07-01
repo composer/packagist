@@ -18,7 +18,7 @@ use App\Validator\NotReservedWord;
 use App\Validator\ValidValueObject;
 use Symfony\Component\Validator\Constraints as Assert;
 
-class SaveOrganizationDetailsRequest
+class OrganizationDetailsRequest
 {
     #[Assert\NotBlank]
     #[ValidValueObject(Slug::class)]

@@ -15,9 +15,8 @@ namespace App\Controller;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
-use App\Form\Model\SaveOrganizationDetailsRequest;
-use App\Form\Type\CreateOrganizationType;
-use App\Form\Type\EditOrganizationType;
+use App\Form\Model\OrganizationDetailsRequest;
+use App\Form\Type\OrganizationDetailsType;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Slug;
 use App\Organization\OrganizationManager;
@@ -58,8 +57,8 @@ class OrganizationController extends Controller
             return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
-        $createRequest = new SaveOrganizationDetailsRequest();
-        $form = $this->createForm(CreateOrganizationType::class, $createRequest);
+        $createRequest = new OrganizationDetailsRequest();
+        $form = $this->createForm(OrganizationDetailsType::class, $createRequest);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -104,11 +103,11 @@ class OrganizationController extends Controller
             return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
-        $editRequest = new SaveOrganizationDetailsRequest();
+        $editRequest = new OrganizationDetailsRequest();
         $editRequest->slug = $organization->slug;
         $editRequest->displayName = $organization->displayName;
 
-        $form = $this->createForm(EditOrganizationType::class, $editRequest);
+        $form = $this->createForm(OrganizationDetailsType::class, $editRequest, ['include_rename_notice' => true]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

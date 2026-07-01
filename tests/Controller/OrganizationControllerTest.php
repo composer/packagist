@@ -149,8 +149,8 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/create');
 
         $form = $crawler->selectButton('Create organization')->form([
-            'create_organization[displayName]' => 'ACME Corp',
-            'create_organization[slug]' => 'acme',
+            'organization_details[displayName]' => 'ACME Corp',
+            'organization_details[slug]' => 'acme',
         ]);
         $this->client->submit($form);
 
@@ -171,14 +171,14 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/create');
 
         $form = $crawler->selectButton('Create organization')->form([
-            'create_organization[displayName]' => 'Acme Corp',
-            'create_organization[slug]' => 'composer',
+            'organization_details[displayName]' => 'Acme Corp',
+            'organization_details[slug]' => 'composer',
         ]);
         $crawler = $this->client->submit($form);
 
         // A reserved slug is rejected by form validation and surfaced as a form error, not a 500.
         self::assertResponseIsSuccessful();
-        $this->assertFormError('"composer" is a reserved name and cannot be used.', 'create_organization', $crawler);
+        $this->assertFormError('"composer" is a reserved name and cannot be used.', 'organization_details', $crawler);
         self::assertNull($this->organizations()->findOneBySlug('composer'));
     }
 
@@ -220,8 +220,8 @@ class OrganizationControllerTest extends IntegrationTestCase
 
         self::assertResponseIsSuccessful();
         self::assertCount(1, $crawler->selectButton('Save changes'));
-        self::assertSame('ACME Corp', $crawler->filter('#edit_organization_displayName')->attr('value'));
-        self::assertSame('acme', $crawler->filter('#edit_organization_slug')->attr('value'));
+        self::assertSame('ACME Corp', $crawler->filter('#organization_details_displayName')->attr('value'));
+        self::assertSame('acme', $crawler->filter('#organization_details_slug')->attr('value'));
     }
 
     public function testOwnerRenamesViaSettings(): void
@@ -237,8 +237,8 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/acme/settings');
 
         $form = $crawler->selectButton('Save changes')->form([
-            'edit_organization[displayName]' => 'ACME Inc',
-            'edit_organization[slug]' => 'acme',
+            'organization_details[displayName]' => 'ACME Inc',
+            'organization_details[slug]' => 'acme',
         ]);
         $this->client->submit($form);
 
