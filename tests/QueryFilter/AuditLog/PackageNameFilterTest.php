@@ -145,4 +145,45 @@ class PackageNameFilterTest extends TestCase
         $this->assertStringStartsWith('"', $pattern);
         $this->assertStringEndsWith('"', $pattern);
     }
+
+    public function testFilterAppliesVendorPreFilterForExactPackageName(): void
+    {
+        $bag = new InputBag(['package' => 'vendor/package']);
+        $filter = PackageNameFilter::fromQuery($bag, 'package', false);
+
+        $qb = new QueryBuilder($this->entityManager);
+        $qb->from(AuditRecord::class, 'a');
+        $filter->filter($qb);
+
+        $this->assertSame('vendor', $qb->getParameter('pkgVendor')->getValue());
+        $this->assertStringContainsString('a.vendor = :pkgVendor', (string) $qb->getDQLPart('where'));
+    }
+
+    public function testFilterAppliesVendorPreFilterWhenWildcardOnlyInPackageSegment(): void
+    {
+        $bag = new InputBag(['package' => 'vendor/pack*']);
+        $filter = PackageNameFilter::fromQuery($bag, 'package', true);
+
+        $qb = new QueryBuilder($this->entityManager);
+        $qb->from(AuditRecord::class, 'a');
+        $filter->filter($qb);
+
+        $this->assertSame('vendor', $qb->getParameter('pkgVendor')->getValue());
+        $this->assertStringContainsString('a.vendor = :pkgVendor', (string) $qb->getDQLPart('where'));
+    }
+
+    public function testFilterSkipsVendorPreFilterWhenWildcardInVendorSegment(): void
+    {
+        $bag = new InputBag(['package' => 'ven*/package']);
+        $filter = PackageNameFilter::fromQuery($bag, 'package', true);
+
+        $qb = new QueryBuilder($this->entityManager);
+        $qb->from(AuditRecord::class, 'a');
+        $filter->filter($qb);
+
+        // The vendor segment "ven%" cannot match via an exact-match pre-filter, so it must be skipped
+        $this->assertNull($qb->getParameter('pkgVendor'));
+        $this->assertStringNotContainsString('a.vendor', (string) $qb->getDQLPart('where'));
+        $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.name') LIKE :package", (string) $qb->getDQLPart('where'));
+    }
 }

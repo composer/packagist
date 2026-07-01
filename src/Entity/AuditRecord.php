@@ -16,6 +16,7 @@ use App\Audit\AbandonmentReason;
 use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
 use App\Audit\VersionDeletionReason;
+use Composer\Pcre\Preg;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
@@ -328,9 +329,12 @@ class AuditRecord
         return new self(
             AuditRecordType::FilterListEntryAdded,
             [
+                'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
                 'actor' => self::getUserData($actor, 'automation'),
             ],
+            vendor: self::getVendorFromPackage($entry->getPackageName()),
+            actorId: $actor?->getId(),
         );
     }
 
@@ -339,9 +343,12 @@ class AuditRecord
         return new self(
             AuditRecordType::FilterListEntryDeleted,
             [
+                'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
                 'actor' => self::getUserData($actor, 'automation'),
             ],
+            vendor: self::getVendorFromPackage($entry->getPackageName()),
+            actorId: $actor?->getId(),
         );
     }
 
@@ -369,5 +376,10 @@ class AuditRecord
             'reason' => $entry->getReason(),
             'source' => $entry->getSource()->value,
         ];
+    }
+
+    private static function getVendorFromPackage(string $packageName): string
+    {
+        return Preg::replace('{/.*$}', '', $packageName);
     }
 }

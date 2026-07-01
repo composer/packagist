@@ -12,6 +12,7 @@
 
 namespace App\QueryFilter\AuditLog;
 
+use Composer\Pcre\Preg;
 use Doctrine\ORM\QueryBuilder;
 
 class PackageNameFilter extends AbstractAdminAwareTextFilter
@@ -24,6 +25,17 @@ class PackageNameFilter extends AbstractAdminAwareTextFilter
         } else {
             $qb->setParameter($paramName, $pattern);
             $qb->andWhere("JSON_EXTRACT(a.attributes, '$.name') = :".$paramName);
+        }
+
+        if (str_contains($pattern, '/')) {
+            $vendor = Preg::replace('{/.*$}', '', $pattern);
+            // The vendor pre-filter is an indexed exact match; skip it when the vendor segment
+            // itself contains a wildcard (e.g. "ven*/pkg" -> pattern "ven%/pkg"), since
+            // `a.vendor = 'ven%'` would match nothing and wrongly empty the result set.
+            if (!$useWildcard || !str_contains($vendor, '%')) {
+                $qb->setParameter('pkgVendor', $vendor);
+                $qb->andWhere('a.vendor = :pkgVendor');
+            }
         }
 
         return $qb;
