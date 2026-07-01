@@ -529,7 +529,7 @@ class V2Dumper
 
             if ($localContent !== $cdnContent) {
                 $this->statsd->increment('packagist.metadata_cdn_purge_warn');
-                $this->logger->error(
+                $this->logger->notice(
                     'Mismatch detected for CDN file: '.$relativePath.', purging again',
                     ['file' => $relativePath, 'local' => base64_encode($localContent), 'cdn' => base64_encode($cdnContent)]
                 );
