@@ -228,6 +228,9 @@ class Version
     #[ORM\Column(type: 'text', length: 65535, nullable: true)]
     private ?string $deletionReasonText = null;
 
+    #[ORM\Column(type: 'text', length: 65535, nullable: true)]
+    private ?string $internalDeletionReasonText = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $lastBlockedReference = null;
 
@@ -726,6 +729,20 @@ class Version
     public function getDeletionReasonText(): ?string
     {
         return $this->deletionReasonText;
+    }
+
+    /**
+     * Admin-only deletion reason. Never shown publicly (audit log restricted to ROLE_AUDITOR),
+     * never serialized to API/metadata, may contain private notes/PII.
+     */
+    public function setInternalDeletionReasonText(?string $text): void
+    {
+        $this->internalDeletionReasonText = $text;
+    }
+
+    public function getInternalDeletionReasonText(): ?string
+    {
+        return $this->internalDeletionReasonText;
     }
 
     public function setLastBlockedReference(?string $ref): void

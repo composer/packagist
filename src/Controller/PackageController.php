@@ -21,7 +21,6 @@ use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
 use App\Entity\Job;
 use App\Entity\Package;
-use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
 use App\Entity\PhpStat;
@@ -458,7 +457,7 @@ class PackageController extends Controller
         return $this->redirectToRoute('view_spam');
     }
 
-    #[IsGranted('ROLE_ADMIN')]
+    #[IsGranted('ROLE_DISABLE_PACKAGES')]
     #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'html'], methods: ['POST'])]
     public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] User $user): Response
     {
@@ -471,11 +470,11 @@ class PackageController extends Controller
             return $package;
         }
 
-        $wasSpam = $package->getFreezeReason() === PackageFreezeReason::Spam;
+        $wasSuppressed = $package->getFreezeReason()?->suppressesPackage() ?? false;
         $package->unfreeze();
         $this->getEM()->persist($package);
 
-        if ($wasSpam) {
+        if ($wasSuppressed) {
             $this->getEM()->getRepository(Version::class)->recoverHiddenVersionsForPackage($package, $user);
         }
 
@@ -512,8 +511,8 @@ class PackageController extends Controller
             return $package;
         }
 
-        if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam && !$this->isGranted('ROLE_ANTISPAM')) {
-            throw new NotFoundHttpException('This is a spam package');
+        if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage() && !$this->isGranted('ROLE_ANTISPAM') && !$this->isGranted('ROLE_DISABLE_PACKAGES')) {
+            throw new NotFoundHttpException('This package has been frozen');
         }
 
         $repo = $this->getEM()->getRepository(Package::class);
@@ -759,7 +758,7 @@ class PackageController extends Controller
         if ($this->isGranted('ROLE_ANTISPAM')) {
             $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
         }
-        if ($this->isGranted('ROLE_ADMIN')) {
+        if ($this->isGranted('ROLE_DISABLE_PACKAGES')) {
             $data['unfreezeCsrfToken'] = $csrfTokenManager->getToken('unfreeze');
         }
 
@@ -873,7 +872,7 @@ class PackageController extends Controller
             $reason = !$package->isMaintainer($user) && $this->isGranted(PackageActions::AdminDeleteVersion->value, $package)
                 ? VersionDeletionReason::DeletedByAdmin
                 : VersionDeletionReason::DeletedByMaintainer;
-            $repo->softDelete($version, $reason, null, $user);
+            $repo->softDelete($version, $reason, null, null, $user);
             $deletionTitle = $reason === VersionDeletionReason::DeletedByAdmin
                 ? 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
                 : 'Deleted by maintainer on '.gmdate('Y-m-d H:i:s').' UTC';
@@ -903,15 +902,14 @@ class PackageController extends Controller
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
-        $reasonText = trim($req->request->getString('reason'));
-        if ($reasonText === '') {
-            $reasonText = null;
-        }
+        $reasonText = trim($req->request->getString('reason')) ?: null;
+        $internalReasonText = trim($req->request->getString('internalReason')) ?: null;
 
-        $repo->softDelete($version, VersionDeletionReason::DeletedByAdmin, $reasonText, $user);
+        $repo->softDelete($version, VersionDeletionReason::DeletedByAdmin, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
         $this->getEM()->clear();
 
+        // deletionTitle becomes a public tooltip, so it only carries the public reason.
         $deletionTitle = 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
             .($reasonText !== null ? ': '.$reasonText : '');
 
@@ -934,12 +932,10 @@ class PackageController extends Controller
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
-        $reasonText = trim($req->request->getString('reason'));
-        if ($reasonText === '') {
-            $reasonText = null;
-        }
+        $reasonText = trim($req->request->getString('reason')) ?: null;
+        $internalReasonText = trim($req->request->getString('internalReason')) ?: null;
 
-        $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $user);
+        $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
         $this->getEM()->clear();
 
@@ -991,8 +987,8 @@ class PackageController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
         }
 
-        if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam) {
-            throw new NotFoundHttpException('This is a spam package');
+        if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage()) {
+            throw new NotFoundHttpException('This package has been frozen');
         }
 
         $update = $req->request->getBoolean('update', $req->query->getBoolean('update'));
@@ -1042,6 +1038,13 @@ class PackageController extends Controller
 
         $this->denyAccessUnlessGranted(PackageActions::Delete->value, $package);
 
+        // Optional deletion reasons, only recorded for admins
+        $reason = $internalReason = null;
+        if ($this->isGranted('ROLE_DELETE_PACKAGES')) {
+            $reason = trim($req->request->getString('reason')) ?: null;
+            $internalReason = trim($req->request->getString('internalReason')) ?: null;
+        }
+
         $form = $this->createDeletePackageForm($package);
         $form->submit($req->request->all('form'));
         if ($form->isSubmitted() && $form->isValid()) {
@@ -1049,7 +1052,7 @@ class PackageController extends Controller
                 $req->getSession()->save();
             }
 
-            $this->packageManager->deletePackage($package);
+            $this->packageManager->deletePackage($package, $reason, $internalReason);
 
             return new Response('', 204);
         }

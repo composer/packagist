@@ -211,6 +211,31 @@ class V2DumperTest extends IntegrationTestCase
         $this->assertFileDoesNotExist($releaseFile);
     }
 
+    public function testMalwareFrozenPackageIsSkipped(): void
+    {
+        $package = self::createPackage('acme/malware-pkg', 'https://example.com/acme/malware-pkg');
+        $package->freeze(PackageFreezeReason::Malware);
+        $version = $this->createVersion($package, '1.0.0');
+        $this->store($package, $version);
+
+        $this->dumper->dump([$package->getId()], force: true);
+
+        $this->assertFileDoesNotExist($this->buildDir.'/p2/acme/malware-pkg.json');
+    }
+
+    public function testTemporarilyFrozenPackageStillKeepsMetadata(): void
+    {
+        $package = self::createPackage('acme/temp-pkg', 'https://example.com/acme/temp-pkg');
+        $package->freeze(PackageFreezeReason::Temporary);
+        $version = $this->createVersion($package, '1.0.0');
+        $this->store($package, $version);
+
+        $this->dumper->dump([$package->getId()], force: true);
+
+        // A temporary freeze keeps the package's metadata served; it is just not updated.
+        $this->assertFileExists($this->buildDir.'/p2/acme/temp-pkg.json');
+    }
+
     public function testSoftDeletedVersionIsExcludedFromMetadata(): void
     {
         $package = self::createPackage('acme/pkg-sd', 'https://example.com/acme/pkg-sd');

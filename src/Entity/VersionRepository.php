@@ -97,15 +97,16 @@ class VersionRepository extends ServiceEntityRepository
      * Soft-delete a version with a reason. Schedules a fresh Updater run so dependents/suggesters
      * and the V2 dump get recomputed without the version (frozen packages only get marked for dump).
      */
-    public function softDelete(Version $version, VersionDeletionReason $reason, ?string $reasonText, ?User $actor): void
+    public function softDelete(Version $version, VersionDeletionReason $reason, ?string $reasonText, ?string $internalReasonText, ?User $actor): void
     {
         $em = $this->getEntityManager();
         $version->setSoftDeletedAt(new \DateTimeImmutable());
         $version->setDeletionReason($reason);
         $version->setDeletionReasonText($reasonText);
+        $version->setInternalDeletionReasonText($internalReasonText);
         $em->persist($version);
 
-        $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $actor));
+        $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $internalReasonText, $actor));
 
         if (!$version->getPackage()->isFrozen()) {
             $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover');
@@ -139,6 +140,7 @@ class VersionRepository extends ServiceEntityRepository
             $version->setSoftDeletedAt(null);
             $version->setDeletionReason(null);
             $version->setDeletionReasonText(null);
+            $version->setInternalDeletionReasonText(null);
             $em->persist($version);
             $em->persist(AuditRecord::versionRecovered($version, VersionDeletionReason::Hidden, $actor));
         }
@@ -159,6 +161,7 @@ class VersionRepository extends ServiceEntityRepository
         $version->setSoftDeletedAt(null);
         $version->setDeletionReason(null);
         $version->setDeletionReasonText(null);
+        $version->setInternalDeletionReasonText(null);
         $em->persist($version);
 
         $em->persist(AuditRecord::versionRecovered($version, $previousReason, $actor));

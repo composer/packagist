@@ -71,17 +71,35 @@ class AuditRecord
 
     public static function packageCreated(Package $package, ?User $actor): self
     {
-        return new self(AuditRecordType::PackageCreated, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(
+            AuditRecordType::PackageCreated,
+            ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor)],
+            $actor?->getId(),
+            $package->getVendor(),
+            $package->getId()
+        );
     }
 
-    public static function packageDeleted(Package $package, ?User $actor): self
+    public static function packageDeleted(Package $package, ?User $actor, ?string $reason = null, ?string $internalReason = null): self
     {
-        return new self(AuditRecordType::PackageDeleted, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(
+            AuditRecordType::PackageDeleted,
+            ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason, 'internalReason' => $internalReason, 'actor' => self::getUserData($actor, 'automation')],
+            $actor?->getId(),
+            $package->getVendor(),
+            $package->getId()
+        );
     }
 
     public static function canonicalUrlChange(Package $package, ?User $actor, string $oldRepository): self
     {
-        return new self(AuditRecordType::CanonicalUrlChanged, ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(
+            AuditRecordType::CanonicalUrlChanged,
+            ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($actor)],
+            $actor?->getId(),
+            $package->getVendor(),
+            $package->getId()
+        );
     }
 
     /**
@@ -93,7 +111,13 @@ class AuditRecord
         $previous = array_values(array_map(self::getUserData(...), $previousMaintainers));
         $current = array_values(array_map(self::getUserData(...), $currentMaintainers));
 
-        return new self(AuditRecordType::PackageTransferred, ['name' => $package->getName(), 'actor' => self::getUserData($actor, 'admin'), 'previous_maintainers' => $previous, 'current_maintainers' => $current], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(
+            AuditRecordType::PackageTransferred,
+            ['name' => $package->getName(), 'actor' => self::getUserData($actor, 'admin'), 'previous_maintainers' => $previous, 'current_maintainers' => $current],
+            $actor?->getId(),
+            $package->getVendor(),
+            $package->getId()
+        );
     }
 
     /**
@@ -103,23 +127,35 @@ class AuditRecord
     {
         $package = $version->getPackage();
 
-        return new self(AuditRecordType::VersionCreated, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation'), 'metadata' => $metadata], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(
+            AuditRecordType::VersionCreated,
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation'), 'metadata' => $metadata],
+            $actor?->getId(),
+            $package->getVendor(),
+            $package->getId()
+        );
     }
 
     public static function versionDeleted(Version $version, ?User $actor): self
     {
         $package = $version->getPackage();
 
-        return new self(AuditRecordType::VersionDeleted, ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(
+            AuditRecordType::VersionDeleted,
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation')],
+            $actor?->getId(),
+            $package->getVendor(),
+            $package->getId()
+        );
     }
 
-    public static function versionSoftDeleted(Version $version, VersionDeletionReason $reason, ?string $reasonText, ?User $actor): self
+    public static function versionSoftDeleted(Version $version, VersionDeletionReason $reason, ?string $reasonText, ?string $internalReasonText, ?User $actor): self
     {
         $package = $version->getPackage();
 
         return new self(
             AuditRecordType::VersionSoftDeleted,
-            ['name' => $package->getName(), 'version' => $version->getVersion(), 'reason' => $reason->value, 'reasonText' => $reasonText, 'actor' => self::getUserData($actor, 'automation')],
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'reason' => $reason->value, 'reasonText' => $reasonText, 'internalReasonText' => $internalReasonText, 'actor' => self::getUserData($actor, 'automation')],
             $actor?->getId(),
             $package->getVendor(),
             $package->getId()
@@ -254,6 +290,37 @@ class AuditRecord
             AuditRecordType::UserDeleted,
             [
                 'user' => self::getUserData($user),
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            actorId: $actor?->getId(),
+            userId: $user->getId(),
+        );
+    }
+
+    public static function userFrozen(User $user, ?User $actor, UserFreezeReason $reason, ?string $reasonText = null, ?string $internalReason = null): self
+    {
+        return new self(
+            AuditRecordType::UserFrozen,
+            [
+                'user' => self::getUserData($user),
+                'reason' => $reason->value,
+                'reasonText' => $reasonText,
+                'internalReason' => $internalReason,
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            actorId: $actor?->getId(),
+            userId: $user->getId(),
+        );
+    }
+
+    public static function userUnfrozen(User $user, ?User $actor, ?string $reasonText = null, ?string $internalReason = null): self
+    {
+        return new self(
+            AuditRecordType::UserUnfrozen,
+            [
+                'user' => self::getUserData($user),
+                'reasonText' => $reasonText,
+                'internalReason' => $internalReason,
                 'actor' => self::getUserData($actor, 'automation'),
             ],
             actorId: $actor?->getId(),

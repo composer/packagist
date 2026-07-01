@@ -67,11 +67,15 @@ const init = function ($) {
         }
     }());
 
-    function dispatchAjaxForm(form, success, className) {
+    function dispatchAjaxForm(form, success, className, extraData) {
+        var data = $(form).serializeArray();
+        if (extraData) {
+            data = data.concat(extraData);
+        }
         var options = {
             cache: false,
             success: success,
-            data: $(form).serializeArray(),
+            data: data,
             type: $(form).attr('method'),
             url: $(form).attr('action')
         };
@@ -80,6 +84,30 @@ const init = function ($) {
         }
         $.ajax(options).then(() => { $(form).removeClass(className); });
         $(form).addClass(className);
+    }
+
+    // Show the shared deletion-reason modal to capture an optional public + internal (admin-only) reason.
+    // Calls onConfirm(publicReason, internalReason) on confirm; aborts silently on cancel/dismiss.
+    // Falls back to a plain confirm() if the modal markup is absent on the page.
+    function promptDeletionReasons(opts, onConfirm) {
+        var modal = $('#deletion-reason-modal');
+        if (!modal.length) {
+            if (window.confirm(opts.title + '?')) {
+                onConfirm('', '');
+            }
+            return;
+        }
+        modal.find('.modal-title').text(opts.title);
+        modal.find('.deletion-reason-confirm').text(opts.confirmLabel || 'Confirm');
+        modal.find('.deletion-reason-public').val('');
+        modal.find('.deletion-reason-internal').val('');
+        modal.find('.deletion-reason-confirm').off('click').on('click', function () {
+            var publicReason = modal.find('.deletion-reason-public').val().trim();
+            var internalReason = modal.find('.deletion-reason-internal').val().trim();
+            modal.modal('hide');
+            onConfirm(publicReason, internalReason);
+        });
+        modal.modal('show');
     }
 
     function forceUpdatePackage(e, updateAll) {
@@ -176,13 +204,23 @@ const init = function ($) {
     });
     $('.package .delete').on('submit', function (e) {
         e.preventDefault();
-        if (window.confirm('Are you sure you want to delete this package?')) {
-            dispatchAjaxForm(this, function () {
-                notifier.log('Package successfully deleted');
-                setTimeout(function () {
-                    document.location.href = document.location.href.replace(/\/[^\/]+$/, '/');
-                })
-            }, 'request-sent');
+        var form = this;
+        var success = function () {
+            notifier.log('Package successfully deleted');
+            setTimeout(function () {
+                document.location.href = document.location.href.replace(/\/[^\/]+$/, '/');
+            })
+        };
+
+        if ($(form).data('admin')) {
+            promptDeletionReasons({title: 'Delete package', confirmLabel: 'Delete'}, function (publicReason, internalReason) {
+                var extra = [];
+                if (publicReason) extra.push({name: 'reason', value: publicReason});
+                if (internalReason) extra.push({name: 'internalReason', value: internalReason});
+                dispatchAjaxForm(form, success, 'request-sent', extra);
+            });
+        } else if (window.confirm('Are you sure you want to delete this package?')) {
+            dispatchAjaxForm(form, success, 'request-sent');
         }
     });
     $('.package .view-log').on('click', function (e) {
@@ -259,29 +297,27 @@ const init = function ($) {
         e.stopImmediatePropagation();
         var form = this;
         var label = getVersionLabel(form);
-        var overrides = {};
+        var success = function (data) {
+            applyVersionDeleteResponse(form, data, 'Version successfully deleted');
+        };
 
         if ($(form).data('admin')) {
-            var reason = window.prompt('Reason text for admin removal of ' + label + ' (leave blank to record without a reason, cancel to abort):', '');
-            if (reason === null) {
-                return;
-            }
-            reason = reason.trim();
-            if (reason !== '') {
-                overrides.url = $(form).data('admin-url');
-                overrides.type = 'POST';
-                overrides.data = [
-                    {name: '_token', value: $(form).find('input[name="_token"]').val()},
-                    {name: 'reason', value: reason}
-                ];
-            }
-        } else if (!window.confirm('Are you sure you want to delete ' + label + '?')) {
-            return;
+            promptDeletionReasons({title: 'Remove version ' + label, confirmLabel: 'Remove'}, function (publicReason, internalReason) {
+                var overrides = {};
+                // Only retarget to the admin route when a reason is given; otherwise fall through to the
+                // ordinary delete (soft-delete stable / hard-delete dev), preserving prior behavior.
+                if (publicReason || internalReason) {
+                    overrides.url = $(form).data('admin-url');
+                    overrides.type = 'POST';
+                    overrides.data = [{name: '_token', value: $(form).find('input[name="_token"]').val()}];
+                    if (publicReason) overrides.data.push({name: 'reason', value: publicReason});
+                    if (internalReason) overrides.data.push({name: 'internalReason', value: internalReason});
+                }
+                dispatchVersionAction(form, success, overrides);
+            });
+        } else if (window.confirm('Are you sure you want to delete ' + label + '?')) {
+            dispatchVersionAction(form, success, {});
         }
-
-        dispatchVersionAction(form, function (data) {
-            applyVersionDeleteResponse(form, data, 'Version successfully deleted');
-        }, overrides);
     });
 
     $('.package .hide-version').on('submit', function (e) {
@@ -289,18 +325,14 @@ const init = function ($) {
         e.stopImmediatePropagation();
         var form = this;
         var label = getVersionLabel(form);
-        var reason = window.prompt('Reason text for hiding ' + label + ' from public (leave blank to record without a reason, cancel to abort):', '');
-        if (reason === null) {
-            return;
-        }
-        reason = reason.trim();
-        var data = $(form).serializeArray();
-        if (reason !== '') {
-            data.push({name: 'reason', value: reason});
-        }
-        dispatchVersionAction(form, function (resp) {
-            applyVersionDeleteResponse(form, resp, 'Version hidden');
-        }, {data: data});
+        promptDeletionReasons({title: 'Hide version ' + label, confirmLabel: 'Hide'}, function (publicReason, internalReason) {
+            var data = $(form).serializeArray();
+            if (publicReason) data.push({name: 'reason', value: publicReason});
+            if (internalReason) data.push({name: 'internalReason', value: internalReason});
+            dispatchVersionAction(form, function (resp) {
+                applyVersionDeleteResponse(form, resp, 'Version hidden');
+            }, {data: data});
+        });
     });
 
     $('.package').on('click', '.requireme input', function () {

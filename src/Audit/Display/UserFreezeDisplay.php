@@ -14,13 +14,15 @@ namespace App\Audit\Display;
 
 use App\Audit\AuditRecordType;
 
-readonly class PackageDeletedDisplay extends AbstractAuditLogDisplay
+readonly class UserFreezeDisplay extends AbstractAuditLogDisplay
 {
     public function __construct(
+        private AuditRecordType $type,
         \DateTimeImmutable $datetime,
-        public string $packageName,
-        public string $repository,
+        public string $username,
+        // The freeze-reason enum value (e.g. 'spam'); null for unfreeze records.
         public ?string $reason,
+        public ?string $reasonText,
         public ?string $internalReason,
         ActorDisplay $actor,
         ?string $ip,
@@ -30,11 +32,11 @@ readonly class PackageDeletedDisplay extends AbstractAuditLogDisplay
 
     public function getType(): AuditRecordType
     {
-        return AuditRecordType::PackageDeleted;
+        return $this->type;
     }
 
     public function getTemplateName(): string
     {
-        return 'audit_log/display/package_deleted.html.twig';
+        return 'audit_log/display/user_freeze.html.twig';
     }
 }

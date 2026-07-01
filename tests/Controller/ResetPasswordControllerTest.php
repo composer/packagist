@@ -15,6 +15,7 @@ namespace App\Tests\Controller;
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\User;
+use App\Entity\UserFreezeReason;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
 use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
@@ -99,6 +100,36 @@ class ResetPasswordControllerTest extends IntegrationTestCase
         $this->assertResponseStatusCodeSame(200);
 
         $this->submitPasswordResetFormAndAsserStatusCode($crawler, newPassword: $user->getEmail(), expectedStatusCode: 422);
+        $this->assertUserHasUnchangedPassword($user, $oldPassword);
+    }
+
+    public function testFrozenUserGetsNoResetEmail(): void
+    {
+        $user = self::createUser();
+        $user->freeze(UserFreezeReason::Spam);
+        $this->store($user);
+
+        $crawler = $this->client->request('GET', '/reset-password');
+        $form = $crawler->selectButton('Send password reset email')->form();
+        $form->setValues(['reset_password_request_form[email]' => $user->getEmail()]);
+        $this->client->submit($form);
+
+        // Same "check your email" redirect as for an unknown account, but no mail is sent.
+        $this->assertResponseRedirects('/reset-password/check-email');
+        $this->assertEmailCount(0);
+    }
+
+    public function testFrozenUserCannotResetPassword(): void
+    {
+        // Regression guard: a disabled (frozen) account must not regain access via a reset link.
+        $user = $this->setupUserWithPasswordResetRequest(false);
+        $oldPassword = $user->getPassword();
+        $user->freeze(UserFreezeReason::Spam);
+        self::getEM()->flush();
+
+        $this->client->request('GET', '/reset-password/reset/'.$user->getConfirmationToken());
+        $this->assertResponseRedirects('/reset-password');
+
         $this->assertUserHasUnchangedPassword($user, $oldPassword);
     }
 

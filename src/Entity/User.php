@@ -28,6 +28,29 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * Why an admin froze a user account. Mirrors {@see PackageFreezeReason}.
+ *
+ * A null freeze reason on the User means the account is not frozen. New cases can be added over
+ * time; some (e.g. Temporary) are expected to be surfaced in an admin review queue later.
+ */
+enum UserFreezeReason: string
+{
+    case Spam = 'spam';
+    case BadActor = 'bad_actor'; // malware / malicious actor
+    case Temporary = 'temporary'; // benign/temporary hold, pending review
+
+    public function translationKey(): string
+    {
+        return 'user_freeze_reasons.'.$this->value;
+    }
+
+    public function isSpam(): bool
+    {
+        return $this === self::Spam;
+    }
+}
+
 #[ORM\Entity(repositoryClass: 'App\Entity\UserRepository')]
 #[ORM\Table(name: 'fos_user')]
 #[UniqueEntity(fields: ['usernameCanonical'], message: 'There is already an account with this username', errorPath: 'username')]
@@ -60,6 +83,15 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     #[ORM\Column(type: 'boolean')]
     private bool $enabled = false;
+
+    /**
+     * Admin-controlled account freeze, independent of the email-confirmation `enabled` flag.
+     * If set, the value is the reason the account was frozen; null means not frozen. A frozen
+     * account cannot log in, reset its password, authenticate via API token, or be used as a
+     * maintainer; only an admin can unfreeze it.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?UserFreezeReason $frozen = null;
 
     /**
      * @var array<string>
@@ -328,6 +360,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
             $this->email,
             $this->emailCanonical,
             'session_buster' => $this->sessionBuster,
+            'frozen' => $this->frozen?->value,
         ];
     }
 
@@ -349,6 +382,9 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
         // session_buster might not be available yet in the session
         $this->sessionBuster = $data['session_buster'] ?? 0;
+        // frozen might not be present in sessions serialized before this field existed
+        $frozen = $data['frozen'] ?? null;
+        $this->frozen = $frozen !== null ? UserFreezeReason::from($frozen) : null;
     }
 
     #[\Deprecated]
@@ -428,6 +464,25 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return $this->enabled;
     }
 
+    public function isFrozen(): bool
+    {
+        return null !== $this->frozen;
+    }
+
+    public function getFreezeReason(): ?UserFreezeReason
+    {
+        return $this->frozen;
+    }
+
+    /**
+     * An account is active (allowed to authenticate and be used) when its email is confirmed and
+     * it is not frozen by an admin.
+     */
+    public function isAccountActive(): bool
+    {
+        return $this->enabled && !$this->isFrozen();
+    }
+
     public function removeRole(string $role): void
     {
         if (false !== $key = array_search(strtoupper($role), $this->roles, true)) {
@@ -465,11 +520,17 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function setEnabled(bool $boolean): void
     {
-        if ($this->hasRole('ROLE_SPAMMER')) {
-            $boolean = false;
-        }
-
         $this->enabled = $boolean;
+    }
+
+    public function freeze(UserFreezeReason $reason): void
+    {
+        $this->frozen = $reason;
+    }
+
+    public function unfreeze(): void
+    {
+        $this->frozen = null;
     }
 
     public function setPassword(string $password): void
@@ -532,6 +593,10 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         }
 
         if ($this->isEnabled() !== $user->isEnabled()) {
+            return false;
+        }
+
+        if ($this->getFreezeReason() !== $user->getFreezeReason()) {
             return false;
         }
 

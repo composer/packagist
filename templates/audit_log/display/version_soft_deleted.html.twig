@@ -1,5 +1,5 @@
 {% import 'audit_log/macros.html.twig' as auditLog %}
 
 <strong>{{ auditLog.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
-Soft-deleted ({{ display.reason }}){% if display.reasonText %}: {{ display.reasonText }}{% endif %}<br>
+Soft-deleted ({{ display.reason }}){% if display.reasonText %}: {{ display.reasonText }}{% endif %}{% if display.internalReasonText %}<br>Internal reason: {{ display.internalReasonText }}{% endif %}<br>
 By: {{ display.actor.username }}

@@ -36,8 +36,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 enum PackageFreezeReason: string
 {
     case Spam = 'spam';
+    case Malware = 'malware';
     case RemoteIdMismatch = 'remote_id';
     case Gone = 'gone';
+    case Temporary = 'temporary';
 
     public function translationKey(): string
     {
@@ -57,6 +59,16 @@ enum PackageFreezeReason: string
     public function isRemoteIdMismatch(): bool
     {
         return $this === self::RemoteIdMismatch;
+    }
+
+    /**
+     * Whether the package should be hidden from the public entirely: skipped by the dumper, removed
+     * from the search index, and 404'd on the package page/API. Gentle freezes (a moving/gone
+     * canonical repo, or a temporary hold) keep their metadata served — they are just not updated.
+     */
+    public function suppressesPackage(): bool
+    {
+        return $this === self::Spam || $this === self::Malware;
     }
 }
 
@@ -217,12 +229,44 @@ class Package
      */
     private ?array $cachedVersions = null;
 
+    /**
+     * Transient (not persisted): optional reasons carried into PackageListener::preRemove so the
+     * PackageDeleted audit record can document why a package was deleted.
+     */
+    private ?string $auditDeletionReason = null;
+
+    /**
+     * Transient (not persisted): admin-only deletion reason. Never shown publicly (audit log view
+     * restricted to ROLE_AUDITOR), may contain private notes/PII.
+     */
+    private ?string $auditDeletionInternalReason = null;
+
     public function __construct()
     {
         $this->versions = new ArrayCollection();
         $this->maintainers = new ArrayCollection();
         $this->downloads = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function setAuditDeletionReason(?string $reason): void
+    {
+        $this->auditDeletionReason = $reason;
+    }
+
+    public function getAuditDeletionReason(): ?string
+    {
+        return $this->auditDeletionReason;
+    }
+
+    public function setAuditDeletionInternalReason(?string $reason): void
+    {
+        $this->auditDeletionInternalReason = $reason;
+    }
+
+    public function getAuditDeletionInternalReason(): ?string
+    {
+        return $this->auditDeletionInternalReason;
     }
 
     /**
@@ -780,8 +824,8 @@ class Package
     public function freeze(PackageFreezeReason $reason): void
     {
         $this->frozen = $reason;
-        // force re-indexing for spam packages to ensure they get deleted from the search index
-        if ($reason === PackageFreezeReason::Spam) {
+        // force re-indexing for suppressed packages to ensure they get deleted from the search index
+        if ($reason->suppressesPackage()) {
             $this->setIndexedAt(null);
         }
     }
