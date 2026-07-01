@@ -500,12 +500,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "8c3eba87d24bbdcdaaf8f5c42391de20fd8ed6b1"
+                "reference": "79d92f047ddbaa91fc5f193d17df2cfcddbf2d7e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/8c3eba87d24bbdcdaaf8f5c42391de20fd8ed6b1",
-                "reference": "8c3eba87d24bbdcdaaf8f5c42391de20fd8ed6b1",
+                "url": "https://api.github.com/repos/composer/composer/zipball/79d92f047ddbaa91fc5f193d17df2cfcddbf2d7e",
+                "reference": "79d92f047ddbaa91fc5f193d17df2cfcddbf2d7e",
                 "shasum": ""
             },
             "require": {
@@ -606,7 +606,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-06-30T08:57:14+00:00"
+            "time": "2026-07-01T09:23:37+00:00"
         },
         {
             "name": "composer/metadata-minifier",
