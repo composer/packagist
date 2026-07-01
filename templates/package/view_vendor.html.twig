@@ -5,4 +5,6 @@
     {{ parent() }}
 {% endblock %}
 
-{% block content_title %}<h1>{{ 'packages.from'|trans({ '%vendor%':vendor }) }}</h1>{% endblock %}
+{% block content_title %}
+    <h1>{{ 'packages.from'|trans({ '%vendor%':vendor }) }} &middot; <small><a rel="nofollow noindex" href="{{ path('view_transparency_log', {vendor: vendor}) }}">Transparency log</a></small></h1>
+{% endblock %}

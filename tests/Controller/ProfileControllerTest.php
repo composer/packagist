@@ -71,6 +71,20 @@ class ProfileControllerTest extends IntegrationTestCase
         $this->assertSame($user->getUsernameCanonical(), $usernameAuditRecord->attributes['actor']['username'] ?? null);
     }
 
+    public function testPublicProfileLinksToAuditLog(): void
+    {
+        $user = self::createUser();
+        $this->store($user);
+
+        $crawler = $this->client->request('GET', '/users/test/');
+        self::assertResponseIsSuccessful();
+
+        $auditLink = $crawler->filter('a[href*="transparency-log"]');
+        self::assertCount(1, $auditLink);
+        self::assertStringContainsString('user=test', (string) $auditLink->attr('href'));
+        self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+    }
+
     public function testTokenRotate(): void
     {
         $user = self::createUser();

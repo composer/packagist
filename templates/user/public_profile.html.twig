@@ -17,6 +17,7 @@
             [SPAMMER]
         {% endif %}
         {{ 'user.member_since'|trans }}: {{ user.createdAt|date('M d, Y') }}
+        &middot; <a rel="nofollow noindex" href="{{ path('view_transparency_log', {user: user.username}) }}">Transparency log</a>
         {%- if is_granted('ROLE_ADMIN') %}
             <a href="mailto:{{ user.email }}">{{ user.email }}</a>
         {%- endif %}
