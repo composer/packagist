@@ -188,8 +188,8 @@ class AuditRecord
             AuditRecordType::OrganizationNameChanged,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
-                'display_name_from' => $previousDisplayName,
-                'display_name_to' => $displayName,
+                'org_name_from' => $previousDisplayName,
+                'org_name_to' => $displayName,
                 'actor' => self::getUserData($actor),
             ],
             $actor?->getId(),
@@ -203,8 +203,8 @@ class AuditRecord
             AuditRecordType::OrganizationSlugChanged,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
-                'slug_from' => $previousSlug,
-                'slug_to' => $slug,
+                'org_slug_from' => $previousSlug,
+                'org_slug_to' => $slug,
                 'actor' => self::getUserData($actor),
             ],
             $actor?->getId(),
