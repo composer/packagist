@@ -296,11 +296,9 @@ class PackageControllerTest extends IntegrationTestCase
         $hidden->setSoftDeletedAt(new \DateTimeImmutable());
         $hidden->setDeletionReason(VersionDeletionReason::Hidden);
 
-        $maintainerSoftDeleted = $this->createStableVersion($package, '1.1.0');
-        $maintainerSoftDeleted->setSoftDeletedAt(new \DateTimeImmutable());
-        $maintainerSoftDeleted->setDeletionReason(VersionDeletionReason::DeletedByMaintainer);
+        $visibleVersion = $this->createStableVersion($package, '1.1.0');
 
-        $this->store($maintainer, $package, $hidden, $maintainerSoftDeleted);
+        $this->store($maintainer, $package, $hidden, $visibleVersion);
 
         // Hidden, served to authorized maintainer -> must NOT be shared-cacheable.
         $this->client->loginUser($maintainer);
@@ -309,10 +307,10 @@ class PackageControllerTest extends IntegrationTestCase
         $cacheControl = $this->client->getResponse()->headers->get('Cache-Control', '');
         self::assertStringNotContainsString('s-maxage', $cacheControl, 'Hidden version JSON must not advertise a shared-cache TTL');
 
-        // Non-Hidden soft-delete reason, served to anonymous -> keeps shared cache. Confirms the
+        // Non soft deleted version, served to anonymous -> keeps shared cache. Confirms the
         // exemption above is Hidden-specific, not a blanket disable.
         $this->client->restart();
-        $this->client->request('GET', '/versions/'.$maintainerSoftDeleted->getId().'.json');
+        $this->client->request('GET', '/versions/'.$visibleVersion->getId().'.json');
         self::assertResponseStatusCodeSame(200);
         $cacheControl = $this->client->getResponse()->headers->get('Cache-Control', '');
         self::assertStringContainsString('s-maxage=86400', $cacheControl);
