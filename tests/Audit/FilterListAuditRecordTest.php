@@ -43,7 +43,7 @@ class FilterListAuditRecordTest extends TestCase
 
     private function createEntry(string $packageName): FilterListEntry
     {
-        return new FilterListEntry(new RemoteFilterListEntry(
+        return FilterListEntry::fromRemote(new RemoteFilterListEntry(
             $packageName,
             '<1.0',
             FilterLists::MALWARE,
