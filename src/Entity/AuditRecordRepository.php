@@ -53,5 +53,37 @@ class AuditRecordRepository extends ServiceEntityRepository
             'datetime' => Types::DATETIME_IMMUTABLE,
             'attributes' => Types::JSON,
         ]);
+
+        $this->indexSearchTerms($record);
+    }
+
+    /**
+     * Denormalizes the record's searchable names into audit_log_search so the transparency-log
+     * user/actor/package filters can do an indexed lookup instead of scanning the JSON attributes.
+     *
+     * Called from {@see insert()} for the direct-insert path and from the postPersist listener for
+     * the ORM path (the two paths are disjoint). Idempotent via INSERT IGNORE on the primary key.
+     */
+    public function indexSearchTerms(AuditRecord $record): void
+    {
+        $terms = $record->getSearchTerms();
+        if (\count($terms) === 0) {
+            return;
+        }
+
+        $idBinary = $record->id->toBinary();
+        $placeholders = [];
+        $params = [];
+        foreach ($terms as $term) {
+            $placeholders[] = '(?, ?, ?)';
+            $params[] = $idBinary;
+            $params[] = $term['type'];
+            $params[] = $term['name'];
+        }
+
+        $this->getEntityManager()->getConnection()->executeStatement(
+            'INSERT IGNORE INTO audit_log_search (auditLogId, type, name) VALUES '.implode(', ', $placeholders),
+            $params,
+        );
     }
 }
