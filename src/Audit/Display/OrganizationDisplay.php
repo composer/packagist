@@ -3,7 +3,7 @@
 namespace App\Audit\Display;
 
 /**
- * @phpstan-type OrganizationDisplayArray array{id: string, slug: string, display_name: string}
+ * @phpstan-type OrganizationDisplayArray array{id: string, org_slug: string, org_name: string}
  */
 final readonly class OrganizationDisplay
 {
@@ -20,8 +20,8 @@ final readonly class OrganizationDisplay
     {
         return new self(
             $record['id'],
-            $record['slug'],
-            $record['display_name'],
+            $record['org_slug'],
+            $record['org_name'],
         );
     }
 
@@ -32,8 +32,8 @@ final readonly class OrganizationDisplay
     {
         return [
             'id' => $this->id,
-            'slug' => $this->slug,
-            'display_name' => $this->displayName,
+            'org_slug' => $this->slug,
+            'org_name' => $this->displayName,
         ];
     }
 }
