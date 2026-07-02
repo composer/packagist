@@ -101,7 +101,7 @@
                                 {% endif %}
                             {% endif %}
                             {% if is_granted('delete', package) %}
-                                <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE">
+                                <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE"{% if is_granted('ROLE_DELETE_PACKAGES') %} data-admin="1"{% endif %}>
                                     {{ form_widget(deleteForm._token) }}
                                     <input class="btn btn-danger" type="submit" value="Delete" />
                                 </form>
@@ -407,4 +407,7 @@
             {% endif %}
         </div>
     </div>
+    {% if is_granted('ROLE_DELETE_PACKAGES') %}
+        {% include 'package/_deletion_reason_modal.html.twig' %}
+    {% endif %}
 {% endblock %}

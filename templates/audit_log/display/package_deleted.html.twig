@@ -2,4 +2,4 @@
 
 <strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
 Repository: {{ display.repository }}<br>
-Deleted by: {{ display.actor.username }}
+Deleted by: {{ display.actor.username }}{% if display.reason %}<br>Reason: {{ display.reason }}{% endif %}{% if display.internalReason %}<br>Internal reason: {{ display.internalReason }}{% endif %}

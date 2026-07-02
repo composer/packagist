@@ -20,6 +20,8 @@ readonly class PackageDeletedDisplay extends AbstractAuditLogDisplay
         \DateTimeImmutable $datetime,
         public string $packageName,
         public string $repository,
+        public ?string $reason,
+        public ?string $internalReason,
         ActorDisplay $actor,
         ?string $ip,
     ) {

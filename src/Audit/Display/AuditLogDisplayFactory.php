@@ -78,6 +78,8 @@ class AuditLogDisplayFactory
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['repository'],
+                $record->attributes['reason'] ?? null,
+                $this->internalReason($record->attributes['internalReason'] ?? null),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
@@ -162,6 +164,7 @@ class AuditLogDisplayFactory
                 $record->attributes['version'],
                 $record->attributes['reason'],
                 $record->attributes['reasonText'] ?? null,
+                $this->internalReason($record->attributes['internalReasonText'] ?? null),
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip,
             ),
@@ -281,6 +284,18 @@ class AuditLogDisplayFactory
         }
 
         return new ActorDisplay($actor['id'], $actor['username']);
+    }
+
+    /**
+     * Admin-only deletion reasons may contain PII, so only auditors (who can also see IPs/emails) see them.
+     */
+    private function internalReason(?string $reason): ?string
+    {
+        if ($reason === null || $reason === '') {
+            return null;
+        }
+
+        return $this->security->isGranted('ROLE_AUDITOR') ? $reason : null;
     }
 
     private function obfuscateEmail(string $email, ?int $userId = null): string
