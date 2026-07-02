@@ -106,12 +106,7 @@
          linkSurroundingLogs: true,
      } only %}
 
-        {% if auditLogPaginator.haveToPaginate() %}
-            {{ pagerfanta(auditLogPaginator, 'twitter_bootstrap', {'proximity': 2}) }}
-        {% endif %}
-    {% else %}
-        <div class="alert alert-info">
-            <p>No transparency log entries found.</p>
-        </div>
+    {% if auditLogDisplays|length and auditLogPaginator.haveToPaginate() %}
+        {{ pagerfanta(auditLogPaginator, 'twitter_bootstrap', {'proximity': 2}) }}
     {% endif %}
 {% endblock %}
