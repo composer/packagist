@@ -33,7 +33,7 @@ enum FilterSources: string
     {
         return match ($this) {
             self::AIKIDO => 'Aikido',
-            self::PACKAGIST => 'Packagist',
+            self::PACKAGIST => 'Packagist.org',
         };
     }
 
