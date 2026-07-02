@@ -49,6 +49,12 @@ parameters:
 			path: src/Entity/AuditRecordRepository.php
 
 		-
+			message: '#^Query error\: Column "audit_log\.organizationId" expects value type string\|null, got type Symfony\\Component\\Uid\\Ulid\|null$#'
+			identifier: dba.keyValue
+			count: 1
+			path: src/Entity/AuditRecordRepository.php
+
+		-
 			message: '#^Method App\\Entity\\PackageRepository\:\:getSuggestCount\(\) should return int\<0, max\> but returns int\.$#'
 			identifier: return.type
 			count: 1
