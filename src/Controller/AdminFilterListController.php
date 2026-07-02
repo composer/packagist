@@ -30,6 +30,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_FILTER_LIST_ADMIN')]
@@ -126,7 +127,7 @@ class AdminFilterListController extends Controller
     }
 
     #[Route(path: '/admin/filter-lists/{publicId}/edit', name: 'admin_filter_list_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, string $publicId, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $auditLogDisplayFactory): Response
+    public function edit(Request $request, string $publicId, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $auditLogDisplayFactory, #[CurrentUser] User $user): Response
     {
         $entry = $this->findEntry($publicId);
         $isManual = $entry->isManual();
@@ -147,7 +148,7 @@ class AdminFilterListController extends Controller
                 $entry->updateAttributes($data->version, $data->internalNote);
             }
 
-            $em->persist(AuditRecord::filterListEntryEdited($entry, $previous, $this->getActor()));
+            $em->persist(AuditRecord::filterListEntryEdited($entry, $previous, $user));
             $em->flush();
 
             $this->filterListEntryUpdateListener->flushChangesToPackages();
@@ -166,7 +167,7 @@ class AdminFilterListController extends Controller
     }
 
     #[Route(path: '/admin/filter-lists/{publicId}/disable', name: 'admin_filter_list_disable', methods: ['POST'])]
-    public function disable(Request $request, string $publicId): RedirectResponse
+    public function disable(Request $request, string $publicId, #[CurrentUser] User $user): RedirectResponse
     {
         $this->assertCsrf($request);
 
@@ -180,7 +181,7 @@ class AdminFilterListController extends Controller
         $entry->disable();
 
         $em = $this->getEM();
-        $em->persist(AuditRecord::filterListEntryDisabled($entry, $this->getActor()));
+        $em->persist(AuditRecord::filterListEntryDisabled($entry, $user));
         $em->flush();
 
         $this->filterListEntryUpdateListener->flushChangesToPackages();
@@ -190,7 +191,7 @@ class AdminFilterListController extends Controller
     }
 
     #[Route(path: '/admin/filter-lists/{publicId}/enable', name: 'admin_filter_list_enable', methods: ['POST'])]
-    public function enable(Request $request, string $publicId): RedirectResponse
+    public function enable(Request $request, string $publicId, #[CurrentUser] User $user): RedirectResponse
     {
         $this->assertCsrf($request);
 
@@ -204,7 +205,7 @@ class AdminFilterListController extends Controller
         $entry->enable();
 
         $em = $this->getEM();
-        $em->persist(AuditRecord::filterListEntryEnabled($entry, $this->getActor()));
+        $em->persist(AuditRecord::filterListEntryEnabled($entry, $user));
         $em->flush();
 
         $this->filterListEntryUpdateListener->flushChangesToPackages();
@@ -214,7 +215,7 @@ class AdminFilterListController extends Controller
     }
 
     #[Route(path: '/admin/filter-lists/bulk', name: 'admin_filter_list_bulk', methods: ['POST'])]
-    public function bulk(Request $request): RedirectResponse
+    public function bulk(Request $request, #[CurrentUser] User $user): RedirectResponse
     {
         $this->assertCsrf($request);
 
@@ -235,7 +236,6 @@ class AdminFilterListController extends Controller
 
         $em = $this->getEM();
         $entries = $em->getRepository(FilterListEntry::class)->findBy(['publicId' => $publicIds]);
-        $actor = $this->getActor();
 
         $changed = 0;
         foreach ($entries as $entry) {
@@ -244,14 +244,14 @@ class AdminFilterListController extends Controller
                     continue;
                 }
                 $entry->disable();
-                $em->persist(AuditRecord::filterListEntryDisabled($entry, $actor));
+                $em->persist(AuditRecord::filterListEntryDisabled($entry, $user));
                 $changed++;
             } else {
                 if (!$entry->isDisabled()) {
                     continue;
                 }
                 $entry->enable();
-                $em->persist(AuditRecord::filterListEntryEnabled($entry, $actor));
+                $em->persist(AuditRecord::filterListEntryEnabled($entry, $user));
                 $changed++;
             }
         }
@@ -286,12 +286,5 @@ class AdminFilterListController extends Controller
         if (!$this->isCsrfTokenValid('admin_filter_list', $request->request->getString('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
         }
-    }
-
-    private function getActor(): ?User
-    {
-        $user = $this->getUser();
-
-        return $user instanceof User ? $user : null;
     }
 }
