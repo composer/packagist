@@ -33,8 +33,8 @@ class OrganizationAuditRecordTest extends TestCase
 
         self::assertSame(AuditRecordType::OrganizationCreated, $record->type);
         self::assertSame((string) $organizationId, $record->attributes['organization']['id']);
-        self::assertSame('acme', $record->attributes['organization']['slug']);
-        self::assertSame('ACME Corp', $record->attributes['organization']['display_name']);
+        self::assertSame('acme', $record->attributes['organization']['org_slug']);
+        self::assertSame('ACME Corp', $record->attributes['organization']['org_name']);
         self::assertIsArray($record->attributes['actor']);
         self::assertSame(42, $record->attributes['actor']['id']);
         self::assertSame('orgowner', $record->attributes['actor']['username']);
