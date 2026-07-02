@@ -58,10 +58,13 @@ class OrganizationAuditRecordTest extends TestCase
     public function testOrganizationNameChangedCapturesBeforeAndAfter(): void
     {
         $organizationId = new Ulid();
-        $record = AuditRecord::organizationNameChanged($organizationId, 'ACME Inc', 'ACME Corp', null);
+        $record = AuditRecord::organizationNameChanged($organizationId, 'acme', 'ACME Inc', 'ACME Corp', null);
 
         self::assertSame(AuditRecordType::OrganizationNameChanged, $record->type);
-        self::assertSame((string) $organizationId, $record->attributes['organization_id']);
+        self::assertSame((string) $organizationId, $record->attributes['organization']['id']);
+        self::assertSame('acme', $record->attributes['organization']['slug']);
+        self::assertSame('ACME Inc', $record->attributes['organization']['display_name']);
+        self::assertSame((string) $organizationId, (string) $record->organizationId);
         self::assertSame('ACME Corp', $record->attributes['display_name_from']);
         self::assertSame('ACME Inc', $record->attributes['display_name_to']);
         self::assertSame('unknown', $record->attributes['actor']);
@@ -71,10 +74,13 @@ class OrganizationAuditRecordTest extends TestCase
     public function testOrganizationSlugChangedCapturesBeforeAndAfter(): void
     {
         $organizationId = new Ulid();
-        $record = AuditRecord::organizationSlugChanged($organizationId, 'acme-inc', 'acme', null);
+        $record = AuditRecord::organizationSlugChanged($organizationId, 'acme-inc', 'ACME Corp', 'acme', null);
 
         self::assertSame(AuditRecordType::OrganizationSlugChanged, $record->type);
-        self::assertSame((string) $organizationId, $record->attributes['organization_id']);
+        self::assertSame((string) $organizationId, $record->attributes['organization']['id']);
+        self::assertSame('acme-inc', $record->attributes['organization']['slug']);
+        self::assertSame('ACME Corp', $record->attributes['organization']['display_name']);
+        self::assertSame((string) $organizationId, (string) $record->organizationId);
         self::assertSame('acme', $record->attributes['slug_from']);
         self::assertSame('acme-inc', $record->attributes['slug_to']);
         self::assertSame('organization', AuditRecordType::OrganizationSlugChanged->category());

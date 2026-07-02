@@ -14,11 +14,14 @@ namespace App\Organization\Projection;
 
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
+use App\Entity\Organization;
+use App\Entity\OrganizationRepository;
 use App\Entity\UserRepository;
 use App\Organization\Domain\Event\OrganizationCreated;
 use App\Organization\Domain\Event\OrganizationNameChanged;
 use App\Organization\Domain\Event\OrganizationSlugChanged;
 use App\Organization\EventStore\RecordedEvent;
+use Symfony\Component\Uid\Ulid;
 
 /**
  * Projects organization events into the public transparency log (`audit_log`).
@@ -28,6 +31,7 @@ final readonly class OrganizationAuditProjector implements Projector
     public function __construct(
         private AuditRecordRepository $auditRecords,
         private UserRepository $users,
+        private OrganizationRepository $organizations,
     ) {
     }
 
@@ -39,10 +43,24 @@ final readonly class OrganizationAuditProjector implements Projector
         $this->auditRecords->insert(
             match (true) {
                 $event instanceof OrganizationCreated => AuditRecord::organizationCreated($event->organizationId, $event->slug, $event->displayName, $actor),
-                $event instanceof OrganizationNameChanged => AuditRecord::organizationNameChanged($event->organizationId, $event->displayName, $event->previousDisplayName, $actor),
-                $event instanceof OrganizationSlugChanged => AuditRecord::organizationSlugChanged($event->organizationId, $event->slug, $event->previousSlug, $actor),
+                // The slug is unaffected by a name change, so reading it from the read model is safe
+                // regardless of the order in which projectors run.
+                $event instanceof OrganizationNameChanged => AuditRecord::organizationNameChanged($event->organizationId, $this->organization($event->organizationId)->slug, $event->displayName, $event->previousDisplayName, $actor),
+                // The display name is unaffected by a slug change, so reading it from the read model is
+                // safe regardless of the order in which projectors run.
+                $event instanceof OrganizationSlugChanged => AuditRecord::organizationSlugChanged($event->organizationId, $event->slug, $this->organization($event->organizationId)->displayName, $event->previousSlug, $actor),
                 default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
             }
         );
+    }
+
+    private function organization(Ulid $id): Organization
+    {
+        $organization = $this->organizations->find($id);
+        if ($organization === null) {
+            throw new \LogicException('Organization read model not found for '.$id->toRfc4122().'.');
+        }
+
+        return $organization;
     }
 }

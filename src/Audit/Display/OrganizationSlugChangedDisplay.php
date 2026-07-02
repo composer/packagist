@@ -18,6 +18,7 @@ readonly class OrganizationSlugChangedDisplay extends AbstractAuditLogDisplay
 {
     public function __construct(
         \DateTimeImmutable $datetime,
+        public OrganizationDisplay $organization,
         public string $slugFrom,
         public string $slugTo,
         ActorDisplay $actor,

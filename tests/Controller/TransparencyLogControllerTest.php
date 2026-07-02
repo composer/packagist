@@ -36,7 +36,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         $link = $crawler->filter('a[href="/organizations/acme"]');
         static::assertCount(1, $link);
-        static::assertSame('acme', trim($link->text()));
+        static::assertSame('ACME Corp', trim($link->text()));
     }
 
     #[DataProvider('filterProvider')]

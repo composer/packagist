@@ -6,10 +6,10 @@
     {%- endif -%}
 {% endmacro %}
 
-{% macro organizationLink(slug) %}
-    {%- if slug is existing_organization -%}
-        <a href="{{ path('organization_show', { 'organization': slug }) }}">{{ slug }}</a>
+{% macro organizationLink(organization) %}
+    {%- if organization.slug is existing_organization -%}
+        <a href="{{ path('organization_show', { 'organization': organization.slug }) }}">{{ organization.displayName }}</a>
     {%- else -%}
-        {{ slug }}
+        {{ organization.displayName }}
     {%- endif -%}
 {% endmacro %}
