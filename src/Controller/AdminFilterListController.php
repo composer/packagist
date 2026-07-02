@@ -139,7 +139,7 @@ class AdminFilterListController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em = $this->getEM();
-            $previous = AuditRecord::filterListEntryEditableState($entry);
+            $previous = AuditRecord::getFilterListEntryData($entry);
 
             if ($isManual) {
                 $list = $data->list ?? throw new BadRequestHttpException('List is required');
@@ -148,11 +148,15 @@ class AdminFilterListController extends Controller
                 $entry->updateAttributes($data->version, $data->internalNote);
             }
 
-            $em->persist(AuditRecord::filterListEntryEdited($entry, $previous, $user));
-            $em->flush();
+            if (AuditRecord::getFilterListEntryData($entry) !== $previous) {
+                $em->persist(AuditRecord::filterListEntryEdited($entry, $previous, $user));
+                $em->flush();
 
-            $this->filterListEntryUpdateListener->flushChangesToPackages();
-            $this->addFlash('success', 'Filter list entry updated.');
+                $this->filterListEntryUpdateListener->flushChangesToPackages();
+                $this->addFlash('success', 'Filter list entry updated.');
+            } else {
+                $this->addFlash('info', 'No changes to save.');
+            }
 
             return $this->redirectToRoute('admin_filter_lists');
         }

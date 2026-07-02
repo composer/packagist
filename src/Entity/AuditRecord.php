@@ -25,6 +25,7 @@ use Symfony\Component\Uid\Ulid;
 
 /**
  * @phpstan-import-type VersionArray from Version
+ * @phpstan-type FilterListEntryData array{package_name: string, version: string, list: string, reason: string|null, source: string, link: string|null, disabled: bool, remote_version: string, overwrite_version: string|null, internal_note: string|null, public_id: string|null}
  */
 #[ORM\Entity(repositoryClass: AuditRecordRepository::class)]
 #[ORM\Table(name: 'audit_log')]
@@ -491,8 +492,7 @@ class AuditRecord
     }
 
     /**
-     * @param array{list: string, version: string, reason: string|null, link: string|null, internal_note: string|null} $previous
-     *        Snapshot of the editable fields taken before the edit, see {@see self::filterListEntryEditableState()}.
+     * @param FilterListEntryData $previous Snapshot of the editable fields taken before the edit, see {@see self::getFilterListEntryData()}.
      */
     public static function filterListEntryEdited(FilterListEntry $entry, array $previous, ?User $actor): self
     {
@@ -510,24 +510,6 @@ class AuditRecord
     }
 
     /**
-     * Captures the values an admin can change on edit, so the resulting
-     * {@see self::filterListEntryEdited()} record can diff every property.
-     * Must be called before the entry is mutated.
-     *
-     * @return array{list: string, version: string, reason: string|null, link: string|null, internal_note: string|null}
-     */
-    public static function filterListEntryEditableState(FilterListEntry $entry): array
-    {
-        return [
-            'list' => $entry->getList()->value,
-            'version' => $entry->getVersion(),
-            'reason' => $entry->getReason(),
-            'link' => $entry->getLink(),
-            'internal_note' => $entry->getInternalNote(),
-        ];
-    }
-
-    /**
      * @return array{id: int, username: string}|string
      */
     private static function getUserData(?User $user, string $fallbackString = 'unknown'): array|string
@@ -540,9 +522,9 @@ class AuditRecord
     }
 
     /**
-     * @return array{package_name: string, version: string, list: string, reason: string|null, source: string, link: string|null, disabled: bool, remote_version: string, overwrite_version: string|null, internal_note: string|null, public_id: string|null}
+     * @return FilterListEntryData
      */
-    private static function getFilterListEntryData(FilterListEntry $entry): array
+    public static function getFilterListEntryData(FilterListEntry $entry): array
     {
         return [
             'package_name' => $entry->getPackageName(),
