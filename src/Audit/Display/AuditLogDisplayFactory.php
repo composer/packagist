@@ -330,7 +330,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
-            AuditRecordType::OrganizationNameChanged => new OrganizationChangeNameDisplay(
+            AuditRecordType::OrganizationNameChanged => new OrganizationNameChangedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $record->attributes['display_name_from'],

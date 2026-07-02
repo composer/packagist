@@ -14,7 +14,7 @@ namespace App\Audit\Display;
 
 use App\Audit\AuditRecordType;
 
-readonly class OrganizationChangeNameDisplay extends AbstractAuditLogDisplay
+readonly class OrganizationNameChangedDisplay extends AbstractAuditLogDisplay
 {
     public function __construct(
         \DateTimeImmutable $datetime,
