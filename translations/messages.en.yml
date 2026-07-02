@@ -204,6 +204,9 @@ audit_log:
         version_reference_change_blocked: Version reference change blocked
         filter_list_entry_added: Entry added
         filter_list_entry_deleted: Entry deleted
+        security_advisory_created: Security advisory created
+        security_advisory_edited: Security advisory edited
+        security_advisory_withdrawn: Security advisory withdrawn
     enums:
         user-registration-method:
             form: 'Registration form'
