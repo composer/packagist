@@ -13,10 +13,13 @@
 namespace App\Twig;
 
 use App\Entity\PackageLink;
+use App\Entity\Version;
 use App\Model\ProviderManager;
 use App\Security\RecaptchaHelper;
+use App\Security\Voter\PackageActions;
 use Composer\Pcre\Preg;
 use Composer\Repository\PlatformRepository;
+use Symfony\Bundle\SecurityBundle\Security;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
@@ -26,11 +29,13 @@ class PackagistExtension extends AbstractExtension
 {
     private ProviderManager $providerManager;
     private RecaptchaHelper $recaptchaHelper;
+    private Security $security;
 
-    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper)
+    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, Security $security)
     {
         $this->providerManager = $providerManager;
         $this->recaptchaHelper = $recaptchaHelper;
+        $this->security = $security;
     }
 
     public function getTests(): array
@@ -49,6 +54,7 @@ class PackagistExtension extends AbstractExtension
             new TwigFilter('gravatar_hash', [$this, 'generateGravatarHash']),
             new TwigFilter('vendor', [$this, 'getVendor']),
             new TwigFilter('sort_links', [$this, 'sortLinks']),
+            new TwigFilter('version_deletion_title', [$this, 'deletionTitle']),
         ];
     }
 
@@ -147,5 +153,12 @@ class PackagistExtension extends AbstractExtension
         $context = $this->recaptchaHelper->buildContext();
 
         return $this->recaptchaHelper->requiresRecaptcha($context);
+    }
+
+    public function deletionTitle(Version $version): ?string
+    {
+        return $version->getDeletionTitle(
+            $this->security->isGranted(PackageActions::AdminDeleteVersion->value, $version->getPackage())
+        );
     }
 }

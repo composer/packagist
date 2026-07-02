@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Entity;
 
+use App\Audit\VersionDeletionReason;
 use App\Entity\Tag;
 use App\Entity\Version;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -86,5 +87,63 @@ final class VersionTest extends TestCase
         $version->setUpdatedAt($updated);
 
         self::assertSame($updated, $version->getPublishedAt());
+    }
+
+    public function testGetDeletionTitleReturnsNullWhenNotSoftDeleted(): void
+    {
+        $version = new Version();
+
+        self::assertNull($version->getDeletionTitle());
+        self::assertNull($version->getDeletionTitle(true));
+    }
+
+    #[DataProvider('provideDeletionTitles')]
+    public function testGetDeletionTitle(?VersionDeletionReason $reason, ?string $reasonText, ?string $internalReasonText, bool $includeInternalReason, string $expected): void
+    {
+        $version = new Version();
+        $version->setSoftDeletedAt(new \DateTimeImmutable('2026-01-02 03:04:05', new \DateTimeZone('UTC')));
+        $version->setDeletionReason($reason);
+        $version->setDeletionReasonText($reasonText);
+        $version->setInternalDeletionReasonText($internalReasonText);
+
+        self::assertSame($expected, $version->getDeletionTitle($includeInternalReason));
+    }
+
+    public static function provideDeletionTitles(): array
+    {
+        return [
+            'maintainer' => [
+                VersionDeletionReason::DeletedByMaintainer, null, null, false,
+                'Deleted by maintainer on 2026-01-02 03:04:05 UTC',
+            ],
+            'admin with internal reason hidden from viewer' => [
+                VersionDeletionReason::DeletedByAdmin, 'bad release', 'internal note', false,
+                'Removed by admin on 2026-01-02 03:04:05 UTC: bad release',
+            ],
+            'admin with internal reason shown to viewer' => [
+                VersionDeletionReason::DeletedByAdmin, 'bad release', 'internal note', true,
+                'Removed by admin on 2026-01-02 03:04:05 UTC: bad release (Internal reason: internal note)',
+            ],
+            'admin with empty internal reason and access' => [
+                VersionDeletionReason::DeletedByAdmin, 'bad release', '', true,
+                'Removed by admin on 2026-01-02 03:04:05 UTC: bad release',
+            ],
+            'admin without reason text' => [
+                VersionDeletionReason::DeletedByAdmin, null, null, true,
+                'Removed by admin on 2026-01-02 03:04:05 UTC',
+            ],
+            'auto deleted missing' => [
+                VersionDeletionReason::AutoDeletedMissing, null, null, false,
+                'No longer found in upstream repository',
+            ],
+            'hidden never exposes internal reason' => [
+                VersionDeletionReason::Hidden, 'spam', 'internal spam note', true,
+                'Hidden by admin on 2026-01-02 03:04:05 UTC: spam',
+            ],
+            'null reason falls back to Deleted' => [
+                null, null, null, false,
+                'Deleted',
+            ],
+        ];
     }
 }

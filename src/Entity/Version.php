@@ -745,6 +745,35 @@ class Version
         return $this->internalDeletionReasonText;
     }
 
+    /**
+     * Human-readable tooltip/title for a soft-deleted version, or null if the version is not soft-deleted.
+     *
+     * @param bool $includeInternalReason Whether the viewer may see the admin-only internal reason.
+     *                                    Must be false for any public output.
+     */
+    public function getDeletionTitle(bool $includeInternalReason = false): ?string
+    {
+        if ($this->softDeletedAt === null) {
+            return null;
+        }
+
+        $date = $this->softDeletedAt->format('Y-m-d H:i:s').' UTC';
+        $reasonText = $this->deletionReasonText !== null && $this->deletionReasonText !== ''
+            ? ': '.$this->deletionReasonText
+            : '';
+
+        return match ($this->deletionReason) {
+            VersionDeletionReason::DeletedByMaintainer => 'Deleted by maintainer on '.$date,
+            VersionDeletionReason::DeletedByAdmin => 'Removed by admin on '.$date.$reasonText
+                .($includeInternalReason && $this->internalDeletionReasonText !== null && $this->internalDeletionReasonText !== ''
+                    ? ' (Internal reason: '.$this->internalDeletionReasonText.')'
+                    : ''),
+            VersionDeletionReason::AutoDeletedMissing => 'No longer found in upstream repository',
+            VersionDeletionReason::Hidden => 'Hidden by admin on '.$date.$reasonText,
+            default => 'Deleted', // null reason or any future case → matches the templates' initial fallback
+        };
+    }
+
     public function setLastBlockedReference(?string $ref): void
     {
         $this->lastBlockedReference = $ref;

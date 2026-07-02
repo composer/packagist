@@ -2,21 +2,9 @@
     <ul class="versions">
         {% for version in versions %}
             {% set expanded = version.id == expandedId|default(false) %}
-            {% set softDeleted = version.softDeletedAt is not null %}
+            {% set softDeleted = version.isSoftDeleted() %}
             {% set reason = version.deletionReason %}
-
-            {% if softDeleted %}
-                {% set deletionTitle = 'Deleted' %}
-                {% if reason == enum('App\\Audit\\VersionDeletionReason').DeletedByMaintainer %}
-                    {% set deletionTitle = 'Deleted by maintainer on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' %}
-                {% elseif reason == enum('App\\Audit\\VersionDeletionReason').DeletedByAdmin %}
-                    {% set deletionTitle = 'Removed by admin on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' ~ (version.deletionReasonText ? ': ' ~ version.deletionReasonText : '') %}
-                {% elseif reason == enum('App\\Audit\\VersionDeletionReason').AutoDeletedMissing %}
-                    {% set deletionTitle = 'No longer found in upstream repository' %}
-                {% elseif reason == enum('App\\Audit\\VersionDeletionReason').Hidden %}
-                    {% set deletionTitle = 'Hidden by admin on ' ~ version.softDeletedAt|date('Y-m-d H:i:s') ~ ' UTC' ~ (version.deletionReasonText ? ': ' ~ version.deletionReasonText : '') %}
-                {% endif %}
-            {% endif %}
+            {% set deletionTitle = softDeleted ? version|version_deletion_title : null %}
 
             <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}{% if softDeleted %} version-soft-deleted{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json'}) }}">
                 <div class="version-number">

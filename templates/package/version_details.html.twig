@@ -1,19 +1,22 @@
 {% import "macros.html.twig" as packagist %}
+
+{% set softDeleted = version.isSoftDeleted() %}
+
 <div class="title">
     <span class="version-number">
-        {{- version.version -}}
-        {% if version.hasVersionAlias() %}
-            / {{ version.versionAlias }}
+        {%- if softDeleted -%}
+            <strike>{{- version.version -}}{% if version.hasVersionAlias() %} / {{ version.versionAlias }}{%- endif -%}</strike>
+        {%- else -%}
+            {{- version.version -}}{% if version.hasVersionAlias() %} / {{ version.versionAlias }}{%- endif -%}
         {%- endif -%}
     </span>
 
-    <span class="release-date" title="Published on Packagist: {{ version.publishedAt|date("Y-m-d H:i") }} UTC">
-        {%- if version.releasedAt -%}
-            {{ version.releasedAt|date("Y-m-d H:i") }} UTC
-        {%- else -%}
-            {{ version.publishedAt|date("Y-m-d H:i") }} UTC
-        {%- endif -%}
+    <span class="release-date" title="Release Date (can be forged)">
+        {{ version.releasedAt|default(version.publishedAt)|date("Y-m-d H:i") }} UTC
     </span>
+    {% if softDeleted %}
+    <br/><small>{{ version|version_deletion_title }}</small>
+    {% endif %}
 </div>
 
 <div class="clearfix package-links">
@@ -68,6 +71,8 @@
             {%- endfor -%}
         </p>
     {% endif %}
+
+    <p class="publish-time"><i class="glyphicon glyphicon-time"></i> Published on Packagist.org on {{ version.publishedAt|date("Y-m-d H:i") }} UTC</p>
 </div>
 
 {% if version.isPiePackage() %}
