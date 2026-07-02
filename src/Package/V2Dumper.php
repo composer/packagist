@@ -55,6 +55,9 @@ class V2Dumper
 
     private bool $bypassIndividualPurges = false;
 
+    // instrumentation only: the current run's worker id, used to tag statsd metrics emitted from writeV2File
+    private int $workerId = 0;
+
     public function __construct(
         private ManagerRegistry $doctrine,
         private Filesystem $filesystem,
@@ -121,6 +124,12 @@ class V2Dumper
         // clear written files tracking for this run
         $this->writtenFiles = [];
 
+        // instrumentation only: track where the wall-clock of a run goes and how much of it is full (forced) dumps
+        $this->workerId = $workerId;
+        $runStart = microtime(true);
+        $processedPackages = 0;
+        $forceDumpPackages = 0;
+
         // prepare build dir
         $webDir = $this->webDir;
 
@@ -164,7 +173,9 @@ class V2Dumper
             $dumpTime = new \DateTime();
             $idBatch = array_splice($packageIds, 0, $step);
             $this->logger->debug('Dumping package ids', ['ids' => $idBatch]);
+            $hydrateStart = microtime(true);
             $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions($idBatch);
+            $this->statsd->timing('packagist.metadata_dump.db_time', round((microtime(true) - $hydrateStart) * 1000, 4), ['op' => 'hydrate', 'worker' => (string) $workerId]);
             unset($idBatch);
             $packageNames = array_map(static fn (Package $pkg) => $pkg->getName(), $packages);
             $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
@@ -188,7 +199,15 @@ class V2Dumper
                 foreach ($package->getVersions() as $version) {
                     $versionIds[] = $version->getId();
                 }
+                $versionDataStart = microtime(true);
                 $versionData = $versionRepo->getVersionData($versionIds);
+                $this->statsd->timing('packagist.metadata_dump.db_time', round((microtime(true) - $versionDataStart) * 1000, 4), ['op' => 'versiondata', 'worker' => (string) $workerId]);
+
+                // instrumentation only: count processed packages and how many need a full (forced) dump vs. a cheap early-return
+                $processedPackages++;
+                if ($package->getDumpedAtV2() === null) {
+                    $forceDumpPackages++;
+                }
 
                 // dump v2 format
                 $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? [], $filterLists[$package->getName()] ?? null);
@@ -228,6 +247,7 @@ class V2Dumper
             echo 'Updating package dump times'.\PHP_EOL;
         }
 
+        $dbUpdateStart = microtime(true);
         foreach ($dumpTimeUpdates as $dt => $ids) {
             $retries = 5;
             // retry loop in case of a lock timeout
@@ -246,10 +266,19 @@ class V2Dumper
                     if (!$retries) {
                         throw $e;
                     }
+                    // instrumentation only: count lock-timeout retries to detect package-table write contention
+                    $this->statsd->increment('packagist.metadata_dump.dbupdate_retry', 1, 1, ['worker' => (string) $workerId]);
                     sleep(2);
                 }
             }
         }
+
+        // instrumentation only: time the dumpedAtV2 UPDATE and the overall run, plus how many packages were
+        // processed and how many needed a full (forced) dump — overlay these on packagist.metadata_dump_queue
+        $this->statsd->timing('packagist.metadata_dump.dbupdate_time', round((microtime(true) - $dbUpdateStart) * 1000, 4), ['worker' => (string) $workerId]);
+        $this->statsd->timing('packagist.metadata_dump.run_time', round((microtime(true) - $runStart) * 1000, 4), ['worker' => (string) $workerId]);
+        $this->statsd->histogram('packagist.metadata_dump.run_packages', $processedPackages, 1.0, ['worker' => (string) $workerId]);
+        $this->statsd->histogram('packagist.metadata_dump.run_forcedump', $forceDumpPackages, 1.0, ['worker' => (string) $workerId]);
     }
 
     public function gc(): void
@@ -370,81 +399,124 @@ class V2Dumper
 
     private function writeV2File(Package $package, string $name, string $path, string $contents, bool $forceDump = false): void
     {
-        // ensure we do not upload files to the cdn for packages that have been recently deleted to avoid race conditions
-        $deletion = $this->redis->zscore('metadata-deletes', $name);
-        if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditRecordType::PackageDeleted]) !== null) {
-            $this->logger->error('Skipped dumping a file as it is marked as having been deleted in the last 30seconds', ['file' => $path, 'deletion' => $deletion, 'time' => time()]);
+        // instrumentation only: time the whole per-file cost and each network op, and classify the outcome
+        // (skipped early-return / deleted-guard / full written) so we can see where the dump loop spends time
+        $fileStart = microtime(true);
+        $result = 'written';
+        $opTimings = [];
+        $workerTag = ['worker' => (string) $this->workerId];
 
-            return;
-        }
+        try {
+            // ensure we do not upload files to the cdn for packages that have been recently deleted to avoid race conditions
+            $deletion = $this->redis->zscore('metadata-deletes', $name);
+            if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditRecordType::PackageDeleted]) !== null) {
+                $this->logger->error('Skipped dumping a file as it is marked as having been deleted in the last 30seconds', ['file' => $path, 'deletion' => $deletion, 'time' => time()]);
 
-        if (!Preg::isMatch('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
-            throw new \LogicException('Could not match package name from '.$path);
-        }
+                $result = 'deleted';
 
-        $pkgWithDevFlag = $match[1];
-        $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
+                return;
+            }
 
-        // Always track files for CDN verification, even if they don't need updating
-        // so that stuff gets purged in case it is outdated on the CDN still for some reason
-        $this->writtenFiles[] = $relativePath;
+            if (!Preg::isMatch('{/([^/]+/[^/]+?(~dev)?)\.json$}', $path, $match)) {
+                throw new \LogicException('Could not match package name from '.$path);
+            }
 
-        if (
-            !$forceDump
-            && file_exists($path)
-            && file_get_contents($path) === $contents
-            // files dumped before then are susceptible to be out of sync, so force them all to be dumped once more at least
-            && filemtime($path) >= 1606210609
-        ) {
-            return;
-        }
+            $pkgWithDevFlag = $match[1];
+            $relativePath = 'p2/'.$pkgWithDevFlag.'.json';
 
-        // fetch the file to ensure the region we hit after has a hot cache so we can verify correctly that the purge worked
-        if (file_exists($path)) {
-            try {
-                $this->cdnClient->fetchPublicMetadata($relativePath);
-            } catch (\Exception $e) {
-                // ignore 404s as if the file is not there yet it means it's unlikely to be cached in a bad state on some other region
-                if ($e->getCode() !== 404) {
-                    throw $e;
+            // Always track files for CDN verification, even if they don't need updating
+            // so that stuff gets purged in case it is outdated on the CDN still for some reason
+            $this->writtenFiles[] = $relativePath;
+
+            if (
+                !$forceDump
+                && file_exists($path)
+                && file_get_contents($path) === $contents
+                // files dumped before then are susceptible to be out of sync, so force them all to be dumped once more at least
+                && filemtime($path) >= 1606210609
+            ) {
+                $result = 'skipped';
+
+                return;
+            }
+
+            // fetch the file to ensure the region we hit after has a hot cache so we can verify correctly that the purge worked
+            if (file_exists($path)) {
+                $opStart = microtime(true);
+                try {
+                    $this->cdnClient->fetchPublicMetadata($relativePath);
+                } catch (\Exception $e) {
+                    // ignore 404s as if the file is not there yet it means it's unlikely to be cached in a bad state on some other region
+                    if ($e->getCode() !== 404) {
+                        throw $e;
+                    }
+                    $this->httpClient->reset();
+                } finally {
+                    $opTimings['prefetch'] = round((microtime(true) - $opStart) * 1000, 4);
+                    $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['prefetch'], ['op' => 'prefetch'] + $workerTag);
                 }
-                $this->httpClient->reset();
+            }
+
+            $this->filesystem->mkdir(\dirname($path));
+
+            $opStart = microtime(true);
+            try {
+                $filemtime = $this->writeCdn($relativePath, $contents);
+            } finally {
+                $opTimings['upload'] = round((microtime(true) - $opStart) * 1000, 4);
+                $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['upload'], ['op' => 'upload'] + $workerTag);
+            }
+
+            // we need to make sure dumps happen always with incrementing times to avoid race conditions when
+            // fetching metadata changes in the currently elapsing second (new items dumped after the fetch can then
+            // be skipped as they appear to have been dumped before the "since" param)
+            // so this ensures a sequence even when we cannot rely on sub-second timing info in the filemtime
+            if (str_ends_with((string) $filemtime, '0000')) {
+                $counterKey = 'metadata:'.substr((string) $filemtime, 0, -4);
+                $counter = $this->redis->incrby($counterKey, 10);
+                if ($counter === 10) {
+                    $this->redis->expire($counterKey, 10);
+                }
+                // safe-guard to avoid going beyond the current second in the very unlikely
+                // case we'd dump more than 1000 packages in one second
+                if ($counter > 9950) {
+                    sleep(1);
+                }
+                $filemtime += $counter;
+            }
+
+            $timeUnix = (int) ceil($filemtime / 10000);
+            $this->writeFileAtomic($path, $contents, $timeUnix);
+
+            $opStart = microtime(true);
+            try {
+                $this->writeToReplica($relativePath, $contents, $timeUnix);
+            } finally {
+                $opTimings['replica'] = round((microtime(true) - $opStart) * 1000, 4);
+                $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['replica'], ['op' => 'replica'] + $workerTag);
+            }
+
+            if (!$this->bypassIndividualPurges) {
+                $opStart = microtime(true);
+                try {
+                    $this->purgeCdn($relativePath);
+                } finally {
+                    $opTimings['purge'] = round((microtime(true) - $opStart) * 1000, 4);
+                    $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['purge'], ['op' => 'purge'] + $workerTag);
+                }
+            }
+
+            $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
+            $this->statsd->increment('packagist.metadata_dump_v2');
+        } finally {
+            // instrumentation only: per-file duration + outcome counter, and a warning log for the slow outliers
+            $fileMs = round((microtime(true) - $fileStart) * 1000, 4);
+            $this->statsd->timing('packagist.metadata_dump.file_time', $fileMs, ['result' => $result] + $workerTag);
+            $this->statsd->increment('packagist.metadata_dump.file', 1, 1, ['result' => $result] + $workerTag);
+            if ($result === 'written' && $fileMs > 2000) {
+                $this->logger->warning('Slow v2 metadata file dump', ['file' => $path, 'duration_ms' => $fileMs, 'ops_ms' => $opTimings, 'worker' => $this->workerId]);
             }
         }
-
-        $this->filesystem->mkdir(\dirname($path));
-
-        $filemtime = $this->writeCdn($relativePath, $contents);
-
-        // we need to make sure dumps happen always with incrementing times to avoid race conditions when
-        // fetching metadata changes in the currently elapsing second (new items dumped after the fetch can then
-        // be skipped as they appear to have been dumped before the "since" param)
-        // so this ensures a sequence even when we cannot rely on sub-second timing info in the filemtime
-        if (str_ends_with((string) $filemtime, '0000')) {
-            $counterKey = 'metadata:'.substr((string) $filemtime, 0, -4);
-            $counter = $this->redis->incrby($counterKey, 10);
-            if ($counter === 10) {
-                $this->redis->expire($counterKey, 10);
-            }
-            // safe-guard to avoid going beyond the current second in the very unlikely
-            // case we'd dump more than 1000 packages in one second
-            if ($counter > 9950) {
-                sleep(1);
-            }
-            $filemtime += $counter;
-        }
-
-        $timeUnix = (int) ceil($filemtime / 10000);
-        $this->writeFileAtomic($path, $contents, $timeUnix);
-
-        $this->writeToReplica($relativePath, $contents, $timeUnix);
-
-        if (!$this->bypassIndividualPurges) {
-            $this->purgeCdn($relativePath);
-        }
-
-        $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
-        $this->statsd->increment('packagist.metadata_dump_v2');
     }
 
     /**

@@ -132,7 +132,10 @@ class DumpPackagesV2Command extends Command
                     $sql .= ' ORDER BY id ASC';
                     $ids = $this->getEM()->getConnection()->fetchFirstColumn($sql, $params);
                 } else {
+                    // instrumentation only: time the stale-select query to rule it out as a bottleneck during a buildup
+                    $selectStart = microtime(true);
                     $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers);
+                    $this->statsd->timing('packagist.metadata_dump.select_time', round((microtime(true) - $selectStart) * 1000, 4), ['worker' => (string) $workerId]);
                     if (\count($ids) > 2000) {
                         $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids), 'worker' => (string) $workerId]);
                         $ids = \array_slice($ids, 0, 2000);
