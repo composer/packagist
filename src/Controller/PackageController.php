@@ -833,9 +833,9 @@ class PackageController extends Controller
                 ['version' => $version]
             )
         ]);
-        // Hidden versions are only served to authorized viewers; shared-cache them and a CDN would
-        // hand the response to anyone hitting the same URL, bypassing the voter guard above.
-        if (!$version->isDevelopment() && $version->getDeletionReason() !== VersionDeletionReason::Hidden) {
+
+        // Soft-deleted versions cannot be cached as they render details based on logged in user.
+        if (!$version->isDevelopment() && !$version->isSoftDeleted()) {
             $resp->setSharedMaxAge(24 * 3600);
             $resp->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
         }
