@@ -12,6 +12,7 @@
 
 namespace App\QueryFilter\AuditLog;
 
+use App\Audit\AuditLogSearchType;
 use Composer\Pcre\Preg;
 use Doctrine\ORM\QueryBuilder;
 
@@ -19,19 +20,16 @@ class PackageNameFilter extends AbstractAdminAwareTextFilter
 {
     protected function applyFilter(QueryBuilder $qb, string $paramName, string $pattern, bool $useWildcard): QueryBuilder
     {
-        if ($useWildcard) {
-            $qb->setParameter($paramName, \sprintf('"%s"', $pattern));
-            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.name') LIKE :".$paramName);
-        } else {
-            $qb->setParameter($paramName, $pattern);
-            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.name') = :".$paramName);
-        }
+        // The (type, name) search index is the actual, fully-selective filter.
+        $this->applySearchIndexFilter($qb, $paramName, $pattern, $useWildcard, AuditLogSearchType::Package);
 
+        // For a "vendor/package" query, also constrain the indexed vendor column: it can't narrow
+        // the result further (every match already has that vendor) but it hands the optimizer an
+        // indexed access path into audit_log, avoiding a backward PK scan for the ORDER BY ... LIMIT.
         if (str_contains($pattern, '/')) {
-            $vendor = Preg::replace('{/.*$}', '', $pattern);
-            // The vendor pre-filter is an indexed exact match; skip it when the vendor segment
-            // itself contains a wildcard (e.g. "ven*/pkg" -> pattern "ven%/pkg"), since
-            // `a.vendor = 'ven%'` would match nothing and wrongly empty the result set.
+            $vendor = Preg::replace('{/.*$}', '', mb_strtolower($pattern));
+            // Skip when the vendor segment itself is a wildcard (e.g. "ven*/pkg" -> "ven%/pkg"),
+            // since `a.vendor = 'ven%'` would match nothing and wrongly empty the result set.
             if (!$useWildcard || !str_contains($vendor, '%')) {
                 $qb->setParameter('pkgVendor', $vendor);
                 $qb->andWhere('a.vendor = :pkgVendor');

@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Audit\AbandonmentReason;
+use App\Audit\AuditLogSearchType;
 use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
 use App\Audit\VersionDeletionReason;
@@ -29,7 +30,6 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Index(name: 'type_idx', columns: ['type'])]
 #[ORM\Index(name: 'datetime_idx', columns: ['datetime'])]
 #[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
-#[ORM\Index(name: 'package_idx', columns: ['packageId'])]
 class AuditRecord
 {
     #[ORM\Id]
@@ -47,7 +47,16 @@ class AuditRecord
         #[ORM\Column]
         public readonly AuditRecordType $type,
 
-        /** @var array<string, mixed> */
+        /**
+         * Special attribute names have special meaning:
+         *
+         *  - name = package name
+         *  - user.username = user name
+         *  - org.name = org name
+         *  - actor.username = actor name
+         *
+         * @var array<string, mixed>
+         */
         #[ORM\Column(type: Types::JSON)]
         public readonly array $attributes,
         #[ORM\Column(nullable: true)]
@@ -67,6 +76,60 @@ class AuditRecord
     {
         // @phpstan-ignore property.readOnlyAssignNotInConstructor
         $this->ip = $ip;
+    }
+
+    /**
+     * The names this record references, keyed by role, for the audit_log_search index.
+     *
+     * Derived generically from the JSON attributes by key presence, so it stays correct as new
+     * record types reuse the same keys (the shapes mirror what AuditLogDisplayFactory reads).
+     * Names are lowercased to match the case-insensitive lookup the transparency-log filters do
+     * (usernames are canonically lowercased anyway). String actor/user sentinels such as
+     * 'automation'/'self'/'anonymous' are not indexed — only real usernames and package names are.
+     *
+     * @return list<array{type: string, name: string}>
+     */
+    public function getSearchTerms(): array
+    {
+        $terms = [];
+        $add = static function (AuditLogSearchType $type, mixed $name) use (&$terms): void {
+            if (!\is_string($name) || $name === '') {
+                return;
+            }
+            $lower = mb_strtolower($name);
+            // keyed to de-duplicate (e.g. user.username === username_to on a rename)
+            $terms[$type->value."\0".$lower] = ['type' => $type->value, 'name' => $lower];
+        };
+
+        $add(AuditLogSearchType::Package, $this->attributes['name'] ?? null);
+
+        $userData = $this->attributes['user'] ?? null;
+        if (\is_array($userData)) {
+            $add(AuditLogSearchType::User, $userData['username'] ?? null);
+        }
+
+        // package ownership transfers store maintainer snapshots as arrays of {id, username}
+        foreach (['current_maintainers', 'previous_maintainers'] as $key) {
+            $maintainers = $this->attributes[$key] ?? null;
+            if (\is_array($maintainers)) {
+                foreach ($maintainers as $maintainer) {
+                    if (\is_array($maintainer)) {
+                        $add(AuditLogSearchType::User, $maintainer['username'] ?? null);
+                    }
+                }
+            }
+        }
+
+        // index both sides of a username change so searching either handle surfaces the rename
+        $add(AuditLogSearchType::User, $this->attributes['username_from'] ?? null);
+        $add(AuditLogSearchType::User, $this->attributes['username_to'] ?? null);
+
+        $actorData = $this->attributes['actor'] ?? null;
+        if (\is_array($actorData)) {
+            $add(AuditLogSearchType::Actor, $actorData['username'] ?? null);
+        }
+
+        return array_values($terms);
     }
 
     public static function packageCreated(Package $package, ?User $actor): self

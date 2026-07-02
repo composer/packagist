@@ -12,23 +12,14 @@
 
 namespace App\QueryFilter\AuditLog;
 
+use App\Audit\AuditLogSearchType;
 use Doctrine\ORM\QueryBuilder;
 
 class ActorFilter extends AbstractAdminAwareTextFilter
 {
     protected function applyFilter(QueryBuilder $qb, string $paramName, string $pattern, bool $useWildcard): QueryBuilder
     {
-        // If pattern is numeric search by actorId
-        if (is_numeric($pattern) && $this->isAdmin) {
-            $qb->setParameter($paramName, (int) $pattern);
-            $qb->andWhere('a.actorId = :'.$paramName);
-        } elseif ($useWildcard) {
-            $qb->setParameter($paramName, \sprintf('"%s"', $pattern));
-            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.actor.username') LIKE :".$paramName);
-        } else {
-            $qb->setParameter($paramName, $pattern);
-            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.actor.username') = :".$paramName);
-        }
+        $this->applySearchIndexFilter($qb, $paramName, $pattern, $useWildcard, AuditLogSearchType::Actor);
 
         return $qb;
     }

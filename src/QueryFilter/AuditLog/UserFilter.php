@@ -12,24 +12,14 @@
 
 namespace App\QueryFilter\AuditLog;
 
+use App\Audit\AuditLogSearchType;
 use Doctrine\ORM\QueryBuilder;
 
 class UserFilter extends AbstractAdminAwareTextFilter
 {
     protected function applyFilter(QueryBuilder $qb, string $paramName, string $pattern, bool $useWildcard): QueryBuilder
     {
-        // If pattern is numeric search by userId
-        if (is_numeric($pattern) && $this->isAdmin) {
-            $qb->setParameter($paramName, (int) $pattern);
-            $qb->andWhere('a.userId = :'.$paramName);
-        } elseif ($useWildcard) {
-            $qb->setParameter($paramName, \sprintf('"%s"', $pattern));
-            $qb->andWhere("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :".$paramName);
-        } else {
-            $qb->setParameter($paramName, $pattern);
-            $qb->setParameter($paramName.'Json', json_encode(['username' => $pattern]));
-            $qb->andWhere("(JSON_EXTRACT(a.attributes, '$.user.username') = :".$paramName.' OR JSON_CONTAINS(a.attributes, :'.$paramName."Json, '$.current_maintainers') = 1 OR JSON_CONTAINS(a.attributes, :".$paramName."Json, '$.previous_maintainers') = 1)");
-        }
+        $this->applySearchIndexFilter($qb, $paramName, $pattern, $useWildcard, AuditLogSearchType::User);
 
         return $qb;
     }

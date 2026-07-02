@@ -13,11 +13,14 @@
 namespace App\EventListener;
 
 use App\Entity\AuditRecord;
+use App\Entity\AuditRecordRepository;
 use App\Service\AuditRecordsManager;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
+use Doctrine\ORM\Event\PostPersistEventArgs;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 
 #[AsEntityListener(event: 'prePersist', entity: AuditRecord::class)]
+#[AsEntityListener(event: 'postPersist', entity: AuditRecord::class)]
 class AuditRecordListener
 {
     public function __construct(
@@ -28,5 +31,13 @@ class AuditRecordListener
     public function prePersist(AuditRecord $record, PrePersistEventArgs $args): void
     {
         $this->auditRecordsManager->enrichWithClientIP($record);
+    }
+
+    public function postPersist(AuditRecord $record, PostPersistEventArgs $args): void
+    {
+        // Mirror AuditRecordRepository::insert()'s search indexing for records persisted via the ORM.
+        $repository = $args->getObjectManager()->getRepository(AuditRecord::class);
+        \assert($repository instanceof AuditRecordRepository);
+        $repository->indexSearchTerms($record);
     }
 }

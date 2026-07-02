@@ -40,6 +40,30 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertSame($expected, $rows->each(fn ($element) => trim($element->text())));
     }
 
+    public function testViewAuditLogsFilteredByUsername(): void
+    {
+        $actor = self::createUser('actoruser', 'actor@example.com', roles: ['ROLE_USER']);
+        $maintainer = self::createUser('naderman', 'nader@example.com');
+        $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$actor]);
+
+        $this->store($actor, $maintainer, $package);
+        $this->store(AuditRecord::maintainerAdded($package, $maintainer, $actor));
+
+        $this->client->loginUser($actor);
+
+        // The link on /users/naderman/ hits this exact path; it used to time out scanning the JSON.
+        // The search is case-insensitive and matches the record where naderman is the subject user.
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user' => 'NADERMAN']));
+        static::assertResponseIsSuccessful();
+        $rowTexts = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        static::assertContains('Maintainer added', $rowTexts);
+
+        // A username with no records returns an empty, non-crashing result
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user' => 'nobody']));
+        static::assertResponseIsSuccessful();
+        static::assertCount(0, $crawler->filter('[data-test=audit-log-type]'));
+    }
+
     public static function filterProvider(): iterable
     {
         yield [

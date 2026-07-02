@@ -28,6 +28,14 @@ class UserFilterTest extends TestCase
         $this->entityManager = $this->createStub(EntityManagerInterface::class);
     }
 
+    private function buildQueryBuilder(): QueryBuilder
+    {
+        $qb = new QueryBuilder($this->entityManager);
+        $qb->from(AuditRecord::class, 'a');
+
+        return $qb;
+    }
+
     public function testFromQueryWithEmptyInput(): void
     {
         $bag = new InputBag([]);
@@ -59,89 +67,63 @@ class UserFilterTest extends TestCase
         $bag = new InputBag([]);
         $filter = UserFilter::fromQuery($bag, 'user', false);
 
-        $qb = new QueryBuilder($this->entityManager);
-        $qb->from(AuditRecord::class, 'a');
+        $qb = $this->buildQueryBuilder();
         $result = $filter->filter($qb);
 
         $this->assertSame($qb, $result);
         $this->assertNull($qb->getDQLPart('where'));
     }
 
-    public function testFilterNonAdminExactMatch(): void
+    public function testFilterNonAdminUsesSearchIndex(): void
     {
         $bag = new InputBag(['user' => 'testuser']);
         $filter = UserFilter::fromQuery($bag, 'user', false);
 
-        $qb = new QueryBuilder($this->entityManager);
-        $qb->from(AuditRecord::class, 'a');
+        $qb = $this->buildQueryBuilder();
         $filter->filter($qb);
 
-        $this->assertNotNull($qb->getDQLPart('where'));
+        $where = (string) $qb->getDQLPart('where');
+        $this->assertStringContainsString('a.id IN (SELECT user_search.auditLogId FROM', $where);
+        $this->assertStringContainsString('AuditLogSearch user_search', $where);
+        $this->assertStringContainsString('user_search.type = :userType', $where);
+        $this->assertStringContainsString('user_search.name = :user', $where);
+        $this->assertSame('user', $qb->getParameter('userType')->getValue());
         $this->assertSame('testuser', $qb->getParameter('user')->getValue());
-        $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.user.username') = :user", (string) $qb->getDQLPart('where'));
     }
 
-    public function testFilterAdminWithWildcard(): void
+    public function testFilterLowercasesValueForCaseInsensitiveMatch(): void
     {
-        $bag = new InputBag(['user' => 'test*']);
-        $filter = UserFilter::fromQuery($bag, 'user', true);
+        $bag = new InputBag(['user' => 'TestUser']);
+        $filter = UserFilter::fromQuery($bag, 'user', false);
 
-        $qb = new QueryBuilder($this->entityManager);
-        $qb->from(AuditRecord::class, 'a');
-        $filter->filter($qb);
-
-        $this->assertSame('"test%"', $qb->getParameter('user')->getValue());
-        $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :user", (string) $qb->getDQLPart('where'));
-    }
-
-    public function testFilterAdminExactMatch(): void
-    {
-        $bag = new InputBag(['user' => 'testuser']);
-        $filter = UserFilter::fromQuery($bag, 'user', true);
-
-        $qb = new QueryBuilder($this->entityManager);
-        $qb->from(AuditRecord::class, 'a');
+        $qb = $this->buildQueryBuilder();
         $filter->filter($qb);
 
         $this->assertSame('testuser', $qb->getParameter('user')->getValue());
-        $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.user.username') = :user", (string) $qb->getDQLPart('where'));
+    }
+
+    public function testFilterAdminWildcardUsesLike(): void
+    {
+        $bag = new InputBag(['user' => 'Test*']);
+        $filter = UserFilter::fromQuery($bag, 'user', true);
+
+        $qb = $this->buildQueryBuilder();
+        $filter->filter($qb);
+
+        $where = (string) $qb->getDQLPart('where');
+        $this->assertStringContainsString('user_search.name LIKE :user', $where);
+        $this->assertSame('test%', $qb->getParameter('user')->getValue());
     }
 
     public function testFilterAdminEscapesSpecialCharacters(): void
     {
-        $bag = new InputBag(['user' => 'test%_user*']);
+        $bag = new InputBag(['user' => 'Test%_user*']);
         $filter = UserFilter::fromQuery($bag, 'user', true);
 
-        $qb = new QueryBuilder($this->entityManager);
-        $qb->from(AuditRecord::class, 'a');
-        $result = $filter->filter($qb);
-
-        $this->assertSame('"test\%\_user%"', $qb->getParameter('user')->getValue());
-    }
-
-    public function testFilterAdminMultipleWildcards(): void
-    {
-        $bag = new InputBag(['user' => 'test*user*']);
-        $filter = UserFilter::fromQuery($bag, 'user', true);
-
-        $qb = new QueryBuilder($this->entityManager);
-        $qb->from(AuditRecord::class, 'a');
+        $qb = $this->buildQueryBuilder();
         $filter->filter($qb);
 
-        $this->assertSame('"test%user%"', $qb->getParameter('user')->getValue());
-        $this->assertStringContainsString("JSON_EXTRACT(a.attributes, '$.user.username') LIKE :user", (string) $qb->getDQLPart('where'));
-    }
-
-    public function testFilterAdminNumericSearchesByUserId(): void
-    {
-        $bag = new InputBag(['user' => '123']);
-        $filter = UserFilter::fromQuery($bag, 'user', true);
-
-        $qb = new QueryBuilder($this->entityManager);
-        $qb->from(AuditRecord::class, 'a');
-        $filter->filter($qb);
-
-        $this->assertSame(123, $qb->getParameter('user')->getValue());
-        $this->assertStringContainsString('a.userId = :user', (string) $qb->getDQLPart('where'));
+        // "%" and "_" escaped (literal), "*" turned into the SQL wildcard "%", all lowercased
+        $this->assertSame('test\%\_user%', $qb->getParameter('user')->getValue());
     }
 }

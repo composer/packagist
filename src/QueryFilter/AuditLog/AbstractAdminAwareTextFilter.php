@@ -12,6 +12,8 @@
 
 namespace App\QueryFilter\AuditLog;
 
+use App\Audit\AuditLogSearchType;
+use App\Entity\AuditLogSearch;
 use App\QueryFilter\QueryFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
@@ -61,6 +63,34 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
         string $pattern,
         bool $useWildcard,
     ): QueryBuilder;
+
+    /**
+     * Restrict to records whose audit_log_search index holds the given name under $type.
+     *
+     * This is an indexed, case-insensitive lookup (names are stored lowercased) that replaces the
+     * former JSON_EXTRACT/JSON_CONTAINS scans of the audit_log.attributes blob. The sub-query alias
+     * is derived from $paramName so several text filters can be combined in one query.
+     */
+    protected function applySearchIndexFilter(
+        QueryBuilder $qb,
+        string $paramName,
+        string $pattern,
+        bool $useWildcard,
+        AuditLogSearchType $type,
+    ): void {
+        $alias = $paramName.'_search';
+        $operator = $useWildcard ? 'LIKE' : '=';
+
+        $qb->andWhere(\sprintf(
+            'a.id IN (SELECT %1$s.auditLogId FROM %2$s %1$s WHERE %1$s.type = :%3$sType AND %1$s.name %4$s :%3$s)',
+            $alias,
+            AuditLogSearch::class,
+            $paramName,
+            $operator,
+        ));
+        $qb->setParameter($paramName.'Type', $type->value);
+        $qb->setParameter($paramName, mb_strtolower($pattern));
+    }
 
     public function getSelectedValue(): mixed
     {
