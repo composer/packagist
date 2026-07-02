@@ -48,3 +48,5 @@ CREATE TABLE slug_reservation (
     KEY slug_reservation_org_idx (orgId),
     UNIQUE KEY slug_reservation_active_slug_uniq (activeSlug)
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
+
+ALTER TABLE audit_log ADD organizationId BINARY(16) DEFAULT NULL;
