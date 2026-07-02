@@ -33,6 +33,7 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Index(name: 'type_idx', columns: ['type'])]
 #[ORM\Index(name: 'datetime_idx', columns: ['datetime'])]
 #[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
+#[ORM\Index(name: 'organization_idx', columns: ['organizationId'])]
 class AuditRecord
 {
     #[ORM\Id]

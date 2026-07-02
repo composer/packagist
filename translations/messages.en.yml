@@ -29,6 +29,7 @@ menu:
     organization_teams: Teams
     organization_members: Members
     organization_settings: Settings
+    organization_audit_log: Audit log
 
 signinbox:
      register: No account yet? Create one now!

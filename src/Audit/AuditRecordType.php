@@ -73,6 +73,14 @@ enum AuditRecordType: string
     case OrganizationMemberRemoved = 'organization_member_removed';
     case OrganizationMemberLeft = 'organization_member_left';
 
+    /**
+     * @return list<self>
+     */
+    public static function organizationCases(): array
+    {
+        return array_values(array_filter(self::cases(), static fn (self $type): bool => $type->category() === 'organization'));
+    }
+
     public function category(): string
     {
         return match ($this) {
