@@ -937,7 +937,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             servicename?: scalar|Param|null, // Overrules dbname parameter if given and used as SERVICE_NAME or SID connection parameter for Oracle depending on the service parameter.
  *             sessionMode?: scalar|Param|null, // The session mode to use for the oci8 driver
  *             server?: scalar|Param|null, // The name of a running database server to connect to for SQL Anywhere.
- *             default_dbname?: scalar|Param|null, // Override the default database (postgres) to connect to for PostgreSQL connexion.
+ *             default_dbname?: scalar|Param|null, // Override the default database (postgres) to connect to for PostgreSQL connection.
  *             sslmode?: scalar|Param|null, // Determines whether or with what priority a SSL TCP/IP connection will be negotiated with the server for PostgreSQL.
  *             sslrootcert?: scalar|Param|null, // The name of a file containing SSL certificate authority (CA) certificate(s). If the file exists, the server's certificate will be verified to be signed by one of these authorities.
  *             sslcert?: scalar|Param|null, // The path to the SSL client certificate file for PostgreSQL.
@@ -983,7 +983,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *                 servicename?: scalar|Param|null, // Overrules dbname parameter if given and used as SERVICE_NAME or SID connection parameter for Oracle depending on the service parameter.
  *                 sessionMode?: scalar|Param|null, // The session mode to use for the oci8 driver
  *                 server?: scalar|Param|null, // The name of a running database server to connect to for SQL Anywhere.
- *                 default_dbname?: scalar|Param|null, // Override the default database (postgres) to connect to for PostgreSQL connexion.
+ *                 default_dbname?: scalar|Param|null, // Override the default database (postgres) to connect to for PostgreSQL connection.
  *                 sslmode?: scalar|Param|null, // Determines whether or with what priority a SSL TCP/IP connection will be negotiated with the server for PostgreSQL.
  *                 sslrootcert?: scalar|Param|null, // The name of a file containing SSL certificate authority (CA) certificate(s). If the file exists, the server's certificate will be verified to be signed by one of these authorities.
  *                 sslcert?: scalar|Param|null, // The path to the SSL client certificate file for PostgreSQL.
@@ -1062,7 +1062,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *                     lock_path?: scalar|Param|null, // Default: "%kernel.cache_dir%/doctrine/orm/slc/filelock"
  *                     lock_lifetime?: scalar|Param|null, // Default: 60
  *                     type?: scalar|Param|null, // Default: "default"
- *                     lifetime?: scalar|Param|null, // Default: 0
+ *                     lifetime?: scalar|Param|null, // Default: null
  *                     service?: scalar|Param|null,
  *                     name?: scalar|Param|null,
  *                 }>,
@@ -1722,6 +1722,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         phpredis_client?: scalar|Param|null, // Default: "Redis"
  *         relay_client?: scalar|Param|null, // Default: "Relay\\Relay"
  *         phpredis_clusterclient?: scalar|Param|null, // Default: "RedisCluster"
+ *         phpredis_arrayclient?: scalar|Param|null, // Default: "RedisArray"
  *         logger?: scalar|Param|null, // Default: "Snc\\RedisBundle\\Logger\\RedisLogger"
  *         data_collector?: scalar|Param|null, // Default: "Snc\\RedisBundle\\DataCollector\\RedisDataCollector"
  *         monolog_handler?: scalar|Param|null, // Default: "Monolog\\Handler\\RedisHandler"
@@ -1729,6 +1730,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     clients?: array<string, array{ // Default: []
  *         type?: scalar|Param|null,
  *         alias?: scalar|Param|null,
+ *         class?: scalar|Param|null, // Default: null
  *         logging?: bool|Param, // Default: true
  *         dsns?: string|list<mixed>,
  *         options?: array{
@@ -1741,7 +1743,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             iterable_multibulk?: bool|Param, // Default: false
  *             throw_errors?: bool|Param, // Default: true
  *             serialization?: scalar|Param|null, // Default: "default"
+ *             compression?: scalar|Param|null, // Default: null
+ *             compression_level?: int|Param, // Default: null
  *             cluster?: scalar|Param|null, // Default: null
+ *             array?: bool|Param, // Default: false
  *             prefix?: scalar|Param|null, // Default: null
  *             replication?: true|"predis"|"sentinel"|Param,
  *             service?: scalar|Param|null, // Default: null
