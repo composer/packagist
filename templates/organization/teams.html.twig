@@ -1,0 +1,75 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block title %}Teams - {{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block org_content %}
+    <h3 class="title">Teams</h3>
+
+    {{ form_start(form, { 'attr': { 'class': 'organization_team_create' } }) }}
+        {{ form_errors(form) }}
+        <div class="form-group clearfix">
+            {{ form_label(form.name) }}
+            {{ form_errors(form.name) }}
+            {{ form_widget(form.name) }}
+            {{ form_help(form.name) }}
+        </div>
+        <input class="btn btn-success" type="submit" value="Create team" />
+    {{ form_end(form) }}
+
+    <hr>
+
+    {% for entry in teams %}
+        {% set team = entry.team %}
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <strong>{{ team.name }}</strong>
+                {% if team.system %}
+                    <span class="label label-info">system</span>
+                {% endif %}
+
+                {% if not team.system %}
+                    <span class="pull-right">
+                        <form method="post" action="{{ path('organization_team_delete', { organization: organization.slug, teamId: team.teamId }) }}"
+                              onsubmit="return confirm('Delete team {{ team.name|e('js') }}?');" style="display:inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('org_team_delete_' ~ team.teamId) }}">
+                            <button type="submit" class="btn btn-xs btn-danger">Delete team</button>
+                        </form>
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="panel-body">
+                {% if not team.system %}
+                    <form method="post" action="{{ path('organization_team_rename', { organization: organization.slug, teamId: team.teamId }) }}" class="form-inline" style="margin-bottom:15px">
+                        <input type="hidden" name="_token" value="{{ csrf_token('org_team_rename_' ~ team.teamId) }}">
+                        <input type="text" name="name" value="{{ team.name }}" maxlength="40" class="form-control input-sm">
+                        <button type="submit" class="btn btn-sm btn-default">Rename</button>
+                    </form>
+                {% endif %}
+
+                <table class="table table-condensed">
+                    <tbody>
+                        {% for member in entry.members %}
+                            <tr>
+                                <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
+                                <td class="text-right">
+                                    <form method="post" action="{{ path('organization_team_member_remove', { organization: organization.slug, teamId: team.teamId, userId: member.userId }) }}" style="display:inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('org_team_member_remove_' ~ team.teamId ~ '_' ~ member.userId) }}">
+                                        <button type="submit" class="btn btn-xs btn-default">Remove</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="2" class="text-muted">No members.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {{ form_start(addMemberForm, { 'attr': { 'class': 'form-inline' }, 'action': path('organization_team_member_add', { organization: organization.slug, teamId: team.teamId }) }) }}
+                    {{ form_widget(addMemberForm.username, { 'attr': { 'class': 'form-control input-sm', 'placeholder': 'username' } }) }}
+                    <button type="submit" class="btn btn-sm btn-default">Add member</button>
+                {{ form_end(addMemberForm) }}
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

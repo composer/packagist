@@ -1,0 +1,4 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ display.member.username }}</strong> removed from <strong>{{ auditLog.organizationLink(display.organization) }}</strong><br>
+Removed by: {{ display.actor.username }}

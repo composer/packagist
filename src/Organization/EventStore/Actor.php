@@ -34,6 +34,14 @@ final readonly class Actor
         return new self($user->getId(), ActorLabel::User);
     }
 
+    /**
+     * An org member who is not an owner (e.g. a member leaving on their own). Carries no org role.
+     */
+    public static function member(User $user): self
+    {
+        return new self($user->getId(), ActorLabel::User);
+    }
+
     public static function packagistAdmin(User $admin): self
     {
         return new self($admin->getId(), ActorLabel::PackagistAdmin);

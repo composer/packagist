@@ -14,6 +14,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
+use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Organization\OrganizationManager;
 use App\Tests\IntegrationTestCase;
@@ -171,6 +172,56 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertSame('ACME Inc', $organization->displayName);
     }
 
+    public function testTeamsForbiddenForNonOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner, $intruder);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($intruder);
+        $this->client->request('GET', '/organizations/acme/teams');
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testTeamsRedirectsOwnerWithoutTwoFactor(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/organizations/acme/teams');
+
+        self::assertResponseRedirects();
+    }
+
+    public function testOwnerCreatesTeam(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        // Create through the event store so the aggregate has a bootstrapped history.
+        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/teams');
+
+        self::assertResponseIsSuccessful();
+        $form = $crawler->selectButton('Create team')->form(['team[name]' => 'backend']);
+        $this->client->submit($form);
+
+        self::assertResponseRedirects('/organizations/acme/teams');
+
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+        $teams = static::getService(OrganizationTeamRepository::class)->findByOrg($organization->id);
+        $names = array_map(static fn ($t): string => $t->name, $teams);
+        self::assertContains('backend', $names);
+    }
+
     public function testShowRedirectsOldSlugToCurrentSlug(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
@@ -219,6 +270,10 @@ class OrganizationControllerTest extends IntegrationTestCase
         $organization = self::createOrganization($slug, $displayName, $owner, $deletedAt);
 
         $this->store($organization);
+
+        if ($owner !== null) {
+            $this->store(self::createOwnerMembership($organization, $owner));
+        }
 
         return $organization;
     }

@@ -4,8 +4,12 @@ namespace App\Tests\Fixtures;
 
 use App\Entity\Organization;
 use App\Entity\OrganizationStatus;
+use App\Entity\OrganizationTeam;
+use App\Entity\OrganizationTeamKind;
+use App\Entity\OrganizationTeamMember;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Organization\Domain\Organization as OrganizationAggregate;
 use Symfony\Component\Uid\Ulid;
 
 trait Fixtures
@@ -13,15 +17,46 @@ trait Fixtures
     protected static function createOrganization(string $slug, string $displayName, ?User $owner = null, ?\DateTimeImmutable $deletedAt = null): Organization
     {
         return new Organization(
-            new Ulid(),
-            $slug,
-            $displayName,
-            $deletedAt !== null ? OrganizationStatus::Deleted : OrganizationStatus::Active,
-            new \DateTimeImmutable(),
-            $owner,
-            $deletedAt,
-            $deletedAt !== null ? 'owner' : null,
+            id: new Ulid(),
+            slug: $slug,
+            displayName: $displayName,
+            status: $deletedAt !== null ? OrganizationStatus::Deleted : OrganizationStatus::Active,
+            createdAt: new \DateTimeImmutable(),
+            createdBy: $owner,
+            ownersTeamId: new Ulid(),
+            deletedAt: $deletedAt,
+            deletedReason: $deletedAt !== null ? 'owner' : null,
         );
+    }
+
+    /**
+     * The bootstrapped `owners` team and the owner's membership, mirroring what OrganizationCreated
+     * projects. Persist these alongside the organization so the owner is recognised as an owner.
+     *
+     * @return array{OrganizationTeam, OrganizationTeamMember}
+     */
+    protected static function createOwnerMembership(Organization $organization, User $owner): array
+    {
+        \Webmozart\Assert\Assert::notNull($organization->ownersTeamId);
+
+        $team = new OrganizationTeam(
+            $organization->ownersTeamId,
+            $organization->id,
+            OrganizationTeamKind::System,
+            OrganizationAggregate::OWNERS_TEAM_NAME,
+            $owner,
+            new \DateTimeImmutable(),
+        );
+
+        $member = new OrganizationTeamMember(
+            $organization->ownersTeamId,
+            $owner->getId(),
+            $organization->id,
+            $owner,
+            new \DateTimeImmutable(),
+        );
+
+        return [$team, $member];
     }
 
     /**

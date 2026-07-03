@@ -45,7 +45,7 @@ final class OrganizationManager
 
         $this->slugChecker->assertClaimable($slug, $owner);
 
-        $organization = Organization::create(new Ulid(), $slug, $displayName, $owner->getId());
+        $organization = Organization::create(new Ulid(), $slug, $displayName, new Ulid(), $owner->getId());
 
         try {
             $this->eventStore->append($organization, $this->actorFor($actor, $owner->getId()), $ip);

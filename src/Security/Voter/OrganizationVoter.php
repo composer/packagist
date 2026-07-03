@@ -13,6 +13,7 @@
 namespace App\Security\Voter;
 
 use App\Entity\Organization;
+use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\User;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -26,6 +27,7 @@ class OrganizationVoter extends Voter
 {
     public function __construct(
         private Security $security,
+        private OrganizationTeamMemberRepository $teamMembers,
     ) {
     }
 
@@ -55,14 +57,28 @@ class OrganizationVoter extends Voter
         return match ($action) {
             // Owners have no visibility into a hidden org, so restore is packagist-admin only.
             OrganizationActions::Restore => false,
+            // Any org member may leave on their own; the last-owner guard is enforced by the aggregate.
+            OrganizationActions::Leave => $this->isMember($organization, $user) && !$organization->isDeleted(),
             OrganizationActions::Edit,
-            OrganizationActions::SoftDelete => $this->isOwner($organization, $user) && !$organization->isDeleted(),
+            OrganizationActions::SoftDelete,
+            OrganizationActions::CreateTeam,
+            OrganizationActions::RenameTeam,
+            OrganizationActions::DeleteTeam,
+            OrganizationActions::AddTeamMember,
+            OrganizationActions::RemoveTeamMember,
+            OrganizationActions::RemoveMember => $this->isOwner($organization, $user) && !$organization->isDeleted(),
         };
     }
 
     private function isOwner(Organization $organization, User $user): bool
     {
-        // Until the membership management is done, the owner is the creating user.
-        return $organization->createdBy?->getId() === $user->getId();
+        // An owner is a member of the org's bootstrapped `owners` team.
+        return $organization->ownersTeamId !== null
+            && $this->teamMembers->isOwner($organization->ownersTeamId, $user->getId());
+    }
+
+    private function isMember(Organization $organization, User $user): bool
+    {
+        return $this->teamMembers->isMemberOfOrg($organization->id, $user->getId());
     }
 }

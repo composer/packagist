@@ -51,10 +51,14 @@ class Organization
         #[ORM\Column(type: 'datetime_immutable')]
         public readonly \DateTimeImmutable $createdAt,
 
-        /** Owner by virtue of creation until the membership stage ships. Null once the creating user is deleted, or for system/automation-created orgs. */
+        /** The creating user. Recorded for provenance; ownership is now derived from the `owners` team ({@see $ownersTeamId}). Null once the creating user is deleted, or for system/automation-created orgs. */
         #[ORM\ManyToOne(targetEntity: User::class)]
         #[ORM\JoinColumn(name: 'createdBy', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
         public readonly ?User $createdBy,
+
+        /** The bootstrapped system `owners` team. Set at creation; the owner check is a membership lookup against it. Nullable only for forward-compat with rows created before this stage. */
+        #[ORM\Column(type: 'ulid', nullable: true)]
+        public ?Ulid $ownersTeamId = null,
 
         // Groundwork for org deletion (not yet implemented)
         #[ORM\Column(nullable: true)]

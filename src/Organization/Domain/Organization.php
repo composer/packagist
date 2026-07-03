@@ -12,22 +12,43 @@
 
 namespace App\Organization\Domain;
 
+use App\Organization\Domain\Event\MemberLeft;
+use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
 use App\Organization\Domain\Event\OrganizationNameChanged;
 use App\Organization\Domain\Event\OrganizationSlugChanged;
+use App\Organization\Domain\Event\TeamCreated;
+use App\Organization\Domain\Event\TeamDeleted;
+use App\Organization\Domain\Event\TeamMemberAdded;
+use App\Organization\Domain\Event\TeamMemberRemoved;
+use App\Organization\Domain\Event\TeamRenamed;
+use App\Organization\Domain\Exception\LastOwnerProtectedException;
+use App\Organization\Domain\Exception\NotAMemberException;
+use App\Organization\Domain\Exception\OrganizationException;
+use App\Organization\Domain\Exception\ReservedTeamNameException;
+use App\Organization\Domain\Exception\TeamNameTakenException;
+use App\Organization\Domain\Exception\TeamNotFoundException;
+use App\Organization\Domain\Exception\TeamProtectedException;
+use App\Organization\Domain\Exception\TwoFactorRequiredException;
 use App\Organization\EventStore\AbstractAggregate;
 use App\Organization\EventStore\DomainEvent;
 use App\Organization\EventStore\OrganizationEventType;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * The Organization aggregate. External facts (slug uniqueness, deny-list, vendor collision,
- * rate limits) are checked by the application service before a command reaches here.
+ * The Organization aggregate and its consistency boundary. Teams and memberships live inside it,
+ * so cross-member invariants (last-owner guard, team-name uniqueness) are enforced in one
+ * transaction. External facts (slug uniqueness, 2FA, rate limits) are checked by the application
+ * service before a command reaches here.
  *
- * This is the write-side model. The projection is {@see \App\Entity\Organization}.
+ * This is the write-side model. The projection is {@see \App\Entity\Organization} and the team
+ * read models {@see \App\Entity\OrganizationTeam} / {@see \App\Entity\OrganizationTeamMember}.
  */
 final class Organization extends AbstractAggregate
 {
+    /** The reserved system team name; created only via bootstrap, never through TeamCreated. */
+    public const string OWNERS_TEAM_NAME = 'owners';
+
     private string $slug;
 
     private string $displayName;
@@ -35,10 +56,18 @@ final class Organization extends AbstractAggregate
     // Groundwork for org deletion (not yet implemented).
     private bool $deleted = false;
 
-    public static function create(Ulid $id, Slug $slug, DisplayName $displayName, int $ownerId): self
+    private ?Ulid $ownersTeamId = null;
+
+    /** @var array<string, array{kind: string, name: string}> teamId (rfc4122) => team */
+    private array $teams = [];
+
+    /** @var array<string, list<int>> teamId (rfc4122) => member user ids */
+    private array $teamMembers = [];
+
+    public static function create(Ulid $id, Slug $slug, DisplayName $displayName, Ulid $ownersTeamId, int $ownerId): self
     {
         $organization = new self($id);
-        $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownerId));
+        $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownersTeamId, $ownerId));
 
         return $organization;
     }
@@ -62,6 +91,135 @@ final class Organization extends AbstractAggregate
         }
 
         $this->record(new OrganizationSlugChanged($this->id, $slug->value, $this->slug));
+    }
+
+    /**
+     * Create a custom team. The `owners` team is bootstrapped by creation, not this path.
+     *
+     * @throws ReservedTeamNameException the name is the reserved `owners`
+     * @throws TeamNameTakenException    another team already uses this name (case-insensitive)
+     */
+    public function createTeam(Ulid $teamId, TeamName $name): void
+    {
+        $this->assertActive();
+        $this->assertNameAllowed($name);
+        $this->assertNameAvailable($name, null);
+
+        $this->record(new TeamCreated($this->id, $teamId, $name->value));
+    }
+
+    /**
+     * Rename a custom team. No-op when the name is unchanged.
+     *
+     * @throws TeamNotFoundException
+     * @throws TeamProtectedException    the `owners` team cannot be renamed
+     * @throws ReservedTeamNameException
+     * @throws TeamNameTakenException
+     */
+    public function renameTeam(Ulid $teamId, TeamName $name): void
+    {
+        $this->assertActive();
+        $this->assertCustomTeam($teamId);
+
+        if ($this->teams[$teamId->toRfc4122()]['name'] === $name->value) {
+            return;
+        }
+
+        $this->assertNameAllowed($name);
+        $this->assertNameAvailable($name, $teamId);
+
+        $this->record(new TeamRenamed($this->id, $teamId, $name->value, $this->teams[$teamId->toRfc4122()]['name']));
+    }
+
+    /**
+     * Delete a custom team and cascade its memberships.
+     *
+     * @throws TeamNotFoundException
+     * @throws TeamProtectedException the `owners` team cannot be deleted
+     */
+    public function deleteTeam(Ulid $teamId): void
+    {
+        $this->assertActive();
+        $this->assertCustomTeam($teamId);
+
+        $this->record(new TeamDeleted($this->id, $teamId, $this->teams[$teamId->toRfc4122()]['name']));
+    }
+
+    /**
+     * Add an existing org member to a further team. No-op if already in the team.
+     *
+     * @param bool $targetHasTwoFactor whether the target user has 2FA enabled (checked by the caller)
+     *
+     * @throws TeamNotFoundException
+     * @throws NotAMemberException       the target has not joined the org (joining is invitation-only)
+     * @throws TwoFactorRequiredException adding to `owners` requires the target to have 2FA
+     */
+    public function addTeamMember(Ulid $teamId, int $userId, bool $targetHasTwoFactor): void
+    {
+        $this->assertActive();
+        $this->assertTeamExists($teamId);
+
+        if (!$this->isOrgMember($userId)) {
+            throw new NotAMemberException('The user is not a member of this organization.');
+        }
+
+        if ($this->isInTeam($teamId, $userId)) {
+            return;
+        }
+
+        if ($teamId->equals($this->ownersTeamId) && !$targetHasTwoFactor) {
+            throw new TwoFactorRequiredException('The user must enable two-factor authentication before becoming an owner.');
+        }
+
+        $this->record(new TeamMemberAdded($this->id, $teamId, $userId));
+    }
+
+    /**
+     * Remove a user from a single team.
+     *
+     * @throws TeamNotFoundException
+     * @throws NotAMemberException          the user is not in the team
+     * @throws LastOwnerProtectedException  would empty the `owners` team
+     */
+    public function removeTeamMember(Ulid $teamId, int $userId): void
+    {
+        $this->assertTeamExists($teamId);
+
+        if (!$this->isInTeam($teamId, $userId)) {
+            throw new NotAMemberException('The user is not a member of this team.');
+        }
+
+        if ($teamId->equals($this->ownersTeamId) && $this->ownerCount() === 1) {
+            throw new LastOwnerProtectedException('The last owner cannot be removed from the organization.');
+        }
+
+        $this->record(new TeamMemberRemoved($this->id, $teamId, $userId));
+    }
+
+    /**
+     * Remove a user from the entire org (all their teams at once).
+     *
+     * @throws NotAMemberException
+     * @throws LastOwnerProtectedException
+     */
+    public function removeMember(int $userId): void
+    {
+        $this->assertRemovableMember($userId);
+
+        $this->record(new MemberRemoved($this->id, $userId));
+    }
+
+    /**
+     * A member voluntarily leaves the org entirely (all teams).
+     *
+     * @throws NotAMemberException
+     * @throws LastOwnerProtectedException the last owner must appoint another owner first
+     */
+    public function leave(int $userId): void
+    {
+        $this->assertRemovableMember($userId);
+
+        $this->record(new MemberLeft($this->id, $userId));
     }
 
     /**
@@ -93,12 +251,105 @@ final class Organization extends AbstractAggregate
         return $this->deleted;
     }
 
+    public function ownersTeamId(): ?Ulid
+    {
+        return $this->ownersTeamId;
+    }
+
+    public function isOwner(int $userId): bool
+    {
+        return $this->ownersTeamId !== null && $this->isInTeam($this->ownersTeamId, $userId);
+    }
+
+    public function isOrgMember(int $userId): bool
+    {
+        foreach ($this->teamMembers as $members) {
+            if (\in_array($userId, $members, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isInTeam(Ulid $teamId, int $userId): bool
+    {
+        return \in_array($userId, $this->teamMembers[$teamId->toRfc4122()] ?? [], true);
+    }
+
+    private function ownerCount(): int
+    {
+        return \count($this->teamMembers[$this->ownersTeamId?->toRfc4122()] ?? []);
+    }
+
+    private function assertActive(): void
+    {
+        if ($this->deleted) {
+            throw new OrganizationException('This organization has been deleted.');
+        }
+    }
+
+    private function assertTeamExists(Ulid $teamId): void
+    {
+        if (!isset($this->teams[$teamId->toRfc4122()])) {
+            throw new TeamNotFoundException('The team does not exist.');
+        }
+    }
+
+    private function assertCustomTeam(Ulid $teamId): void
+    {
+        $this->assertTeamExists($teamId);
+
+        if ($this->teams[$teamId->toRfc4122()]['kind'] !== TeamCreated::KIND) {
+            throw new TeamProtectedException('The owners team is protected and cannot be renamed or deleted.');
+        }
+    }
+
+    private function assertNameAllowed(TeamName $name): void
+    {
+        if (mb_strtolower($name->value) === self::OWNERS_TEAM_NAME) {
+            throw new ReservedTeamNameException(sprintf('"%s" is a reserved team name.', $name->value));
+        }
+    }
+
+    private function assertNameAvailable(TeamName $name, ?Ulid $exceptTeamId): void
+    {
+        $candidate = mb_strtolower($name->value);
+        foreach ($this->teams as $teamId => $team) {
+            if ($exceptTeamId !== null && $teamId === $exceptTeamId->toRfc4122()) {
+                continue;
+            }
+
+            if (mb_strtolower($team['name']) === $candidate) {
+                throw new TeamNameTakenException(sprintf('A team named "%s" already exists in this organization.', $name->value));
+            }
+        }
+    }
+
+    private function assertRemovableMember(int $userId): void
+    {
+        if (!$this->isOrgMember($userId)) {
+            throw new NotAMemberException('The user is not a member of this organization.');
+        }
+
+        if ($this->ownersTeamId !== null && $this->isInTeam($this->ownersTeamId, $userId) && $this->ownerCount() === 1) {
+            throw new LastOwnerProtectedException('The last owner cannot leave or be removed from the organization.');
+        }
+    }
+
     protected function apply(DomainEvent $event): void
     {
         match (true) {
             $event instanceof OrganizationCreated => $this->applyCreated($event),
             $event instanceof OrganizationNameChanged => $this->displayName = $event->displayName,
             $event instanceof OrganizationSlugChanged => $this->slug = $event->slug,
+            $event instanceof TeamCreated => $this->applyTeamCreated($event),
+            $event instanceof TeamRenamed => $this->teams[$event->teamId->toRfc4122()]['name'] = $event->name,
+            $event instanceof TeamMemberAdded => $this->teamMembers[$event->teamId->toRfc4122()][] = $event->userId,
+            $event instanceof TeamMemberRemoved => $this->applyTeamMemberRemoved($event),
+            $event instanceof TeamDeleted => $this->applyTeamDeleted($event),
+            $event instanceof MemberRemoved => $this->applyMemberGone($event->userId),
+            $event instanceof MemberLeft => $this->applyMemberGone($event->userId),
             default => throw new \LogicException('Unhandled organization event: '.$event->eventType()->value),
         };
     }
@@ -108,6 +359,39 @@ final class Organization extends AbstractAggregate
         $this->slug = $event->slug;
         $this->displayName = $event->displayName;
         $this->deleted = false;
+        $this->ownersTeamId = $event->ownersTeamId;
+        $this->teams[$event->ownersTeamId->toRfc4122()] = ['kind' => 'system', 'name' => self::OWNERS_TEAM_NAME];
+        $this->teamMembers[$event->ownersTeamId->toRfc4122()] = [$event->ownerId];
+    }
+
+    private function applyTeamCreated(TeamCreated $event): void
+    {
+        $this->teams[$event->teamId->toRfc4122()] = ['kind' => TeamCreated::KIND, 'name' => $event->name];
+        $this->teamMembers[$event->teamId->toRfc4122()] = [];
+    }
+
+    private function applyTeamMemberRemoved(TeamMemberRemoved $event): void
+    {
+        $key = $event->teamId->toRfc4122();
+        $this->teamMembers[$key] = array_values(array_filter(
+            $this->teamMembers[$key] ?? [],
+            static fn (int $id): bool => $id !== $event->userId,
+        ));
+    }
+
+    private function applyTeamDeleted(TeamDeleted $event): void
+    {
+        unset($this->teams[$event->teamId->toRfc4122()], $this->teamMembers[$event->teamId->toRfc4122()]);
+    }
+
+    private function applyMemberGone(int $userId): void
+    {
+        foreach ($this->teamMembers as $key => $members) {
+            $this->teamMembers[$key] = array_values(array_filter(
+                $members,
+                static fn (int $id): bool => $id !== $userId,
+            ));
+        }
     }
 
     /**
@@ -119,6 +403,13 @@ final class Organization extends AbstractAggregate
             OrganizationEventType::OrganizationCreated => OrganizationCreated::fromPayload($id, $payload),
             OrganizationEventType::OrganizationNameChanged => OrganizationNameChanged::fromPayload($id, $payload),
             OrganizationEventType::OrganizationSlugChanged => OrganizationSlugChanged::fromPayload($id, $payload),
+            OrganizationEventType::TeamCreated => TeamCreated::fromPayload($id, $payload),
+            OrganizationEventType::TeamRenamed => TeamRenamed::fromPayload($id, $payload),
+            OrganizationEventType::TeamMemberAdded => TeamMemberAdded::fromPayload($id, $payload),
+            OrganizationEventType::TeamMemberRemoved => TeamMemberRemoved::fromPayload($id, $payload),
+            OrganizationEventType::TeamDeleted => TeamDeleted::fromPayload($id, $payload),
+            OrganizationEventType::MemberRemoved => MemberRemoved::fromPayload($id, $payload),
+            OrganizationEventType::MemberLeft => MemberLeft::fromPayload($id, $payload),
         };
     }
 }

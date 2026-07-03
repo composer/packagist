@@ -15,22 +15,36 @@ namespace App\Organization\Projection;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationStatus;
+use App\Entity\OrganizationTeam;
+use App\Entity\OrganizationTeamKind;
+use App\Entity\OrganizationTeamMember;
+use App\Entity\OrganizationTeamMemberRepository;
+use App\Entity\OrganizationTeamRepository;
 use App\Entity\SlugReservation;
 use App\Entity\SlugReservationKind;
 use App\Entity\SlugReservationRepository;
+use App\Entity\User;
 use App\Entity\UserRepository;
+use App\Organization\Domain\Event\MemberLeft;
+use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
 use App\Organization\Domain\Event\OrganizationNameChanged;
 use App\Organization\Domain\Event\OrganizationSlugChanged;
+use App\Organization\Domain\Event\TeamCreated;
+use App\Organization\Domain\Event\TeamDeleted;
+use App\Organization\Domain\Event\TeamMemberAdded;
+use App\Organization\Domain\Event\TeamMemberRemoved;
+use App\Organization\Domain\Event\TeamRenamed;
 use App\Organization\EventStore\RecordedEvent;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * Projects the organization event stream into the `organization` read-model table.
- * The slug unique constraint turns a concurrent duplicate into a transaction
- * rollback, which the application service maps to SlugTaken.
+ * Projects the organization event stream into the `organization`, `organization_team` and
+ * `organization_team_member` read-model tables. Unique constraints (slug, team name) turn a
+ * concurrent duplicate into a transaction rollback, which the application service maps to a
+ * SlugTaken / TeamNameTaken error.
  */
 final readonly class OrganizationReadModelProjector implements Projector
 {
@@ -41,6 +55,8 @@ final readonly class OrganizationReadModelProjector implements Projector
         private UserRepository $users,
         private OrganizationRepository $organizations,
         private SlugReservationRepository $reservations,
+        private OrganizationTeamRepository $teams,
+        private OrganizationTeamMemberRepository $teamMembers,
     ) {
     }
 
@@ -52,6 +68,13 @@ final readonly class OrganizationReadModelProjector implements Projector
             $event instanceof OrganizationCreated => $this->organizationCreated($recorded, $event),
             $event instanceof OrganizationNameChanged => $this->organizationNameChanged($event),
             $event instanceof OrganizationSlugChanged => $this->organizationSlugChanged($recorded, $event),
+            $event instanceof TeamCreated => $this->teamCreated($recorded, $event),
+            $event instanceof TeamRenamed => $this->team($event->teamId)->rename($event->name),
+            $event instanceof TeamMemberAdded => $this->teamMemberAdded($recorded, $event),
+            $event instanceof TeamMemberRemoved => $this->removeMembership($event->teamId, $event->userId),
+            $event instanceof TeamDeleted => $this->teamDeleted($event),
+            $event instanceof MemberRemoved => $this->memberGone($event->organizationId, $event->userId),
+            $event instanceof MemberLeft => $this->memberGone($event->organizationId, $event->userId),
             default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
         };
 
@@ -71,6 +94,25 @@ final readonly class OrganizationReadModelProjector implements Projector
             OrganizationStatus::Active,
             $recorded->occurredAt,
             $owner,
+            $event->ownersTeamId,
+        ));
+
+        // The owners team is bootstrapped as part of OrganizationCreated, seeded with the creator.
+        $this->getEM()->persist(new OrganizationTeam(
+            $event->ownersTeamId,
+            $event->organizationId,
+            OrganizationTeamKind::System,
+            \App\Organization\Domain\Organization::OWNERS_TEAM_NAME,
+            $owner,
+            $recorded->occurredAt,
+        ));
+
+        $this->getEM()->persist(new OrganizationTeamMember(
+            $event->ownersTeamId,
+            $event->ownerId,
+            $event->organizationId,
+            $owner,
+            $recorded->occurredAt,
         ));
     }
 
@@ -99,6 +141,56 @@ final readonly class OrganizationReadModelProjector implements Projector
         ));
     }
 
+    private function teamCreated(RecordedEvent $recorded, TeamCreated $event): void
+    {
+        $this->getEM()->persist(new OrganizationTeam(
+            $event->teamId,
+            $event->organizationId,
+            OrganizationTeamKind::Custom,
+            $event->name,
+            $this->user($recorded->actor->userId),
+            $recorded->occurredAt,
+        ));
+    }
+
+    private function teamMemberAdded(RecordedEvent $recorded, TeamMemberAdded $event): void
+    {
+        $this->getEM()->persist(new OrganizationTeamMember(
+            $event->teamId,
+            $event->userId,
+            $event->organizationId,
+            $this->user($recorded->actor->userId),
+            $recorded->occurredAt,
+        ));
+    }
+
+    private function teamDeleted(TeamDeleted $event): void
+    {
+        foreach ($this->teamMembers->findByTeam($event->teamId) as $member) {
+            $this->getEM()->remove($member);
+        }
+
+        $this->getEM()->remove($this->team($event->teamId));
+    }
+
+    /**
+     * Remove the user from every team in the org; they are no longer an org member.
+     */
+    private function memberGone(Ulid $orgId, int $userId): void
+    {
+        foreach ($this->teamMembers->findBy(['orgId' => $orgId, 'userId' => $userId]) as $member) {
+            $this->getEM()->remove($member);
+        }
+    }
+
+    private function removeMembership(Ulid $teamId, int $userId): void
+    {
+        $member = $this->teamMembers->findOneBy(['teamId' => $teamId, 'userId' => $userId]);
+        if ($member !== null) {
+            $this->getEM()->remove($member);
+        }
+    }
+
     private function organization(Ulid $id): Organization
     {
         $organization = $this->organizations->find($id);
@@ -107,5 +199,20 @@ final readonly class OrganizationReadModelProjector implements Projector
         }
 
         return $organization;
+    }
+
+    private function team(Ulid $teamId): OrganizationTeam
+    {
+        $team = $this->teams->find($teamId);
+        if ($team === null) {
+            throw new \LogicException('Organization team read model not found for '.$teamId->toRfc4122().'.');
+        }
+
+        return $team;
+    }
+
+    private function user(?int $userId): ?User
+    {
+        return $userId !== null ? $this->users->find($userId) : null;
     }
 }
