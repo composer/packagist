@@ -26,7 +26,6 @@ CREATE TABLE organization_event (
     payload JSON NOT NULL,
     actorUserId INT DEFAULT NULL,
     actorLabel VARCHAR(32) NOT NULL,
-    actorRoleInOrg VARCHAR(32) DEFAULT NULL,
     createdAt DATETIME NOT NULL,
     ip VARBINARY(16) DEFAULT NULL,
     PRIMARY KEY (id),

@@ -43,14 +43,13 @@ class OrganizationCreationTest extends IntegrationTestCase
 
         // Canonical event stream.
         $event = $connection->fetchAssociative(
-            'SELECT type, sequence, actorLabel, actorRoleInOrg FROM organization_event WHERE aggregateId = :id',
+            'SELECT type, sequence, actorLabel FROM organization_event WHERE aggregateId = :id',
             ['id' => $organization->id->toBinary()],
         );
         self::assertNotFalse($event);
         self::assertSame('organization-created', $event['type']);
         self::assertSame(1, (int) $event['sequence']);
         self::assertSame('user', $event['actorLabel']);
-        self::assertSame('owner', $event['actorRoleInOrg']);
 
         // Transparency log projection.
         $auditCount = $connection->fetchOne(

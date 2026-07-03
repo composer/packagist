@@ -72,7 +72,6 @@ final readonly class EventStore
                         $actor->label->value,
                         $now,
                         $actor->userId,
-                        $actor->roleInOrg?->value,
                         $ip,
                     );
 

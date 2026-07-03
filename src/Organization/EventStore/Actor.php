@@ -16,14 +16,13 @@ use App\Entity\User;
 
 /**
  * The actor behind an event. `userId` is the stable user reference; `label` records
- * who triggered the action and `roleInOrg` the org role that authorized it.
+ * who or what triggered the action.
  */
 final readonly class Actor
 {
     public function __construct(
         public ?int $userId,
         public ActorLabel $label,
-        public ?OrgRole $roleInOrg = null,
     ) {
     }
 
@@ -32,11 +31,11 @@ final readonly class Actor
      */
     public static function owner(User $user): self
     {
-        return new self($user->getId(), ActorLabel::User, OrgRole::Owner);
+        return new self($user->getId(), ActorLabel::User);
     }
 
     public static function packagistAdmin(User $admin): self
     {
-        return new self($admin->getId(), ActorLabel::PackagistAdmin, null);
+        return new self($admin->getId(), ActorLabel::PackagistAdmin);
     }
 }

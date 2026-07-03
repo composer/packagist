@@ -58,9 +58,6 @@ class OrganizationEvent
         #[ORM\Column(nullable: true)]
         public readonly ?int $actorUserId = null,
 
-        #[ORM\Column(length: 32, nullable: true)]
-        public readonly ?string $actorRoleInOrg = null,
-
         #[ORM\Column(nullable: true, type: 'ipaddress')]
         public readonly ?string $ip = null,
     ) {
