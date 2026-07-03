@@ -53,7 +53,7 @@ class AuditRecord
          *
          *  - name = package name
          *  - user.username = user name
-         *  - org.name = org name
+         *  - organization.org_slug = org slug
          *  - actor.username = actor name
          *
          * @var array<string, mixed>
@@ -131,6 +131,16 @@ class AuditRecord
         if (\is_array($actorData)) {
             $add(AuditLogSearchType::Actor, $actorData['username'] ?? null);
         }
+
+        // organizations are searchable by slug only (never the display name); see OrganizationDisplay
+        $orgData = $this->attributes['organization'] ?? null;
+        if (\is_array($orgData)) {
+            $add(AuditLogSearchType::Organization, $orgData['org_slug'] ?? null);
+        }
+
+        // index both sides of a slug change so searching either slug surfaces the rename
+        $add(AuditLogSearchType::Organization, $this->attributes['org_slug_from'] ?? null);
+        $add(AuditLogSearchType::Organization, $this->attributes['org_slug_to'] ?? null);
 
         return array_values($terms);
     }

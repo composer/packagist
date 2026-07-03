@@ -26,4 +26,5 @@ enum AuditLogSearchType: string
     case User = 'user';
     case Actor = 'actor';
     case Package = 'package';
+    case Organization = 'organization';
 }
