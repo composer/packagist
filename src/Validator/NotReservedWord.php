@@ -26,7 +26,7 @@ class NotReservedWord extends Constraint
         'composer',
         'packagist',
         'php',
-        'automation',
+        'automation', // used to describe background workers doing things automatically in transparency log
     ];
 
     public string $message = 'This is a reserved word.';
