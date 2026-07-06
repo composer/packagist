@@ -48,8 +48,8 @@ class CdnClient
             throw new \RuntimeException('Unexpected response from the CDN: '.$resp->getStatusCode().' '.$resp->getContent(false));
         }
 
-        // fetch the file to get the last-modified timestamp reliably
-        $resp = $this->httpClient->request('GET', $this->metadataEndpoint.$path, [
+        // read the file's last-modified timestamp reliably via a HEAD, which avoids re-downloading the whole file
+        $resp = $this->httpClient->request('HEAD', $this->metadataEndpoint.$path, [
             'headers' => [
                 'AccessKey' => $this->metadataApiKey,
             ],
