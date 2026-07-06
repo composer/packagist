@@ -500,12 +500,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "79d92f047ddbaa91fc5f193d17df2cfcddbf2d7e"
+                "reference": "ada25562204b42254adae2404eb0894a718e2bde"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/79d92f047ddbaa91fc5f193d17df2cfcddbf2d7e",
-                "reference": "79d92f047ddbaa91fc5f193d17df2cfcddbf2d7e",
+                "url": "https://api.github.com/repos/composer/composer/zipball/ada25562204b42254adae2404eb0894a718e2bde",
+                "reference": "ada25562204b42254adae2404eb0894a718e2bde",
                 "shasum": ""
             },
             "require": {
@@ -516,6 +516,8 @@
                 "composer/semver": "^3.3",
                 "composer/spdx-licenses": "^1.5.7",
                 "composer/xdebug-handler": "^2.0.2 || ^3.0.3",
+                "ext-filter": "*",
+                "ext-hash": "*",
                 "ext-json": "*",
                 "justinrainbow/json-schema": "^6.5.1",
                 "php": "^7.2.5 || ^8.0",
@@ -606,7 +608,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-01T09:23:37+00:00"
+            "time": "2026-07-03T09:00:57+00:00"
         },
         {
             "name": "composer/metadata-minifier",
