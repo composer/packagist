@@ -3,7 +3,7 @@
 {% import "macros.html.twig" as macros %}
 
 {% block head_additions %}
-    {% if user.hasRole('ROLE_SPAMMER') %}
+    {% if user.isFrozen() %}
         <meta name="robots" content="noindex, nofollow">
     {% endif %}
 {% endblock %}
@@ -13,8 +13,8 @@
 <h2 class="title">
     {{ user.username }}
     <small>
-        {% if is_granted('ROLE_ANTISPAM') and user.hasRole('ROLE_SPAMMER') %}
-            [SPAMMER]
+        {% if (is_granted('ROLE_ANTISPAM') or is_granted('ROLE_DISABLE_USERS')) and user.isFrozen() %}
+            [FROZEN: {{ ('user_freeze_reasons.' ~ user.freezeReason.value)|trans }}]
         {% endif %}
         {{ 'user.member_since'|trans }}: {{ user.createdAt|date('M d, Y') }}
         &middot; <a rel="nofollow noindex" href="{{ path('view_transparency_log', {user: user.username}) }}">Transparency log</a>
@@ -27,11 +27,14 @@
                 <input class="btn btn-danger" type="submit" value="Delete Account Permanently" onclick="return confirm('Are you sure? There is no way back..');" />
             </form>
         {%- endif %}
-        {%- if is_granted('ROLE_ANTISPAM') %}
-            <form class="delete action" action="{{ path('mark_spammer', {name: user.username}) }}" method="POST">
-                {{ form_widget(spammerForm._token) }}
-                <input class="btn btn-danger" type="submit" value="Mark as Spammer" />
-            </form>
+        {%- if freezeForm is defined %}
+            {%- if user.isFrozen() %}
+                {%- if canUnfreezeUser|default(false) %}
+                    <button type="button" class="btn btn-success action" data-toggle="modal" data-target="#unfreeze-user-modal">Unfreeze account</button>
+                {%- endif %}
+            {%- else %}
+                <button type="button" class="btn btn-danger action" data-toggle="modal" data-target="#freeze-user-modal">Freeze account</button>
+            {%- endif %}
         {%- endif %}
     </small>
 </h2>
@@ -91,4 +94,75 @@
         {% endembed %}
     </section>
 </section>
+
+{% if freezeForm is defined %}
+    {% if user.isFrozen() and canUnfreezeUser|default(false) %}
+        <div class="modal fade" id="unfreeze-user-modal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                {{ form_start(unfreezeForm, {'action': path('unfreeze_user', {name: user.username}), 'attr': {'class': 'modal-content'}}) }}
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Unfreeze {{ user.username }}</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Public reason <small class="text-muted">(optional — shown in the transparency log)</small></label>
+                            {{ form_widget(unfreezeForm.reasonText, {'attr': {'class': 'form-control', 'rows': 2}}) }}
+                        </div>
+                        <div class="form-group">
+                            <label>Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
+                            {{ form_widget(unfreezeForm.internalReason, {'attr': {'class': 'form-control', 'rows': 2}}) }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Unfreeze account</button>
+                    </div>
+                {{ form_end(unfreezeForm) }}
+            </div>
+        </div>
+    {% else %}
+        <div class="modal fade" id="freeze-user-modal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                {{ form_start(freezeForm, {'action': path('freeze_user', {name: user.username}), 'attr': {'class': 'modal-content'}}) }}
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Freeze {{ user.username }}</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Reason</label>
+                            {{ form_widget(freezeForm.reason, {'attr': {'class': 'form-control'}}) }}
+                        </div>
+                        <div class="form-group">
+                            <label>Public reason <small class="text-muted">(optional — shown in the transparency log)</small></label>
+                            {{ form_widget(freezeForm.reasonText, {'attr': {'class': 'form-control', 'rows': 2}}) }}
+                        </div>
+                        <div class="form-group">
+                            <label>Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
+                            {{ form_widget(freezeForm.internalReason, {'attr': {'class': 'form-control', 'rows': 2}}) }}
+                        </div>
+                        {% if freezeForm.freezePackages is defined %}
+                            <hr>
+                            <div class="checkbox">
+                                <label>{{ form_widget(freezeForm.freezePackages) }} Also act on the user's packages</label>
+                            </div>
+                            <div class="form-group">
+                                <label>Package freeze reason</label>
+                                {{ form_widget(freezeForm.packageFreezeReason, {'attr': {'class': 'form-control'}}) }}
+                            </div>
+                            <div class="checkbox">
+                                <label>{{ form_widget(freezeForm.purgePackages) }} Purge package metadata <small class="text-muted">(soft-delete all versions and remove all published metadata; ignored for temporary freezes)</small></label>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Freeze account</button>
+                    </div>
+                {{ form_end(freezeForm) }}
+            </div>
+        </div>
+    {% endif %}
+{% endif %}
 {% endblock %}

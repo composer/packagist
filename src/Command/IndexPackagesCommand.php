@@ -14,7 +14,6 @@ namespace App\Command;
 
 use Algolia\AlgoliaSearch\SearchClient;
 use App\Entity\Package;
-use App\Entity\PackageFreezeReason;
 use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
@@ -138,8 +137,8 @@ class IndexPackagesCommand extends Command
                     $output->writeln('['.\sprintf('%'.\strlen((string) $total).'d', $current).'/'.$total.'] Indexing '.$package->getName());
                 }
 
-                // delete spam packages from the search index
-                if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam) {
+                // delete suppressed (spam/malware) packages from the search index
+                if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage()) {
                     try {
                         $index->deleteObject($package->getName());
                         $idsToUpdate[] = $package->getId();
