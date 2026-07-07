@@ -1249,7 +1249,10 @@ class Updater
     }
 
     /**
-     * @param array{issues?: string, forum?: string, wiki?: string, source?: string, email?: string, irc?: string, docs?: string, rss?: string, chat?: string, security?: string}|null $support
+     * Support is expected to be a map of string values, but a malformed composer.json can
+     * provide other shapes (e.g. a list of objects); non-string keys/values are dropped.
+     *
+     * @param array<array-key, mixed>|null $support
      *
      * @return array<string, string>|null
      */
@@ -1259,8 +1262,14 @@ class Updater
             return null;
         }
 
-        // strip control/escape chars from every value, including non-URL ones like email
-        $support = array_map($this->sanitize(...), $support);
+        $filtered = [];
+        foreach ($support as $key => $value) {
+            if (\is_string($key) && \is_string($value)) {
+                // strip control/escape chars from every value, including non-URL ones like email
+                $filtered[$key] = $this->sanitize($value);
+            }
+        }
+        $support = $filtered;
 
         foreach (['issues', 'forum', 'wiki', 'source', 'docs', 'rss', 'security'] as $key) {
             if (isset($support[$key]) && null === $this->filterUrl($support[$key])) {
@@ -1279,9 +1288,12 @@ class Updater
     }
 
     /**
-     * @param array<array{type?: string, url?: string}>|null $funding
+     * Funding is a list of {type, url} objects, but a malformed composer.json can provide
+     * non-array entries or array-valued fields; only string type/url values are kept.
      *
-     * @return array<array{type?: string, url?: string}>|null
+     * @param array<array-key, mixed>|null $funding
+     *
+     * @return list<array{type?: string, url?: string}>|null
      */
     private function filterFundingUrls(?array $funding): ?array
     {
@@ -1289,21 +1301,27 @@ class Updater
             return null;
         }
 
-        foreach ($funding as $i => $entry) {
-            if (isset($entry['type'])) {
-                $funding[$i]['type'] = $this->sanitize($entry['type']);
+        $filtered = [];
+        foreach ($funding as $entry) {
+            if (!\is_array($entry)) {
+                continue;
             }
-            if (isset($entry['url'])) {
+
+            $clean = [];
+            if (isset($entry['type']) && \is_string($entry['type'])) {
+                $clean['type'] = $this->sanitize($entry['type']);
+            }
+            if (isset($entry['url']) && \is_string($entry['url'])) {
                 $url = $this->filterUrl($entry['url']);
-                if (null === $url) {
-                    unset($funding[$i]['url']);
-                } else {
-                    $funding[$i]['url'] = $url;
+                if (null !== $url) {
+                    $clean['url'] = $url;
                 }
             }
+
+            $filtered[] = $clean;
         }
 
-        return $funding;
+        return $filtered;
     }
 
     private function detectAbandonmentReason(VcsDriverInterface $driver, string $rootIdentifier): AbandonmentReason

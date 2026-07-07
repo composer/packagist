@@ -159,6 +159,30 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame('Bob', $authors[0]['name']);
     }
 
+    public function testHandlesMalformedListShapedSupportAndFunding(): void
+    {
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://example.com/test/pkg');
+        $upstream->setSourceReference('abcdef1234567890');
+        // schema-invalid: support as a list of objects instead of a string map
+        $upstream->setSupport([['email' => 'support@teufels.com']]);
+        // schema-invalid: array-valued funding url
+        $upstream->setFunding([['type' => 'custom', 'url' => ['https://a', 'https://b']]]);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        // previously threw: sanitize(): Argument #1 ($str) must be of type ?string, array given
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($version);
+        self::assertSame([], $version->getSupport());
+        self::assertSame([['type' => 'custom']], $version->getFunding());
+    }
+
     public function testStripsControlCharactersFromMetadata(): void
     {
         $esc = "\x1B[31m"; // ANSI CSI color sequence
