@@ -344,16 +344,11 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::RemoveMember->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/members/{userId}/remove', name: 'organization_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'userId' => '\d+'])]
-    public function removeMember(Request $request, Organization $organization, int $userId, #[CurrentUser] User $user): Response
+    #[Route(path: '/organizations/{organization}/members/{organizationMember}/remove', name: 'organization_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
+    public function removeMember(Request $request, Organization $organization, User $organizationMember, #[CurrentUser] User $user): Response
     {
         if ($redirect = $this->require2fa($user)) {
             return $redirect;
-        }
-
-        $target = $this->users->find($userId);
-        if ($target === null) {
-            throw new NotFoundHttpException('Member not found.');
         }
 
         $form = $this->createForm(RemoveMemberType::class);
@@ -361,8 +356,8 @@ class OrganizationController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $this->membershipManager->removeMember($organization, $user, $userId, $request->getClientIp());
-                $this->addFlash('success', sprintf('Removed "%s" from the organization.', $target->getUsername()));
+                $this->membershipManager->removeMember($organization, $user, $organizationMember->getId(), $request->getClientIp());
+                $this->addFlash('success', sprintf('Removed "%s" from the organization.', $organizationMember->getUsername()));
 
                 return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -372,7 +367,7 @@ class OrganizationController extends Controller
 
         return $this->render('organization/member_remove.html.twig', [
             'organization' => $organization,
-            'member' => $target,
+            'member' => $organizationMember,
             'form' => $form->createView(),
         ]);
     }

@@ -31,8 +31,8 @@
                                 <input type="hidden" name="_token" value="{{ csrf_token('org_member_leave') }}">
                                 <button type="submit" class="btn btn-xs btn-default">Leave</button>
                             </form>
-                        {% elseif canRemove %}
-                            <a class="btn btn-xs btn-danger" href="{{ path('organization_member_remove', { organization: organization.slug, userId: member.userId }) }}">Remove</a>
+                        {% elseif canRemove and member.user %}
+                            <a class="btn btn-xs btn-danger" href="{{ path('organization_member_remove', { organization: organization.slug, organizationMember: member.user.username }) }}">Remove</a>
                         {% endif %}
                     </td>
                 </tr>

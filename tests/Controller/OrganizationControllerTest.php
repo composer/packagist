@@ -505,7 +505,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
         $this->client->loginUser($intruder);
-        $this->client->request('GET', sprintf('/organizations/acme/members/%d/remove', $owner->getId()));
+        $this->client->request('GET', '/organizations/acme/members/owner/remove');
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -517,7 +517,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/members/%d/remove', $owner->getId()));
+        $this->client->request('GET', '/organizations/acme/members/owner/remove');
 
         self::assertResponseRedirects();
     }
@@ -530,7 +530,22 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', '/organizations/acme/members/999999/remove');
+        $this->client->request('GET', '/organizations/acme/members/ghost/remove');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testRemoveMemberReturns404ForNonMemberUsername(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        // An existing user who is not a member of the org must not be reachable via the member route.
+        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner, $outsider);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/organizations/acme/members/outsider/remove');
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -549,7 +564,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->store($team, $teamMember);
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/members/%d/remove', $member->getId()));
+        $crawler = $this->client->request('GET', '/organizations/acme/members/member/remove');
 
         self::assertResponseIsSuccessful();
         self::assertCount(1, $crawler->selectButton('Remove member'));
