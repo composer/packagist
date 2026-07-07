@@ -39,8 +39,7 @@ use Symfony\Component\Uid\Ulid;
 
 class OrganizationAggregateTest extends TestCase
 {
-    private const int CREATOR = 1;
-    private const int OWNER = 42;
+    private const int OWNER = 1;
 
     public function testCreateBootstrapsOwnersTeamWithCreator(): void
     {
@@ -265,7 +264,7 @@ class OrganizationAggregateTest extends TestCase
         $organization = $this->created($ownersTeamId);
 
         // The creator is already in the owners team.
-        $organization->addTeamMember($ownersTeamId, self::CREATOR, true);
+        $organization->addTeamMember($ownersTeamId, self::OWNER, true);
 
         self::assertCount(0, $organization->pullPendingEvents());
     }
@@ -276,7 +275,7 @@ class OrganizationAggregateTest extends TestCase
         $organization = $this->created($ownersTeamId);
 
         $this->expectException(LastOwnerProtectedException::class);
-        $organization->removeTeamMember($ownersTeamId, self::CREATOR);
+        $organization->removeTeamMember($ownersTeamId, self::OWNER);
     }
 
     public function testRemoveTeamMemberRecordsEventWhenNotLastOwner(): void
@@ -300,7 +299,7 @@ class OrganizationAggregateTest extends TestCase
         $organization = $this->created(new Ulid());
 
         $this->expectException(LastOwnerProtectedException::class);
-        $organization->removeMember(self::CREATOR);
+        $organization->removeMember(self::OWNER);
     }
 
     public function testRemoveMemberRejectsNonMember(): void
@@ -316,7 +315,7 @@ class OrganizationAggregateTest extends TestCase
         $organization = $this->created(new Ulid());
 
         $this->expectException(LastOwnerProtectedException::class);
-        $organization->leave(self::CREATOR);
+        $organization->leave(self::OWNER);
     }
 
     public function testMemberRemovedClearsAllTeamMembershipsOnReplay(): void
@@ -333,7 +332,7 @@ class OrganizationAggregateTest extends TestCase
         ]);
 
         self::assertFalse($organization->isOrgMember(2));
-        self::assertTrue($organization->isOrgMember(self::CREATOR));
+        self::assertTrue($organization->isOrgMember(self::OWNER));
     }
 
     public function testReconstituteReplaysMemberLeft(): void
@@ -346,12 +345,12 @@ class OrganizationAggregateTest extends TestCase
         ]);
 
         self::assertFalse($organization->isOrgMember(2));
-        self::assertTrue($organization->isOwner(self::CREATOR));
+        self::assertTrue($organization->isOwner(self::OWNER));
     }
 
     private function created(Ulid $ownersTeamId): Organization
     {
-        $organization = Organization::create(new Ulid(), new Slug('acme'), new DisplayName('ACME Corp'), $ownersTeamId, self::CREATOR);
+        $organization = Organization::create(new Ulid(), new Slug('acme'), new DisplayName('ACME Corp'), $ownersTeamId, self::OWNER);
         $organization->pullPendingEvents();
 
         return $organization;
@@ -377,7 +376,7 @@ class OrganizationAggregateTest extends TestCase
             'slug' => 'acme',
             'displayName' => 'ACME Corp',
             'ownersTeamId' => $ownersTeamId->toRfc4122(),
-            'creatorUserId' => self::CREATOR,
+            'ownerId' => self::OWNER,
         ];
     }
 }

@@ -109,7 +109,7 @@ class OrganizationMembershipTest extends IntegrationTestCase
 
     private function createOrg(User $owner, string $slug): \App\Organization\Domain\Organization
     {
-        return static::getService(OrganizationManager::class)->create($owner, $slug, 'ACME Corp', null);
+        return static::getService(OrganizationManager::class)->create($owner, $owner, $slug, 'ACME Corp', null);
     }
 
     private function readModel(string $slug): \App\Entity\Organization

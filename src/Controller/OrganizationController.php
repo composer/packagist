@@ -118,11 +118,8 @@ class OrganizationController extends Controller
         // Any org member (or admin) may view the teams; management is owner-only per-action.
         $this->denyAccessUnlessGranted(OrganizationActions::ViewTeams->value, $organization);
 
-        $addMemberForm = $this->createForm(AddTeamMemberType::class, new AddTeamMemberRequest());
-
         return $this->render('organization/teams.html.twig', [
             'organization' => $organization,
-            'addMemberForm' => $addMemberForm->createView(),
             'teams' => $this->teamsView($organization),
         ]);
     }
@@ -211,10 +208,19 @@ class OrganizationController extends Controller
         return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
     }
 
-    #[Route(path: '/organizations/{organization}/teams/{teamId}/members', name: 'organization_team_member_add', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
+    #[Route(path: '/organizations/{organization}/teams/{teamId}/members/add', name: 'organization_team_member_add', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
     public function addTeamMember(Request $request, Organization $organization, string $teamId, #[CurrentUser] User $user): Response
     {
         $this->denyAccessUnlessGranted(OrganizationActions::AddTeamMember->value, $organization);
+
+        if ($redirect = $this->require2fa($user)) {
+            return $redirect;
+        }
+
+        $team = $this->teams->findOneByOrgAndTeamId($organization->id, $this->teamId($teamId));
+        if ($team === null) {
+            throw new NotFoundHttpException('Team not found.');
+        }
 
         $addRequest = new AddTeamMemberRequest();
         $form = $this->createForm(AddTeamMemberType::class, $addRequest);
@@ -223,18 +229,24 @@ class OrganizationController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             $target = $this->users->findOneByUsernameOrEmail($addRequest->username);
             if ($target === null) {
-                $this->addFlash('error', sprintf('No user "%s" was found.', $addRequest->username));
+                $form->addError(new FormError(sprintf('No user "%s" was found.', $addRequest->username)));
             } else {
                 try {
-                    $this->membershipManager->addTeamMember($organization, $user, $this->teamId($teamId), $target->getId(), $request->getClientIp());
+                    $this->membershipManager->addTeamMember($organization, $user, $team->teamId, $target->getId(), $request->getClientIp());
                     $this->addFlash('success', sprintf('%s added to the team.', $target->getUsername()));
+
+                    return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
                 } catch (OrganizationException $e) {
-                    $this->addFlash('error', $e->getMessage());
+                    $form->addError(new FormError($e->getMessage()));
                 }
             }
         }
 
-        return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
+        return $this->render('organization/team_member_add.html.twig', [
+            'organization' => $organization,
+            'team' => $team,
+            'form' => $form->createView(),
+        ]);
     }
 
     #[Route(path: '/organizations/{organization}/teams/{teamId}/members/{userId}/remove', name: 'organization_team_member_remove', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID, 'userId' => '\d+'])]
