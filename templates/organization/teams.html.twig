@@ -31,11 +31,7 @@
                             <a class="btn btn-xs btn-default" href="{{ path('organization_team_rename', { organization: organization.slug, team: team.teamId }) }}">Rename</a>
                         {% endif %}
                         {% if canDeleteTeam %}
-                            <form method="post" action="{{ path('organization_team_delete', { organization: organization.slug, team: team.teamId }) }}"
-                                  onsubmit="return confirm('Delete team {{ team.name|e('js') }}?');" style="display:inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('org_team_delete_' ~ team.teamId) }}">
-                                <button type="submit" class="btn btn-xs btn-danger">Delete team</button>
-                            </form>
+                            <a class="btn btn-xs btn-danger" href="{{ path('organization_team_delete', { organization: organization.slug, team: team.teamId }) }}">Delete team</a>
                         {% endif %}
                     </span>
                 {% endif %}

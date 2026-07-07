@@ -280,6 +280,43 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    public function testOwnerDeletesTeam(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        [$organization, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/delete', $backend->teamId));
+
+        self::assertResponseIsSuccessful();
+        $form = $crawler->selectButton('Delete team')->form();
+        $this->client->submit($form);
+
+        self::assertResponseRedirects('/organizations/acme/teams');
+
+        $deleted = static::getService(OrganizationTeamRepository::class)->findOneByOrgAndTeamId($organization->id, $backend->teamId);
+        self::assertNull($deleted);
+    }
+
+    public function testDeleteSystemTeamReturns404(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/delete', $organization->ownersTeamId));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testTeamFromAnotherOrganizationReturns404(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);

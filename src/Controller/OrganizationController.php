@@ -24,6 +24,7 @@ use App\Form\Model\AddTeamMemberRequest;
 use App\Form\Model\OrganizationDetailsRequest;
 use App\Form\Model\TeamRequest;
 use App\Form\Type\AddTeamMemberType;
+use App\Form\Type\DeleteTeamType;
 use App\Form\Type\OrganizationDetailsType;
 use App\Form\Type\TeamType;
 use App\Organization\Domain\Exception\OrganizationException;
@@ -207,19 +208,36 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::DeleteTeam->value, 'organization')]
-     #[Route(path: '/organizations/{organization}/teams/{team}/delete', name: 'organization_team_delete', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
+    #[Route(path: '/organizations/{organization}/teams/{team}/delete', name: 'organization_team_delete', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
     public function deleteTeam(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
-         $this->assertCsrf($request, 'org_team_delete_'.$team->teamId);
-
-        try {
-            $this->membershipManager->deleteTeam($organization, $user, $team->teamId, $request->getClientIp());
-            $this->addFlash('success', 'Team deleted.');
-        } catch (OrganizationException $e) {
-            $this->addFlash('error', $e->getMessage());
+        if ($redirect = $this->require2fa($user)) {
+            return $redirect;
         }
 
-        return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
+        if ($team->isSystem()) {
+            throw new NotFoundHttpException('Team not found.');
+        }
+
+        $form = $this->createForm(DeleteTeamType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $this->membershipManager->deleteTeam($organization, $user, $team->teamId, $request->getClientIp());
+                $this->addFlash('success', 'Team deleted.');
+
+                return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
+            } catch (OrganizationException $e) {
+                $form->addError(new FormError($e->getMessage()));
+            }
+        }
+
+        return $this->render('organization/team_delete.html.twig', [
+            'organization' => $organization,
+            'team' => $team,
+            'form' => $form->createView(),
+        ]);
     }
 
     #[IsGranted(OrganizationActions::AddTeamMember->value, 'organization')]
