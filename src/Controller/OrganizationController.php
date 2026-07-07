@@ -224,7 +224,7 @@ class OrganizationController extends Controller
     public function members(Organization $organization): Response
     {
         // Any org member (or admin) may view the members list; management is owner-only per-action.
-        $this->denyAccessUnlessGranted(OrganizationActions::Leave->value, $organization);
+        $this->denyAccessUnlessGranted(OrganizationActions::View->value, $organization);
 
         return $this->render('organization/members.html.twig', [
             'organization' => $organization,

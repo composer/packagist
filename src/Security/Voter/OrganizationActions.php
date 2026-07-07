@@ -30,6 +30,9 @@ enum OrganizationActions: string
     case RemoveTeamMember = 'remove-team-member';
     case RemoveMember = 'remove-member';
 
+    // Any org member may view the members list.
+    case View = 'view';
+
     // Any org member may leave on their own.
     case Leave = 'leave';
 }

@@ -57,7 +57,7 @@ class OrganizationVoter extends Voter
         return match ($action) {
             // Owners have no visibility into a hidden org, so restore is packagist-admin only.
             OrganizationActions::Restore => false,
-            // Any org member may leave on their own; the last-owner guard is enforced by the aggregate.
+            OrganizationActions::View,
             OrganizationActions::Leave => $this->isMember($organization, $user) && !$organization->isDeleted(),
             OrganizationActions::Edit,
             OrganizationActions::SoftDelete,
