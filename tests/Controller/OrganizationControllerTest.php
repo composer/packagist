@@ -390,6 +390,72 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    public function testOwnerRemovesMemberFromTeam(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        [$organization, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+        // The owner is already an org member (via the owners team), so they can be added to the custom team.
+        static::getService(OrganizationMembershipManager::class)->addTeamMember($organization, $owner, $backend->teamId, $owner->getId(), null);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/%d/remove', $backend->teamId, $owner->getId()));
+
+        self::assertResponseIsSuccessful();
+        $form = $crawler->selectButton('Remove member')->form();
+        $this->client->submit($form);
+
+        self::assertResponseRedirects('/organizations/acme/teams');
+
+        $members = static::getService(OrganizationTeamMemberRepository::class)->findByTeam($backend->teamId);
+        $userIds = array_map(static fn (OrganizationTeamMember $m): int => $m->userId, $members);
+        self::assertNotContains($owner->getId(), $userIds);
+    }
+
+    public function testRemoveTeamMemberForbiddenForNonOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner, $intruder);
+
+        [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+
+        $this->client->loginUser($intruder);
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/%d/remove', $backend->teamId, $owner->getId()));
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testRemoveTeamMemberRedirectsOwnerWithoutTwoFactor(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner);
+
+        [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/%d/remove', $backend->teamId, $owner->getId()));
+
+        self::assertResponseRedirects();
+    }
+
+    public function testRemoveUnknownTeamMemberReturns404(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/999999/remove', $backend->teamId));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testMemberCanViewTeamsButCannotCreate(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);

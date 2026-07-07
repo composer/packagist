@@ -27,6 +27,7 @@ use App\Form\Type\AddTeamMemberType;
 use App\Form\Type\DeleteTeamType;
 use App\Form\Type\OrganizationDetailsType;
 use App\Form\Type\RemoveMemberType;
+use App\Form\Type\RemoveTeamMemberType;
 use App\Form\Type\TeamType;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Slug;
@@ -278,20 +279,38 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::RemoveTeamMember->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/teams/{team}/members/{userId}/remove', name: 'organization_team_member_remove', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID, 'userId' => '\d+'])]
+    #[Route(path: '/organizations/{organization}/teams/{team}/members/{userId}/remove', name: 'organization_team_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID, 'userId' => '\d+'])]
     public function removeTeamMember(Request $request, Organization $organization, OrganizationTeam $team, int $userId, #[CurrentUser] User $user): Response
     {
-        $this->assertCsrf($request, 'org_team_member_remove_'.$team->teamId.'_'.$userId);
-
-        try {
-            $target = $this->users->find($userId);
-            $this->membershipManager->removeTeamMember($organization, $user, $team->teamId, $userId, $request->getClientIp());
-            $this->addFlash('success', sprintf('Removed "%s" from team "%s".', $target?->getUsername() ?? sprintf('Member #%d', $userId), $team->name));
-        } catch (OrganizationException $e) {
-            $this->addFlash('error', $e->getMessage());
+        if ($redirect = $this->require2fa($user)) {
+            return $redirect;
         }
 
-        return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
+        $target = $this->users->find($userId);
+        if ($target === null) {
+            throw new NotFoundHttpException('Member not found.');
+        }
+
+        $form = $this->createForm(RemoveTeamMemberType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $this->membershipManager->removeTeamMember($organization, $user, $team->teamId, $userId, $request->getClientIp());
+                $this->addFlash('success', sprintf('Removed "%s" from team "%s".', $target->getUsername(), $team->name));
+
+                return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
+            } catch (OrganizationException $e) {
+                $form->addError(new FormError($e->getMessage()));
+            }
+        }
+
+        return $this->render('organization/team_member_remove.html.twig', [
+            'organization' => $organization,
+            'team' => $team,
+            'member' => $target,
+            'form' => $form->createView(),
+        ]);
     }
 
     #[IsGranted(OrganizationActions::ViewMembers->value, 'organization')]

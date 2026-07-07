@@ -45,10 +45,7 @@
                                 <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
                                 <td class="text-right">
                                     {% if canRemoveTeamMember %}
-                                        <form method="post" action="{{ path('organization_team_member_remove', { organization: organization.slug, team: team.teamId, userId: member.userId }) }}" style="display:inline">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('org_team_member_remove_' ~ team.teamId ~ '_' ~ member.userId) }}">
-                                            <button type="submit" class="btn btn-xs btn-default">Remove</button>
-                                        </form>
+                                        <a class="btn btn-xs btn-default" href="{{ path('organization_team_member_remove', { organization: organization.slug, team: team.teamId, userId: member.userId }) }}">Remove</a>
                                     {% endif %}
                                 </td>
                             </tr>
