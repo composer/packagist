@@ -131,6 +131,7 @@ class MenuBuilder
                 'routes' => [
                     ['route' => 'organization_teams', 'parameters' => ['organization' => $slug]],
                     ['route' => 'organization_team_create', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_team_rename', 'parameters' => ['organization' => $slug]],
                 ],
             ],
         ]);

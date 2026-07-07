@@ -25,26 +25,23 @@
                     <span class="label label-info">system</span>
                 {% endif %}
 
-                {% if not team.system and canDeleteTeam %}
+                {% if not team.system %}
                     <span class="pull-right">
-                        <form method="post" action="{{ path('organization_team_delete', { organization: organization.slug, teamId: team.teamId }) }}"
-                              onsubmit="return confirm('Delete team {{ team.name|e('js') }}?');" style="display:inline">
-                            <input type="hidden" name="_token" value="{{ csrf_token('org_team_delete_' ~ team.teamId) }}">
-                            <button type="submit" class="btn btn-xs btn-danger">Delete team</button>
-                        </form>
+                        {% if canRenameTeam %}
+                            <a class="btn btn-xs btn-default" href="{{ path('organization_team_rename', { organization: organization.slug, teamId: team.teamId }) }}">Rename</a>
+                        {% endif %}
+                        {% if canDeleteTeam %}
+                            <form method="post" action="{{ path('organization_team_delete', { organization: organization.slug, teamId: team.teamId }) }}"
+                                  onsubmit="return confirm('Delete team {{ team.name|e('js') }}?');" style="display:inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('org_team_delete_' ~ team.teamId) }}">
+                                <button type="submit" class="btn btn-xs btn-danger">Delete team</button>
+                            </form>
+                        {% endif %}
                     </span>
                 {% endif %}
             </div>
 
             <div class="panel-body">
-                {% if not team.system and canRenameTeam %}
-                    <form method="post" action="{{ path('organization_team_rename', { organization: organization.slug, teamId: team.teamId }) }}" class="form-inline" style="margin-bottom:15px">
-                        <input type="hidden" name="_token" value="{{ csrf_token('org_team_rename_' ~ team.teamId) }}">
-                        <input type="text" name="name" value="{{ team.name }}" maxlength="40" class="form-control input-sm">
-                        <button type="submit" class="btn btn-sm btn-default">Rename</button>
-                    </form>
-                {% endif %}
-
                 <table class="table table-condensed">
                     <tbody>
                         {% for member in entry.members %}

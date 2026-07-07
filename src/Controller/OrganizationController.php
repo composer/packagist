@@ -157,20 +157,42 @@ class OrganizationController extends Controller
         ]);
     }
 
-    #[Route(path: '/organizations/{organization}/teams/{teamId}/rename', name: 'organization_team_rename', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
+    #[Route(path: '/organizations/{organization}/teams/{teamId}/rename', name: 'organization_team_rename', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
     public function renameTeam(Request $request, Organization $organization, string $teamId, #[CurrentUser] User $user): Response
     {
         $this->denyAccessUnlessGranted(OrganizationActions::RenameTeam->value, $organization);
-        $this->assertCsrf($request, 'org_team_rename_'.$teamId);
 
-        try {
-            $this->membershipManager->renameTeam($organization, $user, $this->teamId($teamId), $request->request->getString('name'), $request->getClientIp());
-            $this->addFlash('success', 'Team renamed.');
-        } catch (OrganizationException $e) {
-            $this->addFlash('error', $e->getMessage());
+        if ($redirect = $this->require2fa($user)) {
+            return $redirect;
         }
 
-        return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
+        $team = $this->teams->findOneByOrgAndTeamId($organization->id, $this->teamId($teamId));
+        if ($team === null || $team->isSystem()) {
+            throw new NotFoundHttpException('Team not found.');
+        }
+
+        $teamRequest = new TeamRequest();
+        $teamRequest->name = $team->name;
+
+        $form = $this->createForm(TeamType::class, $teamRequest);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $this->membershipManager->renameTeam($organization, $user, $team->teamId, $teamRequest->name, $request->getClientIp());
+                $this->addFlash('success', 'Team renamed.');
+
+                return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
+            } catch (OrganizationException $e) {
+                $form->addError(new FormError($e->getMessage()));
+            }
+        }
+
+        return $this->render('organization/team_rename.html.twig', [
+            'organization' => $organization,
+            'team' => $team,
+            'form' => $form->createView(),
+        ]);
     }
 
     #[Route(path: '/organizations/{organization}/teams/{teamId}/delete', name: 'organization_team_delete', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]

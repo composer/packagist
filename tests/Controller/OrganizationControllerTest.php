@@ -20,6 +20,7 @@ use App\Entity\OrganizationTeamMember;
 use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Organization\OrganizationManager;
+use App\Organization\OrganizationMembershipManager;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Uid\Ulid;
 
@@ -224,6 +225,58 @@ class OrganizationControllerTest extends IntegrationTestCase
         $teams = static::getService(OrganizationTeamRepository::class)->findByOrg($organization->id);
         $names = array_map(static fn ($t): string => $t->name, $teams);
         self::assertContains('backend', $names);
+    }
+
+    public function testOwnerRenamesTeam(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        // Create through the event store so the aggregate has a bootstrapped history.
+        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+
+        static::getService(OrganizationMembershipManager::class)->createTeam($organization, $owner, 'backend', null);
+        $team = static::getService(OrganizationTeamRepository::class)->findByOrg($organization->id);
+        $backend = null;
+        foreach ($team as $candidate) {
+            if ($candidate->name === 'backend') {
+                $backend = $candidate;
+            }
+        }
+        self::assertNotNull($backend);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/rename', $backend->teamId));
+
+        self::assertResponseIsSuccessful();
+        $form = $crawler->selectButton('Rename team')->form(['team[name]' => 'platform']);
+        $this->client->submit($form);
+
+        self::assertResponseRedirects('/organizations/acme/teams');
+
+        $renamed = static::getService(OrganizationTeamRepository::class)->findOneByOrgAndTeamId($organization->id, $backend->teamId);
+        self::assertNotNull($renamed);
+        self::assertSame('platform', $renamed->name);
+    }
+
+    public function testRenameSystemTeamReturns404(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+        self::assertNotNull($organization->ownersTeamId);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/rename', $organization->ownersTeamId));
+
+        self::assertResponseStatusCodeSame(404);
     }
 
     public function testMemberCanViewTeamsButCannotCreate(): void
