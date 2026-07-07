@@ -40,7 +40,7 @@ class OrganizationMembershipTest extends IntegrationTestCase
         $teams = static::getService(OrganizationTeamRepository::class)->findByOrg($organization->id);
         self::assertCount(1, $teams);
         self::assertSame(OrganizationTeamKind::System, $teams[0]->kind);
-        self::assertSame('owners', $teams[0]->name);
+        self::assertSame('Owners', $teams[0]->name);
         self::assertTrue($readModel->ownersTeamId->equals($teams[0]->teamId));
 
         $members = static::getService(OrganizationTeamMemberRepository::class);

@@ -47,7 +47,7 @@ use Symfony\Component\Uid\Ulid;
 final class Organization extends AbstractAggregate
 {
     /** The reserved system team name; created only via bootstrap, never through TeamCreated. */
-    public const string OWNERS_TEAM_NAME = 'owners';
+    public const string OWNERS_TEAM_NAME = 'Owners';
 
     private string $slug;
 
@@ -307,7 +307,7 @@ final class Organization extends AbstractAggregate
 
     private function assertNameAllowed(TeamName $name): void
     {
-        if (mb_strtolower($name->value) === self::OWNERS_TEAM_NAME) {
+        if (mb_strtolower($name->value) === mb_strtolower(self::OWNERS_TEAM_NAME)) {
             throw new ReservedTeamNameException(sprintf('"%s" is a reserved team name.', $name->value));
         }
     }
