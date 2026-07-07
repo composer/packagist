@@ -26,6 +26,7 @@ use App\Form\Model\TeamRequest;
 use App\Form\Type\AddTeamMemberType;
 use App\Form\Type\DeleteTeamType;
 use App\Form\Type\OrganizationDetailsType;
+use App\Form\Type\RemoveMemberType;
 use App\Form\Type\TeamType;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Slug;
@@ -329,20 +330,37 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::RemoveMember->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/members/{userId}/remove', name: 'organization_member_remove', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'userId' => '\d+'])]
+    #[Route(path: '/organizations/{organization}/members/{userId}/remove', name: 'organization_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'userId' => '\d+'])]
     public function removeMember(Request $request, Organization $organization, int $userId, #[CurrentUser] User $user): Response
     {
-        $this->assertCsrf($request, 'org_member_remove_'.$userId);
-
-        try {
-            $target = $this->users->find($userId);
-            $this->membershipManager->removeMember($organization, $user, $userId, $request->getClientIp());
-            $this->addFlash('success', sprintf('Removed "%s" from the organization.', $target?->getUsername() ?? sprintf('Member #%d', $userId)));
-        } catch (OrganizationException $e) {
-            $this->addFlash('error', $e->getMessage());
+        if ($redirect = $this->require2fa($user)) {
+            return $redirect;
         }
 
-        return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
+        $target = $this->users->find($userId);
+        if ($target === null) {
+            throw new NotFoundHttpException('Member not found.');
+        }
+
+        $form = $this->createForm(RemoveMemberType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $this->membershipManager->removeMember($organization, $user, $userId, $request->getClientIp());
+                $this->addFlash('success', sprintf('Removed "%s" from the organization.', $target->getUsername()));
+
+                return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
+            } catch (OrganizationException $e) {
+                $form->addError(new FormError($e->getMessage()));
+            }
+        }
+
+        return $this->render('organization/member_remove.html.twig', [
+            'organization' => $organization,
+            'member' => $target,
+            'form' => $form->createView(),
+        ]);
     }
 
     #[IsGranted(OrganizationActions::Leave->value, 'organization')]

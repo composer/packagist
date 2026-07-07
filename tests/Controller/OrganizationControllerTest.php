@@ -413,6 +413,64 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
+    public function testRemoveMemberForbiddenForNonOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner, $intruder);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($intruder);
+        $this->client->request('GET', sprintf('/organizations/acme/members/%d/remove', $owner->getId()));
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testRemoveMemberRedirectsOwnerWithoutTwoFactor(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', sprintf('/organizations/acme/members/%d/remove', $owner->getId()));
+
+        self::assertResponseRedirects();
+    }
+
+    public function testRemoveUnknownMemberReturns404(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/organizations/acme/members/999999/remove');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testOwnerSeesRemoveMemberConfirmationPage(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $member = self::createUser('member', 'member@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner, $member);
+        $organization = $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        // Make `member` a member of the org through a custom team.
+        $team = new OrganizationTeam(new Ulid(), $organization, OrganizationTeamKind::Custom, 'backend', $owner, new \DateTimeImmutable());
+        $teamMember = new OrganizationTeamMember($team->teamId, $member->getId(), $organization->id, $member, new \DateTimeImmutable());
+        $this->store($team, $teamMember);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', sprintf('/organizations/acme/members/%d/remove', $member->getId()));
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->selectButton('Remove member'));
+    }
+
     public function testShowRedirectsOldSlugToCurrentSlug(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);

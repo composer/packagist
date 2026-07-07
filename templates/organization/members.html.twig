@@ -32,11 +32,7 @@
                                 <button type="submit" class="btn btn-xs btn-default">Leave</button>
                             </form>
                         {% elseif canRemove %}
-                            <form method="post" action="{{ path('organization_member_remove', { organization: organization.slug, userId: member.userId }) }}"
-                                  onsubmit="return confirm('Remove this member from the organization?');" style="display:inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('org_member_remove_' ~ member.userId) }}">
-                                <button type="submit" class="btn btn-xs btn-danger">Remove</button>
-                            </form>
+                            <a class="btn btn-xs btn-danger" href="{{ path('organization_member_remove', { organization: organization.slug, userId: member.userId }) }}">Remove</a>
                         {% endif %}
                     </td>
                 </tr>
