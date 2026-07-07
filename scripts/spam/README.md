@@ -43,6 +43,12 @@ scripts/spam/.venv/bin/pip install -r scripts/spam/requirements.txt
 scripts/spam/.venv/bin/python /path/to/repo/scripts/spam/train.py
 # Inspect the printed precision/coverage tables and adjust --target-precision / --threshold as needed.
 # (--input-dir <dir> / --output <file> override the cwd defaults)
+#
+# The safe class dwarfs spam, so by default every spam row is kept and safe rows are streamed +
+# sampled down to --max-per-class (default 50000) to keep memory and fit time sane. Raise it for
+# more data (slower), or pass --max-features / --min-df to bound the vocabulary. Capping rows or
+# vocabulary is inference-safe; do NOT try to shorten individual READMEs here (that would diverge
+# from what PHP tokenizes and cause train/serve skew).
 
 # 4. Dry-run the triage against the real queue before trusting it (point SPAM_MODEL_FILE at the file):
 SPAM_MODEL_FILE="$(pwd)/spam-model.json" bin/console packagist:spam:triage-queue
