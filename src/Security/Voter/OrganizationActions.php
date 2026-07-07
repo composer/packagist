@@ -23,6 +23,7 @@ enum OrganizationActions: string
     case Restore = 'restore';
 
     // Team & member management — owner-only.
+    case ViewTeams = 'view-teams';
     case CreateTeam = 'create-team';
     case RenameTeam = 'rename-team';
     case DeleteTeam = 'delete-team';
@@ -30,7 +31,7 @@ enum OrganizationActions: string
     case RemoveTeamMember = 'remove-team-member';
     case RemoveMember = 'remove-member';
 
-    // Any org member may view the members list.
+    // Any org member may view the members list and the teams.
     case View = 'view';
 
     // Any org member may leave on their own.

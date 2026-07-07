@@ -58,6 +58,7 @@ class OrganizationVoter extends Voter
             // Owners have no visibility into a hidden org, so restore is packagist-admin only.
             OrganizationActions::Restore => false,
             OrganizationActions::View,
+            OrganizationActions::ViewTeams,
             OrganizationActions::Leave => $this->isMember($organization, $user) && !$organization->isDeleted(),
             OrganizationActions::Edit,
             OrganizationActions::SoftDelete,

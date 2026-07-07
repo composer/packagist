@@ -14,10 +14,14 @@ namespace App\Tests\Controller;
 
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
+use App\Entity\OrganizationTeam;
+use App\Entity\OrganizationTeamKind;
+use App\Entity\OrganizationTeamMember;
 use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Organization\OrganizationManager;
 use App\Tests\IntegrationTestCase;
+use Symfony\Component\Uid\Ulid;
 
 class OrganizationControllerTest extends IntegrationTestCase
 {
@@ -185,14 +189,14 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    public function testTeamsRedirectsOwnerWithoutTwoFactor(): void
+    public function testCreateTeamRedirectsOwnerWithoutTwoFactor(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', '/organizations/acme/teams');
+        $this->client->request('GET', '/organizations/acme/teams/create');
 
         self::assertResponseRedirects();
     }
@@ -207,7 +211,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', '/organizations/acme/teams');
+        $crawler = $this->client->request('GET', '/organizations/acme/teams/create');
 
         self::assertResponseIsSuccessful();
         $form = $crawler->selectButton('Create team')->form(['team[name]' => 'backend']);
@@ -220,6 +224,29 @@ class OrganizationControllerTest extends IntegrationTestCase
         $teams = static::getService(OrganizationTeamRepository::class)->findByOrg($organization->id);
         $names = array_map(static fn ($t): string => $t->name, $teams);
         self::assertContains('backend', $names);
+    }
+
+    public function testMemberCanViewTeamsButCannotCreate(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $member = self::createUser('member', 'member@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner, $member);
+        $organization = $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        // Make `member` a member of the org through a custom team (not the owners team).
+        $team = new OrganizationTeam(new Ulid(), $organization->id, OrganizationTeamKind::Custom, 'backend', $owner, new \DateTimeImmutable());
+        $teamMember = new OrganizationTeamMember($team->teamId, $member->getId(), $organization->id, $member, new \DateTimeImmutable());
+        $this->store($team, $teamMember);
+
+        $this->client->loginUser($member);
+
+        // A member may view the teams list.
+        $this->client->request('GET', '/organizations/acme/teams');
+        self::assertResponseIsSuccessful();
+
+        // But creating a team stays owner-only.
+        $this->client->request('GET', '/organizations/acme/teams/create');
+        self::assertResponseStatusCodeSame(403);
     }
 
     public function testShowRedirectsOldSlugToCurrentSlug(): void

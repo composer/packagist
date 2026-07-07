@@ -125,7 +125,14 @@ class MenuBuilder
             'label' => '<span class="icon-users"></span>'.$this->translator->trans('menu.organization_teams'),
             'route' => 'organization_teams',
             'routeParameters' => ['organization' => $slug],
-            'extras' => ['safe_label' => true, 'translation_domain' => false],
+            'extras' => [
+                'safe_label' => true,
+                'translation_domain' => false,
+                'routes' => [
+                    ['route' => 'organization_teams', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_team_create', 'parameters' => ['organization' => $slug]],
+                ],
+            ],
         ]);
         $menu->addChild($this->translator->trans('menu.organization_members'), [
             'label' => '<span class="icon-user"></span>'.$this->translator->trans('menu.organization_members'),

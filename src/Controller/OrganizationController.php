@@ -112,8 +112,23 @@ class OrganizationController extends Controller
         ]);
     }
 
-    #[Route(path: '/organizations/{organization}/teams', name: 'organization_teams', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
-    public function teams(Request $request, Organization $organization, #[CurrentUser] User $user): Response
+    #[Route(path: '/organizations/{organization}/teams', name: 'organization_teams', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
+    public function teams(Organization $organization): Response
+    {
+        // Any org member (or admin) may view the teams; management is owner-only per-action.
+        $this->denyAccessUnlessGranted(OrganizationActions::ViewTeams->value, $organization);
+
+        $addMemberForm = $this->createForm(AddTeamMemberType::class, new AddTeamMemberRequest());
+
+        return $this->render('organization/teams.html.twig', [
+            'organization' => $organization,
+            'addMemberForm' => $addMemberForm->createView(),
+            'teams' => $this->teamsView($organization),
+        ]);
+    }
+
+    #[Route(path: '/organizations/{organization}/teams/create', name: 'organization_team_create', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
+    public function createTeam(Request $request, Organization $organization, #[CurrentUser] User $user): Response
     {
         $this->denyAccessUnlessGranted(OrganizationActions::CreateTeam->value, $organization);
 
@@ -136,13 +151,9 @@ class OrganizationController extends Controller
             }
         }
 
-        $addMemberForm = $this->createForm(AddTeamMemberType::class, new AddTeamMemberRequest());
-
-        return $this->render('organization/teams.html.twig', [
+        return $this->render('organization/team_create.html.twig', [
             'organization' => $organization,
             'form' => $form->createView(),
-            'addMemberForm' => $addMemberForm->createView(),
-            'teams' => $this->teamsView($organization),
         ]);
     }
 
