@@ -191,8 +191,9 @@ class OrganizationController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
+                $previousName = $team->name;
                 $this->membershipManager->renameTeam($organization, $user, $team->teamId, $teamRequest->name, $request->getClientIp());
-                $this->addFlash('success', 'Team renamed.');
+                $this->addFlash('success', sprintf('Team "%s" renamed to "%s".', $previousName, $teamRequest->name));
 
                 return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -224,8 +225,9 @@ class OrganizationController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
+                $teamName = $team->name;
                 $this->membershipManager->deleteTeam($organization, $user, $team->teamId, $request->getClientIp());
-                $this->addFlash('success', 'Team deleted.');
+                $this->addFlash('success', sprintf('Team "%s" deleted.', $teamName));
 
                 return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -259,7 +261,7 @@ class OrganizationController extends Controller
             } else {
                 try {
                     $this->membershipManager->addTeamMember($organization, $user, $team->teamId, $target->getId(), $request->getClientIp());
-                    $this->addFlash('success', sprintf('%s added to the team.', $target->getUsername()));
+                    $this->addFlash('success', sprintf('Added "%s" to team "%s".', $target->getUsername(), $team->name));
 
                     return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
                 } catch (OrganizationException $e) {
@@ -282,8 +284,9 @@ class OrganizationController extends Controller
          $this->assertCsrf($request, 'org_team_member_remove_'.$team->teamId.'_'.$userId);
 
         try {
+            $target = $this->users->find($userId);
             $this->membershipManager->removeTeamMember($organization, $user, $team->teamId, $userId, $request->getClientIp());
-            $this->addFlash('success', 'Member removed from the team.');
+            $this->addFlash('success', sprintf('Removed "%s" from team "%s".', $target?->getUsername() ?? sprintf('Member #%d', $userId), $team->name));
         } catch (OrganizationException $e) {
             $this->addFlash('error', $e->getMessage());
         }
@@ -308,8 +311,9 @@ class OrganizationController extends Controller
         $this->assertCsrf($request, 'org_member_remove_'.$userId);
 
         try {
+            $target = $this->users->find($userId);
             $this->membershipManager->removeMember($organization, $user, $userId, $request->getClientIp());
-            $this->addFlash('success', 'Member removed from the organization.');
+            $this->addFlash('success', sprintf('Removed "%s" from the organization.', $target?->getUsername() ?? sprintf('Member #%d', $userId)));
         } catch (OrganizationException $e) {
             $this->addFlash('error', $e->getMessage());
         }
