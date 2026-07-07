@@ -37,7 +37,7 @@ class OrganizationTeamRepository extends ServiceEntityRepository
             ->where('t.orgId = :orgId')
             ->setParameter('orgId', $orgId, 'ulid')
             // 'system' sorts before 'custom' alphabetically, which is the order we want.
-            ->orderBy('t.kind', 'ASC')
+            ->orderBy('t.kind', 'DESC')
             ->addOrderBy('t.name', 'ASC')
             ->getQuery()
             ->getResult();
