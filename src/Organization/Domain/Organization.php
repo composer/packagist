@@ -101,7 +101,6 @@ final class Organization extends AbstractAggregate
      */
     public function createTeam(Ulid $teamId, TeamName $name): void
     {
-        $this->assertActive();
         $this->assertNameAllowed($name);
         $this->assertNameAvailable($name, null);
 
@@ -118,7 +117,6 @@ final class Organization extends AbstractAggregate
      */
     public function renameTeam(Ulid $teamId, TeamName $name): void
     {
-        $this->assertActive();
         $this->assertCustomTeam($teamId);
 
         if ($this->teams[$teamId->toRfc4122()]['name'] === $name->value) {
@@ -139,7 +137,6 @@ final class Organization extends AbstractAggregate
      */
     public function deleteTeam(Ulid $teamId): void
     {
-        $this->assertActive();
         $this->assertCustomTeam($teamId);
 
         $this->record(new TeamDeleted($this->id, $teamId, $this->teams[$teamId->toRfc4122()]['name']));
@@ -156,7 +153,6 @@ final class Organization extends AbstractAggregate
      */
     public function addTeamMember(Ulid $teamId, int $userId, bool $targetHasTwoFactor): void
     {
-        $this->assertActive();
         $this->assertTeamExists($teamId);
 
         if (!$this->isOrgMember($userId)) {
@@ -280,13 +276,6 @@ final class Organization extends AbstractAggregate
     private function ownerCount(): int
     {
         return \count($this->teamMembers[$this->ownersTeamId?->toRfc4122()] ?? []);
-    }
-
-    private function assertActive(): void
-    {
-        if ($this->deleted) {
-            throw new OrganizationException('This organization has been deleted.');
-        }
     }
 
     private function assertTeamExists(Ulid $teamId): void
