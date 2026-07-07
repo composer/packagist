@@ -34,6 +34,10 @@ enum OrganizationTeamKind: string
 #[ORM\Index(name: 'org_team_org_idx', columns: ['orgId'])]
 class OrganizationTeam
 {
+    /** Generated lowercase mirror of `name` backing the case-insensitive uniqueness constraint. */
+    #[ORM\Column(insertable: false, updatable: false, columnDefinition: 'VARCHAR(' . TeamName::MAX_LENGTH . ') GENERATED ALWAYS AS (LOWER(name)) STORED')]
+    public string $nameLower = '';
+
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: 'ulid')]
