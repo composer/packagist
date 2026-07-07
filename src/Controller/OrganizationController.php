@@ -67,6 +67,8 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}', name: 'organization_show', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
     public function show(Organization $organization): Response
     {
+        $this->denyAccessUnlessGranted(OrganizationActions::View->value, $organization);
+
         return $this->render('organization/show.html.twig', [
             'organization' => $organization,
         ]);
@@ -269,7 +271,7 @@ class OrganizationController extends Controller
     public function members(Organization $organization): Response
     {
         // Any org member (or admin) may view the members list; management is owner-only per-action.
-        $this->denyAccessUnlessGranted(OrganizationActions::View->value, $organization);
+        $this->denyAccessUnlessGranted(OrganizationActions::ViewMembers->value, $organization);
 
         return $this->render('organization/members.html.twig', [
             'organization' => $organization,
