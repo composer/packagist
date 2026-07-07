@@ -297,9 +297,34 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/members', name: 'organization_members', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
     public function members(Organization $organization): Response
     {
+        $rows = $this->teamMembers->findByOrg($organization->id);
+        $usersById = $this->usersById($rows);
+
+        $teamsById = [];
+        foreach ($this->teams->findByOrg($organization->id) as $team) {
+            $teamsById[$team->teamId->toRfc4122()] = $team;
+        }
+
+        $teamsByUser = [];
+        foreach ($rows as $row) {
+            $team = $teamsById[$row->teamId->toRfc4122()] ?? null;
+            if ($team !== null) {
+                $teamsByUser[$row->userId][] = $team;
+            }
+        }
+
+        $members = [];
+        foreach ($teamsByUser as $userId => $teams) {
+            $members[] = [
+                'user' => $usersById[$userId] ?? null,
+                'userId' => $userId,
+                'teams' => $teams,
+            ];
+        }
+
         return $this->render('organization/members.html.twig', [
             'organization' => $organization,
-            'members' => $this->membersView($organization),
+            'members' => $members,
         ]);
     }
 
@@ -354,39 +379,6 @@ class OrganizationController extends Controller
         if (!$this->isCsrfTokenValid($id, $request->request->getString('_token'))) {
             throw new NotFoundHttpException('Invalid CSRF token.');
         }
-    }
-
-    /**
-     * @return list<array{user: User|null, userId: int, teams: non-empty-list<OrganizationTeam>}>
-     */
-    private function membersView(Organization $organization): array
-    {
-        $rows = $this->teamMembers->findByOrg($organization->id);
-        $usersById = $this->usersById($rows);
-
-        $teamsById = [];
-        foreach ($this->teams->findByOrg($organization->id) as $team) {
-            $teamsById[$team->teamId->toRfc4122()] = $team;
-        }
-
-        $teamsByUser = [];
-        foreach ($rows as $row) {
-            $team = $teamsById[$row->teamId->toRfc4122()] ?? null;
-            if ($team !== null) {
-                $teamsByUser[$row->userId][] = $team;
-            }
-        }
-
-        $view = [];
-        foreach ($teamsByUser as $userId => $teams) {
-            $view[] = [
-                'user' => $usersById[$userId] ?? null,
-                'userId' => $userId,
-                'teams' => $teams,
-            ];
-        }
-
-        return $view;
     }
 
     /**
