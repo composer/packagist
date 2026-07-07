@@ -37,8 +37,6 @@ trait Fixtures
      */
     protected static function createOwnerMembership(Organization $organization, User $owner): array
     {
-        \Webmozart\Assert\Assert::notNull($organization->ownersTeamId);
-
         $team = new OrganizationTeam(
             $organization->ownersTeamId,
             $organization,

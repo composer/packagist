@@ -37,4 +37,4 @@ CREATE TABLE organization_team_member (
     CONSTRAINT FK_organization_team_member_added_by FOREIGN KEY (addedBy) REFERENCES fos_user (id) ON DELETE SET NULL
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
 
-ALTER TABLE organization ADD ownersTeamId BINARY(16) DEFAULT NULL;
+ALTER TABLE organization ADD ownersTeamId BINARY(16) NOT NULL;

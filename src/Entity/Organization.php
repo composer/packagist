@@ -56,9 +56,9 @@ class Organization
         #[ORM\JoinColumn(name: 'createdBy', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
         public readonly ?User $createdBy,
 
-        /** The bootstrapped system `owners` team. Set at creation; the owner check is a membership lookup against it. Nullable only for forward-compat with rows created before this stage. */
-        #[ORM\Column(type: 'ulid', nullable: true)]
-        public ?Ulid $ownersTeamId = null,
+        /** The bootstrapped system `owners` team. Set at creation; the owner check is a membership lookup against it. */
+        #[ORM\Column(type: 'ulid')]
+        public readonly Ulid $ownersTeamId,
 
         // Groundwork for org deletion (not yet implemented)
         #[ORM\Column(nullable: true)]

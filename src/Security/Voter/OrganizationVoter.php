@@ -75,8 +75,7 @@ class OrganizationVoter extends Voter
     private function isOwner(Organization $organization, User $user): bool
     {
         // An owner is a member of the org's bootstrapped `owners` team.
-        return $organization->ownersTeamId !== null
-            && $this->teamMembers->isOwner($organization->ownersTeamId, $user->getId());
+        return $this->teamMembers->isOwner($organization->ownersTeamId, $user->getId());
     }
 
     private function isMember(Organization $organization, User $user): bool
