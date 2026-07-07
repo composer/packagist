@@ -172,7 +172,7 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::RenameTeam->value, 'organization')]
-     #[Route(path: '/organizations/{organization}/teams/{team}/rename', name: 'organization_team_rename', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
+    #[Route(path: '/organizations/{organization}/teams/{team}/rename', name: 'organization_team_rename', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
     public function renameTeam(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
         if ($redirect = $this->require2fa($user)) {
@@ -243,7 +243,7 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::AddTeamMember->value, 'organization')]
-     #[Route(path: '/organizations/{organization}/teams/{team}/members/add', name: 'organization_team_member_add', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
+    #[Route(path: '/organizations/{organization}/teams/{team}/members/add', name: 'organization_team_member_add', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
     public function addTeamMember(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
         if ($redirect = $this->require2fa($user)) {
@@ -278,10 +278,10 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::RemoveTeamMember->value, 'organization')]
-     #[Route(path: '/organizations/{organization}/teams/{team}/members/{userId}/remove', name: 'organization_team_member_remove', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID, 'userId' => '\d+'])]
+    #[Route(path: '/organizations/{organization}/teams/{team}/members/{userId}/remove', name: 'organization_team_member_remove', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID, 'userId' => '\d+'])]
     public function removeTeamMember(Request $request, Organization $organization, OrganizationTeam $team, int $userId, #[CurrentUser] User $user): Response
     {
-         $this->assertCsrf($request, 'org_team_member_remove_'.$team->teamId.'_'.$userId);
+        $this->assertCsrf($request, 'org_team_member_remove_'.$team->teamId.'_'.$userId);
 
         try {
             $target = $this->users->find($userId);
