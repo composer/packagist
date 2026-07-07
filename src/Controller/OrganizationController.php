@@ -74,11 +74,10 @@ class OrganizationController extends Controller
         ]);
     }
 
+    #[IsGranted(OrganizationActions::Edit->value, 'organization')]
     #[Route(path: '/organizations/{organization}/settings', name: 'organization_settings', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
     public function settings(Request $request, Organization $organization, #[CurrentUser] User $user): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::Edit->value, $organization);
-
         if ($redirect = $this->require2fa($user)) {
             return $redirect;
         }
@@ -114,23 +113,20 @@ class OrganizationController extends Controller
         ]);
     }
 
+    #[IsGranted(OrganizationActions::ViewTeams->value, 'organization')]
     #[Route(path: '/organizations/{organization}/teams', name: 'organization_teams', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
     public function teams(Organization $organization): Response
     {
-        // Any org member (or admin) may view the teams; management is owner-only per-action.
-        $this->denyAccessUnlessGranted(OrganizationActions::ViewTeams->value, $organization);
-
         return $this->render('organization/teams.html.twig', [
             'organization' => $organization,
             'teams' => $this->teamsView($organization),
         ]);
     }
 
+    #[IsGranted(OrganizationActions::CreateTeam->value, 'organization')]
     #[Route(path: '/organizations/{organization}/teams/create', name: 'organization_team_create', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
     public function createTeam(Request $request, Organization $organization, #[CurrentUser] User $user): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::CreateTeam->value, $organization);
-
         if ($redirect = $this->require2fa($user)) {
             return $redirect;
         }
@@ -156,11 +152,10 @@ class OrganizationController extends Controller
         ]);
     }
 
+    #[IsGranted(OrganizationActions::RenameTeam->value, 'organization')]
     #[Route(path: '/organizations/{organization}/teams/{teamId}/rename', name: 'organization_team_rename', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
     public function renameTeam(Request $request, Organization $organization, string $teamId, #[CurrentUser] User $user): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::RenameTeam->value, $organization);
-
         if ($redirect = $this->require2fa($user)) {
             return $redirect;
         }
@@ -194,10 +189,10 @@ class OrganizationController extends Controller
         ]);
     }
 
+    #[IsGranted(OrganizationActions::DeleteTeam->value, 'organization')]
     #[Route(path: '/organizations/{organization}/teams/{teamId}/delete', name: 'organization_team_delete', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
     public function deleteTeam(Request $request, Organization $organization, string $teamId, #[CurrentUser] User $user): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::DeleteTeam->value, $organization);
         $this->assertCsrf($request, 'org_team_delete_'.$teamId);
 
         try {
@@ -210,11 +205,10 @@ class OrganizationController extends Controller
         return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
     }
 
+    #[IsGranted(OrganizationActions::AddTeamMember->value, 'organization')]
     #[Route(path: '/organizations/{organization}/teams/{teamId}/members/add', name: 'organization_team_member_add', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
     public function addTeamMember(Request $request, Organization $organization, string $teamId, #[CurrentUser] User $user): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::AddTeamMember->value, $organization);
-
         if ($redirect = $this->require2fa($user)) {
             return $redirect;
         }
@@ -251,10 +245,10 @@ class OrganizationController extends Controller
         ]);
     }
 
+    #[IsGranted(OrganizationActions::RemoveTeamMember->value, 'organization')]
     #[Route(path: '/organizations/{organization}/teams/{teamId}/members/{userId}/remove', name: 'organization_team_member_remove', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID, 'userId' => '\d+'])]
     public function removeTeamMember(Request $request, Organization $organization, string $teamId, int $userId, #[CurrentUser] User $user): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::RemoveTeamMember->value, $organization);
         $this->assertCsrf($request, 'org_team_member_remove_'.$teamId.'_'.$userId);
 
         try {
@@ -267,22 +261,20 @@ class OrganizationController extends Controller
         return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
     }
 
+    #[IsGranted(OrganizationActions::ViewMembers->value, 'organization')]
     #[Route(path: '/organizations/{organization}/members', name: 'organization_members', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
     public function members(Organization $organization): Response
     {
-        // Any org member (or admin) may view the members list; management is owner-only per-action.
-        $this->denyAccessUnlessGranted(OrganizationActions::ViewMembers->value, $organization);
-
         return $this->render('organization/members.html.twig', [
             'organization' => $organization,
             'members' => $this->membersView($organization),
         ]);
     }
 
+    #[IsGranted(OrganizationActions::RemoveMember->value, 'organization')]
     #[Route(path: '/organizations/{organization}/members/{userId}/remove', name: 'organization_member_remove', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'userId' => '\d+'])]
     public function removeMember(Request $request, Organization $organization, int $userId, #[CurrentUser] User $user): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::RemoveMember->value, $organization);
         $this->assertCsrf($request, 'org_member_remove_'.$userId);
 
         try {
@@ -295,10 +287,10 @@ class OrganizationController extends Controller
         return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
     }
 
+    #[IsGranted(OrganizationActions::Leave->value, 'organization')]
     #[Route(path: '/organizations/{organization}/members/leave', name: 'organization_member_leave', methods: ['POST'], requirements: ['organization' => Slug::PATTERN])]
     public function leave(Request $request, Organization $organization, #[CurrentUser] User $user): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::Leave->value, $organization);
         $this->assertCsrf($request, 'org_member_leave');
 
         try {
