@@ -29,6 +29,15 @@
                             {% if package.description is defined and package.description %}
                                 <p>{{ package.description|u.truncate(300) }}</p>
                             {% endif %}
+                            {% if meta.spamScores is defined and meta.spamScores[package.id] is defined %}
+                                {% set score = meta.spamScores[package.id] %}
+                                <p>
+                                    <span class="label {{ score.safe ? 'label-success' : 'label-danger' }}"
+                                          title="Classifier estimate. {{ score.safe ? 'Would be auto-cleared as safe.' : 'Would be kept for review.' }}">
+                                        spam {{ (score.metadata * 100)|round }}%{% if score.readme is not null %} · readme {{ (score.readme * 100)|round }}%{% endif %} · {{ score.safe ? 'auto-safe' : 'review' }}
+                                    </span>
+                                </p>
+                            {% endif %}
                             {% if package.abandoned|default(false) %}
                                 <p class="abandoned">
                                     <i class="glyphicon glyphicon-exclamation-sign"></i> Abandoned!

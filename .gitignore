@@ -18,6 +18,7 @@ web/build/
 /nbproject
 /.php-cs-fixer.cache
 /.phpstan-dba.cache
+/scripts/*
 
 ###> symfony/framework-bundle ###
 /.env.local

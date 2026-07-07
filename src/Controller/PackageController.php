@@ -48,6 +48,7 @@ use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
+use App\Service\Spam\SpamClassifier;
 use App\Util\Killswitch;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Package\Version\VersionParser;
@@ -100,6 +101,7 @@ class PackageController extends Controller
         /** @var AwsMetadata */
         private array $awsMetadata,
         private EventDispatcherInterface $eventDispatcher,
+        private SpamClassifier $spamClassifier,
     ) {
     }
 
@@ -419,6 +421,7 @@ class PackageController extends Controller
         $data['packages'] = $paginator;
         $data['count'] = $count;
         $data['meta'] = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
+        $data['meta']['spamScores'] = $this->computeSpamScores($repo, $packages);
         $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
 
         $vendorRepo = $this->getEM()->getRepository(Vendor::class);
@@ -438,6 +441,38 @@ class PackageController extends Controller
         }
 
         return $this->render('package/spam.html.twig', $data);
+    }
+
+    /**
+     * Runs the spam classifier over the listed packages so moderators can see, per package, how
+     * spammy the model thinks it is and whether it would be auto-cleared. No-op (empty map) when no
+     * model is deployed. The score is cheap enough to compute inline for a page of results.
+     *
+     * @param array<array{id: int, name: string, description: string|null}> $packages
+     *
+     * @return array<int, array{metadata: float, readme: float|null, safe: bool}>
+     */
+    private function computeSpamScores(PackageRepository $repo, array $packages): array
+    {
+        if (\count($packages) === 0 || !$this->spamClassifier->isModelAvailable()) {
+            return [];
+        }
+
+        $ids = array_values(array_map(static fn (array $pkg) => $pkg['id'], $packages));
+        $tagsById = $repo->getTagsByPackageIds($ids);
+        $readmesById = $repo->getReadmeContentsByPackageIds($ids);
+
+        $scores = [];
+        foreach ($packages as $pkg) {
+            $scores[$pkg['id']] = $this->spamClassifier->evaluate(
+                $pkg['name'],
+                $pkg['description'],
+                $tagsById[$pkg['id']] ?? [],
+                $readmesById[$pkg['id']] ?? null,
+            );
+        }
+
+        return $scores;
     }
 
     #[IsGranted('ROLE_ANTISPAM')]

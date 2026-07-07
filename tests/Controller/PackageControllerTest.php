@@ -15,11 +15,15 @@ namespace App\Tests\Controller;
 use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\Package;
+use App\Entity\PackageReadme;
 use App\Entity\User;
 use App\Entity\Version;
+use App\Service\Spam\FeatureExtractor;
+use App\Service\Spam\SpamClassifier;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
 use PHPUnit\Framework\Attributes\TestWith;
+use Psr\Log\NullLogger;
 
 class PackageControllerTest extends IntegrationTestCase
 {
@@ -36,6 +40,37 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $auditLink);
         self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+    }
+
+    public function testSpamListingShowsClassifierScoresWhenModelAvailable(): void
+    {
+        // Fixture weights: name token "widget" is strongly safe, "spam" strongly spammy.
+        $antispam = self::createUser('mod', 'mod@example.org', roles: ['ROLE_ANTISPAM']);
+        $safe = self::createPackage('goodvendor/widget', 'https://example.org/goodvendor/widget');
+        $safe->setSuspect('Too many views');
+        $spam = self::createPackage('badvendor/spam', 'https://example.org/badvendor/spam');
+        $spam->setSuspect('Too many views');
+        $this->store($antispam, $safe, $spam);
+
+        // A spammy README on the spam package exercises the second (readme) score column.
+        $this->store(new PackageReadme($spam, '<p>Best deals <a href="https://casino.example/win">buy now</a></p>'));
+
+        // Override the autowired classifier with one backed by the committed test fixture model.
+        self::getContainer()->set(SpamClassifier::class, new SpamClassifier(
+            new FeatureExtractor(),
+            new NullLogger(),
+            __DIR__.'/../Fixtures/spam-model.json',
+        ));
+
+        $this->client->loginUser($antispam);
+        $crawler = $this->client->request('GET', '/spam');
+        self::assertResponseIsSuccessful();
+
+        $listing = $crawler->filter('.packages')->text();
+        self::assertStringContainsString('auto-safe', $listing, 'the metadata-safe package should be flagged auto-safe');
+        self::assertStringContainsString('review', $listing, 'the spammy package should be flagged for review');
+        self::assertStringContainsString('readme', $listing, 'the spam package has a README so its readme score should show');
+        self::assertGreaterThanOrEqual(2, $crawler->filter('.packages .label')->count());
     }
 
     public function testViewVendor(): void

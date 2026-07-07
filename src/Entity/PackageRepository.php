@@ -512,14 +512,83 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
+     * @return array<array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
      */
     public function getSuspectPackages(int $offset = 0, int $limit = 15): array
     {
-        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage
             FROM package p WHERE p.suspect IS NOT NULL AND p.frozen IS NULL ORDER BY p.createdAt DESC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
+    }
+
+    /**
+     * Every package currently in the spam review queue, ordered so a vendor's packages are adjacent.
+     * Used by the automated triage command (packagist:spam:triage-queue).
+     *
+     * @return array<array{id: int, name: string, description: string|null, vendor: string}>
+     */
+    public function getAllSuspectPackages(): array
+    {
+        $sql = 'SELECT p.id, p.name, p.description, p.vendor
+            FROM package p WHERE p.suspect IS NOT NULL AND p.frozen IS NULL ORDER BY p.vendor ASC, p.name ASC';
+
+        return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
+    }
+
+    /**
+     * @param list<int> $ids
+     *
+     * @return array<int, list<string>> map of package id => list of tag names (across all versions)
+     */
+    public function getTagsByPackageIds(array $ids): array
+    {
+        if (\count($ids) === 0) {
+            return [];
+        }
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT pv.package_id AS pid, GROUP_CONCAT(DISTINCT t.name SEPARATOR \',\') AS tags
+             FROM package_version pv
+             JOIN version_tag vt ON vt.version_id = pv.id
+             JOIN tag t ON t.id = vt.tag_id
+             WHERE pv.package_id IN (:ids)
+             GROUP BY pv.package_id',
+            ['ids' => $ids],
+            ['ids' => ArrayParameterType::INTEGER],
+        );
+
+        $tagsById = [];
+        foreach ($rows as $row) {
+            $tagsById[(int) $row['pid']] = array_values(array_filter(explode(',', (string) $row['tags']), static fn (string $t) => $t !== ''));
+        }
+
+        return $tagsById;
+    }
+
+    /**
+     * @param list<int> $ids
+     *
+     * @return array<int, string> map of package id => stored README HTML (only ids that have one)
+     */
+    public function getReadmeContentsByPackageIds(array $ids): array
+    {
+        if (\count($ids) === 0) {
+            return [];
+        }
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT package_id AS pid, contents FROM package_readme WHERE package_id IN (:ids)',
+            ['ids' => $ids],
+            ['ids' => ArrayParameterType::INTEGER],
+        );
+
+        $byId = [];
+        foreach ($rows as $row) {
+            $byId[(int) $row['pid']] = (string) $row['contents'];
+        }
+
+        return $byId;
     }
 
     /**

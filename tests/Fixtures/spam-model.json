@@ -1,0 +1,24 @@
+{
+    "version": 1,
+    "metadata": {
+        "bias": 0.0,
+        "threshold": 0.5,
+        "weights": {
+            "n:widget": -10.0,
+            "n:spam": 10.0,
+            "d:safe": -8.0,
+            "t:casino": 10.0
+        }
+    },
+    "readme": {
+        "bias": -5.0,
+        "threshold": 0.5,
+        "weights": {
+            "rl:casino.example": 10.0,
+            "r:buy now": 6.0
+        }
+    },
+    "config": {
+        "note": "test fixture only - not a real trained model"
+    }
+}
