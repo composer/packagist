@@ -307,7 +307,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
-        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
         $organization = $this->organizations()->findOneBySlug('acme');
         self::assertNotNull($organization);
 
@@ -325,7 +325,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $other->setTotpSecret('totp-secret');
         $this->store($owner, $other);
 
-        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
         [, $foreignTeam] = $this->createOrganizationWithCustomTeam($other, 'globex', 'Globex', 'backend');
 
         $this->client->loginUser($owner);

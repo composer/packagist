@@ -64,11 +64,10 @@ class OrganizationController extends Controller
         ]);
     }
 
+    #[IsGranted(OrganizationActions::View->value, 'organization')]
     #[Route(path: '/organizations/{organization}', name: 'organization_show', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
     public function show(Organization $organization): Response
     {
-        $this->denyAccessUnlessGranted(OrganizationActions::View->value, $organization);
-
         return $this->render('organization/show.html.twig', [
             'organization' => $organization,
         ]);
