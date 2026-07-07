@@ -430,7 +430,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    public function testRemoveTeamMemberRedirectsOwnerWithoutTwoFactor(): void
+    public function testRemoveTeamMemberForbiddenForOwnerWithoutTwoFactor(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
         $this->store($owner);
@@ -441,7 +441,8 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->client->loginUser($owner);
         $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
 
-        self::assertResponseRedirects();
+        // 2FA is required to manage an organization; the voter denies owner actions without it.
+        self::assertResponseStatusCodeSame(403);
     }
 
     public function testRemoveUnknownTeamMemberReturns404(): void
@@ -510,7 +511,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    public function testRemoveMemberRedirectsOwnerWithoutTwoFactor(): void
+    public function testRemoveMemberForbiddenForOwnerWithoutTwoFactor(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
         $this->store($owner);
@@ -519,7 +520,8 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->client->loginUser($owner);
         $this->client->request('GET', '/organizations/acme/members/owner/remove');
 
-        self::assertResponseRedirects();
+        // 2FA is required to manage an organization; the voter denies owner actions without it.
+        self::assertResponseStatusCodeSame(403);
     }
 
     public function testRemoveUnknownMemberReturns404(): void

@@ -262,10 +262,6 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/teams/{team}/members/{teamMember}/remove', name: 'organization_team_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
     public function removeTeamMember(Request $request, Organization $organization, OrganizationTeam $team, User $teamMember, #[CurrentUser] User $user): Response
     {
-        if ($redirect = $this->require2fa($user)) {
-            return $redirect;
-        }
-
         $form = $this->createForm(RemoveTeamMemberType::class);
         $form->handleRequest($request);
 
@@ -327,10 +323,6 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/members/{organizationMember}/remove', name: 'organization_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
     public function removeMember(Request $request, Organization $organization, User $organizationMember, #[CurrentUser] User $user): Response
     {
-        if ($redirect = $this->require2fa($user)) {
-            return $redirect;
-        }
-
         $form = $this->createForm(RemoveMemberType::class);
         $form->handleRequest($request);
 
