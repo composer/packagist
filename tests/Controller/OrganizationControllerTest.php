@@ -401,7 +401,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         static::getService(OrganizationMembershipManager::class)->addTeamMember($organization, $owner, $backend->teamId, $owner->getId(), null);
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/%d/remove', $backend->teamId, $owner->getId()));
+        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
 
         self::assertResponseIsSuccessful();
         $form = $crawler->selectButton('Remove member')->form();
@@ -421,10 +421,11 @@ class OrganizationControllerTest extends IntegrationTestCase
         $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ORGANIZATIONS']);
         $this->store($owner, $intruder);
 
-        [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+        [$organization, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+        static::getService(OrganizationMembershipManager::class)->addTeamMember($organization, $owner, $backend->teamId, $owner->getId(), null);
 
         $this->client->loginUser($intruder);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/%d/remove', $backend->teamId, $owner->getId()));
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -434,10 +435,11 @@ class OrganizationControllerTest extends IntegrationTestCase
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
         $this->store($owner);
 
-        [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+        [$organization, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+        static::getService(OrganizationMembershipManager::class)->addTeamMember($organization, $owner, $backend->teamId, $owner->getId(), null);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/%d/remove', $backend->teamId, $owner->getId()));
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
 
         self::assertResponseRedirects();
     }
@@ -451,7 +453,23 @@ class OrganizationControllerTest extends IntegrationTestCase
         [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/999999/remove', $backend->teamId));
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/ghost/remove', $backend->teamId));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testRemoveTeamMemberReturns404ForNonMemberUsername(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        // An existing user who is not a member of the team must not be reachable via the team member route.
+        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner, $outsider);
+
+        [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/outsider/remove', $backend->teamId));
 
         self::assertResponseStatusCodeSame(404);
     }

@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Ulid;
 
@@ -24,6 +25,25 @@ class OrganizationTeamMemberRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, OrganizationTeamMember::class);
+    }
+
+    /**
+     * Load the {@see User} behind a team membership by their canonical username in a single joined
+     * query. Returns null when the user does not exist or is not a member of the team, so callers
+     * cannot tell the two cases apart and no user id is exposed.
+     */
+    public function findTeamMember(Ulid $teamId, string $usernameCanonical): ?User
+    {
+        return $this->getEntityManager()->createQueryBuilder()
+            ->select('u')
+            ->from(User::class, 'u')
+            ->innerJoin(OrganizationTeamMember::class, 'm', Join::WITH, 'm.userId = u.id')
+            ->where('m.teamId = :teamId')
+            ->andWhere('u.usernameCanonical = :username')
+            ->setParameter('teamId', $teamId, 'ulid')
+            ->setParameter('username', $usernameCanonical)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**

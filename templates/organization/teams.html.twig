@@ -44,8 +44,8 @@
                             <tr>
                                 <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
                                 <td class="text-right">
-                                    {% if canRemoveTeamMember %}
-                                        <a class="btn btn-xs btn-default" href="{{ path('organization_team_member_remove', { organization: organization.slug, team: team.teamId, userId: member.userId }) }}">Remove</a>
+                                    {% if canRemoveTeamMember and member.user %}
+                                        <a class="btn btn-xs btn-default" href="{{ path('organization_team_member_remove', { organization: organization.slug, team: team.teamId, teamMember: member.user.username }) }}">Remove</a>
                                     {% endif %}
                                 </td>
                             </tr>

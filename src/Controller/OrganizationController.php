@@ -279,16 +279,11 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::RemoveTeamMember->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/teams/{team}/members/{userId}/remove', name: 'organization_team_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID, 'userId' => '\d+'])]
-    public function removeTeamMember(Request $request, Organization $organization, OrganizationTeam $team, int $userId, #[CurrentUser] User $user): Response
+    #[Route(path: '/organizations/{organization}/teams/{team}/members/{teamMember}/remove', name: 'organization_team_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
+    public function removeTeamMember(Request $request, Organization $organization, OrganizationTeam $team, User $teamMember, #[CurrentUser] User $user): Response
     {
         if ($redirect = $this->require2fa($user)) {
             return $redirect;
-        }
-
-        $target = $this->users->find($userId);
-        if ($target === null) {
-            throw new NotFoundHttpException('Member not found.');
         }
 
         $form = $this->createForm(RemoveTeamMemberType::class);
@@ -296,8 +291,8 @@ class OrganizationController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $this->membershipManager->removeTeamMember($organization, $user, $team->teamId, $userId, $request->getClientIp());
-                $this->addFlash('success', sprintf('Removed "%s" from team "%s".', $target->getUsername(), $team->name));
+                $this->membershipManager->removeTeamMember($organization, $user, $team->teamId, $teamMember->getId(), $request->getClientIp());
+                $this->addFlash('success', sprintf('Removed "%s" from team "%s".', $teamMember->getUsername(), $team->name));
 
                 return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -308,7 +303,7 @@ class OrganizationController extends Controller
         return $this->render('organization/team_member_remove.html.twig', [
             'organization' => $organization,
             'team' => $team,
-            'member' => $target,
+            'member' => $teamMember,
             'form' => $form->createView(),
         ]);
     }
