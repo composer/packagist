@@ -60,7 +60,7 @@ class OrganizationVoter extends Voter
             OrganizationActions::View,
             OrganizationActions::ViewMembers,
             OrganizationActions::ViewTeams,
-            OrganizationActions::Leave => $this->isMember($organization, $user) && !$organization->isDeleted(),
+            OrganizationActions::Leave => $this->isActiveMember($organization, $user),
             OrganizationActions::Edit,
             OrganizationActions::SoftDelete,
             OrganizationActions::CreateTeam,
@@ -68,8 +68,22 @@ class OrganizationVoter extends Voter
             OrganizationActions::DeleteTeam,
             OrganizationActions::AddTeamMember,
             OrganizationActions::RemoveTeamMember,
-            OrganizationActions::RemoveMember => $this->isOwner($organization, $user) && !$organization->isDeleted(),
+            OrganizationActions::RemoveMember => $this->canManage($organization, $user),
         };
+    }
+
+    private function isActiveMember(Organization $organization, User $user): bool
+    {
+        return $this->isMember($organization, $user) && !$organization->isDeleted();
+    }
+
+    /**
+     * Every owner action changes the org, so management requires an active owner with 2FA.
+     * The 2FA gate here keeps every future owner action covered automatically.
+     */
+    private function canManage(Organization $organization, User $user): bool
+    {
+        return $this->isOwner($organization, $user) && !$organization->isDeleted() && $user->isTotpAuthenticationEnabled();
     }
 
     private function isOwner(Organization $organization, User $user): bool

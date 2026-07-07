@@ -79,10 +79,6 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/settings', name: 'organization_settings', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
     public function settings(Request $request, Organization $organization, #[CurrentUser] User $user): Response
     {
-        if ($redirect = $this->require2fa($user)) {
-            return $redirect;
-        }
-
         $editRequest = new OrganizationDetailsRequest();
         $editRequest->slug = $organization->slug;
         $editRequest->displayName = $organization->displayName;
@@ -147,10 +143,6 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/teams/create', name: 'organization_team_create', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
     public function createTeam(Request $request, Organization $organization, #[CurrentUser] User $user): Response
     {
-        if ($redirect = $this->require2fa($user)) {
-            return $redirect;
-        }
-
         $teamRequest = new TeamRequest();
         $form = $this->createForm(TeamType::class, $teamRequest);
         $form->handleRequest($request);
@@ -176,10 +168,6 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/teams/{team}/rename', name: 'organization_team_rename', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
     public function renameTeam(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
-        if ($redirect = $this->require2fa($user)) {
-            return $redirect;
-        }
-
         if ($team->isSystem()) {
             throw new NotFoundHttpException('Team not found.');
         }
@@ -213,10 +201,6 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/teams/{team}/delete', name: 'organization_team_delete', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
     public function deleteTeam(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
-        if ($redirect = $this->require2fa($user)) {
-            return $redirect;
-        }
-
         if ($team->isSystem()) {
             throw new NotFoundHttpException('Team not found.');
         }
@@ -247,10 +231,6 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/teams/{team}/members/add', name: 'organization_team_member_add', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
     public function addTeamMember(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
-        if ($redirect = $this->require2fa($user)) {
-            return $redirect;
-        }
-
         $addRequest = new AddTeamMemberRequest();
         $form = $this->createForm(AddTeamMemberType::class, $addRequest);
         $form->handleRequest($request);
@@ -388,17 +368,6 @@ class OrganizationController extends Controller
         }
 
         return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
-    }
-
-    private function require2fa(User $user): ?Response
-    {
-        if ($user->isTotpAuthenticationEnabled()) {
-            return null;
-        }
-
-        $this->addFlash('error', 'You must enable two-factor authentication to manage an organization.');
-
-        return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
     }
 
     private function assertCsrf(Request $request, string $id): void

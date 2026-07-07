@@ -124,7 +124,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    public function testSettingsRedirectsOwnerWithoutTwoFactor(): void
+    public function testSettingsForbiddenForOwnerWithoutTwoFactor(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner);
@@ -133,8 +133,8 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->client->loginUser($owner);
         $this->client->request('GET', '/organizations/acme/settings');
 
-        // 2FA is required to manage an organization.
-        self::assertResponseRedirects();
+        // 2FA is required to manage an organization; the voter denies owner actions without it.
+        self::assertResponseStatusCodeSame(403);
     }
 
     public function testSettingsRendersPrefilledFormForOwner(): void
@@ -191,7 +191,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    public function testCreateTeamRedirectsOwnerWithoutTwoFactor(): void
+    public function testCreateTeamForbiddenForOwnerWithoutTwoFactor(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
         $this->store($owner);
@@ -200,7 +200,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->client->loginUser($owner);
         $this->client->request('GET', '/organizations/acme/teams/create');
 
-        self::assertResponseRedirects();
+        self::assertResponseStatusCodeSame(403);
     }
 
     public function testOwnerCreatesTeam(): void
