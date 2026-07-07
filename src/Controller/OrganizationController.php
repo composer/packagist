@@ -25,6 +25,7 @@ use App\Form\Model\OrganizationDetailsRequest;
 use App\Form\Model\TeamRequest;
 use App\Form\Type\AddTeamMemberType;
 use App\Form\Type\DeleteTeamType;
+use App\Form\Type\LeaveOrganizationType;
 use App\Form\Type\OrganizationDetailsType;
 use App\Form\Type\RemoveMemberType;
 use App\Form\Type\RemoveTeamMemberType;
@@ -345,28 +346,27 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::Leave->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/members/leave', name: 'organization_member_leave', methods: ['POST'], requirements: ['organization' => Slug::PATTERN])]
+    #[Route(path: '/organizations/{organization}/members/leave', name: 'organization_member_leave', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
     public function leave(Request $request, Organization $organization, #[CurrentUser] User $user): Response
     {
-        $this->assertCsrf($request, 'org_member_leave');
+        $form = $this->createForm(LeaveOrganizationType::class);
+        $form->handleRequest($request);
 
-        try {
-            $this->membershipManager->leave($organization, $user, $request->getClientIp());
-            $this->addFlash('success', sprintf('You have left "%s".', $organization->displayName));
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $this->membershipManager->leave($organization, $user, $request->getClientIp());
+                $this->addFlash('success', sprintf('You have left "%s".', $organization->displayName));
 
-            return $this->redirectToRoute('organization_list');
-        } catch (OrganizationException $e) {
-            $this->addFlash('error', $e->getMessage());
+                return $this->redirectToRoute('organization_list');
+            } catch (OrganizationException $e) {
+                $form->addError(new FormError($e->getMessage()));
+            }
         }
 
-        return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
-    }
-
-    private function assertCsrf(Request $request, string $id): void
-    {
-        if (!$this->isCsrfTokenValid($id, $request->request->getString('_token'))) {
-            throw new NotFoundHttpException('Invalid CSRF token.');
-        }
+        return $this->render('organization/member_leave.html.twig', [
+            'organization' => $organization,
+            'form' => $form->createView(),
+        ]);
     }
 
     /**

@@ -572,6 +572,49 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertCount(1, $crawler->selectButton('Remove member'));
     }
 
+    public function testMemberSeesLeaveConfirmationPage(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/members/leave');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->selectButton('Leave organization'));
+    }
+
+    public function testLeaveForbiddenForNonMember(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner, $outsider);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($outsider);
+        $this->client->request('GET', '/organizations/acme/members/leave');
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testLeaveShowsErrorWhenLastOwnerTriesToLeave(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $this->store($owner);
+        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/members/leave');
+
+        $form = $crawler->selectButton('Leave organization')->form();
+        $crawler = $this->client->submit($form);
+
+        // The sole owner cannot leave: the form re-renders with the domain error instead of redirecting.
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('The last owner cannot leave or be removed from the organization.', $crawler->text());
+    }
+
     public function testShowRedirectsOldSlugToCurrentSlug(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);

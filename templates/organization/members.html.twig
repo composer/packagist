@@ -26,11 +26,7 @@
                     </td>
                     <td class="text-right">
                         {% if app.user and member.userId == app.user.id %}
-                            <form method="post" action="{{ path('organization_member_leave', { organization: organization.slug }) }}"
-                                  onsubmit="return confirm('Leave {{ organization.displayName|e('js') }}?');" style="display:inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('org_member_leave') }}">
-                                <button type="submit" class="btn btn-xs btn-default">Leave</button>
-                            </form>
+                            <a class="btn btn-xs btn-default" href="{{ path('organization_member_leave', { organization: organization.slug }) }}">Leave</a>
                         {% elseif canRemove and member.user %}
                             <a class="btn btn-xs btn-danger" href="{{ path('organization_member_remove', { organization: organization.slug, organizationMember: member.user.username }) }}">Remove</a>
                         {% endif %}

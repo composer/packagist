@@ -148,6 +148,7 @@ class MenuBuilder
                 'routes' => [
                     ['route' => 'organization_members', 'parameters' => ['organization' => $slug]],
                     ['route' => 'organization_member_remove', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_member_leave', 'parameters' => ['organization' => $slug]],
                 ],
             ],
         ]);
