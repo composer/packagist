@@ -41,7 +41,7 @@ trait Fixtures
 
         $team = new OrganizationTeam(
             $organization->ownersTeamId,
-            $organization->id,
+            $organization,
             OrganizationTeamKind::System,
             OrganizationAggregate::OWNERS_TEAM_NAME,
             $owner,

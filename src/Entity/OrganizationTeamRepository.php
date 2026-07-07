@@ -34,7 +34,7 @@ class OrganizationTeamRepository extends ServiceEntityRepository
     public function findByOrg(Ulid $orgId): array
     {
         return $this->createQueryBuilder('t')
-            ->where('t.orgId = :orgId')
+            ->where('t.organization = :orgId')
             ->setParameter('orgId', $orgId, 'ulid')
             // 'system' sorts before 'custom' alphabetically, which is the order we want.
             ->orderBy('t.kind', 'DESC')
@@ -45,6 +45,24 @@ class OrganizationTeamRepository extends ServiceEntityRepository
 
     public function findOneByOrgAndTeamId(Ulid $orgId, Ulid $teamId): ?OrganizationTeam
     {
-        return $this->findOneBy(['orgId' => $orgId, 'teamId' => $teamId]);
+        return $this->createQueryBuilder('t')
+            ->where('t.organization = :orgId')
+            ->andWhere('t.teamId = :teamId')
+            ->setParameter('orgId', $orgId, 'ulid')
+            ->setParameter('teamId', $teamId, 'ulid')
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findOneByOrgSlugAndTeamId(string $slug, Ulid $teamId): ?OrganizationTeam
+    {
+        return $this->createQueryBuilder('t')
+            ->innerJoin('t.organization', 'o')
+            ->where('o.slug = :slug')
+            ->andWhere('t.teamId = :teamId')
+            ->setParameter('slug', $slug)
+            ->setParameter('teamId', $teamId, 'ulid')
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

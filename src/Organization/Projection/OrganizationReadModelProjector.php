@@ -87,7 +87,7 @@ final readonly class OrganizationReadModelProjector implements Projector
         // from the actor when a Packagist admin creates the organization on someone's behalf.
         $owner = $this->users->find($event->ownerId);
 
-        $this->getEM()->persist(new Organization(
+        $organization = new Organization(
             $event->organizationId,
             $event->slug,
             $event->displayName,
@@ -95,12 +95,13 @@ final readonly class OrganizationReadModelProjector implements Projector
             $recorded->occurredAt,
             $owner,
             $event->ownersTeamId,
-        ));
+        );
+        $this->getEM()->persist($organization);
 
         // The owners team is bootstrapped as part of OrganizationCreated, seeded with the creator.
         $this->getEM()->persist(new OrganizationTeam(
             $event->ownersTeamId,
-            $event->organizationId,
+            $organization,
             OrganizationTeamKind::System,
             \App\Organization\Domain\Organization::OWNERS_TEAM_NAME,
             $owner,
@@ -145,7 +146,7 @@ final readonly class OrganizationReadModelProjector implements Projector
     {
         $this->getEM()->persist(new OrganizationTeam(
             $event->teamId,
-            $event->organizationId,
+            $this->organization($event->organizationId),
             OrganizationTeamKind::Custom,
             $event->name,
             $this->user($recorded->actor->userId),

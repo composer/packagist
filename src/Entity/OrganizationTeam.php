@@ -43,8 +43,9 @@ class OrganizationTeam
         #[ORM\Column(type: 'ulid')]
         public readonly Ulid $teamId,
 
-        #[ORM\Column(type: 'ulid')]
-        public readonly Ulid $orgId,
+        #[ORM\ManyToOne(targetEntity: Organization::class)]
+        #[ORM\JoinColumn(name: 'orgId', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+        public readonly Organization $organization,
 
         #[ORM\Column(length: 16)]
         public readonly OrganizationTeamKind $kind,

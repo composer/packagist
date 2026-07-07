@@ -19,6 +19,7 @@ CREATE TABLE organization_team (
     PRIMARY KEY (teamId),
     UNIQUE KEY org_team_name_uniq (orgId, nameLower),
     KEY org_team_org_idx (orgId),
+    CONSTRAINT FK_organization_team_org FOREIGN KEY (orgId) REFERENCES organization (id) ON DELETE CASCADE,
     CONSTRAINT FK_organization_team_created_by FOREIGN KEY (createdBy) REFERENCES fos_user (id) ON DELETE SET NULL
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
 

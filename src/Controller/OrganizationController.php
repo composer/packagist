@@ -39,7 +39,6 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Uid\Ulid;
 
 #[IsGranted('ROLE_ADMIN_ORGS')]
 class OrganizationController extends Controller
@@ -153,15 +152,14 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::RenameTeam->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/teams/{teamId}/rename', name: 'organization_team_rename', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
-    public function renameTeam(Request $request, Organization $organization, string $teamId, #[CurrentUser] User $user): Response
+     #[Route(path: '/organizations/{organization}/teams/{team}/rename', name: 'organization_team_rename', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
+    public function renameTeam(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
         if ($redirect = $this->require2fa($user)) {
             return $redirect;
         }
 
-        $team = $this->teams->findOneByOrgAndTeamId($organization->id, $this->teamId($teamId));
-        if ($team === null || $team->isSystem()) {
+        if ($team->isSystem()) {
             throw new NotFoundHttpException('Team not found.');
         }
 
@@ -190,13 +188,13 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::DeleteTeam->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/teams/{teamId}/delete', name: 'organization_team_delete', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
-    public function deleteTeam(Request $request, Organization $organization, string $teamId, #[CurrentUser] User $user): Response
+     #[Route(path: '/organizations/{organization}/teams/{team}/delete', name: 'organization_team_delete', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
+    public function deleteTeam(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
-        $this->assertCsrf($request, 'org_team_delete_'.$teamId);
+         $this->assertCsrf($request, 'org_team_delete_'.$team->teamId);
 
         try {
-            $this->membershipManager->deleteTeam($organization, $user, $this->teamId($teamId), $request->getClientIp());
+            $this->membershipManager->deleteTeam($organization, $user, $team->teamId, $request->getClientIp());
             $this->addFlash('success', 'Team deleted.');
         } catch (OrganizationException $e) {
             $this->addFlash('error', $e->getMessage());
@@ -206,16 +204,11 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::AddTeamMember->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/teams/{teamId}/members/add', name: 'organization_team_member_add', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID])]
-    public function addTeamMember(Request $request, Organization $organization, string $teamId, #[CurrentUser] User $user): Response
+     #[Route(path: '/organizations/{organization}/teams/{team}/members/add', name: 'organization_team_member_add', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
+    public function addTeamMember(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
         if ($redirect = $this->require2fa($user)) {
             return $redirect;
-        }
-
-        $team = $this->teams->findOneByOrgAndTeamId($organization->id, $this->teamId($teamId));
-        if ($team === null) {
-            throw new NotFoundHttpException('Team not found.');
         }
 
         $addRequest = new AddTeamMemberRequest();
@@ -246,13 +239,13 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::RemoveTeamMember->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/teams/{teamId}/members/{userId}/remove', name: 'organization_team_member_remove', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'teamId' => Requirement::ULID, 'userId' => '\d+'])]
-    public function removeTeamMember(Request $request, Organization $organization, string $teamId, int $userId, #[CurrentUser] User $user): Response
+     #[Route(path: '/organizations/{organization}/teams/{team}/members/{userId}/remove', name: 'organization_team_member_remove', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID, 'userId' => '\d+'])]
+    public function removeTeamMember(Request $request, Organization $organization, OrganizationTeam $team, int $userId, #[CurrentUser] User $user): Response
     {
-        $this->assertCsrf($request, 'org_team_member_remove_'.$teamId.'_'.$userId);
+         $this->assertCsrf($request, 'org_team_member_remove_'.$team->teamId.'_'.$userId);
 
         try {
-            $this->membershipManager->removeTeamMember($organization, $user, $this->teamId($teamId), $userId, $request->getClientIp());
+            $this->membershipManager->removeTeamMember($organization, $user, $team->teamId, $userId, $request->getClientIp());
             $this->addFlash('success', 'Member removed from the team.');
         } catch (OrganizationException $e) {
             $this->addFlash('error', $e->getMessage());
@@ -321,15 +314,6 @@ class OrganizationController extends Controller
         if (!$this->isCsrfTokenValid($id, $request->request->getString('_token'))) {
             throw new NotFoundHttpException('Invalid CSRF token.');
         }
-    }
-
-    private function teamId(string $teamId): Ulid
-    {
-        if (!Ulid::isValid($teamId)) {
-            throw new NotFoundHttpException('Invalid team id.');
-        }
-
-        return Ulid::fromString($teamId);
     }
 
     /**

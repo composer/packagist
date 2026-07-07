@@ -280,6 +280,24 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    public function testTeamFromAnotherOrganizationReturns404(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $other = self::createUser('other', 'other@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $other->setTotpSecret('totp-secret');
+        $this->store($owner, $other);
+
+        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        [, $foreignTeam] = $this->createOrganizationWithCustomTeam($other, 'globex', 'Globex', 'backend');
+
+        $this->client->loginUser($owner);
+        // The team belongs to globex, so it must not be reachable under acme.
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/rename', $foreignTeam->teamId));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testOwnerAddsMemberToTeam(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
@@ -343,7 +361,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $organization = $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
         // Make `member` a member of the org through a custom team (not the owners team).
-        $team = new OrganizationTeam(new Ulid(), $organization->id, OrganizationTeamKind::Custom, 'backend', $owner, new \DateTimeImmutable());
+        $team = new OrganizationTeam(new Ulid(), $organization, OrganizationTeamKind::Custom, 'backend', $owner, new \DateTimeImmutable());
         $teamMember = new OrganizationTeamMember($team->teamId, $member->getId(), $organization->id, $member, new \DateTimeImmutable());
         $this->store($team, $teamMember);
 

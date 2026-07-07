@@ -28,10 +28,10 @@
                 {% if not team.system %}
                     <span class="pull-right">
                         {% if canRenameTeam %}
-                            <a class="btn btn-xs btn-default" href="{{ path('organization_team_rename', { organization: organization.slug, teamId: team.teamId }) }}">Rename</a>
+                            <a class="btn btn-xs btn-default" href="{{ path('organization_team_rename', { organization: organization.slug, team: team.teamId }) }}">Rename</a>
                         {% endif %}
                         {% if canDeleteTeam %}
-                            <form method="post" action="{{ path('organization_team_delete', { organization: organization.slug, teamId: team.teamId }) }}"
+                            <form method="post" action="{{ path('organization_team_delete', { organization: organization.slug, team: team.teamId }) }}"
                                   onsubmit="return confirm('Delete team {{ team.name|e('js') }}?');" style="display:inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('org_team_delete_' ~ team.teamId) }}">
                                 <button type="submit" class="btn btn-xs btn-danger">Delete team</button>
@@ -49,7 +49,7 @@
                                 <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
                                 <td class="text-right">
                                     {% if canRemoveTeamMember %}
-                                        <form method="post" action="{{ path('organization_team_member_remove', { organization: organization.slug, teamId: team.teamId, userId: member.userId }) }}" style="display:inline">
+                                        <form method="post" action="{{ path('organization_team_member_remove', { organization: organization.slug, team: team.teamId, userId: member.userId }) }}" style="display:inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('org_team_member_remove_' ~ team.teamId ~ '_' ~ member.userId) }}">
                                             <button type="submit" class="btn btn-xs btn-default">Remove</button>
                                         </form>
@@ -63,7 +63,7 @@
                 </table>
 
                 {% if canAddTeamMember %}
-                    <a class="btn btn-sm btn-default" href="{{ path('organization_team_member_add', { organization: organization.slug, teamId: team.teamId }) }}">Add member</a>
+                    <a class="btn btn-sm btn-default" href="{{ path('organization_team_member_add', { organization: organization.slug, team: team.teamId }) }}">Add member</a>
                 {% endif %}
             </div>
         </div>
