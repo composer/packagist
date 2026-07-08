@@ -1,0 +1,46 @@
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Organization;
+
+use App\Entity\OrganizationRepository;
+use App\Entity\PackageRepository;
+use App\Entity\SlugReservationRepository;
+use App\Entity\User;
+use App\Organization\Domain\Exception\SlugTakenException;
+use App\Organization\Domain\Slug;
+
+final class OrganizationSlugClaimGuard
+{
+    public function __construct(
+        private readonly OrganizationRepository $organizationRepo,
+        private readonly SlugReservationRepository $slugReservationRepo,
+        private readonly PackageRepository $packageRepo,
+    ) {
+    }
+
+    /**
+     * @throws SlugTakenException   if a live organization or active reservation already holds the slug
+     */
+    public function assertClaimable(Slug $slug, User $user): void
+    {
+        // A slug that matches an existing vendor prefix may only be claimed by someone
+        // who has access to that prefix (i.e. maintains a package under it).
+        if ($this->packageRepo->isVendorTaken($slug->value, $user)) {
+            throw new SlugTakenException(sprintf('"%s" matches a vendor prefix you do not have access to.', $slug->value));
+        }
+
+        if ($this->organizationRepo->slugExists($slug->value) || $this->slugReservationRepo->isReserved($slug->value)) {
+            throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $slug->value));
+        }
+    }
+}

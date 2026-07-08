@@ -5,3 +5,11 @@
         {{ packageName }}
     {%- endif -%}
 {% endmacro %}
+
+{% macro organizationLink(slug) %}
+    {%- if slug is existing_organization -%}
+        <a href="{{ path('organization_show', { 'organization': slug }) }}">{{ slug }}</a>
+    {%- else -%}
+        {{ slug }}
+    {%- endif -%}
+{% endmacro %}

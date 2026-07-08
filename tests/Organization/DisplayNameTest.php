@@ -1,0 +1,57 @@
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Tests\Organization;
+
+use App\Organization\Domain\DisplayName;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+
+class DisplayNameTest extends TestCase
+{
+    public function testConstructAcceptsValidValue(): void
+    {
+        self::assertSame('ACME Corp', (new DisplayName('ACME Corp'))->value);
+    }
+
+    public function testConstructTrimsWhitespace(): void
+    {
+        self::assertSame('ACME Corp', (new DisplayName('  ACME Corp  '))->value);
+    }
+
+    #[DataProvider('invalidDisplayNames')]
+    public function testConstructRejectsInvalidValue(string $displayName): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        new DisplayName($displayName);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function invalidDisplayNames(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'punctuation' => ['ACME, Inc.'];
+        yield 'symbols' => ['ACME @ Corp'];
+        yield 'too long' => [str_repeat('a', 61)];
+    }
+
+    public function testConstructStillRejectsForbiddenCharactersAfterTrimming(): void
+    {
+        // User input should still be properly validated after being trimmed
+        $this->expectException(\InvalidArgumentException::class);
+
+        new DisplayName('  ACME, Inc.  ');
+    }
+}

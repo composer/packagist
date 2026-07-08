@@ -48,10 +48,12 @@ class AuditRecordRepository extends ServiceEntityRepository
             'packageId' => $record->packageId,
             'userId' => $record->userId,
             'ip' => IpAddress::stringToBinary($record->ip),
+            'organizationId' => $record->organizationId,
         ], [
             'id' => UlidType::NAME,
             'datetime' => Types::DATETIME_IMMUTABLE,
             'attributes' => Types::JSON,
+            'organizationId' => UlidType::NAME,
         ]);
 
         $this->indexSearchTerms($record);

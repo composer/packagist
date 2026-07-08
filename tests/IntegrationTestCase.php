@@ -31,21 +31,34 @@ class IntegrationTestCase extends WebTestCase
         $this->client = self::createClient();
         $this->client->disableReboot(); // prevent reboot to keep the transaction
 
-        static::getContainer()->get(Connection::class)->beginTransaction();
+        static::getService(Connection::class)->beginTransaction();
 
         parent::setUp();
     }
 
     protected function tearDown(): void
     {
-        static::getContainer()->get(Connection::class)->rollBack();
+        static::getService(Connection::class)->rollBack();
 
         parent::tearDown();
     }
 
     public static function getEM(): EntityManagerInterface
     {
-        return static::getContainer()->get(ManagerRegistry::class)->getManager();
+        return static::getService(ManagerRegistry::class)->getManager();
+    }
+
+    /**
+     * @template T
+     * @param class-string<T> $className
+     * @return T
+     */
+    protected static function getService(string $className)
+    {
+        $service = static::getContainer()->get($className);
+        assert($service instanceof $className);
+
+        return $service;
     }
 
     protected function assertFormError(string $message, string $formName, Crawler $crawler): void

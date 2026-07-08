@@ -19,6 +19,26 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 class TransparencyLogControllerTest extends IntegrationTestCase
 {
+    public function testViewOrganizationCreatedAuditLog(): void
+    {
+        $user = self::createUser('orgcreator', 'orgcreator@example.com', roles: ['ROLE_USER']);
+        $organization = self::createOrganization('acme', 'ACME Corp', owner: $user);
+        $this->store($user, $organization);
+
+        $this->store(AuditRecord::organizationCreated($organization->id, $organization->slug, $organization->displayName, $user));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/transparency-log');
+        static::assertResponseIsSuccessful();
+
+        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        static::assertContains('Organization created', $types);
+
+        $link = $crawler->filter('a[href="/organizations/acme"]');
+        static::assertCount(1, $link);
+        static::assertSame('acme', trim($link->text()));
+    }
+
     #[DataProvider('filterProvider')]
     public function testViewAuditLogs(array $filters, array $expected): void
     {
