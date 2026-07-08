@@ -19,9 +19,6 @@ use App\Entity\User;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Slug;
 
-/**
- * TODO a Levenshtein-similarity check against a protected-names should be added later
- */
 final class OrganizationSlugClaimGuard
 {
     public function __construct(
