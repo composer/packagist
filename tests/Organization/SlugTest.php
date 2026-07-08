@@ -24,6 +24,11 @@ class SlugTest extends TestCase
         self::assertSame('acme-corp', (new Slug('acme-corp'))->value);
     }
 
+    public function testConstructCanonicalisesCaseAndWhitespace(): void
+    {
+        self::assertSame('acme', (new Slug('  ACME  '))->value);
+    }
+
     #[DataProvider('invalidSlugs')]
     public function testConstructRejectsInvalidValue(string $slug): void
     {
@@ -38,24 +43,10 @@ class SlugTest extends TestCase
     public static function invalidSlugs(): iterable
     {
         yield 'empty' => [''];
-        yield 'uppercase' => ['ACME'];
         yield 'leading hyphen' => ['-acme'];
         yield 'trailing hyphen' => ['acme-'];
         yield 'spaces' => ['ac me'];
         yield 'underscore' => ['ac_me'];
         yield 'too long' => [str_repeat('a', 21)];
-    }
-
-    public function testFromUserInputCanonicalisesCaseAndWhitespace(): void
-    {
-        self::assertSame('acme', Slug::fromUserInput('  ACME  ')->value);
-    }
-
-    public function testFromUserInputStillRejectsStructurallyInvalidInput(): void
-    {
-        // Lower-casing and trimming cannot rescue characters the format forbids.
-        $this->expectException(InvalidSlugException::class);
-
-        Slug::fromUserInput('ac_me');
     }
 }

@@ -28,15 +28,12 @@ final readonly class DisplayName
     public string $value;
 
     /**
-     * Canonicalise raw user input (trim surrounding whitespace).
+     * Canonicalises raw user input (trim surrounding whitespace) before validating the format.
      */
-    public static function fromUserInput(string $value): self
-    {
-        return new self(trim($value));
-    }
-
     public function __construct(string $value)
     {
+        $value = trim($value);
+
         if ($value === '' || mb_strlen($value) > self::MAX_LENGTH) {
             throw new InvalidDisplayNameException(sprintf('The display name must be between 1 and %d characters.', self::MAX_LENGTH));
         }

@@ -24,6 +24,11 @@ class DisplayNameTest extends TestCase
         self::assertSame('ACME Corp', (new DisplayName('ACME Corp'))->value);
     }
 
+    public function testConstructTrimsWhitespace(): void
+    {
+        self::assertSame('ACME Corp', (new DisplayName('  ACME Corp  '))->value);
+    }
+
     #[DataProvider('invalidDisplayNames')]
     public function testConstructRejectsInvalidValue(string $displayName): void
     {
@@ -43,16 +48,11 @@ class DisplayNameTest extends TestCase
         yield 'too long' => [str_repeat('a', 61)];
     }
 
-    public function testFromUserInputTrimsWhitespace(): void
-    {
-        self::assertSame('ACME Corp', DisplayName::fromUserInput('  ACME Corp  ')->value);
-    }
-
-    public function testFromUserInputStillRejectsForbiddenCharacters(): void
+    public function testConstructStillRejectsForbiddenCharactersAfterTrimming(): void
     {
         // User input should still be properly validated after being trimmed
         $this->expectException(InvalidDisplayNameException::class);
 
-        DisplayName::fromUserInput('  ACME, Inc.  ');
+        new DisplayName('  ACME, Inc.  ');
     }
 }

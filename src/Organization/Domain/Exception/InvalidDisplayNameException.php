@@ -12,6 +12,6 @@
 
 namespace App\Organization\Domain\Exception;
 
-final class InvalidDisplayNameException extends OrganizationException
+final class InvalidDisplayNameException extends OrganizationException implements DomainValidationException
 {
 }

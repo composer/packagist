@@ -13,9 +13,10 @@
 namespace App\Organization\Domain\Exception;
 
 /**
- * The slug is malformed or reserved (regex, deny-list or vendor-prefix collision).
- * Nothing is appended to the event stream.
+ * Marker for domain exceptions thrown when a value object rejects invalid user input; the message is
+ * safe to display to end users. The generic {@see \App\Validator\ValidValueObject} validator turns
+ * these into form violations.
  */
-final class InvalidSlugException extends OrganizationException implements DomainValidationException
+interface DomainValidationException extends \Throwable
 {
 }

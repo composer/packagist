@@ -12,20 +12,21 @@
 
 namespace App\Form\Model;
 
+use App\Organization\Domain\DisplayName;
+use App\Organization\Domain\Slug;
 use App\Validator\NotReservedWord;
-use App\Validator\ValidDisplayName;
-use App\Validator\ValidSlug;
+use App\Validator\ValidValueObject;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class CreateOrganizationRequest
 {
     #[Assert\NotBlank]
-    #[ValidSlug]
+    #[ValidValueObject(Slug::class)]
     #[NotReservedWord]
     public string $slug = '';
 
     #[Assert\NotBlank]
-    #[ValidDisplayName]
+    #[ValidValueObject(DisplayName::class)]
     #[NotReservedWord]
     public string $displayName = '';
 }

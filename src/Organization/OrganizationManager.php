@@ -42,8 +42,8 @@ final class OrganizationManager
      */
     public function create(User $owner, string $slug, string $displayName, ?string $ip): Organization
     {
-        $slug = Slug::fromUserInput($slug);
-        $displayName = DisplayName::fromUserInput($displayName);
+        $slug = new Slug($slug);
+        $displayName = new DisplayName($displayName);
 
         $this->slugChecker->assertClaimable($slug, $owner);
 

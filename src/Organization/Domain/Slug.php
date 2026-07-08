@@ -29,15 +29,12 @@ final readonly class Slug
     public string $value;
 
     /**
-     * Canonicalise raw user input (trim, lower-case)
+     * Canonicalises raw user input (trim, lower-case) before validating the format.
      */
-    public static function fromUserInput(string $value): self
-    {
-        return new self(mb_strtolower(trim($value)));
-    }
-
     public function __construct(string $value)
     {
+        $value = mb_strtolower(trim($value));
+
         if ($value === '' || mb_strlen($value) > self::MAX_LENGTH) {
             throw new InvalidSlugException(sprintf('The slug must be between 1 and %d characters.', self::MAX_LENGTH));
         }

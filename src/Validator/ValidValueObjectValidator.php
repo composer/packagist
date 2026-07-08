@@ -12,18 +12,17 @@
 
 namespace App\Validator;
 
-use App\Organization\Domain\Exception\InvalidSlugException;
-use App\Organization\Domain\Slug;
+use App\Organization\Domain\Exception\DomainValidationException;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
-class ValidSlugValidator extends ConstraintValidator
+class ValidValueObjectValidator extends ConstraintValidator
 {
     public function validate(mixed $value, Constraint $constraint): void
     {
-        if (!$constraint instanceof ValidSlug) {
-            throw new UnexpectedTypeException($constraint, ValidSlug::class);
+        if (!$constraint instanceof ValidValueObject) {
+            throw new UnexpectedTypeException($constraint, ValidValueObject::class);
         }
 
         // Empty values are handled by NotBlank constraint.
@@ -32,8 +31,8 @@ class ValidSlugValidator extends ConstraintValidator
         }
 
         try {
-            Slug::fromUserInput($value);
-        } catch (InvalidSlugException $e) {
+            new ($constraint->class)($value);
+        } catch (DomainValidationException $e) {
             $this->context->buildViolation($e->getMessage())->addViolation();
         }
     }
