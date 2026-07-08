@@ -567,7 +567,15 @@ class Updater
     {
         $prettyVersion = $data->getPrettyVersion();
         $skip = function (string $reason) use ($io, $prettyVersion, $data, $existingVersion): void {
-            $this->logger->error('Skipped URL update for '.$data->getName(), ['reason' => $reason, 'prettyVersion' => $prettyVersion, 'old' => $existingVersion, 'new' => $data]);
+            $this->logger->error('Skipped URL update for '.$data->getName(), [
+                'reason' => $reason,
+                'prettyVersion' => $prettyVersion,
+                'old' => $existingVersion,
+                'new' => [
+                    'source' => ['reference' => $data->getSourceReference(), 'url' => $data->getSourceUrl()],
+                    'dist' => ['reference' => $data->getDistReference(), 'url' => $data->getDistUrl()],
+                ],
+            ]);
             $io->writeError('<warning>Skipping URL update on '.$prettyVersion.': '.$reason.'.</warning>');
         };
 
