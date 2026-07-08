@@ -41,11 +41,12 @@ class OrganizationAggregateTest extends TestCase
 {
     private const int OWNER = 1;
 
-    public function testCreateBootstrapsOwnersTeamWithCreator(): void
+    public function testCreateBootstrapsOwnersAndAllMembersTeamWithCreator(): void
     {
         $id = new Ulid();
         $ownersTeamId = new Ulid();
-        $organization = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'), $ownersTeamId, self::OWNER);
+        $allMembersTeamId = new Ulid();
+        $organization = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'), $ownersTeamId, $allMembersTeamId, self::OWNER);
 
         $events = $organization->pullPendingEvents();
 
@@ -56,16 +57,18 @@ class OrganizationAggregateTest extends TestCase
         self::assertSame('acme', $event->slug);
         self::assertSame('ACME Corp', $event->displayName);
         self::assertTrue($ownersTeamId->equals($event->ownersTeamId));
+        self::assertTrue($allMembersTeamId->equals($event->allMembersTeamId));
         self::assertSame(self::OWNER, $event->ownerId);
         self::assertTrue($organization->isOwner(self::OWNER));
         self::assertTrue($organization->isOrgMember(self::OWNER));
+        self::assertTrue($allMembersTeamId->equals($organization->allMembersTeamId()));
     }
 
     public function testReconstituteRebuildsStateFromHistory(): void
     {
         $id = new Ulid();
         $ownersTeamId = new Ulid();
-        $created = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'), $ownersTeamId, self::OWNER);
+        $created = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'), $ownersTeamId, new Ulid(), self::OWNER);
         $event = $created->pullPendingEvents()[0];
         self::assertInstanceOf(OrganizationCreated::class, $event);
 
@@ -193,6 +196,39 @@ class OrganizationAggregateTest extends TestCase
 
         $this->expectException(TeamProtectedException::class);
         $organization->deleteTeam($ownersTeamId);
+    }
+
+    public function testAllMembersTeamCannotBeRenamed(): void
+    {
+        $allMembersTeamId = new Ulid();
+        $organization = $this->created(new Ulid(), $allMembersTeamId);
+
+        $this->expectException(TeamProtectedException::class);
+        $organization->renameTeam($allMembersTeamId, new TeamName('everyone'));
+    }
+
+    public function testAllMembersTeamCannotBeAddedToManually(): void
+    {
+        $allMembersTeamId = new Ulid();
+        $customTeamId = new Ulid();
+        // A second user has joined the org via a custom team.
+        $organization = $this->reconstituteWith(new Ulid(), [
+            ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'name' => 'backend', 'kind' => 'custom']],
+            ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'userId' => 2]],
+        ], $allMembersTeamId);
+
+        $this->expectException(TeamProtectedException::class);
+        $organization->addTeamMember($allMembersTeamId, 2, true);
+    }
+
+    public function testAllMembersTeamCannotBeRemovedFromManually(): void
+    {
+        $allMembersTeamId = new Ulid();
+        $organization = $this->created(new Ulid(), $allMembersTeamId);
+
+        // The creator is in the members team, but its roster is managed automatically.
+        $this->expectException(TeamProtectedException::class);
+        $organization->removeTeamMember($allMembersTeamId, self::OWNER);
     }
 
     public function testDeleteTeamRecordsEvent(): void
@@ -348,9 +384,9 @@ class OrganizationAggregateTest extends TestCase
         self::assertTrue($organization->isOwner(self::OWNER));
     }
 
-    private function created(Ulid $ownersTeamId): Organization
+    private function created(Ulid $ownersTeamId, ?Ulid $allMembersTeamId = null): Organization
     {
-        $organization = Organization::create(new Ulid(), new Slug('acme'), new DisplayName('ACME Corp'), $ownersTeamId, self::OWNER);
+        $organization = Organization::create(new Ulid(), new Slug('acme'), new DisplayName('ACME Corp'), $ownersTeamId, $allMembersTeamId ?? new Ulid(), self::OWNER);
         $organization->pullPendingEvents();
 
         return $organization;
@@ -359,10 +395,10 @@ class OrganizationAggregateTest extends TestCase
     /**
      * @param list<array{type: OrganizationEventType, payload: array<string, mixed>}> $extra
      */
-    private function reconstituteWith(Ulid $ownersTeamId, array $extra): Organization
+    private function reconstituteWith(Ulid $ownersTeamId, array $extra, ?Ulid $allMembersTeamId = null): Organization
     {
         return Organization::reconstitute(new Ulid(), [
-            ['type' => OrganizationEventType::OrganizationCreated, 'payload' => $this->createdPayload($ownersTeamId)],
+            ['type' => OrganizationEventType::OrganizationCreated, 'payload' => $this->createdPayload($ownersTeamId, $allMembersTeamId)],
             ...$extra,
         ]);
     }
@@ -370,12 +406,13 @@ class OrganizationAggregateTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function createdPayload(Ulid $ownersTeamId): array
+    private function createdPayload(Ulid $ownersTeamId, ?Ulid $allMembersTeamId = null): array
     {
         return [
             'slug' => 'acme',
             'displayName' => 'ACME Corp',
             'ownersTeamId' => $ownersTeamId->toRfc4122(),
+            'allMembersTeamId' => ($allMembersTeamId ?? new Ulid())->toRfc4122(),
             'ownerId' => self::OWNER,
         ];
     }

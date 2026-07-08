@@ -94,6 +94,7 @@ class OrganizationTeamResolverTest extends TestCase
             new \DateTimeImmutable(),
             null,
             new Ulid(),
+            new Ulid(),
         );
 
         return new OrganizationTeam(

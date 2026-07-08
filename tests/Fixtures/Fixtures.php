@@ -24,37 +24,58 @@ trait Fixtures
             createdAt: new \DateTimeImmutable(),
             createdBy: $owner,
             ownersTeamId: new Ulid(),
+            allMembersTeamId: new Ulid(),
             deletedAt: $deletedAt,
             deletedReason: $deletedAt !== null ? 'owner' : null,
         );
     }
 
     /**
-     * The bootstrapped `owners` team and the owner's membership, mirroring what OrganizationCreated
-     * projects. Persist these alongside the organization so the owner is recognised as an owner.
+     * The two bootstrapped system teams (`owners` and `all organization members`) and the owner's
+     * membership in both, mirroring what OrganizationCreated projects. Persist these alongside the
+     * organization so the owner is recognised as an owner and org member.
      *
-     * @return array{OrganizationTeam, OrganizationTeamMember}
+     * @return array{OrganizationTeam, OrganizationTeamMember, OrganizationTeam, OrganizationTeamMember}
      */
     protected static function createOwnerMembership(Organization $organization, User $owner): array
     {
-        $team = new OrganizationTeam(
+        $now = new \DateTimeImmutable();
+
+        $ownersTeam = new OrganizationTeam(
             $organization->ownersTeamId,
             $organization,
             OrganizationTeamKind::System,
             OrganizationAggregate::OWNERS_TEAM_NAME,
             $owner,
-            new \DateTimeImmutable(),
+            $now,
         );
 
-        $member = new OrganizationTeamMember(
+        $ownerMembership = new OrganizationTeamMember(
             $organization->ownersTeamId,
             $owner->getId(),
             $organization->id,
             $owner,
-            new \DateTimeImmutable(),
+            $now,
         );
 
-        return [$team, $member];
+        $allMembersTeam = new OrganizationTeam(
+            $organization->allMembersTeamId,
+            $organization,
+            OrganizationTeamKind::System,
+            OrganizationAggregate::ALL_ORGANIZATION_MEMBERS_TEAM_NAME,
+            $owner,
+            $now,
+        );
+
+        $allMembersMembership = new OrganizationTeamMember(
+            $organization->allMembersTeamId,
+            $owner->getId(),
+            $organization->id,
+            $owner,
+            $now,
+        );
+
+        return [$ownersTeam, $ownerMembership, $allMembersTeam, $allMembersMembership];
     }
 
     /**

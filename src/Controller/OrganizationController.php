@@ -134,6 +134,17 @@ class OrganizationController extends Controller
             ];
         }
 
+        // Show the two system teams first in a fixed order (Owners, then All organization members),
+        // then custom teams in findByOrg's name order (usort is stable on PHP 8+).
+        $rank = static function (OrganizationTeam $team) use ($organization): int {
+            return match (true) {
+                $team->teamId->equals($organization->ownersTeamId) => 0,
+                $team->teamId->equals($organization->allMembersTeamId) => 1,
+                default => 2,
+            };
+        };
+        usort($teams, static fn (array $a, array $b): int => $rank($a['team']) <=> $rank($b['team']));
+
         return $this->render('organization/teams.html.twig', [
             'organization' => $organization,
             'teams' => $teams,
@@ -232,6 +243,11 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/teams/{team}/members/add', name: 'organization_team_member_add', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
     public function addTeamMember(Request $request, Organization $organization, OrganizationTeam $team, #[CurrentUser] User $user): Response
     {
+        // The all-members team's roster is managed automatically; it has no manual add flow.
+        if ($team->teamId->equals($organization->allMembersTeamId)) {
+            throw new NotFoundHttpException('Team not found.');
+        }
+
         $addRequest = new AddTeamMemberRequest();
         $form = $this->createForm(AddTeamMemberType::class, $addRequest);
         $form->handleRequest($request);
@@ -263,6 +279,11 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/teams/{team}/members/{teamMember}/remove', name: 'organization_team_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'team' => Requirement::ULID])]
     public function removeTeamMember(Request $request, Organization $organization, OrganizationTeam $team, User $teamMember, #[CurrentUser] User $user): Response
     {
+        // The all-members team's roster is managed automatically; it has no manual remove flow.
+        if ($team->teamId->equals($organization->allMembersTeamId)) {
+            throw new NotFoundHttpException('Team not found.');
+        }
+
         // The last owner cannot be removed: the org must always keep someone who can manage it.
         // Explain this up front and offer no removal form, only a way back.
         if ($team->teamId->equals($organization->ownersTeamId) && $this->teamMembers->countByTeam($organization->ownersTeamId) === 1) {

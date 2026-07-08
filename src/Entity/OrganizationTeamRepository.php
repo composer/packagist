@@ -27,7 +27,9 @@ class OrganizationTeamRepository extends ServiceEntityRepository
     }
 
     /**
-     * An org's teams, the system `owners` team first, then custom teams by name.
+     * An org's teams: the two system teams (`owners`, `all organization members`) first, then
+     * custom teams by name. The two system teams sort by name here; callers that need a fixed
+     * system-team order (e.g. Owners before All organization members) reorder explicitly.
      *
      * @return list<OrganizationTeam>
      */

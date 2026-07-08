@@ -49,6 +49,9 @@ final class Organization extends AbstractAggregate
     /** The reserved system team name; created only via bootstrap, never through TeamCreated. */
     public const string OWNERS_TEAM_NAME = 'Owners';
 
+    /** The reserved system team every org member belongs to; created only via bootstrap. */
+    public const string ALL_ORGANIZATION_MEMBERS_TEAM_NAME = 'All organization members';
+
     private string $slug;
 
     private string $displayName;
@@ -58,16 +61,18 @@ final class Organization extends AbstractAggregate
 
     private ?Ulid $ownersTeamId = null;
 
+    private ?Ulid $allMembersTeamId = null;
+
     /** @var array<string, array{kind: string, name: string}> teamId (rfc4122) => team */
     private array $teams = [];
 
     /** @var array<string, list<int>> teamId (rfc4122) => member user ids */
     private array $teamMembers = [];
 
-    public static function create(Ulid $id, Slug $slug, DisplayName $displayName, Ulid $ownersTeamId, int $ownerId): self
+    public static function create(Ulid $id, Slug $slug, DisplayName $displayName, Ulid $ownersTeamId, Ulid $allMembersTeamId, int $ownerId): self
     {
         $organization = new self($id);
-        $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownersTeamId, $ownerId));
+        $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownersTeamId, $allMembersTeamId, $ownerId));
 
         return $organization;
     }
@@ -148,12 +153,14 @@ final class Organization extends AbstractAggregate
      * @param bool $targetHasTwoFactor whether the target user has 2FA enabled (checked by the caller)
      *
      * @throws TeamNotFoundException
+     * @throws TeamProtectedException    the `all organization members` team is managed automatically
      * @throws NotAMemberException       the target has not joined the org (joining is invitation-only)
      * @throws TwoFactorRequiredException adding to `owners` requires the target to have 2FA
      */
     public function addTeamMember(Ulid $teamId, int $userId, bool $targetHasTwoFactor): void
     {
         $this->assertTeamExists($teamId);
+        $this->assertNotAllMembersTeam($teamId);
 
         if (!$this->isOrgMember($userId)) {
             throw new NotAMemberException('The user is not a member of this organization.');
@@ -174,12 +181,14 @@ final class Organization extends AbstractAggregate
      * Remove a user from a single team.
      *
      * @throws TeamNotFoundException
+     * @throws TeamProtectedException       the `all organization members` team is managed automatically
      * @throws NotAMemberException          the user is not in the team
      * @throws LastOwnerProtectedException  would empty the `owners` team
      */
     public function removeTeamMember(Ulid $teamId, int $userId): void
     {
         $this->assertTeamExists($teamId);
+        $this->assertNotAllMembersTeam($teamId);
 
         if (!$this->isInTeam($teamId, $userId)) {
             throw new NotAMemberException('The user is not a member of this team.');
@@ -252,6 +261,11 @@ final class Organization extends AbstractAggregate
         return $this->ownersTeamId;
     }
 
+    public function allMembersTeamId(): ?Ulid
+    {
+        return $this->allMembersTeamId;
+    }
+
     public function isOwner(int $userId): bool
     {
         return $this->ownersTeamId !== null && $this->isInTeam($this->ownersTeamId, $userId);
@@ -290,13 +304,28 @@ final class Organization extends AbstractAggregate
         $this->assertTeamExists($teamId);
 
         if ($this->teams[$teamId->toRfc4122()]['kind'] !== TeamCreated::KIND) {
-            throw new TeamProtectedException('The owners team is protected and cannot be renamed or deleted.');
+            throw new TeamProtectedException('This team is protected and cannot be renamed or deleted.');
+        }
+    }
+
+    /**
+     * The `all organization members` team's roster is derived from org membership, so it cannot be
+     * added to or removed from directly. Use {@see addTeamMember}/{@see removeTeamMember} on other
+     * teams and {@see leave}/{@see removeMember} to change org membership.
+     *
+     * @throws TeamProtectedException
+     */
+    private function assertNotAllMembersTeam(Ulid $teamId): void
+    {
+        if ($teamId->equals($this->allMembersTeamId)) {
+            throw new TeamProtectedException('Membership of the "All organization members" team is managed automatically.');
         }
     }
 
     private function assertNameAllowed(TeamName $name): void
     {
-        if (mb_strtolower($name->value) === mb_strtolower(self::OWNERS_TEAM_NAME)) {
+        $reserved = [mb_strtolower(self::OWNERS_TEAM_NAME), mb_strtolower(self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME)];
+        if (\in_array(mb_strtolower($name->value), $reserved, true)) {
             throw new ReservedTeamNameException(sprintf('"%s" is a reserved team name.', $name->value));
         }
     }
@@ -351,6 +380,10 @@ final class Organization extends AbstractAggregate
         $this->ownersTeamId = $event->ownersTeamId;
         $this->teams[$event->ownersTeamId->toRfc4122()] = ['kind' => 'system', 'name' => self::OWNERS_TEAM_NAME];
         $this->teamMembers[$event->ownersTeamId->toRfc4122()] = [$event->ownerId];
+
+        $this->allMembersTeamId = $event->allMembersTeamId;
+        $this->teams[$event->allMembersTeamId->toRfc4122()] = ['kind' => 'system', 'name' => self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME];
+        $this->teamMembers[$event->allMembersTeamId->toRfc4122()] = [$event->ownerId];
     }
 
     private function applyTeamCreated(TeamCreated $event): void

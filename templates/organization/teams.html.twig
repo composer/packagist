@@ -18,6 +18,7 @@
 
     {% for entry in teams %}
         {% set team = entry.team %}
+        {% set isAllMembersTeam = team.teamId == organization.allMembersTeamId %}
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <strong>{{ team.name }}</strong>
@@ -44,7 +45,7 @@
                             <tr>
                                 <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
                                 <td class="text-right">
-                                    {% if canRemoveTeamMember and member.user %}
+                                    {% if canRemoveTeamMember and member.user and not isAllMembersTeam %}
                                         <a class="btn btn-xs btn-default" href="{{ path('organization_team_member_remove', { organization: organization.slug, team: team.teamId, teamMember: member.user.username }) }}">Remove</a>
                                     {% endif %}
                                 </td>
@@ -55,7 +56,9 @@
                     </tbody>
                 </table>
 
-                {% if canAddTeamMember %}
+                {% if isAllMembersTeam %}
+                    <p class="text-muted">Membership is managed automatically: everyone in the organization belongs to this team.</p>
+                {% elseif canAddTeamMember %}
                     <a class="btn btn-sm btn-default" href="{{ path('organization_team_member_add', { organization: organization.slug, team: team.teamId }) }}">Add member</a>
                 {% endif %}
             </div>

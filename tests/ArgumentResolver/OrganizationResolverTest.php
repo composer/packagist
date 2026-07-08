@@ -154,6 +154,7 @@ class OrganizationResolverTest extends TestCase
             new \DateTimeImmutable(),
             null,
             new Ulid(),
+            new Ulid(),
             $deleted ? new \DateTimeImmutable() : null,
             $deleted ? 'owner' : null,
         );

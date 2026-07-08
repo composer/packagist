@@ -28,7 +28,7 @@ use Doctrine\DBAL\Connection;
 
 class OrganizationMembershipTest extends IntegrationTestCase
 {
-    public function testCreationBootstrapsOwnersTeamWithCreator(): void
+    public function testCreationBootstrapsOwnersAndAllMembersTeamsWithCreator(): void
     {
         $owner = $this->persistOwner('orgowner');
         $organization = $this->createOrg($owner, 'acme');
@@ -36,16 +36,29 @@ class OrganizationMembershipTest extends IntegrationTestCase
         $readModel = static::getService(OrganizationRepository::class)->findOneBySlug('acme');
         self::assertNotNull($readModel);
         self::assertNotNull($readModel->ownersTeamId);
+        self::assertNotNull($readModel->allMembersTeamId);
 
         $teams = static::getService(OrganizationTeamRepository::class)->findByOrg($organization->id);
-        self::assertCount(1, $teams);
-        self::assertSame(OrganizationTeamKind::System, $teams[0]->kind);
-        self::assertSame('Owners', $teams[0]->name);
-        self::assertTrue($readModel->ownersTeamId->equals($teams[0]->teamId));
+        self::assertCount(2, $teams);
+
+        $byTeamId = [];
+        foreach ($teams as $team) {
+            self::assertSame(OrganizationTeamKind::System, $team->kind);
+            $byTeamId[$team->teamId->toRfc4122()] = $team;
+        }
+
+        $ownersTeam = $byTeamId[$readModel->ownersTeamId->toRfc4122()] ?? null;
+        $allMembersTeam = $byTeamId[$readModel->allMembersTeamId->toRfc4122()] ?? null;
+        self::assertNotNull($ownersTeam);
+        self::assertNotNull($allMembersTeam);
+        self::assertSame('Owners', $ownersTeam->name);
+        self::assertSame('All organization members', $allMembersTeam->name);
 
         $members = static::getService(OrganizationTeamMemberRepository::class);
         self::assertTrue($members->isOwner($readModel->ownersTeamId, $owner->getId()));
         self::assertTrue($members->isMemberOfOrg($organization->id, $owner->getId()));
+        // The creator is seeded into the all-members team too.
+        self::assertSame(1, $members->countByTeam($readModel->allMembersTeamId));
     }
 
     public function testCreateTeamPersistsRowAndTransparencyLog(): void

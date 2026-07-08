@@ -126,7 +126,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testSettingsForbiddenForOwnerWithoutTwoFactor(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $owner = self::createUser('owner', 'owner@example.org');
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -420,7 +420,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
-        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
         $organization = $this->organizations()->findOneBySlug('acme');
         self::assertNotNull($organization);
 
@@ -491,6 +491,59 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/outsider/remove', $backend->teamId));
 
         self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testAddMemberToAllMembersTeamReturns404(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/add', $organization->allMembersTeamId));
+
+        // The all-members team's roster is managed automatically; it has no manual add flow.
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testRemoveMemberFromAllMembersTeamReturns404(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        static::getService(OrganizationManager::class)->create($owner, $owner,  'acme', 'ACME Corp', null);
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $organization->allMembersTeamId));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testAllMembersTeamShownInTeamsListWithoutMemberControls(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        static::getService(OrganizationManager::class)->create($owner, $owner,  'acme', 'ACME Corp', null);
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/teams');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('All organization members', $crawler->text());
+        self::assertStringContainsString('Membership is managed automatically', $crawler->text());
+        // No add/remove links point at the all-members team.
+        self::assertCount(0, $crawler->filter(sprintf('a[href*="/teams/%s/members"]', $organization->allMembersTeamId)));
     }
 
     public function testMemberCanViewTeamsButCannotCreate(): void
@@ -635,7 +688,7 @@ class OrganizationControllerTest extends IntegrationTestCase
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
         $this->store($owner);
-        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
 
         $this->client->loginUser($owner);
         $crawler = $this->client->request('GET', '/organizations/acme/members/leave');

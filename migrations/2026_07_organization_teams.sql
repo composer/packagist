@@ -38,3 +38,4 @@ CREATE TABLE organization_team_member (
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
 
 ALTER TABLE organization ADD ownersTeamId BINARY(16) NOT NULL;
+ALTER TABLE organization ADD allMembersTeamId BINARY(16) NOT NULL;

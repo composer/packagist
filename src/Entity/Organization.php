@@ -60,6 +60,10 @@ class Organization
         #[ORM\Column(type: 'ulid')]
         public readonly Ulid $ownersTeamId,
 
+        /** The bootstrapped system `all organization members` team. Every org member belongs to it; its roster is managed automatically. */
+        #[ORM\Column(type: 'ulid')]
+        public readonly Ulid $allMembersTeamId,
+
         // Groundwork for org deletion (not yet implemented)
         #[ORM\Column(nullable: true)]
         public readonly ?\DateTimeImmutable $deletedAt = null,
