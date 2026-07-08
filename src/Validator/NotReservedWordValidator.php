@@ -18,6 +18,20 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
 class NotReservedWordValidator extends ConstraintValidator
 {
+    /**
+     * Names reserved across Packagist (usernames, organization slugs).
+     *
+     * @var list<string>
+     */
+    public const array RESERVED_WORDS = [
+        'composer',
+        'packagist',
+        'php',
+        'automation', // used to describe background workers doing things automatically in transparency log
+        'unknown', // used to describe unknown actors in transparency log
+        'admin', // used to describe admin actors in transparency log
+    ];
+
     public function validate(mixed $value, Constraint $constraint): void
     {
         if (!$constraint instanceof NotReservedWord) {
@@ -28,7 +42,7 @@ class NotReservedWordValidator extends ConstraintValidator
             return;
         }
 
-        if (\in_array(mb_strtolower($value), NotReservedWord::RESERVED_WORDS, true)) {
+        if (\in_array(mb_strtolower($value), NotReservedWordValidator::RESERVED_WORDS, true)) {
             $this->context
                 ->buildViolation($constraint->message)
                 ->addViolation();

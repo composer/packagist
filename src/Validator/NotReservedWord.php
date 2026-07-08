@@ -17,20 +17,6 @@ use Symfony\Component\Validator\Constraint;
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 class NotReservedWord extends Constraint
 {
-    /**
-     * Names reserved across Packagist (usernames, organization slugs).
-     *
-     * @var list<string>
-     */
-    public const array RESERVED_WORDS = [
-        'composer',
-        'packagist',
-        'php',
-        'automation', // used to describe background workers doing things automatically in transparency log
-        'unknown', // used to describe unknown actors in transparency log
-        'admin', // used to describe admin actors in transparency log
-    ];
-
     public string $message = 'This is a reserved word.';
 
     public function getTargets(): string
