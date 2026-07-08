@@ -41,9 +41,7 @@ class OrganizationVoter extends Voter
 
         $action = OrganizationActions::from($attribute);
 
-        // A packagist-admin may perform any owner action on any org for moderation, and is
-        // the only actor who can restore. Their authority derives from admin status.
-        if ($this->security->isGranted('ROLE_ADMIN')) {
+        if ($this->security->isGranted('ROLE_ADMIN_ORGS')) {
             return true;
         }
 

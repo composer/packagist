@@ -3,7 +3,7 @@
 {% block title %}{{ 'menu.my_organizations'|trans }} - {{ parent() }}{% endblock %}
 
 {% block content %}
-    {% if is_granted('ROLE_ADMIN') %}
+    {% if is_granted('ROLE_ADMIN_ORGS') %}
         <a href="{{ path('organization_create') }}" class="btn btn-success pull-right">Create organization</a>
     {% endif %}
 

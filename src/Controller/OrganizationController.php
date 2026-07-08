@@ -27,7 +27,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[IsGranted('ROLE_ORGANIZATIONS')]
+#[IsGranted('ROLE_ADMIN_ORGS')]
 class OrganizationController extends Controller
 {
     public function __construct(
@@ -39,14 +39,10 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations', name: 'organization_list', methods: ['GET'])]
     public function list(#[CurrentUser] User $user): Response
     {
-        if ($this->isGranted('ROLE_ADMIN')) {
-            $organizations = $this->organizationRepo->findAllOrdered();
-        } else {
-            $organizations = $this->organizationRepo->findByOwner($user);
-        }
-
+        // Currently organizations are admin-only groundwork: every actor here holds
+        // ROLE_ADMIN_ORGS and sees only the organizations they own.
         return $this->render('organization/list.html.twig', [
-            'organizations' => $organizations
+            'organizations' => $this->organizationRepo->findByOwner($user),
         ]);
     }
 

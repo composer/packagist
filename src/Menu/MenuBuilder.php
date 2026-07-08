@@ -90,7 +90,7 @@ class MenuBuilder
             'routeParameters' => ['name' => $this->username],
             'extras' => ['safe_label' => true, 'translation_domain' => false],
         ]);
-        if ($this->security->isGranted('ROLE_ORGANIZATIONS')) {
+        if ($this->security->isGranted('ROLE_ADMIN_ORGS')) {
             $menu->addChild($this->translator->trans('menu.my_organizations'), [
                 'label' => '<span class="icon-users"></span>'.$this->translator->trans('menu.my_organizations'),
                 'route' => 'organization_list',

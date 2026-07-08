@@ -84,19 +84,23 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertStringNotContainsString('Their Org', $body);
     }
 
-    public function testListShowsAllOrganizationsForAdmin(): void
+    public function testListShowsOnlyOrganizationsOwnedByAdmin(): void
     {
+        // For now even a Packagist admin sees only the organizations they own
         $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
         $other = self::createUser('other', 'other@example.org');
         $this->store($admin, $other);
 
+        $this->persistOrganization('mine', 'Admin Org', owner: $admin);
         $this->persistOrganization('theirs', 'Their Org', owner: $other);
 
         $this->client->loginUser($admin);
         $crawler = $this->client->request('GET', '/organizations');
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('Their Org', $crawler->filter('body')->text());
+        $body = $crawler->filter('body')->text();
+        self::assertStringContainsString('Admin Org', $body);
+        self::assertStringNotContainsString('Their Org', $body);
     }
 
     public function testCreateIsForbiddenForNonAdmin(): void
@@ -194,7 +198,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         return $organization;
     }
 
-    private function persistUser(string $role = 'ROLE_ORGANIZATIONS'): User
+    private function persistUser(string $role = 'ROLE_ADMIN_ORGS'): User
     {
         $user = self::createUser('admin', 'admin@example.org', roles: [$role]);
         $this->store($user);
