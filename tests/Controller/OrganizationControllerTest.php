@@ -414,6 +414,24 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertNotContains($owner->getId(), $userIds);
     }
 
+    public function testRemoveLastOwnerShowsExplanationAndNoForm(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $organization->ownersTeamId));
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('is the last owner of ACME Corp and cannot be removed', $crawler->text());
+        self::assertCount(0, $crawler->selectButton('Remove member'));
+    }
+
     public function testRemoveTeamMemberForbiddenForNonOwner(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);

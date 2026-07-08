@@ -82,6 +82,20 @@ class OrganizationTeamMemberRepository extends ServiceEntityRepository
     }
 
     /**
+     * Number of members in a team. For the `owners` team this is the owner count that gates
+     * removing the last owner.
+     */
+    public function countByTeam(Ulid $teamId): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.userId)')
+            ->where('m.teamId = :teamId')
+            ->setParameter('teamId', $teamId, 'ulid')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * All membership rows for an org (a user appears once per team they belong to).
      *
      * @return list<OrganizationTeamMember>
