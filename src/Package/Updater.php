@@ -324,6 +324,10 @@ class Updater
             if (!$version instanceof CompletePackageInterface) {
                 throw new \LogicException('Received a package instance of type '.$version::class.', expected a CompletePackageInterface instance');
             }
+            // skip branch names which are commonly short-lived or not meant to be published
+            if (Preg::isMatch('{^dev-(gh-readonly-queue/|renovate/|dependabot/|conductor-|merge-up/).+}', $version->getPrettyVersion()) || in_array($version->getPrettyVersion(), ['dev-gh-pages', 'dev-release-please--branches--main', 'dev-gitattributes'], true)) {
+                continue;
+            }
 
             if (isset($processedVersions[strtolower($version->getVersion())])) {
                 $io->write('Skipping version '.$version->getPrettyVersion().' (duplicate of '.$processedVersions[strtolower($version->getVersion())]->getPrettyVersion().')', true, IOInterface::VERBOSE);
