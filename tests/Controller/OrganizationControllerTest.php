@@ -590,6 +590,21 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertCount(1, $crawler->selectButton('Remove member'));
     }
 
+    public function testRemoveLastOwnerFromOrganizationShowsExplanationAndNoForm(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/members/owner/remove');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('is the last owner of ACME Corp and cannot be removed', $crawler->text());
+        self::assertCount(0, $crawler->selectButton('Remove member'));
+    }
+
     public function testMemberSeesLeaveConfirmationPage(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);

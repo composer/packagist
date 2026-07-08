@@ -337,6 +337,17 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/members/{organizationMember}/remove', name: 'organization_member_remove', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
     public function removeMember(Request $request, Organization $organization, User $organizationMember, #[CurrentUser] User $user): Response
     {
+        // The last owner cannot be removed: the org must always keep someone who can manage it.
+        // Explain this up front and offer no removal form, only a way back.
+        if ($this->teamMembers->isOwner($organization->ownersTeamId, $organizationMember->getId()) && $this->teamMembers->countByTeam($organization->ownersTeamId) === 1) {
+            return $this->render('organization/member_remove.html.twig', [
+                'organization' => $organization,
+                'member' => $organizationMember,
+                'form' => null,
+                'isLastOwner' => true,
+            ]);
+        }
+
         $form = $this->createForm(RemoveMemberType::class);
         $form->handleRequest($request);
 
@@ -355,6 +366,7 @@ class OrganizationController extends Controller
             'organization' => $organization,
             'member' => $organizationMember,
             'form' => $form->createView(),
+            'isLastOwner' => false,
         ]);
     }
 
