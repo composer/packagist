@@ -799,7 +799,6 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame($ref, $reloaded->getDist()['reference'] ?? null, 'dist.reference must not change');
         self::assertSame($shasum, $reloaded->getDist()['shasum'] ?? null, 'dist.shasum must not be overwritten');
 
-        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChanged));
         self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
     }
 

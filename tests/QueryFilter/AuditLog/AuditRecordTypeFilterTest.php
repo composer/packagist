@@ -70,7 +70,7 @@ class AuditRecordTypeFilterTest extends TestCase
     {
         $types = [
             AuditRecordType::PackageCreated->value,
-            AuditRecordType::VersionReferenceChanged->value,
+            AuditRecordType::VersionCreated->value,
         ];
 
         $bag = new InputBag(['type' => $types]);

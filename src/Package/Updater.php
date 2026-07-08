@@ -29,7 +29,6 @@ use App\Entity\Tag;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Event\PackageAbandonedEvent;
-use App\Event\VersionReferenceChangedEvent;
 use App\HtmlSanitizer\ReadmeImageSanitizer;
 use App\HtmlSanitizer\ReadmeLinkSanitizer;
 use App\Model\PackageManager;
@@ -738,9 +737,6 @@ class Updater
             }
         }
 
-        // Capture original metadata BEFORE modifications
-        $originalMetadata = $versionId !== null ? $version->toV2Array([]) : null;
-
         $version->setName($package->getName());
         $version->setVersion(ConsoleIO::sanitize($data->getPrettyVersion(), false));
         $version->setNormalizedVersion($normVersion);
@@ -960,14 +956,6 @@ class Updater
                 $em->remove($link);
             }
             $version->getSuggest()->clear();
-        }
-
-        if ($originalMetadata !== null) {
-            $event = new VersionReferenceChangedEvent($version, $originalMetadata);
-
-            if ($event->hasReferenceChanged()) {
-                $postUpdateEvents[] = $event;
-            }
         }
 
         return new VersionUpdatedResult(

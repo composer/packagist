@@ -200,7 +200,6 @@ audit_log:
         version_deleted: Version deleted
         version_soft_deleted: Version soft-deleted
         version_recovered: Version recovered
-        version_reference_changed: Version reference changed
         version_reference_change_blocked: Version reference change blocked
         filter_list_entry_added: Entry added
         filter_list_entry_deleted: Entry deleted

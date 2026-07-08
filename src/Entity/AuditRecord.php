@@ -248,21 +248,6 @@ class AuditRecord
         );
     }
 
-    /**
-     * @param VersionArray $metadata
-     */
-    public static function versionReferenceChange(Version $version, ?string $oldSourceReference, ?string $oldDistReference, array $metadata): self
-    {
-        $package = $version->getPackage();
-
-        return new self(
-            AuditRecordType::VersionReferenceChanged,
-            ['name' => $package->getName(), 'version' => $version->getVersion(), 'source_from' => $oldSourceReference, 'source_to' => $version->getSource()['reference'] ?? null, 'dist_from' => $oldDistReference, 'dist_to' => $version->getDist()['reference'] ?? null, 'metadata' => $metadata],
-            vendor: $package->getVendor(),
-            packageId: $package->getId()
-        );
-    }
-
     public static function maintainerAdded(Package $package, User $maintainer, ?User $actor): self
     {
         return new self(AuditRecordType::MaintainerAdded, ['name' => $package->getName(), 'user' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
