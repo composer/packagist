@@ -12,7 +12,6 @@
 
 namespace App\Organization\Domain;
 
-use App\Organization\Domain\Exception\InvalidSlugException;
 use Composer\Pcre\Preg;
 
 /**
@@ -36,11 +35,11 @@ final readonly class Slug
         $value = mb_strtolower(trim($value));
 
         if ($value === '' || mb_strlen($value) > self::MAX_LENGTH) {
-            throw new InvalidSlugException(sprintf('The slug must be between 1 and %d characters.', self::MAX_LENGTH));
+            throw new \InvalidArgumentException(sprintf('The slug must be between 1 and %d characters.', self::MAX_LENGTH));
         }
 
         if (!Preg::isMatch('/^' . self::PATTERN . '$/', $value)) {
-            throw new InvalidSlugException('The slug may only contain lowercase letters, numbers and hyphens, with no leading or trailing hyphen.');
+            throw new \InvalidArgumentException('The slug may only contain lowercase letters, numbers and hyphens, with no leading or trailing hyphen.');
         }
 
         $this->value = $value;

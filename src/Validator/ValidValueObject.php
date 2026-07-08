@@ -16,8 +16,8 @@ use Symfony\Component\Validator\Constraint;
 
 /**
  * Validates a string by constructing the given value object from it. The value object constructor
- * canonicalises and validates the input, throwing a
- * {@see \App\Organization\Domain\Exception\DomainValidationException} whose message is shown as the violation.
+ * canonicalises and validates the input, throwing an \InvalidArgumentException (with a user-safe
+ * message) that is shown as the violation.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 class ValidValueObject extends Constraint
@@ -27,7 +27,7 @@ class ValidValueObject extends Constraint
 
     /**
      * @param class-string $class value object constructed via `new $class($value)`; on invalid
-     *                            input it must throw a DomainValidationException
+     *                            input it must throw an \InvalidArgumentException
      * @param array<string>|null $groups
      */
     public function __construct(string $class, ?array $groups = null, mixed $payload = null)

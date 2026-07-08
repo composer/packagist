@@ -14,14 +14,11 @@ namespace App\Organization;
 
 use App\Entity\User;
 use App\Organization\Domain\DisplayName;
-use App\Organization\Domain\Exception\InvalidDisplayNameException;
-use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
 use App\Organization\EventStore\Actor;
 use App\Organization\EventStore\EventStore;
-use App\Validator\NotReservedWord;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\Uid\Ulid;
 
@@ -36,8 +33,6 @@ final class OrganizationManager
     /**
      * @return Organization the created aggregate
      *
-     * @throws InvalidSlugException
-     * @throws InvalidDisplayNameException
      * @throws SlugTakenException
      */
     public function create(User $owner, string $slug, string $displayName, ?string $ip): Organization
@@ -46,10 +41,6 @@ final class OrganizationManager
         $displayName = new DisplayName($displayName);
 
         $this->slugChecker->assertClaimable($slug, $owner);
-
-        if (\in_array(mb_strtolower($displayName->value), NotReservedWord::RESERVED_WORDS, true)) {
-            throw new InvalidDisplayNameException(sprintf('"%s" is a reserved name and cannot be used.', $displayName->value));
-        }
 
         $organization = Organization::create(new Ulid(), $slug, $displayName);
 

@@ -14,13 +14,10 @@ namespace App\Tests\Organization;
 
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
-use App\Organization\Domain\Exception\InvalidDisplayNameException;
-use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\OrganizationManager;
 use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
 
 class OrganizationCreationTest extends IntegrationTestCase
 {
@@ -57,27 +54,6 @@ class OrganizationCreationTest extends IntegrationTestCase
             ['actor' => $owner->getId()],
         );
         self::assertSame(1, (int) $auditCount);
-    }
-
-    public function testCreateRejectsReservedSlug(): void
-    {
-        $owner = $this->persistOwner('reserved', twoFactor: true);
-
-        $this->expectException(InvalidSlugException::class);
-
-        static::getService(OrganizationManager::class)
-            ->create($owner, 'composer', 'Composer', null);
-    }
-
-    public function testCreateRejectsReservedDisplayName(): void
-    {
-        $owner = $this->persistOwner('user', twoFactor: true);
-
-        $this->expectException(InvalidDisplayNameException::class);
-
-        // Valid, claimable slug so the display-name deny-list is what trips (case-insensitive).
-        static::getService(OrganizationManager::class)
-            ->create($owner, 'acme', 'PHP', null);
     }
 
     public function testCreateRejectsAlreadyTakenSlug(): void

@@ -13,7 +13,6 @@
 namespace App\Tests\Organization;
 
 use App\Organization\Domain\DisplayName;
-use App\Organization\Domain\Exception\InvalidDisplayNameException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -32,7 +31,7 @@ class DisplayNameTest extends TestCase
     #[DataProvider('invalidDisplayNames')]
     public function testConstructRejectsInvalidValue(string $displayName): void
     {
-        $this->expectException(InvalidDisplayNameException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         new DisplayName($displayName);
     }
@@ -51,7 +50,7 @@ class DisplayNameTest extends TestCase
     public function testConstructStillRejectsForbiddenCharactersAfterTrimming(): void
     {
         // User input should still be properly validated after being trimmed
-        $this->expectException(InvalidDisplayNameException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         new DisplayName('  ACME, Inc.  ');
     }

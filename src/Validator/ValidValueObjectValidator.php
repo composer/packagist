@@ -12,7 +12,6 @@
 
 namespace App\Validator;
 
-use App\Organization\Domain\Exception\DomainValidationException;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
@@ -32,7 +31,7 @@ class ValidValueObjectValidator extends ConstraintValidator
 
         try {
             new ($constraint->class)($value);
-        } catch (DomainValidationException $e) {
+        } catch (\InvalidArgumentException $e) {
             $this->context->buildViolation($e->getMessage())->addViolation();
         }
     }
