@@ -33,12 +33,12 @@ class PackagistExtension extends AbstractExtension
     private Security $security;
     private OrganizationRepository $organizationRepo;
 
-    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, OrganizationRepository $organizations, Security $security)
+    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, OrganizationRepository $organizationRepo, Security $security)
     {
         $this->providerManager = $providerManager;
         $this->recaptchaHelper = $recaptchaHelper;
         $this->security = $security;
-        $this->organizationRepo = $organizations;
+        $this->organizationRepo = $organizationRepo;
     }
 
     public function getTests(): array

@@ -39,9 +39,9 @@ class OrganizationResolverTest extends TestCase
     public function testResolvesActiveOrganizationBySlug(): void
     {
         $organization = $this->organization('acme');
-        $organizations = $this->createStub(OrganizationRepository::class);
-        $organizations->method('findOneBySlug')->willReturn($organization);
-        $resolver = new OrganizationResolver($organizations, $this->createStub(Security::class));
+        $organizationRepo = $this->createStub(OrganizationRepository::class);
+        $organizationRepo->method('findOneBySlug')->willReturn($organization);
+        $resolver = new OrganizationResolver($organizationRepo, $this->createStub(Security::class));
 
         $request = new Request(attributes: ['organization' => 'acme']);
 
@@ -50,9 +50,9 @@ class OrganizationResolverTest extends TestCase
 
     public function testThrowsNotFoundWhenSlugDoesNotMatch(): void
     {
-        $organizations = $this->createStub(OrganizationRepository::class);
-        $organizations->method('findOneBySlug')->willReturn(null);
-        $resolver = new OrganizationResolver($organizations, $this->createStub(Security::class));
+        $organizationRepo = $this->createStub(OrganizationRepository::class);
+        $organizationRepo->method('findOneBySlug')->willReturn(null);
+        $resolver = new OrganizationResolver($organizationRepo, $this->createStub(Security::class));
 
         $request = new Request(attributes: ['organization' => 'missing']);
 
@@ -63,11 +63,11 @@ class OrganizationResolverTest extends TestCase
 
     public function testThrowsGoneForDeletedOrganizationWhenNotAdmin(): void
     {
-        $organizations = $this->createStub(OrganizationRepository::class);
-        $organizations->method('findOneBySlug')->willReturn($this->organization('acme', deleted: true));
+        $organizationRepo = $this->createStub(OrganizationRepository::class);
+        $organizationRepo->method('findOneBySlug')->willReturn($this->organization('acme', deleted: true));
         $security = $this->createStub(Security::class);
         $security->method('isGranted')->willReturn(false);
-        $resolver = new OrganizationResolver($organizations, $security);
+        $resolver = new OrganizationResolver($organizationRepo, $security);
 
         $request = new Request(attributes: ['organization' => 'acme']);
 
@@ -79,11 +79,11 @@ class OrganizationResolverTest extends TestCase
     public function testReturnsDeletedOrganizationForAdmin(): void
     {
         $organization = $this->organization('acme', deleted: true);
-        $organizations = $this->createStub(OrganizationRepository::class);
-        $organizations->method('findOneBySlug')->willReturn($organization);
+        $organizationRepo = $this->createStub(OrganizationRepository::class);
+        $organizationRepo->method('findOneBySlug')->willReturn($organization);
         $security = $this->createStub(Security::class);
         $security->method('isGranted')->willReturn(true);
-        $resolver = new OrganizationResolver($organizations, $security);
+        $resolver = new OrganizationResolver($organizationRepo, $security);
 
         $request = new Request(attributes: ['organization' => 'acme']);
 
