@@ -32,7 +32,7 @@ class OrganizationController extends Controller
 {
     public function __construct(
         private readonly OrganizationManager $organizationManager,
-        private readonly OrganizationRepository $organizations,
+        private readonly OrganizationRepository $organizationRepo,
     ) {
     }
 
@@ -40,9 +40,9 @@ class OrganizationController extends Controller
     public function list(#[CurrentUser] User $user): Response
     {
         if ($this->isGranted('ROLE_ADMIN')) {
-            $organizations = $this->organizations->findAllOrdered();
+            $organizations = $this->organizationRepo->findAllOrdered();
         } else {
-            $organizations = $this->organizations->findByOwner($user);
+            $organizations = $this->organizationRepo->findByOwner($user);
         }
 
         return $this->render('organization/list.html.twig', [
