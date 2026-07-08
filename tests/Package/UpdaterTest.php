@@ -676,6 +676,39 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame('newref9999999999', $reloaded->getSource()['reference'] ?? null);
     }
 
+    public function testSkipsShortLivedAutomatedBranches(): void
+    {
+        $renovate = $this->buildCompletePackage('test/pkg', 'dev-renovate/foo', 'dev-renovate/foo', 'aaaaaaaaaaaaaaaa');
+        $dependabot = $this->buildCompletePackage('test/pkg', 'dev-dependabot/bar', 'dev-dependabot/bar', 'bbbbbbbbbbbbbbbb');
+        $mergeQueue = $this->buildCompletePackage('test/pkg', 'dev-gh-readonly-queue/main/pr-1', 'dev-gh-readonly-queue/main/pr-1', 'cccccccccccccccc');
+        $realBranch = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'dddddddddddddddd');
+        // a branch that merely contains one of the keywords must not be skipped (anchoring check)
+        $lookalike = $this->buildCompletePackage('test/pkg', 'dev-feature/renovate-ish', 'dev-feature/renovate-ish', 'eeeeeeeeeeeeeeee');
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$renovate, $dependabot, $mergeQueue, $realBranch, $lookalike]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em = self::getEM();
+        $em->clear();
+        $repo = $em->getRepository(Version::class);
+
+        self::assertNull($repo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-renovate/foo']));
+        self::assertNull($repo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-dependabot/bar']));
+        self::assertNull($repo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-gh-readonly-queue/main/pr-1']));
+
+        self::assertNotNull(
+            $repo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-main']),
+            'a normal dev branch must still be imported'
+        );
+        self::assertNotNull(
+            $repo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-feature/renovate-ish']),
+            'a branch that only contains a keyword must not be skipped'
+        );
+    }
+
     public function testDeleteBeforeWipesDevRowsButPreservesStableAndSoftDeletedStable(): void
     {
         // Seed three rows: an active stable, a maintainer-soft-deleted stable, and a dev branch.
