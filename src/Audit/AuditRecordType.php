@@ -30,7 +30,6 @@ enum AuditRecordType: string
 
     // version
     case VersionCreated = 'version_created';
-    case VersionReferenceChanged = 'version_reference_changed';
     case VersionReferenceChangeBlocked = 'version_reference_change_blocked';
     case VersionDeleted = 'version_deleted';
     case VersionSoftDeleted = 'version_soft_deleted';
@@ -60,7 +59,7 @@ enum AuditRecordType: string
             self::MaintainerAdded, self::MaintainerRemoved, self::PackageTransferred => 'ownership',
             self::PackageCreated, self::PackageDeleted, self::CanonicalUrlChanged,
             self::PackageAbandoned, self::PackageUnabandoned, self::PackageFrozen, self::PackageUnfrozen => 'package',
-            self::VersionCreated, self::VersionDeleted, self::VersionReferenceChanged,
+            self::VersionCreated, self::VersionDeleted,
             self::VersionReferenceChangeBlocked, self::VersionSoftDeleted, self::VersionRecovered => 'version',
             self::UserCreated, self::UserVerified, self::UserDeleted,
             self::PasswordResetRequested, self::PasswordReset, self::PasswordChanged,

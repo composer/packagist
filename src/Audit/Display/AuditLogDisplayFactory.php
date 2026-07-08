@@ -138,17 +138,6 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditRecordType::VersionReferenceChanged => new VersionReferenceChangedDisplay(
-                $record->datetime,
-                $record->attributes['name'],
-                $record->attributes['version'],
-                $record->attributes['source_from'] ?? null,
-                $record->attributes['source_to'] ?? null,
-                $record->attributes['dist_from'] ?? null,
-                $record->attributes['dist_to'] ?? null,
-                $this->buildActor($record->attributes['actor'] ?? null),
-                $record->ip,
-            ),
             AuditRecordType::VersionReferenceChangeBlocked => new VersionReferenceChangeBlockedDisplay(
                 $record->datetime,
                 $record->attributes['name'],

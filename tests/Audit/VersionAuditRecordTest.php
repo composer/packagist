@@ -17,12 +17,10 @@ use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\RequireLink;
 use App\Entity\Version;
-use App\Event\VersionReferenceChangedEvent;
 use App\Tests\Fixtures\Fixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class VersionAuditRecordTest extends KernelTestCase
 {
@@ -65,70 +63,6 @@ class VersionAuditRecordTest extends KernelTestCase
         self::assertSame('source-ref', $attributes['metadata']['source']['reference']);
         self::assertSame('^1.5.0', $attributes['metadata']['require']['composer/ca-bundle']);
         self::assertArrayHasKey('published-time', $attributes['metadata']);
-    }
-
-    public function testVersionChangesGetRecorded(): void
-    {
-        $container = static::getContainer();
-        $em = $container->get(ManagerRegistry::class)->getManager();
-        $eventDispatcher = $container->get(EventDispatcherInterface::class);
-
-        $version = $this->createPackageAndVersion();
-
-        $originalMetadata = $version->toV2Array([]);
-        $version->setDist(['reference' => 'new-dist-ref', 'type' => 'zip', 'url' => 'https://example.org/dist.zip']);
-        $version->setSource(['reference' => 'new-source-ref', 'type' => 'git', 'url' => 'git://example.org/dist.zip']);
-
-        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata);
-        $eventDispatcher->dispatch($changeEvent);
-        $em->flush();
-
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
-        self::assertCount(3, $logs); // package creation + version creation + version reference change
-        $log = $logs[0];
-        $attributes = json_decode($log['attributes'] ?? '{}', true) ?? [];
-        self::assertSame(AuditRecordType::VersionReferenceChanged->value, $log['type']);
-        self::assertSame('composer/composer', $attributes['name']);
-        self::assertSame('1.0.0', $attributes['version']);
-        self::assertSame('dist-ref', $attributes['dist_from']);
-        self::assertSame('new-dist-ref', $attributes['dist_to']);
-        self::assertSame('source-ref', $attributes['source_from']);
-        self::assertSame('new-source-ref', $attributes['source_to']);
-        self::assertSame('^1.5.0', $attributes['metadata']['require']['composer/ca-bundle']);
-
-        // verify that dev versions with no changes to metadata don't create an audit record
-        $originalMetadata = $version->toV2Array([]);
-        $version->setDist(['reference' => 'another-dist-ref', 'type' => 'zip', 'url' => 'https://example.org/dist.zip']);
-        $version->setDevelopment(true);
-        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata);
-        $eventDispatcher->dispatch($changeEvent);
-        $em->flush();
-
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
-        self::assertCount(3, $logs); // package creation + version creation + version reference change
-
-        // verify that dev versions with changes to metadata create an audit record
-        $originalMetadata = $version->toV2Array([]);
-        $link = new RequireLink();
-        $link->setVersion($version);
-        $link->setPackageVersion('^1.6.0');
-        $link->setPackageName('composer/ca-bundle');
-        $em->persist($link);
-        $version->setDist(['reference' => 'a-dist-ref-with-metadata-changes', 'type' => 'zip', 'url' => 'https://d.io/dist.zip']);
-        $version->getRequire()->clear();
-        $version->addRequireLink($link);
-        $changeEvent = new VersionReferenceChangedEvent($version, $originalMetadata);
-        $eventDispatcher->dispatch($changeEvent);
-        $em->flush();
-
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
-        self::assertCount(4, $logs); // package creation + version creation + version reference change x 2
-        $log = $logs[0];
-        $attributes = json_decode($log['attributes'] ?? '{}', true) ?? [];
-        self::assertSame(AuditRecordType::VersionReferenceChanged->value, $log['type']);
-        self::assertSame('another-dist-ref', $attributes['dist_from']);
-        self::assertSame('a-dist-ref-with-metadata-changes', $attributes['dist_to']);
-        self::assertSame('^1.6.0', $attributes['metadata']['require']['composer/ca-bundle']);
     }
 
     private function createPackageAndVersion(): Version

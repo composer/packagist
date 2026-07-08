@@ -28,7 +28,6 @@ use App\Audit\Display\PackageUnfrozenDisplay;
 use App\Audit\Display\TwoFaDeactivatedDisplay;
 use App\Audit\Display\UserVerifiedDisplay;
 use App\Audit\Display\VersionDeletedDisplay;
-use App\Audit\Display\VersionReferenceChangedDisplay;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\FilterList\FilterLists;
@@ -156,105 +155,6 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('moderator', $display->actor->username);
         self::assertSame(AuditRecordType::VersionDeleted, $display->getType());
         self::assertSame('audit_log/display/version_deleted.html.twig', $display->getTemplateName());
-    }
-
-    public function testBuildVersionReferenceChangedWithSourceOnly(): void
-    {
-        $auditRecord = $this->createAuditRecord(
-            AuditRecordType::VersionReferenceChanged,
-            [
-                'name' => 'vendor/package',
-                'version' => '2.0.0',
-                'source_from' => 'abc123',
-                'source_to' => 'def456',
-                'actor' => ['id' => 222, 'username' => 'releaser'],
-            ]
-        );
-
-        $display = $this->factory->buildSingle($auditRecord);
-
-        self::assertInstanceOf(VersionReferenceChangedDisplay::class, $display);
-        self::assertSame('vendor/package', $display->packageName);
-        self::assertSame('2.0.0', $display->version);
-        self::assertSame('abc123', $display->sourceFrom);
-        self::assertSame('def456', $display->sourceTo);
-        self::assertNull($display->distFrom);
-        self::assertNull($display->distTo);
-        self::assertSame(222, $display->getActor()->id);
-        self::assertSame('releaser', $display->getActor()->username);
-        self::assertSame(AuditRecordType::VersionReferenceChanged, $display->getType());
-        self::assertSame('audit_log/display/version_reference_changed.html.twig', $display->getTemplateName());
-    }
-
-    public function testBuildVersionReferenceChangedWithDistOnly(): void
-    {
-        $auditRecord = $this->createAuditRecord(
-            AuditRecordType::VersionReferenceChanged,
-            [
-                'name' => 'vendor/package',
-                'version' => '2.0.0',
-                'dist_from' => 'xyz789',
-                'dist_to' => 'uvw012',
-                'actor' => ['id' => 333, 'username' => 'updater'],
-            ]
-        );
-
-        $display = $this->factory->buildSingle($auditRecord);
-
-        self::assertInstanceOf(VersionReferenceChangedDisplay::class, $display);
-        self::assertNull($display->sourceFrom);
-        self::assertNull($display->sourceTo);
-        self::assertSame('xyz789', $display->distFrom);
-        self::assertSame('uvw012', $display->distTo);
-        self::assertSame(333, $display->getActor()->id);
-        self::assertSame('updater', $display->getActor()->username);
-    }
-
-    public function testBuildVersionReferenceChangedWithBothSourceAndDist(): void
-    {
-        $auditRecord = $this->createAuditRecord(
-            AuditRecordType::VersionReferenceChanged,
-            [
-                'name' => 'vendor/package',
-                'version' => '3.0.0',
-                'source_from' => 'abc123',
-                'source_to' => 'def456',
-                'dist_from' => 'xyz789',
-                'dist_to' => 'uvw012',
-                'actor' => ['id' => 444, 'username' => 'publisher'],
-            ]
-        );
-
-        $display = $this->factory->buildSingle($auditRecord);
-
-        self::assertInstanceOf(VersionReferenceChangedDisplay::class, $display);
-        self::assertSame('abc123', $display->sourceFrom);
-        self::assertSame('def456', $display->sourceTo);
-        self::assertSame('xyz789', $display->distFrom);
-        self::assertSame('uvw012', $display->distTo);
-        self::assertSame(444, $display->getActor()->id);
-        self::assertSame('publisher', $display->getActor()->username);
-    }
-
-    public function testBuildVersionReferenceChangedWithoutActor(): void
-    {
-        $auditRecord = $this->createAuditRecord(
-            AuditRecordType::VersionReferenceChanged,
-            [
-                'name' => 'vendor/package',
-                'version' => '4.0.0',
-                'source_from' => 'abc123',
-                'source_to' => 'def456',
-            ]
-        );
-
-        $display = $this->factory->buildSingle($auditRecord);
-
-        self::assertInstanceOf(VersionReferenceChangedDisplay::class, $display);
-        self::assertSame('vendor/package', $display->packageName);
-        self::assertSame('4.0.0', $display->version);
-        self::assertNull($display->getActor()->id);
-        self::assertSame('unknown', $display->getActor()->username);
     }
 
     public function testBuildPackageAbandonedWithReplacement(): void
