@@ -28,8 +28,8 @@ class OrganizationResolverTest extends TestCase
 {
     public function testReturnsEmptyForNonOrganizationArgument(): void
     {
-        $organizations = $this->createStub(OrganizationRepository::class);
-        $resolver = new OrganizationResolver($organizations, $this->createStub(Security::class));
+        $organizationRepo = $this->createStub(OrganizationRepository::class);
+        $resolver = new OrganizationResolver($organizationRepo, $this->createStub(Security::class));
 
         $request = new Request(attributes: ['slug' => 'acme']);
 

@@ -29,7 +29,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 final readonly class OrganizationResolver implements ValueResolverInterface
 {
     public function __construct(
-        private OrganizationRepository $organizations,
+        private OrganizationRepository $organizationRepo,
         private Security $security,
     ) {
     }
@@ -45,7 +45,7 @@ final readonly class OrganizationResolver implements ValueResolverInterface
 
         $slug = $request->attributes->getString($argument->getName());
 
-        $organization = $this->organizations->findOneBySlug($slug);
+        $organization = $this->organizationRepo->findOneBySlug($slug);
         if (null === $organization) {
             throw new NotFoundHttpException('Organization not found.');
         }

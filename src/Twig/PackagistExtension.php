@@ -31,14 +31,14 @@ class PackagistExtension extends AbstractExtension
     private ProviderManager $providerManager;
     private RecaptchaHelper $recaptchaHelper;
     private Security $security;
-    private OrganizationRepository $organizations;
+    private OrganizationRepository $organizationRepo;
 
     public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, OrganizationRepository $organizations, Security $security)
     {
         $this->providerManager = $providerManager;
         $this->recaptchaHelper = $recaptchaHelper;
         $this->security = $security;
-        $this->organizations = $organizations;
+        $this->organizationRepo = $organizations;
     }
 
     public function getTests(): array
@@ -111,7 +111,7 @@ class PackagistExtension extends AbstractExtension
             return false;
         }
 
-        return $this->organizations->slugExists($slug, false);
+        return $this->organizationRepo->slugExists($slug, false);
     }
 
     public function providerExistsTest(mixed $package): bool

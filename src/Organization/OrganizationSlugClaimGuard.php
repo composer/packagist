@@ -25,9 +25,9 @@ use App\Organization\Domain\Slug;
 final class OrganizationSlugClaimGuard
 {
     public function __construct(
-        private readonly OrganizationRepository $organizations,
-        private readonly SlugReservationRepository $reservations,
-        private readonly PackageRepository $packages,
+        private readonly OrganizationRepository $organizationRepo,
+        private readonly SlugReservationRepository $slugReservationRepo,
+        private readonly PackageRepository $packageRepo,
     ) {
     }
 
@@ -38,11 +38,11 @@ final class OrganizationSlugClaimGuard
     {
         // A slug that matches an existing vendor prefix may only be claimed by someone
         // who has access to that prefix (i.e. maintains a package under it).
-        if ($this->packages->isVendorTaken($slug->value, $user)) {
+        if ($this->packageRepo->isVendorTaken($slug->value, $user)) {
             throw new SlugTakenException(sprintf('"%s" matches a vendor prefix you do not have access to.', $slug->value));
         }
 
-        if ($this->organizations->slugExists($slug->value) || $this->reservations->isReserved($slug->value)) {
+        if ($this->organizationRepo->slugExists($slug->value) || $this->slugReservationRepo->isReserved($slug->value)) {
             throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $slug->value));
         }
     }
