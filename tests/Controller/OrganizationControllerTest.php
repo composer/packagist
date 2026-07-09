@@ -184,8 +184,8 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testSettingsForbiddenForNonOwner(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
-        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner, $intruder);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -197,7 +197,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testSettingsRedirectsOwnerWithoutTwoFactor(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -210,7 +210,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testSettingsRendersPrefilledFormForOwner(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
@@ -226,7 +226,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testOwnerRenamesViaSettings(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -251,7 +251,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testShowRedirectsOldSlugToCurrentSlug(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner);
 
         $this->renameOrganization($owner, 'acme', 'acme-inc');
@@ -265,7 +265,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRedirectPreservesTheRouteForOldSlug(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 

@@ -17,8 +17,10 @@ use App\Entity\OrganizationRepository;
 use App\Entity\PackageRepository;
 use App\Entity\SlugReservationRepository;
 use App\Entity\User;
+use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
 use App\Organization\Domain\Slug;
+use App\Validator\NotReservedWordValidator;
 
 final class OrganizationSlugClaimGuard
 {
@@ -30,14 +32,19 @@ final class OrganizationSlugClaimGuard
     }
 
     /**
+     * @throws InvalidSlugException if the slug is reserved (deny-list) or collides with a vendor prefix the user cannot access
      * @throws SlugTakenException   if a live organization or active reservation already holds the slug
      */
     public function assertClaimable(Slug $slug, User $user, ?OrganizationReadModel $claimingOrg = null): void
     {
+        if (\in_array($slug->value, NotReservedWordValidator::RESERVED_WORDS, true)) {
+            throw new InvalidSlugException(sprintf('"%s" is a reserved name and cannot be used.', $slug->value));
+        }
+
         // A slug that matches an existing vendor prefix may only be claimed by someone
         // who has access to that prefix (i.e. maintains a package under it).
         if ($this->packageRepo->isVendorTaken($slug->value, $user)) {
-            throw new SlugTakenException(sprintf('"%s" matches a vendor prefix you do not have access to.', $slug->value));
+            throw new InvalidSlugException(sprintf('"%s" matches a vendor prefix you do not have access to.', $slug->value));
         }
 
         if ($this->organizationRepo->slugExists($slug->value) || $this->slugReservationRepo->isReserved($slug->value, $claimingOrg?->id)) {

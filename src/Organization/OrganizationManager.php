@@ -17,7 +17,6 @@ use App\Entity\User;
 use App\Organization\Domain\DisplayName;
 use App\Organization\Domain\Exception\InvalidSlugException;
 use App\Organization\Domain\Exception\SlugTakenException;
-use App\Organization\Domain\Exception\TwoFactorRequiredException;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\Slug;
 use App\Organization\EventStore\Actor;
@@ -65,8 +64,8 @@ final class OrganizationManager
      */
     public function edit(OrganizationReadModel $organization, User $actor, string $slug, string $displayName, ?string $ip): void
     {
-        $newSlug = Slug::fromUserInput($slug);
-        $newDisplayName = DisplayName::fromUserInput($displayName);
+        $newSlug = new Slug($slug);
+        $newDisplayName = new DisplayName($displayName);
 
         $slugChanged = $newSlug->value !== $organization->slug;
         $displayNameChanged = $newDisplayName->value !== $organization->displayName;

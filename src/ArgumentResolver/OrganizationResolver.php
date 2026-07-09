@@ -59,7 +59,7 @@ final readonly class OrganizationResolver implements ValueResolverInterface
             throw new NotFoundHttpException('Organization not found.');
         }
 
-        if ($organization->isDeleted() && !$this->security->isGranted('ROLE_ADMIN_ORGS')) {
+        if ($organization->isDeleted() && !$this->security->isGranted('ROLE_ADMIN')) {
             throw new GoneHttpException('This organization was deleted.');
         }
 
