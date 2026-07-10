@@ -43,7 +43,7 @@ class SlugReservation
     /**
      * Ensure that we only ever allow only one slug reservation with releasedAt set to NULL
      */
-    #[ORM\Column(insertable: false, updatable: false, nullable: true, columnDefinition: 'VARCHAR(' . Slug::MAX_LENGTH . ') GENERATED ALWAYS AS (IF(releasedAt IS NULL, slug, NULL)) STORED')]
+    #[ORM\Column(length: Slug::MAX_LENGTH, insertable: false, updatable: false, nullable: true, columnDefinition: 'VARCHAR(' . Slug::MAX_LENGTH . ') GENERATED ALWAYS AS (IF(releasedAt IS NULL, slug, NULL)) STORED')]
     public ?string $activeSlug = null;
 
     public function __construct(
