@@ -400,7 +400,7 @@ class PackageController extends Controller
         ]);
     }
 
-    #[Route(path: '/spam', name: 'view_spam', defaults: ['_format' => 'html'], methods: ['GET'])]
+    #[Route(path: '/admin/spam', name: 'view_spam', defaults: ['_format' => 'html'], methods: ['GET'])]
     public function viewSpamAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager): Response
     {
         if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
@@ -440,7 +440,7 @@ class PackageController extends Controller
             return $this->redirectToRoute('view_spam');
         }
 
-        return $this->render('package/spam.html.twig', $data);
+        return $this->render('admin/spam.html.twig', $data);
     }
 
     /**
@@ -476,7 +476,7 @@ class PackageController extends Controller
     }
 
     #[IsGranted('ROLE_ANTISPAM')]
-    #[Route(path: '/spam/nospam', name: 'mark_nospam', defaults: ['_format' => 'html'], methods: ['POST'])]
+    #[Route(path: '/admin/spam/nospam', name: 'mark_nospam', defaults: ['_format' => 'html'], methods: ['POST'])]
     public function markSafeAction(Request $req): RedirectResponse
     {
         /** @var string[] $vendors */

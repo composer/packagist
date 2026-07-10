@@ -106,6 +106,12 @@ services:
         tags:
             - { name: knp_menu.menu, alias: profile_menu }
 
+    packagist.menu.admin:
+        class: Knp\Menu\MenuItem
+        factory: ['@App\Menu\MenuBuilder', createAdminMenu]
+        tags:
+            - { name: knp_menu.menu, alias: admin_menu }
+
     Algolia\AlgoliaSearch\SearchClient:
         arguments: ['%env(ALGOLIA_APP_ID)%', '%env(ALGOLIA_ADMIN_KEY)%']
         factory: ['Algolia\AlgoliaSearch\SearchClient', create]

@@ -1,0 +1,47 @@
+{% extends "layout.html.twig" %}
+
+{% set showSearchDesc = 'hide' %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block title %}Administration - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-xs-12 package">
+            <div class="package-header">
+                <h2 class="title">Administration</h2>
+                <p>Administrative tools for Packagist. Pick a section below.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="list-group">
+                {% if is_granted('ROLE_FILTER_LIST_ADMIN') %}
+                    <a href="{{ path('admin_filter_lists') }}" class="list-group-item">
+                        <h4 class="list-group-item-heading"><span class="icon-archive"></span> Filter lists</h4>
+                        <p class="list-group-item-text">Manage filter list entries received from external providers (e.g. malware reports).</p>
+                    </a>
+                {% endif %}
+                {% if is_granted('ROLE_ANTISPAM') %}
+                    <a href="{{ path('view_spam') }}" class="list-group-item">
+                        <h4 class="list-group-item-heading"><span class="icon-traffic-cone"></span> Suspect packages</h4>
+                        <p class="list-group-item-text">Review packages flagged as potential spam and mark them as safe.</p>
+                    </a>
+                {% endif %}
+                {% if is_granted('ROLE_ADMIN_ORGS') %}
+                    <a href="{{ path('organization_list') }}" class="list-group-item">
+                        <h4 class="list-group-item-heading"><span class="icon-users"></span> Organizations</h4>
+                        <p class="list-group-item-text">Manage and moderate organizations.</p>
+                    </a>
+                {% endif %}
+                <a href="{{ path('view_transparency_log') }}" class="list-group-item">
+                    <h4 class="list-group-item-heading"><span class="icon-back-in-time"></span> Transparency log</h4>
+                    <p class="list-group-item-text">Browse the audit trail of administrative and account actions.</p>
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
