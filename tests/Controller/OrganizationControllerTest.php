@@ -180,8 +180,8 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testTeamsForbiddenForNonOwner(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
-        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner, $intruder);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -193,7 +193,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testCreateTeamForbiddenForOwnerWithoutTwoFactor(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -205,7 +205,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testOwnerCreatesTeam(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -230,7 +230,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testOwnerRenamesTeam(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -265,7 +265,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRenameSystemTeamReturns404(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -282,7 +282,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testOwnerDeletesTeam(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -303,7 +303,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testDeleteSystemTeamReturns404(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -319,9 +319,9 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testTeamFromAnotherOrganizationReturns404(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
-        $other = self::createUser('other', 'other@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $other = self::createUser('other', 'other@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $other->setTotpSecret('totp-secret');
         $this->store($owner, $other);
 
@@ -337,7 +337,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testOwnerAddsMemberToTeam(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -360,7 +360,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testAddTeamMemberWithUnknownUserRerendersWithError(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -378,7 +378,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testAddTeamMemberToUnknownTeamReturns404(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -392,7 +392,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testOwnerRemovesMemberFromTeam(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -416,7 +416,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveLastOwnerShowsExplanationAndNoForm(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -434,9 +434,9 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveTeamMemberForbiddenForNonOwner(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
-        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner, $intruder);
 
         [$organization, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
@@ -450,7 +450,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveTeamMemberForbiddenForOwnerWithoutTwoFactor(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner);
 
         [$organization, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
@@ -465,7 +465,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveUnknownTeamMemberReturns404(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -479,10 +479,10 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveTeamMemberReturns404ForNonMemberUsername(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         // An existing user who is not a member of the team must not be reachable via the team member route.
-        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner, $outsider);
 
         [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
@@ -495,7 +495,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testAddMemberToAllMembersTeamReturns404(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -512,7 +512,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveMemberFromAllMembersTeamReturns404(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -528,7 +528,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testAllMembersTeamShownInTeamsListWithoutMemberControls(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -548,8 +548,8 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testMemberCanViewTeamsButCannotCreate(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
-        $member = self::createUser('member', 'member@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $member = self::createUser('member', 'member@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner, $member);
         $organization = $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -571,8 +571,8 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveMemberForbiddenForNonOwner(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
-        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner, $intruder);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -584,7 +584,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveMemberForbiddenForOwnerWithoutTwoFactor(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -597,7 +597,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveUnknownMemberReturns404(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
@@ -610,10 +610,10 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveMemberReturns404ForNonMemberUsername(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         // An existing user who is not a member of the org must not be reachable via the member route.
-        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner, $outsider);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -625,9 +625,9 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testOwnerSeesRemoveMemberConfirmationPage(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
-        $member = self::createUser('member', 'member@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $member = self::createUser('member', 'member@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner, $member);
         $organization = $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -645,7 +645,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testRemoveLastOwnerFromOrganizationShowsExplanationAndNoForm(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
@@ -660,7 +660,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testMemberSeesLeaveConfirmationPage(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -673,8 +673,8 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testLeaveForbiddenForNonMember(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
-        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner, $outsider);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
@@ -686,7 +686,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testLeaveShowsErrorWhenLastOwnerTriesToLeave(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ORGANIZATIONS']);
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
         $this->store($owner);
         static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
 
