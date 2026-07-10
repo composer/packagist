@@ -10,9 +10,10 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Controller;
+namespace App\Controller\Admin;
 
 use App\Audit\Display\AuditLogDisplayFactory;
+use App\Controller\Controller;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\FilterListEntry;
@@ -35,7 +36,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_FILTER_LIST_ADMIN')]
-class AdminFilterListController extends Controller
+class FilterListController extends Controller
 {
     public function __construct(
         private readonly FilterListEntryUpdateListener $filterListEntryUpdateListener,
