@@ -25,6 +25,7 @@ use Symfony\Component\Uid\Ulid;
 
 /**
  * @phpstan-import-type VersionArray from Version
+ * @phpstan-type FilterListEntryData array{package_name: string, version: string, list: string, reason: string|null, source: string, link: string|null, disabled: bool, remote_version: string, overwrite_version: string|null, internal_note: string|null, public_id: string|null}
  */
 #[ORM\Entity(repositoryClass: AuditRecordRepository::class)]
 #[ORM\Table(name: 'audit_log')]
@@ -434,7 +435,7 @@ class AuditRecord
         );
     }
 
-    public static function filterListEntryAdded(FilterListEntry $entry, ?User $actor): self
+    public static function filterListEntryAdded(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
             AuditRecordType::FilterListEntryAdded,
@@ -444,11 +445,12 @@ class AuditRecord
                 'actor' => self::getUserData($actor, 'automation'),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
             actorId: $actor?->getId(),
         );
     }
 
-    public static function filterListEntryDeleted(FilterListEntry $entry, ?User $actor): self
+    public static function filterListEntryDeleted(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
             AuditRecordType::FilterListEntryDeleted,
@@ -458,6 +460,56 @@ class AuditRecord
                 'actor' => self::getUserData($actor, 'automation'),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
+            actorId: $actor?->getId(),
+        );
+    }
+
+    public static function filterListEntryDisabled(FilterListEntry $entry, ?User $actor, ?int $packageId): self
+    {
+        return new self(
+            AuditRecordType::FilterListEntryDisabled,
+            [
+                'name' => $entry->getPackageName(),
+                'entry' => self::getFilterListEntryData($entry),
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
+            actorId: $actor?->getId(),
+        );
+    }
+
+    public static function filterListEntryEnabled(FilterListEntry $entry, ?User $actor, ?int $packageId): self
+    {
+        return new self(
+            AuditRecordType::FilterListEntryEnabled,
+            [
+                'name' => $entry->getPackageName(),
+                'entry' => self::getFilterListEntryData($entry),
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
+            actorId: $actor?->getId(),
+        );
+    }
+
+    /**
+     * @param FilterListEntryData $previous Snapshot of the editable fields taken before the edit, see {@see self::getFilterListEntryData()}.
+     */
+    public static function filterListEntryEdited(FilterListEntry $entry, array $previous, ?User $actor, ?int $packageId): self
+    {
+        return new self(
+            AuditRecordType::FilterListEntryEdited,
+            [
+                'name' => $entry->getPackageName(),
+                'entry' => self::getFilterListEntryData($entry),
+                'previous' => $previous,
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
             actorId: $actor?->getId(),
         );
     }
@@ -475,9 +527,9 @@ class AuditRecord
     }
 
     /**
-     * @return array{package_name: string, version: string, list: string}
+     * @return FilterListEntryData
      */
-    private static function getFilterListEntryData(FilterListEntry $entry): array
+    public static function getFilterListEntryData(FilterListEntry $entry): array
     {
         return [
             'package_name' => $entry->getPackageName(),
@@ -485,6 +537,12 @@ class AuditRecord
             'list' => $entry->getList()->value,
             'reason' => $entry->getReason(),
             'source' => $entry->getSource()->value,
+            'link' => $entry->getLink(),
+            'disabled' => $entry->isDisabled(),
+            'remote_version' => $entry->getRemoteVersion(),
+            'overwrite_version' => $entry->getOverwriteVersion(),
+            'internal_note' => $entry->getInternalNote(),
+            'public_id' => $entry->getPublicId(),
         ];
     }
 

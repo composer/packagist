@@ -204,6 +204,9 @@ audit_log:
         version_reference_change_blocked: Version reference change blocked
         filter_list_entry_added: Entry added
         filter_list_entry_deleted: Entry deleted
+        filter_list_entry_disabled: Entry disabled
+        filter_list_entry_enabled: Entry enabled
+        filter_list_entry_edited: Entry edited
         organization_created: Organization created
     enums:
         user-registration-method:

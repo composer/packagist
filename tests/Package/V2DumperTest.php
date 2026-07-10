@@ -180,7 +180,7 @@ class V2DumperTest extends IntegrationTestCase
             'malware',
             FilterSources::AIKIDO,
         );
-        $filterEntry = new FilterListEntry($remote);
+        $filterEntry = FilterListEntry::fromRemote($remote);
         $this->store($filterEntry);
 
         $this->dumper->dump([$package->getId()], force: true);

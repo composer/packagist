@@ -23,7 +23,7 @@ class FilterListAuditRecordTest extends TestCase
 {
     public function testFilterListEntryAddedStoresTopLevelNameAndVendor(): void
     {
-        $record = AuditRecord::filterListEntryAdded($this->createEntry('acme/package'), null);
+        $record = AuditRecord::filterListEntryAdded($this->createEntry('acme/package'), null, null);
 
         // top-level name lets PackageNameFilter ($.name) match these records
         self::assertSame('acme/package', $record->attributes['name']);
@@ -34,16 +34,30 @@ class FilterListAuditRecordTest extends TestCase
 
     public function testFilterListEntryDeletedStoresTopLevelNameAndVendor(): void
     {
-        $record = AuditRecord::filterListEntryDeleted($this->createEntry('acme/package'), null);
+        $record = AuditRecord::filterListEntryDeleted($this->createEntry('acme/package'), null, null);
 
         self::assertSame('acme/package', $record->attributes['name']);
         self::assertSame('acme/package', $record->attributes['entry']['package_name']);
         self::assertSame('acme', $record->vendor);
     }
 
+    public function testFilterListEntryStoresPackageIdWhenPackageExists(): void
+    {
+        $record = AuditRecord::filterListEntryAdded($this->createEntry('acme/package'), null, 42);
+
+        self::assertSame(42, $record->packageId);
+    }
+
+    public function testFilterListEntryLeavesPackageIdNullWhenPackageIsUnknown(): void
+    {
+        $record = AuditRecord::filterListEntryAdded($this->createEntry('acme/package'), null, null);
+
+        self::assertNull($record->packageId);
+    }
+
     private function createEntry(string $packageName): FilterListEntry
     {
-        return new FilterListEntry(new RemoteFilterListEntry(
+        return FilterListEntry::fromRemote(new RemoteFilterListEntry(
             $packageName,
             '<1.0',
             FilterLists::MALWARE,

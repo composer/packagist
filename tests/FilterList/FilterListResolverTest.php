@@ -41,7 +41,7 @@ class FilterListResolverTest extends TestCase
 
     public function testExistingEntryWithTwoRemoteEntriesResultsInNoChange(): void
     {
-        $existing = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
         $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
         $result = $this->resolver->resolve([$existing], [$remote, $remote]);
 
@@ -50,7 +50,7 @@ class FilterListResolverTest extends TestCase
 
     public function testResolveRemoveOldEntry(): void
     {
-        $existing = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
         $result = $this->resolver->resolve([$existing], []);
 
         $this->assertSame([], $result[0]);
@@ -60,7 +60,7 @@ class FilterListResolverTest extends TestCase
     public function testResolveExistingMatchesRemote(): void
     {
         $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
-        $existing = new FilterListEntry($remote);
+        $existing = FilterListEntry::fromRemote($remote);
         $result = $this->resolver->resolve([$existing], [$remote]);
 
         $this->assertSame([], $result[0]);
@@ -69,8 +69,8 @@ class FilterListResolverTest extends TestCase
 
     public function testResolveMixed(): void
     {
-        $existingKeep = new FilterListEntry($this->createRemoteFilterListEntry('vendor/keep', '1.0.0'));
-        $existingRemove = new FilterListEntry($this->createRemoteFilterListEntry('vendor/remove', '2.0.0'));
+        $existingKeep = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/keep', '1.0.0'));
+        $existingRemove = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/remove', '2.0.0'));
 
         $remoteKeep = $this->createRemoteFilterListEntry('vendor/keep', '1.0.0');
         $remoteNew = $this->createRemoteFilterListEntry('vendor/new-pkg', '3.0.0');
@@ -95,7 +95,7 @@ class FilterListResolverTest extends TestCase
     {
         $remote1 = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
         $remote2 = $this->createRemoteFilterListEntry('vendor/package', '2.0.0');
-        $existing = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
 
         $result = $this->resolver->resolve([$existing], [$remote1, $remote2]);
 
@@ -105,8 +105,8 @@ class FilterListResolverTest extends TestCase
 
     public function testResolveRemovesOnlyUnmatchedVersions(): void
     {
-        $existing1 = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
-        $existing2 = new FilterListEntry($this->createRemoteFilterListEntry('vendor/package', '2.0.0'));
+        $existing1 = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing2 = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/package', '2.0.0'));
 
         $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
 
@@ -125,6 +125,51 @@ class FilterListResolverTest extends TestCase
 
         $this->assertEntry($valid, $result[0]);
         $this->assertSame([], $result[1]);
+    }
+
+    public function testResolveDoesNotRecreateOverwrittenUpstreamEntry(): void
+    {
+        // Admin overwrote the version constraint of an Aikido-sourced entry.
+        // The next sync must NOT create a fresh entry for the originally reported version.
+        $existing = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing->updateAttributes('>=1.0,<2.0');
+
+        $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
+
+        $result = $this->resolver->resolve([$existing], [$remote]);
+
+        $this->assertSame([], $result[0]);
+        $this->assertSame([], $result[1]);
+        $this->assertSame('>=1.0,<2.0', $existing->getVersion(), 'Effective version remains the admin overwrite.');
+        $this->assertSame('1.0.0', $existing->getRemoteVersion(), 'Upstream identity is preserved.');
+    }
+
+    public function testResolveDoesNotRemoveOverwrittenUpstreamEntryWhileUpstreamStillReportsIt(): void
+    {
+        // The overwritten entry's effective version (2.0.0) doesn't match upstream's report (1.0.0)
+        // but its upstream-side identity does, so the resolver must keep it intact.
+        $existing = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing->updateAttributes('2.0.0');
+
+        $remote = $this->createRemoteFilterListEntry('vendor/package', '1.0.0');
+
+        $result = $this->resolver->resolve([$existing], [$remote]);
+
+        $this->assertSame([], $result[0]);
+        $this->assertSame([], $result[1]);
+    }
+
+    public function testResolveRemovesOverwrittenEntryWhenUpstreamDropsIt(): void
+    {
+        // Admin overwrote the entry, but upstream has now dropped it entirely.
+        // The entry should be removed despite the admin override.
+        $existing = FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/package', '1.0.0'));
+        $existing->updateAttributes('2.0.0');
+
+        $result = $this->resolver->resolve([$existing], []);
+
+        $this->assertSame([], $result[0]);
+        $this->assertSame([$existing], $result[1]);
     }
 
     private function createRemoteFilterListEntry(string $packageName, string $version): RemoteFilterListEntry
