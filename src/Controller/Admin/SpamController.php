@@ -26,11 +26,11 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('ROLE_ANTISPAM')]
 class SpamController extends Controller
 {
     public function __construct(
@@ -43,10 +43,6 @@ class SpamController extends Controller
     #[Route(path: '/admin/spam', name: 'view_spam', defaults: ['_format' => 'html'], methods: ['GET'])]
     public function viewSpamAction(Request $req, CsrfTokenManagerInterface $csrfTokenManager): Response
     {
-        if (!$this->getUser() || !$this->isGranted('ROLE_ANTISPAM')) {
-            throw new NotFoundHttpException();
-        }
-
         $page = max(1, $req->query->getInt('page', 1));
 
         $repo = $this->getEM()->getRepository(Package::class);
@@ -115,7 +111,6 @@ class SpamController extends Controller
         return $scores;
     }
 
-    #[IsGranted('ROLE_ANTISPAM')]
     #[Route(path: '/admin/spam/nospam', name: 'mark_nospam', defaults: ['_format' => 'html'], methods: ['POST'])]
     public function markSafeAction(Request $req): RedirectResponse
     {
