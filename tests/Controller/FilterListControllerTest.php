@@ -22,7 +22,7 @@ use App\Form\Model\FilterListEntryRequest;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\TestWith;
 
-class AdminFilterListControllerTest extends IntegrationTestCase
+class FilterListControllerTest extends IntegrationTestCase
 {
     public function testIndexRequiresAdmin(): void
     {

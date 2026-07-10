@@ -63,7 +63,7 @@ class PackageControllerTest extends IntegrationTestCase
         ));
 
         $this->client->loginUser($antispam);
-        $crawler = $this->client->request('GET', '/spam');
+        $crawler = $this->client->request('GET', '/admin/spam');
         self::assertResponseIsSuccessful();
 
         $listing = $crawler->filter('.packages')->text();

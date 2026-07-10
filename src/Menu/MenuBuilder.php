@@ -12,6 +12,7 @@
 
 namespace App\Menu;
 
+use App\Controller\AdminController;
 use App\Entity\User;
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
@@ -61,6 +62,52 @@ class MenuBuilder
         return $menu;
     }
 
+    public function createAdminMenu(): ItemInterface
+    {
+        $menu = $this->factory->createItem('root');
+        $menu->setChildrenAttribute('class', 'nav nav-tabs');
+
+        if ($this->security->isGranted('ROLE_FILTER_LIST_ADMIN')) {
+            $menu->addChild('Filter lists', [
+                'label' => '<span class="icon-archive"></span>Filter lists',
+                'route' => 'admin_filter_lists',
+                'extras' => ['safe_label' => true, 'translation_domain' => false],
+            ]);
+        }
+        if ($this->security->isGranted('ROLE_ANTISPAM')) {
+            $menu->addChild('Suspect packages', [
+                'label' => '<span class="icon-traffic-cone"></span>Suspect packages',
+                'route' => 'view_spam',
+                'extras' => ['safe_label' => true, 'translation_domain' => false],
+            ]);
+        }
+        if ($this->security->isGranted('ROLE_ADMIN_ORGS')) {
+            $menu->addChild('Organizations', [
+                'label' => '<span class="icon-users"></span>Organizations',
+                'route' => 'organization_list',
+                'extras' => ['safe_label' => true, 'translation_domain' => false],
+            ]);
+        }
+        $menu->addChild('Transparency log', [
+            'label' => '<span class="icon-back-in-time"></span>Transparency log',
+            'route' => 'view_transparency_log',
+            'extras' => ['safe_label' => true, 'translation_domain' => false],
+        ]);
+
+        return $menu;
+    }
+
+    public function hasAdminAccess(): bool
+    {
+        foreach (AdminController::ADMIN_ROLES as $role) {
+            if ($this->security->isGranted($role)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function addProfileMenu(ItemInterface $menu): void
     {
         $menu->addChild($this->translator->trans('menu.profile'), [
@@ -103,5 +150,12 @@ class MenuBuilder
             'routeParameters' => ['name' => $this->username],
             'extras' => ['safe_label' => true, 'translation_domain' => false],
         ]);
+        if ($this->hasAdminAccess()) {
+            $menu->addChild('Admin', [
+                'label' => '<span class="icon-cogs"></span>Admin',
+                'route' => 'admin_index',
+                'extras' => ['safe_label' => true, 'translation_domain' => false],
+            ]);
+        }
     }
 }
