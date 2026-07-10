@@ -207,6 +207,9 @@ audit_log:
         filter_list_entry_disabled: Entry disabled
         filter_list_entry_enabled: Entry enabled
         filter_list_entry_edited: Entry edited
+        security_advisory_created: Security advisory created
+        security_advisory_edited: Security advisory edited
+        security_advisory_withdrawn: Security advisory withdrawn
         organization_created: Organization created
     enums:
         user-registration-method:

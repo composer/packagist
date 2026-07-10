@@ -28,6 +28,9 @@ use App\Audit\Display\PackageDeletedDisplay;
 use App\Audit\Display\PackageFrozenDisplay;
 use App\Audit\Display\PackageUnabandonedDisplay;
 use App\Audit\Display\PackageUnfrozenDisplay;
+use App\Audit\Display\SecurityAdvisoryCreatedDisplay;
+use App\Audit\Display\SecurityAdvisoryEditedDisplay;
+use App\Audit\Display\SecurityAdvisoryWithdrawnDisplay;
 use App\Audit\Display\TwoFaDeactivatedDisplay;
 use App\Audit\Display\UserVerifiedDisplay;
 use App\Audit\Display\VersionDeletedDisplay;
@@ -634,6 +637,83 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(FilterListEntryEditedDisplay::class, $display);
         self::assertSame('confirmed malware after manual review', $display->internalNote);
         self::assertSame('older note', $display->previousInternalNote);
+    }
+
+    public function testBuildSecurityAdvisoryCreated(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::SecurityAdvisoryCreated,
+            [
+                'advisoryId' => 'PKSA-abcd-1234-5678',
+                'name' => 'acme/package',
+                'source' => 'GitHub',
+                'remoteId' => 'GHSA-aaaa-bbbb-cccc',
+                'cve' => 'CVE-2024-12345',
+                'title' => 'Remote code execution',
+                'actor' => 'automation',
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(SecurityAdvisoryCreatedDisplay::class, $display);
+        self::assertSame('acme/package', $display->packageName);
+        self::assertSame('PKSA-abcd-1234-5678', $display->advisoryId);
+        self::assertSame('CVE-2024-12345', $display->cve);
+        self::assertSame('Remote code execution', $display->title);
+        self::assertSame('GitHub', $display->source);
+        self::assertNull($display->actor->id);
+        self::assertSame('automation', $display->actor->username);
+        self::assertSame(AuditRecordType::SecurityAdvisoryCreated, $display->getType());
+        self::assertSame('audit_log/display/security_advisory_created.html.twig', $display->getTemplateName());
+        self::assertSame('audit_log.type.security_advisory_created', $display->getTypeTranslationKey());
+    }
+
+    public function testBuildSecurityAdvisoryEdited(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::SecurityAdvisoryEdited,
+            [
+                'advisoryId' => 'PKSA-abcd-1234-5678',
+                'name' => 'acme/package',
+                'source' => 'GitHub',
+                'remoteId' => 'GHSA-aaaa-bbbb-cccc',
+                'cve' => 'CVE-2024-12345',
+                'title' => 'Edited advisory',
+                'actor' => 'automation',
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(SecurityAdvisoryEditedDisplay::class, $display);
+        self::assertSame('acme/package', $display->packageName);
+        self::assertSame('CVE-2024-12345', $display->cve);
+        self::assertSame(AuditRecordType::SecurityAdvisoryEdited, $display->getType());
+        self::assertSame('audit_log/display/security_advisory_edited.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildSecurityAdvisoryWithdrawn(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::SecurityAdvisoryWithdrawn,
+            [
+                'advisoryId' => 'PKSA-abcd-1234-5678',
+                'name' => 'acme/package',
+                'source' => 'GitHub',
+                'remoteId' => 'GHSA-aaaa-bbbb-cccc',
+                'cve' => null,
+                'title' => 'Withdrawn advisory',
+                'actor' => 'automation',
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(SecurityAdvisoryWithdrawnDisplay::class, $display);
+        self::assertNull($display->cve);
+        self::assertSame(AuditRecordType::SecurityAdvisoryWithdrawn, $display->getType());
+        self::assertSame('audit_log/display/security_advisory_withdrawn.html.twig', $display->getTemplateName());
     }
 
     /**
