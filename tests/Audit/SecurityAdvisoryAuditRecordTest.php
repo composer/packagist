@@ -16,12 +16,15 @@ use App\Audit\AuditRecordType;
 use App\Entity\SecurityAdvisory;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
+use App\Tests\Fixtures\Fixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class SecurityAdvisoryAuditRecordTest extends KernelTestCase
 {
+    use Fixtures;
+
     protected function setUp(): void
     {
         self::bootKernel();
@@ -41,6 +44,11 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
     {
         $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
 
+        // The advisory targets a package that is available on Packagist so the audit record can be linked to it.
+        $package = self::createPackage('acme/package', 'https://example.org/acme/package.git');
+        $em->persist($package);
+        $em->flush();
+
         // Created
         $advisory = new SecurityAdvisory($this->remoteAdvisory('GHSA-aaaa-bbbb-cccc'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
         $em->persist($advisory);
@@ -48,9 +56,10 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
 
         self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisoryCreated));
         $attributes = $this->latestAttributes(AuditRecordType::SecurityAdvisoryCreated);
-        self::assertSame('acme/package', $attributes['packageName']);
+        self::assertSame('acme/package', $attributes['name']);
         self::assertSame('GHSA-aaaa-bbbb-cccc', $attributes['remoteId']);
         self::assertSame('automation', $attributes['actor']);
+        self::assertSame($package->getId(), $this->latestPackageId(AuditRecordType::SecurityAdvisoryCreated));
 
         // Edited
         $advisory->updateAdvisory($this->remoteAdvisory('GHSA-aaaa-bbbb-cccc', '^2.0'));
@@ -89,6 +98,16 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
         $attributes = $connection->fetchOne('SELECT attributes FROM audit_log WHERE type = ? ORDER BY datetime DESC, id DESC LIMIT 1', [$type->value]);
 
         return json_decode((string) $attributes, true, flags: \JSON_THROW_ON_ERROR);
+    }
+
+    private function latestPackageId(AuditRecordType $type): ?int
+    {
+        $connection = static::getContainer()->get(Connection::class);
+        \assert($connection instanceof Connection);
+
+        $packageId = $connection->fetchOne('SELECT packageId FROM audit_log WHERE type = ? ORDER BY datetime DESC, id DESC LIMIT 1', [$type->value]);
+
+        return $packageId === false || $packageId === null ? null : (int) $packageId;
     }
 
     private function remoteAdvisory(string $remoteId, string $affectedVersions = '^1.0'): RemoteSecurityAdvisory

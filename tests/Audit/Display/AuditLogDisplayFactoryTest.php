@@ -645,7 +645,7 @@ class AuditLogDisplayFactoryTest extends TestCase
             AuditRecordType::SecurityAdvisoryCreated,
             [
                 'advisoryId' => 'PKSA-abcd-1234-5678',
-                'packageName' => 'acme/package',
+                'name' => 'acme/package',
                 'source' => 'GitHub',
                 'remoteId' => 'GHSA-aaaa-bbbb-cccc',
                 'cve' => 'CVE-2024-12345',
@@ -675,7 +675,7 @@ class AuditLogDisplayFactoryTest extends TestCase
             AuditRecordType::SecurityAdvisoryEdited,
             [
                 'advisoryId' => 'PKSA-abcd-1234-5678',
-                'packageName' => 'acme/package',
+                'name' => 'acme/package',
                 'source' => 'GitHub',
                 'remoteId' => 'GHSA-aaaa-bbbb-cccc',
                 'cve' => 'CVE-2024-12345',
@@ -699,7 +699,7 @@ class AuditLogDisplayFactoryTest extends TestCase
             AuditRecordType::SecurityAdvisoryWithdrawn,
             [
                 'advisoryId' => 'PKSA-abcd-1234-5678',
-                'packageName' => 'acme/package',
+                'name' => 'acme/package',
                 'source' => 'GitHub',
                 'remoteId' => 'GHSA-aaaa-bbbb-cccc',
                 'cve' => null,

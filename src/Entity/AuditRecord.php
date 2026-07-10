@@ -515,36 +515,39 @@ class AuditRecord
         );
     }
 
-    public static function securityAdvisoryCreated(SecurityAdvisory $advisory, ?User $actor): self
+    public static function securityAdvisoryCreated(SecurityAdvisory $advisory, ?User $actor, ?int $packageId): self
     {
         return new self(
             AuditRecordType::SecurityAdvisoryCreated,
             self::getSecurityAdvisoryData($advisory, $actor),
             vendor: self::vendorFromPackageName($advisory->getPackageName()),
             actorId: $actor?->getId(),
+            packageId: $packageId,
         );
     }
 
     /**
      * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, mixed>> $changeSet the Doctrine entity change set (field => [old, new])
      */
-    public static function securityAdvisoryEdited(SecurityAdvisory $advisory, ?User $actor, array $changeSet): self
+    public static function securityAdvisoryEdited(SecurityAdvisory $advisory, ?User $actor, array $changeSet, ?int $packageId): self
     {
         return new self(
             AuditRecordType::SecurityAdvisoryEdited,
             [...self::getSecurityAdvisoryData($advisory, $actor), 'changes' => self::getSecurityAdvisoryChanges($changeSet)],
             vendor: self::vendorFromPackageName($advisory->getPackageName()),
             actorId: $actor?->getId(),
+            packageId: $packageId,
         );
     }
 
-    public static function securityAdvisoryWithdrawn(SecurityAdvisory $advisory, ?User $actor): self
+    public static function securityAdvisoryWithdrawn(SecurityAdvisory $advisory, ?User $actor, ?int $packageId): self
     {
         return new self(
             AuditRecordType::SecurityAdvisoryWithdrawn,
             self::getSecurityAdvisoryData($advisory, $actor),
             vendor: self::vendorFromPackageName($advisory->getPackageName()),
             actorId: $actor?->getId(),
+            packageId: $packageId,
         );
     }
 
@@ -561,14 +564,13 @@ class AuditRecord
     }
 
     /**
-     * @return array{name: string, advisoryId: string, packageName: string, source: string, remoteId: string, cve: string|null, title: string, actor: array{id: int, username: string}|string}
+     * @return array{name: string, advisoryId: string, source: string, remoteId: string, cve: string|null, title: string, actor: array{id: int, username: string}|string}
      */
     private static function getSecurityAdvisoryData(SecurityAdvisory $advisory, ?User $actor): array
     {
         return [
             'name' => $advisory->getPackageName(),
             'advisoryId' => $advisory->getPackagistAdvisoryId(),
-            'packageName' => $advisory->getPackageName(),
             'source' => $advisory->getSource(),
             'remoteId' => $advisory->getRemoteId(),
             'cve' => $advisory->getCve(),

@@ -13,6 +13,7 @@
 namespace App\EventListener;
 
 use App\Entity\AuditRecord;
+use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Util\DoctrineTrait;
@@ -48,12 +49,12 @@ class SecurityAdvisoryAuditListener
      */
     public function postPersist(SecurityAdvisory $advisory, LifecycleEventArgs $event): void
     {
-        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::securityAdvisoryCreated($advisory, $this->getUser()));
+        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::securityAdvisoryCreated($advisory, $this->getUser(), $this->getPackageId($advisory)));
     }
 
     public function preUpdate(SecurityAdvisory $advisory, PreUpdateEventArgs $event): void
     {
-        $this->buffered[] = AuditRecord::securityAdvisoryEdited($advisory, $this->getUser(), $event->getEntityChangeSet());
+        $this->buffered[] = AuditRecord::securityAdvisoryEdited($advisory, $this->getUser(), $event->getEntityChangeSet(), $this->getPackageId($advisory));
     }
 
     /**
@@ -77,7 +78,7 @@ class SecurityAdvisoryAuditListener
      */
     public function preRemove(SecurityAdvisory $advisory, LifecycleEventArgs $event): void
     {
-        $this->getEM()->persist(AuditRecord::securityAdvisoryWithdrawn($advisory, $this->getUser()));
+        $this->getEM()->persist(AuditRecord::securityAdvisoryWithdrawn($advisory, $this->getUser(), $this->getPackageId($advisory)));
     }
 
     private function getUser(): ?User
@@ -85,5 +86,10 @@ class SecurityAdvisoryAuditListener
         $user = $this->security->getUser();
 
         return $user instanceof User ? $user : null;
+    }
+
+    private function getPackageId(SecurityAdvisory $advisory): ?int
+    {
+        return $this->getEM()->getRepository(Package::class)->getPackageIdByName($advisory->getPackageName());
     }
 }

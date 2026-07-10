@@ -258,7 +258,7 @@ class AuditLogDisplayFactory
             ),
             AuditRecordType::SecurityAdvisoryCreated => new SecurityAdvisoryCreatedDisplay(
                 $record->datetime,
-                $record->attributes['packageName'],
+                $record->attributes['name'],
                 $record->attributes['advisoryId'],
                 $record->attributes['cve'] ?? null,
                 $record->attributes['title'],
@@ -268,7 +268,7 @@ class AuditLogDisplayFactory
             ),
             AuditRecordType::SecurityAdvisoryEdited => new SecurityAdvisoryEditedDisplay(
                 $record->datetime,
-                $record->attributes['packageName'],
+                $record->attributes['name'],
                 $record->attributes['advisoryId'],
                 $record->attributes['cve'] ?? null,
                 $record->attributes['title'],
@@ -279,7 +279,7 @@ class AuditLogDisplayFactory
             ),
             AuditRecordType::SecurityAdvisoryWithdrawn => new SecurityAdvisoryWithdrawnDisplay(
                 $record->datetime,
-                $record->attributes['packageName'],
+                $record->attributes['name'],
                 $record->attributes['advisoryId'],
                 $record->attributes['cve'] ?? null,
                 $record->attributes['title'],
