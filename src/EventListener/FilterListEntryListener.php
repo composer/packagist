@@ -14,6 +14,7 @@ namespace App\EventListener;
 
 use App\Entity\AuditRecord;
 use App\Entity\FilterListEntry;
+use App\Entity\Package;
 use App\Entity\User;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
@@ -39,7 +40,7 @@ class FilterListEntryListener
      */
     public function postPersist(FilterListEntry $entry, LifecycleEventArgs $event): void
     {
-        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::filterListEntryAdded($entry, $this->getUser()));
+        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::filterListEntryAdded($entry, $this->getUser(), $this->getPackageId($entry)));
     }
 
     /**
@@ -47,7 +48,7 @@ class FilterListEntryListener
      */
     public function preRemove(FilterListEntry $entry, LifecycleEventArgs $event): void
     {
-        $this->getEM()->persist(AuditRecord::filterListEntryDeleted($entry, $this->getUser()));
+        $this->getEM()->persist(AuditRecord::filterListEntryDeleted($entry, $this->getUser(), $this->getPackageId($entry)));
     }
 
     private function getUser(): ?User
@@ -55,5 +56,10 @@ class FilterListEntryListener
         $user = $this->security->getUser();
 
         return $user instanceof User ? $user : null;
+    }
+
+    private function getPackageId(FilterListEntry $entry): ?int
+    {
+        return $this->getEM()->getRepository(Package::class)->getPackageIdByName($entry->getPackageName());
     }
 }

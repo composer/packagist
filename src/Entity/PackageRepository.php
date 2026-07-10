@@ -174,6 +174,18 @@ class PackageRepository extends ServiceEntityRepository
         return (bool) $query->getOneOrNullResult();
     }
 
+    public function getPackageIdByName(string $name): ?int
+    {
+        $id = $this->createQueryBuilder('p')
+            ->select('p.id')
+            ->where('p.name = :name')
+            ->setParameter('name', $name)
+            ->getQuery()
+            ->getOneOrNullResult(\Doctrine\ORM\Query::HYDRATE_SCALAR_COLUMN);
+
+        return $id === null ? null : (int) $id;
+    }
+
     /**
      * @param array<string, string|int|bool> $filters
      * @param array<string>                  $fields

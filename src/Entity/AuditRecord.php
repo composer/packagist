@@ -435,7 +435,7 @@ class AuditRecord
         );
     }
 
-    public static function filterListEntryAdded(FilterListEntry $entry, ?User $actor): self
+    public static function filterListEntryAdded(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
             AuditRecordType::FilterListEntryAdded,
@@ -445,11 +445,12 @@ class AuditRecord
                 'actor' => self::getUserData($actor, 'automation'),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
             actorId: $actor?->getId(),
         );
     }
 
-    public static function filterListEntryDeleted(FilterListEntry $entry, ?User $actor): self
+    public static function filterListEntryDeleted(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
             AuditRecordType::FilterListEntryDeleted,
@@ -459,11 +460,12 @@ class AuditRecord
                 'actor' => self::getUserData($actor, 'automation'),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
             actorId: $actor?->getId(),
         );
     }
 
-    public static function filterListEntryDisabled(FilterListEntry $entry, ?User $actor): self
+    public static function filterListEntryDisabled(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
             AuditRecordType::FilterListEntryDisabled,
@@ -473,11 +475,12 @@ class AuditRecord
                 'actor' => self::getUserData($actor, 'automation'),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
             actorId: $actor?->getId(),
         );
     }
 
-    public static function filterListEntryEnabled(FilterListEntry $entry, ?User $actor): self
+    public static function filterListEntryEnabled(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
             AuditRecordType::FilterListEntryEnabled,
@@ -487,6 +490,7 @@ class AuditRecord
                 'actor' => self::getUserData($actor, 'automation'),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
             actorId: $actor?->getId(),
         );
     }
@@ -494,7 +498,7 @@ class AuditRecord
     /**
      * @param FilterListEntryData $previous Snapshot of the editable fields taken before the edit, see {@see self::getFilterListEntryData()}.
      */
-    public static function filterListEntryEdited(FilterListEntry $entry, array $previous, ?User $actor): self
+    public static function filterListEntryEdited(FilterListEntry $entry, array $previous, ?User $actor, ?int $packageId): self
     {
         return new self(
             AuditRecordType::FilterListEntryEdited,
@@ -505,6 +509,7 @@ class AuditRecord
                 'actor' => self::getUserData($actor, 'automation'),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
+            packageId: $packageId,
             actorId: $actor?->getId(),
         );
     }

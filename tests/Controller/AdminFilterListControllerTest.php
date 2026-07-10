@@ -198,9 +198,9 @@ class AdminFilterListControllerTest extends IntegrationTestCase
         $this->store($admin, $subject, $unrelated);
 
         $em = self::getEM();
-        $em->persist(AuditRecord::filterListEntryDisabled($subject, $admin));
-        $em->persist(AuditRecord::filterListEntryEnabled($subject, $admin));
-        $em->persist(AuditRecord::filterListEntryDisabled($unrelated, $admin));
+        $em->persist(AuditRecord::filterListEntryDisabled($subject, $admin, null));
+        $em->persist(AuditRecord::filterListEntryEnabled($subject, $admin, null));
+        $em->persist(AuditRecord::filterListEntryDisabled($unrelated, $admin, null));
         $em->flush();
 
         $this->client->loginUser($admin);

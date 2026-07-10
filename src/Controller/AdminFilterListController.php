@@ -16,6 +16,7 @@ use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\FilterListEntry;
+use App\Entity\PackageRepository;
 use App\Entity\User;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterLists;
@@ -38,6 +39,7 @@ class AdminFilterListController extends Controller
 {
     public function __construct(
         private readonly FilterListEntryUpdateListener $filterListEntryUpdateListener,
+        private readonly PackageRepository $packageRepo,
     ) {
     }
 
@@ -149,7 +151,7 @@ class AdminFilterListController extends Controller
             }
 
             if (AuditRecord::getFilterListEntryData($entry) !== $previous) {
-                $em->persist(AuditRecord::filterListEntryEdited($entry, $previous, $user));
+                $em->persist(AuditRecord::filterListEntryEdited($entry, $previous, $user, $this->packageRepo->getPackageIdByName($entry->getPackageName())));
                 $em->flush();
 
                 $this->filterListEntryUpdateListener->flushChangesToPackages();
@@ -185,7 +187,7 @@ class AdminFilterListController extends Controller
         $entry->disable();
 
         $em = $this->getEM();
-        $em->persist(AuditRecord::filterListEntryDisabled($entry, $user));
+        $em->persist(AuditRecord::filterListEntryDisabled($entry, $user, $this->packageRepo->getPackageIdByName($entry->getPackageName())));
         $em->flush();
 
         $this->filterListEntryUpdateListener->flushChangesToPackages();
@@ -209,7 +211,7 @@ class AdminFilterListController extends Controller
         $entry->enable();
 
         $em = $this->getEM();
-        $em->persist(AuditRecord::filterListEntryEnabled($entry, $user));
+        $em->persist(AuditRecord::filterListEntryEnabled($entry, $user, $this->packageRepo->getPackageIdByName($entry->getPackageName())));
         $em->flush();
 
         $this->filterListEntryUpdateListener->flushChangesToPackages();
@@ -248,14 +250,14 @@ class AdminFilterListController extends Controller
                     continue;
                 }
                 $entry->disable();
-                $em->persist(AuditRecord::filterListEntryDisabled($entry, $user));
+                $em->persist(AuditRecord::filterListEntryDisabled($entry, $user, $this->packageRepo->getPackageIdByName($entry->getPackageName())));
                 $changed++;
             } else {
                 if (!$entry->isDisabled()) {
                     continue;
                 }
                 $entry->enable();
-                $em->persist(AuditRecord::filterListEntryEnabled($entry, $user));
+                $em->persist(AuditRecord::filterListEntryEnabled($entry, $user, $this->packageRepo->getPackageIdByName($entry->getPackageName())));
                 $changed++;
             }
         }
