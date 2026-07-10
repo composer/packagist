@@ -35,10 +35,10 @@ final class Organization extends AbstractAggregate
     // Groundwork for org deletion (not yet implemented).
     private bool $deleted = false;
 
-    public static function create(Ulid $id, Slug $slug, DisplayName $displayName): self
+    public static function create(Ulid $id, Slug $slug, DisplayName $displayName, int $ownerId): self
     {
         $organization = new self($id);
-        $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value));
+        $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownerId));
 
         return $organization;
     }

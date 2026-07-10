@@ -38,17 +38,17 @@ final class OrganizationManager
      * @throws InvalidSlugException
      * @throws SlugTakenException
      */
-    public function create(User $owner, string $slug, string $displayName, ?string $ip): Organization
+    public function create(User $owner, User $actor, string $slug, string $displayName, ?string $ip): Organization
     {
         $slug = new Slug($slug);
         $displayName = new DisplayName($displayName);
 
         $this->slugChecker->assertClaimable($slug, $owner);
 
-        $organization = Organization::create(new Ulid(), $slug, $displayName);
+        $organization = Organization::create(new Ulid(), $slug, $displayName, $owner->getId());
 
         try {
-            $this->eventStore->append($organization, Actor::owner($owner), $ip);
+            $this->eventStore->append($organization, $this->actorFor($actor, $owner->getId()), $ip);
         } catch (UniqueConstraintViolationException $e) {
             throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $slug->value), 0, $e);
         }
@@ -92,15 +92,19 @@ final class OrganizationManager
         }
 
         try {
-            $this->eventStore->append($aggregate, $this->actorFor($actor, $organization), $ip);
+            $this->eventStore->append($aggregate, $this->actorFor($actor, $organization->createdBy?->getId()), $ip);
         } catch (UniqueConstraintViolationException $e) {
             throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $newSlug->value), 0, $e);
         }
     }
 
-    private function actorFor(User $actor, OrganizationReadModel $organization): Actor
+    /**
+     * The owner acting on their own organization is recorded as its owner; anyone else (a
+     * Packagist admin acting on their behalf) is recorded as an admin.
+     */
+    private function actorFor(User $actor, ?int $ownerId): Actor
     {
-        if ($organization->createdBy?->getId() === $actor->getId()) {
+        if ($ownerId === $actor->getId()) {
             return Actor::owner($actor);
         }
 

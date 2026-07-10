@@ -28,7 +28,7 @@ class OrganizationCreationTest extends IntegrationTestCase
         $owner = $this->persistOwner('orgowner', twoFactor: true);
 
         $manager = static::getService(OrganizationManager::class);
-        $organization = $manager->create($owner, 'acme', 'ACME Corp', '203.0.113.5');
+        $organization = $manager->create($owner, $owner, 'acme', 'ACME Corp', '203.0.113.5');
 
         self::assertSame('acme', $organization->slug());
 
@@ -64,7 +64,7 @@ class OrganizationCreationTest extends IntegrationTestCase
         $this->expectException(InvalidSlugException::class);
 
         static::getService(OrganizationManager::class)
-            ->create($owner, 'composer', 'Composer', null);
+            ->create($owner, $owner, 'composer', 'Composer', null);
     }
 
     public function testCreateRejectsAlreadyTakenSlug(): void
@@ -73,10 +73,10 @@ class OrganizationCreationTest extends IntegrationTestCase
         $second = $this->persistOwner('second', twoFactor: true);
 
         $manager = static::getService(OrganizationManager::class);
-        $manager->create($first, 'acme', 'ACME Corp', null);
+        $manager->create($first, $first, 'acme', 'ACME Corp', null);
 
         $this->expectException(SlugTakenException::class);
-        $manager->create($second, 'acme', 'ACME Two', null);
+        $manager->create($second, $second, 'acme', 'ACME Two', null);
     }
 
     private function persistOwner(string $username, bool $twoFactor): User

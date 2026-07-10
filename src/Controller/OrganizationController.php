@@ -47,42 +47,6 @@ class OrganizationController extends Controller
         ]);
     }
 
-    #[Route(path: '/organizations/create', name: 'organization_create', methods: ['GET', 'POST'])]
-    public function create(Request $request, #[CurrentUser] User $user): Response
-    {
-        // 2FA is required to create an organization / become an owner.
-        if (!$user->isTotpAuthenticationEnabled()) {
-            $this->addFlash('error', 'You must enable two-factor authentication before creating an organization.');
-
-            return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
-        }
-
-        $createRequest = new OrganizationDetailsRequest();
-        $form = $this->createForm(OrganizationDetailsType::class, $createRequest);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            try {
-                $organization = $this->organizationManager->create(
-                    $user,
-                    $createRequest->slug,
-                    $createRequest->displayName,
-                    $request->getClientIp(),
-                );
-
-                $this->addFlash('success', sprintf('Organization "%s" created.', $organization->slug()));
-
-                return $this->redirectToRoute('organization_show', ['organization' => $organization->slug()]);
-            } catch (OrganizationException $e) {
-                $form->addError(new FormError($e->getMessage()));
-            }
-        }
-
-        return $this->render('organization/create.html.twig', [
-            'form' => $form->createView(),
-        ]);
-    }
-
     #[Route(path: '/organizations/{organization}', name: 'organization_show', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
     public function show(Organization $organization): Response
     {

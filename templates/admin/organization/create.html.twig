@@ -1,0 +1,46 @@
+{% extends "admin/layout.html.twig" %}
+
+{% block title %}Create an organization - {{ parent() }}{% endblock %}
+
+{% block admin_content %}
+    <div class="row">
+        <div class="col-xs-12 package">
+            <div class="package-header">
+                <h2 class="title">Create an organization</h2>
+                <p>Create an organization and assign its first owner.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            {{ form_start(form, { 'attr': { 'class': 'admin_create_organization' } }) }}
+                {{ form_errors(form) }}
+
+                <div class="form-group clearfix">
+                    {{ form_label(form.displayName) }}
+                    {{ form_errors(form.displayName) }}
+                    {{ form_widget(form.displayName) }}
+                    {{ form_help(form.displayName) }}
+                </div>
+
+                <div class="form-group clearfix">
+                    {{ form_label(form.slug) }}
+                    {{ form_errors(form.slug) }}
+                    {{ form_widget(form.slug) }}
+                    {{ form_help(form.slug) }}
+                </div>
+
+                <div class="form-group clearfix">
+                    {{ form_label(form.owner) }}
+                    {{ form_errors(form.owner) }}
+                    {{ form_widget(form.owner) }}
+                    {{ form_help(form.owner) }}
+                </div>
+
+                <button type="submit" class="btn btn-success">Create organization</button>
+                <a class="btn btn-default" href="{{ path('admin_organization_list') }}">Cancel</a>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

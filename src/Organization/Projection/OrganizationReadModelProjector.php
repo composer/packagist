@@ -60,9 +60,9 @@ final readonly class OrganizationReadModelProjector implements Projector
 
     private function organizationCreated(RecordedEvent $recorded, OrganizationCreated $event): void
     {
-        $createdBy = $recorded->actor->userId !== null
-            ? $this->users->find($recorded->actor->userId)
-            : null;
+        // The owner is recorded on the event itself, since it may differ
+        // from the actor when a Packagist admin creates the organization on someone's behalf.
+        $owner = $this->users->find($event->ownerId);
 
         $this->getEM()->persist(new Organization(
             $event->organizationId,
@@ -70,7 +70,7 @@ final readonly class OrganizationReadModelProjector implements Projector
             $event->displayName,
             OrganizationStatus::Active,
             $recorded->occurredAt,
-            $createdBy,
+            $owner,
         ));
     }
 

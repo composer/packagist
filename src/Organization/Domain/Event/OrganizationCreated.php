@@ -17,7 +17,9 @@ use App\Organization\EventStore\OrganizationEventType;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * Creates the aggregate at sequence = 1; the creator becomes the owner.
+ * Creates the aggregate at sequence = 1. `ownerId` is the user who becomes the first owner,
+ * recorded separately from the event actor because an admin may create an organization on
+ * another user's behalf.
  */
 final readonly class OrganizationCreated implements DomainEvent
 {
@@ -27,6 +29,7 @@ final readonly class OrganizationCreated implements DomainEvent
         public Ulid $organizationId,
         public string $slug,
         public string $displayName,
+        public int $ownerId,
     ) {
     }
 
@@ -45,6 +48,7 @@ final readonly class OrganizationCreated implements DomainEvent
         return [
             'slug' => $this->slug,
             'displayName' => $this->displayName,
+            'ownerId' => $this->ownerId,
         ];
     }
 
@@ -57,6 +61,7 @@ final readonly class OrganizationCreated implements DomainEvent
             $organizationId,
             (string) $payload['slug'],
             (string) $payload['displayName'],
+            (int) $payload['ownerId'],
         );
     }
 }

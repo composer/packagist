@@ -27,7 +27,7 @@ class OrganizationAggregateTest extends TestCase
     public function testCreateRecordsOrganizationCreatedEvent(): void
     {
         $id = new Ulid();
-        $organization = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'));
+        $organization = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'), 42);
 
         $events = $organization->pullPendingEvents();
 
@@ -37,13 +37,14 @@ class OrganizationAggregateTest extends TestCase
         self::assertTrue($id->equals($event->organizationId));
         self::assertSame('acme', $event->slug);
         self::assertSame('ACME Corp', $event->displayName);
+        self::assertSame(42, $event->ownerId);
         self::assertSame(OrganizationEventType::OrganizationCreated, $event->eventType());
     }
 
     public function testReconstituteRebuildsStateFromHistory(): void
     {
         $id = new Ulid();
-        $created = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'));
+        $created = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'), 42);
         $event = $created->pullPendingEvents()[0];
         self::assertInstanceOf(OrganizationCreated::class, $event);
 
