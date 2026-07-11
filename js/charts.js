@@ -102,11 +102,15 @@ import '../css/charts.css';
                 return a;
             }
 
-            chart.xAxis.tickFormat(formatDate);
+            chart.xAxis
+                .showMaxMin(false)
+                .tickFormat(formatDate);
             chart.yAxis.tickFormat(formatDigit);
 
             if (withDatePicker) {
-                chart.x2Axis.tickFormat(formatDate);
+                chart.x2Axis
+                    .showMaxMin(false)
+                    .tickFormat(formatDate);
                 chart.y2Axis.tickFormat(formatDigit);
             }
 
