@@ -45,15 +45,14 @@ class OrganizationMemberResolverTest extends TestCase
         self::assertSame([], $resolver->resolve($request, $this->argument(name: 'user')));
     }
 
-    public function testResolvesMemberByOrgSlugAndCanonicalUsername(): void
+    public function testResolvesMemberByOrgSlugAndUsername(): void
     {
         $member = new User();
 
         $teamMembers = $this->createMock(OrganizationTeamMemberRepository::class);
         $teamMembers->expects(self::once())
             ->method('findOrgMember')
-            // The username from the URL is lowercased to match the canonical column.
-            ->with('acme', 'jane')
+            ->with('acme', 'JANE')
             ->willReturn($member);
         $resolver = new OrganizationMemberResolver($teamMembers);
 

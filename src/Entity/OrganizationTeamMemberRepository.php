@@ -28,11 +28,11 @@ class OrganizationTeamMemberRepository extends ServiceEntityRepository
     }
 
     /**
-     * Load the {@see User} behind a team membership by their canonical username in a single joined
-     * query. Returns null when the user does not exist or is not a member of the team, so callers
+     * Load the {@see User} behind a team membership by their username (canonicalised here) in a single
+     * joined query. Returns null when the user does not exist or is not a member of the team, so callers
      * cannot tell the two cases apart and no user id is exposed.
      */
-    public function findTeamMember(Ulid $teamId, string $usernameCanonical): ?User
+    public function findTeamMember(Ulid $teamId, string $username): ?User
     {
         return $this->getEntityManager()->createQueryBuilder()
             ->select('u')
@@ -41,18 +41,18 @@ class OrganizationTeamMemberRepository extends ServiceEntityRepository
             ->where('m.teamId = :teamId')
             ->andWhere('u.usernameCanonical = :username')
             ->setParameter('teamId', $teamId, 'ulid')
-            ->setParameter('username', $usernameCanonical)
+            ->setParameter('username', mb_strtolower($username))
             ->getQuery()
             ->getOneOrNullResult();
     }
 
     /**
-     * Load the {@see User} behind an organization membership by the org slug and their canonical
-     * username in a single joined query. Membership is the union of team memberships, so DISTINCT
-     * collapses a user who belongs to several teams. Returns null when the user does not exist or is
-     * not a member of the org, so callers cannot tell the two cases apart and no user id is exposed.
+     * Load the {@see User} behind an organization membership by the org slug and their username
+     * (canonicalised here) in a single joined query. Membership is the union of team memberships, so
+     * DISTINCT collapses a user who belongs to several teams. Returns null when the user does not exist
+     * or is not a member of the org, so callers cannot tell the two cases apart and no user id is exposed.
      */
-    public function findOrgMember(string $orgSlug, string $usernameCanonical): ?User
+    public function findOrgMember(string $orgSlug, string $username): ?User
     {
         return $this->getEntityManager()->createQueryBuilder()
             ->select('u')
@@ -63,7 +63,7 @@ class OrganizationTeamMemberRepository extends ServiceEntityRepository
             ->where('o.slug = :slug')
             ->andWhere('u.usernameCanonical = :username')
             ->setParameter('slug', $orgSlug)
-            ->setParameter('username', $usernameCanonical)
+            ->setParameter('username', mb_strtolower($username))
             ->getQuery()
             ->getOneOrNullResult();
     }

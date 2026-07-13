@@ -45,8 +45,7 @@ final readonly class OrganizationMemberResolver implements ValueResolverInterfac
             return [];
         }
 
-        $username = mb_strtolower($request->attributes->getString('organizationMember'));
-        $member = $this->teamMembers->findOrgMember($request->attributes->getString('organization'), $username);
+        $member = $this->teamMembers->findOrgMember($request->attributes->getString('organization'), $request->attributes->getString('organizationMember'));
         if (null === $member) {
             throw new NotFoundHttpException('Member not found.');
         }

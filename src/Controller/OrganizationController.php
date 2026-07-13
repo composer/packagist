@@ -253,9 +253,9 @@ class OrganizationController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $target = $this->users->findOneByUsernameOrEmail($addRequest->username);
+            $target = $this->teamMembers->findOrgMember($organization->slug, $addRequest->username);
             if ($target === null) {
-                $form->addError(new FormError(sprintf('No user "%s" was found.', $addRequest->username)));
+                $form->addError(new FormError(sprintf('No member "%s" was found in this organization.', $addRequest->username)));
             } else {
                 try {
                     $this->membershipManager->addTeamMember($organization, $user, $team->teamId, $target->getId(), $request->getClientIp());

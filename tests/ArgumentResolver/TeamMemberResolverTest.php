@@ -46,7 +46,7 @@ class TeamMemberResolverTest extends TestCase
         self::assertSame([], $resolver->resolve($request, $this->argument(name: 'user')));
     }
 
-    public function testResolvesMemberByTeamIdAndCanonicalUsername(): void
+    public function testResolvesMemberByTeamIdAndUsername(): void
     {
         $member = new User();
         $teamId = new Ulid();
@@ -54,8 +54,8 @@ class TeamMemberResolverTest extends TestCase
         $teamMembers = $this->createMock(OrganizationTeamMemberRepository::class);
         $teamMembers->expects(self::once())
             ->method('findTeamMember')
-            // The username from the URL is lowercased to match the canonical column.
-            ->with(self::callback(static fn (Ulid $id): bool => $id->equals($teamId)), 'jane')
+            // The raw username from the URL is passed through; the repository canonicalises it.
+            ->with(self::callback(static fn (Ulid $id): bool => $id->equals($teamId)), 'JANE')
             ->willReturn($member);
         $resolver = new TeamMemberResolver($teamMembers);
 

@@ -51,8 +51,7 @@ final readonly class TeamMemberResolver implements ValueResolverInterface
             throw new NotFoundHttpException('Team member not found.');
         }
 
-        $username = mb_strtolower($request->attributes->getString('teamMember'));
-        $member = $this->teamMembers->findTeamMember(Ulid::fromString($teamId), $username);
+        $member = $this->teamMembers->findTeamMember(Ulid::fromString($teamId), $request->attributes->getString('teamMember'));
         if (null === $member) {
             throw new NotFoundHttpException('Team member not found.');
         }

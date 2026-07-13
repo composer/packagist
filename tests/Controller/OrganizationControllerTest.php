@@ -373,7 +373,46 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->submit($form);
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('No user "ghost" was found.', $crawler->text());
+        self::assertStringContainsString('No member "ghost" was found in this organization.', $crawler->text());
+    }
+
+    public function testAddTeamMemberWithNonMemberUserRerendersWithError(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $owner->setTotpSecret('totp-secret');
+        // An existing platform user who has not joined the org cannot be added (joining is invitation-only).
+        $outsider = self::createUser('outsider', 'outsider@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $this->store($owner, $outsider);
+
+        [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
+
+        $form = $crawler->selectButton('Add member')->form(['add_team_member[username]' => 'outsider']);
+        $crawler = $this->client->submit($form);
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('No member "outsider" was found in this organization.', $crawler->text());
+    }
+
+    public function testAddTeamMemberDoesNotAcceptEmailAddress(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
+
+        // The owner is a member, but they are matched by username only: their email must not resolve them.
+        $form = $crawler->selectButton('Add member')->form(['add_team_member[username]' => 'owner@example.org']);
+        $crawler = $this->client->submit($form);
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('No member "owner@example.org" was found in this organization.', $crawler->text());
     }
 
     public function testAddTeamMemberToUnknownTeamReturns404(): void
