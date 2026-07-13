@@ -85,9 +85,14 @@ final readonly class OrganizationAuditProjector implements Projector
 
     private function teamName(Ulid $teamId): string
     {
+        // A member add/remove event always follows the team's own creation event, so the read-model
+        // row must exist by now; a miss signals an inconsistent projection rather than a normal state.
         $team = $this->teams->find($teamId);
+        if ($team === null) {
+            throw new \LogicException('Organization team read model not found for '.$teamId->toRfc4122().'.');
+        }
 
-        return $team !== null ? $team->name : '';
+        return $team->name;
     }
 
     private function user(?int $userId): ?User
