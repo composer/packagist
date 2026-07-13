@@ -105,7 +105,7 @@ final class OrganizationManager
     private function actorFor(User $actor, ?int $ownerId): Actor
     {
         if ($ownerId === $actor->getId()) {
-            return Actor::owner($actor);
+            return Actor::member($actor);
         }
 
         return Actor::packagistAdmin($actor);

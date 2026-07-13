@@ -125,7 +125,7 @@ final class OrganizationMembershipManager
     private function actorFor(Organization $aggregate, User $actor): Actor
     {
         if ($aggregate->isOwner($actor->getId())) {
-            return Actor::owner($actor);
+            return Actor::member($actor);
         }
 
         if ($this->security->isGranted('ROLE_ADMIN')) {
