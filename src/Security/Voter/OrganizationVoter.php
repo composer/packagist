@@ -54,13 +54,33 @@ class OrganizationVoter extends Voter
             return false;
         }
 
+        if ($organization->isDeleted()) {
+            return false;
+        }
+
+        $reason = $this->denialReason($action, $organization, $user);
+        if ($reason !== null) {
+            return $this->deny($vote, $reason);
+        }
+
+        return true;
+    }
+
+    /**
+     * The reason the action is denied, or null when it is allowed. Each owner action changes the
+     * org, so management requires an active owner with 2FA; the reasons are ordered so the most
+     * fundamental obstacle wins, and {@see OrganizationAccessDeniedReason::TwoFactorRequired} is
+     * only reported for an owner of a live org, matching what the access-denied listener acts on.
+     */
+    private function denialReason(OrganizationActions $action, Organization $organization, User $user): ?OrganizationAccessDeniedReason
+    {
         return match ($action) {
             // Owners have no visibility into a hidden org, so restore is packagist-admin only.
-            OrganizationActions::Restore => false,
+            OrganizationActions::Restore => OrganizationAccessDeniedReason::AdminOnly,
             OrganizationActions::View,
             OrganizationActions::ViewMembers,
             OrganizationActions::ViewTeams,
-            OrganizationActions::Leave => $this->isActiveMember($organization, $user),
+            OrganizationActions::Leave => $this->memberDenialReason($organization, $user),
             OrganizationActions::Edit,
             OrganizationActions::SoftDelete,
             OrganizationActions::CreateTeam,
@@ -68,27 +88,40 @@ class OrganizationVoter extends Voter
             OrganizationActions::DeleteTeam,
             OrganizationActions::AddTeamMember,
             OrganizationActions::RemoveTeamMember,
-            OrganizationActions::RemoveMember => $this->canManage($organization, $user),
+            OrganizationActions::RemoveMember => $this->manageDenialReason($organization, $user),
         };
     }
 
-    private function isActiveMember(Organization $organization, User $user): bool
+    private function memberDenialReason(Organization $organization, User $user): ?OrganizationAccessDeniedReason
     {
-        return $this->isMember($organization, $user) && !$organization->isDeleted();
+        if (!$this->isMember($organization, $user)) {
+            return OrganizationAccessDeniedReason::NotAMember;
+        }
+
+        return null;
     }
 
-    /**
-     * Every owner action changes the org, so management requires an active owner with 2FA.
-     * The 2FA gate here keeps every future owner action covered automatically.
-     */
-    private function canManage(Organization $organization, User $user): bool
+    private function manageDenialReason(Organization $organization, User $user): ?OrganizationAccessDeniedReason
     {
-        return $this->isOwner($organization, $user) && !$organization->isDeleted() && $user->isTotpAuthenticationEnabled();
+        return match (true) {
+            !$this->isOwner($organization, $user) => OrganizationAccessDeniedReason::NotAnOwner,
+            !$user->isTotpAuthenticationEnabled() => OrganizationAccessDeniedReason::TwoFactorRequired,
+            default => null,
+        };
+    }
+
+    private function deny(?Vote $vote, OrganizationAccessDeniedReason $reason): bool
+    {
+        if ($vote !== null) {
+            $vote->addReason($reason->message());
+            $vote->extraData[OrganizationAccessDeniedReason::VOTE_KEY] = $reason;
+        }
+
+        return false;
     }
 
     private function isOwner(Organization $organization, User $user): bool
     {
-        // An owner is a member of the org's bootstrapped `owners` team.
         return $this->teamMembers->isOwner($organization->ownersTeamId, $user->getId());
     }
 
