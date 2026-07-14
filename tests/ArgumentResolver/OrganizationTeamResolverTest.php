@@ -92,7 +92,6 @@ class OrganizationTeamResolverTest extends TestCase
             'ACME Corp',
             OrganizationStatus::Active,
             new \DateTimeImmutable(),
-            null,
             new Ulid(),
             new Ulid(),
         );

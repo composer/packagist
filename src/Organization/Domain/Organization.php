@@ -72,7 +72,15 @@ final class Organization extends AbstractAggregate
     public static function create(Ulid $id, Slug $slug, DisplayName $displayName, Ulid $ownersTeamId, Ulid $allMembersTeamId, int $ownerId): self
     {
         $organization = new self($id);
-        $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownersTeamId, $allMembersTeamId, $ownerId));
+
+        // Bootstrap the org through multiple events: the org itself, then its two system teams,
+        // then the creator joining each. The teams and memberships are modeled as their own events (rather
+        // than all being covered by a single OrganizationCreated event).
+        $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownersTeamId, $allMembersTeamId));
+        $organization->record(new TeamCreated($id, $ownersTeamId, self::OWNERS_TEAM_NAME, TeamCreated::KIND_SYSTEM));
+        $organization->record(new TeamCreated($id, $allMembersTeamId, self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, TeamCreated::KIND_SYSTEM));
+        $organization->record(new TeamMemberAdded($id, $ownersTeamId, $ownerId));
+        $organization->record(new TeamMemberAdded($id, $allMembersTeamId, $ownerId));
 
         return $organization;
     }
@@ -303,7 +311,7 @@ final class Organization extends AbstractAggregate
     {
         $this->assertTeamExists($teamId);
 
-        if ($this->teams[$teamId->toRfc4122()]['kind'] !== TeamCreated::KIND) {
+        if ($this->teams[$teamId->toRfc4122()]['kind'] !== TeamCreated::KIND_CUSTOM) {
             throw new TeamProtectedException('This team is protected and cannot be renamed or deleted.');
         }
     }
@@ -374,21 +382,17 @@ final class Organization extends AbstractAggregate
 
     private function applyCreated(OrganizationCreated $event): void
     {
+        // The organization teams and its members are established by the TeamCreated / TeamMemberAdded events that follow in the creation batch.
         $this->slug = $event->slug;
         $this->displayName = $event->displayName;
         $this->deleted = false;
         $this->ownersTeamId = $event->ownersTeamId;
-        $this->teams[$event->ownersTeamId->toRfc4122()] = ['kind' => 'system', 'name' => self::OWNERS_TEAM_NAME];
-        $this->teamMembers[$event->ownersTeamId->toRfc4122()] = [$event->ownerId];
-
         $this->allMembersTeamId = $event->allMembersTeamId;
-        $this->teams[$event->allMembersTeamId->toRfc4122()] = ['kind' => 'system', 'name' => self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME];
-        $this->teamMembers[$event->allMembersTeamId->toRfc4122()] = [$event->ownerId];
     }
 
     private function applyTeamCreated(TeamCreated $event): void
     {
-        $this->teams[$event->teamId->toRfc4122()] = ['kind' => TeamCreated::KIND, 'name' => $event->name];
+        $this->teams[$event->teamId->toRfc4122()] = ['kind' => $event->kind, 'name' => $event->name];
         $this->teamMembers[$event->teamId->toRfc4122()] = [];
     }
 

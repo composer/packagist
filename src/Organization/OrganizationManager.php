@@ -22,6 +22,7 @@ use App\Organization\Domain\Slug;
 use App\Organization\EventStore\Actor;
 use App\Organization\EventStore\EventStore;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Uid\Ulid;
 
 final class OrganizationManager
@@ -29,6 +30,7 @@ final class OrganizationManager
     public function __construct(
         private readonly EventStore $eventStore,
         private readonly OrganizationSlugClaimGuard $slugChecker,
+        private readonly Security $security,
     ) {
     }
 
@@ -48,7 +50,7 @@ final class OrganizationManager
         $organization = Organization::create(new Ulid(), $slug, $displayName, new Ulid(), new Ulid(), $owner->getId());
 
         try {
-            $this->eventStore->append($organization, $this->actorFor($actor, $owner->getId()), $ip);
+            $this->eventStore->append($organization, $this->actorFor($organization, $actor), $ip);
         } catch (UniqueConstraintViolationException $e) {
             throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $slug->value), 0, $e);
         }
@@ -92,22 +94,27 @@ final class OrganizationManager
         }
 
         try {
-            $this->eventStore->append($aggregate, $this->actorFor($actor, $organization->createdBy?->getId()), $ip);
+            $this->eventStore->append($aggregate, $this->actorFor($aggregate, $actor), $ip);
         } catch (UniqueConstraintViolationException $e) {
             throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $newSlug->value), 0, $e);
         }
     }
 
     /**
-     * The owner acting on their own organization is recorded as its owner; anyone else (a
-     * Packagist admin acting on their behalf) is recorded as an admin.
+     * An owner acts as a member; a platform moderator who is not an owner acts as `packagist-admin`.
+     * Mirrors {@see OrganizationMembershipManager::actorFor()} so ownership is decided by owners-team
+     * membership on the aggregate, not by who originally created the org.
      */
-    private function actorFor(User $actor, ?int $ownerId): Actor
+    private function actorFor(Organization $aggregate, User $actor): Actor
     {
-        if ($ownerId === $actor->getId()) {
+        if ($aggregate->isOwner($actor->getId())) {
             return Actor::member($actor);
         }
 
-        return Actor::packagistAdmin($actor);
+        if ($this->security->isGranted('ROLE_ADMIN')) {
+            return Actor::packagistAdmin($actor);
+        }
+
+        return Actor::member($actor);
     }
 }

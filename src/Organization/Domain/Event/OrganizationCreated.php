@@ -17,10 +17,10 @@ use App\Organization\EventStore\OrganizationEventType;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * Creates the aggregate at sequence = 1 and bootstraps the two system teams seeded with the
- * * `ownerId`: the `owners` team (making them the first owner) and the `all organization
- * * members` team (the roster every member belongs to). Both teams are part of this event (not
- * * separate user-facing TeamCreated events), so their ids and the creator are carried in the payload.
+ * Creates the aggregate at sequence = 1. It records the identity of the org and the ids of its two
+ * system teams (so those ids are stable and the roles are unambiguous), but the teams themselves and
+ * the creator's membership in each follow as their own TeamCreated / TeamMemberAdded events in the
+ * same creation batch, keeping every projection a faithful replay of first-class facts.
  */
 final readonly class OrganizationCreated implements DomainEvent
 {
@@ -32,7 +32,6 @@ final readonly class OrganizationCreated implements DomainEvent
         public string $displayName,
         public Ulid $ownersTeamId,
         public Ulid $allMembersTeamId,
-        public int $ownerId,
     ) {
     }
 
@@ -53,7 +52,6 @@ final readonly class OrganizationCreated implements DomainEvent
             'displayName' => $this->displayName,
             'ownersTeamId' => $this->ownersTeamId->toRfc4122(),
             'allMembersTeamId' => $this->allMembersTeamId->toRfc4122(),
-            'ownerId' => $this->ownerId,
         ];
     }
 
@@ -68,7 +66,6 @@ final readonly class OrganizationCreated implements DomainEvent
             (string) $payload['displayName'],
             Ulid::fromString((string) $payload['ownersTeamId']),
             Ulid::fromString((string) $payload['allMembersTeamId']),
-            (int) $payload['ownerId'],
         );
     }
 }

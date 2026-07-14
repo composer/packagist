@@ -83,47 +83,18 @@ final readonly class OrganizationReadModelProjector implements Projector
 
     private function organizationCreated(RecordedEvent $recorded, OrganizationCreated $event): void
     {
-        // The owner is recorded on the event itself, since it may differ
-        // from the actor when a Packagist admin creates the organization on someone's behalf.
-        $owner = $this->users->find($event->ownerId);
-
+        // NOTE: the two system teams and the owner's membership are set up as their own
+        // TeamCreated / TeamMemberAdded events later in the same creation batch
         $organization = new Organization(
             $event->organizationId,
             $event->slug,
             $event->displayName,
             OrganizationStatus::Active,
             $recorded->occurredAt,
-            $owner,
             $event->ownersTeamId,
             $event->allMembersTeamId,
         );
         $this->getEM()->persist($organization);
-
-        // Both system teams are bootstrapped as part of OrganizationCreated, seeded with the creator:
-        // the owners team (first owner) and the all-members team (the org-wide roster).
-        foreach ([
-            $event->ownersTeamId->toRfc4122() => \App\Organization\Domain\Organization::OWNERS_TEAM_NAME,
-            $event->allMembersTeamId->toRfc4122() => \App\Organization\Domain\Organization::ALL_ORGANIZATION_MEMBERS_TEAM_NAME,
-        ] as $teamId => $name) {
-            $teamId = Ulid::fromString($teamId);
-
-            $this->getEM()->persist(new OrganizationTeam(
-                $teamId,
-                $organization,
-                OrganizationTeamKind::System,
-                $name,
-                $owner,
-                $recorded->occurredAt,
-            ));
-
-            $this->getEM()->persist(new OrganizationTeamMember(
-                $teamId,
-                $event->ownerId,
-                $event->organizationId,
-                $owner,
-                $recorded->occurredAt,
-            ));
-        }
     }
 
     private function organizationNameChanged(OrganizationNameChanged $event): void
@@ -156,7 +127,7 @@ final readonly class OrganizationReadModelProjector implements Projector
         $this->getEM()->persist(new OrganizationTeam(
             $event->teamId,
             $this->organization($event->organizationId),
-            OrganizationTeamKind::Custom,
+            OrganizationTeamKind::from($event->kind),
             $event->name,
             $this->user($recorded->actor->userId),
             $recorded->occurredAt,

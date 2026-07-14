@@ -73,8 +73,10 @@ class OrganizationMembershipTest extends IntegrationTestCase
         $names = array_map(static fn ($t): string => $t->name, $teams);
         self::assertContains('backend', $names);
 
+        // The two system teams are also logged as created, so scope the assertion to the custom team.
         $auditCount = $connection->fetchOne(
-            "SELECT COUNT(*) FROM audit_log WHERE type = 'organization_team_created' AND organizationId = :org",
+            "SELECT COUNT(*) FROM audit_log WHERE type = 'organization_team_created' AND organizationId = :org
+             AND JSON_UNQUOTE(JSON_EXTRACT(attributes, '$.team_name')) = 'backend'",
             ['org' => $organization->id->toBinary()],
         );
         self::assertSame(1, (int) $auditCount);

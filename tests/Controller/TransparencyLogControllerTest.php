@@ -22,7 +22,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
     public function testViewOrganizationCreatedAuditLog(): void
     {
         $user = self::createUser('orgcreator', 'orgcreator@example.com', roles: ['ROLE_USER']);
-        $organization = self::createOrganization('acme', 'ACME Corp', owner: $user);
+        $organization = self::createOrganization('acme', 'ACME Corp');
         $this->store($user, $organization);
 
         $this->store(AuditRecord::organizationCreated($organization->id, $organization->slug, $organization->displayName, $user));

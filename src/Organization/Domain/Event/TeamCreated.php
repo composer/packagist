@@ -17,19 +17,24 @@ use App\Organization\EventStore\OrganizationEventType;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * A custom team is created within the org. The system `owners` team is bootstrapped by
- * {@see OrganizationCreated}, not through this path, so `kind` is always `custom` here.
+ * A team is created within the org. User-created teams are `custom`; the two system teams (`owners`
+ * and `all organization members`) are recorded with `kind = system` as part of the creation batch
+ * that {@see OrganizationCreated} opens. `kind` distinguishes the two so the protection guards know
+ * which teams cannot be renamed or deleted.
  */
 final readonly class TeamCreated implements DomainEvent
 {
     public const OrganizationEventType TYPE = OrganizationEventType::TeamCreated;
 
-    public const string KIND = 'custom';
+    public const string KIND_CUSTOM = 'custom';
+
+    public const string KIND_SYSTEM = 'system';
 
     public function __construct(
         public Ulid $organizationId,
         public Ulid $teamId,
         public string $name,
+        public string $kind = self::KIND_CUSTOM,
     ) {
     }
 
@@ -48,7 +53,7 @@ final readonly class TeamCreated implements DomainEvent
         return [
             'teamId' => $this->teamId->toRfc4122(),
             'name' => $this->name,
-            'kind' => self::KIND,
+            'kind' => $this->kind,
         ];
     }
 
@@ -61,6 +66,7 @@ final readonly class TeamCreated implements DomainEvent
             $organizationId,
             Ulid::fromString((string) $payload['teamId']),
             (string) $payload['name'],
+            (string) ($payload['kind'] ?? self::KIND_CUSTOM),
         );
     }
 }

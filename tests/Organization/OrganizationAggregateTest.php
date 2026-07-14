@@ -50,15 +50,35 @@ class OrganizationAggregateTest extends TestCase
 
         $events = $organization->pullPendingEvents();
 
-        self::assertCount(1, $events);
-        $event = $events[0];
-        self::assertInstanceOf(OrganizationCreated::class, $event);
-        self::assertTrue($id->equals($event->organizationId));
-        self::assertSame('acme', $event->slug);
-        self::assertSame('ACME Corp', $event->displayName);
-        self::assertTrue($ownersTeamId->equals($event->ownersTeamId));
-        self::assertTrue($allMembersTeamId->equals($event->allMembersTeamId));
-        self::assertSame(self::OWNER, $event->ownerId);
+        // Creation is an explicit event sequence: the org, its two system teams, then the creator
+        // joining each. Every fact is a first-class event so projections replay them uniformly.
+        self::assertCount(5, $events);
+
+        self::assertInstanceOf(OrganizationCreated::class, $events[0]);
+        self::assertTrue($id->equals($events[0]->organizationId));
+        self::assertSame('acme', $events[0]->slug);
+        self::assertSame('ACME Corp', $events[0]->displayName);
+        self::assertTrue($ownersTeamId->equals($events[0]->ownersTeamId));
+        self::assertTrue($allMembersTeamId->equals($events[0]->allMembersTeamId));
+
+        self::assertInstanceOf(TeamCreated::class, $events[1]);
+        self::assertTrue($ownersTeamId->equals($events[1]->teamId));
+        self::assertSame(Organization::OWNERS_TEAM_NAME, $events[1]->name);
+        self::assertSame(TeamCreated::KIND_SYSTEM, $events[1]->kind);
+
+        self::assertInstanceOf(TeamCreated::class, $events[2]);
+        self::assertTrue($allMembersTeamId->equals($events[2]->teamId));
+        self::assertSame(Organization::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, $events[2]->name);
+        self::assertSame(TeamCreated::KIND_SYSTEM, $events[2]->kind);
+
+        self::assertInstanceOf(TeamMemberAdded::class, $events[3]);
+        self::assertTrue($ownersTeamId->equals($events[3]->teamId));
+        self::assertSame(self::OWNER, $events[3]->userId);
+
+        self::assertInstanceOf(TeamMemberAdded::class, $events[4]);
+        self::assertTrue($allMembersTeamId->equals($events[4]->teamId));
+        self::assertSame(self::OWNER, $events[4]->userId);
+
         self::assertTrue($organization->isOwner(self::OWNER));
         self::assertTrue($organization->isOrgMember(self::OWNER));
         self::assertTrue($allMembersTeamId->equals($organization->allMembersTeamId()));
@@ -69,17 +89,18 @@ class OrganizationAggregateTest extends TestCase
         $id = new Ulid();
         $ownersTeamId = new Ulid();
         $created = Organization::create($id, new Slug('acme'), new DisplayName('ACME Corp'), $ownersTeamId, new Ulid(), self::OWNER);
-        $event = $created->pullPendingEvents()[0];
-        self::assertInstanceOf(OrganizationCreated::class, $event);
+        $history = array_map(
+            static fn ($event): array => ['type' => $event->eventType(), 'payload' => $event->toPayload()],
+            $created->pullPendingEvents(),
+        );
 
-        $reloaded = Organization::reconstitute($id, [
-            ['type' => $event->eventType(), 'payload' => $event->toPayload()],
-        ]);
+        $reloaded = Organization::reconstitute($id, $history);
 
         self::assertSame('acme', $reloaded->slug());
         self::assertSame('ACME Corp', $reloaded->displayName());
-        self::assertSame(1, $reloaded->version());
+        self::assertSame(5, $reloaded->version());
         self::assertTrue($reloaded->isOwner(self::OWNER));
+        self::assertTrue($reloaded->isOrgMember(self::OWNER));
         // History replay must not leave events pending to be appended again.
         self::assertCount(0, $reloaded->pullPendingEvents());
     }
@@ -360,7 +381,7 @@ class OrganizationAggregateTest extends TestCase
         $customTeamId = new Ulid();
         $id = new Ulid();
         $organization = Organization::reconstitute($id, [
-            ['type' => OrganizationEventType::OrganizationCreated, 'payload' => $this->createdPayload($ownersTeamId)],
+            ...$this->bootstrapHistory($ownersTeamId),
             ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'name' => 'backend', 'kind' => 'custom']],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'userId' => 2]],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'userId' => 2]],
@@ -375,7 +396,7 @@ class OrganizationAggregateTest extends TestCase
     {
         $ownersTeamId = new Ulid();
         $organization = Organization::reconstitute(new Ulid(), [
-            ['type' => OrganizationEventType::OrganizationCreated, 'payload' => $this->createdPayload($ownersTeamId)],
+            ...$this->bootstrapHistory($ownersTeamId),
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'userId' => 2]],
             ['type' => OrganizationEventType::MemberLeft, 'payload' => ['userId' => 2]],
         ]);
@@ -398,22 +419,33 @@ class OrganizationAggregateTest extends TestCase
     private function reconstituteWith(Ulid $ownersTeamId, array $extra, ?Ulid $allMembersTeamId = null): Organization
     {
         return Organization::reconstitute(new Ulid(), [
-            ['type' => OrganizationEventType::OrganizationCreated, 'payload' => $this->createdPayload($ownersTeamId, $allMembersTeamId)],
+            ...$this->bootstrapHistory($ownersTeamId, $allMembersTeamId),
             ...$extra,
         ]);
     }
 
     /**
-     * @return array<string, mixed>
+     * The full five-event creation sequence a real org starts from: the org, its two system teams,
+     * and the creator joining each. Reconstitution needs all of them to rebuild the bootstrapped state.
+     *
+     * @return list<array{type: OrganizationEventType, payload: array<string, mixed>}>
      */
-    private function createdPayload(Ulid $ownersTeamId, ?Ulid $allMembersTeamId = null): array
+    private function bootstrapHistory(Ulid $ownersTeamId, ?Ulid $allMembersTeamId = null): array
     {
+        $allMembersTeamId ??= new Ulid();
+
         return [
-            'slug' => 'acme',
-            'displayName' => 'ACME Corp',
-            'ownersTeamId' => $ownersTeamId->toRfc4122(),
-            'allMembersTeamId' => ($allMembersTeamId ?? new Ulid())->toRfc4122(),
-            'ownerId' => self::OWNER,
+            ['type' => OrganizationEventType::OrganizationCreated, 'payload' => [
+                'slug' => 'acme',
+                'displayName' => 'ACME Corp',
+                'ownersTeamId' => $ownersTeamId->toRfc4122(),
+                'allMembersTeamId' => $allMembersTeamId->toRfc4122(),
+                'ownerId' => self::OWNER,
+            ]],
+            ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'name' => Organization::OWNERS_TEAM_NAME, 'kind' => 'system']],
+            ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $allMembersTeamId->toRfc4122(), 'name' => Organization::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, 'kind' => 'system']],
+            ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'userId' => self::OWNER]],
+            ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $allMembersTeamId->toRfc4122(), 'userId' => self::OWNER]],
         ];
     }
 }

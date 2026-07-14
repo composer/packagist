@@ -35,8 +35,12 @@ class OrganizationControllerTest extends IntegrationTestCase
         $other = self::createUser('other', 'other@example.org');
         $this->store($admin, $other);
 
-        $this->store(self::createOrganization('mine', 'Admin Org', $admin));
-        $this->store(self::createOrganization('theirs', 'Their Org', $other));
+        $this->store(
+            $adminOrg = self::createOrganization('mine', 'Admin Org'),
+            $theirOrg = self::createOrganization('theirs', 'Their Org'),
+            ...self::createOwnerMembership($adminOrg, $admin),
+            ...self::createOwnerMembership($theirOrg, $other),
+        );
 
         $this->client->loginUser($admin);
         $crawler = $this->client->request('GET', '/admin/organizations');
@@ -81,8 +85,6 @@ class OrganizationControllerTest extends IntegrationTestCase
         $organization = $this->organizations()->findOneBySlug('acme');
         self::assertNotNull($organization);
         self::assertSame('ACME Corp', $organization->displayName);
-        // The selected user, not the acting admin, becomes the first owner.
-        self::assertSame($owner->getId(), $organization->createdBy?->getId());
 
         // The acting admin, not the owner, is recorded as the actor on the transparency log.
         $connection = static::getService(Connection::class);

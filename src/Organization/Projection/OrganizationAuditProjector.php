@@ -56,7 +56,9 @@ final readonly class OrganizationAuditProjector implements Projector
         }
 
         // OrganizationCreated carries its own slug/displayName and is projected before the
-        // read-model row exists, so it must not read the read model.
+        // read-model row exists, so it must not read the read model. The system teams and the
+        // creator's membership are set by their own TeamCreated / TeamMemberAdded events in the
+        // same creation batch
         if ($event instanceof OrganizationCreated) {
             $this->auditRecords->insert(AuditRecord::organizationCreated($event->organizationId, $event->slug, $event->displayName, $actor));
 

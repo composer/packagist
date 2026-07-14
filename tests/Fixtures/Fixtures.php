@@ -14,7 +14,7 @@ use Symfony\Component\Uid\Ulid;
 
 trait Fixtures
 {
-    protected static function createOrganization(string $slug, string $displayName, ?User $owner = null, ?\DateTimeImmutable $deletedAt = null): Organization
+    protected static function createOrganization(string $slug, string $displayName, ?\DateTimeImmutable $deletedAt = null): Organization
     {
         return new Organization(
             id: new Ulid(),
@@ -22,7 +22,6 @@ trait Fixtures
             displayName: $displayName,
             status: $deletedAt !== null ? OrganizationStatus::Deleted : OrganizationStatus::Active,
             createdAt: new \DateTimeImmutable(),
-            createdBy: $owner,
             ownersTeamId: new Ulid(),
             allMembersTeamId: new Ulid(),
             deletedAt: $deletedAt,

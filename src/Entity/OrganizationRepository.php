@@ -33,7 +33,7 @@ class OrganizationRepository extends ServiceEntityRepository
 
     /**
      * Live organizations owned by the given user, newest first. Ownership is membership in the org's
-     * bootstrapped `owners` team, not the historical creator recorded on `createdBy`.
+     * bootstrapped `owners` team.
      *
      * @return list<Organization>
      */

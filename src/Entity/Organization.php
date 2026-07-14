@@ -31,7 +31,6 @@ enum OrganizationStatus: string
 #[ORM\Entity(repositoryClass: OrganizationRepository::class)]
 #[ORM\Table(name: 'organization')]
 #[ORM\UniqueConstraint(name: 'org_slug_idx', columns: ['slug'])]
-#[ORM\Index(name: 'org_created_by_idx', columns: ['createdBy'])]
 class Organization
 {
     public function __construct(
@@ -50,11 +49,6 @@ class Organization
 
         #[ORM\Column(type: 'datetime_immutable')]
         public readonly \DateTimeImmutable $createdAt,
-
-        /** The creating user. Recorded for provenance; ownership is now derived from the `owners` team ({@see $ownersTeamId}). Null once the creating user is deleted, or for system/automation-created orgs. */
-        #[ORM\ManyToOne(targetEntity: User::class)]
-        #[ORM\JoinColumn(name: 'createdBy', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
-        public readonly ?User $createdBy,
 
         /** The bootstrapped system `owners` team. Set at creation; the owner check is a membership lookup against it. */
         #[ORM\Column(type: 'ulid')]
