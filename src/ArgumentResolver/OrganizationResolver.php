@@ -51,7 +51,7 @@ final readonly class OrganizationResolver implements ValueResolverInterface
             $rename = $this->slugReservationRepo->findActiveRename($slug);
             if (null !== $rename) {
                 $target = $this->organizationRepo->find($rename->orgId);
-                if (null !== $target && (!$target->isDeleted() || $this->security->isGranted('ROLE_ADMIN'))) {
+                if (null !== $target && (!$target->isDeleted() || $this->security->isGranted('ROLE_ADMIN_ORGS'))) {
                     throw new OrganizationRenamedException($target->slug);
                 }
             }
@@ -59,7 +59,7 @@ final readonly class OrganizationResolver implements ValueResolverInterface
             throw new NotFoundHttpException('Organization not found.');
         }
 
-        if ($organization->isDeleted() && !$this->security->isGranted('ROLE_ADMIN')) {
+        if ($organization->isDeleted() && !$this->security->isGranted('ROLE_ADMIN_ORGS')) {
             throw new GoneHttpException('This organization was deleted.');
         }
 
