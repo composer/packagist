@@ -12,16 +12,10 @@
 
 namespace App\Entity;
 
+use App\Organization\Domain\OrganizationTeamKind;
 use App\Organization\Domain\TeamName;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
-
-enum OrganizationTeamKind: string
-{
-    /** The bootstrapped `owners` team: org-wide access, protected from rename/delete. */
-    case System = 'system';
-    case Custom = 'custom';
-}
 
 /**
  * Read-model projection of a team within the Organization aggregate.

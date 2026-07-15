@@ -5,11 +5,11 @@ namespace App\Tests\Fixtures;
 use App\Entity\Organization;
 use App\Entity\OrganizationStatus;
 use App\Entity\OrganizationTeam;
-use App\Entity\OrganizationTeamKind;
 use App\Entity\OrganizationTeamMember;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Organization\Domain\Organization as OrganizationAggregate;
+use App\Organization\Domain\OrganizationTeamKind;
 use Symfony\Component\Uid\Ulid;
 
 trait Fixtures

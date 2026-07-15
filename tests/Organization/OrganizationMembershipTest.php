@@ -13,7 +13,6 @@
 namespace App\Tests\Organization;
 
 use App\Entity\OrganizationRepository;
-use App\Entity\OrganizationTeamKind;
 use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
@@ -21,6 +20,7 @@ use App\Organization\Domain\Exception\LastOwnerProtectedException;
 use App\Organization\Domain\Exception\ReservedTeamNameException;
 use App\Organization\Domain\Exception\TeamNameTakenException;
 use App\Organization\Domain\Exception\TeamProtectedException;
+use App\Organization\Domain\OrganizationTeamKind;
 use App\Organization\OrganizationManager;
 use App\Organization\OrganizationMembershipManager;
 use App\Tests\IntegrationTestCase;

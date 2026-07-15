@@ -31,6 +31,7 @@ use App\Organization\Domain\Exception\TeamNotFoundException;
 use App\Organization\Domain\Exception\TeamProtectedException;
 use App\Organization\Domain\Exception\TwoFactorRequiredException;
 use App\Organization\Domain\Organization;
+use App\Organization\Domain\OrganizationTeamKind;
 use App\Organization\Domain\Slug;
 use App\Organization\Domain\TeamName;
 use App\Organization\EventStore\OrganizationEventType;
@@ -64,12 +65,12 @@ class OrganizationAggregateTest extends TestCase
         self::assertInstanceOf(TeamCreated::class, $events[1]);
         self::assertTrue($ownersTeamId->equals($events[1]->teamId));
         self::assertSame(Organization::OWNERS_TEAM_NAME, $events[1]->name);
-        self::assertSame(TeamCreated::KIND_SYSTEM, $events[1]->kind);
+        self::assertSame(OrganizationTeamKind::System, $events[1]->kind);
 
         self::assertInstanceOf(TeamCreated::class, $events[2]);
         self::assertTrue($allMembersTeamId->equals($events[2]->teamId));
         self::assertSame(Organization::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, $events[2]->name);
-        self::assertSame(TeamCreated::KIND_SYSTEM, $events[2]->kind);
+        self::assertSame(OrganizationTeamKind::System, $events[2]->kind);
 
         self::assertInstanceOf(TeamMemberAdded::class, $events[3]);
         self::assertTrue($ownersTeamId->equals($events[3]->teamId));

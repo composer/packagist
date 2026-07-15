@@ -16,7 +16,6 @@ use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationStatus;
 use App\Entity\OrganizationTeam;
-use App\Entity\OrganizationTeamKind;
 use App\Entity\OrganizationTeamMember;
 use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\OrganizationTeamRepository;
@@ -127,7 +126,7 @@ final readonly class OrganizationReadModelProjector implements Projector
         $this->getEM()->persist(new OrganizationTeam(
             $event->teamId,
             $this->organization($event->organizationId),
-            OrganizationTeamKind::from($event->kind),
+            $event->kind,
             $event->name,
             $this->user($recorded->actor->userId),
             $recorded->occurredAt,

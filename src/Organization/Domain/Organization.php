@@ -63,7 +63,7 @@ final class Organization extends AbstractAggregate
 
     private ?Ulid $allMembersTeamId = null;
 
-    /** @var array<string, array{kind: string, name: string}> teamId (rfc4122) => team */
+    /** @var array<string, array{kind: OrganizationTeamKind, name: string}> teamId (rfc4122) => team */
     private array $teams = [];
 
     /** @var array<string, list<int>> teamId (rfc4122) => member user ids */
@@ -77,8 +77,8 @@ final class Organization extends AbstractAggregate
         // then the creator joining each. The teams and memberships are modeled as their own events (rather
         // than all being covered by a single OrganizationCreated event).
         $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownersTeamId, $allMembersTeamId));
-        $organization->record(new TeamCreated($id, $ownersTeamId, self::OWNERS_TEAM_NAME, TeamCreated::KIND_SYSTEM));
-        $organization->record(new TeamCreated($id, $allMembersTeamId, self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, TeamCreated::KIND_SYSTEM));
+        $organization->record(new TeamCreated($id, $ownersTeamId, self::OWNERS_TEAM_NAME, OrganizationTeamKind::System));
+        $organization->record(new TeamCreated($id, $allMembersTeamId, self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, OrganizationTeamKind::System));
         $organization->record(new TeamMemberAdded($id, $ownersTeamId, $ownerId));
         $organization->record(new TeamMemberAdded($id, $allMembersTeamId, $ownerId));
 
@@ -311,7 +311,7 @@ final class Organization extends AbstractAggregate
     {
         $this->assertTeamExists($teamId);
 
-        if ($this->teams[$teamId->toRfc4122()]['kind'] !== TeamCreated::KIND_CUSTOM) {
+        if ($this->teams[$teamId->toRfc4122()]['kind'] !== OrganizationTeamKind::Custom) {
             throw new TeamProtectedException('This team is protected and cannot be renamed or deleted.');
         }
     }
