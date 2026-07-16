@@ -38,7 +38,14 @@ final readonly class OrganizationAuditProjector implements Projector
     public function project(RecordedEvent $recorded): void
     {
         $event = $recorded->event;
-        $actor = $recorded->actor->userId !== null ? $this->users->find($recorded->actor->userId) : null;
+        $actor = null;
+        if ($recorded->actor->userId !== null) {
+            $actor = $this->users->find($recorded->actor->userId);
+        }
+
+        if (!$actor) {
+            throw new \RuntimeException('Missing actor: ' . $recorded->actor->userId);
+        }
 
         $this->auditRecords->insert(
             match (true) {

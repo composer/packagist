@@ -169,7 +169,7 @@ class AuditRecord
         );
     }
 
-    public static function organizationCreated(Ulid $organizationId, string $slug, string $displayName, ?User $actor): self
+    public static function organizationCreated(Ulid $organizationId, string $slug, string $displayName, User $actor): self
     {
         return new self(
             AuditRecordType::OrganizationCreated,
@@ -177,12 +177,12 @@ class AuditRecord
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'actor' => self::getUserData($actor),
             ],
-            $actor?->getId(),
+            $actor->getId(),
             organizationId: $organizationId,
         );
     }
 
-    public static function organizationNameChanged(Ulid $organizationId, string $slug, string $displayName, string $previousDisplayName, ?User $actor): self
+    public static function organizationNameChanged(Ulid $organizationId, string $slug, string $displayName, string $previousDisplayName, User $actor): self
     {
         return new self(
             AuditRecordType::OrganizationNameChanged,
@@ -192,12 +192,12 @@ class AuditRecord
                 'org_name_to' => $displayName,
                 'actor' => self::getUserData($actor),
             ],
-            $actor?->getId(),
+            $actor->getId(),
             organizationId: $organizationId,
         );
     }
 
-    public static function organizationSlugChanged(Ulid $organizationId, string $slug, string $displayName, string $previousSlug, ?User $actor): self
+    public static function organizationSlugChanged(Ulid $organizationId, string $slug, string $displayName, string $previousSlug, User $actor): self
     {
         return new self(
             AuditRecordType::OrganizationSlugChanged,
@@ -207,7 +207,7 @@ class AuditRecord
                 'org_slug_to' => $slug,
                 'actor' => self::getUserData($actor),
             ],
-            $actor?->getId(),
+            $actor->getId(),
             organizationId: $organizationId,
         );
     }
