@@ -641,9 +641,9 @@ class PackageController extends Controller
             $data['hasVersionsFlaggedAsMalware'] = [];
             $packageVersionsFlaggedAsMalware = $this->getEM()->getRepository(FilterListEntry::class)->getPackageVersionsFlaggedAsMalwareForPackage($package);
             foreach ($packageVersionsFlaggedAsMalware as $packageVersionFlaggedAsMalware) {
-                $normalizedVersion = $versionParser->normalize($packageVersionFlaggedAsMalware->getVersion());
+                $constraint = $versionParser->parseConstraints($packageVersionFlaggedAsMalware->getVersion());
                 foreach ($versions as $version) {
-                    if ($version->getNormalizedVersion() === $normalizedVersion) {
+                    if ($constraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
                         $data['hasVersionsFlaggedAsMalware'][$version->getId()] = true;
                         $data['listsFlaggingVersionsAsMalware'][$packageVersionFlaggedAsMalware->getSource()->value] = $packageVersionFlaggedAsMalware->getSource();
                     }
