@@ -71,11 +71,6 @@ class Organization
         return $this->deletedAt !== null;
     }
 
-    public function changeName(string $displayName): void
-    {
-        $this->displayName = $displayName;
-    }
-
     public function changeSlug(string $slug): void
     {
         $this->slug = $slug;

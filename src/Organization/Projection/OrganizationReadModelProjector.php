@@ -76,12 +76,12 @@ final readonly class OrganizationReadModelProjector implements Projector
 
     private function organizationNameChanged(OrganizationNameChanged $event): void
     {
-        $this->organization($event->organizationId)->changeName($event->displayName);
+        $this->organization($event->organizationId)->displayName = $event->displayName;
     }
 
     private function organizationSlugChanged(RecordedEvent $recorded, OrganizationSlugChanged $event): void
     {
-        $this->organization($event->organizationId)->changeSlug($event->slug);
+        $this->organization($event->organizationId)->slug = $event->slug;
 
         // Reclaiming a slug the org previously freed (e.g. acme -> acme-inc -> acme):
         // release the now-stale reservation (kept for the audit trail) so the slug is live
