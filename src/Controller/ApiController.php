@@ -401,6 +401,9 @@ class ApiController extends Controller
         if ($updatedSince > 0 && \count($packageNames) > 0) {
             return new JsonResponse(['status' => 'error', 'message' => 'Pass only one of "updatedSince" OR "packages" parameters, they cannot be provided together.'], 400);
         }
+        if (!array_is_list($packageNames)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Pass an array of package names as the "packages" parameter, e.g. packages[]=foo/bar&packages[]=baz/qux'], 400);
+        }
 
         $statsd->increment('advisory_api');
 
