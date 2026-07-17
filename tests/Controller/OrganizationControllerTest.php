@@ -185,7 +185,7 @@ class OrganizationControllerTest extends IntegrationTestCase
     public function testSettingsForbiddenForNonOwner(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
-        $intruder = self::createUser('intruder', 'intruder@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $intruder = self::createUser('intruder', 'intruder@example.org');
         $this->store($owner, $intruder);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
