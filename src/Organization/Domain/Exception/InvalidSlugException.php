@@ -10,15 +10,12 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Security\Voter;
+namespace App\Organization\Domain\Exception;
 
 /**
- * Organization actions guarded by {@see OrganizationVoter}.
+ * The slug is reserved (deny-list) or collides with a vendor prefix the user cannot access.
+ * Nothing is appended to the event stream.
  */
-enum OrganizationActions: string
+final class InvalidSlugException extends OrganizationException
 {
-    case Edit = 'edit';
-    // Groundwork for org deletion (not yet implemented).
-    case SoftDelete = 'soft-delete';
-    case Restore = 'restore';
 }

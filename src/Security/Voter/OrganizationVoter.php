@@ -41,6 +41,8 @@ class OrganizationVoter extends Voter
 
         $action = OrganizationActions::from($attribute);
 
+        // A packagist-admin may perform any owner action on any org for moderation, and is
+        // the only actor who can restore. Their authority derives from admin status.
         if ($this->security->isGranted('ROLE_ADMIN_ORGS')) {
             return true;
         }
@@ -53,8 +55,7 @@ class OrganizationVoter extends Voter
         return match ($action) {
             // Owners have no visibility into a hidden org, so restore is packagist-admin only.
             OrganizationActions::Restore => false,
-            OrganizationActions::EditDisplayInfo,
-            OrganizationActions::EditSlug,
+            OrganizationActions::Edit,
             OrganizationActions::SoftDelete => $this->isOwner($organization, $user) && !$organization->isDeleted(),
         };
     }

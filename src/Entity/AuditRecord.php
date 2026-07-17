@@ -169,7 +169,7 @@ class AuditRecord
         );
     }
 
-    public static function organizationCreated(Ulid $organizationId, string $slug, string $displayName, ?User $actor): self
+    public static function organizationCreated(Ulid $organizationId, string $slug, string $displayName, User $actor): self
     {
         return new self(
             AuditRecordType::OrganizationCreated,
@@ -177,7 +177,37 @@ class AuditRecord
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'actor' => self::getUserData($actor),
             ],
-            $actor?->getId(),
+            $actor->getId(),
+            organizationId: $organizationId,
+        );
+    }
+
+    public static function organizationNameChanged(Ulid $organizationId, string $slug, string $displayName, string $previousDisplayName, User $actor): self
+    {
+        return new self(
+            AuditRecordType::OrganizationNameChanged,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'org_name_from' => $previousDisplayName,
+                'org_name_to' => $displayName,
+                'actor' => self::getUserData($actor),
+            ],
+            $actor->getId(),
+            organizationId: $organizationId,
+        );
+    }
+
+    public static function organizationSlugChanged(Ulid $organizationId, string $slug, string $displayName, string $previousSlug, User $actor): self
+    {
+        return new self(
+            AuditRecordType::OrganizationSlugChanged,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'org_slug_from' => $previousSlug,
+                'org_slug_to' => $slug,
+                'actor' => self::getUserData($actor),
+            ],
+            $actor->getId(),
             organizationId: $organizationId,
         );
     }

@@ -14,6 +14,8 @@ namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UlidType;
+use Symfony\Component\Uid\Ulid;
 
 /**
  * @extends ServiceEntityRepository<SlugReservation>
@@ -27,15 +29,54 @@ class SlugReservationRepository extends ServiceEntityRepository
 
     /**
      * Whether the slug is currently held by an active (not yet released) reservation.
+     *
+     * Reservations owned by $exceptOrgId are ignored so an organization can reclaim a
+     * slug it previously freed by renaming (e.g. acme -> acme-inc -> acme).
      */
-    public function isReserved(string $slug): bool
+    public function isReserved(string $slug, ?Ulid $exceptOrgId = null): bool
     {
-        return (bool) $this->createQueryBuilder('r')
+        $qb = $this->createQueryBuilder('r')
             ->select('COUNT(r.id)')
-            ->where('r.slug = :slug')
-            ->andWhere('r.releasedAt IS NULL')
+            ->where('r.activeSlug = :slug')
+            ->setParameter('slug', $slug);
+
+        if ($exceptOrgId !== null) {
+            $qb->andWhere('r.orgId != :orgId')
+                ->setParameter('orgId', $exceptOrgId, UlidType::NAME);
+        }
+
+        return (bool) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * The active (not yet released) reservation left behind by a rename, if any.
+     *
+     * Only `RenamedFrom` reservations are returned: they point at an organization that still
+     * exists under a new slug, so the old slug can redirect to it. `Deleted` reservations are
+     * excluded on purpose, they keep showing the gone page rather than redirecting.
+     */
+    public function findActiveRename(string $slug): ?SlugReservation
+    {
+        return $this->createQueryBuilder('r')
+            ->where('r.activeSlug = :slug')
+            ->andWhere('r.kind = :kind')
             ->setParameter('slug', $slug)
+            ->setParameter('kind', SlugReservationKind::RenamedFrom)
             ->getQuery()
-            ->getSingleScalarResult();
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * The active (not yet released) reservation an organization holds for this slug, if any.
+     */
+    public function findActiveForOrg(string $slug, Ulid $orgId): ?SlugReservation
+    {
+        return $this->createQueryBuilder('r')
+            ->where('r.activeSlug = :slug')
+            ->andWhere('r.orgId = :orgId')
+            ->setParameter('slug', $slug)
+            ->setParameter('orgId', $orgId, UlidType::NAME)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

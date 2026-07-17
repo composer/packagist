@@ -16,6 +16,10 @@ use App\ArgumentResolver\OrganizationResolver;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationStatus;
+use App\Entity\SlugReservation;
+use App\Entity\SlugReservationKind;
+use App\Entity\SlugReservationRepository;
+use App\Organization\Http\OrganizationRenamedException;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,7 +33,7 @@ class OrganizationResolverTest extends TestCase
     public function testReturnsEmptyForNonOrganizationArgument(): void
     {
         $organizationRepo = $this->createStub(OrganizationRepository::class);
-        $resolver = new OrganizationResolver($organizationRepo, $this->createStub(Security::class));
+        $resolver = new OrganizationResolver($organizationRepo, $this->reservations(), $this->createStub(Security::class));
 
         $request = new Request(attributes: ['slug' => 'acme']);
 
@@ -41,7 +45,7 @@ class OrganizationResolverTest extends TestCase
         $organization = $this->organization('acme');
         $organizationRepo = $this->createStub(OrganizationRepository::class);
         $organizationRepo->method('findOneBySlug')->willReturn($organization);
-        $resolver = new OrganizationResolver($organizationRepo, $this->createStub(Security::class));
+        $resolver = new OrganizationResolver($organizationRepo, $this->reservations(), $this->createStub(Security::class));
 
         $request = new Request(attributes: ['organization' => 'acme']);
 
@@ -52,9 +56,49 @@ class OrganizationResolverTest extends TestCase
     {
         $organizationRepo = $this->createStub(OrganizationRepository::class);
         $organizationRepo->method('findOneBySlug')->willReturn(null);
-        $resolver = new OrganizationResolver($organizationRepo, $this->createStub(Security::class));
+        $resolver = new OrganizationResolver($organizationRepo, $this->reservations(), $this->createStub(Security::class));
 
         $request = new Request(attributes: ['organization' => 'missing']);
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $resolver->resolve($request, $this->argument());
+    }
+
+    public function testRedirectsToCurrentSlugWhenActiveRenameReservationExists(): void
+    {
+        $current = $this->organization('acme-inc');
+        $reservation = new SlugReservation(new Ulid(), 'acme', $current->id, SlugReservationKind::RenamedFrom, new \DateTimeImmutable());
+
+        $organizations = $this->createStub(OrganizationRepository::class);
+        $organizations->method('findOneBySlug')->willReturn(null);
+        $organizations->method('find')->willReturn($current);
+        $reservations = $this->createStub(SlugReservationRepository::class);
+        $reservations->method('findActiveRename')->willReturn($reservation);
+        $resolver = new OrganizationResolver($organizations, $reservations, $this->createStub(Security::class));
+
+        $request = new Request(attributes: ['organization' => 'acme']);
+
+        try {
+            $resolver->resolve($request, $this->argument());
+            self::fail('Expected OrganizationRenamedException.');
+        } catch (OrganizationRenamedException $e) {
+            self::assertSame('acme-inc', $e->currentSlug);
+        }
+    }
+
+    public function testThrowsNotFoundWhenRenameTargetIsDeleted(): void
+    {
+        $reservation = new SlugReservation(new Ulid(), 'acme', new Ulid(), SlugReservationKind::RenamedFrom, new \DateTimeImmutable());
+
+        $organizations = $this->createStub(OrganizationRepository::class);
+        $organizations->method('findOneBySlug')->willReturn(null);
+        $organizations->method('find')->willReturn($this->organization('acme-inc', deleted: true));
+        $reservations = $this->createStub(SlugReservationRepository::class);
+        $reservations->method('findActiveRename')->willReturn($reservation);
+        $resolver = new OrganizationResolver($organizations, $reservations, $this->createStub(Security::class));
+
+        $request = new Request(attributes: ['organization' => 'acme']);
 
         $this->expectException(NotFoundHttpException::class);
 
@@ -67,7 +111,7 @@ class OrganizationResolverTest extends TestCase
         $organizationRepo->method('findOneBySlug')->willReturn($this->organization('acme', deleted: true));
         $security = $this->createStub(Security::class);
         $security->method('isGranted')->willReturn(false);
-        $resolver = new OrganizationResolver($organizationRepo, $security);
+        $resolver = new OrganizationResolver($organizationRepo, $this->reservations(), $security);
 
         $request = new Request(attributes: ['organization' => 'acme']);
 
@@ -83,7 +127,7 @@ class OrganizationResolverTest extends TestCase
         $organizationRepo->method('findOneBySlug')->willReturn($organization);
         $security = $this->createStub(Security::class);
         $security->method('isGranted')->willReturn(true);
-        $resolver = new OrganizationResolver($organizationRepo, $security);
+        $resolver = new OrganizationResolver($organizationRepo, $this->reservations(), $security);
 
         $request = new Request(attributes: ['organization' => 'acme']);
 
@@ -93,6 +137,11 @@ class OrganizationResolverTest extends TestCase
     private function argument(string $name = 'organization', ?string $type = Organization::class): ArgumentMetadata
     {
         return new ArgumentMetadata($name, $type, false, false, null);
+    }
+
+    private function reservations(): SlugReservationRepository
+    {
+        return $this->createStub(SlugReservationRepository::class);
     }
 
     private function organization(string $slug, bool $deleted = false): Organization

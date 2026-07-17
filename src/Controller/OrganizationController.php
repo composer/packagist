@@ -15,11 +15,12 @@ namespace App\Controller;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
-use App\Form\Model\CreateOrganizationRequest;
-use App\Form\Type\CreateOrganizationType;
+use App\Form\Model\OrganizationDetailsRequest;
+use App\Form\Type\OrganizationDetailsType;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Slug;
 use App\Organization\OrganizationManager;
+use App\Security\Voter\OrganizationActions;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -56,8 +57,8 @@ class OrganizationController extends Controller
             return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
-        $createRequest = new CreateOrganizationRequest();
-        $form = $this->createForm(CreateOrganizationType::class, $createRequest);
+        $createRequest = new OrganizationDetailsRequest();
+        $form = $this->createForm(OrganizationDetailsType::class, $createRequest);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -87,6 +88,49 @@ class OrganizationController extends Controller
     {
         return $this->render('organization/show.html.twig', [
             'organization' => $organization,
+        ]);
+    }
+
+    #[Route(path: '/organizations/{organization}/settings', name: 'organization_settings', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
+    public function settings(Request $request, Organization $organization, #[CurrentUser] User $user): Response
+    {
+        $this->denyAccessUnlessGranted(OrganizationActions::Edit->value, $organization);
+
+        // 2FA is required to manage organization settings
+        if (!$user->isTotpAuthenticationEnabled()) {
+            $this->addFlash('error', 'You must enable two-factor authentication to manage an organization.');
+
+            return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
+        }
+
+        $editRequest = new OrganizationDetailsRequest();
+        $editRequest->slug = $organization->slug;
+        $editRequest->displayName = $organization->displayName;
+
+        $form = $this->createForm(OrganizationDetailsType::class, $editRequest, ['include_rename_notice' => true]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $this->organizationManager->edit(
+                    $organization,
+                    $user,
+                    $editRequest->slug,
+                    $editRequest->displayName,
+                    $request->getClientIp(),
+                );
+
+                $this->addFlash('success', 'Organization settings edited.');
+
+                return $this->redirectToRoute('organization_settings', ['organization' => $organization->slug]);
+            } catch (OrganizationException $e) {
+                $form->addError(new FormError($e->getMessage()));
+            }
+        }
+
+        return $this->render('organization/settings.html.twig', [
+            'organization' => $organization,
+            'form' => $form->createView(),
         ]);
     }
 }

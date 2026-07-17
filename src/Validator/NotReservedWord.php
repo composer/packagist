@@ -17,7 +17,7 @@ use Symfony\Component\Validator\Constraint;
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 class NotReservedWord extends Constraint
 {
-    public string $message = 'This is a reserved word.';
+    public string $message = '"{{ value }}" is a reserved name and cannot be used.';
 
     public function getTargets(): string
     {

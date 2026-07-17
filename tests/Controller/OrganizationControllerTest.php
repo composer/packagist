@@ -15,6 +15,7 @@ namespace App\Tests\Controller;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\User;
+use App\Organization\OrganizationManager;
 use App\Tests\IntegrationTestCase;
 
 class OrganizationControllerTest extends IntegrationTestCase
@@ -148,8 +149,8 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/create');
 
         $form = $crawler->selectButton('Create organization')->form([
-            'create_organization[displayName]' => 'ACME Corp',
-            'create_organization[slug]' => 'acme',
+            'organization_details[displayName]' => 'ACME Corp',
+            'organization_details[slug]' => 'acme',
         ]);
         $this->client->submit($form);
 
@@ -170,15 +171,125 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/create');
 
         $form = $crawler->selectButton('Create organization')->form([
-            'create_organization[displayName]' => 'Acme Corp',
-            'create_organization[slug]' => 'composer',
+            'organization_details[displayName]' => 'Acme Corp',
+            'organization_details[slug]' => 'composer',
         ]);
         $crawler = $this->client->submit($form);
 
-        // The OrganizationException is caught and surfaced as a form error, not a 500.
+        // A reserved slug is rejected by form validation and surfaced as a form error, not a 500.
         self::assertResponseIsSuccessful();
-        $this->assertFormError('"composer" is a reserved name and cannot be used.', 'create_organization', $crawler);
+        $this->assertFormError('"composer" is a reserved name and cannot be used.', 'organization_details', $crawler);
         self::assertNull($this->organizations()->findOneBySlug('composer'));
+    }
+
+    public function testSettingsForbiddenForNonOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $intruder = self::createUser('intruder', 'intruder@example.org');
+        $this->store($owner, $intruder);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($intruder);
+        $this->client->request('GET', '/organizations/acme/settings');
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testSettingsRedirectsOwnerWithoutTwoFactor(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $this->store($owner);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/organizations/acme/settings');
+
+        // 2FA is required to manage an organization.
+        self::assertResponseRedirects();
+    }
+
+    public function testSettingsRendersPrefilledFormForOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/settings');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->selectButton('Save changes'));
+        self::assertSame('ACME Corp', $crawler->filter('#organization_details_displayName')->attr('value'));
+        self::assertSame('acme', $crawler->filter('#organization_details_slug')->attr('value'));
+    }
+
+    public function testOwnerRenamesViaSettings(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        // Create through the event store so the aggregate has a history to update.
+        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/settings');
+
+        $form = $crawler->selectButton('Save changes')->form([
+            'organization_details[displayName]' => 'ACME Inc',
+            'organization_details[slug]' => 'acme',
+        ]);
+        $this->client->submit($form);
+
+        self::assertResponseRedirects('/organizations/acme/settings');
+
+        $organization = $this->organizations()->findOneBySlug('acme');
+        self::assertNotNull($organization);
+        self::assertSame('ACME Inc', $organization->displayName);
+    }
+
+    public function testShowRedirectsOldSlugToCurrentSlug(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $this->store($owner);
+
+        $this->renameOrganization($owner, 'acme', 'acme-inc');
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/organizations/acme');
+
+        // The old slug redirects (temporarily) to the current slug while the reservation is active.
+        self::assertResponseRedirects('/organizations/acme-inc', 302);
+    }
+
+    public function testRedirectPreservesTheRouteForOldSlug(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+
+        $this->renameOrganization($owner, 'acme', 'acme-inc');
+
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/organizations/acme/settings');
+
+        self::assertResponseRedirects('/organizations/acme-inc/settings', 302);
+    }
+
+    /**
+     * Creates an organization and renames its slug through the event store, leaving an active
+     * `RenamedFrom` reservation for the old slug.
+     */
+    private function renameOrganization(User $owner, string $from, string $to): void
+    {
+        $manager = static::getService(OrganizationManager::class);
+        $manager->create($owner, $from, 'ACME Corp', null);
+
+        $organization = $this->organizations()->findOneBySlug($from);
+        self::assertNotNull($organization);
+
+        $manager->edit($organization, $owner, $to, 'ACME Corp', null);
     }
 
     private function createAdminWithTwoFactor(): User
@@ -208,6 +319,6 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     private function organizations(): OrganizationRepository
     {
-        return static::getContainer()->get(OrganizationRepository::class);
+        return static::getService(OrganizationRepository::class);
     }
 }

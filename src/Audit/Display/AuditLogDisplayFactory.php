@@ -330,6 +330,22 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
+            AuditRecordType::OrganizationNameChanged => new OrganizationNameChangedDisplay(
+                $record->datetime,
+                OrganizationDisplay::fromRecord($record->attributes['organization']),
+                $record->attributes['org_name_from'],
+                $record->attributes['org_name_to'],
+                $this->buildActor($record->attributes['actor']),
+                $record->ip,
+            ),
+            AuditRecordType::OrganizationSlugChanged => new OrganizationSlugChangedDisplay(
+                $record->datetime,
+                OrganizationDisplay::fromRecord($record->attributes['organization']),
+                $record->attributes['org_slug_from'],
+                $record->attributes['org_slug_to'],
+                $this->buildActor($record->attributes['actor']),
+                $record->ip,
+            ),
         };
     }
 

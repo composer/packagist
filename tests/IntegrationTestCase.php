@@ -64,9 +64,14 @@ class IntegrationTestCase extends WebTestCase
     protected function assertFormError(string $message, string $formName, Crawler $crawler): void
     {
         $formCrawler = $crawler->filter(\sprintf('[name="%s"]', $formName));
+        // Match on the rendered text rather than a CSS `:contains("…")` selector, which breaks when
+        // the message itself contains double quotes (e.g. '"composer" is a reserved name…').
+        $matching = $formCrawler->filter('.alert-danger')->reduce(
+            static fn (Crawler $node): bool => str_contains($node->text(), $message),
+        );
         $this->assertCount(
             1,
-            $formCrawler->filter('.alert-danger:contains("'.$message.'")'),
+            $matching,
             $formCrawler->html()."\nShould find an .alert-danger within the form with the message: '$message'",
         );
     }

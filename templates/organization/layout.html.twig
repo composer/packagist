@@ -1,0 +1,23 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <h2 class="title">
+        {{ organization.displayName }}
+        {# Groundwork for org deletion (not yet implemented). #}
+        {% if organization.deleted %}
+            <span class="label label-warning">deleted</span>
+        {% endif %}
+    </h2>
+
+    <section class="row">
+        <div class="col-md-3">
+            {{ knp_menu_render('organization_menu', {'currentClass': 'active', 'allow_safe_labels': true}) }}
+        </div>
+
+        <div class="col-md-9">
+            {% block org_content %}{% endblock %}
+        </div>
+    </section>
+{% endblock %}

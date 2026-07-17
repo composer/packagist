@@ -40,10 +40,10 @@ class Organization
         public readonly Ulid $id,
 
         #[ORM\Column(length: Slug::MAX_LENGTH)]
-        public readonly string $slug,
+        public string $slug,
 
         #[ORM\Column(length: 60)]
-        public readonly string $displayName,
+        public string $displayName,
 
         #[ORM\Column(length: 16)]
         public readonly OrganizationStatus $status,
