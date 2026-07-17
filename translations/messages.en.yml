@@ -28,6 +28,7 @@ menu:
     organization_overview: Overview
     organization_teams: Teams
     organization_members: Members
+    organization_invitations: Invitations
     organization_settings: Settings
     organization_audit_log: Audit log
 
@@ -232,6 +233,7 @@ audit_log:
         organization_team_deleted: Team deleted
         organization_team_member_added: Team member added
         organization_team_member_removed: Team member removed
+        organization_member_joined: Member joined
         organization_member_removed: Member removed
         organization_member_left: Member left
     enums:

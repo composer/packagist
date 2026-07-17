@@ -20,4 +20,6 @@ enum ActorLabel: string
     case User = 'user';
     case PackagistAdmin = 'packagist-admin';
     case Automation = 'automation';
+    /** No human actor: e.g. lazily expiring an invitation during link validation. */
+    case System = 'system';
 }

@@ -47,26 +47,48 @@ final readonly class EventStore
      */
     public function append(AbstractAggregate $aggregate, Actor $actor, ?string $ip): void
     {
-        $events = $aggregate->pullPendingEvents();
-        if ($events === []) {
+        $this->appendAll([$aggregate], $actor, $ip);
+    }
+
+    /**
+     * Persist the pending events of several aggregates and project them all in one transaction. Use this
+     * for a command that must atomically touch more than one stream (e.g. accepting an invitation, which
+     * resolves the invitation aggregate and adds the org membership together). Each aggregate keeps its
+     * own sequence; events are appended in the given aggregate order.
+     *
+     * @param iterable<AbstractAggregate> $aggregates
+     *
+     * @throws ConcurrencyException               on an (aggregateId, sequence) conflict; reload and retry
+     * @throws UniqueConstraintViolationException on a projection uniqueness conflict (e.g. slug)
+     */
+    public function appendAll(iterable $aggregates, Actor $actor, ?string $ip): void
+    {
+        /** @var list<array{aggregate: AbstractAggregate, sequence: int, event: DomainEvent}> $pending */
+        $pending = [];
+        foreach ($aggregates as $aggregate) {
+            $sequence = $aggregate->version();
+            foreach ($aggregate->pullPendingEvents() as $event) {
+                $pending[] = ['aggregate' => $aggregate, 'sequence' => ++$sequence, 'event' => $event];
+            }
+        }
+
+        if ($pending === []) {
             return;
         }
 
-        $expectedVersion = $aggregate->version();
         $now = new \DateTimeImmutable();
 
         try {
             // Open the transaction on the connection rather than via EntityManager::wrapInTransaction():
             // a connection-level rollback is independent of whether the failing flush closed the EM.
-            $this->getEM()->wrapInTransaction(function (EntityManagerInterface $em) use ($events, $expectedVersion, $aggregate, $actor, $ip, $now): void {
-                $sequence = $expectedVersion;
-                foreach ($events as $event) {
-                    ++$sequence;
+            $this->getEM()->wrapInTransaction(function (EntityManagerInterface $em) use ($pending, $actor, $ip, $now): void {
+                foreach ($pending as $item) {
+                    $event = $item['event'];
 
                     $stored = new OrganizationEvent(
                         new Ulid(),
-                        $aggregate->id,
-                        $sequence,
+                        $item['aggregate']->id,
+                        $item['sequence'],
                         $event->eventType(),
                         $event->toPayload(),
                         $actor->label->value,
@@ -80,7 +102,7 @@ final readonly class EventStore
                     $em->persist($stored);
                     $em->flush();
 
-                    $recorded = new RecordedEvent($stored->id, $event, $sequence, $actor, $now, $ip);
+                    $recorded = new RecordedEvent($stored->id, $event, $item['sequence'], $actor, $now, $ip);
                     foreach ($this->projectors as $projector) {
                         $projector->project($recorded);
                     }
@@ -90,7 +112,7 @@ final readonly class EventStore
             $this->doctrine->resetManager();
 
             if (str_contains($e->getMessage(), 'org_event_seq_idx')) {
-                throw new ConcurrencyException('Concurrent modification of aggregate '.$aggregate->id->toRfc4122().'.', 0, $e);
+                throw new ConcurrencyException('Concurrent modification of an organization aggregate.', 0, $e);
             }
 
             throw $e;

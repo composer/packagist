@@ -19,6 +19,8 @@ use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Entity\UserRepository;
+use App\Organization\Domain\Event\InvitationEvent;
+use App\Organization\Domain\Event\MemberJoinedViaInvitation;
 use App\Organization\Domain\Event\MemberLeft;
 use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
@@ -50,6 +52,13 @@ final readonly class OrganizationAuditProjector implements Projector
     public function project(RecordedEvent $recorded): void
     {
         $event = $recorded->event;
+
+        // Pre-membership invitation events are never published; only the join (via the org stream's
+        // MemberJoinedViaInvitation) reaches the public transparency log.
+        if ($event instanceof InvitationEvent) {
+            return;
+        }
+
         $actor = $this->user($recorded->actor->userId);
         if ($actor === null) {
             throw new \RuntimeException('Missing actor: ' . $recorded->actor->userId);
@@ -77,12 +86,23 @@ final readonly class OrganizationAuditProjector implements Projector
                 $event instanceof TeamRenamed => AuditRecord::organizationTeamRenamed($event->organizationId, $org->slug, $org->displayName, $event->previousName, $event->name, $actor),
                 $event instanceof TeamDeleted => AuditRecord::organizationTeamDeleted($event->organizationId, $org->slug, $org->displayName, $event->name, $actor),
                 $event instanceof TeamMemberAdded => AuditRecord::organizationTeamMemberAdded($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
+                $event instanceof MemberJoinedViaInvitation => AuditRecord::organizationMemberJoined($event->organizationId, $org->slug, $org->displayName, $this->teamNames($event->teamIds), $this->user($event->userId)),
                 $event instanceof TeamMemberRemoved => AuditRecord::organizationTeamMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
                 $event instanceof MemberRemoved => AuditRecord::organizationMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId), $actor),
                 $event instanceof MemberLeft => AuditRecord::organizationMemberLeft($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId)),
                 default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
             }
         );
+    }
+
+    /**
+     * @param list<Ulid> $teamIds
+     *
+     * @return list<string>
+     */
+    private function teamNames(array $teamIds): array
+    {
+        return array_map(fn (Ulid $teamId): string => $this->teamName($teamId), $teamIds);
     }
 
     private function teamName(Ulid $teamId): string

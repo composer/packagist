@@ -1,0 +1,58 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block title %}Invitations - {{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block org_content %}
+    <h3 class="title">Invitations</h3>
+
+    <p>
+        <a class="btn btn-success" href="{{ path('organization_invitation_create', { organization: organization.slug }) }}">Invite a member</a>
+    </p>
+
+    {% if invitations is empty %}
+        <p>No invitations have been sent yet.</p>
+    {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Teams</th>
+                    <th>Status</th>
+                    <th>Last sent</th>
+                    <th>Expires</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in invitations %}
+                    {% set invitation = row.invitation %}
+                    <tr>
+                        <td>{{ invitation.email }}</td>
+                        <td>
+                            {% for name in row.teamNames %}
+                                <span class="label label-default">{{ name }}</span>
+                            {% endfor %}
+                        </td>
+                        <td><span class="label label-{{ invitation.status.value == 'pending' ? 'info' : (invitation.status.value == 'accepted' ? 'success' : 'default') }}">{{ invitation.status.value }}</span></td>
+                        <td>{{ invitation.lastSentAt|date('Y-m-d H:i') }}</td>
+                        <td>{{ invitation.expiresAt|date('Y-m-d H:i') }}</td>
+                        {# btn-group-xs is the app's small-button hook (.btn-group-xs .btn); plain btn-xs is
+                           overridden by the app's .btn padding. Each action is its own CSRF-protected form. #}
+                        <td class="text-right btn-group-xs" style="white-space:nowrap">
+                            {% if invitation.pending %}
+                                <form method="post" action="{{ path('organization_invitation_resend', { organization: organization.slug, invitation: invitation.id }) }}" style="display:inline-block">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('invitation') }}">
+                                    <button class="btn btn-default" type="submit">Resend</button>
+                                </form>
+                                <form method="post" action="{{ path('organization_invitation_revoke', { organization: organization.slug, invitation: invitation.id }) }}" style="display:inline-block; margin-left:4px">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('invitation') }}">
+                                    <button class="btn btn-danger" type="submit">Revoke</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

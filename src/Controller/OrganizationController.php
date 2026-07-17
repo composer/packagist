@@ -16,6 +16,9 @@ use App\Audit\AuditRecordType;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\Entity\Organization;
+use App\Entity\OrganizationInvitation;
+use App\Entity\OrganizationInvitationRepository;
+use App\Entity\OrganizationInvitationTeamRepository;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeam;
 use App\Entity\OrganizationTeamMember;
@@ -24,10 +27,12 @@ use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Form\Model\AddTeamMemberRequest;
+use App\Form\Model\InviteMemberRequest;
 use App\Form\Model\OrganizationDetailsRequest;
 use App\Form\Model\TeamRequest;
 use App\Form\Type\AddTeamMemberType;
 use App\Form\Type\DeleteTeamType;
+use App\Form\Type\InviteMemberType;
 use App\Form\Type\LeaveOrganizationType;
 use App\Form\Type\OrganizationDetailsType;
 use App\Form\Type\RemoveMemberType;
@@ -35,6 +40,7 @@ use App\Form\Type\RemoveTeamMemberType;
 use App\Form\Type\TeamType;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Slug;
+use App\Organization\InvitationManager;
 use App\Organization\OrganizationManager;
 use App\Organization\OrganizationMembershipManager;
 use App\QueryFilter\AuditLog\ActorFilter;
@@ -46,6 +52,7 @@ use App\Security\Voter\OrganizationActions;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Bridge\Doctrine\Types\UlidType;
+use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -60,10 +67,13 @@ class OrganizationController extends Controller
     public function __construct(
         private readonly OrganizationManager $organizationManager,
         private readonly OrganizationMembershipManager $membershipManager,
+        private readonly InvitationManager $invitationManager,
         private readonly OrganizationRepository $organizationRepo,
         private readonly OrganizationTeamRepository $organizationTeamRepo,
         private readonly OrganizationTeamMemberRepository $organizationTeamMemberRepo,
-        private readonly UserRepository $users,
+        private readonly OrganizationInvitationRepository $organizationInvitationRepo,
+        private readonly OrganizationInvitationTeamRepository $organizationInvitationTeamRepo,
+        private readonly UserRepository $userRepo,
     ) {
     }
 
@@ -472,6 +482,122 @@ class OrganizationController extends Controller
         ]);
     }
 
+    #[IsGranted(OrganizationActions::ViewInvitations->value, 'organization')]
+    #[Route(path: '/organizations/{organization}/invitations', name: 'organization_invitations', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
+    public function invitations(Organization $organization): Response
+    {
+        $teamNamesById = [];
+        foreach ($this->organizationTeamRepo->findByOrg($organization->id) as $team) {
+            $teamNamesById[$team->teamId->toRfc4122()] = $team->name;
+        }
+
+        $invitations = [];
+        foreach ($this->organizationInvitationRepo->findByOrg($organization->id) as $invitation) {
+            $teamNames = [];
+            foreach ($this->organizationInvitationTeamRepo->findTeamIds($invitation->id) as $teamId) {
+                $teamNames[] = $teamNamesById[$teamId->toRfc4122()] ?? '(deleted team)';
+            }
+
+            $invitations[] = ['invitation' => $invitation, 'teamNames' => $teamNames];
+        }
+
+        return $this->render('organization/invitations.html.twig', [
+            'organization' => $organization,
+            'invitations' => $invitations,
+        ]);
+    }
+
+    #[IsGranted(OrganizationActions::InviteMember->value, 'organization')]
+    #[Route(path: '/organizations/{organization}/invitations/invite', name: 'organization_invitation_create', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
+    public function inviteMember(Request $request, Organization $organization, #[CurrentUser] User $user): Response
+    {
+        $inviteRequest = new InviteMemberRequest();
+        $form = $this->createForm(InviteMemberType::class, $inviteRequest, ['teams' => $this->invitableTeamChoices($organization)]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $teamIds = array_map(static fn (string $id): Ulid => Ulid::fromString($id), $inviteRequest->teamIds);
+                $this->invitationManager->invite($organization, $user, $inviteRequest->email, $teamIds, $request->getClientIp());
+                $this->addFlash('success', sprintf('Invitation sent to "%s".', $inviteRequest->email));
+
+                return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
+            } catch (OrganizationException $e) {
+                $form->addError(new FormError($e->getMessage()));
+            }
+        }
+
+        return $this->render('organization/invitation_create.html.twig', [
+            'organization' => $organization,
+            'form' => $form->createView(),
+        ]);
+    }
+
+    #[IsGranted(OrganizationActions::InviteMember->value, 'organization')]
+    #[Route(path: '/organizations/{organization}/invitations/{invitation}/resend', name: 'organization_invitation_resend', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID])]
+    public function resendInvitation(Request $request, Organization $organization, string $invitation, #[CurrentUser] User $user): Response
+    {
+        $record = $this->requireInvitation($organization, $invitation);
+
+        if ($this->isCsrfTokenValid('invitation', (string) $request->request->get('_token'))) {
+            try {
+                $this->invitationManager->resend($organization, $user, $record, $request->getClientIp());
+                $this->addFlash('success', sprintf('Invitation to "%s" re-sent.', $record->email));
+            } catch (OrganizationException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
+        }
+
+        return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
+    }
+
+    #[IsGranted(OrganizationActions::RevokeInvitation->value, 'organization')]
+    #[Route(path: '/organizations/{organization}/invitations/{invitation}/revoke', name: 'organization_invitation_revoke', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID])]
+    public function revokeInvitation(Request $request, Organization $organization, string $invitation, #[CurrentUser] User $user): Response
+    {
+        $record = $this->requireInvitation($organization, $invitation);
+
+        if ($this->isCsrfTokenValid('invitation', (string) $request->request->get('_token'))) {
+            try {
+                $this->invitationManager->revoke($organization, $user, $record, $request->getClientIp());
+                $this->addFlash('success', sprintf('Invitation to "%s" revoked.', $record->email));
+            } catch (OrganizationException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
+        }
+
+        return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
+    }
+
+    /**
+     * The teams an owner may invite to: every team except the automatically-managed all-members team.
+     *
+     * @return array<string, string> team name => team id (rfc4122)
+     */
+    private function invitableTeamChoices(Organization $organization): array
+    {
+        $choices = [];
+        foreach ($this->organizationTeamRepo->findByOrg($organization->id) as $team) {
+            if ($team->teamId->equals($organization->allMembersTeamId)) {
+                continue;
+            }
+
+            $choices[$team->name] = $team->teamId->toRfc4122();
+        }
+
+        return $choices;
+    }
+
+    private function requireInvitation(Organization $organization, string $invitationId): OrganizationInvitation
+    {
+        $record = $this->organizationInvitationRepo->find(Ulid::fromString($invitationId));
+        if ($record === null || !$record->orgId->equals($organization->id)) {
+            throw new NotFoundHttpException('Invitation not found.');
+        }
+
+        return $record;
+    }
+
     /**
      * @param list<OrganizationTeamMember> $rows
      *
@@ -485,7 +611,7 @@ class OrganizationController extends Controller
         }
 
         $usersById = [];
-        foreach ($this->users->findBy(['id' => $userIds]) as $user) {
+        foreach ($this->userRepo->findBy(['id' => $userIds]) as $user) {
             $usersById[$user->getId()] = $user;
         }
 

@@ -89,7 +89,10 @@ class OrganizationVoter extends Voter
             OrganizationActions::DeleteTeam,
             OrganizationActions::AddTeamMember,
             OrganizationActions::RemoveTeamMember,
-            OrganizationActions::RemoveMember => $this->manageDenialReason($organization, $user),
+            OrganizationActions::RemoveMember,
+            OrganizationActions::ViewInvitations,
+            OrganizationActions::InviteMember,
+            OrganizationActions::RevokeInvitation => $this->manageDenialReason($organization, $user),
         };
     }
 

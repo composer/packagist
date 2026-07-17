@@ -38,4 +38,12 @@ final readonly class Actor
     {
         return new self($admin->getId(), ActorLabel::PackagistAdmin);
     }
+
+    /**
+     * No human actor, e.g. an invitation lazily expired during link validation.
+     */
+    public static function system(): self
+    {
+        return new self(null, ActorLabel::System);
+    }
 }

@@ -72,6 +72,7 @@ enum AuditRecordType: string
     case OrganizationTeamDeleted = 'organization_team_deleted';
     case OrganizationTeamMemberAdded = 'organization_team_member_added';
     case OrganizationTeamMemberRemoved = 'organization_team_member_removed';
+    case OrganizationMemberJoined = 'organization_member_joined';
     case OrganizationMemberRemoved = 'organization_member_removed';
     case OrganizationMemberLeft = 'organization_member_left';
 
@@ -105,6 +106,7 @@ enum AuditRecordType: string
             self::OrganizationCreated, self::OrganizationNameChanged, self::OrganizationSlugChanged,
             self::OrganizationTeamCreated, self::OrganizationTeamRenamed, self::OrganizationTeamDeleted,
             self::OrganizationTeamMemberAdded, self::OrganizationTeamMemberRemoved,
+            self::OrganizationMemberJoined,
             self::OrganizationMemberRemoved, self::OrganizationMemberLeft => 'organization',
         };
     }

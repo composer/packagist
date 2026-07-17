@@ -6,7 +6,9 @@
 {%- endblock textarea_widget %}
 
 {% block form_widget_simple -%}
-    {% if type is not defined or type not in ['file', 'hidden'] %}
+    {# Bootstrap's form-control makes an input display:block/width:100%, which is wrong for checkboxes
+       and radios (it pushes their label onto the next line and stretches the box). #}
+    {% if type is not defined or type not in ['file', 'hidden', 'checkbox', 'radio'] %}
         {%- set attr = attr|merge({class: (attr.class|default('') ~ ' form-control')|trim}) -%}
     {% endif %}
     {%- set type = type|default('text') -%}

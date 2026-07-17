@@ -16,6 +16,8 @@ use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationStatus;
 use App\Entity\OrganizationTeam;
+use App\Entity\OrganizationMember;
+use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationTeamMember;
 use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\OrganizationTeamRepository;
@@ -24,6 +26,8 @@ use App\Entity\SlugReservationKind;
 use App\Entity\SlugReservationRepository;
 use App\Entity\User;
 use App\Entity\UserRepository;
+use App\Organization\Domain\Event\InvitationEvent;
+use App\Organization\Domain\Event\MemberJoinedViaInvitation;
 use App\Organization\Domain\Event\MemberLeft;
 use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
@@ -56,12 +60,18 @@ final readonly class OrganizationReadModelProjector implements Projector
         private SlugReservationRepository $slugReservationRepo,
         private OrganizationTeamRepository $organizationTeamRepo,
         private OrganizationTeamMemberRepository $organizationTeamMemberRepo,
+        private OrganizationMemberRepository $organizationMemberRepo,
     ) {
     }
 
     public function project(RecordedEvent $recorded): void
     {
         $event = $recorded->event;
+
+        // Invitation-stream events have their own read-model projector and are internal only.
+        if ($event instanceof InvitationEvent) {
+            return;
+        }
 
         match (true) {
             $event instanceof OrganizationCreated => $this->organizationCreated($recorded, $event),
@@ -70,6 +80,7 @@ final readonly class OrganizationReadModelProjector implements Projector
             $event instanceof TeamCreated => $this->teamCreated($recorded, $event),
             $event instanceof TeamRenamed => $this->team($event->teamId)->name = $event->name,
             $event instanceof TeamMemberAdded => $this->teamMemberAdded($recorded, $event),
+            $event instanceof MemberJoinedViaInvitation => $this->memberJoinedViaInvitation($recorded, $event),
             $event instanceof TeamMemberRemoved => $this->removeMembership($event->teamId, $event->userId),
             $event instanceof TeamDeleted => $this->teamDeleted($event),
             $event instanceof MemberRemoved => $this->memberGone($event->organizationId, $event->userId),
@@ -142,6 +153,39 @@ final readonly class OrganizationReadModelProjector implements Projector
             $this->user($recorded->actor->userId),
             $recorded->occurredAt,
         ));
+
+        // Being added to any team makes the user an org member; ensure the org-level record exists.
+        $this->ensureOrgMember($event->organizationId, $event->userId, $recorded->occurredAt);
+    }
+
+    private function memberJoinedViaInvitation(RecordedEvent $recorded, MemberJoinedViaInvitation $event): void
+    {
+        $actor = $this->user($recorded->actor->userId);
+        foreach ($event->teamIds as $teamId) {
+            $this->getEM()->persist(new OrganizationTeamMember(
+                $teamId,
+                $event->userId,
+                $event->organizationId,
+                $actor,
+                $recorded->occurredAt,
+            ));
+        }
+
+        $this->ensureOrgMember($event->organizationId, $event->userId, $recorded->occurredAt);
+    }
+
+    /**
+     * Create the org-level membership record on first join, if not already present. Membership is the
+     * union of team memberships, so a user added to several teams (bootstrap, invitation) gets one row
+     * stamped at their first join.
+     */
+    private function ensureOrgMember(Ulid $orgId, int $userId, \DateTimeImmutable $joinedAt): void
+    {
+        if ($this->organizationMemberRepo->findOneByOrgAndUser($orgId, $userId) !== null) {
+            return;
+        }
+
+        $this->getEM()->persist(new OrganizationMember($orgId, $userId, $joinedAt));
     }
 
     private function teamDeleted(TeamDeleted $event): void
@@ -160,6 +204,11 @@ final readonly class OrganizationReadModelProjector implements Projector
     {
         foreach ($this->organizationTeamMemberRepo->findBy(['orgId' => $orgId, 'userId' => $userId]) as $member) {
             $this->getEM()->remove($member);
+        }
+
+        $orgMember = $this->organizationMemberRepo->findOneByOrgAndUser($orgId, $userId);
+        if ($orgMember !== null) {
+            $this->getEM()->remove($orgMember);
         }
     }
 

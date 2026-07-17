@@ -152,6 +152,19 @@ class MenuBuilder
                 ],
             ],
         ]);
+        $menu->addChild($this->translator->trans('menu.organization_invitations'), [
+            'label' => '<span class="icon-mail"></span>'.$this->translator->trans('menu.organization_invitations'),
+            'route' => 'organization_invitations',
+            'routeParameters' => ['organization' => $slug],
+            'extras' => [
+                'safe_label' => true,
+                'translation_domain' => false,
+                'routes' => [
+                    ['route' => 'organization_invitations', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_invitation_create', 'parameters' => ['organization' => $slug]],
+                ],
+            ],
+        ]);
         $menu->addChild($this->translator->trans('menu.organization_settings'), [
             'label' => '<span class="icon-tools"></span>'.$this->translator->trans('menu.organization_settings'),
             'route' => 'organization_settings',
