@@ -70,9 +70,4 @@ class Organization
     {
         return $this->deletedAt !== null;
     }
-
-    public function changeSlug(string $slug): void
-    {
-        $this->slug = $slug;
-    }
 }
