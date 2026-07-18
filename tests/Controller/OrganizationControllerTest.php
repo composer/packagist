@@ -29,7 +29,8 @@ class OrganizationControllerTest extends IntegrationTestCase
 {
     public function testShowRendersActiveOrganization(): void
     {
-        $user = $this->persistUser();
+        $user = self::createUser();
+        $this->store($user);
         $this->persistOrganization('acme', 'ACME Corp', owner: $user);
 
         $this->client->loginUser($user);
@@ -58,7 +59,8 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testAdminCanViewDeletedOrganization(): void
     {
-        $admin = self::persistUser('ROLE_ADMIN');
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $this->store($admin);
         $this->persistOrganization('acme', 'ACME Corp', deletedAt: new \DateTimeImmutable());
 
         $this->client->loginUser($admin);
@@ -76,9 +78,9 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testListShowsOnlyOrganizationsOwnedByUser(): void
     {
-        $owner = self::persistUser();
-        $other = self::createUser('other', 'other@example.org');
-        $this->store($other);
+        $owner = self::createUser(roles: ['ROLE_ADMIN_ORGS']);
+        $other = self::createUser('other', 'other@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $this->store($owner, $other);
 
         $this->persistOrganization('mine', 'Mine Org', owner: $owner);
         $this->persistOrganization('theirs', 'Their Org', owner: $other);
@@ -113,7 +115,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testSettingsForbiddenForNonOwner(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $owner = self::createUser('owner', 'owner@example.org');
         $intruder = self::createUser('intruder', 'intruder@example.org');
         $this->store($owner, $intruder);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
@@ -140,7 +142,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testSettingsRendersPrefilledFormForOwner(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $owner = self::createUser('owner', 'owner@example.org');
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
@@ -156,7 +158,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
     public function testOwnerRenamesViaSettings(): void
     {
-        $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
+        $owner = self::createUser('owner', 'owner@example.org');
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
@@ -817,14 +819,6 @@ class OrganizationControllerTest extends IntegrationTestCase
         }
 
         return $organization;
-    }
-
-    private function persistUser(string $role = 'ROLE_ADMIN_ORGS'): User
-    {
-        $user = self::createUser('admin', 'admin@example.org', roles: [$role]);
-        $this->store($user);
-
-        return $user;
     }
 
     private function organizations(): OrganizationRepository
