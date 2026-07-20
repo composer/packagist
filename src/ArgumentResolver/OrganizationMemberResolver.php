@@ -32,7 +32,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 final readonly class OrganizationMemberResolver implements ValueResolverInterface
 {
     public function __construct(
-        private OrganizationTeamMemberRepository $teamMembers,
+        private OrganizationTeamMemberRepository $organizationTeamMemberRepo,
     ) {
     }
 
@@ -45,7 +45,7 @@ final readonly class OrganizationMemberResolver implements ValueResolverInterfac
             return [];
         }
 
-        $member = $this->teamMembers->findOrgMember($request->attributes->getString('organization'), $request->attributes->getString('organizationMember'));
+        $member = $this->organizationTeamMemberRepo->findOrgMember($request->attributes->getString('organization'), $request->attributes->getString('organizationMember'));
         if (null === $member) {
             throw new NotFoundHttpException('Member not found.');
         }

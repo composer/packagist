@@ -40,10 +40,10 @@ use Symfony\Component\Uid\Ulid;
 final readonly class OrganizationAuditProjector implements Projector
 {
     public function __construct(
-        private AuditRecordRepository $auditRecords,
+        private AuditRecordRepository $auditRecordRepo,
         private UserRepository $users,
-        private OrganizationRepository $organizations,
-        private OrganizationTeamRepository $teams,
+        private OrganizationRepository $organizationRepo,
+        private OrganizationTeamRepository $organizationTeamRepo,
     ) {
     }
 
@@ -60,7 +60,7 @@ final readonly class OrganizationAuditProjector implements Projector
         // creator's membership are set by their own TeamCreated / TeamMemberAdded events in the
         // same creation batch
         if ($event instanceof OrganizationCreated) {
-            $this->auditRecords->insert(AuditRecord::organizationCreated($event->organizationId, $event->slug, $event->displayName, $actor));
+            $this->auditRecordRepo->insert(AuditRecord::organizationCreated($event->organizationId, $event->slug, $event->displayName, $actor));
 
             return;
         }
@@ -69,7 +69,7 @@ final readonly class OrganizationAuditProjector implements Projector
         // team/member events (and by each other's change events), so the read model is safe here.
         $org = $this->organization($event->aggregateId());
 
-        $this->auditRecords->insert(
+        $this->auditRecordRepo->insert(
             match (true) {
                 $event instanceof OrganizationNameChanged => AuditRecord::organizationNameChanged($event->organizationId, $org->slug, $event->displayName, $event->previousDisplayName, $actor),
                 $event instanceof OrganizationSlugChanged => AuditRecord::organizationSlugChanged($event->organizationId, $event->slug, $org->displayName, $event->previousSlug, $actor),
@@ -89,7 +89,7 @@ final readonly class OrganizationAuditProjector implements Projector
     {
         // A member add/remove event always follows the team's own creation event, so the read-model
         // row must exist by now; a miss signals an inconsistent projection rather than a normal state.
-        $team = $this->teams->find($teamId);
+        $team = $this->organizationTeamRepo->find($teamId);
         if ($team === null) {
             throw new \LogicException('Organization team read model not found for '.$teamId->toRfc4122().'.');
         }
@@ -104,7 +104,7 @@ final readonly class OrganizationAuditProjector implements Projector
 
     private function organization(Ulid $id): Organization
     {
-        $organization = $this->organizations->find($id);
+        $organization = $this->organizationRepo->find($id);
         if ($organization === null) {
             throw new \LogicException('Organization read model not found for '.$id->toRfc4122().'.');
         }

@@ -27,7 +27,7 @@ class OrganizationVoter extends Voter
 {
     public function __construct(
         private Security $security,
-        private OrganizationTeamMemberRepository $teamMembers,
+        private OrganizationTeamMemberRepository $organizationTeamMemberRepo,
     ) {
     }
 
@@ -122,11 +122,11 @@ class OrganizationVoter extends Voter
 
     private function isOwner(Organization $organization, User $user): bool
     {
-        return $this->teamMembers->isOwner($organization->ownersTeamId, $user->getId());
+        return $this->organizationTeamMemberRepo->isOwner($organization->ownersTeamId, $user->getId());
     }
 
     private function isMember(Organization $organization, User $user): bool
     {
-        return $this->teamMembers->isMemberOfOrg($organization->id, $user->getId());
+        return $this->organizationTeamMemberRepo->isMemberOfOrg($organization->id, $user->getId());
     }
 }

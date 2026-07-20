@@ -51,11 +51,11 @@ final readonly class OrganizationReadModelProjector implements Projector
 
     public function __construct(
         private ManagerRegistry $doctrine,
-        private UserRepository $users,
-        private OrganizationRepository $organizations,
-        private SlugReservationRepository $reservations,
-        private OrganizationTeamRepository $teams,
-        private OrganizationTeamMemberRepository $teamMembers,
+        private UserRepository $userRepo,
+        private OrganizationRepository $organizationRepo,
+        private SlugReservationRepository $slugReservationRepo,
+        private OrganizationTeamRepository $organizationTeamRepo,
+        private OrganizationTeamMemberRepository $organizationTeamMemberRepo,
     ) {
     }
 
@@ -108,7 +108,7 @@ final readonly class OrganizationReadModelProjector implements Projector
         // Reclaiming a slug the org previously freed (e.g. acme -> acme-inc -> acme):
         // release the now-stale reservation (kept for the audit trail) so the slug is live
         // again and the active-slug unique constraint stays free for a future rename away.
-        $reclaimed = $this->reservations->findActiveForOrg($event->slug, $event->organizationId);
+        $reclaimed = $this->slugReservationRepo->findActiveForOrg($event->slug, $event->organizationId);
         $reclaimed?->release($recorded->occurredAt);
 
         // Reserve the freed slug.
@@ -146,7 +146,7 @@ final readonly class OrganizationReadModelProjector implements Projector
 
     private function teamDeleted(TeamDeleted $event): void
     {
-        foreach ($this->teamMembers->findByTeam($event->teamId) as $member) {
+        foreach ($this->organizationTeamMemberRepo->findByTeam($event->teamId) as $member) {
             $this->getEM()->remove($member);
         }
 
@@ -158,14 +158,14 @@ final readonly class OrganizationReadModelProjector implements Projector
      */
     private function memberGone(Ulid $orgId, int $userId): void
     {
-        foreach ($this->teamMembers->findBy(['orgId' => $orgId, 'userId' => $userId]) as $member) {
+        foreach ($this->organizationTeamMemberRepo->findBy(['orgId' => $orgId, 'userId' => $userId]) as $member) {
             $this->getEM()->remove($member);
         }
     }
 
     private function removeMembership(Ulid $teamId, int $userId): void
     {
-        $member = $this->teamMembers->findOneBy(['teamId' => $teamId, 'userId' => $userId]);
+        $member = $this->organizationTeamMemberRepo->findOneBy(['teamId' => $teamId, 'userId' => $userId]);
         if ($member !== null) {
             $this->getEM()->remove($member);
         }
@@ -173,7 +173,7 @@ final readonly class OrganizationReadModelProjector implements Projector
 
     private function organization(Ulid $id): Organization
     {
-        $organization = $this->organizations->find($id);
+        $organization = $this->organizationRepo->find($id);
         if ($organization === null) {
             throw new \LogicException('Organization read model not found for '.$id->toRfc4122().'.');
         }
@@ -183,7 +183,7 @@ final readonly class OrganizationReadModelProjector implements Projector
 
     private function team(Ulid $teamId): OrganizationTeam
     {
-        $team = $this->teams->find($teamId);
+        $team = $this->organizationTeamRepo->find($teamId);
         if ($team === null) {
             throw new \LogicException('Organization team read model not found for '.$teamId->toRfc4122().'.');
         }
@@ -193,6 +193,6 @@ final readonly class OrganizationReadModelProjector implements Projector
 
     private function user(?int $userId): ?User
     {
-        return $userId !== null ? $this->users->find($userId) : null;
+        return $userId !== null ? $this->userRepo->find($userId) : null;
     }
 }

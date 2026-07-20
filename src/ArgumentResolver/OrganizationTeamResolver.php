@@ -29,7 +29,7 @@ use Symfony\Component\Uid\Ulid;
 final readonly class OrganizationTeamResolver implements ValueResolverInterface
 {
     public function __construct(
-        private OrganizationTeamRepository $teams,
+        private OrganizationTeamRepository $organizationTeamRepo,
     ) {
     }
 
@@ -47,7 +47,7 @@ final readonly class OrganizationTeamResolver implements ValueResolverInterface
             throw new NotFoundHttpException('Team not found.');
         }
 
-        $team = $this->teams->findOneByOrgSlugAndTeamId($request->attributes->getString('organization'), Ulid::fromString($teamId));
+        $team = $this->organizationTeamRepo->findOneByOrgSlugAndTeamId($request->attributes->getString('organization'), Ulid::fromString($teamId));
         if (null === $team) {
             throw new NotFoundHttpException('Team not found.');
         }

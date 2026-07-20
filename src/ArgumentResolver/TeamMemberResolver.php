@@ -33,7 +33,7 @@ use Symfony\Component\Uid\Ulid;
 final readonly class TeamMemberResolver implements ValueResolverInterface
 {
     public function __construct(
-        private OrganizationTeamMemberRepository $teamMembers,
+        private OrganizationTeamMemberRepository $organizationTeamMemberRepo,
     ) {
     }
 
@@ -51,7 +51,7 @@ final readonly class TeamMemberResolver implements ValueResolverInterface
             throw new NotFoundHttpException('Team member not found.');
         }
 
-        $member = $this->teamMembers->findTeamMember(Ulid::fromString($teamId), $request->attributes->getString('teamMember'));
+        $member = $this->organizationTeamMemberRepo->findTeamMember(Ulid::fromString($teamId), $request->attributes->getString('teamMember'));
         if (null === $member) {
             throw new NotFoundHttpException('Team member not found.');
         }

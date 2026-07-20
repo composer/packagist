@@ -34,7 +34,7 @@ final class OrganizationMembershipManager
 {
     public function __construct(
         private readonly EventStore $eventStore,
-        private readonly UserRepository $users,
+        private readonly UserRepository $userRepo,
         private readonly Security $security,
     ) {
     }
@@ -72,7 +72,7 @@ final class OrganizationMembershipManager
 
     public function addTeamMember(OrganizationReadModel $organization, User $actor, Ulid $teamId, int $userId, ?string $ip): void
     {
-        $targetHasTwoFactor = $this->users->find($userId)?->isTotpAuthenticationEnabled() ?? false;
+        $targetHasTwoFactor = $this->userRepo->find($userId)?->isTotpAuthenticationEnabled() ?? false;
 
         $this->mutate($organization, $actor, static fn (Organization $org) => $org->addTeamMember($teamId, $userId, $targetHasTwoFactor), $ip);
     }

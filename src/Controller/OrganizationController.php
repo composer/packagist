@@ -50,8 +50,8 @@ class OrganizationController extends Controller
         private readonly OrganizationManager $organizationManager,
         private readonly OrganizationMembershipManager $membershipManager,
         private readonly OrganizationRepository $organizationRepo,
-        private readonly OrganizationTeamRepository $teams,
-        private readonly OrganizationTeamMemberRepository $teamMembers,
+        private readonly OrganizationTeamRepository $organizationTeamRepo,
+        private readonly OrganizationTeamMemberRepository $organizationTeamMemberRepo,
         private readonly UserRepository $users,
     ) {
     }
@@ -114,7 +114,7 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/teams', name: 'organization_teams', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
     public function teams(Organization $organization): Response
     {
-        $rows = $this->teamMembers->findByOrg($organization->id);
+        $rows = $this->organizationTeamMemberRepo->findByOrg($organization->id);
         $usersById = $this->usersById($rows);
 
         $membersByTeam = [];
@@ -126,7 +126,7 @@ class OrganizationController extends Controller
         }
 
         $teams = [];
-        foreach ($this->teams->findByOrg($organization->id) as $team) {
+        foreach ($this->organizationTeamRepo->findByOrg($organization->id) as $team) {
             $teams[] = [
                 'team' => $team,
                 'members' => $membersByTeam[$team->teamId->toRfc4122()] ?? [],
@@ -252,7 +252,7 @@ class OrganizationController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $target = $this->teamMembers->findOrgMember($organization->slug, $addRequest->username);
+            $target = $this->organizationTeamMemberRepo->findOrgMember($organization->slug, $addRequest->username);
             if ($target === null) {
                 $form->addError(new FormError(sprintf('No member "%s" was found in this organization.', $addRequest->username)));
             } else {
@@ -285,7 +285,7 @@ class OrganizationController extends Controller
 
         // The last owner cannot be removed: the org must always keep someone who can manage it.
         // Explain this up front and offer no removal form, only a way back.
-        if ($team->teamId->equals($organization->ownersTeamId) && $this->teamMembers->countByTeam($organization->ownersTeamId) === 1) {
+        if ($team->teamId->equals($organization->ownersTeamId) && $this->organizationTeamMemberRepo->countByTeam($organization->ownersTeamId) === 1) {
             return $this->render('organization/team_member_remove.html.twig', [
                 'organization' => $organization,
                 'team' => $team,
@@ -322,11 +322,11 @@ class OrganizationController extends Controller
     #[Route(path: '/organizations/{organization}/members', name: 'organization_members', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
     public function members(Organization $organization): Response
     {
-        $rows = $this->teamMembers->findByOrg($organization->id);
+        $rows = $this->organizationTeamMemberRepo->findByOrg($organization->id);
         $usersById = $this->usersById($rows);
 
         $teamsById = [];
-        foreach ($this->teams->findByOrg($organization->id) as $team) {
+        foreach ($this->organizationTeamRepo->findByOrg($organization->id) as $team) {
             $teamsById[$team->teamId->toRfc4122()] = $team;
         }
 
@@ -359,7 +359,7 @@ class OrganizationController extends Controller
     {
         // The last owner cannot be removed: the org must always keep someone who can manage it.
         // Explain this up front and offer no removal form, only a way back.
-        if ($this->teamMembers->isOwner($organization->ownersTeamId, $organizationMember->getId()) && $this->teamMembers->countByTeam($organization->ownersTeamId) === 1) {
+        if ($this->organizationTeamMemberRepo->isOwner($organization->ownersTeamId, $organizationMember->getId()) && $this->organizationTeamMemberRepo->countByTeam($organization->ownersTeamId) === 1) {
             return $this->render('organization/member_remove.html.twig', [
                 'organization' => $organization,
                 'member' => $organizationMember,
