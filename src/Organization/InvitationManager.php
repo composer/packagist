@@ -42,6 +42,9 @@ use Symfony\Component\Uid\Ulid;
  */
 final class InvitationManager
 {
+    /** Days an organization invitation link stays valid before it lazily expires. */
+    private const int INVITATION_EXPIRY_DAYS = 7;
+
     public function __construct(
         private readonly EventStore $eventStore,
         private readonly OrganizationInvitationRepository $invitations,
@@ -54,7 +57,6 @@ final class InvitationManager
         private readonly Security $security,
         private readonly string $mailFromEmail,
         private readonly string $mailFromName,
-        private readonly int $invitationExpiryDays,
     ) {
     }
 
@@ -83,7 +85,7 @@ final class InvitationManager
         $this->assertTeamsBelongToOrg($organization, $teamIds);
 
         $token = $this->tokens->generate();
-        $expiresAt = $now->add(new \DateInterval('P'.$this->invitationExpiryDays.'D'));
+        $expiresAt = $now->add(new \DateInterval('P'.self::INVITATION_EXPIRY_DAYS.'D'));
 
         $invitation = Invitation::send(new Ulid(), $organization->id, $emailVo, $teamIds, $token['hash'], $expiresAt);
         $this->eventStore->append($invitation, $this->ownerActor($actor, $organization), $ip);
@@ -100,7 +102,7 @@ final class InvitationManager
     {
         $now = $this->clock->now();
         $token = $this->tokens->generate();
-        $newExpiresAt = $now->add(new \DateInterval('P'.$this->invitationExpiryDays.'D'));
+        $newExpiresAt = $now->add(new \DateInterval('P'.self::INVITATION_EXPIRY_DAYS.'D'));
 
         $aggregate = $this->reconstituteInvitation($invitation->id);
         $aggregate->resend($token['hash'], $newExpiresAt, $now);

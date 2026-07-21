@@ -16,8 +16,6 @@ parameters:
     github.webhook_secret: '%env(APP_GITHUB_WEBHOOK_SECRET)%'
     fallback_gh_tokens: []
     replica_ips: []
-    # Days an organization invitation link stays valid before it lazily expires.
-    app.organization.invitation_expiry_days: 7
 
 services:
     # default configuration for services in *this* file
@@ -47,7 +45,6 @@ services:
             $recaptchaEnabled: "%env(bool:APP_RECAPTCHA_ENABLED)%"
             $mailFromEmail: "%env(APP_MAILER_FROM_EMAIL)%"
             $mailFromName: "%env(APP_MAILER_FROM_NAME)%"
-            $invitationExpiryDays: '%app.organization.invitation_expiry_days%'
             $fallbackGhTokens: "%fallback_gh_tokens%"
             $configDir: '%kernel.project_dir%/config/'
             $internalSecret: '%env(APP_SECRET)%'
