@@ -21,7 +21,6 @@ use App\Entity\User;
 use App\Organization\Domain\Email;
 use App\Organization\Domain\Exception\DuplicatePendingInvitationException;
 use App\Organization\Domain\Exception\NoTeamSpecifiedException;
-use App\Organization\Domain\Exception\OrganizationDeletedException;
 use App\Organization\Domain\Exception\TeamNotFoundException;
 use App\Organization\Domain\Invitation;
 use App\Organization\Domain\Organization;
@@ -65,17 +64,12 @@ final class InvitationManager
      *
      * @param list<Ulid> $teamIds
      *
-     * @throws OrganizationDeletedException
      * @throws DuplicatePendingInvitationException
      * @throws TeamNotFoundException
      * @throws \App\Organization\Domain\Exception\NoTeamSpecifiedException
      */
     public function invite(OrganizationReadModel $organization, User $actor, string $email, array $teamIds, ?string $ip): void
     {
-        if ($organization->isDeleted()) {
-            throw new OrganizationDeletedException('This organization has been deleted.');
-        }
-
         $emailVo = new Email($email);
         $now = $this->clock->now();
 
@@ -131,7 +125,6 @@ final class InvitationManager
      * (email match, 2FA for owners) and adds the org membership, all in one transaction. The caller has
      * already validated the link token.
      *
-     * @throws OrganizationDeletedException
      * @throws \App\Organization\Domain\Exception\EmailMismatchException
      * @throws \App\Organization\Domain\Exception\PolicyNotMetException
      * @throws \App\Organization\Domain\Exception\InvitationNotPendingException
@@ -141,9 +134,6 @@ final class InvitationManager
     public function accept(OrganizationInvitation $invitation, User $user, ?string $ip): void
     {
         $organization = $this->reconstituteOrganization($invitation->orgId);
-        if ($organization->isDeleted()) {
-            throw new OrganizationDeletedException('This organization has been deleted.');
-        }
 
         $aggregate = $this->reconstituteInvitation($invitation->id);
         $now = $this->clock->now();
