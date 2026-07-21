@@ -533,7 +533,7 @@ class OrganizationController extends Controller
         ]);
     }
 
-    #[IsGranted(OrganizationActions::InviteMember->value, 'organization')]
+    #[IsGranted(OrganizationActions::ResendInvitation->value, 'organization')]
     #[Route(path: '/organizations/{organization}/invitations/{invitation}/resend', name: 'organization_invitation_resend', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID])]
     public function resendInvitation(Request $request, Organization $organization, string $invitation, #[CurrentUser] User $user): Response
     {
