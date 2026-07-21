@@ -168,17 +168,6 @@ final class InvitationManager
         $this->eventStore->append($aggregate, Actor::member($user), $ip);
     }
 
-    /**
-     * Lazily flip a due invitation to `expired`, recorded with a system actor. Called by the link handler
-     * when a still-pending row is past its expiry. A no-op if it is not actually due.
-     */
-    public function expireIfDue(OrganizationInvitation $invitation, ?string $ip): void
-    {
-        $aggregate = $this->reconstituteInvitation($invitation->id);
-        $aggregate->markExpired($this->clock->now());
-        $this->eventStore->append($aggregate, Actor::system(), $ip);
-    }
-
     private function reconstituteInvitation(Ulid $invitationId): Invitation
     {
         return Invitation::reconstitute($invitationId, $this->eventStore->loadHistory($invitationId));
