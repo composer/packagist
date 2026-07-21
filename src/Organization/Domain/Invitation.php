@@ -262,7 +262,7 @@ final class Invitation extends AbstractAggregate
             OrganizationEventType::TeamMemberAdded,
             OrganizationEventType::TeamMemberRemoved,
             OrganizationEventType::TeamDeleted,
-            OrganizationEventType::MemberJoinedViaInvitation,
+            OrganizationEventType::MemberJoined,
             OrganizationEventType::MemberRemoved,
             OrganizationEventType::MemberLeft => throw new \LogicException('Not an invitation-stream event: '.$type->value),
         };

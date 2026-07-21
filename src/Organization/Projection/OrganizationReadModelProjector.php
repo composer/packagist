@@ -27,7 +27,7 @@ use App\Entity\SlugReservationRepository;
 use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Organization\Domain\Event\InvitationEvent;
-use App\Organization\Domain\Event\MemberJoinedViaInvitation;
+use App\Organization\Domain\Event\MemberJoined;
 use App\Organization\Domain\Event\MemberLeft;
 use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
@@ -80,7 +80,7 @@ final readonly class OrganizationReadModelProjector implements Projector
             $event instanceof TeamCreated => $this->teamCreated($recorded, $event),
             $event instanceof TeamRenamed => $this->team($event->teamId)->name = $event->name,
             $event instanceof TeamMemberAdded => $this->teamMemberAdded($recorded, $event),
-            $event instanceof MemberJoinedViaInvitation => $this->memberJoinedViaInvitation($recorded, $event),
+            $event instanceof MemberJoined => $this->memberJoined($recorded, $event),
             $event instanceof TeamMemberRemoved => $this->removeMembership($event->teamId, $event->userId),
             $event instanceof TeamDeleted => $this->teamDeleted($event),
             $event instanceof MemberRemoved => $this->memberGone($event->organizationId, $event->userId),
@@ -158,7 +158,7 @@ final readonly class OrganizationReadModelProjector implements Projector
         $this->ensureOrgMember($event->organizationId, $event->userId, $recorded->occurredAt);
     }
 
-    private function memberJoinedViaInvitation(RecordedEvent $recorded, MemberJoinedViaInvitation $event): void
+    private function memberJoined(RecordedEvent $recorded, MemberJoined $event): void
     {
         $actor = $this->user($recorded->actor->userId);
         foreach ($event->teamIds as $teamId) {

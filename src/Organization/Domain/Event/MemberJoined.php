@@ -26,9 +26,9 @@ use Symfony\Component\Uid\Ulid;
  * is the single event the transparency log publishes for it ("{user} joined ... via invitation"), so the
  * accompanying per-team adds are not separately logged.
  */
-final readonly class MemberJoinedViaInvitation implements DomainEvent
+final readonly class MemberJoined implements DomainEvent
 {
-    public const OrganizationEventType TYPE = OrganizationEventType::MemberJoinedViaInvitation;
+    public const OrganizationEventType TYPE = OrganizationEventType::MemberJoined;
 
     /**
      * @param list<Ulid> $teamIds the teams the user is added to (target teams + the all-members team)

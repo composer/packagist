@@ -32,11 +32,11 @@ enum OrganizationEventType: string
     // A member joining through an accepted invitation. Lives on the org stream (the org aggregate is
     // the source of truth for membership) but is the org-side half of the acceptance, appended in the
     // same transaction as the invitation stream's UserInvitationAccepted.
-    case MemberJoinedViaInvitation = 'member-joined-via-invitation';
+    case MemberJoined = 'member-joined';
 
     // Invitation aggregate (a separate ULID stream in the same event table). These are internal only:
     // they never reach the public transparency log; the acceptance is surfaced publicly by the org
-    // stream's MemberJoinedViaInvitation instead.
+    // stream's MemberJoined instead.
     case UserInvitationSent = 'user-invitation-sent';
     case UserInvitationResent = 'user-invitation-resent';
     case UserInvitationRevoked = 'user-invitation-revoked';

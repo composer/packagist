@@ -17,7 +17,7 @@ use Symfony\Component\Uid\Ulid;
 
 /**
  * The invitee accepts; the invitation is resolved. The org-side membership (team rows + the org member
- * record) is created by the companion {@see MemberJoinedViaInvitation} event on the org stream, appended
+ * record) is created by the companion {@see MemberJoined} event on the org stream, appended
  * in the same transaction. `teamIds` records the target teams that still existed at acceptance and that
  * the user was therefore added to.
  */

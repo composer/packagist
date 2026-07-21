@@ -20,7 +20,7 @@ use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Organization\Domain\Event\InvitationEvent;
-use App\Organization\Domain\Event\MemberJoinedViaInvitation;
+use App\Organization\Domain\Event\MemberJoined;
 use App\Organization\Domain\Event\MemberLeft;
 use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
@@ -54,7 +54,7 @@ final readonly class OrganizationAuditProjector implements Projector
         $event = $recorded->event;
 
         // Pre-membership invitation events are never published; only the join (via the org stream's
-        // MemberJoinedViaInvitation) reaches the public transparency log.
+        // MemberJoined) reaches the public transparency log.
         if ($event instanceof InvitationEvent) {
             return;
         }
@@ -86,7 +86,7 @@ final readonly class OrganizationAuditProjector implements Projector
                 $event instanceof TeamRenamed => AuditRecord::organizationTeamRenamed($event->organizationId, $org->slug, $org->displayName, $event->previousName, $event->name, $actor),
                 $event instanceof TeamDeleted => AuditRecord::organizationTeamDeleted($event->organizationId, $org->slug, $org->displayName, $event->name, $actor),
                 $event instanceof TeamMemberAdded => AuditRecord::organizationTeamMemberAdded($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
-                $event instanceof MemberJoinedViaInvitation => AuditRecord::organizationMemberJoined($event->organizationId, $org->slug, $org->displayName, $this->teamNames($event->teamIds), $this->user($event->userId)),
+                $event instanceof MemberJoined => AuditRecord::organizationMemberJoined($event->organizationId, $org->slug, $org->displayName, $this->teamNames($event->teamIds), $this->user($event->userId)),
                 $event instanceof TeamMemberRemoved => AuditRecord::organizationTeamMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
                 $event instanceof MemberRemoved => AuditRecord::organizationMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId), $actor),
                 $event instanceof MemberLeft => AuditRecord::organizationMemberLeft($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId)),

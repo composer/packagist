@@ -34,7 +34,7 @@ use Symfony\Component\Uid\Ulid;
  * Projects the invitation stream into the `organization_invitation` and `organization_invitation_team`
  * read-model tables. These events are internal only and never reach the public transparency log; the
  * org-side membership created on acceptance is projected by {@see OrganizationReadModelProjector} from
- * the org stream's MemberJoinedViaInvitation event.
+ * the org stream's MemberJoined event.
  *
  * All projectors run for every event, so org-stream events are ignored here.
  */

@@ -12,7 +12,7 @@
 
 namespace App\Organization\Domain;
 
-use App\Organization\Domain\Event\MemberJoinedViaInvitation;
+use App\Organization\Domain\Event\MemberJoined;
 use App\Organization\Domain\Event\MemberLeft;
 use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
@@ -232,7 +232,7 @@ final class Organization extends AbstractAggregate
             return;
         }
 
-        $this->record(new MemberJoinedViaInvitation($this->id, $userId, $teamIds, $invitationId));
+        $this->record(new MemberJoined($this->id, $userId, $teamIds, $invitationId));
     }
 
     /**
@@ -419,7 +419,7 @@ final class Organization extends AbstractAggregate
             $event instanceof TeamMemberAdded => $this->teamMembers[$event->teamId->toRfc4122()][] = $event->userId,
             $event instanceof TeamMemberRemoved => $this->applyTeamMemberRemoved($event),
             $event instanceof TeamDeleted => $this->applyTeamDeleted($event),
-            $event instanceof MemberJoinedViaInvitation => $this->applyMemberJoined($event),
+            $event instanceof MemberJoined => $this->applyMemberJoined($event),
             $event instanceof MemberRemoved => $this->applyMemberGone($event->userId),
             $event instanceof MemberLeft => $this->applyMemberGone($event->userId),
             default => throw new \LogicException('Unhandled organization event: '.$event->eventType()->value),
@@ -456,7 +456,7 @@ final class Organization extends AbstractAggregate
         unset($this->teams[$event->teamId->toRfc4122()], $this->teamMembers[$event->teamId->toRfc4122()]);
     }
 
-    private function applyMemberJoined(MemberJoinedViaInvitation $event): void
+    private function applyMemberJoined(MemberJoined $event): void
     {
         foreach ($event->teamIds as $teamId) {
             $this->teamMembers[$teamId->toRfc4122()][] = $event->userId;
@@ -487,7 +487,7 @@ final class Organization extends AbstractAggregate
             OrganizationEventType::TeamMemberAdded => TeamMemberAdded::fromPayload($id, $payload),
             OrganizationEventType::TeamMemberRemoved => TeamMemberRemoved::fromPayload($id, $payload),
             OrganizationEventType::TeamDeleted => TeamDeleted::fromPayload($id, $payload),
-            OrganizationEventType::MemberJoinedViaInvitation => MemberJoinedViaInvitation::fromPayload($id, $payload),
+            OrganizationEventType::MemberJoined => MemberJoined::fromPayload($id, $payload),
             OrganizationEventType::MemberRemoved => MemberRemoved::fromPayload($id, $payload),
             OrganizationEventType::MemberLeft => MemberLeft::fromPayload($id, $payload),
             // Invitation-stream events belong to the Invitation aggregate and never appear in an org's
