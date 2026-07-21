@@ -43,6 +43,23 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
     }
 
     /**
+     * A single invitation by id, scoped to the organization named by slug. An invitation belonging to
+     * another organization resolves to null rather than leaking across org boundaries. Fetched in one
+     * query, so the organization is not loaded twice.
+     */
+    public function findOneByOrgSlugAndId(string $slug, Ulid $invitationId): ?OrganizationInvitation
+    {
+        return $this->createQueryBuilder('i')
+            ->innerJoin(Organization::class, 'o', 'WITH', 'o.id = i.orgId')
+            ->where('o.slug = :slug')
+            ->andWhere('i.id = :id')
+            ->setParameter('slug', $slug)
+            ->setParameter('id', $invitationId, 'ulid')
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
      * The live (pending and unexpired at $now) invitation for an org/email pair, if any. Used to enforce
      * the "no duplicate pending invitation" precondition. A pending row whose expiry has passed is not
      * live and does not block a fresh invitation.

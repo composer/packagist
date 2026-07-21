@@ -82,6 +82,54 @@ class InvitationControllerTest extends IntegrationTestCase
         self::assertNotSame($before->tokenHash, $after->tokenHash);
     }
 
+    public function testResendPageRejectsExpiredInvitation(): void
+    {
+        [$owner, $organization, $backend] = $this->orgWithTeam();
+
+        $this->client->loginUser($owner);
+        $this->submitInvite($backend, 'alice@example.org');
+
+        $invitation = $this->pendingInvitation($organization);
+        $invitation->expiresAt = new \DateTimeImmutable('-1 day');
+        static::getEM()->flush();
+
+        $this->client->request('GET', sprintf('/organizations/acme/invitations/%s/resend', $invitation->id->toBase32()));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testResendPageRejectsResolvedInvitation(): void
+    {
+        [$owner, $organization, $backend] = $this->orgWithTeam();
+
+        $this->client->loginUser($owner);
+        $this->submitInvite($backend, 'alice@example.org');
+
+        $invitation = $this->pendingInvitation($organization);
+        $invitation->status = InvitationStatus::Revoked;
+        static::getEM()->flush();
+
+        $this->client->request('GET', sprintf('/organizations/acme/invitations/%s/resend', $invitation->id->toBase32()));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testResendPageRejectsInvitationFromAnotherOrganization(): void
+    {
+        [$owner, $organization, $backend] = $this->orgWithTeam();
+
+        $this->client->loginUser($owner);
+        $this->submitInvite($backend, 'alice@example.org');
+        $invitation = $this->pendingInvitation($organization);
+
+        // A second organization the same admin owns; the invitation belongs to acme, not beta.
+        static::getService(OrganizationManager::class)->create($owner, 'beta', 'Beta Corp', null);
+
+        $this->client->request('GET', sprintf('/organizations/beta/invitations/%s/resend', $invitation->id->toBase32()));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testOwnerRevokesInvitationFromList(): void
     {
         [$owner, $organization, $backend] = $this->orgWithTeam();

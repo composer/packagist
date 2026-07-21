@@ -536,17 +536,15 @@ class OrganizationController extends Controller
 
     #[IsGranted(OrganizationActions::ResendInvitation->value, 'organization')]
     #[Route(path: '/organizations/{organization}/invitations/{invitation}/resend', name: 'organization_invitation_resend', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID])]
-    public function resendInvitation(Request $request, Organization $organization, string $invitation, #[CurrentUser] User $user): Response
+    public function resendInvitation(Request $request, Organization $organization, OrganizationInvitation $invitation, #[CurrentUser] User $user): Response
     {
-        $record = $this->requireInvitation($organization, $invitation);
-
         $form = $this->createForm(ResendInvitationType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
-                $this->invitationManager->resend($organization, $user, $record, $request->getClientIp());
-                $this->addFlash('success', sprintf('Invitation to "%s" re-sent.', $record->email));
+                $this->invitationManager->resend($organization, $user, $invitation, $request->getClientIp());
+                $this->addFlash('success', sprintf('Invitation to "%s" re-sent.', $invitation->email));
 
                 return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -556,7 +554,7 @@ class OrganizationController extends Controller
 
         return $this->render('organization/invitation_resend.html.twig', [
             'organization' => $organization,
-            'invitation' => $record,
+            'invitation' => $invitation,
             'expiryDays' => InvitationManager::INVITATION_EXPIRY_DAYS,
             'form' => $form->createView(),
         ]);
@@ -564,14 +562,12 @@ class OrganizationController extends Controller
 
     #[IsGranted(OrganizationActions::RevokeInvitation->value, 'organization')]
     #[Route(path: '/organizations/{organization}/invitations/{invitation}/revoke', name: 'organization_invitation_revoke', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID])]
-    public function revokeInvitation(Request $request, Organization $organization, string $invitation, #[CurrentUser] User $user): Response
+    public function revokeInvitation(Request $request, Organization $organization, OrganizationInvitation $invitation, #[CurrentUser] User $user): Response
     {
-        $record = $this->requireInvitation($organization, $invitation);
-
         if ($this->isCsrfTokenValid('invitation', (string) $request->request->get('_token'))) {
             try {
-                $this->invitationManager->revoke($organization, $user, $record, $request->getClientIp());
-                $this->addFlash('success', sprintf('Invitation to "%s" revoked.', $record->email));
+                $this->invitationManager->revoke($organization, $user, $invitation, $request->getClientIp());
+                $this->addFlash('success', sprintf('Invitation to "%s" revoked.', $invitation->email));
             } catch (OrganizationException $e) {
                 $this->addFlash('error', $e->getMessage());
             }
@@ -597,16 +593,6 @@ class OrganizationController extends Controller
         }
 
         return $choices;
-    }
-
-    private function requireInvitation(Organization $organization, string $invitationId): OrganizationInvitation
-    {
-        $record = $this->organizationInvitationRepo->find(Ulid::fromString($invitationId));
-        if ($record === null || !$record->orgId->equals($organization->id)) {
-            throw new NotFoundHttpException('Invitation not found.');
-        }
-
-        return $record;
     }
 
     /**
