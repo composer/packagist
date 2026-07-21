@@ -13,6 +13,7 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Organization;
+use App\Entity\OrganizationInvitation;
 use App\Entity\OrganizationInvitationRepository;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeam;
@@ -50,8 +51,35 @@ class InvitationControllerTest extends IntegrationTestCase
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('alice@example.org', $crawler->text());
-        self::assertCount(1, $crawler->selectButton('Resend'));
+        self::assertCount(1, $crawler->filter('a:contains("Resend")'));
         self::assertCount(1, $crawler->selectButton('Revoke'));
+    }
+
+    public function testOwnerResendsInvitationFromDedicatedPage(): void
+    {
+        [$owner, $organization, $backend] = $this->orgWithTeam();
+
+        $this->client->loginUser($owner);
+        $this->submitInvite($backend, 'alice@example.org');
+        $before = $this->pendingInvitation($organization);
+
+        // The list links to a dedicated resend page that explains the consequences.
+        $crawler = $this->client->request('GET', '/organizations/acme/invitations');
+        $crawler = $this->client->click($crawler->filter('a:contains("Resend")')->link());
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('invalidate the previous invitation link', $crawler->text());
+        self::assertStringContainsString('another 7 days', $crawler->text());
+
+        $this->client->submit($crawler->selectButton('Resend invitation')->form());
+        self::assertResponseRedirects('/organizations/acme/invitations');
+
+        // A fresh link is sent (one email per request) and the expiry is pushed out.
+        self::assertEmailCount(1);
+        $after = $this->pendingInvitation($organization);
+        self::assertSame(InvitationStatus::Pending, $after->status);
+        self::assertGreaterThan($before->expiresAt, $after->expiresAt);
+        self::assertNotSame($before->tokenHash, $after->tokenHash);
     }
 
     public function testOwnerRevokesInvitationFromList(): void
@@ -172,6 +200,14 @@ class InvitationControllerTest extends IntegrationTestCase
         $values['invite_member']['teamIds'] = [$team->teamId->toRfc4122()];
 
         $this->client->request('POST', $form->getUri(), $values);
+    }
+
+    private function pendingInvitation(Organization $organization): OrganizationInvitation
+    {
+        $rows = static::getService(OrganizationInvitationRepository::class)->findByOrg($organization->id);
+        self::assertCount(1, $rows);
+
+        return $rows[0];
     }
 
     private function acceptUrlPath(): string

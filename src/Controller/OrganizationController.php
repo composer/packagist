@@ -37,6 +37,7 @@ use App\Form\Type\LeaveOrganizationType;
 use App\Form\Type\OrganizationDetailsType;
 use App\Form\Type\RemoveMemberType;
 use App\Form\Type\RemoveTeamMemberType;
+use App\Form\Type\ResendInvitationType;
 use App\Form\Type\TeamType;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Slug;
@@ -534,21 +535,31 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::ResendInvitation->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/invitations/{invitation}/resend', name: 'organization_invitation_resend', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID])]
+    #[Route(path: '/organizations/{organization}/invitations/{invitation}/resend', name: 'organization_invitation_resend', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID])]
     public function resendInvitation(Request $request, Organization $organization, string $invitation, #[CurrentUser] User $user): Response
     {
         $record = $this->requireInvitation($organization, $invitation);
 
-        if ($this->isCsrfTokenValid('invitation', (string) $request->request->get('_token'))) {
+        $form = $this->createForm(ResendInvitationType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->invitationManager->resend($organization, $user, $record, $request->getClientIp());
                 $this->addFlash('success', sprintf('Invitation to "%s" re-sent.', $record->email));
+
+                return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
-                $this->addFlash('error', $e->getMessage());
+                $form->addError(new FormError($e->getMessage()));
             }
         }
 
-        return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
+        return $this->render('organization/invitation_resend.html.twig', [
+            'organization' => $organization,
+            'invitation' => $record,
+            'expiryDays' => InvitationManager::INVITATION_EXPIRY_DAYS,
+            'form' => $form->createView(),
+        ]);
     }
 
     #[IsGranted(OrganizationActions::RevokeInvitation->value, 'organization')]

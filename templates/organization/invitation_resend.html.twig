@@ -1,0 +1,20 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block title %}Resend invitation - {{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block org_content %}
+    <h3 class="title">Resend invitation to "{{ invitation.email }}"</h3>
+
+    <p>Resending the invitation to "{{ invitation.email }}" will:</p>
+    <ul>
+        <li>invalidate the previous invitation link, so it can no longer be used, and</li>
+        <li>extend the invitation by another {{ expiryDays }} days from now.</li>
+    </ul>
+    <p>A fresh invitation email with the new link will be sent to "{{ invitation.email }}".</p>
+
+    {{ form_start(form, { 'attr': { 'class': 'organization_invitation_resend' } }) }}
+        {{ form_errors(form) }}
+        <input class="btn btn-success" type="submit" value="Resend invitation" />
+        <a class="btn btn-default" href="{{ path('organization_invitations', { organization: organization.slug }) }}">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}

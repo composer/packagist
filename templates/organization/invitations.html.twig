@@ -40,10 +40,7 @@
                            overridden by the app's .btn padding. Each action is its own CSRF-protected form. #}
                         <td class="text-right btn-group-xs" style="white-space:nowrap">
                             {% if invitation.pending %}
-                                <form method="post" action="{{ path('organization_invitation_resend', { organization: organization.slug, invitation: invitation.id }) }}" style="display:inline-block">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('invitation') }}">
-                                    <button class="btn btn-default" type="submit">Resend</button>
-                                </form>
+                                <a class="btn btn-default" href="{{ path('organization_invitation_resend', { organization: organization.slug, invitation: invitation.id }) }}">Resend</a>
                                 <form method="post" action="{{ path('organization_invitation_revoke', { organization: organization.slug, invitation: invitation.id }) }}" style="display:inline-block; margin-left:4px">
                                     <input type="hidden" name="_token" value="{{ csrf_token('invitation') }}">
                                     <button class="btn btn-danger" type="submit">Revoke</button>

@@ -43,7 +43,7 @@ use Symfony\Component\Uid\Ulid;
 final class InvitationManager
 {
     /** Days an organization invitation link stays valid before it lazily expires. */
-    private const int INVITATION_EXPIRY_DAYS = 7;
+    public const int INVITATION_EXPIRY_DAYS = 7;
 
     public function __construct(
         private readonly EventStore $eventStore,
