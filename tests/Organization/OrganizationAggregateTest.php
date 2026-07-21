@@ -289,6 +289,7 @@ class OrganizationAggregateTest extends TestCase
         // A second user already joined the org (via a custom team) — modelled directly in history.
         $organization = $this->reconstituteWith($ownersTeamId, [
             ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'name' => 'backend', 'kind' => 'custom']],
+            ['type' => OrganizationEventType::MemberJoined, 'payload' => ['userId' => 2]],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'userId' => 2]],
         ]);
 
@@ -302,6 +303,7 @@ class OrganizationAggregateTest extends TestCase
         $customTeamId = new Ulid();
         $organization = $this->reconstituteWith($ownersTeamId, [
             ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'name' => 'backend', 'kind' => 'custom']],
+            ['type' => OrganizationEventType::MemberJoined, 'payload' => ['userId' => 2]],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'userId' => 2]],
         ]);
 
@@ -338,6 +340,7 @@ class OrganizationAggregateTest extends TestCase
         $ownersTeamId = new Ulid();
         // Two owners: removing one is allowed.
         $organization = $this->reconstituteWith($ownersTeamId, [
+            ['type' => OrganizationEventType::MemberJoined, 'payload' => ['userId' => 2]],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'userId' => 2]],
         ]);
 
@@ -381,6 +384,7 @@ class OrganizationAggregateTest extends TestCase
         $organization = Organization::reconstitute($id, [
             ...$this->bootstrapHistory($ownersTeamId),
             ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'name' => 'backend', 'kind' => 'custom']],
+            ['type' => OrganizationEventType::MemberJoined, 'payload' => ['userId' => 2]],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $customTeamId->toRfc4122(), 'userId' => 2]],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'userId' => 2]],
             ['type' => OrganizationEventType::MemberRemoved, 'payload' => ['userId' => 2]],
@@ -395,6 +399,7 @@ class OrganizationAggregateTest extends TestCase
         $ownersTeamId = new Ulid();
         $organization = Organization::reconstitute(new Ulid(), [
             ...$this->bootstrapHistory($ownersTeamId),
+            ['type' => OrganizationEventType::MemberJoined, 'payload' => ['userId' => 2]],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'userId' => 2]],
             ['type' => OrganizationEventType::MemberLeft, 'payload' => ['userId' => 2]],
         ]);
@@ -423,8 +428,9 @@ class OrganizationAggregateTest extends TestCase
     }
 
     /**
-     * The full five-event creation sequence a real org starts from: the org, its two system teams,
-     * and the creator joining each. Reconstitution needs all of them to rebuild the bootstrapped state.
+     * The full six-event creation sequence a real org starts from: the org, the founding owner joining,
+     * its two system teams, and the owner's membership of each. Reconstitution needs all of them to
+     * rebuild the bootstrapped state.
      *
      * @return list<array{type: OrganizationEventType, payload: array<string, mixed>}>
      */
@@ -440,6 +446,7 @@ class OrganizationAggregateTest extends TestCase
                 'allMembersTeamId' => $allMembersTeamId->toRfc4122(),
                 'ownerId' => self::OWNER,
             ]],
+            ['type' => OrganizationEventType::MemberJoined, 'payload' => ['userId' => self::CREATOR]],
             ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'name' => Organization::OWNERS_TEAM_NAME, 'kind' => 'system']],
             ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $allMembersTeamId->toRfc4122(), 'name' => Organization::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, 'kind' => 'system']],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'userId' => self::OWNER]],
