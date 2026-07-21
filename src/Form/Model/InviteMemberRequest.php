@@ -12,13 +12,15 @@
 
 namespace App\Form\Model;
 
+use App\Organization\Domain\Email;
+use App\Validator\ValidValueObject;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class InviteMemberRequest
 {
     #[Assert\NotBlank]
     #[Assert\Email]
-    #[Assert\Length(max: 255)]
+    #[ValidValueObject(Email::class)]
     public string $email = '';
 
     /**
