@@ -89,11 +89,12 @@ final class Invitation extends AbstractAggregate
     }
 
     /**
-     * An owner cancels the invitation. A no-op if it is no longer pending.
+     * An owner cancels the invitation. A no-op if it is no longer pending or has already expired; an
+     * expired invitation is resolved by {@see markExpired}, not by revoking it.
      */
-    public function revoke(): void
+    public function revoke(\DateTimeImmutable $now): void
     {
-        if (!$this->status->isPending()) {
+        if (!$this->status->isPending() || $this->isExpired($now)) {
             return;
         }
 
@@ -101,14 +102,14 @@ final class Invitation extends AbstractAggregate
     }
 
     /**
-     * The invitee declines. A no-op if it is no longer pending; the caller has already validated the
-     * link token, and the invitee's account email must match the invited address.
+     * The invitee declines. A no-op if it is no longer pending or has already expired; the caller has
+     * already validated the link token, and the invitee's account email must match the invited address.
      *
      * @throws EmailMismatchException
      */
-    public function decline(string $userEmailCanonical): void
+    public function decline(string $userEmailCanonical, \DateTimeImmutable $now): void
     {
-        if (!$this->status->isPending()) {
+        if (!$this->status->isPending() || $this->isExpired($now)) {
             return;
         }
 

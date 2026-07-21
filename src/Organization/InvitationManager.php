@@ -116,7 +116,7 @@ final class InvitationManager
     public function revoke(OrganizationReadModel $organization, User $actor, OrganizationInvitation $invitation, ?string $ip): void
     {
         $aggregate = $this->reconstituteInvitation($invitation->id);
-        $aggregate->revoke();
+        $aggregate->revoke($this->clock->now());
         $this->eventStore->append($aggregate, $this->ownerActor($actor, $organization), $ip);
     }
 
@@ -162,7 +162,7 @@ final class InvitationManager
     public function decline(OrganizationInvitation $invitation, User $user, ?string $ip): void
     {
         $aggregate = $this->reconstituteInvitation($invitation->id);
-        $aggregate->decline($user->getEmailCanonical());
+        $aggregate->decline($user->getEmailCanonical(), $this->clock->now());
         $this->eventStore->append($aggregate, Actor::member($user), $ip);
     }
 

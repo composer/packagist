@@ -104,12 +104,23 @@ class InvitationAggregateTest extends TestCase
     {
         $invitation = $this->pendingInvitation([new Ulid()]);
 
-        $invitation->decline('alice@example.org');
+        $invitation->decline('alice@example.org', $this->now());
 
         $events = $invitation->pullPendingEvents();
         self::assertCount(1, $events);
         self::assertInstanceOf(UserInvitationDeclined::class, $events[0]);
         self::assertSame(InvitationStatus::Declined, $invitation->status());
+    }
+
+    public function testDeclineIsNoOpWhenExpired(): void
+    {
+        $invitation = Invitation::send(new Ulid(), new Ulid(), new Email('alice@example.org'), [new Ulid()], 'hash', $this->past());
+        $invitation->pullPendingEvents();
+
+        $invitation->decline('alice@example.org', $this->now());
+
+        self::assertSame([], $invitation->pullPendingEvents());
+        self::assertSame(InvitationStatus::Pending, $invitation->status());
     }
 
     public function testRevokeIsNoOpOnceResolved(): void
@@ -119,9 +130,20 @@ class InvitationAggregateTest extends TestCase
         $invitation->accept(42, 'alice@example.org', [$teamId], false, true, $this->now());
         $invitation->pullPendingEvents();
 
-        $invitation->revoke();
+        $invitation->revoke($this->now());
 
         self::assertSame([], $invitation->pullPendingEvents());
+    }
+
+    public function testRevokeIsNoOpWhenExpired(): void
+    {
+        $invitation = Invitation::send(new Ulid(), new Ulid(), new Email('alice@example.org'), [new Ulid()], 'hash', $this->past());
+        $invitation->pullPendingEvents();
+
+        $invitation->revoke($this->now());
+
+        self::assertSame([], $invitation->pullPendingEvents());
+        self::assertSame(InvitationStatus::Pending, $invitation->status());
     }
 
     public function testResendCannotReviveExpiredInvitation(): void
