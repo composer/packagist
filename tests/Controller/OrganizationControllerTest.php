@@ -15,6 +15,7 @@ namespace App\Tests\Controller;
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Organization;
+use App\Entity\OrganizationMember;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeam;
 use App\Entity\OrganizationTeamMember;
@@ -625,7 +626,8 @@ class OrganizationControllerTest extends IntegrationTestCase
         // Make `member` a member of the org through a custom team (not the owners team).
         $team = new OrganizationTeam(new Ulid(), $organization, OrganizationTeamKind::Custom, 'backend', $owner, new \DateTimeImmutable());
         $teamMember = new OrganizationTeamMember($team->teamId, $member->getId(), $organization->id, $member, new \DateTimeImmutable());
-        $this->store($team, $teamMember);
+        $orgMember = new OrganizationMember($organization->id, $member->getId(), new \DateTimeImmutable());
+        $this->store($team, $teamMember, $orgMember);
 
         $this->client->loginUser($member);
 
@@ -725,7 +727,8 @@ class OrganizationControllerTest extends IntegrationTestCase
         // Make `member` a member of the org through a custom team.
         $team = new OrganizationTeam(new Ulid(), $organization, OrganizationTeamKind::Custom, 'backend', $owner, new \DateTimeImmutable());
         $teamMember = new OrganizationTeamMember($team->teamId, $member->getId(), $organization->id, $member, new \DateTimeImmutable());
-        $this->store($team, $teamMember);
+        $orgMember = new OrganizationMember($organization->id, $member->getId(), new \DateTimeImmutable());
+        $this->store($team, $teamMember, $orgMember);
 
         $this->client->loginUser($owner);
         $crawler = $this->client->request('GET', '/organizations/acme/members/member/remove');

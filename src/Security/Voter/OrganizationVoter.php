@@ -13,6 +13,7 @@
 namespace App\Security\Voter;
 
 use App\Entity\Organization;
+use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\User;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -28,6 +29,7 @@ class OrganizationVoter extends Voter
     public function __construct(
         private Security $security,
         private OrganizationTeamMemberRepository $organizationTeamMemberRepo,
+        private OrganizationMemberRepository $organizationMemberRepo,
     ) {
     }
 
@@ -132,6 +134,6 @@ class OrganizationVoter extends Voter
 
     private function isMember(Organization $organization, User $user): bool
     {
-        return $this->organizationTeamMemberRepo->isMemberOfOrg($organization->id, $user->getId());
+        return $this->organizationMemberRepo->findOneByOrgAndUser($organization->id, $user->getId()) !== null;
     }
 }
