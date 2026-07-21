@@ -68,7 +68,7 @@ final readonly class OrganizationReadModelProjector implements Projector
             $event instanceof OrganizationNameChanged => $this->organizationNameChanged($event),
             $event instanceof OrganizationSlugChanged => $this->organizationSlugChanged($recorded, $event),
             $event instanceof TeamCreated => $this->teamCreated($recorded, $event),
-            $event instanceof TeamRenamed => $this->team($event->teamId)->rename($event->name),
+            $event instanceof TeamRenamed => $this->team($event->teamId)->name = $event->name,
             $event instanceof TeamMemberAdded => $this->teamMemberAdded($recorded, $event),
             $event instanceof TeamMemberRemoved => $this->removeMembership($event->teamId, $event->userId),
             $event instanceof TeamDeleted => $this->teamDeleted($event),

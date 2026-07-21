@@ -61,9 +61,4 @@ class OrganizationTeam
     {
         return $this->kind === OrganizationTeamKind::System;
     }
-
-    public function rename(string $name): void
-    {
-        $this->name = $name;
-    }
 }
